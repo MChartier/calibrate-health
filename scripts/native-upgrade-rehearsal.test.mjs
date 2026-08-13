@@ -43,6 +43,25 @@ function packageDump(versionCode, firstInstallTime = '2026-07-13 10:00:00') {
   `;
 }
 
+function createFakeTooling(root) {
+  const tooling = {
+    sdkRoot: path.join(root, 'sdk'),
+    javaHome: path.join(root, 'jdk'),
+    adb: path.join(root, 'adb'),
+    aapt: path.join(root, 'aapt'),
+    apksignerJar: path.join(root, 'apksigner.jar'),
+    java: path.join(root, 'java'),
+    keytool: path.join(root, 'keytool'),
+    npmCli: path.join(root, 'npm-cli.js')
+  };
+  fs.mkdirSync(tooling.sdkRoot, { recursive: true });
+  fs.mkdirSync(tooling.javaHome, { recursive: true });
+  for (const [name, file] of Object.entries(tooling)) {
+    if (name !== 'sdkRoot' && name !== 'javaHome') fs.writeFileSync(file, 'fixture');
+  }
+  return tooling;
+}
+
 test('CLI is dry-run by default and requires explicit emulator serials', () => {
   const parsed = parseNativeUpgradeArgs(validArgs());
   assert.equal(parsed.dryRun, true);
@@ -98,6 +117,12 @@ test('build sequence runs release mirror validation after prebuild and before Gr
       if (request.label === 'build candidate phone APK') {
         assert.ok(request.args.includes('-PreactNativeArchitectures=x86_64'));
       }
+      if (request.label === 'verify candidate release mirrors') {
+        assert.deepEqual(request.args, [
+          path.join('C:', 'owned-temp', 'candidate', 'scripts', 'release-config.mjs'),
+          'check'
+        ]);
+      }
       return { status: 0, stdout: '', stderr: '' };
     },
     'x86_64'
@@ -110,6 +135,27 @@ test('build sequence runs release mirror validation after prebuild and before Gr
     'build candidate Wear APK'
   ]);
   assert.match(artifacts.phone, /app-release\.apk$/);
+});
+
+test('package-only builds omit memory-heavy release lint while preserving the release APK task', async () => {
+  const requests = [];
+  await buildCheckout(
+    'candidate',
+    path.join('C:', 'owned-temp', 'candidate'),
+    { npmCli: 'npm-cli.js', java: 'java' },
+    {},
+    async (request) => {
+      requests.push(request);
+      return { status: 0, stdout: '', stderr: '' };
+    },
+    'x86_64',
+    { packageOnly: true }
+  );
+  const phone = requests.find((request) => request.label === 'build candidate phone APK');
+  assert.ok(phone.args.includes(':app:assembleRelease'));
+  assert.deepEqual(phone.args.slice(phone.args.indexOf(':app:assembleRelease') + 1, -2), [
+    '-x', 'lintVitalAnalyzeRelease'
+  ]);
 });
 
 test('historical builds receive an allowlisted environment without unrelated credentials', () => {
@@ -135,6 +181,25 @@ test('historical builds receive an allowlisted environment without unrelated cre
   assert.equal(environment.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, 'store-secret');
 });
 
+test('tooling resolution honors the npm CLI injected by npm run', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-upgrade-resolver-test-'));
+  const sdkRoot = path.join(root, 'sdk');
+  const javaHome = path.join(root, 'jdk');
+  const npmCli = path.join(root, 'hosted-npm-cli.js');
+  try {
+    fs.mkdirSync(path.join(sdkRoot, 'build-tools', '36.0.0'), { recursive: true });
+    fs.mkdirSync(javaHome, { recursive: true });
+    fs.writeFileSync(npmCli, 'fixture');
+    const tooling = resolveNativeUpgradeTooling({
+      ANDROID_HOME: sdkRoot,
+      JAVA_HOME: javaHome,
+      npm_execpath: npmCli
+    });
+    assert.equal(tooling.npmCli, npmCli);
+  } finally {
+    fs.rmSync(root, { recursive: true });
+  }
+});
 test('CLI requires a real version increase and a credential-free HTTPS origin', () => {
   assert.throws(
     () => parseNativeUpgradeArgs(validArgs(['--candidate-version-code', '1'])),
@@ -382,6 +447,7 @@ test('baseline and candidate launches must report Status: ok', async () => {
 });
 
 test('dry-run uses an injectable runner and emits only a reviewable plan', async () => {
+  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-upgrade-tooling-test-'));
   const commands = [];
   const commitA = 'a'.repeat(40);
   const commitB = 'b'.repeat(40);
@@ -406,18 +472,22 @@ test('dry-run uses an injectable runner and emits only a reviewable plan', async
     }
     throw new Error(`Unexpected dry-run command: ${request.command} ${joined}`);
   };
-  const config = parseNativeUpgradeArgs(validArgs());
-  const result = await runNativeUpgradeRehearsal(config, {
-    runner,
-    repositoryRoot: path.resolve('.'),
-    tooling: resolveNativeUpgradeTooling(process.env)
-  });
-  assert.equal(result.status, 'dry-run');
-  assert.equal(result.plan.baseline.commit, commitA);
-  assert.equal(result.plan.candidate.commit, commitB);
-  assert.equal(result.warnings.length, 1);
-  assert.equal(commands.some((request) => request.args.includes('clone')), false);
-  assert.equal(commands.some((request) => request.args.includes('install')), false);
+  try {
+    const config = parseNativeUpgradeArgs(validArgs());
+    const result = await runNativeUpgradeRehearsal(config, {
+      runner,
+      repositoryRoot: path.resolve('.'),
+      tooling: createFakeTooling(fixtureRoot)
+    });
+    assert.equal(result.status, 'dry-run');
+    assert.equal(result.plan.baseline.commit, commitA);
+    assert.equal(result.plan.candidate.commit, commitB);
+    assert.equal(result.warnings.length, 1);
+    assert.equal(commands.some((request) => request.args.includes('clone')), false);
+    assert.equal(commands.some((request) => request.args.includes('install')), false);
+  } finally {
+    fs.rmSync(fixtureRoot, { recursive: true });
+  }
 });
 
 test('temp cleanup refuses any path that is not the exact run-owned root', () => {

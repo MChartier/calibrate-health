@@ -1,25 +1,66 @@
 import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const API_URL = process.env.CALIBRATE_E2E_API_URL ?? 'http://127.0.0.1:3000';
 const TEST_EMAIL = process.env.CALIBRATE_E2E_EMAIL ?? 'test@calibratehealth.app';
 const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
 const APP_ID = 'app.calibratehealth.mobile';
+export const ANDROID_E2E_METRO_STATUS_URL = 'http://localhost:8081/status';
+export const ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS = 150_000;
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
 const OFFLINE_FOOD = { name: 'Android E2E protein shake', calories: 240 };
 const UI_DUMP_PATH = '/sdcard/calibrate-e2e-window.xml';
+
+export function buildAddFoodDeepLink(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Android E2E Add food date must be YYYY-MM-DD.');
+  return `https://calibratehealth.app/log?date=${encodeURIComponent(date)}`;
+}
+export function buildAddFoodLaunchArgs(date) {
+  return [
+    'shell', 'am', 'start', '-W', '-S',
+    '-a', 'android.intent.action.VIEW',
+    '-d', buildAddFoodDeepLink(date),
+    APP_ID,
+  ];
+}
+
+export function assertAndroidAppLinkLaunch(output) {
+  if (!/\bStatus:\s*ok\b/i.test(output) || !/\bActivity:\s*app\.calibratehealth\.mobile\//i.test(output)) {
+    throw new Error('Android E2E app link did not launch the Calibrate activity.');
+  }
+}
+
 const METRO_REVERSE_HOST = 'localhost:8081';
 const API_REVERSE_PORT = 'tcp:3000';
 const HOP_BY_HOP_HEADERS = new Set([
   'connection', 'content-encoding', 'content-length', 'keep-alive', 'proxy-authenticate',
   'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade'
 ]);
-const ADB = process.env.ADB
-  ?? path.join(process.env.LOCALAPPDATA ?? '', 'Android', 'Sdk', 'platform-tools', 'adb.exe');
+export function resolveAndroidE2eAdb(environment = process.env, platform = process.platform) {
+  if (environment.ADB?.trim()) return environment.ADB.trim();
+  const pathApi = platform === 'win32' ? path.win32 : path.posix;
+  const sdkRoot = environment.ANDROID_HOME
+    ?? environment.ANDROID_SDK_ROOT
+    ?? (environment.LOCALAPPDATA ? pathApi.join(environment.LOCALAPPDATA, 'Android', 'Sdk') : null);
+  if (!sdkRoot) return platform === 'win32' ? 'adb.exe' : 'adb';
+  return pathApi.join(sdkRoot, 'platform-tools', platform === 'win32' ? 'adb.exe' : 'adb');
+}
+
+export function buildAndroidE2eAdbArgs(args, serial = process.env.ANDROID_ADB_SERIAL) {
+  const target = serial?.trim();
+  if (!target || !/^emulator-\d+$/.test(target)) {
+    throw new Error('ANDROID_ADB_SERIAL must explicitly name an emulator-<port> target.');
+  }
+  return ['-s', target, ...args];
+}
+
+const ADB = resolveAndroidE2eAdb();
 const release = JSON.parse(readFileSync(new URL('../shared/release.json', import.meta.url), 'utf8'));
 const NATIVE_CLIENT_HEADERS = {
   PLATFORM: 'x-calibrate-client-platform',
@@ -29,10 +70,26 @@ const NATIVE_CLIENT_HEADERS = {
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function adb(args, options = {}) {
-  return execFileSync(ADB, args, {
+  return execFileSync(ADB, buildAndroidE2eAdbArgs(args), {
     encoding: 'utf8',
     stdio: options.quiet ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'inherit']
   }).trim();
+}
+
+export async function fetchAndroidE2eProxyUpstream(url, options, dependencies = {}) {
+  const fetchImpl = dependencies.fetchImpl ?? fetch;
+  const sleepImpl = dependencies.sleepImpl ?? sleep;
+  const attempts = options.method === 'GET' ? 3 : 1;
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchImpl(url, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) await sleepImpl(250 * attempt);
+    }
+  }
+  throw lastError;
 }
 
 /** Proxy the app's reversed loopback API separately from the host-side assertions. */
@@ -58,7 +115,7 @@ async function startApiProxy() {
         }
       }
       const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : undefined;
-      const upstream = await fetch(new URL(request.url ?? '/', target), {
+      const upstream = await fetchAndroidE2eProxyUpstream(new URL(request.url ?? '/', target), {
         method: request.method,
         headers,
         body
@@ -179,11 +236,15 @@ async function waitForNode(label, predicate, timeoutMs = 30_000) {
   return waitFor(label, async () => findNode(dumpUi(), predicate), timeoutMs, 750);
 }
 
-async function tapNode(label, predicate, timeoutMs = 30_000) {
-  const node = await waitForNode(label, predicate, timeoutMs);
+function tapFoundNode(node) {
   const point = parseBounds(node.bounds);
   adb(['shell', 'input', 'tap', String(point.x), String(point.y)], { quiet: true });
 }
+
+async function tapNode(label, predicate, timeoutMs = 30_000) {
+  tapFoundNode(await waitForNode(label, predicate, timeoutMs));
+}
+
 
 /** Attach the release-candidate phone identity to direct API assertions made outside the app. */
 export function buildE2eRequestHeaders(initialHeaders = {}) {
@@ -220,6 +281,27 @@ async function requestJson(pathname, options = {}) {
   throw lastError;
 }
 
+const SAFE_ANDROID_UI_MARKERS = Object.freeze([
+  'Opening add food...', 'Add food', 'Add & close', 'Quick', 'Today', 'Restoring session...',
+  'Food logging is unavailable', 'Sign in',
+]);
+
+export function summarizeAndroidE2eUi(xml) {
+  const nodes = xml.match(/<node\b[^>]*>/g) ?? [];
+  const markers = SAFE_ANDROID_UI_MARKERS.filter((marker) => nodes.some((node) => (
+    readAttribute(node, 'text') === marker || readAttribute(node, 'content-desc') === marker
+  )));
+  return markers.length > 0 ? markers.join(', ') : 'none';
+}
+
+export function isAndroidE2eRecentFoodNode(node, name) {
+  return node?.clickable === true && node?.label === `Choose amount for ${name}`;
+}
+
+export function isAndroidE2eAddAndCloseNode(node) {
+  return node?.clickable === true && node?.label === 'Add & close';
+}
+
 async function loginApi() {
   return requestJson('/auth/mobile/login', {
     method: 'POST',
@@ -252,7 +334,24 @@ async function countFood(accessToken, date, name) {
   return logs.filter((entry) => entry.name === name).length;
 }
 
-/** Put known rows at the front of Quick recents without relying on mutable seed history. */
+export function buildOpenFoodDayRequest(accessToken, date, operationId = randomUUID()) {
+  return {
+    method: 'PATCH',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      'content-type': 'application/json',
+      'x-client-operation-id': operationId
+    },
+    body: JSON.stringify({ date, status: 'OPEN' })
+  };
+}
+
+/** Reopen the deterministic seed's current day before adding E2E-only recent foods. */
+async function ensureFoodDayOpen(accessToken, date) {
+  await requestJson('/api/v1/food-days', buildOpenFoodDayRequest(accessToken, date));
+}
+
+/** Put known rows at the front of Add Food recents without relying on mutable seed history. */
 async function seedRecentFood(accessToken, date, food) {
   await requestJson('/api/v1/food', {
     method: 'POST',
@@ -276,42 +375,60 @@ async function waitForFoodCount(accessToken, date, name, expected, timeoutMs = 3
   }, timeoutMs, 750);
 }
 
-async function launchAndWaitForLog() {
-  adb(['shell', 'am', 'force-stop', APP_ID], { quiet: true });
-  adb(['shell', 'monkey', '-p', APP_ID, '-c', 'android.intent.category.LAUNCHER', '1'], { quiet: true });
-  await waitForNode('authenticated Log screen', (node) => node.clickable && node.label === 'Add food', 45_000);
+async function openRecentAdd(name, date, timeoutMs = 45_000) {
+  const launchOutput = adb(buildAddFoodLaunchArgs(date), { quiet: true });
+  assertAndroidAppLinkLaunch(launchOutput);
+  try {
+    await waitForNode(
+      `${name} recent row`,
+      (node) => isAndroidE2eRecentFoodNode(node, name),
+      timeoutMs,
+    );
+  } catch (error) {
+    let markers = 'unavailable';
+    try {
+      markers = summarizeAndroidE2eUi(dumpUi());
+    } catch {
+      // Keep failure diagnostics bounded if UI automation itself is unavailable.
+    }
+    throw new Error(`${error.message} Safe UI markers: ${markers}.`);
+  }
 }
 
-async function openQuickAdd() {
-  await tapNode('Add food button', (node) => node.clickable && node.label === 'Add food');
-  await tapNode('Quick add mode', (node) => node.clickable && node.label === 'Quick');
+async function logOpenRecentFood(name, waitForSheetClose = true) {
+  await tapNode(`${name} recent row`, (node) => isAndroidE2eRecentFoodNode(node, name));
+  await tapNode('Add & close', isAndroidE2eAddAndCloseNode);
+  if (waitForSheetClose) {
+    await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
+  }
 }
 
-async function logOpenRecentFood(name) {
-  await tapNode(`${name} recent row`, (node) => node.clickable && node.label.startsWith(`${name},`));
-  await waitForNode('Add food sheet to close', (node) => node.clickable && node.label === 'Add food', 45_000);
-}
-
-async function logRecentFood(name) {
-  await openQuickAdd();
-  await logOpenRecentFood(name);
+async function logRecentFood(name, date, timeoutMs = 45_000) {
+  await openRecentAdd(name, date, timeoutMs);
+  await logOpenRecentFood(name, false);
 }
 
 async function main() {
   let apiProxy = null;
+  adb(['wait-for-device'], { quiet: true });
+  const qemu = adb(['shell', 'getprop', 'ro.kernel.qemu'], { quiet: true });
+  const characteristics = adb(['shell', 'getprop', 'ro.build.characteristics'], { quiet: true });
+  if (qemu !== '1' || characteristics.split(',').includes('watch')) {
+    throw new Error('ANDROID_ADB_SERIAL must resolve to an Android phone emulator.');
+  }
   const health = await requestJson('/api/v1/healthz');
   if (!health.ok) throw new Error('Calibrate E2E backend health check failed.');
-  const metroStatus = await fetch('http://127.0.0.1:8081/status').then((response) => response.text());
+  const metroStatus = await fetch(ANDROID_E2E_METRO_STATUS_URL).then((response) => response.text());
   if (!metroStatus.includes('packager-status:running')) {
     throw new Error('Metro is not running on port 8081. Start the mobile dev server first.');
   }
 
   const session = await loginApi();
   const date = localDateFor(session.user.timezone);
+  await ensureFoodDayOpen(session.access_token, date);
   await seedRecentFood(session.access_token, date, ONLINE_FOOD);
   await seedRecentFood(session.access_token, date, OFFLINE_FOOD);
   apiProxy = await startApiProxy();
-  adb(['wait-for-device'], { quiet: true });
   adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
   reverseApiTo(apiProxy);
   // Scope the crash assertion to this run so stale emulator crashes do not cause a false failure.
@@ -320,18 +437,17 @@ async function main() {
   configureMetroReverseHost();
 
   try {
-    await launchAndWaitForLog();
-
     const onlineName = ONLINE_FOOD.name;
     const onlineBefore = await countFood(session.access_token, date, onlineName);
-    await logRecentFood(onlineName);
+    // The canonical app link owns the first launch and triggers Metro's cold Android bundle.
+    await logRecentFood(onlineName, date, ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS);
     await waitForFoodCount(session.access_token, date, onlineName, onlineBefore + 1);
-    console.log(`PASS online one-tap logging: ${onlineName} ${onlineBefore} -> ${onlineBefore + 1}`);
+    console.log(`PASS online one-tap logging count: ${onlineBefore} -> ${onlineBefore + 1}`);
 
     const offlineName = OFFLINE_FOOD.name;
     const offlineBefore = await countFood(session.access_token, date, offlineName);
-    // Load the cached Quick list before isolating the API while Metro remains reachable through adb reverse.
-    await openQuickAdd();
+    // Load the cached recent list before isolating the API while Metro remains reachable through adb reverse.
+    await openRecentAdd(offlineName, date);
     apiProxy.setAvailable(false);
     await logOpenRecentFood(offlineName);
     const pendingBadge = await waitForNode(
@@ -346,11 +462,11 @@ async function main() {
 
     adb(['shell', 'am', 'force-stop', APP_ID], { quiet: true });
     apiProxy.setAvailable(true);
-    await launchAndWaitForLog();
+    await openRecentAdd(offlineName, date);
     await waitForFoodCount(session.access_token, date, offlineName, offlineBefore + 1, 45_000);
-    console.log(`PASS process-death replay: ${offlineName} ${offlineBefore} -> ${offlineBefore + 1}`);
+    console.log(`PASS process-death replay count: ${offlineBefore} -> ${offlineBefore + 1}`);
 
-    await launchAndWaitForLog();
+    await openRecentAdd(offlineName, date);
     await sleep(3_000);
     const finalCount = await countFood(session.access_token, date, offlineName);
     if (finalCount !== offlineBefore + 1) {
@@ -362,7 +478,7 @@ async function main() {
     if (crashBufferContainsCalibrateProcess(crashes)) {
       throw new Error(`Calibrate appears in the Android crash buffer:\n${crashes}`);
     }
-    console.log(`PASS exactly-once replay after second restart: ${offlineName} remained ${finalCount}`);
+    console.log(`PASS exactly-once replay after second restart: count remained ${finalCount}`);
   } finally {
     adb(['shell', 'cmd', 'connectivity', 'airplane-mode', 'disable'], { quiet: true });
     await apiProxy?.close().catch(() => undefined);

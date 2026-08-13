@@ -18,4 +18,5 @@ coverage
 .c8_output
 deploy/backups/
 deploy/*age-identity*
+build/native-release-provenance.json
 .vscode/settings.json

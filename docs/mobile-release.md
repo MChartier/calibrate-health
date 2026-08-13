@@ -9,6 +9,10 @@ project in `wear/`:
 The permanent Android identity is the application ID `app.calibratehealth.mobile` plus its signing certificate.
 Changing either creates a different app or prevents an in-place upgrade.
 
+This runbook defines release procedures; it is not proof that a permanent-signed artifact was built, a device was
+tested, an OTA update was published, or Play accepted a bundle. Those claims exist only in the commit-specific,
+repository-safe evidence described below and the access-controlled Console record.
+
 ## One-time release setup
 
 The canonical release path uses one operator-controlled keystore for both phone and Wear. This is required for Wear
@@ -24,6 +28,19 @@ $env:CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD='<from-password-manager>'
 $env:CALIBRATE_ANDROID_SIGNING_KEY_ALIAS='calibrate'
 $env:CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD='<from-password-manager>'
 ```
+
+Release-device inspection also requires the official bundletool all-in-one JAR. Keep it outside the repository and
+point `BUNDLETOOL_JAR` at its absolute path in the same PowerShell session:
+
+```powershell
+$env:BUNDLETOOL_JAR='C:/Tools/bundletool-all-<version>.jar'
+if (-not (Test-Path -LiteralPath $env:BUNDLETOOL_JAR -PathType Leaf)) {
+  throw 'BUNDLETOOL_JAR must name the downloaded official bundletool all-in-one JAR.'
+}
+```
+
+The release-device command does not download or infer this tool. It fails closed when the variable is absent, the
+file is missing, or either AAB manifest cannot be parsed and matched to `shared/release.json`.
 
 Never commit a keystore, `credentials.json`, service-account JSON, access token, or signing password. Backend
 database, food-provider, push, and session secrets remain server-side and never belong in an Android build.
@@ -112,15 +129,49 @@ Run this from the repository root with the signing environment above:
 npm.cmd run build:native:release
 ```
 
-The command fails before native work when signing is incomplete or the configured origin is not a credential-free
-HTTPS origin. It regenerates the ignored phone Android project with a clean Expo prebuild, then builds APK and AAB
+The command fails before native work unless HEAD is a clean lowercase 40-character commit, signing is complete, and
+the configured origin is a credential-free HTTPS origin. It removes any stale provenance sidecar, regenerates the
+ignored phone Android project with a clean Expo prebuild, then builds APK and AAB
 artifacts for phone and Wear with the same signing identity. The release workflow supplies a larger Gradle heap and
 metaspace allowance for Expo release lint, removes stale final artifacts before each build, and fails immediately if
-Gradle does not recreate both outputs. Outputs are under `mobile/android/app/build/outputs/` and
-`wear/app/build/outputs/`.
+Gradle does not recreate all four canonical outputs:
 
-Record the Git commit, semantic versions, version codes, SHA-256 digests, and signing certificate fingerprint in the
-release notes. Do not rename an artifact in a way that loses those identifiers.
+- `mobile/android/app/build/outputs/apk/release/app-release.apk`
+- `mobile/android/app/build/outputs/bundle/release/app-release.aab`
+- `wear/app/build/outputs/apk/release/app-release.apk`
+- `wear/app/build/outputs/bundle/release/app-release.aab`
+
+Only after all four files exist, the build writes ignored `build/native-release-provenance.json`. This v1 sidecar
+binds their repository-relative paths, sizes, SHA-256 values, application ID, and versions plus the release-manifest
+hash to candidate C. Strict evidence capture rejects a missing sidecar, a different source commit, or any manifest or
+artifact mismatch.
+
+The retained observation inspects every artifact independently: APK package/version metadata comes from `aapt`, AAB
+package/version metadata comes from bundletool, APK signers come from `apksigner`, and AAB signers come from
+`keytool -printcert -jarfile`. It records canonical repository-relative paths, byte counts, SHA-256 digests,
+application IDs, version names/codes, and signer SHA-256 values, then requires one signer across all four. Do not
+infer AAB metadata or signer identity from its matching APK or retain an absolute build path.
+
+## Commit-specific retained evidence
+
+Freeze the clean, pushed source candidate as commit C before building. The signed artifacts, canonical
+`shared/release.json`, automated gates, and physical protocol must all describe C. Do not add source, scripts,
+configuration, or documentation after physical execution and still call the old artifacts current.
+
+The retained v3 result records C only. After finalizing that sanitized JSON and updating
+`quality/risk-evidence.json`, create one evidence-only commit A whose sole parent is C and whose diff contains only
+those two evidence paths. A is supplied to verification from Git; no tracked file can truthfully contain its own
+commit SHA.
+
+The repository-safe result contains no hardware or ADB serials, absolute paths, account identifiers, email, health
+values, food names, tokens, request payloads, reviewer credentials, or private Console URLs. It records only the
+allowlisted build provenance, artifact, signer, version, Samsung handset/watch class and model/OS, upgrade-state,
+fixed checkpoint command/capability IDs with boolean outcomes, and derived capability fields. Use only a synthetic
+account.
+
+Follow `docs/physical-galaxy-validation.md` for observation capture, checkpoint review, finalization, and the exact
+C-to-A verification command. The ordinary hosted emulator jobs use disposable signing and prove package/runtime
+behavior only; they never satisfy permanent-signing or physical-device checkpoints.
 
 ## One-command physical device workflow
 
@@ -303,8 +354,11 @@ mismatch, a non-increasing candidate version, or recursive cleanup outside its u
 Execute the paired phone/watch runtime path in `docs/physical-galaxy-validation.md`; use the broader Play worksheet
 for store policy and declaration evidence.
 
-- [ ] `npm.cmd run release:check` and `npm.cmd run test:release` pass.
-- [ ] Working tree is clean and the release commit is pushed.
+- [ ] `npm.cmd run release:check`, `npm.cmd run test:release`, and `npm.cmd run test:native-release` pass.
+- [ ] Run the Android phone emulator, Wear emulator, native package-upgrade, OTA, and risk-evidence gates named in
+  `docs/physical-galaxy-validation.md`; do not substitute their unit-only CI contracts for operator/device results.
+- [ ] Source candidate C is clean and pushed before signing; evidence-only child A changes only the risk manifest
+  and retained physical result.
 - [ ] `version` is correct and `versionCode` is greater than every distributed Android build.
 - [ ] Application ID is still `app.calibratehealth.mobile`.
 - [ ] Public Expo config includes camera/notification permissions but does not request microphone access.
@@ -320,7 +374,10 @@ for store policy and declaration evidence.
 - [ ] With the phone disconnected and watch networking available, confirm the bounded watch refresh posts one combined, deep-linked food/weight reminder.
 - [ ] Confirm a self-hosted HTTPS origin can be selected and survives an app restart.
 - [ ] Inspect the APK/AAB for an expected public server origin and absence of credentials.
-- [ ] Record artifact digest, Git commit, version, version code, device/API level, and test results.
+- [ ] Record C and the canonical manifest hash plus independent path/size/digest/application/version/signer facts
+  for phone APK/AAB and Wear APK/AAB; record only Samsung model, OS, and API level for devices.
 - [ ] Before an OTA publish, run `release:native:ota -- --dry-run` and confirm no native fingerprint mismatch.
 - [ ] Generate and retain the deterministic release metadata described in `docs/release-compatibility.md`.
 - [ ] Keep the prior artifact and encrypted keystore backup, but distribute only the new higher-version build.
+- [ ] `npm.cmd run test:risk-evidence:release` remains blocked until the physical result is finalized, A is committed,
+  and the C/A refs verify.
