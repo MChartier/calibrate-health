@@ -1,5 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import {
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+    type AccessibilityActionEvent,
+    type ViewProps
+} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Circle, Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
@@ -23,7 +32,6 @@ import {
     describeVisibleWeightTrend,
     formatEstimatedTrendRange,
     getLatestWeightTrendSnapshot,
-    isVisibleWeightTrendPoint,
 } from '../weightTrend/presentation';
 
 type TrendRange = 'week' | 'month' | 'year' | 'all';
@@ -43,14 +51,41 @@ const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
 
 const DEFAULT_CHART_WIDTH = 340;
 const MIN_CHART_WIDTH = 280;
-const CHART_HEIGHT = 188;
+const DESKTOP_CHART_BREAKPOINT = 840;
+// Phone bounds preserve chart detail without pushing the selected summary below the fold.
+const MOBILE_CHART_MIN_HEIGHT = 188;
+const MOBILE_CHART_MAX_HEIGHT = 260;
+// Wide-screen bounds use available card space while keeping the chart scannable.
+const DESKTOP_CHART_MIN_HEIGHT = 260;
+const DESKTOP_CHART_MAX_HEIGHT = 420;
 // Axis gutters reserve room for weight and date labels without crowding the data.
 const CHART_PADDING = { left: 58, right: 12, top: 12, bottom: 32 };
 const MIN_WEIGHT_AXIS_SPAN = 0.4;
+// Keeps chart growth deterministic across compact and wide viewports.
+export function getWeightTrendChartHeightBounds(viewportWidth: number): {
+    minimum: number;
+    maximum: number;
+} {
+    return viewportWidth >= DESKTOP_CHART_BREAKPOINT
+        ? { minimum: DESKTOP_CHART_MIN_HEIGHT, maximum: DESKTOP_CHART_MAX_HEIGHT }
+        : { minimum: MOBILE_CHART_MIN_HEIGHT, maximum: MOBILE_CHART_MAX_HEIGHT };
+}
+
+const TREND_TABLE_MIN_WIDTH = 620;
+// The expanded table stays horizontally scrollable instead of crushing four labeled columns.
+const TREND_TABLE_DATE_COLUMN_WIDTH = 128;
+const TREND_TABLE_VALUE_COLUMN_WIDTH = 132;
+const TREND_TABLE_RANGE_COLUMN_WIDTH = 196;
 
 type ChartPressNativeEvent = {
     locationX?: unknown;
     offsetX?: unknown;
+};
+
+type KeyboardLikeEvent = {
+    key?: string;
+    nativeEvent?: { key?: string };
+    preventDefault?: () => void;
 };
 
 function getPointKey(point: WeightTrendChartPoint): string {
@@ -76,6 +111,29 @@ function getChartPressX(nativeEvent: ChartPressNativeEvent): number | null {
     return typeof pressX === 'number' && Number.isFinite(pressX) ? pressX : null;
 }
 
+function getKeyboardKey(event: KeyboardLikeEvent): string {
+    return event.key ?? event.nativeEvent?.key ?? '';
+}
+
+function clampChartHeight(value: number, minimum: number, maximum: number): number {
+    return Math.max(minimum, Math.min(value, maximum));
+}
+
+function describeSelectedTrendPoint(
+    point: WeightTrendChartPoint,
+    unit: Parameters<typeof formatWeight>[1]
+): string {
+    if (!point.hasVisibleTrend) {
+        return `Selected ${formatDateOnlyForDisplay(point.dateKey)}. Scale reading ${formatWeight(point.metric.weight, unit)}. No underlying trend estimate is available for this date.`;
+    }
+    const snapshot = {
+        weight: point.metric.trend_weight,
+        lower: point.metric.trend_ci_lower,
+        upper: point.metric.trend_ci_upper
+    };
+    return `Selected ${formatDateOnlyForDisplay(point.dateKey)}. Underlying weight estimate ${formatWeight(snapshot.weight, unit)}. 95% trend range ${formatEstimatedTrendRange(snapshot, unit)}. Scale reading ${formatWeight(point.metric.weight, unit)}.`;
+}
+
 export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     title = 'Weight trend',
     description,
@@ -84,12 +142,19 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     ...props
 }) => {
     const { api, user } = useAuth();
+    const { width: viewportWidth } = useWindowDimensions();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [range, setRange] = useState<TrendRange>('month');
     const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
+    const [selectionAnnouncement, setSelectionAnnouncement] = useState('');
+    const [showDataTable, setShowDataTable] = useState(false);
     const [chartCanvasWidth, setChartCanvasWidth] = useState(DEFAULT_CHART_WIDTH);
-    const [chartHeight, setChartHeight] = useState(CHART_HEIGHT);
+    const [chartCanvasHeight, setChartCanvasHeight] = useState(0);
+    const chartHeightBounds = getWeightTrendChartHeightBounds(viewportWidth);
+    const chartMinHeight = chartHeightBounds.minimum;
+    const chartMaxHeight = chartHeightBounds.maximum;
+    const chartHeight = clampChartHeight(chartCanvasHeight || chartMinHeight, chartMinHeight, chartMaxHeight);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', range],
         queryFn: () => api.getTrendMetrics({ range })
@@ -103,7 +168,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             width: chartCanvasWidth,
             height: chartHeight,
             minWidth: MIN_CHART_WIDTH,
-            minHeight: CHART_HEIGHT,
+            minHeight: chartMinHeight,
             minWeightSpan: MIN_WEIGHT_AXIS_SPAN,
             padding: CHART_PADDING,
             xTickCount: 3,
@@ -111,7 +176,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             downsampleMeasurements: range === 'all',
             modelStartDate: trendSummary?.modeled_start_date
         }),
-        [chartCanvasWidth, chartHeight, metrics, range, trendSummary?.modeled_start_date]
+        [chartCanvasWidth, chartHeight, chartMinHeight, metrics, range, trendSummary?.modeled_start_date]
     );
     const chartPoints = chartLayout.points;
     const selectedPointIndex = useMemo(() => {
@@ -124,7 +189,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
 
     const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
     const trendUnavailable = trendSummary?.status === 'unavailable';
-    const hasVisibleTrend = metrics.some(isVisibleWeightTrendPoint);
     const latestSnapshot = getLatestWeightTrendSnapshot(metrics, trendSummary);
     const visibleTrendSummary = describeVisibleWeightTrend(metrics, user?.weight_unit);
     const showModelBoundary = (range === 'year' || range === 'all') && chartLayout.modelBoundaryPoint !== null;
@@ -135,18 +199,41 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
         ? `Weight chart from ${formatDateOnlyForDisplay(chartPoints[0]?.dateKey ?? '')} to ${formatDateOnlyForDisplay(chartPoints[chartPoints.length - 1]?.dateKey ?? '')}, with ${chartPoints.length} measurements. Latest smoothed weight ${formatWeight(latestSnapshot.weight, user?.weight_unit)}. 95% estimated trend range ${formatEstimatedTrendRange(latestSnapshot, user?.weight_unit)}.`
         : `Weight chart with ${chartPoints.length} measurements. Smoothed estimates are not available for this selected history.`;
 
+    function selectPoint(point: WeightTrendChartPoint) {
+        setSelectedPointKey(getPointKey(point));
+        setSelectionAnnouncement(describeSelectedTrendPoint(point, user?.weight_unit));
+    }
+
     function selectNearestPoint(locationX: number | null) {
         if (chartPoints.length === 0 || locationX === null) return;
         const scaledX = (locationX / Math.max(chartCanvasWidth, 1)) * chartLayout.width;
         const nearestPoint = chartPoints.reduce((nearest, point) => (
             Math.abs(point.x - scaledX) < Math.abs(nearest.x - scaledX) ? point : nearest
         ), chartPoints[0]);
-        setSelectedPointKey(getPointKey(nearestPoint));
+        selectPoint(nearestPoint);
     }
 
     function selectPointAtIndex(index: number) {
         const point = chartPoints[index];
-        if (point) setSelectedPointKey(getPointKey(point));
+        if (point) selectPoint(point);
+    }
+
+    function handleChartKeyDown(event: KeyboardLikeEvent) {
+        const key = getKeyboardKey(event);
+        let nextIndex: number | undefined;
+        if (key === 'ArrowLeft') nextIndex = Math.max(0, selectedPointIndex - 1);
+        if (key === 'ArrowRight') nextIndex = Math.min(chartPoints.length - 1, selectedPointIndex + 1);
+        if (key === 'Home') nextIndex = 0;
+        if (key === 'End') nextIndex = chartPoints.length - 1;
+        if (nextIndex === undefined) return;
+        event.preventDefault?.();
+        selectPointAtIndex(nextIndex);
+    }
+
+    function handleChartAccessibilityAction(event: AccessibilityActionEvent) {
+        const actionName = event.nativeEvent.actionName;
+        if (actionName === 'decrement') selectPointAtIndex(Math.max(0, selectedPointIndex - 1));
+        if (actionName === 'increment') selectPointAtIndex(Math.min(chartPoints.length - 1, selectedPointIndex + 1));
     }
 
     return (
@@ -161,6 +248,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                         onPress={() => {
                             setRange(option.value);
                             setSelectedPointKey(null);
+                            setSelectionAnnouncement('');
                         }}
                         style={styles.rangeChip}
                     />
@@ -211,10 +299,13 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                 <View style={styles.chartShell}>
                     <View
                         testID="weight-trend-chart-canvas"
-                        style={styles.chartCanvas}
+                        style={[
+                            styles.chartCanvas,
+                            { minHeight: chartMinHeight, maxHeight: chartMaxHeight }
+                        ]}
                         onLayout={(event) => {
                             setChartCanvasWidth(event.nativeEvent.layout.width);
-                            setChartHeight(Math.max(event.nativeEvent.layout.height, CHART_HEIGHT));
+                            setChartCanvasHeight(event.nativeEvent.layout.height);
                         }}
                     >
                         <Svg
@@ -349,10 +440,17 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             ))}
                         </Svg>
                         <Pressable
+                            accessibilityActions={[
+                                { name: 'decrement', label: 'Previous weigh-in' },
+                                { name: 'increment', label: 'Next weigh-in' }
+                            ]}
                             accessibilityRole="button"
                             accessibilityLabel="Select nearest weigh-in"
-                            accessibilityHint="Use Previous and Next below the chart for keyboard or screen reader navigation"
+                            accessibilityHint="Use Left and Right arrow keys, or Home and End, to review weigh-ins. Previous and Next buttons follow the chart."
+                            onAccessibilityAction={handleChartAccessibilityAction}
+                            focusable={Platform.OS === 'web'}
                             onPress={(event) => selectNearestPoint(getChartPressX(event.nativeEvent))}
+                            {...({ onKeyDown: handleChartKeyDown } as object)}
                             style={StyleSheet.absoluteFill}
                         />
                     </View>
@@ -361,7 +459,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             Smoothed trend starts {formatDateOnlyForDisplay(chartLayout.modelBoundaryPoint.dateKey)}. Earlier dots are measurements only.
                         </AppText>
                     )}
-                    <TrendChartLegend showModeledTrend={hasVisibleTrend} />
+                    <TrendChartLegend />
                     {selectedPoint && (
                         <SelectedTrendPanel
                             point={selectedPoint}
@@ -386,16 +484,100 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             />
                         </View>
                     )}
+                    <AppText
+                        testID="weight-trend-selection-announcement"
+                        accessibilityLiveRegion="polite"
+                        role="status"
+                        style={styles.liveStatus}
+                    >
+                        {selectionAnnouncement}
+                    </AppText>
                     {!trendSummary && (
                         <AppText variant="caption" style={styles.summary}>
                             {visibleTrendSummary}
                         </AppText>
                     )}
+                    <WeightTrendDataTable
+                        points={chartPoints}
+                        unit={user?.weight_unit}
+                        expanded={showDataTable}
+                        onToggle={() => setShowDataTable((current) => !current)}
+                    />
                 </View>
             )}
             </AsyncStateBoundary>
             {footer}
         </AppCard>
+    );
+};
+
+const WeightTrendDataTable: React.FC<{
+    points: WeightTrendChartPoint[];
+    unit: Parameters<typeof formatWeight>[1];
+    expanded: boolean;
+    onToggle: () => void;
+}> = ({ points, unit, expanded, onToggle }) => {
+    const theme = useAppTheme();
+    const styles = useMemo(() => createStyles(theme), [theme]);
+    const label = expanded ? 'Hide data table' : 'View data table';
+
+    return (
+        <View style={styles.dataTableDisclosure}>
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={label}
+                accessibilityState={{ expanded }}
+                onPress={onToggle}
+                style={({ pressed }) => [styles.dataTableToggle, pressed && styles.pressed]}
+            >
+                <AppText variant="label" style={styles.dataTableToggleLabel}>{label}</AppText>
+                <Ionicons
+                    name={expanded ? 'chevron-up' : 'chevron-down'}
+                    size={18}
+                    color={theme.colors.primary}
+                />
+            </Pressable>
+            {expanded ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator style={styles.dataTableScroller}>
+                    <View
+                        testID="weight-trend-data-table"
+                        role="table"
+                        accessibilityLabel="Weight trend data table"
+                        style={styles.dataTable}
+                    >
+                        <View role="row" style={[styles.dataTableRow, styles.dataTableHeader]}>
+                            <AppText role="columnheader" variant="label" style={styles.dataTableDateCell}>Date</AppText>
+                            <AppText role="columnheader" variant="label" style={styles.dataTableValueCell}>Scale reading</AppText>
+                            <AppText role="columnheader" variant="label" style={styles.dataTableValueCell}>Underlying estimate</AppText>
+                            <AppText role="columnheader" variant="label" style={styles.dataTableRangeCell}>95% range</AppText>
+                        </View>
+                        {[...points].reverse().map((point) => {
+                            const trendRange = point.hasVisibleTrend
+                                ? formatEstimatedTrendRange({
+                                    weight: point.metric.trend_weight,
+                                    lower: point.metric.trend_ci_lower,
+                                    upper: point.metric.trend_ci_upper
+                                }, unit)
+                                : '-';
+                            return (
+                                <View key={getPointKey(point)} role="row" style={styles.dataTableRow}>
+                                    <AppText role="cell" style={styles.dataTableDateCell}>
+                                        {formatDateOnlyForDisplay(point.dateKey)}
+                                    </AppText>
+                                    <AppText role="cell" style={styles.dataTableValueCell}>
+                                        {formatWeight(point.metric.weight, unit)}
+                                    </AppText>
+                                    <AppText role="cell" style={styles.dataTableValueCell}>
+                                        {point.hasVisibleTrend ? formatWeight(point.metric.trend_weight, unit) : '-'}
+                                    </AppText>
+                                    <AppText role="cell" style={styles.dataTableRangeCell}>{trendRange}</AppText>
+                                </View>
+                            );
+                        })}
+                    </View>
+                </ScrollView>
+            ) : null}
+        </View>
     );
 };
 
@@ -421,15 +603,12 @@ const SelectedTrendPanel: React.FC<{
             upper: point.metric.trend_ci_upper
         }
         : null;
-    const accessibilityLabel = trendSnapshot
-        ? `Selected ${formatDateOnlyForDisplay(point.dateKey)}. Underlying weight estimate ${formatWeight(trendSnapshot.weight, unit)}. 95% trend range ${formatEstimatedTrendRange(trendSnapshot, unit)}. Scale reading ${formatWeight(point.metric.weight, unit)}.`
-        : `Selected ${formatDateOnlyForDisplay(point.dateKey)}. Scale reading ${formatWeight(point.metric.weight, unit)}. No underlying trend estimate is available for this date.`;
+    const accessibilityLabel = describeSelectedTrendPoint(point, unit);
 
     return (
         <View
             testID="selected-trend-summary"
             accessibilityLabel={accessibilityLabel}
-            accessibilityLiveRegion="polite"
             style={styles.snapshotPanel}
         >
             <View style={styles.snapshotHeader}>
@@ -456,16 +635,12 @@ const SelectedTrendPanel: React.FC<{
                             onHoverOut={() => setIsRangeInfoHovered(false)}
                             onFocus={() => setIsRangeInfoFocused(true)}
                             onBlur={() => setIsRangeInfoFocused(false)}
-                            onPress={() => {
-                                if (Platform.OS !== 'web') {
-                                    setIsRangeInfoPinned((current) => !current);
-                                }
-                            }}
+                            onPress={() => setIsRangeInfoPinned((current) => !current)}
                             style={({ pressed }) => [styles.rangeInfoButton, pressed && styles.pressed]}
                         >
-                            <Ionicons name="information-circle-outline" size={17} color={theme.colors.onPrimaryContainer} />
+                            <Ionicons name="information-circle-outline" size={17} color={theme.colors.onSurfaceVariant} />
                             {showRangeTooltip ? (
-                                <View testID="trend-range-tooltip" pointerEvents="none" style={styles.rangeTooltip}>
+                                <View testID="trend-range-tooltip" role="tooltip" pointerEvents="none" style={styles.rangeTooltip}>
                                     <AppText variant="caption" style={styles.rangeTooltipText}>
                                         This range shows uncertainty in the estimate, not expected scale readings.
                                     </AppText>
@@ -519,7 +694,7 @@ const PointNavigationButton: React.FC<{
     );
 };
 
-const TrendChartLegend: React.FC<{ showModeledTrend: boolean }> = ({ showModeledTrend }) => {
+const TrendChartLegend: React.FC = () => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     return (
@@ -528,18 +703,14 @@ const TrendChartLegend: React.FC<{ showModeledTrend: boolean }> = ({ showModeled
                 <View style={styles.readingLegendMarker} />
                 <AppText variant="caption">Scale reading</AppText>
             </View>
-            {showModeledTrend ? (
-                <>
-                    <View style={styles.chartLegendItem}>
-                        <View style={styles.trendLegendMarker} />
-                        <AppText variant="caption">Underlying trend</AppText>
-                    </View>
-                    <View style={styles.chartLegendItem}>
-                        <View style={styles.rangeLegendMarker} />
-                        <AppText variant="caption">95% estimate range</AppText>
-                    </View>
-                </>
-            ) : null}
+            <View style={styles.chartLegendItem}>
+                <View style={styles.trendLegendMarker} />
+                <AppText variant="caption">Underlying trend</AppText>
+            </View>
+            <View style={styles.chartLegendItem}>
+                <View style={styles.rangeLegendMarker} />
+                <AppText variant="caption">95% estimate range</AppText>
+            </View>
         </View>
     );
 };
@@ -557,7 +728,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         padding: spacing.sm,
         gap: spacing.sm
     },
-    chartCanvas: { position: 'relative', flexGrow: 1, flexShrink: 1, minHeight: CHART_HEIGHT },
+    chartCanvas: { position: 'relative', flexGrow: 1, flexShrink: 1 },
     chartLegend: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -591,7 +762,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     emptyChart: {
         flexGrow: 1,
-        minHeight: CHART_HEIGHT,
+        minHeight: MOBILE_CHART_MIN_HEIGHT,
         borderRadius: radius.md,
         backgroundColor: theme.colors.surfaceContainer,
         alignItems: 'center',
@@ -628,7 +799,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         position: 'relative',
         zIndex: 2,
         borderRadius: radius.md,
-        backgroundColor: theme.colors.primaryContainer,
+        borderColor: theme.colors.outlineVariant,
+        borderWidth: StyleSheet.hairlineWidth,
+        backgroundColor: theme.colors.surfaceContainer,
         padding: spacing.md,
         gap: spacing.xs
     },
@@ -639,7 +812,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flexWrap: 'wrap',
         gap: spacing.sm
     },
-    snapshotValue: { color: theme.colors.onPrimaryContainer },
+    snapshotValue: { color: theme.colors.onSurface },
     snapshotRangeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs },
     snapshotMeasurementRow: {
         flexDirection: 'row',
@@ -672,6 +845,47 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         ...theme.shadows.raised
     },
     rangeTooltipText: { color: theme.colors.onSurface },
+    dataTableDisclosure: { gap: spacing.sm },
+    dataTableToggle: {
+        minHeight: theme.interaction.minimumTouchTarget,
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.md
+    },
+    dataTableToggleLabel: { color: theme.colors.primary },
+    dataTableScroller: {
+        width: '100%',
+        borderColor: theme.colors.outlineVariant,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: radius.md
+    },
+    dataTable: { minWidth: TREND_TABLE_MIN_WIDTH },
+    dataTableRow: {
+        flexDirection: 'row',
+        borderBottomColor: theme.colors.outlineVariant,
+        borderBottomWidth: StyleSheet.hairlineWidth
+    },
+    dataTableHeader: { backgroundColor: theme.colors.surfaceContainerHigh },
+    dataTableDateCell: {
+        width: TREND_TABLE_DATE_COLUMN_WIDTH,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.sm
+    },
+    dataTableValueCell: {
+        width: TREND_TABLE_VALUE_COLUMN_WIDTH,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.sm
+    },
+    dataTableRangeCell: {
+        width: TREND_TABLE_RANGE_COLUMN_WIDTH,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.sm
+    },
+    liveStatus: { height: 0, overflow: 'hidden' },
     summary: { textAlign: 'center' },
     boundaryNote: { color: theme.colors.onSurfaceVariant, textAlign: 'center' },
     pointNavigation: { flexDirection: 'row', gap: spacing.sm },

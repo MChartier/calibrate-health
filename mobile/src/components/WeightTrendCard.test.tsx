@@ -1,7 +1,7 @@
 import { fireEvent, render, within } from '@testing-library/react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from '@calibrate/api-client';
-import { WeightTrendCard } from './WeightTrendCard';
+import { getWeightTrendChartHeightBounds, WeightTrendCard } from './WeightTrendCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('@tanstack/react-query', () => ({
@@ -115,10 +115,32 @@ describe('WeightTrendCard', () => {
         expect(next).toHaveProp('accessibilityState', { disabled: true });
         fireEvent.press(previous);
         expect(screen.getByText('Jul 14, 2026')).toBeTruthy();
+        expect(screen.getByTestId('weight-trend-selection-announcement').props.children).toContain(
+            'Selected Jul 14, 2026'
+        );
         expect(screen.getByLabelText('Next weigh-in')).toHaveProp('accessibilityState', { disabled: false });
         fireEvent.press(screen.getByLabelText('Previous weigh-in'));
         expect(screen.getByText('Jul 13, 2026')).toBeTruthy();
         expect(screen.getByLabelText('Previous weigh-in')).toHaveProp('accessibilityState', { disabled: true });
+    });
+
+    it('supports Left, Right, Home, and End from the chart focus target', () => {
+        const screen = render(<WeightTrendCard />);
+        const chart = screen.getByLabelText('Select nearest weigh-in');
+        const preventDefault = jest.fn();
+
+        fireEvent(chart, 'keyDown', { key: 'ArrowLeft', preventDefault });
+        expect(screen.getByText('Jul 14, 2026')).toBeTruthy();
+        fireEvent(chart, 'keyDown', { key: 'Home', preventDefault });
+        expect(screen.getByText('Jul 13, 2026')).toBeTruthy();
+        fireEvent(chart, 'keyDown', { key: 'ArrowRight', preventDefault });
+        expect(screen.getByText('Jul 14, 2026')).toBeTruthy();
+        fireEvent(chart, 'keyDown', { key: 'End', preventDefault });
+        expect(screen.getByText('Jul 15, 2026')).toBeTruthy();
+        expect(screen.getByTestId('weight-trend-selection-announcement').props.children).toContain(
+            'Selected Jul 15, 2026'
+        );
+        expect(preventDefault).toHaveBeenCalledTimes(4);
     });
 
     it('keeps the current selection when a press has no usable coordinate', () => {
@@ -194,11 +216,20 @@ describe('WeightTrendCard', () => {
         expect(summary.getByText('168.3 lb')).toBeTruthy();
         expect(summary.getByText(/95% trend range/)).toBeTruthy();
         expect(screen.queryByText(/uncertainty in the estimate/)).toBeNull();
-        fireEvent(screen.getByLabelText('About the 95% trend range'), 'hoverIn');
+        const rangeHelp = screen.getByLabelText('About the 95% trend range');
+        fireEvent(rangeHelp, 'hoverIn');
         expect(screen.getByText(/uncertainty in the estimate/)).toBeTruthy();
         expect(screen.getByTestId('trend-range-tooltip')).toHaveStyle({ position: 'absolute' });
-        fireEvent(screen.getByLabelText('About the 95% trend range'), 'hoverOut');
+        fireEvent(rangeHelp, 'hoverOut');
         expect(screen.queryByText(/uncertainty in the estimate/)).toBeNull();
+        fireEvent(rangeHelp, 'focus');
+        expect(screen.getByTestId('trend-range-tooltip')).toHaveProp('role', 'tooltip');
+        fireEvent(rangeHelp, 'blur');
+        expect(screen.queryByTestId('trend-range-tooltip')).toBeNull();
+        fireEvent.press(rangeHelp);
+        expect(screen.getByTestId('trend-range-tooltip')).toHaveStyle({ position: 'absolute' });
+        fireEvent.press(rangeHelp);
+        expect(screen.queryByTestId('trend-range-tooltip')).toBeNull();
         expect(screen.queryByText('Scale reading variation')).toBeNull();
         expect(screen.queryByText('About 80% within +/- 0.6 lb')).toBeNull();
         expect(screen.queryByText('Hydration, meals, timing, and scale noise can shift individual readings.')).toBeNull();
@@ -253,8 +284,8 @@ describe('WeightTrendCard', () => {
         expect(screen.getByText('Trend estimate temporarily unavailable')).toBeTruthy();
         expect(screen.getByText('Your scale readings are still shown. Try again later for the underlying trend.')).toBeTruthy();
         expect(screen.queryByTestId('weight-trend-smoothed-path-0')).toBeNull();
-        expect(screen.queryByText('Underlying trend')).toBeNull();
-        expect(screen.queryByText('95% estimate range')).toBeNull();
+        expect(screen.getByText('Underlying trend')).toBeTruthy();
+        expect(screen.getByText('95% estimate range')).toBeTruthy();
 
         const selected = within(screen.getByTestId('selected-trend-summary'));
         expect(selected.getByText('168.3 lb')).toBeTruthy();
@@ -302,12 +333,40 @@ describe('WeightTrendCard', () => {
         expect(screen.queryByText('Current pace estimate')).toBeNull();
     });
 
-    it('uses the full available chart height on larger responsive layouts', () => {
+    it('exposes the chart values through a semantic data table disclosure', () => {
+        const screen = render(<WeightTrendCard />);
+        const showTable = screen.getByLabelText('View data table');
+
+        expect(showTable).toHaveProp('accessibilityState', { expanded: false });
+        expect(screen.queryByTestId('weight-trend-data-table')).toBeNull();
+        fireEvent.press(showTable);
+
+        expect(screen.getByLabelText('Hide data table')).toHaveProp('accessibilityState', { expanded: true });
+        const table = screen.getByTestId('weight-trend-data-table');
+        expect(table).toHaveProp('role', 'table');
+        expect(within(table).getByText('Date')).toHaveProp('role', 'columnheader');
+        expect(within(table).getByText('Scale reading')).toHaveProp('role', 'columnheader');
+        expect(within(table).getByText('Underlying estimate')).toHaveProp('role', 'columnheader');
+        expect(within(table).getByText('95% range')).toHaveProp('role', 'columnheader');
+        expect(within(table).getByText('Jul 15, 2026')).toHaveProp('role', 'cell');
+
+        fireEvent.press(screen.getByLabelText('Hide data table'));
+        expect(screen.queryByTestId('weight-trend-data-table')).toBeNull();
+    });
+
+    it('clamps mobile chart height to the named responsive bounds', () => {
         const screen = render(<WeightTrendCard />);
         const canvas = screen.getByTestId('weight-trend-chart-canvas');
-        fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 343 } } });
-        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 343);
+        fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 100 } } });
+        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 188);
         fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 600 } } });
-        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 600);
+        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 260);
+    });
+
+    it('clamps desktop chart height to the named responsive bounds', () => {
+        expect(getWeightTrendChartHeightBounds(1_024)).toEqual({
+            minimum: 260,
+            maximum: 420
+        });
     });
 });

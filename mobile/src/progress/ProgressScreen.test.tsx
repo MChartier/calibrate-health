@@ -1,4 +1,5 @@
 import React from 'react';
+import { router } from 'expo-router';
 import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -61,6 +62,7 @@ const mockApi = {
 
 let mockSearchParams: { openNextGoal?: string } = {};
 let mockWeightChangePending = false;
+let mockTrendPreviewProps: { onPress: () => void; onLogWeight: () => void } | null = null;
 jest.mock('expo-router', () => ({
     router: { push: jest.fn() },
     useLocalSearchParams: () => mockSearchParams
@@ -73,7 +75,10 @@ jest.mock('../auth/AuthContext', () => ({
     })
 }));
 jest.mock('../components/progress/WeightTrendPreviewCard', () => ({
-    WeightTrendPreviewCard: () => null
+    WeightTrendPreviewCard: (props: { onPress: () => void; onLogWeight: () => void }) => {
+        mockTrendPreviewProps = props;
+        return null;
+    }
 }));
 jest.mock('../components/CalibrationInsightCard', () => ({
     CalibrationInsightCard: () => null
@@ -101,11 +106,30 @@ describe('Progress goal completion flow', () => {
     beforeEach(() => {
         mockSearchParams = {};
         mockWeightChangePending = false;
+        mockTrendPreviewProps = null;
+        (router.push as jest.Mock).mockClear();
         onlineManager.setOnline(true);
     });
 
     afterEach(() => {
         onlineManager.setOnline(true);
+    });
+
+    it('routes the preview Log weight action to weight entry', async () => {
+        const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+        const screen = render(
+            <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+                <QueryClientProvider client={queryClient}><ProgressScreen /></QueryClientProvider>
+            </SafeAreaProvider>
+        );
+
+        await screen.findByText('Snapshot');
+        expect(mockTrendPreviewProps).not.toBeNull();
+        act(() => mockTrendPreviewProps?.onLogWeight());
+        expect(router.push).toHaveBeenCalledWith('/weight');
+
+        screen.unmount();
+        queryClient.clear();
     });
 
     it('suppresses reached projection and target while a queued weight change is pending', async () => {
