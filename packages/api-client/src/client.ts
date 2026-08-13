@@ -24,6 +24,8 @@ import type {
     GoalEntry,
     HealthConnectSyncPayload,
     HealthConnectSyncResponse,
+    InAppNotificationPageResponse,
+    InAppNotificationsQuery,
     InAppNotificationsResponse,
     LoseItImportSummary,
     MetricEntry,
@@ -37,6 +39,7 @@ import type {
     EmailVerificationResendRequest,
     LegalAcceptanceStatus,
     LegalAcceptanceRequest,
+    MarkAllInAppNotificationsReadResponse,
     MessageResponse,
     PasswordResetConfirmRequest,
     PasswordResetRequest,
@@ -915,8 +918,19 @@ export class CalibrateApiClient {
         });
     }
 
-    getInAppNotifications(): Promise<InAppNotificationsResponse> {
-        return this.request<InAppNotificationsResponse>('/api/notifications/in-app');
+    getInAppNotifications(): Promise<InAppNotificationsResponse>;
+    getInAppNotifications(query: InAppNotificationsQuery): Promise<InAppNotificationPageResponse>;
+    getInAppNotifications(
+        query?: InAppNotificationsQuery
+    ): Promise<InAppNotificationsResponse | InAppNotificationPageResponse> {
+        if (!query) {
+            return this.request<InAppNotificationsResponse>('/api/notifications/in-app');
+        }
+
+        const params = new URLSearchParams({ view: query.view });
+        if (query.limit !== undefined) params.set('limit', String(query.limit));
+        if (query.cursor !== undefined) params.set('cursor', query.cursor);
+        return this.request<InAppNotificationPageResponse>('/api/notifications/in-app?' + params.toString());
     }
 
     getBrowserPushPublicKey(): Promise<{ publicKey: string }> {
@@ -945,6 +959,12 @@ export class CalibrateApiClient {
 
     markInAppNotificationRead(id: number): Promise<{ ok: true }> {
         return this.request<{ ok: true }>(`/api/notifications/in-app/${encodeURIComponent(String(id))}/read`, {
+            method: 'PATCH'
+        });
+    }
+
+    markAllInAppNotificationsRead(): Promise<MarkAllInAppNotificationsReadResponse> {
+        return this.request<MarkAllInAppNotificationsReadResponse>('/api/notifications/in-app/read-all', {
             method: 'PATCH'
         });
     }

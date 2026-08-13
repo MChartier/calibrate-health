@@ -41,6 +41,13 @@ import {
 } from '../../src/navigation/routeRegistry';
 import { getRouteBackLabel, hasBrowserHistorySinceMount } from '../../src/navigation/routePresentation';
 import { getNotificationAction } from '../../src/notifications/workflow';
+import {
+    ACTIVE_NOTIFICATION_LIMIT,
+    activeNotificationQueryKey,
+    invalidateNotificationQueries,
+    reconcileNotificationDismissed,
+    reconcileNotificationRead
+} from '../../src/notifications/query';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
 import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../../src/asyncState/resolveAsyncState';
 import { radius, spacing, useAppTheme, type AppTheme, type AppThemeColors } from '../../src/theme';
@@ -165,8 +172,11 @@ export default function TabsLayout() {
         enabled: Boolean(user && hasFullAccess)
     });
     const notificationsQuery = useQuery({
-        queryKey: ['mobile-in-app-notifications'],
-        queryFn: () => api.getInAppNotifications(),
+        queryKey: activeNotificationQueryKey,
+        queryFn: () => api.getInAppNotifications({
+            view: 'active',
+            limit: ACTIVE_NOTIFICATION_LIMIT
+        }),
         enabled: Boolean(user && hasFullAccess)
     });
     const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
@@ -175,8 +185,14 @@ export default function TabsLayout() {
         ({ notifications }) => notifications.length === 0
     );
     const dismissNotification = useMutation({
-        mutationFn: (notification: InAppNotification) => api.dismissInAppNotification(notification.id),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] })
+        mutationFn: async (notification: InAppNotification) => {
+            await api.dismissInAppNotification(notification.id);
+            return notification;
+        },
+        onSuccess: async (notification) => {
+            reconcileNotificationDismissed(queryClient, notification.id);
+            await invalidateNotificationQueries(queryClient);
+        }
     });
     const openNotification = useMutation({
         mutationFn: async (notification: InAppNotification) => {
@@ -184,7 +200,8 @@ export default function TabsLayout() {
             return notification;
         },
         onSuccess: async (notification) => {
-            await queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] });
+            reconcileNotificationRead(queryClient, notification.id);
+            await invalidateNotificationQueries(queryClient);
             setIsNotificationDrawerOpen(false);
             router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
         }
@@ -492,6 +509,7 @@ const HeaderActions: React.FC<{
             </NavigationPressable>
         )}
         <NavigationPressable
+            testID="notifications-button"
             accessibilityRole="button"
             accessibilityLabel={getNotificationsAccessibilityLabel(unreadCount)}
             focusStyle={styles.navigationFocus}
@@ -501,7 +519,12 @@ const HeaderActions: React.FC<{
         >
             <Ionicons name="notifications-outline" size={21} color={colors.text} />
             {unreadCount !== null && unreadCount > 0 && (
-                <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.badge}>
+                <View
+                    testID="notifications-badge"
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={styles.badge}
+                >
                     <AppText style={styles.badgeText}>{Math.min(unreadCount, 99)}</AppText>
                 </View>
             )}

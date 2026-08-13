@@ -1,6 +1,11 @@
 import type { InAppNotification } from '@calibrate/api-client';
 import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
-import { formatNotificationDate, getNotificationText } from './presentation';
+import {
+    formatNotificationDate,
+    formatNotificationTimestamp,
+    getNotificationStateLabel,
+    getNotificationText
+} from './presentation';
 
 function createNotification(overrides: Partial<InAppNotification> = {}): InAppNotification {
     return {
@@ -35,5 +40,19 @@ describe('notification presentation', () => {
 
     it('formats notification local dates without UTC shifting', () => {
         expect(formatNotificationDate('2026-07-20')).toMatch(/Jul 20/);
+    });
+
+    it('formats timestamps and distinguishes history states', () => {
+        expect(formatNotificationTimestamp('2026-07-20T12:30:00.000Z')).toMatch(/Jul 20/);
+        expect(getNotificationStateLabel(createNotification())).toBe('Unread');
+        expect(getNotificationStateLabel(createNotification({ read_at: '2026-07-20T13:00:00.000Z' }))).toBe('Read');
+        expect(getNotificationStateLabel(createNotification({
+            read_at: '2026-07-20T13:00:00.000Z',
+            dismissed_at: '2026-07-20T13:01:00.000Z'
+        }))).toBe('Dismissed');
+        expect(getNotificationStateLabel({
+            ...createNotification(),
+            resolved_at: '2026-07-20T13:02:00.000Z'
+        })).toBe('Resolved');
     });
 });

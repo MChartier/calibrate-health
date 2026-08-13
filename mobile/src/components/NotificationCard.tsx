@@ -2,7 +2,12 @@ import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { InAppNotification } from '@calibrate/api-client';
-import { formatNotificationDate, getNotificationText } from '../notifications/presentation';
+import {
+    formatNotificationDate,
+    formatNotificationTimestamp,
+    getNotificationStateLabel,
+    getNotificationText
+} from '../notifications/presentation';
 import { getNotificationAction } from '../notifications/workflow';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
@@ -13,6 +18,7 @@ import { AppText } from './AppText';
 type NotificationCardProps = {
     notification: InAppNotification;
     isBusy?: boolean;
+    showHistoryState?: boolean;
     onOpen: (notification: InAppNotification) => void;
     onDismiss: (notification: InAppNotification) => void;
 };
@@ -21,6 +27,7 @@ type NotificationCardProps = {
 export const NotificationCard: React.FC<NotificationCardProps> = ({
     notification,
     isBusy = false,
+    showHistoryState = false,
     onOpen,
     onDismiss
 }) => {
@@ -28,10 +35,15 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     const styles = useMemo(() => createStyles(theme), [theme]);
     const action = getNotificationAction(notification.action_url, notification.local_date);
     const text = getNotificationText(notification);
-    const isUnread = !notification.read_at;
+    const isResolved = 'resolved_at' in notification && Boolean(notification.resolved_at);
+    const isUnread = !notification.read_at && !notification.dismissed_at && !isResolved;
+    const stateLabel = getNotificationStateLabel(notification);
 
     return (
-        <AppCard style={[styles.card, isUnread && styles.unreadCard]}>
+        <AppCard
+            testID={`notification-card-${notification.id}`}
+            style={[styles.card, isUnread && styles.unreadCard]}
+        >
             <View style={styles.row}>
                 <View style={[styles.iconTile, isUnread && styles.iconTileUnread]}>
                     <Ionicons
@@ -47,12 +59,17 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                         </AppText>
                         {isUnread ? <View style={styles.unreadDot} /> : null}
                     </View>
-                    <AppText variant="caption">{formatNotificationDate(notification.local_date)}</AppText>
+                    <AppText variant="caption">
+                        {showHistoryState
+                            ? `${formatNotificationTimestamp(notification.created_at)} | ${stateLabel}`
+                            : formatNotificationDate(notification.local_date)}
+                    </AppText>
                     <AppText variant="muted">{text.body}</AppText>
                 </View>
             </View>
             <View style={styles.actions}>
                 <AppButton
+                    testID={`notification-open-${notification.id}`}
                     title={action.label}
                     accessibilityHint="Marks this reminder read and opens its Calibrate destination."
                     disabled={isBusy}
@@ -60,13 +77,16 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                     onPress={() => onOpen(notification)}
                     style={styles.actionButton}
                 />
-                <AppIconButton
-                    icon="close"
-                    accessibilityLabel={`Dismiss ${text.title}`}
-                    disabled={isBusy}
-                    iconColor={theme.colors.onSurfaceVariant}
-                    onPress={() => onDismiss(notification)}
-                />
+                {!notification.dismissed_at && !isResolved && (
+                    <AppIconButton
+                        testID={`notification-dismiss-${notification.id}`}
+                        icon="close"
+                        accessibilityLabel={`Dismiss ${text.title}`}
+                        disabled={isBusy}
+                        iconColor={theme.colors.onSurfaceVariant}
+                        onPress={() => onDismiss(notification)}
+                    />
+                )}
             </View>
         </AppCard>
     );

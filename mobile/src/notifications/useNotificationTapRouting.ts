@@ -12,17 +12,18 @@ type NotificationResponseLike = {
     };
 };
 
-/** Route foreground/background and cold-start notification taps through the same safe allowlist. */
-export function useNotificationTapRouting(enabled: boolean): void {
+/** Route push taps safely and reconcile foreground/native updates with the in-app notification cache. */
+export function useNotificationTapRouting(enabled: boolean, onNotificationUpdate?: () => void): void {
     const handledResponses = useRef(new Set<string>());
 
     useEffect(() => {
         if (!enabled) return;
         let active = true;
-        let removeListener: (() => void) | undefined;
+        let removeListeners: (() => void) | undefined;
 
         const handleResponse = (response: NotificationResponseLike) => {
             if (!active) return;
+            onNotificationUpdate?.();
             const responseKey = `${response.notification.request.identifier}:${response.actionIdentifier ?? 'default'}`;
             if (handledResponses.current.has(responseKey)) return;
             handledResponses.current.add(responseKey);
@@ -34,8 +35,14 @@ export function useNotificationTapRouting(enabled: boolean): void {
 
         void import('expo-notifications').then(async (Notifications) => {
             if (!active) return;
-            const subscription = Notifications.addNotificationResponseReceivedListener(handleResponse);
-            removeListener = () => subscription.remove();
+            const responseSubscription = Notifications.addNotificationResponseReceivedListener(handleResponse);
+            const receivedSubscription = Notifications.addNotificationReceivedListener(() => {
+                if (active) onNotificationUpdate?.();
+            });
+            removeListeners = () => {
+                responseSubscription.remove();
+                receivedSubscription.remove();
+            };
 
             const lastResponse = await Notifications.getLastNotificationResponseAsync();
             if (lastResponse) {
@@ -48,7 +55,7 @@ export function useNotificationTapRouting(enabled: boolean): void {
 
         return () => {
             active = false;
-            removeListener?.();
+            removeListeners?.();
         };
-    }, [enabled]);
+    }, [enabled, onNotificationUpdate]);
 }

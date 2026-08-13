@@ -149,4 +149,19 @@ describe('NotificationsDrawer', () => {
         expect(screen.queryByText(rawError.message)).toBeNull();
         expect(screen.getByText('Time to weigh in')).toBeTruthy();
     });
+
+    it('limits the quick drawer to five items while keeping full history discoverable', () => {
+        const notifications = Array.from({ length: 7 }, (_, index) => ({
+            ...NOTIFICATION,
+            id: index + 1,
+            title: `Reminder ${index + 1}`
+        }));
+        const { screen } = renderDrawer({ notifications, unreadCount: 7 });
+
+        expect(screen.getByTestId('notifications-drawer-list')).toBeTruthy();
+        expect(screen.getByText('Reminder 1')).toBeTruthy();
+        expect(screen.getByText('Reminder 5')).toBeTruthy();
+        expect(screen.queryByText('Reminder 6')).toBeNull();
+        expect(screen.getByTestId('view-all-notifications')).toBeTruthy();
+    });
 });

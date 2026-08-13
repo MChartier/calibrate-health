@@ -956,6 +956,30 @@ export type InAppNotificationsResponse = {
     unread_count: number;
 };
 
+export type InAppNotificationView = 'active' | 'history';
+
+export type InAppNotificationsQuery = {
+    view: InAppNotificationView;
+    limit?: number;
+    cursor?: string;
+};
+
+export type InAppNotificationPageItem = InAppNotification & {
+    resolved_at: string | null;
+    updated_at: string;
+};
+
+export type InAppNotificationPageResponse = {
+    notifications: InAppNotificationPageItem[];
+    unread_count: number;
+    next_cursor: string | null;
+};
+
+export type MarkAllInAppNotificationsReadResponse = {
+    ok: true;
+    updated_count: number;
+};
+
 export type NativePushSubscriptionPayload = {
     token: string;
     device_id?: string;

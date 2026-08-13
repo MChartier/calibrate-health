@@ -1066,6 +1066,86 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/notifications/in-app:
+    get:
+      operationId: getInAppNotifications
+      description: >-
+        With no query parameters, preserves the legacy active-unread response. Query mode adds stable
+        cursor pagination; active returns active unread rows and history returns all user-owned rows.
+      parameters:
+        - name: view
+          in: query
+          required: false
+          schema: { type: string, enum: [active, history], default: active }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Owner-scoped notifications and the global active-unread badge count.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InAppNotificationsResponse' }
+        '400':
+          description: Invalid view, limit, or cursor.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/notifications/in-app/read-all:
+    patch:
+      operationId: markAllInAppNotificationsRead
+      description: Idempotently mark every unread notification owned by the authenticated user as read.
+      responses:
+        '200':
+          description: Number of rows changed by this request.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MarkAllInAppNotificationsReadResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/notifications/in-app/{notificationId}/read:
+    patch:
+      operationId: markInAppNotificationRead
+      parameters:
+        - $ref: '#/components/parameters/NotificationId'
+      responses:
+        '200':
+          description: Notification is read or was already unavailable to mutate.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
+        '400':
+          description: Invalid notification identifier.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/notifications/in-app/{notificationId}/dismiss:
+    patch:
+      operationId: dismissInAppNotification
+      parameters:
+        - $ref: '#/components/parameters/NotificationId'
+      responses:
+        '200':
+          description: Notification is dismissed or was already unavailable to mutate.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
+        '400':
+          description: Invalid notification identifier.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/v1/user/account/export:
     get:
       operationId: exportAccount
@@ -1134,6 +1214,13 @@ components:
       schema:
         type: integer
         minimum: 1
+    NotificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
     ClientOperationId:
       name: x-client-operation-id
       in: header
@@ -1160,6 +1247,41 @@ components:
           schema:
             $ref: '#/components/schemas/ApiError'
   schemas:
+    InAppNotification:
+      type: object
+      required: [id, type, local_date, title, body, action_url, read_at, created_at]
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [LOG_WEIGHT_REMINDER, LOG_FOOD_REMINDER, GENERIC] }
+        local_date: { type: string, format: date }
+        title: { type: [string, 'null'] }
+        body: { type: [string, 'null'] }
+        action_url: { type: string }
+        read_at: { type: [string, 'null'], format: date-time }
+        dismissed_at: { type: [string, 'null'], format: date-time }
+        resolved_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    InAppNotificationsResponse:
+      type: object
+      required: [notifications, unread_count]
+      properties:
+        notifications:
+          type: array
+          items: { $ref: '#/components/schemas/InAppNotification' }
+        unread_count: { type: integer, minimum: 0 }
+        next_cursor: { type: [string, 'null'] }
+    MarkAllInAppNotificationsReadResponse:
+      type: object
+      required: [ok, updated_count]
+      properties:
+        ok: { type: boolean, const: true }
+        updated_count: { type: integer, minimum: 0 }
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean, const: true }
     EligibilityStatus:
       type: string
       enum: [unknown, eligible, invalid]
