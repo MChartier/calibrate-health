@@ -50,7 +50,11 @@ export function resolveExpoWebRequest(distDir, encodedPathname) {
     if (fs.existsSync(routeFile) && fs.statSync(routeFile).isFile()) {
       return { status: 200, filePath: routeFile, spaFallback: false };
     }
-    return { status: 200, filePath: path.join(resolvedDist, 'index.html'), spaFallback: true };
+    const notFoundFile = path.join(resolvedDist, '+not-found.html');
+    const fallbackFile = fs.existsSync(notFoundFile) && fs.statSync(notFoundFile).isFile()
+      ? notFoundFile
+      : path.join(resolvedDist, 'index.html');
+    return { status: 200, filePath: fallbackFile, spaFallback: true };
   }
   return { status: 404 };
 }

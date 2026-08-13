@@ -1,17 +1,11 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import type { Page, Route } from '@playwright/test';
+import { expect, expectApiFailure, test } from './fixtures';
 
-const capturedBrowserErrors = new WeakMap<Page, string[]>();
-const stubbedSignedOutResponses = new WeakSet<Page>();
-const stubbedRetryableMutationResponses = new WeakSet<Page>();
 const unexpectedApiRequests = new WeakMap<Page, string[]>();
-const EXPECTED_SIGNED_OUT_RESOURCE_ERROR =
-  'Failed to load resource: the server responded with a status of 401 (Unauthorized)';
-const EXPECTED_RETRYABLE_MUTATION_RESOURCE_ERROR =
-  'Failed to load resource: the server responded with a status of 503 (Service Unavailable)';
 
 async function stubSignedOutSession(page: Page): Promise<void> {
+  expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 401 });
   await page.route('**/auth/me', (route) => {
-    stubbedSignedOutResponses.add(page);
     return route.fulfill({
       status: 401,
       contentType: 'application/json',
@@ -87,7 +81,18 @@ const CALIBRATION_STATUS_RESPONSE = {
     headline: 'See how your calorie plan is working',
     summary: 'Keep logging food and weight to build your first pace check.',
     nextStep: 'Keep following your current plan and log consistently.',
-    historyProgress: { observedDays: 6, requiredDays: 7 },
+    historyProgress: {
+      stage: 'pace_check',
+      observedDays: 6,
+      requiredDays: 7,
+      completeFoodDays: 6,
+      requiredCompleteFoodDays: 7,
+      weightSpanDays: 6,
+      requiredWeightSpanDays: 7,
+      weightPoints: 6,
+      requiredWeightPoints: 2,
+      restartedAfterPause: false,
+    },
     selectedWindowDays: null,
     dataQuality: {
       observationDays: 6,
@@ -308,23 +313,7 @@ async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
 
-test.beforeEach(async ({ page }) => {
-  const errors: string[] = [];
-  capturedBrowserErrors.set(page, errors);
-  page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
-  page.on('console', (message) => {
-    if (message.type() !== 'error') return;
-    if (stubbedSignedOutResponses.has(page) && message.text() === EXPECTED_SIGNED_OUT_RESOURCE_ERROR) return;
-    if (
-      stubbedRetryableMutationResponses.has(page) &&
-      message.text() === EXPECTED_RETRYABLE_MUTATION_RESOURCE_ERROR
-    ) return;
-    errors.push(`console.error: ${message.text()}`);
-  });
-});
-
 test.afterEach(async ({ page }) => {
-  expect(capturedBrowserErrors.get(page) ?? [], 'Expo web emitted browser errors').toEqual([]);
   expect(unexpectedApiRequests.get(page) ?? [], 'Expo web made unhandled API requests').toEqual([]);
 });
 
@@ -345,8 +334,7 @@ test('production export boots to the signed-out shell at each release viewport',
   expect(storedKeys.filter((key) => /token|auth|session/i.test(key))).toEqual([]);
 });
 
-test('installed shell reports connection loss and recovery', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop-chrome', 'PWA network state is viewport-independent.');
+test('installed shell reports connection loss and recovery', async ({ page }) => {
   await stubSignedOutSession(page);
   await page.goto('/');
   await page.evaluate(async () => {
@@ -401,8 +389,10 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await expect(page.getByText('Daily balance', { exact: true })).toBeVisible();
   const foodLogSummary = page.getByRole('button', { name: /Food log.*View full log/ });
-  await expect(foodLogSummary).toContainText('Breakfast');
-  await expect(foodLogSummary).toContainText('Greek yogurt and berries');
+  await expect(foodLogSummary).toHaveAccessibleName('Food log. Breakfast, 360 kcal, 1 item. View full log');
+  const foodLogSummaryCard = page.getByTestId('food-log-summary-card');
+  await expect(foodLogSummaryCard.getByText('Breakfast', { exact: true })).toBeVisible();
+  await expect(foodLogSummaryCard.getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
   await foodLogSummary.click();
   await expect(page).toHaveURL((url) => url.pathname === '/food-log' && Boolean(url.searchParams.get('date')));
   await expect(page.getByRole('heading', { name: 'Food log', exact: true })).toBeVisible();
@@ -461,8 +451,8 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await page.getByRole('tab', { name: /Progress$/ }).click();
   await expect(page).toHaveURL(/\/progress$/);
   await expect(page.getByRole('heading', { name: 'Progress', exact: true })).toBeVisible();
-  await expect(page.getByText('Progress snapshot', { exact: true })).toBeVisible();
-  await expect(page.getByText('Weight trend', { exact: true })).toBeVisible();
+  await expect(page.getByText('Snapshot', { exact: true })).toBeVisible();
+  await expect(page.getByText('Trend', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   const reloadResponse = await page.reload();
@@ -491,7 +481,13 @@ test('paused days omit calorie progress and only preview food when entries exist
   await expect(page.getByText('Calorie tracking paused', { exact: true })).toBeVisible();
   await expect(page.getByText('Daily balance', { exact: true })).toBeHidden();
   await expect(page.getByText('0%', { exact: true })).toBeHidden();
-  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toContainText('Greek yogurt and berries');
+  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toHaveAccessibleName(
+    'Food log. Breakfast, 360 kcal, 1 item. View full log',
+  );
+  await expect(page.getByTestId('food-log-summary-card').getByText(
+    'Greek yogurt and berries',
+    { exact: true },
+  )).toBeVisible();
 
   options.foodEntries = [];
   await page.reload();
@@ -501,8 +497,7 @@ test('paused days omit calorie progress and only preview food when entries exist
   await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeHidden();
 });
 
-test('mobile weight logging keeps the progress result visible and hands off a reached goal', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'android-phone-chrome', 'The weight editor geometry is mobile-specific.');
+test('weight logging keeps the progress result visible and hands off a reached goal', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
 
   const options: AuthenticatedApiOptions = {
@@ -635,10 +630,9 @@ test('mobile weight logging keeps the progress result visible and hands off a re
   expect(goalPostCount).toBe(0);
 });
 
-test('a browser write survives reload and replays exactly once with its operation id', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop-chrome', 'IndexedDB integrity is viewport-independent.');
+test('a browser write survives reload and replays exactly once with its operation id', async ({ page }) => {
   await stubAuthenticatedApi(page);
-  stubbedRetryableMutationResponses.add(page);
+  expectApiFailure(page, { method: 'POST', pathname: '/api/v1/metrics', status: 503 });
 
   let rejectMutation = true;
   const operationIds: string[] = [];
@@ -684,7 +678,10 @@ test('a browser write survives reload and replays exactly once with its operatio
   expect(operationIds[1]).toBe(operationIds[0]);
   await expect(page.getByRole('button', { name: /offline changes/ })).toHaveCount(0);
 
-  await page.reload();
-  await page.waitForTimeout(250);
+  const finalReloadResponse = await page.reload();
+  expect(finalReloadResponse?.status()).toBe(200);
+  await expect(page).toHaveURL((url) => url.pathname === '/progress');
+  await expect(page.getByRole('heading', { name: 'Progress', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /offline changes/ })).toHaveCount(0);
   expect(operationIds).toHaveLength(2);
 });
