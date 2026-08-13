@@ -69,6 +69,8 @@ export type PwaRuntime = {
 export const BACK_ONLINE_NOTICE_MS = 5_000;
 // Surface a recoverable failure if an installed worker never takes control after refresh is requested.
 export const UPDATE_APPLY_TIMEOUT_MS = 12_000;
+export const PWA_SERVICE_WORKER_URL = '/sw.js';
+export const PWA_SERVICE_WORKER_SCOPE = '/';
 
 const SERVER_SNAPSHOT: PwaSnapshot = Object.freeze({
     network: PWA_NETWORK_STATES.ONLINE,
@@ -212,7 +214,9 @@ export function createPwaRuntime(environment: PwaEnvironment): PwaRuntime {
     async function registerServiceWorker() {
         if (!environment.production || !serviceWorker) return;
         try {
-            const nextRegistration = await serviceWorker.register('/sw.js', { scope: '/' });
+            const nextRegistration = await serviceWorker.register(PWA_SERVICE_WORKER_URL, {
+                scope: PWA_SERVICE_WORKER_SCOPE
+            });
             if (disposed) return;
             observeRegistration(nextRegistration);
         } catch {

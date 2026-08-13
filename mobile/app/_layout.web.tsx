@@ -19,18 +19,19 @@ import { PwaStatusBanner } from '../src/pwa/PwaStatusBanner.web';
 import { useBrowserNotificationStream } from '../src/notifications/useBrowserNotificationStream.web';
 import { useVisualViewportHeight } from '../src/hooks/useVisualViewportHeight';
 import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.web';
-import { getRouteDocumentTitle } from '../src/navigation/routePresentation';
+import { resolveRouteMetadata } from '../src/navigation/routeMetadata';
 import { scrubBrowserOneTimeTokenFromUrl } from '../src/auth/oneTimeToken';
 
 const queryClient = new QueryClient();
 
 const BrowserRoutePresentation: React.FC = () => {
     const pathname = usePathname();
+    const { user } = useAuth();
     scrubBrowserOneTimeTokenFromUrl(pathname);
-    const documentTitle = getRouteDocumentTitle(pathname);
+    const metadata = resolveRouteMetadata(pathname, { authenticated: Boolean(user) });
 
     React.useEffect(() => {
-        document.title = documentTitle;
+        document.title = metadata.title;
         function focusRouteTitle(): boolean {
             const title = document.getElementById('route-focus-title');
             if (!title) return false;
@@ -56,11 +57,14 @@ const BrowserRoutePresentation: React.FC = () => {
             observer.disconnect();
             if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
         };
-    }, [documentTitle, pathname]);
+    }, [metadata.title, pathname]);
 
     return (
         <Head>
-            <title>{documentTitle}</title>
+            <title>{metadata.title}</title>
+            <meta name="description" content={metadata.description} />
+            <meta name="robots" content={metadata.robots} />
+            {metadata.canonicalPath ? <link rel="canonical" href={metadata.canonicalPath} /> : null}
         </Head>
     );
 };
@@ -127,7 +131,7 @@ const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) =
 /** Network status belongs to the whole web shell; update prompts wait until the user is signed in. */
 const BrowserPwaStatus: React.FC = () => {
     const { user } = useAuth();
-    return <PwaStatusBanner showUpdateNotices={Boolean(user)} />;
+    return <PwaStatusBanner showUpdateNotices={Boolean(user)} hasCompactNavigation={Boolean(user)} />;
 };
 
 export default function RootLayout() {

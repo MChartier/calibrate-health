@@ -874,15 +874,15 @@ export default function SettingsScreen() {
                 </View>
             </SettingsDetailSheet>
 
-            {!isWeb && (
-                <SettingsDetailSheet
-                    visible={activeSheet === 'advanced'}
-                    title="Advanced"
-                    description="Optional connection settings for self-hosted services."
-                    isDirty={serverIsDirty}
-                    confirmDismiss={confirmDiscardChanges}
-                    onClose={closeServerEditor}
-                >
+            <SettingsDetailSheet
+                visible={activeSheet === 'advanced'}
+                title="Advanced"
+                description="Optional connection settings for self-hosted services."
+                isDirty={serverIsDirty}
+                confirmDismiss={confirmDiscardChanges}
+                onClose={closeServerEditor}
+            >
+                <View testID="settings-advanced-sheet" style={styles.sheetContent}>
                     <ServerUrlControl
                         presentation="editor"
                         value={serverInput}
@@ -898,8 +898,8 @@ export default function SettingsScreen() {
                         leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onPrimary} />}
                         onPress={() => void handleSaveServer()}
                     />
-                </SettingsDetailSheet>
-            )}
+                </View>
+            </SettingsDetailSheet>
 
             <ProfileEditorSheet
                 visible={isProfileEditorOpen}

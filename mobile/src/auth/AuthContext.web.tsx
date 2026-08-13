@@ -15,6 +15,7 @@ import { getSessionRestoreErrorMessage } from './authErrors';
 import type { AccountDeletionCleanupNotice } from '../account/accountDeletionNotice';
 import { cleanupBrowserPushBeforeSessionChange } from '../notifications/browserPush.web';
 import { restoreBrowserDevelopmentSession } from './devAutoLogin';
+import { clearBrowserUserScopedCaches } from '../pwa/cacheIsolation.web';
 import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
 
 type AuthContextValue = {
@@ -57,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setAuthError(null);
         queryClient.clear();
+        await clearBrowserUserScopedCaches();
     }, [queryClient]);
 
     const clearSessionWithBrowserCleanup = useCallback(async () => {
@@ -72,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         let active = true;
+        setIsLoading(true);
         void restoreBrowserDevelopmentSession(api, serverUrl).then(({ user: nextUser }) => {
             if (active) setUser(nextUser);
         }).catch((error: unknown) => {
@@ -120,9 +123,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }).loginBrowser({ email, password })
         });
         if (!payload) return false;
+        queryClient.clear();
+        await clearBrowserUserScopedCaches();
         setUser(payload.user);
         return true;
-    }, [confirmCurrentServer, serverUrl]);
+    }, [confirmCurrentServer, queryClient, serverUrl]);
 
     const register = useCallback(async (
         email: string,
@@ -153,9 +158,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         });
         if (!payload) return false;
+        queryClient.clear();
+        await clearBrowserUserScopedCaches();
         setUser(payload.user);
         return true;
-    }, [confirmCurrentServer, serverUrl]);
+    }, [confirmCurrentServer, queryClient, serverUrl]);
 
     const logout = useCallback(async () => {
         try {

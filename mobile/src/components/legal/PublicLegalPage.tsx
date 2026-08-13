@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
+import { useAuth } from '../../auth/AuthContext';
 import { AppCard } from '../AppCard';
 import { AppText } from '../AppText';
+import { CalibrateLogo } from '../CalibrateLogo';
 import { Screen } from '../Screen';
 import type { PublicLegalSection } from '../../legal/publicLegalContent';
 import { radius, spacing, useAppTheme } from '../../theme';
@@ -20,16 +22,42 @@ type PublicLegalPageProps = {
     actions?: React.ReactNode;
 };
 
-/** Accessible, static-renderable legal surface shared by web and native routes. */
+/** Public legal content keeps its own trust shell and gives signed-in users a clear return to Settings. */
 export function PublicLegalPage({ title, lastUpdated, intro, sections, links, actions }: PublicLegalPageProps) {
+    const { user } = useAuth();
     const { colors } = useAppTheme();
+    const inApp = Boolean(user);
 
     return (
-        <Screen safeTop style={styles.screen}>
-            <AppCard>
+        <Screen
+            testID={inApp ? 'legal-in-app-shell' : 'legal-public-shell'}
+            safeTop
+            style={styles.screen}
+        >
+            <View style={[styles.brandBar, { borderBottomColor: colors.outlineVariant }]}>
+                <View style={styles.brandIdentity}>
+                    <CalibrateLogo size={36} />
+                    <AppText variant="label" style={{ color: colors.primary }}>Calibrate Health</AppText>
+                </View>
+                <Link
+                    href={(inApp ? '/settings' : '/') as Href}
+                    style={StyleSheet.flatten([styles.homeLink, { color: colors.primary }])}
+                >
+                    {inApp ? 'Back to Settings' : 'Calibrate home'}
+                </Link>
+            </View>
+
+            <AppCard testID="legal-page">
                 <View style={styles.content}>
                     <View style={styles.section}>
-                        <AppText accessibilityRole="header" aria-level={1} variant="title">{title}</AppText>
+                        <AppText
+                            nativeID="route-focus-title"
+                            accessibilityRole="header"
+                            aria-level={1}
+                            variant="title"
+                        >
+                            {title}
+                        </AppText>
                         {lastUpdated && <AppText variant="label">Last updated: {lastUpdated}</AppText>}
                         {intro.map((paragraph) => (
                             <AppText key={paragraph}>{paragraph}</AppText>
@@ -81,6 +109,28 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 920,
         alignSelf: 'center'
+    },
+    brandBar: {
+        minHeight: 56,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.md,
+        paddingBottom: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth
+    },
+    brandIdentity: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm
+    },
+    homeLink: {
+        minHeight: 48,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.sm,
+        textAlign: 'center',
+        fontWeight: '800'
     },
     content: {
         gap: spacing.lg

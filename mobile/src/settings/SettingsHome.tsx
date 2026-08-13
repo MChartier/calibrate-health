@@ -282,7 +282,7 @@ export function SettingsHome({
 
             <SettingsSection
                 testID="settings-section-app"
-                title={isWeb ? 'App' : 'App & Advanced'}
+                title="App & Advanced"
                 description="Version, product information, and optional connection controls."
             >
                 <SettingsRow
@@ -290,18 +290,17 @@ export function SettingsHome({
                     label="About Calibrate"
                     supportingText="Purpose, trust, version, and update details"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
-                    showDivider={!isWeb}
+                    showDivider
                     onPress={onOpenAbout}
                 />
-                {!isWeb && (
-                    <SettingsRow
-                        icon="options-outline"
-                        label="Advanced"
-                        supportingText="Connection and technical options"
-                        showDivider={false}
-                        onPress={() => onOpenSheet('advanced')}
-                    />
-                )}
+                <SettingsRow
+                    testID="settings-advanced"
+                    icon="options-outline"
+                    label="Advanced"
+                    supportingText="Alternate server and technical connection options"
+                    showDivider={false}
+                    onPress={() => onOpenSheet('advanced')}
+                />
             </SettingsSection>
         </View>
     );

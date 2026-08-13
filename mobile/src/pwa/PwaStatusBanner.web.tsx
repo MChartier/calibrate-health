@@ -1,4 +1,5 @@
 import React from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useAppTheme } from '../theme';
 import {
     browserPwaRuntime,
@@ -8,10 +9,71 @@ import {
     usePwaStatus
 } from './runtime.web';
 
-export const BROWSER_OFFLINE_MESSAGE = 'Queued changes stay on this device and sync when the server is reachable.';
-const NOTICE_TOP_OFFSET = 76; // Clears the compact app header while keeping status feedback near the top.
+export const BROWSER_OFFLINE_MESSAGE = 'Some information may be out of date. Reconnect before making changes.';
+const DESKTOP_NOTICE_BREAKPOINT = 1024;
+const NOTICE_EDGE_OFFSET = 16;
+// Clears the largest compact nav, contextual action, and spacing at 200% text.
+const COMPACT_SHELL_CLEARANCE = 174;
+
+export function resolvePwaNoticePlacement(
+    viewportWidth: number,
+    hasCompactNavigation: boolean
+): React.CSSProperties {
+    const base: React.CSSProperties = {
+        position: 'fixed',
+        zIndex: 9000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        pointerEvents: 'none'
+    };
+    if (viewportWidth >= DESKTOP_NOTICE_BREAKPOINT) {
+        return {
+            ...base,
+            top: `calc(env(safe-area-inset-top, 0px) + ${NOTICE_EDGE_OFFSET}px)`,
+            right: NOTICE_EDGE_OFFSET,
+            alignItems: 'flex-end'
+        };
+    }
+    if (hasCompactNavigation) return {
+        ...base,
+        right: NOTICE_EDGE_OFFSET,
+        bottom: `calc(env(safe-area-inset-bottom, 0px) + ${COMPACT_SHELL_CLEARANCE}px)`,
+        left: NOTICE_EDGE_OFFSET,
+        alignItems: 'center'
+    };
+    return {
+        ...base,
+        top: `calc(env(safe-area-inset-top, 0px) + ${NOTICE_EDGE_OFFSET}px)`,
+        right: NOTICE_EDGE_OFFSET,
+        left: NOTICE_EDGE_OFFSET,
+        alignItems: 'center'
+    };
+}
+
+export function isDocumentModalOpen(): boolean {
+    if (typeof document === 'undefined') return false;
+    return document.querySelector('[role="dialog"]') !== null;
+}
+
+function subscribeToDocumentModals(onStoreChange: () => void): () => void {
+    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return () => undefined;
+    const observer = new MutationObserver(onStoreChange);
+    observer.observe(document.body, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+        attributeFilter: ['aria-hidden', 'aria-modal', 'role']
+    });
+    return () => observer.disconnect();
+}
+
+function useDocumentModalOpen(): boolean {
+    return React.useSyncExternalStore(subscribeToDocumentModals, isDocumentModalOpen, () => false);
+}
 
 type NoticeProps = {
+    testID: string;
     role: 'alert' | 'status';
     title: string;
     detail: string;
@@ -25,9 +87,9 @@ type NoticeProps = {
     };
 };
 
-function Notice({ role, title, detail, background, foreground, border, action }: NoticeProps) {
+function Notice({ testID, role, title, detail, background, foreground, border, action }: NoticeProps) {
     const style: React.CSSProperties = {
-        width: 'min(680px, calc(100vw - 24px))',
+        width: 'min(440px, calc(100vw - 32px))',
         boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
@@ -61,7 +123,7 @@ function Notice({ role, title, detail, background, foreground, border, action }:
     };
 
     return (
-        <div role={role} aria-live={role === 'alert' ? 'assertive' : 'polite'} style={style}>
+        <div data-testid={testID} role={role} aria-live={role === 'alert' ? 'assertive' : 'polite'} style={style}>
             <span style={copyStyle}>
                 <span style={titleStyle}>{title}</span>
                 <span style={detailStyle}>{detail}</span>
@@ -78,32 +140,26 @@ function Notice({ role, title, detail, background, foreground, border, action }:
 type PwaStatusBannerProps = {
     runtime?: PwaRuntime;
     showUpdateNotices?: boolean;
+    hasCompactNavigation?: boolean;
 };
 
 export function PwaStatusBanner({
     runtime = browserPwaRuntime,
-    showUpdateNotices = true
+    showUpdateNotices = true,
+    hasCompactNavigation = false
 }: PwaStatusBannerProps) {
     const theme = useAppTheme();
+    const { width } = useWindowDimensions();
     const { network, update, applyUpdate, retryUpdate } = usePwaStatus(runtime);
-    const containerStyle: React.CSSProperties = {
-        position: 'fixed',
-        top: `calc(env(safe-area-inset-top, 0px) + ${NOTICE_TOP_OFFSET}px)`,
-        left: 0,
-        right: 0,
-        zIndex: 9000,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8,
-        pointerEvents: 'none'
-    };
+    const modalOpen = useDocumentModalOpen();
+    const containerStyle = resolvePwaNoticePlacement(width, hasCompactNavigation);
     const notices: React.ReactNode[] = [];
 
     if (network === PWA_NETWORK_STATES.OFFLINE) {
         notices.push(
             <Notice
                 key="offline"
+                testID="pwa-offline"
                 role="alert"
                 title="You're offline"
                 detail={BROWSER_OFFLINE_MESSAGE}
@@ -116,9 +172,10 @@ export function PwaStatusBanner({
         notices.push(
             <Notice
                 key="online"
+                testID="pwa-back-online"
                 role="status"
                 title="Back online"
-                detail="Queued changes are syncing now."
+                detail="Connection restored. Calibrate is refreshing account data."
                 background={theme.colors.successContainer}
                 foreground={theme.colors.onSuccessContainer}
                 border={theme.colors.success}
@@ -131,6 +188,7 @@ export function PwaStatusBanner({
         notices.push(
             <Notice
                 key="update"
+                testID="pwa-update-ready"
                 role="status"
                 title={applying ? 'Updating Calibrate' : 'Update ready'}
                 detail={applying ? 'Finishing the update and refreshing...' : 'Refresh to use the latest version.'}
@@ -144,6 +202,7 @@ export function PwaStatusBanner({
         notices.push(
             <Notice
                 key="update-error"
+                testID="pwa-update-error"
                 role="alert"
                 title="Update failed"
                 detail="Calibrate could not install the update. Check your connection and try again."
@@ -155,6 +214,6 @@ export function PwaStatusBanner({
         );
     }
 
-    if (notices.length === 0) return null;
-    return <div style={containerStyle}>{notices}</div>;
+    if (notices.length === 0 || modalOpen) return null;
+    return <div data-testid="pwa-status-container" style={containerStyle}>{notices}</div>;
 }
