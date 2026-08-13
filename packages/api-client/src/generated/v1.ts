@@ -1810,12 +1810,12 @@ export interface components {
             /** @constant */
             platform?: "android_phone";
             /** @enum {unknown} */
-            version?: "0.2.5" | "0.2.4" | "0.2.3" | "0.2.2" | "0.2.1" | "0.1.0";
+            version?: "0.2.6" | "0.2.5" | "0.2.4" | "0.2.3" | "0.2.2" | "0.2.1" | "0.1.0";
         } | {
             /** @constant */
             platform?: "wear_os";
             /** @enum {unknown} */
-            version?: "0.2.5" | "0.2.3" | "0.2.2" | "0.2.1" | "0.2.0";
+            version?: "0.2.6" | "0.2.5" | "0.2.3" | "0.2.2" | "0.2.1" | "0.2.0";
         }) & ({
             /** @constant */
             event?: "client_failure";
