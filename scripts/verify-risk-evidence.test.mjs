@@ -226,12 +226,12 @@ test('workflow-backed evidence fails when its test command is removed', () => {
 
 test('expired physical evidence waivers fail the contract instead of silently extending release risk', () => {
   const fixture = repositoryFixture();
-  fixture.now = new Date('2026-08-13T00:00:00.000Z');
+  fixture.now = new Date('2026-08-27T00:00:00.000Z');
 
   const result = validateRiskEvidence(fixture);
 
   assert.ok(result.errors.includes(
-    'Waiver physical-galaxy-phone-and-watch-validation expired on 2026-08-12.'
+    'Waiver physical-galaxy-phone-and-watch-validation expired on 2026-08-26.'
   ));
   assert.equal(result.blockers.length, 1);
 });

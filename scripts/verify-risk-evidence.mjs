@@ -68,7 +68,7 @@ const REQUIRED_PHYSICAL_WAIVER = Object.freeze({
   status: 'release-blocking',
   owner: 'MChartier',
   trackingIssues: ['#219', '#222', '#303'],
-  expiresOn: '2026-08-12',
+  expiresOn: '2026-08-26',
   capabilities: [
     'android-physical-happy-path',
     'android-physical-offline-reconnect',
