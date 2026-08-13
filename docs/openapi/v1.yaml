@@ -703,6 +703,38 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/food/copy:
+    post:
+      operationId: copyFoodLogs
+      description: Atomically copy owned immutable food-log snapshots to another local date, with exact operation replay.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FoodLogCopyRequest' }
+      responses:
+        '200':
+          description: Copy result or exact replay of its committed result. An empty source is a successful zero-count result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FoodLogCopyResponse' }
+        '400':
+          description: Invalid operation ID, local date, timezone, or meal mapping.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: The target day is not open, or the operation is in progress or reused for another payload.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '500':
+          description: Copy transaction failed without committing target entries.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/food/{foodLogId}:
     delete:
       operationId: deleteFoodLog
@@ -1629,6 +1661,42 @@ components:
         materialized_through: { type: string, format: date }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    FoodLogCopyMealMapping:
+      type: object
+      additionalProperties: false
+      required: [source_meal_period, target_meal_period]
+      properties:
+        source_meal_period: { type: string, enum: [BREAKFAST, MORNING_SNACK, LUNCH, AFTERNOON_SNACK, DINNER, EVENING_SNACK] }
+        target_meal_period: { type: string, enum: [BREAKFAST, MORNING_SNACK, LUNCH, AFTERNOON_SNACK, DINNER, EVENING_SNACK] }
+    FoodLogCopyRequest:
+      type: object
+      additionalProperties: true
+      required: [operation_id, source_date, target_date]
+      properties:
+        operation_id:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+        source_date: { type: string, format: date }
+        target_date: { type: string, format: date }
+        meal_mappings:
+          type: array
+          minItems: 1
+          maxItems: 36
+          items: { $ref: '#/components/schemas/FoodLogCopyMealMapping' }
+    FoodLogCopyResponse:
+      type: object
+      additionalProperties: false
+      required: [operation_id, source_date, target_date, copied_count, food_logs]
+      properties:
+        operation_id: { type: string }
+        source_date: { type: string, format: date }
+        target_date: { type: string, format: date }
+        copied_count: { type: integer, minimum: 0 }
+        food_logs:
+          type: array
+          items: { $ref: '#/components/schemas/AccountExportFoodLog' }
     FoodLogDay:
       type: object
       additionalProperties: false

@@ -27,7 +27,7 @@ const LEGACY_GRAMS_ENTRY: FoodLogEntry = {
 
 describe('FoodLogTimelineCard', () => {
     it('leaves the detailed page add-food entry point to its FAB', () => {
-        const { queryByLabelText, getByLabelText } = render(
+        const { queryByLabelText, getByLabelText, getByText } = render(
             <FoodLogTimelineCard
                 entries={[MORNING_SNACK_ENTRY]}
                 onEditEntry={jest.fn()}
@@ -36,7 +36,8 @@ describe('FoodLogTimelineCard', () => {
         );
 
         expect(queryByLabelText(/Add food to/)).toBeNull();
-        expect(getByLabelText('Expand Morning Snack')).toBeTruthy();
+        expect(getByLabelText('Collapse Morning Snack')).toBeTruthy();
+        expect(getByText('Oatmeal')).toBeTruthy();
         expect(queryByLabelText('Expand Breakfast')).toBeNull();
     });
 
@@ -49,13 +50,13 @@ describe('FoodLogTimelineCard', () => {
             />
         );
 
-        fireEvent.press(getByLabelText('Expand Dinner'));
+        expect(getByLabelText('Collapse Dinner')).toBeTruthy();
         expect(getByText('142 g')).toBeTruthy();
     });
 
     it('offers an independently enabled save-recipe action under an expanded meal', () => {
         const onSaveMealAsRecipe = jest.fn();
-        const { getByLabelText, getByText } = render(
+        const { getByText } = render(
             <FoodLogTimelineCard
                 entries={[MORNING_SNACK_ENTRY]}
                 disabled
@@ -65,9 +66,47 @@ describe('FoodLogTimelineCard', () => {
             />
         );
 
-        fireEvent.press(getByLabelText('Expand Morning Snack'));
         fireEvent.press(getByText('Save as recipe'));
 
         expect(onSaveMealAsRecipe).toHaveBeenCalledWith('MORNING_SNACK', [MORNING_SNACK_ENTRY]);
+    });
+
+    it('exposes accessible meal and day copy actions only for populated content', () => {
+        const onCopyMeal = jest.fn();
+        const onCopyDay = jest.fn();
+        const { getByRole, queryByLabelText } = render(
+            <FoodLogTimelineCard
+                entries={[MORNING_SNACK_ENTRY]}
+                onEditEntry={jest.fn()}
+                onDeleteEntry={jest.fn()}
+                onCopyMeal={onCopyMeal}
+                onCopyDay={onCopyDay}
+            />
+        );
+
+        fireEvent.press(getByRole('button', { name: 'Copy Morning Snack' }));
+        fireEvent.press(getByRole('button', { name: 'Copy day' }));
+
+        expect(onCopyMeal).toHaveBeenCalledWith('MORNING_SNACK');
+        expect(onCopyDay).toHaveBeenCalledTimes(1);
+        expect(queryByLabelText('Copy Breakfast')).toBeNull();
+    });
+
+    it('disables online-only copy without blocking queued edit and delete actions', () => {
+        const { getByRole } = render(
+            <FoodLogTimelineCard
+                entries={[MORNING_SNACK_ENTRY]}
+                copyDisabled
+                onEditEntry={jest.fn()}
+                onDeleteEntry={jest.fn()}
+                onCopyMeal={jest.fn()}
+                onCopyDay={jest.fn()}
+            />
+        );
+
+        expect(getByRole('button', { name: 'Copy Morning Snack' })).toBeDisabled();
+        expect(getByRole('button', { name: 'Copy day' })).toBeDisabled();
+        expect(getByRole('button', { name: 'Edit Oatmeal' })).toBeEnabled();
+        expect(getByRole('button', { name: 'Delete Oatmeal' })).toBeEnabled();
     });
 });

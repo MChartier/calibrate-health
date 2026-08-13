@@ -816,6 +816,26 @@ export type FoodLogEntry = {
     grams_total_snapshot?: number | null;
 };
 
+export type FoodLogCopyMealMapping = {
+    source_meal_period: MealPeriod;
+    target_meal_period: MealPeriod;
+};
+
+export type FoodLogCopyPayload = {
+    operation_id: string;
+    source_date: string;
+    target_date: string;
+    meal_mappings?: FoodLogCopyMealMapping[];
+};
+
+export type FoodLogCopyResponse = {
+    operation_id: string;
+    source_date: string;
+    target_date: string;
+    copied_count: number;
+    food_logs: FoodLogEntry[];
+};
+
 export type FoodLogCreatePayload = {
     date: string;
     meal_period: MealPeriod;

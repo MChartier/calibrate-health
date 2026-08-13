@@ -412,6 +412,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/food/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Atomically copy owned immutable food-log snapshots to another local date, with exact operation replay. */
+        post: operations["copyFoodLogs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/food/{foodLogId}": {
         parameters: {
             query?: never;
@@ -1027,6 +1044,31 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        FoodLogCopyMealMapping: {
+            /** @enum {string} */
+            source_meal_period: "BREAKFAST" | "MORNING_SNACK" | "LUNCH" | "AFTERNOON_SNACK" | "DINNER" | "EVENING_SNACK";
+            /** @enum {string} */
+            target_meal_period: "BREAKFAST" | "MORNING_SNACK" | "LUNCH" | "AFTERNOON_SNACK" | "DINNER" | "EVENING_SNACK";
+        };
+        FoodLogCopyRequest: {
+            operation_id: string;
+            /** Format: date */
+            source_date: string;
+            /** Format: date */
+            target_date: string;
+            meal_mappings?: components["schemas"]["FoodLogCopyMealMapping"][];
+        } & {
+            [key: string]: unknown;
+        };
+        FoodLogCopyResponse: {
+            operation_id: string;
+            /** Format: date */
+            source_date: string;
+            /** Format: date */
+            target_date: string;
+            copied_count: number;
+            food_logs: components["schemas"]["AccountExportFoodLog"][];
         };
         FoodLogDay: {
             /** Format: date */
@@ -3021,6 +3063,58 @@ export interface operations {
                 };
             };
             /** @description Mutation execution failed. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    copyFoodLogs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodLogCopyRequest"];
+            };
+        };
+        responses: {
+            /** @description Copy result or exact replay of its committed result. An empty source is a successful zero-count result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodLogCopyResponse"];
+                };
+            };
+            /** @description Invalid operation ID, local date, timezone, or meal mapping. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description The target day is not open, or the operation is in progress or reused for another payload. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Copy transaction failed without committing target entries. */
             500: {
                 headers: {
                     [name: string]: unknown;

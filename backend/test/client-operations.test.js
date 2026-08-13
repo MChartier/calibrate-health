@@ -302,3 +302,52 @@ test('recordSyncChange stores entity identifiers as strings and JSON-safe payloa
     }
   ]);
 });
+test('food-copy operation IDs prevent duplicate writes across in-flight retries and exact replays', async () => {
+  const prismaStub = createPrismaStub();
+  const { ClientOperationConflictError, executeIdempotentMutation } = loadClientOperationsService(prismaStub);
+  let releaseMutation;
+  const mutationStarted = new Promise((resolve) => {
+    releaseMutation = resolve;
+  });
+  let mutationCalls = 0;
+  const requestPayload = {
+    operation_id: 'food-copy-concurrent-001',
+    source_date: '2026-08-08',
+    target_date: '2026-08-09'
+  };
+  const options = {
+    userId: 7,
+    operationId: requestPayload.operation_id,
+    operationKind: 'food_log.copy',
+    requestPayload,
+    mutate: async () => {
+      mutationCalls += 1;
+      await mutationStarted;
+      return {
+        status: 200,
+        body: { ...requestPayload, copied_count: 2, food_logs: [{ id: 51 }, { id: 52 }] }
+      };
+    }
+  };
+
+  const first = executeIdempotentMutation(options);
+  await new Promise((resolve) => setImmediate(resolve));
+  await assert.rejects(
+    () => executeIdempotentMutation(options),
+    (error) => error instanceof ClientOperationConflictError && error.code === 'OPERATION_IN_PROGRESS'
+  );
+
+  releaseMutation();
+  const committed = await first;
+  assert.deepEqual(await executeIdempotentMutation(options), committed);
+  assert.equal(mutationCalls, 1);
+
+  await assert.rejects(
+    () => executeIdempotentMutation({
+      ...options,
+      requestPayload: { ...requestPayload, target_date: '2026-08-10' }
+    }),
+    (error) => error instanceof ClientOperationConflictError && error.code === 'OPERATION_ID_REUSED'
+  );
+  assert.equal(mutationCalls, 1);
+});

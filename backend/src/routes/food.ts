@@ -23,6 +23,11 @@ import {
     RECENT_FOOD_MAX_LIMIT
 } from '../services/recentFoods';
 import { getFoodDayWriteBlock } from '../services/foodTracking';
+import {
+    copyFoodLogs,
+    foodCopyOperationPayload,
+    parseFoodCopyRequest
+} from '../services/foodCopy';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
@@ -359,6 +364,46 @@ router.post('/', async (req, res) => {
             });
         }
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/copy', async (req, res) => {
+    const user = getAuthenticatedUser(req);
+    const parsedCopy = parseFoodCopyRequest({
+        body: req.body,
+        userTimeZone: user.timezone
+    });
+    if (!parsedCopy.ok) {
+        return res.status(parsedCopy.statusCode).json({
+            message: parsedCopy.message,
+            code: 'INVALID_FOOD_COPY',
+            retryable: false
+        });
+    }
+
+    try {
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id,
+            operationId: parsedCopy.request.operationId,
+            operationKind: 'food_log.copy',
+            requestPayload: foodCopyOperationPayload(parsedCopy.request),
+            mutate: (tx, claimedOperationId) => copyFoodLogs({
+                tx,
+                userId: user.id,
+                request: parsedCopy.request,
+                operationId: claimedOperationId ?? parsedCopy.request.operationId
+            })
+        });
+        return res.status(result.status).json(result.body);
+    } catch (err) {
+        if (err instanceof ClientOperationConflictError) {
+            return res.status(409).json({
+                message: err.message,
+                code: err.code,
+                retryable: err.code === 'OPERATION_IN_PROGRESS'
+            });
+        }
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 
