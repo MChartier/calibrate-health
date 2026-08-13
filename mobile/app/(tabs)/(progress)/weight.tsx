@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { DateNavigation } from '../../src/components/DateNavigation';
-import { TabScreen } from '../../src/components/TabScreen';
-import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
-import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
+import { DateNavigation } from '../../../src/components/DateNavigation';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { WeightEntrySheet } from '../../../src/components/WeightEntrySheet';
+import { useLogDateNavigation } from '../../../src/hooks/useLogDateNavigation';
 
 export default function WeightScreen() {
     const { date } = useLocalSearchParams<{ date?: string }>();
@@ -12,7 +12,7 @@ export default function WeightScreen() {
 
     function closeSheet() {
         setIsSheetOpen(false);
-        router.replace('/(tabs)/progress');
+        router.replace('/progress');
     }
 
     return (

@@ -9,5 +9,5 @@ export default function IndexRoute() {
         return <LoadingState label="Preparing calibrate..." />;
     }
 
-    return <Redirect href={user ? '/(tabs)/today' : '/(auth)/login'} />;
+    return <Redirect href={user ? '/today' : '/(auth)/login'} />;
 }

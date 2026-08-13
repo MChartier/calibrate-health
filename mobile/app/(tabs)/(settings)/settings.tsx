@@ -4,56 +4,56 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS, type ActivityLevel, type HeightUnit, type Sex, type WeightUnit } from '@calibrate/shared';
-import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
-import { AppText } from '../../src/components/AppText';
-import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
-import { HealthConnectCard } from '../../src/components/HealthConnectCard';
-import { WearPairingCard } from '../../src/components/WearPairingCard';
-import { BottomSheetModal } from '../../src/components/BottomSheetModal';
-import { confirmDiscardChanges } from '../../src/components/confirmDiscardChanges';
-import { TabScreen } from '../../src/components/TabScreen';
-import { SectionHeader } from '../../src/components/SectionHeader';
-import { SegmentedControl } from '../../src/components/SegmentedControl';
-import { TextField } from '../../src/components/TextField';
-import { SkeletonBlock } from '../../src/components/SkeletonBlock';
-import { useAuth } from '../../src/auth/AuthContext';
-import { invalidateProfilePlanningQueries } from '../../src/caloriePlanning/queryInvalidation';
+import { AppButton } from '../../../src/components/AppButton';
+import { AppCard } from '../../../src/components/AppCard';
+import { AppText } from '../../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
+import { HealthConnectCard } from '../../../src/components/HealthConnectCard';
+import { WearPairingCard } from '../../../src/components/WearPairingCard';
+import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
+import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { SectionHeader } from '../../../src/components/SectionHeader';
+import { SegmentedControl } from '../../../src/components/SegmentedControl';
+import { TextField } from '../../../src/components/TextField';
+import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { invalidateProfilePlanningQueries } from '../../../src/caloriePlanning/queryInvalidation';
 import {
     canSubmitAccountDeletion,
     deleteAccountAndClearLocalData,
     shareAccountExport
-} from '../../src/account/accountData';
-import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
-import { useOfflineOutbox } from '../../src/offline/provider';
-import { hasPendingWeightMutation } from '../../src/offline/pendingWeight';
-import { useNativePushRegistration } from '../../src/hooks/useNativePushRegistration';
-import { getPushStatusPresentation } from '../../src/notifications/workflow';
-import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/utils/bodyMeasurements';
-import { formatGoalSummary } from '../../src/utils/goals';
-import { HEIGHT_UNIT_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../src/utils/profileOptions';
-import { radius, spacing, useAppTheme } from '../../src/theme';
-import { useHealthConnect } from '../../src/healthConnect/provider';
-import { clearWearAccountData } from '../../src/wear/accountCleanup';
+} from '../../../src/account/accountData';
+import { OUTBOX_MUTATION_STATES } from '../../../src/offline/queuedMutation';
+import { useOfflineOutbox } from '../../../src/offline/provider';
+import { hasPendingWeightMutation } from '../../../src/offline/pendingWeight';
+import { useNativePushRegistration } from '../../../src/hooks/useNativePushRegistration';
+import { getPushStatusPresentation } from '../../../src/notifications/workflow';
+import { millimetersToCentimeters, millimetersToFeetInches } from '../../../src/utils/bodyMeasurements';
+import { formatGoalSummary } from '../../../src/utils/goals';
+import { HEIGHT_UNIT_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../../src/utils/profileOptions';
+import { radius, spacing, useAppTheme } from '../../../src/theme';
+import { useHealthConnect } from '../../../src/healthConnect/provider';
+import { clearWearAccountData } from '../../../src/wear/accountCleanup';
 import {
     DeleteAccountSheet,
     ProfileEditorSheet
-} from '../../src/settings/AccountSettingsSheets';
-import { SettingsHome, type SettingsSheetId } from '../../src/settings/SettingsHome';
+} from '../../../src/settings/AccountSettingsSheets';
+import { SettingsHome, type SettingsSheetId } from '../../../src/settings/SettingsHome';
 import {
     PreferenceSwitch,
     SettingsDetailSheet,
     SummaryRow
-} from '../../src/settings/SettingsPrimitives';
+} from '../../../src/settings/SettingsPrimitives';
 import {
     ASYNC_RESOURCE_STATES,
     isNeverEmpty,
     isNullResource,
     type AsyncResourceState
-} from '../../src/asyncState/resolveAsyncState';
-import { getSafeActionErrorMessage } from '../../src/errors/presentation';
-import { getCaloriePlanPresentation } from '../../src/caloriePlanning/presentation';
-import { getHeightPolicyError, isHeightWithinPolicy } from '../../src/caloriePlanning/heightInput';
+} from '../../../src/asyncState/resolveAsyncState';
+import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
+import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
+import { getHeightPolicyError, isHeightWithinPolicy } from '../../../src/caloriePlanning/heightInput';
 
 const MIN_PASSWORD_LENGTH = 8;
 function getAvatarLabel(email?: string | null): string {
@@ -472,11 +472,11 @@ export default function SettingsScreen() {
             return;
         }
         if (planPresentation.actionKind === 'weight') {
-            router.push('/(tabs)/weight');
+            router.push('/weight');
             return;
         }
         router.push({
-            pathname: '/(tabs)/progress',
+            pathname: '/progress',
             params: { openPlanReview: 'true' }
         });
     }
@@ -538,6 +538,8 @@ export default function SettingsScreen() {
                 serverUrl={serverUrl}
                 onEditProfile={() => setIsProfileEditorOpen(true)}
                 onOpenSheet={setActiveSheet}
+                onOpenActivity={() => router.push('/activity')}
+                onOpenSavedFoods={() => router.push('/my-foods')}
                 onOpenAbout={() => router.push('/about')}
                 onLogout={() => void logout()}
             />

@@ -75,6 +75,7 @@ export type UxStateController = {
 
 export type UxHarness = {
   install(state: UxFixtureState, options?: AuthenticatedApiOptions): Promise<UxStateController>;
+  installOnPage(page: Page): Promise<UxStateController>;
 };
 
 const AUTHENTICATED_USER = {
@@ -593,6 +594,37 @@ async function installState(
   };
 }
 
+function attachFixtureDiagnostics(page: Page, diagnostics: FixtureDiagnostics): void {
+  if (diagnosticsByPage.has(page)) return;
+  diagnosticsByPage.set(page, diagnostics);
+  page.on('pageerror', (error) => diagnostics.browserErrors.push(`pageerror: ${error.message}`));
+  page.on('console', (message) => {
+    if (message.type() !== 'error') return;
+    const resourceStatus = Number(RESOURCE_ERROR_STATUS_PATTERN.exec(message.text())?.[1]);
+    if (Number.isInteger(resourceStatus)) {
+      diagnostics.resourceErrors.set(resourceStatus, (diagnostics.resourceErrors.get(resourceStatus) ?? 0) + 1);
+      return;
+    }
+    diagnostics.browserErrors.push(`console.error: ${message.text()}`);
+  });
+  page.on('requestfailed', (request) => {
+    const pathname = new URL(request.url()).pathname;
+    diagnostics.lastFailedRequest = `${request.method()} ${pathname} (${request.failure()?.errorText ?? 'failed'})`;
+  });
+  page.on('response', (response) => {
+    if (response.status() < 400) return;
+    const request = response.request();
+    const pathname = new URL(request.url()).pathname;
+    diagnostics.lastFailedRequest = `${request.method()} ${pathname} (${response.status()})`;
+    const key = apiFailureKey({ method: request.method(), pathname, status: response.status() });
+    if (diagnostics.expectedApiFailures.has(key)) {
+      diagnostics.expectedResourceErrors.set(
+        response.status(),
+        (diagnostics.expectedResourceErrors.get(response.status()) ?? 0) + 1,
+      );
+    }
+  });
+}
 export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
   diagnostics: [async ({ page }, use, testInfo) => {
     const diagnostics: FixtureDiagnostics = {
@@ -603,35 +635,9 @@ export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
       expectedResourceErrors: new Map(),
       resourceErrors: new Map(),
     };
-    diagnosticsByPage.set(page, diagnostics);
+    attachFixtureDiagnostics(page, diagnostics);
     await freezeBrowserInputs(page);
-    page.on('pageerror', (error) => diagnostics.browserErrors.push(`pageerror: ${error.message}`));
-    page.on('console', (message) => {
-      if (message.type() !== 'error') return;
-      const resourceStatus = Number(RESOURCE_ERROR_STATUS_PATTERN.exec(message.text())?.[1]);
-      if (Number.isInteger(resourceStatus)) {
-        diagnostics.resourceErrors.set(resourceStatus, (diagnostics.resourceErrors.get(resourceStatus) ?? 0) + 1);
-        return;
-      }
-      diagnostics.browserErrors.push(`console.error: ${message.text()}`);
-    });
-    page.on('requestfailed', (request) => {
-      const pathname = new URL(request.url()).pathname;
-      diagnostics.lastFailedRequest = `${request.method()} ${pathname} (${request.failure()?.errorText ?? 'failed'})`;
-    });
-    page.on('response', (response) => {
-      if (response.status() < 400) return;
-      const request = response.request();
-      const pathname = new URL(request.url()).pathname;
-      diagnostics.lastFailedRequest = `${request.method()} ${pathname} (${response.status()})`;
-      const key = apiFailureKey({ method: request.method(), pathname, status: response.status() });
-      if (diagnostics.expectedApiFailures.has(key)) {
-        diagnostics.expectedResourceErrors.set(
-          response.status(),
-          (diagnostics.expectedResourceErrors.get(response.status()) ?? 0) + 1,
-        );
-      }
-    });
+
 
     await use();
 
@@ -658,12 +664,20 @@ export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
     expect.soft(diagnostics.unexpectedApiRequests, `Unhandled API requests; ${failureContext}`).toEqual([]);
   }, { auto: true }],
   ux: async ({ page, context }, use) => {
-    let installed = false;
+    let installed: { state: UxFixtureState; options: AuthenticatedApiOptions } | null = null;
     await use({
       install: async (state, options = {}) => {
         if (installed) throw new Error('Only one deterministic UX state may be installed per test.');
-        installed = true;
+        installed = { state, options };
         return installState(page, context, state, options);
+      },
+      installOnPage: async (additionalPage) => {
+        if (!installed) throw new Error('Install a deterministic UX state before adding a page.');
+        const diagnostics = diagnosticsByPage.get(page);
+        if (!diagnostics) throw new Error('Primary page diagnostics must be installed before adding a page.');
+        attachFixtureDiagnostics(additionalPage, diagnostics);
+        await freezeBrowserInputs(additionalPage);
+        return installState(additionalPage, context, installed.state, installed.options);
       },
     });
   },

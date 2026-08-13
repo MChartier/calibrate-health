@@ -332,7 +332,7 @@ export default function OnboardingScreen() {
     }
 
     if (!setupSaved && profileQuery.data && isProfileSetupComplete(profileQuery.data)) {
-        return <Redirect href="/(tabs)/today" />;
+        return <Redirect href="/today" />;
     }
 
     function handleGoalModeChange(nextMode: GoalMode) {
@@ -444,7 +444,7 @@ export default function OnboardingScreen() {
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics'] }),
                 queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] })
             ]);
-            router.replace('/(tabs)/today');
+            router.replace('/today');
         } catch (error) {
             setValidationError(getSafeActionErrorMessage(error, 'Unable to finish setup.'));
         } finally {

@@ -4,25 +4,25 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
-import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
-import { AppText } from '../../src/components/AppText';
-import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
-import { BottomSheetModal } from '../../src/components/BottomSheetModal';
-import { GoalProgressCard } from '../../src/components/GoalProgressCard';
-import { GoalDailyChangeSelect } from '../../src/components/GoalDailyChangeSelect';
-import { WeightValueInput } from '../../src/components/WeightValueInput';
-import { TabScreen } from '../../src/components/TabScreen';
-import { SegmentedControl } from '../../src/components/SegmentedControl';
-import { SkeletonBlock } from '../../src/components/SkeletonBlock';
-import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
-import { CalibrationInsightCard } from '../../src/components/CalibrationInsightCard';
-import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
-import { isNeverEmpty } from '../../src/asyncState/resolveAsyncState';
-import { getCaloriePlanPresentation } from '../../src/caloriePlanning/presentation';
-import { useAuth } from '../../src/auth/AuthContext';
-import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
-import { formatWeightUnit } from '../../src/utils/format';
+import { AppButton } from '../../../src/components/AppButton';
+import { AppCard } from '../../../src/components/AppCard';
+import { AppText } from '../../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
+import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
+import { GoalProgressCard } from '../../../src/components/GoalProgressCard';
+import { GoalDailyChangeSelect } from '../../../src/components/GoalDailyChangeSelect';
+import { WeightValueInput } from '../../../src/components/WeightValueInput';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { SegmentedControl } from '../../../src/components/SegmentedControl';
+import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
+import { WeightTrendPreviewCard } from '../../../src/components/progress/WeightTrendPreviewCard';
+import { CalibrationInsightCard } from '../../../src/components/CalibrationInsightCard';
+import { calibrationStatusQueryKey } from '../../../src/calibration/queryKeys';
+import { isNeverEmpty } from '../../../src/asyncState/resolveAsyncState';
+import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { gramsToDisplayWeight } from '../../../src/utils/bodyMeasurements';
+import { formatWeightUnit } from '../../../src/utils/format';
 import {
     DAILY_GOAL_CHANGE_OPTIONS,
     getGoalModeFromDailyDeficit,
@@ -30,18 +30,18 @@ import {
     getTargetWeightAfterGoalModeChange,
     GOAL_MODE_OPTIONS,
     type GoalMode
-} from '../../src/utils/goals';
-import { getLatestMetric } from '../../src/utils/metrics';
-import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
-import { WEIGHT_INPUT_INCREMENT } from '../../src/config/inputPrecision';
-import { getSafeActionErrorMessage } from '../../src/errors/presentation';
-import { confirmDiscardChanges } from '../../src/components/confirmDiscardChanges';
-import { usePendingWeightMutation } from '../../src/offline/usePendingWeightMutation';
+} from '../../../src/utils/goals';
+import { getLatestMetric } from '../../../src/utils/metrics';
+import { radius, spacing, useAppTheme, type AppTheme } from '../../../src/theme';
+import { WEIGHT_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
+import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
+import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
+import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
 import {
     getWeightDisplayBounds,
     getWeightPolicyError,
     isWeightWithinPolicy
-} from '../../src/weightEntry/input';
+} from '../../../src/weightEntry/input';
 
 function formatWeightInput(value: number): string {
     return value.toFixed(1).replace(/\.0$/, '');

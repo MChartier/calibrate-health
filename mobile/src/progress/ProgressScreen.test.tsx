@@ -4,7 +4,7 @@ import { StyleSheet } from 'react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { GoalEntry } from '@calibrate/api-client';
-import ProgressScreen from '../../app/(tabs)/progress';
+import ProgressScreen from '../../app/(tabs)/(progress)/progress';
 
 const GOAL: GoalEntry = {
     id: 1,

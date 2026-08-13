@@ -15,9 +15,9 @@ export const NATIVE_PUSH_STATES = {
 export type NativePushState = (typeof NATIVE_PUSH_STATES)[keyof typeof NATIVE_PUSH_STATES];
 
 export type NotificationRoute =
-    | '/(tabs)/today'
-    | '/(tabs)/progress'
-    | { pathname: '/(tabs)/log' | '/(tabs)/weight'; params?: { date: string } };
+    | '/today'
+    | '/progress'
+    | { pathname: '/log' | '/weight'; params?: { date: string } };
 
 export type NotificationAction = {
     label: string;
@@ -139,13 +139,13 @@ const isLocalDate = (value: string | undefined): value is string =>
     typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 const withOptionalDate = (
-    pathname: '/(tabs)/log' | '/(tabs)/weight',
+    pathname: '/log' | '/weight',
     localDate?: string
 ): NotificationRoute => isLocalDate(localDate) ? { pathname, params: { date: localDate } } : { pathname };
 
 /** Resolve only known relative app routes; absolute, protocol-relative, and malformed URLs stay in-app. */
 export function getNotificationAction(actionUrl: unknown, localDate?: string): NotificationAction {
-    const fallback: NotificationAction = { label: 'Open Calibrate', href: '/(tabs)/today' };
+    const fallback: NotificationAction = { label: 'Open Calibrate', href: '/today' };
     if (typeof actionUrl !== 'string') return fallback;
 
     const candidate = actionUrl.trim();
@@ -162,26 +162,26 @@ export function getNotificationAction(actionUrl: unknown, localDate?: string): N
     const pathname = parsed.pathname.replace(/\/$/, '') || '/';
     const quickAdd = parsed.searchParams.get('quickAdd')?.trim().toLowerCase();
     if (pathname === '/log' && quickAdd === 'weight') {
-        return { label: 'Log weight', href: withOptionalDate('/(tabs)/weight', localDate) };
+        return { label: 'Log weight', href: withOptionalDate('/weight', localDate) };
     }
     if (pathname === '/log' && quickAdd === 'food') {
-        return { label: 'Log food', href: withOptionalDate('/(tabs)/log', localDate) };
+        return { label: 'Log food', href: withOptionalDate('/log', localDate) };
     }
 
     switch (pathname) {
         case '/weight':
-            return { label: 'Log weight', href: withOptionalDate('/(tabs)/weight', localDate) };
+            return { label: 'Log weight', href: withOptionalDate('/weight', localDate) };
         case '/food':
         case '/log':
-            return { label: 'Log food', href: withOptionalDate('/(tabs)/log', localDate) };
+            return { label: 'Log food', href: withOptionalDate('/log', localDate) };
         case '/goal':
         case '/goals':
         case '/progress':
-            return { label: 'Open goals', href: '/(tabs)/progress' };
+            return { label: 'Open goals', href: '/progress' };
         case '/':
         case '/dashboard':
         case '/today':
-            return { label: 'Open Calibrate', href: '/(tabs)/today' };
+            return { label: 'Open Calibrate', href: '/today' };
         default:
             return fallback;
     }

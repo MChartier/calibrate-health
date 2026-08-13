@@ -110,10 +110,10 @@ export default function BarcodeScreen() {
                 return;
             }
             if (returnTo === 'food-log') {
-                router.replace({ pathname: '/(tabs)/food-log', params: { date: selectedDate } });
+                router.replace({ pathname: '/food-log', params: { date: selectedDate } });
                 return;
             }
-            router.replace('/(tabs)/today');
+            router.replace('/today');
         }
     });
 
@@ -140,7 +140,7 @@ export default function BarcodeScreen() {
                         title="Food logging is unavailable"
                         description="Resume tracking or backfill this day from Today before scanning a barcode."
                     />
-                    <AppButton title="Back to Today" onPress={() => router.replace('/(tabs)/today')} />
+                    <AppButton title="Back to Today" onPress={() => router.replace('/today')} />
                 </AppCard>
             </Screen>
         );

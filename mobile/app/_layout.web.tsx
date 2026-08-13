@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React from 'react';
-import { Slot } from 'expo-router';
+import { Slot, usePathname } from 'expo-router';
 import Head from 'expo-router/head';
 import { StyleSheet, View } from 'react-native';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
@@ -18,8 +18,49 @@ import { PwaStatusBanner } from '../src/pwa/PwaStatusBanner.web';
 import { useBrowserNotificationStream } from '../src/notifications/useBrowserNotificationStream.web';
 import { useVisualViewportHeight } from '../src/hooks/useVisualViewportHeight';
 import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.web';
+import { getRouteDocumentTitle } from '../src/navigation/routePresentation';
 
 const queryClient = new QueryClient();
+
+const BrowserRoutePresentation: React.FC = () => {
+    const pathname = usePathname();
+    const documentTitle = getRouteDocumentTitle(pathname);
+
+    React.useEffect(() => {
+        document.title = documentTitle;
+        function focusRouteTitle(): boolean {
+            const title = document.getElementById('route-focus-title');
+            if (!title) return false;
+            title.tabIndex = -1;
+            title.focus({ preventScroll: true });
+            return true;
+        }
+
+        if (focusRouteTitle()) return undefined;
+
+        let fallbackTimer: number | null = null;
+        const observer = new MutationObserver(() => {
+            if (!focusRouteTitle()) return;
+            observer.disconnect();
+            if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        fallbackTimer = window.setTimeout(() => {
+            observer.disconnect();
+            document.querySelector<HTMLElement>('[role="main"]')?.focus({ preventScroll: true });
+        }, 5_000);
+        return () => {
+            observer.disconnect();
+            if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+        };
+    }, [documentTitle, pathname]);
+
+    return (
+        <Head>
+            <title>{documentTitle}</title>
+        </Head>
+    );
+};
 
 const WebSkipLink: React.FC = () => {
     const theme = useAppTheme();
@@ -123,9 +164,7 @@ export default function RootLayout() {
                         <NativePushRegistrationProvider>
                             <BrowserRuntime>
                                 <StatusBar style={theme.dark ? 'light' : 'dark'} />
-                                <Head>
-                                    <title>calibrate</title>
-                                </Head>
+                                <BrowserRoutePresentation />
                                 <View
                                     style={[
                                         styles.viewport,

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { TabScreen } from '../../src/components/TabScreen';
-import { WeightTrendCard } from '../../src/components/WeightTrendCard';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { WeightTrendCard } from '../../../src/components/WeightTrendCard';
 
 export default function WeightTrendScreen() {
     return (

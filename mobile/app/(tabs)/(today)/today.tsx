@@ -3,31 +3,31 @@ import { StyleSheet } from 'react-native';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { MealPeriod } from '@calibrate/shared';
-import { AddFoodSheet } from '../../src/components/AddFoodSheet';
-import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
-import { AppText } from '../../src/components/AppText';
-import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
-import { CalorieBalanceCard } from '../../src/components/CalorieBalanceCard';
-import { DateNavigation } from '../../src/components/DateNavigation';
-import { FoodLogSummaryCard } from '../../src/components/FoodLogSummaryCard';
-import { DayStatusCard, useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
-import { LogContentSkeleton } from '../../src/components/LogContentSkeleton';
-import { TabScreen } from '../../src/components/TabScreen';
-import { TodayWeightCard } from '../../src/components/TodayWeightCard';
-import { WeightEntrySheet } from '../../src/components/WeightEntrySheet';
-import { useAuth } from '../../src/auth/AuthContext';
-import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
-import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
-import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
-import { shouldEmphasizePausedStatus, shouldShowCalorieComparison } from '../../src/food/dayPresentation';
-import { getCaloriePlanPresentation } from '../../src/caloriePlanning/presentation';
-import { getActiveTabRoute } from '../../src/navigation/contextualFab';
-import { MEAL_OPTIONS } from '../../src/utils/meals';
-import { getTodayDate } from '../../src/utils/dates';
-import { getMetricDate } from '../../src/utils/metrics';
-import { usePendingWeightMutation } from '../../src/offline/usePendingWeightMutation';
-import { spacing } from '../../src/theme';
+import { AddFoodSheet } from '../../../src/components/AddFoodSheet';
+import { AppButton } from '../../../src/components/AppButton';
+import { AppCard } from '../../../src/components/AppCard';
+import { AppText } from '../../../src/components/AppText';
+import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
+import { CalorieBalanceCard } from '../../../src/components/CalorieBalanceCard';
+import { DateNavigation } from '../../../src/components/DateNavigation';
+import { FoodLogSummaryCard } from '../../../src/components/FoodLogSummaryCard';
+import { DayStatusCard, useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
+import { LogContentSkeleton } from '../../../src/components/LogContentSkeleton';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { TodayWeightCard } from '../../../src/components/TodayWeightCard';
+import { WeightEntrySheet } from '../../../src/components/WeightEntrySheet';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { useSharedLogDateNavigation } from '../../../src/context/LogDateContext';
+import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
+import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPreviousFoodLog';
+import { shouldEmphasizePausedStatus, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
+import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
+import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
+import { MEAL_OPTIONS } from '../../../src/utils/meals';
+import { getTodayDate } from '../../../src/utils/dates';
+import { getMetricDate } from '../../../src/utils/metrics';
+import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
+import { spacing } from '../../../src/theme';
 
 export default function TodayScreen() {
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
@@ -117,11 +117,11 @@ export default function TodayScreen() {
             return;
         }
         if (planPresentation.actionKind === 'profile') {
-            router.push('/(tabs)/settings');
+            router.push('/settings');
             return;
         }
         router.push({
-            pathname: '/(tabs)/progress',
+            pathname: '/progress',
             params: { openPlanReview: 'true' }
         });
     }
@@ -200,7 +200,7 @@ export default function TodayScreen() {
                         <FoodLogSummaryCard
                             entries={entries}
                             trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
-                            onPress={() => router.push({ pathname: '/(tabs)/food-log', params: { date: selectedDate } })}
+                            onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })}
                             onAddFood={dayStatus?.status === 'OPEN' ? () => setAddFoodMeal(null) : undefined}
                             compact
                         />

@@ -32,6 +32,8 @@ type SettingsHomeProps = {
     serverUrl: string;
     onEditProfile: () => void;
     onOpenSheet: (sheet: SettingsSheetId) => void;
+    onOpenActivity: () => void;
+    onOpenSavedFoods: () => void;
     onOpenAbout: () => void;
     onLogout: () => void;
 };
@@ -54,6 +56,8 @@ export function SettingsHome({
     serverUrl,
     onEditProfile,
     onOpenSheet,
+    onOpenActivity,
+    onOpenSavedFoods,
     onOpenAbout,
     onLogout
 }: SettingsHomeProps) {
@@ -118,6 +122,12 @@ export function SettingsHome({
 
             <SettingsSection title="Connections" description="Health data and companion devices.">
                 <SettingsRow
+                    icon="walk-outline"
+                    label="Activity"
+                    supportingText="Steps, active calories, and exercise history"
+                    onPress={onOpenActivity}
+                />
+                <SettingsRow
                     icon="fitness-outline"
                     label="Health Connect"
                     supportingText="Read activity and weight from Android"
@@ -140,6 +150,12 @@ export function SettingsHome({
             </SettingsSection>
 
             <SettingsSection title="Data" description="Import, sync, export, and privacy controls.">
+                <SettingsRow
+                    icon="restaurant-outline"
+                    label="Saved foods"
+                    supportingText="Foods and recipes you can quickly log"
+                    onPress={onOpenSavedFoods}
+                />
                 <SettingsRow
                     icon="cloud-upload-outline"
                     label="Import from Lose It"

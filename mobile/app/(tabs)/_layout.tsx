@@ -33,10 +33,12 @@ import { useOfflineOutbox } from '../../src/offline/provider';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { resolveContextualFab } from '../../src/navigation/contextualFab';
 import {
-    getSecondaryRouteHeader,
-    SECONDARY_ROUTE_HEADERS,
-    type SecondaryRouteHeader
-} from '../../src/navigation/secondaryRoutes';
+    canonicalPathForRoute,
+    getRouteByPath,
+    getRouteFallback,
+    type RouteId
+} from '../../src/navigation/routeRegistry';
+import { getRouteBackLabel, hasBrowserHistorySinceMount } from '../../src/navigation/routePresentation';
 import { getNotificationAction } from '../../src/notifications/workflow';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
 import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../../src/asyncState/resolveAsyncState';
@@ -56,16 +58,21 @@ const DESKTOP_NAV_RAIL_WIDTH = 104;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
 const QUERY_GATE_MAX_WIDTH = 640; // Keeps terminal shell errors readable on wide screens.
 
-function navigateBackFromSecondaryRoute(config: SecondaryRouteHeader) {
-    if (config.fixedDestination) {
-        router.navigate(config.fallbackHref);
-        return;
-    }
-    if (router.canGoBack()) {
+function navigateBackFromRoute(
+    routeId: RouteId,
+    history: { router: boolean; browser: boolean }
+) {
+    if (history.router) {
         router.back();
         return;
     }
-    router.replace(config.fallbackHref);
+    if (history.browser && Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.history.back();
+        return;
+    }
+
+    const fallback = getRouteFallback(routeId);
+    router.replace((fallback?.path ?? canonicalPathForRoute('today')) as Href);
 }
 
 function getNotificationsAccessibilityLabel(unreadCount: number | null): string {
@@ -131,6 +138,15 @@ export default function TabsLayout() {
     const insets = useSafeAreaInsets();
     const { fontScale, width } = useWindowDimensions();
     const pathname = usePathname();
+    const initialBrowserHistoryLength = React.useRef(
+        Platform.OS === 'web' && typeof window !== 'undefined' ? window.history.length : 0
+    );
+    const routerCanGoBack = router.canGoBack();
+    const browserCanGoBack = Platform.OS === 'web'
+        && typeof window !== 'undefined'
+        && hasBrowserHistorySinceMount(initialBrowserHistoryLength.current, window.history.length);
+    const canNavigateBack = routerCanGoBack || browserCanGoBack;
+    const activeRoute = getRouteByPath(pathname);
     const usesNavigationRail = Platform.OS === 'web' && width >= DESKTOP_NAV_BREAKPOINT;
     const logDateNavigation = useLogDateNavigation();
     const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user));
@@ -255,6 +271,7 @@ export default function TabsLayout() {
                         </View>
                     )}
                     <Tabs
+                        backBehavior="history"
                         screenOptions={{
                             tabBarPosition: usesNavigationRail ? 'left' : 'bottom',
                             tabBarVariant: usesNavigationRail ? 'material' : 'uikit',
@@ -275,16 +292,21 @@ export default function TabsLayout() {
                                 },
                             tabBarItemStyle: [styles.tabBarItem, usesNavigationRail && styles.navigationRailItem],
                             tabBarLabelStyle: styles.tabBarLabel,
-                            header: ({ options, route }) => {
-                                const secondaryRoute = getSecondaryRouteHeader(route.name);
+                            header: ({ options }) => {
+                                const routeTitle = activeRoute?.definition.title
+                                    ?? (typeof options.headerTitle === 'string' ? options.headerTitle : 'Calibrate');
+                                const backLabel = getRouteBackLabel(pathname, canNavigateBack);
                                 return (
                                     <TabHeader
                                         topInset={insets.top}
                                         fontScale={fontScale}
-                                        title={typeof options.headerTitle === 'string' ? options.headerTitle : ''}
-                                        backAction={secondaryRoute ? {
-                                            label: secondaryRoute.backLabel,
-                                            onPress: () => navigateBackFromSecondaryRoute(secondaryRoute)
+                                        title={routeTitle}
+                                        backAction={backLabel && activeRoute ? {
+                                            label: backLabel,
+                                            onPress: () => navigateBackFromRoute(activeRoute.routeId, {
+                                                router: routerCanGoBack,
+                                                browser: browserCanGoBack
+                                            })
                                         } : undefined}
                                         unreadCount={unreadCount}
                                         offlineChangeCount={queuedMutations.length}
@@ -300,78 +322,29 @@ export default function TabsLayout() {
                         }}
                     >
                         <Tabs.Screen
-                            name="today"
+                            name="(today)"
                             options={{
+                                href: canonicalPathForRoute('today') as Href,
                                 title: 'Today',
                                 headerTitle: 'Today',
                                 tabBarIcon: ({ color, size }) => <Ionicons name="today-outline" color={color} size={size} />
                             }}
                         />
                         <Tabs.Screen
-                            name="progress"
+                            name="(progress)"
                             options={{
+                                href: canonicalPathForRoute('progress') as Href,
                                 title: 'Progress',
                                 headerTitle: 'Progress',
                                 tabBarIcon: ({ color, size }) => <Ionicons name="analytics-outline" color={color} size={size} />
                             }}
                         />
                         <Tabs.Screen
-                            name="settings"
+                            name="(settings)"
                             options={{
                                 ...HIDDEN_TAB_OPTIONS,
                                 title: 'Account',
                                 headerTitle: 'Account'
-                            }}
-                        />
-                        <Tabs.Screen name="log" options={{ ...HIDDEN_TAB_OPTIONS, title: 'Add food' }} />
-                        <Tabs.Screen
-                            name="food-log"
-                            options={{
-                                ...HIDDEN_TAB_OPTIONS,
-                                headerTitle: SECONDARY_ROUTE_HEADERS['food-log'].title,
-                                title: SECONDARY_ROUTE_HEADERS['food-log'].title
-                            }}
-                        />
-                        <Tabs.Screen name="weight" options={{ ...HIDDEN_TAB_OPTIONS, title: 'Log weight' }} />
-                        <Tabs.Screen name="goals" options={HIDDEN_TAB_OPTIONS} />
-                        <Tabs.Screen
-                            name="weight-trend"
-                            options={{
-                                ...HIDDEN_TAB_OPTIONS,
-                                headerTitle: SECONDARY_ROUTE_HEADERS['weight-trend'].title,
-                                title: SECONDARY_ROUTE_HEADERS['weight-trend'].title
-                            }}
-                        />
-                        <Tabs.Screen
-                            name="activity"
-                            options={{
-                                ...HIDDEN_TAB_OPTIONS,
-                                headerTitle: SECONDARY_ROUTE_HEADERS.activity.title,
-                                title: SECONDARY_ROUTE_HEADERS.activity.title
-                            }}
-                        />
-                        <Tabs.Screen
-                            name="my-foods"
-                            options={{
-                                ...HIDDEN_TAB_OPTIONS,
-                                headerTitle: SECONDARY_ROUTE_HEADERS['my-foods'].title,
-                                title: SECONDARY_ROUTE_HEADERS['my-foods'].title
-                            }}
-                        />
-                        <Tabs.Screen
-                            name="notifications"
-                            options={{
-                                ...HIDDEN_TAB_OPTIONS,
-                                headerTitle: SECONDARY_ROUTE_HEADERS.notifications.title,
-                                title: SECONDARY_ROUTE_HEADERS.notifications.title
-                            }}
-                        />
-                        <Tabs.Screen
-                            name="about"
-                            options={{
-                                ...HIDDEN_TAB_OPTIONS,
-                                headerTitle: SECONDARY_ROUTE_HEADERS.about.title,
-                                title: SECONDARY_ROUTE_HEADERS.about.title
                             }}
                         />
                     </Tabs>
@@ -385,6 +358,10 @@ export default function TabsLayout() {
                         onClose={() => setIsNotificationDrawerOpen(false)}
                         onOpenNotification={(notification) => openNotification.mutate(notification)}
                         onDismissNotification={(notification) => dismissNotification.mutate(notification)}
+                        onViewAll={() => {
+                            setIsNotificationDrawerOpen(false);
+                            router.push(canonicalPathForRoute('notifications') as Href);
+                        }}
                         onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
                     />
                     <ResumeTrackingPrompt />
@@ -444,7 +421,15 @@ const TabHeader: React.FC<{
                 ) : (
                     <HeaderBrand styles={styles} />
                 )}
-                <AppText accessibilityRole="header" aria-level={1} numberOfLines={2} style={styles.headerTitleText}>{title}</AppText>
+                <AppText
+                    accessibilityRole="header"
+                    aria-level={1}
+                    nativeID="route-focus-title"
+                    numberOfLines={2}
+                    style={styles.headerTitleText}
+                >
+                    {title}
+                </AppText>
             </View>
             <HeaderActions
                 unreadCount={unreadCount}
@@ -466,7 +451,7 @@ const HeaderBrand: React.FC<{ styles: TabStyles }> = ({ styles }) => (
         accessibilityHint="Opens the Today dashboard"
         focusStyle={styles.navigationFocus}
         hoverStyle={styles.navigationHover}
-        onPress={() => router.push('/(tabs)/today')}
+        onPress={() => router.push(canonicalPathForRoute('today') as Href)}
         style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
     >
         <CalibrateLogo size={30} />
@@ -489,7 +474,7 @@ const HeaderActions: React.FC<{
                 accessibilityLabel={`${offlineChangeCount} offline changes ${hasFailedOfflineChanges ? 'need attention' : 'pending'}`}
                 focusStyle={styles.navigationFocus}
                 hoverStyle={styles.navigationHover}
-                onPress={() => router.push('/(tabs)/settings')}
+                onPress={() => router.push(canonicalPathForRoute('settings') as Href)}
                 style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
             >
                 <Ionicons
@@ -520,7 +505,7 @@ const HeaderActions: React.FC<{
             accessibilityHint="Opens profile and app settings"
             focusStyle={styles.navigationFocus}
             hoverStyle={styles.navigationHover}
-            onPress={() => router.push('/(tabs)/settings')}
+            onPress={() => router.push(canonicalPathForRoute('settings') as Href)}
             style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
         >
             {profileImageUrl ? (

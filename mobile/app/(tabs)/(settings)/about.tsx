@@ -1,13 +1,13 @@
 import React from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
-import { AppText } from '../../src/components/AppText';
-import { CalibrateLogo } from '../../src/components/CalibrateLogo';
-import { TabScreen } from '../../src/components/TabScreen';
-import { radius, spacing, useAppTheme } from '../../src/theme';
-import { useAppUpdateController } from '../../src/updates/useAppUpdateController';
+import { AppButton } from '../../../src/components/AppButton';
+import { AppCard } from '../../../src/components/AppCard';
+import { AppText } from '../../../src/components/AppText';
+import { CalibrateLogo } from '../../../src/components/CalibrateLogo';
+import { TabScreen } from '../../../src/components/TabScreen';
+import { radius, spacing, useAppTheme } from '../../../src/theme';
+import { useAppUpdateController } from '../../../src/updates/useAppUpdateController';
 
 function formatUpdateDate(value: Date | null): string {
     if (!value || Number.isNaN(value.getTime())) return 'Unknown';

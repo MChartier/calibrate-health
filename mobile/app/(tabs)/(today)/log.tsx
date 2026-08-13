@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { MealPeriod } from '@calibrate/shared';
-import { LoadingState } from '../../src/components/LoadingState';
-import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
-import { MEAL_OPTIONS } from '../../src/utils/meals';
+import { LoadingState } from '../../../src/components/LoadingState';
+import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
+import { MEAL_OPTIONS } from '../../../src/utils/meals';
 
 export default function LogScreen() {
     const { date, meal } = useLocalSearchParams<{ date?: string; meal?: MealPeriod }>();
@@ -18,7 +18,7 @@ export default function LogScreen() {
             meal: requestedMeal
         });
         router.replace({
-            pathname: '/(tabs)/today',
+            pathname: '/today',
             params: {
                 openAddFood: 'true',
                 date: typeof date === 'string' ? date : undefined,

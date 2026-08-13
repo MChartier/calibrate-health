@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react-native';
-import WeightTrendScreen from '../../app/(tabs)/weight-trend';
+import WeightTrendScreen from '../../app/(tabs)/(progress)/weight-trend';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('react-native-safe-area-context', () => ({

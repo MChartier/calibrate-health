@@ -3,6 +3,7 @@ import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View, useWi
 import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppCard } from './AppCard';
+import { AppButton } from './AppButton';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
 import { NotificationCard } from './NotificationCard';
@@ -33,6 +34,7 @@ type NotificationsDrawerProps = {
     onClose: () => void;
     onOpenNotification: (notification: InAppNotification) => void;
     onDismissNotification: (notification: InAppNotification) => void;
+    onViewAll: () => void;
     onRetry?: () => void;
 };
 
@@ -47,6 +49,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     onClose,
     onOpenNotification,
     onDismissNotification,
+    onViewAll,
     onRetry
 }) => {
     const theme = useAppTheme();
@@ -198,6 +201,12 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                                 </AppText>
                             </AppCard>
                         )}
+
+                        <AppButton
+                            title="View all notifications"
+                            variant="secondary"
+                            onPress={onViewAll}
+                        />
                     </ScrollView>
                 </Animated.View>
             </View>
