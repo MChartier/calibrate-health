@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Linking } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import { hasFullAccountAccess } from '../auth/accountAccess';
 import {
     disconnectHealthConnect,
     getHealthConnectConnection,
@@ -61,7 +62,8 @@ function errorMessage(error: unknown, fallback: string): string {
 
 /** Own per-account Health Connect consent choices without coupling them to server sync. */
 export function HealthConnectProvider({ children }: { children: React.ReactNode }) {
-    const { api, serverUrl, user } = useAuth();
+    const { api, serverUrl, user: authenticatedUser } = useAuth();
+    const user = hasFullAccountAccess(authenticatedUser) ? authenticatedUser : null;
     const [preferences, setPreferences] = useState(DEFAULT_HEALTH_CONNECT_PREFERENCES);
     const [connection, setConnection] = useState<HealthConnectConnection | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -359,11 +361,11 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
     }, [persist, serverUrl, user]);
 
     const clearAccountData = useCallback(async () => {
-        if (!user) return;
+        if (!authenticatedUser) return;
         syncGenerationRef.current += 1;
         await Promise.allSettled(syncPromiseRef.current ? [syncPromiseRef.current.promise] : []);
         try {
-            await clearHealthConnectAccountData(serverUrl, user.id);
+            await clearHealthConnectAccountData(serverUrl, authenticatedUser.id);
         } finally {
             preferencesRef.current = DEFAULT_HEALTH_CONNECT_PREFERENCES;
             setPreferences(DEFAULT_HEALTH_CONNECT_PREFERENCES);
@@ -372,7 +374,7 @@ export function HealthConnectProvider({ children }: { children: React.ReactNode 
             setIsSyncing(false);
             setLastSuccessfulSyncAt(null);
         }
-    }, [serverUrl, user]);
+    }, [authenticatedUser, serverUrl]);
 
     const value = useMemo<HealthConnectContextValue>(() => ({
         ...preferences,

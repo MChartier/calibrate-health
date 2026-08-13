@@ -69,6 +69,120 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["registerBrowser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-verification/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Always returns a generic response to avoid disclosing whether an account exists. */
+        post: operations["resendEmailVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-verification/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmEmailVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Always returns a generic response to avoid disclosing whether an account exists. */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getLegalStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acceptLegalDocuments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/mobile/login": {
         parameters: {
             query?: never;
@@ -763,10 +877,11 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 6;
+            version: 7;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
+            legal_acceptances: components["schemas"]["AccountExportLegalAcceptance"][];
             goals: components["schemas"]["AccountExportGoal"][];
             body_metrics: components["schemas"]["AccountExportBodyMetric"][];
             food_logs: components["schemas"]["AccountExportFoodLog"][];
@@ -783,6 +898,8 @@ export interface components {
             id: number;
             /** Format: email */
             email: string;
+            /** Format: date-time */
+            email_verified_at: string | null;
             /** Format: date-time */
             created_at: string;
             /** @enum {string} */
@@ -805,6 +922,12 @@ export interface components {
                 mime_type: string;
                 data_base64: string;
             } | null;
+        };
+        AccountExportLegalAcceptance: {
+            terms_version: string;
+            privacy_version: string;
+            /** Format: date-time */
+            accepted_at: string;
         };
         AccountExportGoal: {
             id: number;
@@ -1352,6 +1475,61 @@ export interface components {
                 wear_os_ready: boolean;
             };
         };
+        AccountAccess: {
+            /** @enum {string} */
+            state: "full" | "email_verification_required" | "legal_acceptance_required";
+            email_verified: boolean;
+            legal_current: boolean;
+        };
+        LegalDocumentVersions: {
+            terms_version: string;
+            privacy_version: string;
+        };
+        LegalAcceptanceStatus: {
+            account_access: components["schemas"]["AccountAccess"];
+            required: components["schemas"]["LegalDocumentVersions"];
+            accepted: {
+                terms_version: string | null;
+                privacy_version: string | null;
+                /** Format: date-time */
+                accepted_at: string | null;
+            };
+        };
+        LegalAcceptanceRequest: {
+            terms_version: string;
+            privacy_version: string;
+            /** @constant */
+            accept_terms: true;
+            /** @constant */
+            accept_privacy: true;
+        };
+        RegistrationLegalAcceptance: {
+            terms_version: string;
+            privacy_version: string;
+            /** @constant */
+            accept_terms: true;
+            /** @constant */
+            accept_privacy: true;
+        };
+        BrowserAuthRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        BrowserRegistrationRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+            terms_version?: string;
+            privacy_version?: string;
+            /** @constant */
+            accept_terms?: true;
+            /** @constant */
+            accept_privacy?: true;
+        };
+        BrowserAuthResponse: {
+            user: components["schemas"]["UserClientPayload"];
+        };
         MobileAuthRequest: {
             /** Format: email */
             email: string;
@@ -1360,6 +1538,43 @@ export interface components {
             /** @enum {string} */
             device_platform?: "android_phone";
             device_name?: string;
+        };
+        MobileRegistrationRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+            device_id: string;
+            /** @enum {string} */
+            device_platform?: "android_phone";
+            device_name?: string;
+            terms_version?: string;
+            privacy_version?: string;
+            /** @constant */
+            accept_terms?: true;
+            /** @constant */
+            accept_privacy?: true;
+        };
+        EmailVerificationResendRequest: {
+            /** Format: email */
+            email?: string;
+        };
+        TokenConfirmRequest: {
+            token: string;
+        };
+        PasswordResetRequest: {
+            /** Format: email */
+            email: string;
+        };
+        PasswordResetConfirmRequest: {
+            token: string;
+            new_password: string;
+        };
+        MessageResponse: {
+            message: string;
+        };
+        EmailVerificationConfirmResponse: {
+            message: string;
+            account_access: components["schemas"]["AccountAccess"];
         };
         MobileAuthResponse: {
             user: components["schemas"]["UserClientPayload"];
@@ -1682,6 +1897,7 @@ export interface components {
             /** @enum {string|null} */
             activity_level?: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE" | null;
             profile_image_url?: string | null;
+            account_access?: components["schemas"]["AccountAccess"];
         };
     };
     responses: {
@@ -1885,6 +2101,235 @@ export interface operations {
             };
         };
     };
+    registerBrowser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrowserRegistrationRequest"];
+            };
+        };
+        responses: {
+            /** @description Registered browser session with email verification required. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrowserAuthResponse"];
+                };
+            };
+            /** @description Invalid credentials or missing/current legal acceptance. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Hosted registration is unavailable because email delivery is not configured. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    resendEmailVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailVerificationResendRequest"];
+            };
+        };
+        responses: {
+            /** @description A verification message will be sent when an eligible account exists. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Verification resend rate limit reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    confirmEmailVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description The single-use verification token was accepted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailVerificationConfirmResponse"];
+                };
+            };
+            /** @description Token is invalid, expired, already used, or bound to another purpose. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Reset instructions will be sent when an eligible account exists. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Password reset request rate limit reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    confirmPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Password changed and all browser, Android, and Wear sessions revoked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Token or replacement password is invalid. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getLegalStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Required and accepted legal versions plus the effective account-access state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAcceptanceStatus"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    acceptLegalDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalAcceptanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Current legal documents were accepted and account access was recalculated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalAcceptanceStatus"];
+                };
+            };
+            /** @description Submitted versions do not match the currently required documents. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
     loginMobile: {
         parameters: {
             query?: never;
@@ -1919,7 +2364,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MobileAuthRequest"];
+                "application/json": components["schemas"]["MobileRegistrationRequest"];
             };
         };
         responses: {
@@ -1934,6 +2379,15 @@ export interface operations {
             };
             /** @description Invalid registration or Android phone device metadata. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Hosted registration is unavailable because email delivery is not configured. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

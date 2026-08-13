@@ -8,7 +8,7 @@ import { hasPendingWeightMutation } from './pendingWeight';
 
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'generated-operation-id') }));
 
-let mockAuthState = {
+let mockAuthState: { serverUrl: string; user: { id: number; account_access?: { state: string } } | null } = {
     serverUrl: 'https://health.example',
     user: { id: 7 }
 };
@@ -50,6 +50,29 @@ describe('browser offline outbox provider', () => {
 
     afterEach(() => database.close());
 
+    it('does not open or replay the browser outbox while account access is restricted', async () => {
+        mockAuthState = {
+            serverUrl: 'https://health.example',
+            user: { id: 7, account_access: { state: 'email_verification_required' } }
+        };
+        const executeMutation = jest.fn(async () => undefined);
+        const connectivity = createConnectivity(true);
+        const wrapper = ({ children }: { children: React.ReactNode }) => (
+            <OfflineOutboxProvider
+                executeMutation={executeMutation}
+                openDatabase={openDatabase}
+                connectivity={connectivity.value}
+            >
+                {children}
+            </OfflineOutboxProvider>
+        );
+        const { result } = renderHook(() => useOfflineOutbox(), { wrapper });
+
+        await waitFor(() => expect(result.current.isReady).toBe(false));
+        expect(openDatabase).not.toHaveBeenCalled();
+        expect(executeMutation).not.toHaveBeenCalled();
+    });
+
     it('isolates account switches immediately and restores each account queue deterministically', async () => {
         const connectivity = createConnectivity(false);
         const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -90,7 +113,7 @@ describe('browser offline outbox provider', () => {
     });
 
     it('replays pending writes on startup when the browser is online', async () => {
-        const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user.id);
+        const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user!.id);
         await new IndexedDbOutbox(database, namespace).enqueue({
             id: 'startup-operation',
             operation: 'food-day.update',
@@ -123,7 +146,7 @@ describe('browser offline outbox provider', () => {
     });
 
     it('retries a durable startup failure when the browser comes online', async () => {
-        const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user.id);
+        const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user!.id);
         await new IndexedDbOutbox(database, namespace).enqueue({
             id: 'retry-operation',
             operation: 'food.delete',

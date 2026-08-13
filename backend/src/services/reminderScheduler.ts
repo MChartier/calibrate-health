@@ -3,6 +3,7 @@ import { InAppNotificationType } from '@prisma/client';
 import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { MS_PER_MINUTE } from '../utils/time';
+import { CURRENT_ACCOUNT_ACCESS_WHERE } from '../utils/accountAccessSerialization';
 import {
     buildReminderInAppDedupeKey,
     getReminderMissingStatusForDate,
@@ -81,6 +82,7 @@ const getLocalHour = (timeZone: string, now: Date): number => {
 const resolveInactiveInAppReminders = async (now: Date): Promise<void> => {
     const usersWithActiveInAppReminders = await prisma.user.findMany({
         where: {
+            ...CURRENT_ACCOUNT_ACCESS_WHERE,
             in_app_notifications: {
                 some: {
                     dismissed_at: null,
@@ -111,6 +113,7 @@ const createAndSendScheduledReminders = async (reminderHour: number, now: Date):
 
     const users = await prisma.user.findMany({
         where: {
+            ...CURRENT_ACCOUNT_ACCESS_WHERE,
             OR: [{ reminder_log_weight_enabled: true }, { reminder_log_food_enabled: true }]
         },
         select: {

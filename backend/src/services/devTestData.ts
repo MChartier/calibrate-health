@@ -17,6 +17,7 @@ import {
   getSeedWeightGramsForDayIndex
 } from './devTestDataUtils';
 import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '../../../shared/legalVersions';
 
 /**
  * Deterministic dev seed data helpers (test user, goals, metrics, food logs).
@@ -98,12 +99,13 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
     ? { profile_image: placeholderImage.bytes, profile_image_mime_type: placeholderImage.mimeType }
     : {};
 
-  return prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: { email: TEST_USER_EMAIL },
     create: {
       email: TEST_USER_EMAIL,
       password_hash: TEST_USER_PASSWORD_HASH,
       created_at: createdAt,
+      email_verified_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
       language: SUPPORTED_LANGUAGES.EN,
       weight_unit: WeightUnit.KG,
@@ -119,6 +121,7 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
       // if the account already existed with a different password.
       password_hash: TEST_USER_PASSWORD_HASH,
       created_at: createdAt,
+      email_verified_at: createdAt,
       timezone: TEST_USER_TIMEZONE,
       language: SUPPORTED_LANGUAGES.EN,
       weight_unit: WeightUnit.KG,
@@ -131,6 +134,24 @@ const ensureTestUser = async (createdAt: Date): Promise<{ id: number }> => {
     },
     select: { id: true },
   });
+
+  await prisma.legalAcceptance.upsert({
+    where: {
+      user_id_terms_version_privacy_version: {
+        user_id: user.id,
+        terms_version: CURRENT_TERMS_VERSION,
+        privacy_version: CURRENT_PRIVACY_VERSION
+      }
+    },
+    create: {
+      user_id: user.id,
+      terms_version: CURRENT_TERMS_VERSION,
+      privacy_version: CURRENT_PRIVACY_VERSION,
+      accepted_at: createdAt
+    },
+    update: { accepted_at: createdAt }
+  });
+  return user;
 };
 
 /** Create the test user's deterministic calorie-deficit goal. */

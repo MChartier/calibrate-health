@@ -52,6 +52,18 @@ export default function WebHomeRoute() {
                         Privacy policy
                     </Link>
                     <Link
+                        href="/terms"
+                        style={StyleSheet.flatten([styles.textLink, { color: colors.primary }])}
+                    >
+                        Terms of service
+                    </Link>
+                    <Link
+                        href="/support"
+                        style={StyleSheet.flatten([styles.textLink, { color: colors.primary }])}
+                    >
+                        Support
+                    </Link>
+                    <Link
                         href="/account-deletion"
                         style={StyleSheet.flatten([styles.textLink, { color: colors.primary }])}
                     >

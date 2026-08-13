@@ -1,6 +1,22 @@
 import { type PropsWithChildren } from 'react';
 import { ScrollViewStyleReset } from 'expo-router/html';
 
+const ONE_TIME_TOKEN_BOOTSTRAP = `
+(function () {
+  try {
+    var pathname = window.location.pathname;
+    if (pathname !== '/reset-password' && pathname !== '/verify-email') return;
+    var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    var queryParams = new URLSearchParams(window.location.search);
+    var token = hashParams.get('token') || queryParams.get('token');
+    if (!token) return;
+    window.__calibrateOneTimeToken = { pathname: pathname, token: token };
+    queryParams.delete('token');
+    var query = queryParams.toString();
+    window.history.replaceState(window.history.state, '', pathname + (query ? '?' + query : ''));
+  } catch (_) {}
+})();`;
+
 /** Web-only document metadata shared by every statically rendered Expo route. */
 export default function RootHtml({ children }: PropsWithChildren) {
     return (
@@ -20,9 +36,12 @@ export default function RootHtml({ children }: PropsWithChildren) {
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <link rel="icon" href="/calibrate-icon.svg" type="image/svg+xml" />
+                <script dangerouslySetInnerHTML={{ __html: ONE_TIME_TOKEN_BOOTSTRAP }} />
                 <ScrollViewStyleReset />
             </head>
-            <body>{children}</body>
+            <body>
+                {children}
+            </body>
         </html>
     );
 }

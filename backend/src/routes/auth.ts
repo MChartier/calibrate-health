@@ -25,6 +25,21 @@ import {
 import { diagnosticsRegistry, logSafeOperationalError } from '../observability';
 import { clearSessionCookie } from '../utils/sessionCookie';
 import { getAuthenticatedUser } from '../middleware/authenticatedUser';
+import {
+    CURRENT_PRIVACY_VERSION,
+    CURRENT_TERMS_VERSION
+} from '../../../shared/legalVersions';
+import {
+    EMAIL_DELIVERY_MODES,
+    isEmailVerificationRequired,
+    resolveEmailDeliveryConfig
+} from '../config/emailDelivery';
+import {
+    confirmEmailVerification,
+    resetPasswordWithToken,
+    sendEmailVerification,
+    sendPasswordReset
+} from '../services/accountTokens';
 
 /**
  * Session-based auth endpoints (register/login/logout/me).
@@ -35,9 +50,49 @@ const router = express.Router();
 
 const INVALID_LOGIN_MESSAGE = 'Invalid email or password';
 const REGISTRATION_FAILED_MESSAGE = 'Unable to create account';
+const GENERIC_EMAIL_RESPONSE = 'If the account is eligible, email instructions will be sent.';
+
+const invalidLegalResponse = (code: 'INVALID_LEGAL_ACCEPTANCE' | 'INVALID_LEGAL_VERSION') => ({
+    message: code === 'INVALID_LEGAL_VERSION'
+        ? 'Accept the current Terms and Privacy Policy versions.'
+        : 'Terms and Privacy acceptance is required.',
+    code,
+    retryable: false
+});
+
+const validateRegistrationLegalAcceptance = (body: unknown):
+    | { ok: true }
+    | { ok: false; code: 'INVALID_LEGAL_ACCEPTANCE' | 'INVALID_LEGAL_VERSION' } => {
+    const record = body && typeof body === 'object' ? body as Record<string, unknown> : {};
+    if (record.accept_terms !== true || record.accept_privacy !== true) {
+        return { ok: false, code: 'INVALID_LEGAL_ACCEPTANCE' };
+    }
+    if (
+        record.terms_version !== CURRENT_TERMS_VERSION ||
+        record.privacy_version !== CURRENT_PRIVACY_VERSION
+    ) {
+        return { ok: false, code: 'INVALID_LEGAL_VERSION' };
+    }
+    return { ok: true };
+};
 
 const isUniqueConstraintError = (err: unknown): boolean =>
     Boolean(err && typeof err === 'object' && (err as { code?: unknown }).code === 'P2002');
+
+const destroyRequestSession = async (req: express.Request): Promise<void> => {
+    if (!req.session) return;
+    await new Promise<void>((resolve, reject) => {
+        req.session.destroy((error) => error ? reject(error) : resolve());
+    });
+};
+
+const scheduleAccountEmail = (task: () => Promise<unknown>): void => {
+    setImmediate(() => {
+        void task().catch(() => {
+            // Public request responses remain enumeration-safe; delivery state is intentionally hidden.
+        });
+    });
+};
 
 router.post('/register', async (req, res) => {
     const email = normalizeEmailCredential(req.body?.email);
@@ -50,6 +105,21 @@ router.post('/register', async (req, res) => {
     if (passwordError) {
         return res.status(400).json({ message: passwordError });
     }
+    const emailConfig = resolveEmailDeliveryConfig();
+    if (emailConfig.hostedRequired) {
+        const legal = validateRegistrationLegalAcceptance(req.body);
+        if (!legal.ok) {
+            return res.status(400).json(invalidLegalResponse(legal.code));
+        }
+    }
+    if (emailConfig.hostedRequired && emailConfig.mode === EMAIL_DELIVERY_MODES.DISABLED) {
+        return res.status(503).json({
+            message: 'Account email delivery is temporarily unavailable.',
+            code: 'EMAIL_DELIVERY_UNAVAILABLE',
+            retryable: true
+        });
+    }
+    const verificationRequired = isEmailVerificationRequired(emailConfig);
 
     try {
         const existingUser = await prisma.user.findFirst({
@@ -62,26 +132,40 @@ router.post('/register', async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
-
         const newUser = await prisma.user.create({
             data: {
                 email,
-                password_hash
+                password_hash,
+                email_verified_at: verificationRequired ? null : new Date(),
+                legal_acceptances: emailConfig.hostedRequired ? {
+                    create: {
+                        terms_version: CURRENT_TERMS_VERSION,
+                        privacy_version: CURRENT_PRIVACY_VERSION
+                    }
+                } : undefined
             },
-            // Keep response/session payloads free of sensitive columns.
             select: USER_CLIENT_SELECT
         });
 
-        // Establish the session immediately after successful registration.
+        if (verificationRequired) {
+            const delivered = await sendEmailVerification(newUser.id);
+            if (!delivered) {
+                await prisma.user.delete({ where: { id: newUser.id } });
+                return res.status(503).json({
+                    message: 'Account email delivery is temporarily unavailable.',
+                    code: 'EMAIL_DELIVERY_UNAVAILABLE',
+                    retryable: true
+                });
+            }
+        }
+
         req.login(newUser, (err) => {
             if (err) {
                 logSafeOperationalError('auth.register_session', err, res.locals?.requestId);
                 res.status(500).json({ message: 'Server error' });
                 return;
             }
-            res.json({
-                user: serializeUserForClient(newUser)
-            });
+            res.json({ user: serializeUserForClient(newUser) });
         });
     } catch (err) {
         if (isUniqueConstraintError(err)) {
@@ -103,7 +187,6 @@ router.post('/mobile/register', async (req, res) => {
     if (passwordError) {
         return res.status(400).json({ message: passwordError });
     }
-
     const device = parseMobileDevicePayload(req.body);
     if (!device.ok) {
         return res.status(400).json({ message: device.message });
@@ -111,6 +194,22 @@ router.post('/mobile/register', async (req, res) => {
     if (device.device.devicePlatform === 'WEAR_OS') {
         return res.status(400).json({ message: 'Wear OS sessions require phone pairing' });
     }
+
+    const emailConfig = resolveEmailDeliveryConfig();
+    if (emailConfig.hostedRequired) {
+        const legal = validateRegistrationLegalAcceptance(req.body);
+        if (!legal.ok) {
+            return res.status(400).json(invalidLegalResponse(legal.code));
+        }
+    }
+    if (emailConfig.hostedRequired && emailConfig.mode === EMAIL_DELIVERY_MODES.DISABLED) {
+        return res.status(503).json({
+            message: 'Account email delivery is temporarily unavailable.',
+            code: 'EMAIL_DELIVERY_UNAVAILABLE',
+            retryable: true
+        });
+    }
+    const verificationRequired = isEmailVerificationRequired(emailConfig);
 
     try {
         const existingUser = await prisma.user.findFirst({
@@ -126,10 +225,29 @@ router.post('/mobile/register', async (req, res) => {
         const newUser = await prisma.user.create({
             data: {
                 email,
-                password_hash
+                password_hash,
+                email_verified_at: verificationRequired ? null : new Date(),
+                legal_acceptances: emailConfig.hostedRequired ? {
+                    create: {
+                        terms_version: CURRENT_TERMS_VERSION,
+                        privacy_version: CURRENT_PRIVACY_VERSION
+                    }
+                } : undefined
             },
             select: USER_CLIENT_SELECT
         });
+
+        if (verificationRequired) {
+            const delivered = await sendEmailVerification(newUser.id);
+            if (!delivered) {
+                await prisma.user.delete({ where: { id: newUser.id } });
+                return res.status(503).json({
+                    message: 'Account email delivery is temporarily unavailable.',
+                    code: 'EMAIL_DELIVERY_UNAVAILABLE',
+                    retryable: true
+                });
+            }
+        }
 
         const authPayload = await issueMobileAuthPayload({
             userId: newUser.id,
@@ -145,6 +263,107 @@ router.post('/mobile/register', async (req, res) => {
             return res.status(400).json({ message: REGISTRATION_FAILED_MESSAGE });
         }
         logSafeOperationalError('auth.mobile_register', err, res.locals?.requestId);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/email-verification/resend', async (req, res) => {
+    try {
+        let userId: number | null = null;
+        if (req.isAuthenticated()) {
+            userId = getAuthenticatedUser(req).id;
+        } else {
+            const email = normalizeEmailCredential(req.body?.email);
+            if (email) {
+                const user = await prisma.user.findFirst({
+                    where: { email: { equals: email, mode: 'insensitive' } },
+                    select: { id: true }
+                });
+                userId = user?.id ?? null;
+            }
+        }
+        if (userId) {
+            scheduleAccountEmail(() => sendEmailVerification(userId));
+        }
+    } catch {
+        // Enumeration-safe responses deliberately hide account and delivery state.
+    }
+    return res.status(202).json({ message: GENERIC_EMAIL_RESPONSE });
+});
+
+router.post('/email-verification/confirm', async (req, res) => {
+    const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+    if (!token || token.length > 512) {
+        return res.status(400).json({
+            message: 'This verification link is invalid or expired.',
+            code: 'INVALID_OR_EXPIRED_TOKEN',
+            retryable: false
+        });
+    }
+    try {
+        const accountAccess = await confirmEmailVerification(token);
+        if (!accountAccess) {
+            return res.status(400).json({
+                message: 'This verification link is invalid or expired.',
+                code: 'INVALID_OR_EXPIRED_TOKEN',
+                retryable: false
+            });
+        }
+        return res.json({
+            message: 'Email verified.',
+            account_access: accountAccess
+        });
+    } catch (error) {
+        logSafeOperationalError('auth.email_verification_confirm', error, res.locals?.requestId);
+        return res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.post('/password-reset/request', async (req, res) => {
+    try {
+        const email = normalizeEmailCredential(req.body?.email);
+        if (email) {
+            const user = await prisma.user.findFirst({
+                where: { email: { equals: email, mode: 'insensitive' } },
+                select: { id: true, email: true }
+            });
+            if (user) {
+                scheduleAccountEmail(() => sendPasswordReset(user.id, user.email));
+            }
+        }
+    } catch {
+        // Enumeration-safe responses deliberately hide account and delivery state.
+    }
+    return res.status(202).json({ message: GENERIC_EMAIL_RESPONSE });
+});
+
+router.post('/password-reset/confirm', async (req, res) => {
+    const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+    const newPassword = req.body?.new_password;
+    const passwordError = validatePasswordCredential(newPassword, 'New password');
+    if (passwordError) return res.status(400).json({ message: passwordError });
+    if (!token || token.length > 512) {
+        return res.status(400).json({
+            message: 'This password reset link is invalid or expired.',
+            code: 'INVALID_OR_EXPIRED_TOKEN',
+            retryable: false
+        });
+    }
+
+    try {
+        const reset = await resetPasswordWithToken(token, newPassword);
+        if (!reset) {
+            return res.status(400).json({
+                message: 'This password reset link is invalid or expired.',
+                code: 'INVALID_OR_EXPIRED_TOKEN',
+                retryable: false
+            });
+        }
+        await destroyRequestSession(req);
+        clearSessionCookie(res);
+        return res.json({ message: 'Password reset. Sign in with your new password.' });
+    } catch (error) {
+        logSafeOperationalError('auth.password_reset_confirm', error, res.locals?.requestId);
         return res.status(500).json({ message: 'Server error' });
     }
 });

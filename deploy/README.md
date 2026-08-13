@@ -37,6 +37,23 @@ digest and Git commit.
 For Caddy, `CADDYFILE=./Caddyfile.prod` is the normal setting. Use `./Caddyfile.staging` only after setting a real
 `BASIC_AUTH_USER` and Caddy password hash.
 
+### Email verification and password recovery
+
+Self-hosted deployments default to `CALIBRATE_HOSTED_SERVICE=false` and
+`EMAIL_DELIVERY_MODE=disabled`. To enable verification and recovery email, set `PUBLIC_APP_ORIGIN`
+to the instance's public HTTPS origin, set `EMAIL_DELIVERY_MODE=smtp`, and provide every `SMTP_*`
+value in `.env`. Keep `SMTP_PASSWORD` in the deployment secret store and out of Compose output,
+logs, and diagnostics.
+
+The official `calibratehealth.app` deployment must set `CALIBRATE_HOSTED_SERVICE=true`.
+Registration fails closed until complete SMTP configuration and delivery are available. See
+`../docs/account-access-and-recovery.md` for the endpoint and access-state contract.
+
+The official hosted web tier must also publish `/.well-known/assetlinks.json` as a static,
+unauthenticated, non-redirecting JSON response. The package and signing-certificate contract is
+recorded in `../docs/android-app-links.md`; self-hosted domains are not automatically associated
+with the official Android app.
+
 ### Split frontend and API origins
 
 The standard Compose files serve the frontend and API from `APP_HOST`. If a separate frontend origin is intentional,

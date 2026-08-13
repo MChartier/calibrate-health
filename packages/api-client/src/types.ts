@@ -48,6 +48,40 @@ export type CaloriePlanOptionsResponse = {
     minimumDailyCalorieTarget: number | null;
     planOptions: CaloriePlanOption[];
 };
+
+export type AccountAccessState =
+    | 'full'
+    | 'email_verification_required'
+    | 'legal_acceptance_required';
+
+export type AccountAccess = {
+    state: AccountAccessState;
+    email_verified: boolean;
+    legal_current: boolean;
+};
+
+export type LegalDocumentVersions = {
+    terms_version: string;
+    privacy_version: string;
+};
+
+export type LegalAcceptanceStatus = {
+    account_access: AccountAccess;
+    required: LegalDocumentVersions;
+    accepted: {
+        terms_version: string | null;
+        privacy_version: string | null;
+        accepted_at: string | null;
+    };
+};
+
+export type RegistrationLegalAcceptance = LegalDocumentVersions & {
+    accept_terms: true;
+    accept_privacy: true;
+};
+
+export type LegalAcceptanceRequest = RegistrationLegalAcceptance;
+
 export type UserClientPayload = {
     id: number;
     email: string;
@@ -64,15 +98,18 @@ export type UserClientPayload = {
     height_mm: number | null;
     activity_level: ActivityLevel | null;
     profile_image_url: string | null;
+    /** Absent only when connected to a legacy self-host that predates account-access gates. */
+    account_access?: AccountAccess;
 };
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 6;
+    version: 7;
     exported_at: string;
     account: {
         id: number;
         email: string;
+        email_verified_at: string | null;
         created_at: string;
         weight_unit: WeightUnit;
         height_unit: HeightUnit;
@@ -87,6 +124,11 @@ export type AccountExport = {
         activity_level: ActivityLevel | null;
         profile_image: { mime_type: string; data_base64: string } | null;
     };
+    legal_acceptances: Array<{
+        terms_version: string;
+        privacy_version: string;
+        accepted_at: string;
+    }>;
     goals: Array<{
         id: number;
         start_weight_grams: number;
@@ -270,9 +312,38 @@ export type MobileAuthRequest = {
     device_name?: string;
 };
 
+export type MobileRegistrationRequest = MobileAuthRequest & Partial<RegistrationLegalAcceptance>;
+
 export type BrowserAuthRequest = {
     email: string;
     password: string;
+};
+
+export type BrowserRegistrationRequest = BrowserAuthRequest & Partial<RegistrationLegalAcceptance>;
+
+export type EmailVerificationResendRequest = {
+    email?: string;
+};
+
+export type EmailVerificationConfirmRequest = {
+    token: string;
+};
+
+export type PasswordResetRequest = {
+    email: string;
+};
+
+export type PasswordResetConfirmRequest = {
+    token: string;
+    new_password: string;
+};
+
+export type MessageResponse = {
+    message: string;
+};
+
+export type EmailVerificationConfirmResponse = MessageResponse & {
+    account_access: AccountAccess;
 };
 
 export type BrowserAuthResponse = {

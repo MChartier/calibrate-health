@@ -89,6 +89,11 @@ export default function LoginScreen() {
                     onChangeText={setPassword}
                     onSubmitEditing={() => void handleLogin()}
                 />
+                <Link href="/forgot-password" asChild>
+                    <Pressable accessibilityRole="link" style={styles.inlineLinkTarget}>
+                        <AppText style={[styles.link, { color: colors.primary }]}>Forgot password?</AppText>
+                    </Pressable>
+                </Link>
                 {canSelectServer && (
                     <ServerUrlControl
                         value={serverInput}
@@ -136,6 +141,11 @@ const styles = StyleSheet.create({
     linkTarget: {
         minHeight: 48,
         alignItems: 'center',
+        justifyContent: 'center'
+    },
+    inlineLinkTarget: {
+        minHeight: 48,
+        alignItems: 'flex-start',
         justifyContent: 'center'
     },
     link: {

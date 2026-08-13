@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { hasFullAccountAccess } from '../auth/accountAccess';
 import { IndexedDbOutbox, openBrowserOutboxDatabase } from './indexedDbOutbox.web';
 import { OutboxReconciler, type QueuedMutationExecutor, type ReconcileResult } from './reconciler';
 import { createOutboxNamespace, type QueuedMutation } from './queuedMutation';
@@ -60,7 +61,8 @@ export function OfflineOutboxProvider({
     connectivity = DEFAULT_BROWSER_CONNECTIVITY
 }: OfflineOutboxProviderProps) {
     const { serverUrl, user } = useAuth();
-    const namespace = useMemo(() => getNamespace(serverUrl, user?.id), [serverUrl, user?.id]);
+    const userId = hasFullAccountAccess(user) ? user?.id : undefined;
+    const namespace = useMemo(() => getNamespace(serverUrl, userId), [serverUrl, userId]);
     const [binding, setBinding] = useState<{ namespace: string; outbox: IndexedDbOutbox } | null>(null);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [initializationError, setInitializationError] = useState<string | null>(null);

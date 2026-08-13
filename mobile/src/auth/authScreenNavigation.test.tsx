@@ -25,6 +25,7 @@ const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockUseLocalSearchParams = useLocalSearchParams as jest.MockedFunction<typeof useLocalSearchParams>;
 const mockLink = Link as unknown as jest.Mock;
 const SELF_HOSTED_URL = 'http://127.0.0.1:3300';
+const HOSTED_URL = 'https://calibratehealth.app';
 
 function authContextStub() {
     return {
@@ -46,7 +47,10 @@ function authContextStub() {
 }
 
 function expectAuthLink(pathname: string) {
-    const linkProps = mockLink.mock.calls[0][0];
+    const linkProps = mockLink.mock.calls
+        .map(([props]) => props)
+        .find((props) => props.href?.pathname === pathname);
+    expect(linkProps).toBeDefined();
     expect(linkProps.href).toEqual({
         pathname,
         params: { serverUrl: SELF_HOSTED_URL }
@@ -101,10 +105,14 @@ describe('auth screen server navigation', () => {
         fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret12');
         fireEvent.changeText(screen.getByLabelText('Confirm password'), 'secret12');
+        expect(screen.queryByRole('checkbox')).toBeNull();
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
-            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', SELF_HOSTED_URL);
+            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', SELF_HOSTED_URL, {
+                acceptTerms: false,
+                acceptPrivacy: false
+            });
         });
     });
 
@@ -137,6 +145,22 @@ describe('auth screen server navigation', () => {
         expect(auth.register).not.toHaveBeenCalled();
     });
 
+
+    it('requires both legal choices for hosted account creation', () => {
+        const auth = authContextStub();
+        auth.serverUrl = HOSTED_URL;
+        mockUseLocalSearchParams.mockReturnValue({ serverUrl: HOSTED_URL });
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<RegisterScreen />);
+
+        fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'password123');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'password123');
+        fireEvent.press(screen.getByLabelText('Create account'));
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Review and accept both legal documents to create an account.');
+        expect(auth.register).not.toHaveBeenCalled();
+    });
     it('hides server selection and uses the serving server on web', async () => {
         jest.replaceProperty(Platform, 'OS', 'web');
         const auth = authContextStub();
@@ -157,7 +181,7 @@ describe('auth screen server navigation', () => {
                 auth.serverUrl
             );
         });
-        expect(mockLink.mock.calls[0][0].href).toBe('/(auth)/register');
+        expect(mockLink.mock.calls.some(([props]) => props.href === '/(auth)/register')).toBe(true);
     });
 
     it('restores the create-account action after registration fails', async () => {

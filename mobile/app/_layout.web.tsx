@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
+import { hasFullAccountAccess } from '../src/auth/accountAccess';
 import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
@@ -19,11 +20,13 @@ import { useBrowserNotificationStream } from '../src/notifications/useBrowserNot
 import { useVisualViewportHeight } from '../src/hooks/useVisualViewportHeight';
 import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.web';
 import { getRouteDocumentTitle } from '../src/navigation/routePresentation';
+import { scrubBrowserOneTimeTokenFromUrl } from '../src/auth/oneTimeToken';
 
 const queryClient = new QueryClient();
 
 const BrowserRoutePresentation: React.FC = () => {
     const pathname = usePathname();
+    scrubBrowserOneTimeTokenFromUrl(pathname);
     const documentTitle = getRouteDocumentTitle(pathname);
 
     React.useEffect(() => {
@@ -113,7 +116,7 @@ const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) =
             invalidateQueriesAfterOfflineReplay(queryClient, result),
         [queryClient]
     );
-    useBrowserNotificationStream({ enabled: Boolean(user), serverUrl, queryClient });
+    useBrowserNotificationStream({ enabled: Boolean(user && hasFullAccountAccess(user)), serverUrl, queryClient });
     return (
         <OfflineOutboxProvider executeMutation={executeMutation} onReplayCompleted={onReplayCompleted}>
             <HealthConnectProvider>{children}</HealthConnectProvider>

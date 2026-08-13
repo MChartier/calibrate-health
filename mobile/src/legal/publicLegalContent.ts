@@ -1,8 +1,84 @@
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '@calibrate/shared/legalVersions';
+
 export type PublicLegalSection = {
     title: string;
     paragraphs?: string[];
     bullets?: string[];
 };
+
+export const SUPPORT_EMAIL = 'support@calibratehealth.app';
+export const PRIVACY_EMAIL = 'privacy@calibratehealth.app';
+export const TERMS_LAST_UPDATED = 'August 9, 2026';
+export { CURRENT_PRIVACY_VERSION as PRIVACY_VERSION, CURRENT_TERMS_VERSION as TERMS_VERSION };
+
+export const TERMS_INTRO = [
+    'These Terms govern use of the hosted Calibrate Health service. By creating or continuing an account, you agree to the current Terms and Privacy Policy.',
+    'Calibrate is a calorie and weight-tracking tool for adults age 18 and older. It is not medical care and does not replace advice from a qualified professional.'
+];
+
+export const TERMS_SECTIONS: PublicLegalSection[] = [
+    {
+        title: '1. Your account',
+        paragraphs: [
+            'Provide accurate account information, protect your credentials, and promptly report suspected unauthorized access. You are responsible for activity under your account until a session is revoked or the account is deleted.'
+        ]
+    },
+    {
+        title: '2. Health and calorie information',
+        paragraphs: [
+            'Calorie targets, projections, trends, and other estimates are informational. Do not use Calibrate for emergency care, diagnosis, or treatment. Stop and seek professional guidance if tracking is unsafe or inappropriate for you.'
+        ]
+    },
+    {
+        title: '3. Acceptable use',
+        bullets: [
+            'Do not access another person\'s account or interfere with the service.',
+            'Do not upload unlawful or malicious material or misuse provider data.',
+            'Do not attempt to bypass safety, security, or rate limits.'
+        ]
+    },
+    {
+        title: '4. Your data and third-party services',
+        paragraphs: [
+            'You retain responsibility for information you submit. Calibrate processes it to provide the service as described in the Privacy Policy. Food databases, Health Connect, notification providers, and self-hosted operators may have separate terms and policies.'
+        ]
+    },
+    {
+        title: '5. Service changes and availability',
+        paragraphs: [
+            'We may change, suspend, or discontinue features and may update these Terms. We will request acceptance again when a material revision requires it. The service is provided without a guarantee of uninterrupted availability.'
+        ]
+    },
+    {
+        title: '6. Ending use',
+        paragraphs: [
+            'You may export or permanently delete your account in Calibrate. We may restrict access for misuse, security risk, or legal requirements. Sections that by their nature should survive termination remain effective.'
+        ]
+    },
+    {
+        title: '7. Contact',
+        paragraphs: [`Questions about these Terms: ${SUPPORT_EMAIL}.`]
+    }
+];
+
+export const SUPPORT_INTRO = [
+    'Get help with the hosted Calibrate service or find the right privacy and account resource. Never send a password, verification code, reset link, health values, or food history by email.'
+];
+
+export const SUPPORT_SECTIONS: PublicLegalSection[] = [
+    {
+        title: 'Product support',
+        paragraphs: [
+            `Email ${SUPPORT_EMAIL} with a short description of the problem, your app version, platform, and the request ID shown by Calibrate when available.`
+        ]
+    },
+    {
+        title: 'Privacy and account requests',
+        paragraphs: [
+            `Email ${PRIVACY_EMAIL} for hosted-service privacy or account requests. Self-hosted accounts are controlled by their server operator.`
+        ]
+    }
+];
 
 export const PRIVACY_LAST_UPDATED = 'July 24, 2026';
 export const PRIVACY_INTRO = [
@@ -84,7 +160,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
     {
         title: "8. Children's Privacy",
         paragraphs: [
-            'Calibrate is not intended for children under 13. We do not knowingly collect personal data from children; contact us if you believe a child provided information so it can be deleted.'
+            'Calibrate calorie planning is for adults age 18 and older. Contact us if you believe a child provided information so it can be deleted.'
         ]
     },
     {

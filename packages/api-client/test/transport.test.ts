@@ -422,7 +422,14 @@ test('browser cookie transport uses session endpoints without native or bearer c
     });
 
     await client.loginBrowser({ email: 'person@example.com', password: 'secret123' });
-    await client.registerBrowser({ email: 'new@example.com', password: 'secret456' });
+    await client.registerBrowser({
+        email: 'new@example.com',
+        password: 'secret456',
+        terms_version: '2026-08-09',
+        privacy_version: '2026-07-24',
+        accept_terms: true,
+        accept_privacy: true
+    });
     await client.getMe();
     await client.logoutBrowser();
 
@@ -443,6 +450,14 @@ test('browser cookie transport uses session endpoints without native or bearer c
     assert.deepEqual(JSON.parse(String(requests[0]?.init.body)), {
         email: 'person@example.com',
         password: 'secret123'
+    });
+    assert.deepEqual(JSON.parse(String(requests[1]?.init.body)), {
+        email: 'new@example.com',
+        password: 'secret456',
+        terms_version: '2026-08-09',
+        privacy_version: '2026-07-24',
+        accept_terms: true,
+        accept_privacy: true
     });
 });
 

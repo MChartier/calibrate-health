@@ -22,6 +22,7 @@ import { LoadingState } from '../../src/components/LoadingState';
 import { NotificationsDrawer } from '../../src/components/NotificationsDrawer';
 import { ResumeTrackingPrompt, useFoodDayStatus } from '../../src/components/FoodTrackingStatus';
 import { useAuth } from '../../src/auth/AuthContext';
+import { hasFullAccountAccess, restrictedAccountRoute } from '../../src/auth/accountAccess';
 import { LogDateProvider } from '../../src/context/LogDateContext';
 import {
     AddFoodRequestProvider,
@@ -131,6 +132,7 @@ const NavigationPressable: React.FC<NavigationPressableProps> = ({
 
 export default function TabsLayout() {
     const { api, user, isLoading } = useAuth();
+    const hasFullAccess = hasFullAccountAccess(user);
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme.colors, theme.shadows), [theme]);
@@ -149,7 +151,7 @@ export default function TabsLayout() {
     const activeRoute = getRouteByPath(pathname);
     const usesNavigationRail = Platform.OS === 'web' && width >= DESKTOP_NAV_BREAKPOINT;
     const logDateNavigation = useLogDateNavigation();
-    const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user));
+    const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user && hasFullAccess));
     const addFoodRequestSequence = React.useRef(0);
     const [addFoodRequest, setAddFoodRequest] = React.useState<AddFoodRequest | null>(null);
     const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = React.useState(false);
@@ -160,12 +162,12 @@ export default function TabsLayout() {
     const profileQuery = useQuery({
         queryKey: ['mobile-profile'],
         queryFn: () => api.getUserProfile(),
-        enabled: Boolean(user)
+        enabled: Boolean(user && hasFullAccess)
     });
     const notificationsQuery = useQuery({
         queryKey: ['mobile-in-app-notifications'],
         queryFn: () => api.getInAppNotifications(),
-        enabled: Boolean(user)
+        enabled: Boolean(user && hasFullAccess)
     });
     const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
     const notificationsState = useAsyncResourceState(
@@ -206,6 +208,11 @@ export default function TabsLayout() {
 
     if (!user) {
         return <Redirect href="/(auth)/login" />;
+    }
+
+    const accountAccessRoute = restrictedAccountRoute(user);
+    if (accountAccessRoute) {
+        return <Redirect href={accountAccessRoute} />;
     }
 
     if (profileState.kind === ASYNC_RESOURCE_STATES.LOADING) {

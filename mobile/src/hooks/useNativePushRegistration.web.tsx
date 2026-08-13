@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { hasFullAccountAccess } from '../auth/accountAccess';
 import {
     browserPushEnvironment,
     parseSubscriptionChangedMessage,
@@ -45,7 +46,7 @@ export function NativePushRegistrationProvider({
             setState(NATIVE_PUSH_STATES.CHECKING);
             return;
         }
-        if (!user) {
+        if (!user || !hasFullAccountAccess(user)) {
             setState(NATIVE_PUSH_STATES.SIGNED_OUT);
             try {
                 await removeLocalBrowserPushSubscription(environment);

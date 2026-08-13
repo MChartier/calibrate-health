@@ -89,3 +89,20 @@ export function getAuthActionErrorMessage(error: unknown, action: 'sign in' | 'c
     }
     return action === 'sign in' ? 'Unable to sign in. Try again.' : 'Unable to create account. Try again.';
 }
+/** Purpose-bound auth links never expose provider or server exception text. */
+export function getAccountTrustErrorMessage(error: unknown, fallback: string): string {
+    if (looksLikeConnectivityFailure(error)) return 'Check your connection and try again.';
+    if (error instanceof ApiError) {
+        if (error.code === 'INVALID_OR_EXPIRED_TOKEN') {
+            return 'This link is invalid or has expired. Request a new one.';
+        }
+        if (error.code === 'EMAIL_DELIVERY_UNAVAILABLE') {
+            return 'Email delivery is temporarily unavailable. Try again later.';
+        }
+        if (error.code === 'INVALID_LEGAL_VERSION' || error.code === 'INVALID_LEGAL_ACCEPTANCE') {
+            return 'The legal documents changed. Reload this page and review the current versions.';
+        }
+        if (error.status === 429) return 'Too many attempts were made. Try again shortly.';
+    }
+    return fallback;
+}
