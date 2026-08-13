@@ -24,11 +24,11 @@ import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPrevio
 import { shouldEmphasizePausedStatus, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
 import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
-import { MEAL_OPTIONS } from '../../../src/utils/meals';
 import { getTodayDate } from '../../../src/utils/dates';
 import { getMetricDate } from '../../../src/utils/metrics';
 import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
 import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../src/today/dashboardState';
+import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
 import { spacing } from '../../../src/theme';
 
 const TODAY_SUMMARY_GRID_BREAKPOINT = 840; // Mirrors the app shell's wide layout without compressing scaled text.
@@ -41,7 +41,6 @@ export default function TodayScreen() {
     const setLogDate = dateNavigation.setDate;
     const { request: addFoodRequest, consumeRequest: consumeAddFoodRequest } = useAddFoodRequest();
     const selectedDate = dateNavigation.selectedDate;
-    const handledAddFoodRouteRef = React.useRef<string | null>(null);
     const [addFoodMeal, setAddFoodMeal] = useState<MealPeriod | null | undefined>(undefined);
     const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
@@ -64,6 +63,12 @@ export default function TodayScreen() {
     }, [failedDashboardQueries]);
 
     useEffect(() => {
+        if (typeof routeParams.date === 'string' && routeParams.date !== selectedDate) {
+            setLogDate(routeParams.date);
+        }
+    }, [routeParams.date, selectedDate, setLogDate]);
+
+    useEffect(() => {
         if (!addFoodRequest || getActiveTabRoute(pathname) !== 'today') return;
         const requestDate = addFoodRequest.date ?? selectedDate;
         if (requestDate !== selectedDate) {
@@ -75,25 +80,18 @@ export default function TodayScreen() {
         consumeAddFoodRequest(addFoodRequest.id);
     }, [addFoodRequest, consumeAddFoodRequest, foodDayQuery.data?.status, pathname, selectedDate, setLogDate]);
 
-    useEffect(() => {
-        if (routeParams.openAddFood !== 'true') {
-            handledAddFoodRouteRef.current = null;
-            return;
-        }
-        const routeRequestKey = `${routeParams.date ?? ''}|${routeParams.meal ?? ''}`;
-        if (handledAddFoodRouteRef.current === routeRequestKey) return;
-        const requestDate = typeof routeParams.date === 'string' ? routeParams.date : selectedDate;
-        if (requestDate !== selectedDate) {
-            setLogDate(requestDate);
-            return;
-        }
-        if (foodDayQuery.data?.status !== 'OPEN') return;
-        const requestedMeal = typeof routeParams.meal === 'string' && MEAL_OPTIONS.includes(routeParams.meal as MealPeriod)
-            ? routeParams.meal as MealPeriod
-            : null;
-        setAddFoodMeal(requestedMeal);
-        handledAddFoodRouteRef.current = routeRequestKey;
-    }, [foodDayQuery.data?.status, routeParams.date, routeParams.meal, routeParams.openAddFood, selectedDate, setLogDate]);
+    useBarcodeSearchHandoff({
+        params: routeParams,
+        selectedDate,
+        enabled: foodDayQuery.data?.status === 'OPEN',
+        setDate: setLogDate,
+        openSheet: setAddFoodMeal,
+        scrubParams: (requestDate) => router.setParams({
+            date: requestDate,
+            meal: undefined,
+            openAddFood: undefined
+        })
+    });
 
     const entries = foodQuery.data ?? [];
     const calories = entries.reduce((total, entry) => total + entry.calories, 0);
