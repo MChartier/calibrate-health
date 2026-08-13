@@ -80,10 +80,10 @@ manifest releases publish version, source-SHA, and moving `latest` tags to GHCR.
 unchanged by default and reject attempts to move it to anything other than the highest stable release. Deployment to
 a self-host remains an operator-controlled Docker Compose operation.
 
-Container publication runs `release:check:container`, including the encrypted backup/restore drill, strict dependency
-policy, canonical version checks, and risk-contract validation. It intentionally does not claim physical Android/Wear
-readiness: `release:check:production` remains the stricter native distribution gate and still requires the retained
-Galaxy phone/watch evidence. This allows an immutable server image to exist for the production-like device testing
+Container publication runs `release:check:container`, including the encrypted backup/restore drill, exact and
+time-bounded dependency policy, canonical version checks, and risk-contract validation. It intentionally does not
+claim physical Android/Wear readiness: `release:check:production` remains the stricter native
+distribution gate and still requires the retained Galaxy phone/watch evidence. This allows an immutable server image to exist for the production-like device testing
 that produces that evidence without weakening the final native release gate.
 
 ## Reproducible artifact metadata

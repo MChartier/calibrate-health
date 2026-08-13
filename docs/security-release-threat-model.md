@@ -51,8 +51,9 @@ every published `image-size` release through 2.0.2, and neither has a patched re
 this parser only while bundling repository-owned assets; deployed web, Android, Wear, and backend
 artifacts do not execute it. The production audit therefore permits only those two advisory IDs at
 the exact `node_modules/image-size@1.2.1` path through 2026-08-16. The checker fails closed for any
-other high/critical advisory, version, or path, and strict release validation rejects the exception
-even before expiry.
+other high/critical advisory, version, or path. Container publication honors the active exception because the
+affected Metro parser is absent from the published server image; external production launch remains strict and
+rejects the exception even before expiry.
 
 Beyond the production finding above, the root/mobile full audit reports 23 additional high package
 entries, all from the same development-only path to
