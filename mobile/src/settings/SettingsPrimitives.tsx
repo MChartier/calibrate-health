@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { AppText } from '../components/AppText';
-import { BottomSheetModal } from '../components/BottomSheetModal';
+import { BottomSheetModal, type BottomSheetModalProps } from '../components/BottomSheetModal';
 import { spacing, useAppTheme } from '../theme';
 
 type PreferenceSwitchProps = {
@@ -49,7 +49,13 @@ export const SummaryRow: React.FC<{ label: string; value: string }> = ({
 
 type SettingsDetailSheetProps = {
     visible: boolean;
-    maxHeight?: React.ComponentProps<typeof BottomSheetModal>['maxHeight'];
+    maxHeight?: BottomSheetModalProps['maxHeight'];
+    title?: string;
+    description?: string;
+    size?: BottomSheetModalProps['size'];
+    dismissDisabled?: boolean;
+    isDirty?: boolean;
+    confirmDismiss?: BottomSheetModalProps['confirmDismiss'];
     onClose: () => void;
     children: React.ReactNode;
 };
@@ -57,10 +63,28 @@ type SettingsDetailSheetProps = {
 export const SettingsDetailSheet: React.FC<SettingsDetailSheetProps> = ({
     visible,
     maxHeight,
+    title,
+    description,
+    size,
+    dismissDisabled,
+    isDirty,
+    confirmDismiss,
     onClose,
     children
 }) => (
-    <BottomSheetModal visible={visible} maxHeight={maxHeight} onRequestClose={onClose}>
+    <BottomSheetModal
+        visible={visible}
+        accessibilityLabel={title ?? 'Settings details'}
+        maxHeight={maxHeight}
+        title={title}
+        description={description}
+        size={size}
+        showCloseButton
+        dismissDisabled={dismissDisabled}
+        isDirty={isDirty}
+        confirmDismiss={confirmDismiss}
+        onRequestClose={onClose}
+    >
         <View style={styles.sheetContent}>{children}</View>
     </BottomSheetModal>
 );

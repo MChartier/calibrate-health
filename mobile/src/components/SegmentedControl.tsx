@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View, type ViewProps } from 'react-native';
 import { AppText } from './AppText';
 import { type AppTheme, useAppTheme } from '../theme';
 
@@ -26,9 +26,11 @@ export function SegmentedControl<T extends string>({
 }: SegmentedControlProps<T>) {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const { width, fontScale } = useWindowDimensions();
+    const stacked = options.length >= 3 && (width < 360 || fontScale >= 1.5);
 
     return (
-        <View {...props} accessibilityRole="radiogroup" style={[styles.root, style]}>
+        <View {...props} accessibilityRole="radiogroup" style={[styles.root, stacked && styles.rootStacked, style]}>
             {options.map((option) => {
                 const selected = option.value === value;
                 return (
@@ -40,13 +42,14 @@ export function SegmentedControl<T extends string>({
                         onPress={() => onChange(option.value)}
                         style={({ pressed }) => [
                             styles.segment,
+                            stacked && styles.segmentStacked,
                             selected && styles.segmentSelected,
                             pressed && !selected && styles.segmentPressed
                         ]}
                     >
                         <AppText
                             style={selected ? styles.labelSelected : styles.label}
-                            numberOfLines={2}
+                            numberOfLines={stacked ? 1 : 2}
                         >
                             {option.label}
                         </AppText>
@@ -75,6 +78,9 @@ function createStyles(theme: AppTheme) {
         padding: theme.spacing.xs,
         gap: theme.spacing.xs
     },
+    rootStacked: {
+        flexDirection: 'column'
+    },
     segment: {
         flex: 1,
         minHeight: theme.interaction.minimumTouchTarget,
@@ -86,6 +92,10 @@ function createStyles(theme: AppTheme) {
         justifyContent: 'center',
         paddingHorizontal: theme.spacing.sm,
         paddingVertical: theme.spacing.xs
+    },
+    segmentStacked: {
+        flex: 0,
+        width: '100%'
     },
     segmentSelected: {
         backgroundColor: theme.colors.surface,

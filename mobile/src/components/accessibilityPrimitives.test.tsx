@@ -55,11 +55,15 @@ describe('mobile accessibility primitives', () => {
         const { getByRole } = render(
             <>
                 <AppButton title="Save" />
+                <AppButton title="Retry" accessibilityState={{ busy: true }} />
                 <AppChip label="Breakfast" selected />
             </>
         );
 
         expect(getByRole('button', { name: 'Save' })).toHaveStyle({ minHeight: 48 });
+        expect(getByRole('button', { name: 'Retry' }).props.accessibilityState).toEqual(
+            expect.objectContaining({ busy: true, disabled: true })
+        );
         expect(getByRole('button', { name: 'Breakfast' })).toHaveStyle({ minHeight: 48 });
         expect(getByRole('button', { name: 'Breakfast' }).props.accessibilityState).toEqual(
             expect.objectContaining({ selected: true })
@@ -70,12 +74,16 @@ describe('mobile accessibility primitives', () => {
         const { getByRole } = render(
             <>
                 <AppButton title="Save" busy busyLabel="Saving..." />
+                <AppButton title="Retry" accessibilityState={{ busy: true }} />
                 <AppChip label="Breakfast" selected />
                 <AppIconButton icon="refresh" accessibilityLabel="Refreshing trend" busy />
             </>
         );
 
         expect(getByRole('button', { name: 'Saving...' }).props.accessibilityState).toEqual(
+            expect.objectContaining({ busy: true, disabled: true })
+        );
+        expect(getByRole('button', { name: 'Retry' }).props.accessibilityState).toEqual(
             expect.objectContaining({ busy: true, disabled: true })
         );
         expect(getByRole('button', { name: 'Breakfast' })).toHaveStyle({

@@ -1,4 +1,4 @@
-import type { OverlaySelectOption } from '../components/OverlaySelect';
+import type { ComboboxOption } from '../components/Combobox';
 
 type TimeZoneDefinition = {
     value: string;
@@ -104,7 +104,7 @@ export function getTimeZoneOptions(
     selectedTimeZone: string,
     deviceTimeZone: string | null,
     now = new Date()
-): Array<OverlaySelectOption<string>> {
+): Array<ComboboxOption<string>> {
     const values = [deviceTimeZone, selectedTimeZone, ...CURATED_TIME_ZONES.map(({ value }) => value)]
         .filter((value): value is string => typeof value === 'string' && isValidIanaTimeZone(value));
     const uniqueValues = [...new Set(values)];

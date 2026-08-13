@@ -76,6 +76,27 @@ describe('NotificationsDrawer', () => {
         expect(props.onClose).toHaveBeenCalledTimes(1);
     });
 
+    it('exposes one modal dialog and keeps the decorative backdrop out of the accessibility tree', () => {
+        const { screen } = renderDrawer();
+        const modal = screen.UNSAFE_getByType(Modal);
+        const panel = screen.getByTestId('notifications-drawer-panel');
+        const backdrop = screen.getByTestId('notifications-drawer-backdrop', { includeHiddenElements: true });
+
+        expect(modal.props.accessibilityLabel).toBeUndefined();
+        expect(modal.props.accessibilityViewIsModal).toBeUndefined();
+        expect(panel.props).toMatchObject({
+            accessibilityLabel: 'Notifications',
+            accessibilityViewIsModal: true,
+            role: 'dialog'
+        });
+        expect(backdrop.props).toMatchObject({
+            accessible: false,
+            focusable: false,
+            importantForAccessibility: 'no-hide-descendants',
+            'aria-hidden': true
+        });
+    });
+
     it('does not render drawer content while closed', () => {
         const { screen } = renderDrawer({ visible: false });
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,7 +13,6 @@ import { GoalProgressCard } from '../../src/components/GoalProgressCard';
 import { GoalDailyChangeSelect } from '../../src/components/GoalDailyChangeSelect';
 import { WeightValueInput } from '../../src/components/WeightValueInput';
 import { TabScreen } from '../../src/components/TabScreen';
-import { SectionHeader } from '../../src/components/SectionHeader';
 import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
@@ -36,6 +35,7 @@ import { getLatestMetric } from '../../src/utils/metrics';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 import { getSafeActionErrorMessage } from '../../src/errors/presentation';
+import { confirmDiscardChanges } from '../../src/components/confirmDiscardChanges';
 import { usePendingWeightMutation } from '../../src/offline/usePendingWeightMutation';
 import {
     getWeightDisplayBounds,
@@ -69,6 +69,10 @@ function getGoalValidationError(
     }
 
     return null;
+}
+
+function getGoalDraftKey(startWeight: string, targetWeight: string, goalMode: GoalMode, dailyChangeAbs: string) {
+    return JSON.stringify([startWeight, targetWeight, goalMode, dailyChangeAbs]);
 }
 
 export default function ProgressScreen() {
@@ -123,10 +127,16 @@ export default function ProgressScreen() {
     const [isDailyChangeSelectorOpen, setIsDailyChangeSelectorOpen] = useState(false);
     const handledNextGoalRouteRef = useRef(false);
     const handledPlanReviewRouteRef = useRef(false);
+    const goalDraftBaselineRef = useRef('');
+    const targetWeightInputRef = useRef<TextInput>(null);
     const latestMetric = getLatestMetric(metricsQuery.data);
     const latestTrendMetric = getLatestMetric(trendSummaryQuery.data?.metrics);
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
+    const goalDraftKey = getGoalDraftKey(startWeight, targetWeight, goalMode, dailyChangeAbs);
+    const isGoalDraftDirty = isGoalEditorOpen
+        && goalDraftBaselineRef.current.length > 0
+        && goalDraftKey !== goalDraftBaselineRef.current;
     const hasExplicitDailyChange = goalMode === 'maintain'
         || DAILY_GOAL_CHANGE_OPTIONS.some((value) => String(value) === dailyChangeAbs);
     const goalWeightBounds = getWeightDisplayBounds(user?.weight_unit);
@@ -165,13 +175,15 @@ export default function ProgressScreen() {
     const planOptionsAreFresh = isOnline
         && planOptionsQuery.isSuccess
         && !planOptionsQuery.isFetching;
-    const canSave = isWeightWithinPolicy(Number(startWeight), user?.weight_unit) &&
-        isWeightWithinPolicy(Number(targetWeight), user?.weight_unit) &&
-        hasExplicitDailyChange &&
-        !hasPendingWeightChange &&
-        planOptionsAreFresh &&
-        planOptionsQuery.data?.eligibility.status === 'eligible' &&
-        selectedPlanOption?.available === true;
+    const goalInputsAreValid = isWeightWithinPolicy(Number(startWeight), user?.weight_unit)
+        && isWeightWithinPolicy(Number(targetWeight), user?.weight_unit)
+        && hasExplicitDailyChange;
+    const serverPlanIsAvailable = !hasPendingWeightChange
+        && planOptionsAreFresh
+        && planOptionsQuery.data?.eligibility.status === 'eligible'
+        && selectedPlanOption?.available === true;
+    const canSave = goalInputsAreValid && serverPlanIsAvailable;
+    const canAttemptSave = !goalInputsAreValid || serverPlanIsAvailable;
     const saveGoal = useMutation({
         mutationFn: () =>
             api.createGoal({
@@ -199,7 +211,11 @@ export default function ProgressScreen() {
             user?.weight_unit
         );
         setValidationError(error);
-        if (error) return;
+        if (error) {
+            targetWeightInputRef.current?.focus();
+            AccessibilityInfo.announceForAccessibility(error);
+            return;
+        }
         if (hasPendingWeightChange) {
             setValidationError('Wait for the queued weight change to sync before replacing your calorie plan.');
             return;
@@ -243,10 +259,15 @@ export default function ProgressScreen() {
 
     function openGoalEditor() {
         const currentGoal = goalQuery.data;
-        setStartWeight(getDefaultStartWeight());
-        setTargetWeight(currentGoal ? formatWeightInput(currentGoal.target_weight) : '');
-        setGoalMode(getGoalModeFromDailyDeficit(currentGoal?.daily_deficit));
-        setDailyChangeAbs(String(Math.abs(currentGoal?.daily_deficit ?? 500) || 500));
+        const nextStartWeight = getDefaultStartWeight();
+        const nextTargetWeight = currentGoal ? formatWeightInput(currentGoal.target_weight) : '';
+        const nextMode = getGoalModeFromDailyDeficit(currentGoal?.daily_deficit);
+        const nextDailyChange = String(Math.abs(currentGoal?.daily_deficit ?? 500) || 500);
+        setStartWeight(nextStartWeight);
+        setTargetWeight(nextTargetWeight);
+        setGoalMode(nextMode);
+        setDailyChangeAbs(nextDailyChange);
+        goalDraftBaselineRef.current = getGoalDraftKey(nextStartWeight, nextTargetWeight, nextMode, nextDailyChange);
         setValidationError(null);
         setIsDailyChangeSelectorOpen(false);
         setIsGoalEditorOpen(true);
@@ -254,13 +275,19 @@ export default function ProgressScreen() {
 
     function openNextGoalEditor() {
         const latestWeight = getDefaultStartWeight();
+        const nextTargetWeight = getTargetWeightAfterGoalModeChange('maintain', latestWeight, '');
         setStartWeight(latestWeight);
-        setTargetWeight(getTargetWeightAfterGoalModeChange('maintain', latestWeight, ''));
+        setTargetWeight(nextTargetWeight);
         setGoalMode('maintain');
         setDailyChangeAbs('500');
+        goalDraftBaselineRef.current = getGoalDraftKey(latestWeight, nextTargetWeight, 'maintain', '500');
         setValidationError(null);
         setIsDailyChangeSelectorOpen(false);
         setIsGoalEditorOpen(true);
+    }
+
+    async function requestGoalEditorClose() {
+        if (!isGoalDraftDirty || await confirmDiscardChanges()) setIsGoalEditorOpen(false);
     }
 
     function handleGoalModeChange(nextMode: GoalMode) {
@@ -351,11 +378,17 @@ export default function ProgressScreen() {
                 {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <CalibrationInsightCard />}
             </TabScreen>
 
-            <BottomSheetModal visible={isGoalEditorOpen} onRequestClose={() => setIsGoalEditorOpen(false)}>
-                <SectionHeader
-                    title="Set a new goal"
-                    description={`Weights are entered in ${formatWeightUnit(user?.weight_unit)}.`}
-                />
+            <BottomSheetModal
+                visible={isGoalEditorOpen}
+                accessibilityLabel="Set a new goal"
+                title="Set a new goal"
+                description={`Weights are entered in ${formatWeightUnit(user?.weight_unit)}.`}
+                showCloseButton
+                dismissDisabled={saveGoal.isPending}
+                isDirty={isGoalDraftDirty}
+                confirmDismiss={confirmDiscardChanges}
+                onRequestClose={() => setIsGoalEditorOpen(false)}
+            >
                 <SegmentedControl options={GOAL_MODE_OPTIONS} value={goalMode} onChange={handleGoalModeChange} />
                 <View style={styles.goalEditorBody}>
                     <View style={styles.startingContext}>
@@ -371,6 +404,7 @@ export default function ProgressScreen() {
                         label="Target"
                         value={targetWeight}
                         unit={user?.weight_unit}
+                        inputRef={targetWeightInputRef}
                         onChangeText={setTargetWeight}
                         step={WEIGHT_INPUT_INCREMENT}
                         min={goalWeightBounds.minimum}
@@ -437,12 +471,13 @@ export default function ProgressScreen() {
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={themeColors.onSurface} />}
-                        onPress={() => setIsGoalEditorOpen(false)}
+                        onPress={() => { void requestGoalEditorClose(); }}
                         style={styles.rowField}
                     />
                     <AppButton
                         title={saveGoal.isPending ? 'Saving...' : 'Save goal'}
-                        disabled={!canSave || saveGoal.isPending}
+                        accessibilityHint={canSave ? undefined : 'Checks the goal fields and explains what needs attention.'}
+                        disabled={!canAttemptSave || saveGoal.isPending}
                         leftIcon={<Ionicons name="flag-outline" size={18} color={themeColors.onPrimary} />}
                         onPress={handleSave}
                         style={styles.rowField}

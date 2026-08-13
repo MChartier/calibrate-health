@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,6 @@ import { AppIconButton } from '../../src/components/AppIconButton';
 import { AppText } from '../../src/components/AppText';
 import { BottomSheetModal } from '../../src/components/BottomSheetModal';
 import { NumberStepperField } from '../../src/components/NumberStepperField';
-import { SectionHeader } from '../../src/components/SectionHeader';
 import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { TabScreen } from '../../src/components/TabScreen';
 import { TextField } from '../../src/components/TextField';
@@ -26,6 +25,14 @@ import {
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { SERVING_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 import { getSafeActionErrorMessage } from '../../src/errors/presentation';
+import {
+    getRecipeNameError,
+    getSavedFoodNameError,
+    RECIPE_NAME_REQUIRED_ERROR,
+    SAVED_FOOD_NAME_REQUIRED_ERROR
+} from '../../src/utils/myFoodFormValidation';
+import { confirmDiscardChanges } from '../../src/components/confirmDiscardChanges';
+import { FormErrorSummary, type FormErrorSummaryHandle } from '../../src/components/FormErrorSummary';
 
 type MyFoodSheet = 'food' | 'recipe' | null;
 
@@ -48,6 +55,22 @@ export default function MyFoodsScreen() {
     const [recipeServingQuantity, setRecipeServingQuantity] = useState('1');
     const [recipeServingUnit, setRecipeServingUnit] = useState('serving');
     const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredientDraft[]>([]);
+    const [foodValidationError, setFoodValidationError] = useState<string | null>(null);
+    const [recipeValidationError, setRecipeValidationError] = useState<string | null>(null);
+    const foodErrorSummaryRef = useRef<FormErrorSummaryHandle>(null);
+    const recipeErrorSummaryRef = useRef<FormErrorSummaryHandle>(null);
+
+    useEffect(() => {
+        if (foodValidationError && !getSavedFoodNameError(foodValidationError)) {
+            foodErrorSummaryRef.current?.focus();
+        }
+    }, [foodValidationError]);
+
+    useEffect(() => {
+        if (recipeValidationError && !getRecipeNameError(recipeValidationError)) {
+            recipeErrorSummaryRef.current?.focus();
+        }
+    }, [recipeValidationError]);
 
     const allFoods = myFoodsQuery.data ?? [];
     const savedFoods = useMemo(
@@ -138,6 +161,41 @@ export default function MyFoodsScreen() {
         recipeServingUnit.trim().length > 0 &&
         Number(recipeYield) > 0 &&
         recipeIngredients.length > 0;
+    const foodDraftKey = JSON.stringify([foodName, servingQuantity, servingUnit, caloriesPerServing]);
+    const foodDraftBaseline = editingItem?.type === 'FOOD'
+        ? JSON.stringify([
+              editingItem.name,
+              String(editingItem.serving_size_quantity),
+              editingItem.serving_unit_label,
+              String(editingItem.calories_per_serving)
+          ])
+        : JSON.stringify(['', '1', 'serving', '']);
+    const isFoodDraftDirty = activeSheet === 'food' && foodDraftKey !== foodDraftBaseline;
+    const recipeDraftKey = JSON.stringify([
+        recipeName,
+        recipeServingQuantity,
+        recipeServingUnit,
+        recipeYield,
+        serializeRecipeIngredientDrafts(recipeIngredients)
+    ]);
+    const loadedRecipeIngredients = loadRecipe.data
+        ? hydrateRecipeIngredientDrafts(loadRecipe.data, savedFoods)
+        : null;
+    const recipeDraftBaseline = editingItem?.type === 'RECIPE'
+        ? (loadRecipe.data && loadedRecipeIngredients
+            ? JSON.stringify([
+                  loadRecipe.data.name,
+                  String(loadRecipe.data.serving_size_quantity),
+                  loadRecipe.data.serving_unit_label,
+                  String(loadRecipe.data.yield_servings ?? 1),
+                  serializeRecipeIngredientDrafts(loadedRecipeIngredients)
+              ])
+            : null)
+        : JSON.stringify(['', '1', 'serving', '1', []]);
+    const isRecipeDraftDirty = activeSheet === 'recipe'
+        && recipeDraftBaseline !== null
+        && recipeDraftKey !== recipeDraftBaseline;
+    const isEditorBusy = saveFood.isPending || saveRecipe.isPending || deleteItem.isPending || loadRecipe.isPending;
 
     function closeEditor() {
         setActiveSheet(null);
@@ -151,6 +209,8 @@ export default function MyFoodsScreen() {
         setRecipeServingUnit('serving');
         setRecipeYield('1');
         setRecipeIngredients([]);
+        setFoodValidationError(null);
+        setRecipeValidationError(null);
         saveFood.reset();
         saveRecipe.reset();
         loadRecipe.reset();
@@ -173,6 +233,37 @@ export default function MyFoodsScreen() {
         } else {
             loadRecipe.mutate(item);
         }
+    }
+
+    async function requestEditorClose() {
+        const isDirty = activeSheet === 'food' ? isFoodDraftDirty : isRecipeDraftDirty;
+        if (!isDirty || await confirmDiscardChanges()) closeEditor();
+    }
+
+    function handleSaveFood() {
+        if (!foodName.trim()) {
+            setFoodValidationError(SAVED_FOOD_NAME_REQUIRED_ERROR);
+            return;
+        }
+        if (!canSaveFood) {
+            setFoodValidationError('Enter a valid serving, unit, and calorie value.');
+            return;
+        }
+        setFoodValidationError(null);
+        saveFood.mutate();
+    }
+
+    function handleSaveRecipe() {
+        if (!recipeName.trim()) {
+            setRecipeValidationError(RECIPE_NAME_REQUIRED_ERROR);
+            return;
+        }
+        if (!canSaveRecipe) {
+            setRecipeValidationError('Add a valid serving, yield, and at least one ingredient.');
+            return;
+        }
+        setRecipeValidationError(null);
+        saveRecipe.mutate();
     }
 
     function confirmDelete() {
@@ -292,12 +383,28 @@ export default function MyFoodsScreen() {
                 </AppCard>
             </AsyncStateBoundary>
 
-            <BottomSheetModal visible={activeSheet === 'food'} onRequestClose={closeEditor}>
-                <SectionHeader
-                    title={editingItem ? 'Edit food' : 'New food'}
-                    description="Saved food edits do not rewrite existing food logs."
+            <BottomSheetModal
+                visible={activeSheet === 'food'}
+                accessibilityLabel={editingItem ? 'Edit food' : 'New food'}
+                title={editingItem ? 'Edit food' : 'New food'}
+                description="Saved food edits do not rewrite existing food logs."
+                showCloseButton
+                dismissDisabled={isEditorBusy}
+                isDirty={isFoodDraftDirty}
+                confirmDismiss={confirmDiscardChanges}
+                onRequestClose={closeEditor}
+            >
+                <TextField
+                    label="Name"
+                    value={foodName}
+                    onChangeText={(value) => {
+                        setFoodName(value);
+                        setFoodValidationError(null);
+                    }}
+                    errorText={getSavedFoodNameError(foodValidationError)}
+                    focusError={Boolean(getSavedFoodNameError(foodValidationError))}
+                    required
                 />
-                <TextField label="Name" value={foodName} onChangeText={setFoodName} />
                 <View style={styles.row}>
                     <NumberStepperField
                         label="Serving"
@@ -317,7 +424,14 @@ export default function MyFoodsScreen() {
                     min={0}
                     suffix="kcal"
                 />
-                {saveFood.error && <AppText style={styles.error}>{getSafeActionErrorMessage(saveFood.error, 'Unable to save this food.')}</AppText>}
+                {foodValidationError && !getSavedFoodNameError(foodValidationError) && (
+                    <FormErrorSummary
+                        ref={foodErrorSummaryRef}
+                        message={foodValidationError}
+                        style={styles.error}
+                    />
+                )}
+                {saveFood.error && <AppText accessibilityRole="alert" style={styles.error}>{getSafeActionErrorMessage(saveFood.error, 'Unable to save this food.')}</AppText>}
                 {deleteItem.error && <AppText style={styles.error}>{getSafeActionErrorMessage(deleteItem.error, 'Unable to delete this food.')}</AppText>}
                 {editingItem && (
                     <AppButton
@@ -333,25 +447,42 @@ export default function MyFoodsScreen() {
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={theme.colors.onSurface} />}
-                        onPress={closeEditor}
+                        onPress={() => { void requestEditorClose(); }}
                         style={styles.field}
                     />
                     <AppButton
                         title={saveFood.isPending ? 'Saving...' : 'Save food'}
-                        disabled={!canSaveFood || saveFood.isPending || deleteItem.isPending}
+                        disabled={saveFood.isPending || deleteItem.isPending}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
-                        onPress={() => saveFood.mutate()}
+                        onPress={handleSaveFood}
                         style={styles.field}
                     />
                 </View>
             </BottomSheetModal>
 
-            <BottomSheetModal visible={activeSheet === 'recipe'} onRequestClose={closeEditor}>
-                <SectionHeader
-                    title={editingItem ? 'Edit recipe' : 'Recipe builder'}
-                    description="Recipe edits create new ingredient snapshots without changing past logs."
+            <BottomSheetModal
+                visible={activeSheet === 'recipe'}
+                accessibilityLabel={editingItem ? 'Edit recipe' : 'Recipe builder'}
+                title={editingItem ? 'Edit recipe' : 'Recipe builder'}
+                description="Recipe edits create new ingredient snapshots without changing past logs."
+                size="wide"
+                showCloseButton
+                dismissDisabled={isEditorBusy}
+                isDirty={isRecipeDraftDirty}
+                confirmDismiss={confirmDiscardChanges}
+                onRequestClose={closeEditor}
+            >
+                <TextField
+                    label="Recipe name"
+                    value={recipeName}
+                    onChangeText={(value) => {
+                        setRecipeName(value);
+                        setRecipeValidationError(null);
+                    }}
+                    errorText={getRecipeNameError(recipeValidationError)}
+                    focusError={Boolean(getRecipeNameError(recipeValidationError))}
+                    required
                 />
-                <TextField label="Recipe name" value={recipeName} onChangeText={setRecipeName} />
                 <View style={styles.row}>
                     <NumberStepperField
                         label="Serving"
@@ -415,7 +546,14 @@ export default function MyFoodsScreen() {
                         />
                     </View>
                 ))}
-                {saveRecipe.error && <AppText style={styles.error}>{getSafeActionErrorMessage(saveRecipe.error, 'Unable to save this recipe.')}</AppText>}
+                {recipeValidationError && !getRecipeNameError(recipeValidationError) && (
+                    <FormErrorSummary
+                        ref={recipeErrorSummaryRef}
+                        message={recipeValidationError}
+                        style={styles.error}
+                    />
+                )}
+                {saveRecipe.error && <AppText accessibilityRole="alert" style={styles.error}>{getSafeActionErrorMessage(saveRecipe.error, 'Unable to save this recipe.')}</AppText>}
                 {deleteItem.error && <AppText style={styles.error}>{getSafeActionErrorMessage(deleteItem.error, 'Unable to delete this recipe.')}</AppText>}
                 {editingItem && (
                     <AppButton
@@ -431,14 +569,14 @@ export default function MyFoodsScreen() {
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={theme.colors.onSurface} />}
-                        onPress={closeEditor}
+                        onPress={() => { void requestEditorClose(); }}
                         style={styles.field}
                     />
                     <AppButton
                         title={saveRecipe.isPending ? 'Saving...' : 'Save recipe'}
-                        disabled={!canSaveRecipe || saveRecipe.isPending || deleteItem.isPending || loadRecipe.isPending}
+                        disabled={saveRecipe.isPending || deleteItem.isPending || loadRecipe.isPending}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
-                        onPress={() => saveRecipe.mutate()}
+                        onPress={handleSaveRecipe}
                         style={styles.field}
                     />
                 </View>

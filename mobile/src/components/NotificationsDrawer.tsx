@@ -11,6 +11,7 @@ import { AsyncStateBoundary } from './AsyncStateBoundary';
 import type { AsyncResourceState } from '../asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
+import { useModalFocusManagement } from '../hooks/useModalFocusManagement';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 
 const DRAWER_WIDTH_FRACTION = 0.9;
@@ -56,6 +57,13 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const drawerProgress = useRef(new Animated.Value(1)).current;
+    const panelRef = useRef<View>(null);
+
+    useModalFocusManagement({
+        visible: shouldRender && visible,
+        containerRef: panelRef,
+        onEscape: onClose
+    });
 
     useEffect(() => {
         if (visible) setShouldRender(true);
@@ -112,16 +120,24 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
         >
             <View style={styles.root}>
                 <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Close notifications drawer"
+                    testID="notifications-drawer-backdrop"
+                    accessible={false}
+                    focusable={false}
+                    importantForAccessibility="no-hide-descendants"
+                    aria-hidden
                     onPress={onClose}
                     style={StyleSheet.absoluteFill}
                 >
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
                 </Pressable>
                 <Animated.View
+                    ref={panelRef}
                     testID="notifications-drawer-panel"
+                    accessibilityLabel="Notifications"
                     accessibilityViewIsModal
+                    aria-label="Notifications"
+                    aria-modal
+                    role="dialog"
                     style={[
                         styles.panel,
                         {
