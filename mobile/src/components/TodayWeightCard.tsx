@@ -5,11 +5,11 @@ import type { MetricEntry } from '@calibrate/api-client';
 import type { WeightUnit } from '@calibrate/shared';
 import { AppPressableCard } from './AppPressableCard';
 import { AppText } from './AppText';
-import { CompactCardHeader } from './CompactCardHeader';
+import { CardHeader } from './CardHeader';
 import { formatWeight } from '../utils/format';
 import { type AppTheme, useAppTheme } from '../theme';
 
-type TodayWeightCardProps = Omit<React.ComponentProps<typeof AppPressableCard>, 'children' | 'onPress'> & {
+type TodayWeightCardProps = Omit<React.ComponentProps<typeof AppPressableCard>, 'accessibilityLabel' | 'children' | 'onPress'> & {
     metric: MetricEntry | null;
     weightUnit: WeightUnit | undefined;
     isToday: boolean;
@@ -46,8 +46,9 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
             onPress={onPress}
             style={[styles.card, compact && styles.cardCompact, style]}
         >
-            <CompactCardHeader
+            <CardHeader
                 title={title}
+                density="compact"
                 action={<View style={styles.viewAction}>
                     <AppText style={[styles.viewActionText, compact && styles.viewActionTextCompact]}>{action}</AppText>
                     <Ionicons name="chevron-forward" size={compact ? 17 : 19} color={theme.colors.primary} />

@@ -3,7 +3,7 @@ import { StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-nat
 import Svg, { Circle } from 'react-native-svg';
 import { AppCard } from './AppCard';
 import { AppText } from './AppText';
-import { CompactCardHeader } from './CompactCardHeader';
+import { CardHeader } from './CardHeader';
 import { spacing, useAppTheme, type AppThemeColors } from '../theme';
 import { formatNumber } from '../utils/format';
 
@@ -68,7 +68,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
                     <CalorieGauge value={progressValue} tone={tone} compact={compact} colors={colors} styles={styles} />
                 )}
                 <View style={[styles.balanceCopy, stackHero && styles.balanceCopyStacked]}>
-                    <CompactCardHeader title="Daily balance" />
+                    <CardHeader title="Daily balance" density="compact" />
                     {remaining === null ? (
                         <>
                             <AppText style={styles.unavailable}>{balanceLabel}</AppText>

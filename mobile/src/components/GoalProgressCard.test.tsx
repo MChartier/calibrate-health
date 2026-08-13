@@ -39,7 +39,7 @@ describe('GoalProgressCard', () => {
         expect(screen.getByText('Updated Jul 20')).toBeTruthy();
         expect(screen.getByTestId('snapshot-heading-line')).toHaveStyle({
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'baseline',
             flexWrap: 'wrap'
         });
         expect(screen.getByText('Goal projection')).toBeTruthy();

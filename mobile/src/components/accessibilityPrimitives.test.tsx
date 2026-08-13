@@ -1,10 +1,13 @@
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
 import { AppButton } from './AppButton';
 import { AppChip } from './AppChip';
+import { AppIconButton } from './AppIconButton';
 import { SectionHeader } from './SectionHeader';
 import { TextField } from './TextField';
 import { themes } from '../theme';
+
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
 describe('mobile accessibility primitives', () => {
     it('gives buttons a useful default role, label, and disabled state', () => {
@@ -61,6 +64,60 @@ describe('mobile accessibility primitives', () => {
         expect(getByRole('button', { name: 'Breakfast' }).props.accessibilityState).toEqual(
             expect.objectContaining({ selected: true })
         );
+    });
+
+    it('announces and visually distinguishes busy, disabled, and selected states', () => {
+        const { getByRole } = render(
+            <>
+                <AppButton title="Save" busy busyLabel="Saving..." />
+                <AppChip label="Breakfast" selected />
+                <AppIconButton icon="refresh" accessibilityLabel="Refreshing trend" busy />
+            </>
+        );
+
+        expect(getByRole('button', { name: 'Saving...' }).props.accessibilityState).toEqual(
+            expect.objectContaining({ busy: true, disabled: true })
+        );
+        expect(getByRole('button', { name: 'Breakfast' })).toHaveStyle({
+            borderColor: themes.light.colors.selection,
+            backgroundColor: themes.light.colors.selectionContainer
+        });
+        expect(getByRole('button', { name: 'Refreshing trend' }).props.accessibilityState).toEqual(
+            expect.objectContaining({ busy: true, disabled: true })
+        );
+    });
+
+    it('uses the contrast-safe outline for interactive control boundaries', () => {
+        const { getByRole } = render(
+            <>
+                <AppButton title="Secondary action" variant="secondary" />
+                <AppChip label="Dinner" />
+                <AppIconButton icon="settings" accessibilityLabel="Open settings" />
+            </>
+        );
+
+        expect(getByRole('button', { name: 'Secondary action' })).toHaveStyle({
+            borderColor: themes.light.colors.outline
+        });
+        expect(getByRole('button', { name: 'Dinner' })).toHaveStyle({
+            borderColor: themes.light.colors.outline
+        });
+        expect(getByRole('button', { name: 'Open settings' })).toHaveStyle({
+            borderColor: themes.light.colors.outline
+        });
+    });
+
+    it('shows the semantic focus ring when keyboard focus reaches a shared control', () => {
+        const { getByRole } = render(<AppButton title="Continue" />);
+
+        const button = getByRole('button', { name: 'Continue' });
+        fireEvent(button, 'focus');
+
+        expect(button).toHaveStyle({
+            outlineColor: themes.light.colors.focusRing,
+            outlineStyle: 'solid',
+            outlineWidth: themes.light.interaction.focusRingWidth
+        });
     });
 
     it('exposes section titles as level-two headings by default', () => {

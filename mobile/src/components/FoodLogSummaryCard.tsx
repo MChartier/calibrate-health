@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import { AppButton } from './AppButton';
-import { AppCard } from './AppCard';
+import { NavigableCard } from './NavigableCard';
 import { AppText } from './AppText';
-import { CompactCardHeader } from './CompactCardHeader';
+import { CardHeader } from './CardHeader';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { type AppTheme, useAppTheme } from '../theme';
 
-type FoodLogSummaryCardProps = Omit<React.ComponentProps<typeof AppCard>, 'children'> & {
+type FoodLogSummaryCardProps = Omit<React.ComponentProps<typeof NavigableCard>, 'accessibilityLabel' | 'children' | 'onPress' | 'secondaryAction'> & {
     entries: FoodLogEntry[];
     onPress: () => void;
     onAddFood?: () => void;
@@ -55,7 +55,6 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
-    const [isCardPressed, setIsCardPressed] = React.useState(false);
     // The food endpoint returns entries in creation order, so the final entry identifies the latest populated meal.
     const recentMeal = useMemo(() => getRecentMealSummary(entries), [entries]);
     const accessibilitySummary = recentMeal
@@ -63,29 +62,32 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
         : 'No food logged';
 
     return (
-        <AppCard
+        <NavigableCard
             {...props}
             testID={props.testID ?? 'food-log-summary-card'}
-            style={[styles.card, compact && styles.cardCompact, isCardPressed && styles.cardPressed, style]}
+            primaryActionTestID="food-log-card-press-layer"
+            accessibilityRole="button"
+            accessibilityLabel={`Food log. ${accessibilitySummary}. View full log`}
+            accessibilityHint="Opens the detailed food log for this day"
+            onPress={onPress}
+            style={style}
+            contentStyle={[styles.card, compact && styles.cardCompact]}
+            secondaryActionPlacement="footer"
+            secondaryAction={onAddFood ? (
+                <AppButton
+                    title="Add food"
+                    accessibilityHint="Opens food search for this day"
+                    leftIcon={<Ionicons name="add" size={20} color={theme.colors.onPrimary} />}
+                    onPress={onAddFood}
+                    style={styles.addFoodButton}
+                />
+            ) : undefined}
         >
-            <Pressable
-                testID="food-log-card-press-layer"
-                accessibilityRole="button"
-                accessibilityLabel={`Food log. ${accessibilitySummary}. View full log`}
-                accessibilityHint="Opens the detailed food log for this day"
-                onPressIn={() => setIsCardPressed(true)}
-                onPressOut={() => setIsCardPressed(false)}
-                onPress={onPress}
-                style={[
-                    StyleSheet.absoluteFill,
-                    styles.cardPressLayer
-                ]}
-            />
-
-            <View pointerEvents="none" style={[styles.logSection, compact && styles.logSectionCompact]}>
-                <CompactCardHeader
+            <View style={[styles.logSection, compact && styles.logSectionCompact]}>
+                <CardHeader
                     headingTestID={compact ? 'compact-food-log-header' : undefined}
                     title="Food log"
+                    density="compact"
                     action={<View
                         accessibilityElementsHidden
                         aria-hidden
@@ -132,30 +134,14 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
                     )}
                 </View>
             </View>
-            {onAddFood && (
-                <AppButton
-                    title="Add food"
-                    accessibilityHint="Opens food search for this day"
-                    leftIcon={<Ionicons name="add" size={20} color={theme.colors.onPrimary} />}
-                    onPress={onAddFood}
-                    style={styles.addFoodButton}
-                />
-            )}
-        </AppCard>
+        </NavigableCard>
     );
 };
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         card: {
-            position: 'relative',
             gap: theme.spacing.sm
-        },
-        cardPressed: {
-            backgroundColor: theme.colors.surfacePressed,
-            borderColor: theme.colors.outline,
-            shadowOpacity: 0,
-            elevation: 0
         },
         cardCompact: {
             padding: theme.spacing.md,
@@ -185,9 +171,7 @@ function createStyles(theme: AppTheme) {
         viewActionTextCompact: {
             fontSize: theme.typography.caption
         },
-        cardPressLayer: {
-            borderRadius: theme.radius.lg
-        },
+
         summaryContent: {
             minHeight: theme.interaction.minimumTouchTarget,
             minWidth: 0,
