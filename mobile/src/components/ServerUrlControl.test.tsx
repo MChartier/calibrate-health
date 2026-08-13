@@ -12,6 +12,29 @@ const idleConnection: ServerConnectionState = {
 };
 
 describe('ServerUrlControl', () => {
+    it('keeps hosted connection details behind a generic Advanced disclosure', () => {
+        const view = render(
+            <ServerUrlControl
+                value={HOSTED_SERVER_URL}
+                onChangeText={jest.fn()}
+                connection={idleConnection}
+                onTestConnection={jest.fn(async () => true)}
+            />
+        );
+
+        expect(view.getByText('Advanced')).toBeTruthy();
+        expect(view.queryByText(HOSTED_SERVER_URL)).toBeNull();
+        expect(view.queryByLabelText('Server URL')).toBeNull();
+        expect(view.queryByText(idleConnection.message)).toBeNull();
+        expect(view.getByLabelText('Show advanced connection options')).toHaveProp(
+            'accessibilityState',
+            { expanded: false }
+        );
+        fireEvent.press(view.getByLabelText('Show advanced connection options'));
+        expect(view.queryByText('Self-hosted service')).toBeNull();
+        expect(view.queryByText(/operator is responsible/)).toBeNull();
+    });
+
     it('expands self-hosted controls and invokes an explicit connection test', () => {
         const onTestConnection = jest.fn(async () => true);
         const view = render(
@@ -23,13 +46,16 @@ describe('ServerUrlControl', () => {
             />
         );
 
-        fireEvent.press(view.getByLabelText('Change server URL'));
+        fireEvent.press(view.getByLabelText('Show advanced connection options'));
         fireEvent.press(view.getByLabelText('Test Calibrate server connection'));
 
         expect(view.getByLabelText('Server URL')).toHaveProp('keyboardType', 'url');
         expect(
             view.getByText('Release builds require HTTPS. Local HTTP is limited to development builds.')
         ).toBeTruthy();
+        expect(view.getByText(
+            /operator is responsible for privacy, security, availability, backups, and support/
+        )).toBeTruthy();
         expect(onTestConnection).toHaveBeenCalledWith('http://10.0.2.2:3000');
     });
 
@@ -48,6 +74,8 @@ describe('ServerUrlControl', () => {
                 onTestConnection={jest.fn(async () => true)}
             />
         );
+
+        fireEvent.press(view.getByLabelText('Show advanced connection options'));
 
         expect(view.getByLabelText(connected.message)).toHaveProp('accessibilityLiveRegion', 'polite');
         expect(view.getByText(connected.message)).toBeTruthy();
@@ -70,11 +98,27 @@ describe('ServerUrlControl', () => {
             />
         );
 
+        expect(view.getByText('Self-hosted service selected')).toBeTruthy();
         expect(view.queryByText(connected.message)).toBeNull();
-        expect(view.getByText('Test this address before signing in.')).toBeTruthy();
 
-        fireEvent.press(view.getByLabelText('Change server URL'));
-        fireEvent.press(view.getByLabelText('Use hosted Calibrate server'));
+        fireEvent.press(view.getByLabelText('Show advanced connection options'));
+        expect(view.getByText('Test this address before continuing.')).toBeTruthy();
+        fireEvent.press(view.getByLabelText('Use Calibrate hosted service'));
         expect(onChangeText).toHaveBeenCalledWith(HOSTED_SERVER_URL);
+    });
+
+    it('renders the editor directly inside an existing Advanced surface', () => {
+        const view = render(
+            <ServerUrlControl
+                presentation="editor"
+                value="https://self-hosted.example"
+                onChangeText={jest.fn()}
+                connection={idleConnection}
+                onTestConnection={jest.fn(async () => true)}
+            />
+        );
+
+        expect(view.queryByText('Advanced')).toBeNull();
+        expect(view.getByLabelText('Server URL')).toBeTruthy();
     });
 });

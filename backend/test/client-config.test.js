@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+const { CALIBRATE_HOSTED_ORIGIN } = require('../../shared/product');
+
 const loaded = require('../src/routes/clientConfig');
 const router = loaded.default ?? loaded;
 
@@ -47,9 +49,11 @@ test('client config advertises the stable v1 API, release floors, and privacy-sa
     assert.equal(body.api_versions.current, 'v1');
     assert.deepEqual(body.api_versions.supported, ['v1']);
     assert.equal(body.api_versions.legacy_alias, '/api');
+    assert.equal(body.hosted_origin, CALIBRATE_HOSTED_ORIGIN);
     assert.equal(body.min_supported_mobile_version, '0.1.0');
     assert.equal(body.min_supported_wear_version, '0.2.0');
     assert.equal(body.capabilities.native_push, false);
+    assert.equal(body.capabilities.self_hosted_server_url, true);
     assert.equal(body.capabilities.web_push, false);
     assert.equal(body.capabilities.wear_os_ready, true);
     assert.match(body.api_versions.legacy_deprecation, /migrated/i);

@@ -35,8 +35,8 @@ with the Wear artifact.
 
 ## Environment configuration
 
-With no override, release builds default to `https://calibratehealth.app`, and users can select a self-hosted origin
-from the sign-in screen.
+Official release builds default to `https://calibratehealth.app`. A previously selected self-hosted origin remains
+authoritative across restarts, and custom-server selection remains available under Advanced sign-in options.
 
 To give a private build a different initial origin, define `EXPO_PUBLIC_CALIBRATE_SERVER_URL` before building. This
 value is compiled into the artifacts and is public. The release script accepts only a credential-free `https://`

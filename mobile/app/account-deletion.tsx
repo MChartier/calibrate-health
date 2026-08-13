@@ -1,3 +1,4 @@
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { PublicLegalPage } from '../src/components/legal/PublicLegalPage';
 import {
     ACCOUNT_DELETION_INTRO,
@@ -18,7 +19,7 @@ export default function AccountDeletionRoute() {
             links={[
                 { href: '/(auth)/login', label: 'Sign in to delete now' },
                 { href: buildAccountDeletionRequestMailto(), label: 'Email a hosted deletion request' },
-                { href: '/privacy', label: 'Read the privacy policy' }
+                { href: CALIBRATE_PRODUCT_LINKS.privacy, label: 'Read the privacy policy' }
             ]}
         />
     );

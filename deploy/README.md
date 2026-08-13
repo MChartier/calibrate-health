@@ -1,8 +1,9 @@
-# Production self-hosting
+# Advanced self-hosting
 
-The deployment files are portable Docker Compose building blocks. They intentionally contain no AWS, Terraform, or
-other cloud-specific infrastructure. Choose one proxy file and optionally add the Postgres and encrypted-backup
-overlays.
+The official service at `calibratehealth.app` is the default product experience. These portable Docker Compose files
+support Advanced self-hosting for operators responsible for their domain, database, email delivery, logs, backups,
+retention, and upgrades. They contain no cloud-provider-specific infrastructure. Choose one proxy file and
+optionally add the Postgres and encrypted-backup overlays.
 
 The published `Dockerfile.app` image serves the Expo Router/React Native Web static export and the API from one
 origin. Expo documents, the service worker, and the install manifest are revalidated; hashed bundles use immutable
@@ -39,15 +40,16 @@ For Caddy, `CADDYFILE=./Caddyfile.prod` is the normal setting. Use `./Caddyfile.
 
 ### Email verification and password recovery
 
-Self-hosted deployments default to `CALIBRATE_HOSTED_SERVICE=false` and
-`EMAIL_DELIVERY_MODE=disabled`. To enable verification and recovery email, set `PUBLIC_APP_ORIGIN`
-to the instance's public HTTPS origin, set `EMAIL_DELIVERY_MODE=smtp`, and provide every `SMTP_*`
-value in `.env`. Keep `SMTP_PASSWORD` in the deployment secret store and out of Compose output,
+Self-hosted deployments must keep `CALIBRATE_HOSTED_SERVICE=false`; email delivery defaults to
+`EMAIL_DELIVERY_MODE=disabled`. To enable verification and recovery email with any SMTP provider,
+set `PUBLIC_APP_ORIGIN` to the instance's public HTTPS origin, set `EMAIL_DELIVERY_MODE=smtp`,
+and provide complete `SMTP_*`
+settings in `.env`. Keep `SMTP_PASSWORD` in the deployment secret store and out of Compose output,
 logs, and diagnostics.
 
-The official `calibratehealth.app` deployment must set `CALIBRATE_HOSTED_SERVICE=true`.
-Registration fails closed until complete SMTP configuration and delivery are available. See
-`../docs/account-access-and-recovery.md` for the endpoint and access-state contract.
+Only the official `calibratehealth.app` deployment sets `CALIBRATE_HOSTED_SERVICE=true`.
+Registration then fails closed until complete provider-neutral SMTP configuration and delivery are
+available. See `../docs/account-access-and-recovery.md` for the endpoint and access-state contract.
 
 The official hosted web tier must also publish `/.well-known/assetlinks.json` as a static,
 unauthenticated, non-redirecting JSON response. The package and signing-certificate contract is

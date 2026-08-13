@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+const { CALIBRATE_HOSTED_ORIGIN } = require('../../shared/product');
+
 const {
   EMAIL_DELIVERY_MODES,
   isEmailVerificationRequired,
@@ -16,6 +18,7 @@ test('hosted deployed registration requires configured account email', () => {
   });
   assert.equal(config.mode, EMAIL_DELIVERY_MODES.DISABLED);
   assert.equal(config.hostedRequired, true);
+  assert.equal(config.publicAppOrigin, CALIBRATE_HOSTED_ORIGIN);
   assert.equal(isEmailVerificationRequired(config), true);
 });
 

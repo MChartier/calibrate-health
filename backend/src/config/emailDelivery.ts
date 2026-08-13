@@ -1,3 +1,4 @@
+import { CALIBRATE_HOSTED_ORIGIN } from '../../../shared/product';
 import { isProductionOrStagingEnv } from './environment';
 
 export const EMAIL_DELIVERY_MODES = {
@@ -50,7 +51,7 @@ export const isHostedServiceDeployment = (env: NodeJS.ProcessEnv = process.env):
 export function resolveEmailDeliveryConfig(env: NodeJS.ProcessEnv = process.env): EmailDeliveryConfig {
   const hostedRequired = isHostedServiceDeployment(env);
   const publicAppOrigin = normalizeOrigin(env.PUBLIC_APP_ORIGIN) ??
-    (hostedRequired ? 'https://calibratehealth.app' : null);
+    (hostedRequired ? CALIBRATE_HOSTED_ORIGIN : null);
   const mode = env.EMAIL_DELIVERY_MODE?.trim().toLowerCase() ?? EMAIL_DELIVERY_MODES.DISABLED;
 
   if (mode !== EMAIL_DELIVERY_MODES.SMTP) {

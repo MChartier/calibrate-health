@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
-import { Link, Redirect } from 'expo-router';
+import { Link, Redirect, type Href } from 'expo-router';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
 import { AuthBrand } from '../src/components/auth/AuthBrand';
@@ -18,11 +19,11 @@ export default function WebHomeRoute() {
 
     return (
         <Screen safeTop style={styles.screen}>
-            <AuthBrand description="Track food, weight, activity, and goals with data stored on your Calibrate server." />
+            <AuthBrand description="Track food, weight, and progress against a personalized calorie target." />
             <AppCard>
-                <AppText variant="subtitle">Your health history stays portable.</AppText>
+                <AppText variant="subtitle">A clearer view of your progress.</AppText>
                 <AppText variant="muted">
-                    Choose the hosted service or connect to a compatible self-hosted Calibrate server.
+                    Create an account on Calibrate's hosted service, or sign in to one you already use.
                 </AppText>
                 <View style={styles.actions}>
                     <Link
@@ -46,19 +47,19 @@ export default function WebHomeRoute() {
                 </View>
                 <View style={styles.legalLinks}>
                     <Link
-                        href="/privacy"
+                        href={CALIBRATE_PRODUCT_LINKS.privacy as Href}
                         style={StyleSheet.flatten([styles.textLink, { color: colors.primary }])}
                     >
                         Privacy policy
                     </Link>
                     <Link
-                        href="/terms"
+                        href={CALIBRATE_PRODUCT_LINKS.terms as Href}
                         style={StyleSheet.flatten([styles.textLink, { color: colors.primary }])}
                     >
                         Terms of service
                     </Link>
                     <Link
-                        href="/support"
+                        href={CALIBRATE_PRODUCT_LINKS.support as Href}
                         style={StyleSheet.flatten([styles.textLink, { color: colors.primary }])}
                     >
                         Support

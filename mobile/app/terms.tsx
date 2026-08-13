@@ -1,3 +1,4 @@
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { PublicLegalPage } from '../src/components/legal/PublicLegalPage';
 import {
     TERMS_INTRO,
@@ -13,8 +14,8 @@ export default function TermsRoute() {
             intro={TERMS_INTRO}
             sections={TERMS_SECTIONS}
             links={[
-                { href: '/privacy', label: 'Privacy policy' },
-                { href: '/support', label: 'Support' },
+                { href: CALIBRATE_PRODUCT_LINKS.privacy, label: 'Privacy policy' },
+                { href: CALIBRATE_PRODUCT_LINKS.support, label: 'Support' },
                 { href: '/', label: 'Back to Calibrate' }
             ]}
         />

@@ -1,12 +1,12 @@
 # calibrate
 
-calibrate is a responsive calorie tracker (desktop + mobile web) for people who want to lose (or maintain) weight by
-logging food and weight, then comparing daily intake against an estimated target based on their profile.
-If you self-host, your data stays in your own database.
+Calibrate is a hosted calorie tracker for people who want to lose or maintain weight by logging food and weight, then
+comparing daily intake with an estimated target based on their profile. The official service is the default for routine
+use; self-hosting remains available as an Advanced option for operators who want to run the application and database.
 
-- Hosted instance: https://calibratehealth.app
+- Official service: https://calibratehealth.app
+- Launch clients: English Web/PWA, Android phone, and Wear OS
 - Stack: Expo Router + React Native Web, Node.js + TypeScript + Express, Postgres (Prisma)
-- Clients: one Expo codebase for the installable web client and native Android client
 
 Note: calibrate is not medical advice.
 
@@ -20,6 +20,7 @@ Note: calibrate is not medical advice.
 - Lose It CSV import (food logs + weigh-ins)
 - Weight logging + trend visualization
 - Goal projection from a steady deficit
+- Observational Health Connect activity that never automatically changes the calorie target
 
 #### FatSecret terms + attribution
 
@@ -34,13 +35,13 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Deployment (Compose self-hosting): `deploy/README.md`
 - Expo web dev/build/PWA: `docs/expo-web.md`
 - Expo Android client: `mobile/README.md`
-- First native release scope: `docs/release-scope.md`
+- First hosted release scope: `docs/release-scope.md`
 - Android/Wear Play and health release worksheet: `docs/play-console-health-release-checklist.md`
 - Current release-candidate notes: `docs/releases/0.12.0-native-0.1.0-wear-0.2.0.md`
 - Security model and release threat review: `docs/security.md`, `docs/security-release-threat-model.md`
 - Architecture decisions: `docs/architecture/`
 
-## Self-hosting
+## Advanced: self-hosting
 
 ### Docker Compose (single machine)
 
@@ -201,12 +202,11 @@ added to a home screen. The tagged `Dockerfile.app` image serves this export fro
 - For local API and Expo web work, run `npm run dev`.
 - Test the release artifact locally with `npm run build:expo-web` followed by
   `npm --prefix mobile run preview:web`, then open `http://localhost:4174` and use the browser install UI.
-- iOS: open the app in Safari and use Share -> Add to Home Screen.
 
 Push notes:
 
 - Browser push registration and delivery require backend VAPID env vars: `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT`.
-- Native Android push is disabled by default for self-hosting. Set `NATIVE_PUSH_MODE=expo` only when the instance intentionally uses Expo Push Service for private/internal builds.
+- Native Android push is disabled by default for self-hosting. An operator can set `NATIVE_PUSH_MODE=expo` only after accepting the Expo Push Service data boundary.
 - The development launcher generates missing VAPID keys in `.dev.env`. Set
   `WEB_PUSH_*` in the root `.env` to override them.
 - Direct backend runs outside the standard stack must set `WEB_PUSH_*`
@@ -227,8 +227,9 @@ This standard path brings up the local API, Postgres, and Expo web client. Host-
 the commands in `mobile/README.md` when Android build tools are available.
 
 For Android emulator development, the app defaults to `http://10.0.2.2:3000` in dev builds so it can reach the local
-backend. Production builds default to `https://calibratehealth.app`, and the sign-in screen allows a custom self-hosted
-server URL.
+backend. Official Android builds default to `https://calibratehealth.app`. A previously selected self-hosted origin
+continues to win after restart; custom server setup is an Advanced Android sign-in option. Production Web/PWA deployments
+always use the corresponding same-origin backend and do not expose a server selector.
 
 Native auth is bearer-token based and additive to the existing browser cookie session flow. Mobile tokens are opaque to
 the client, hashed at rest on the server, and stored on-device through Expo SecureStore.

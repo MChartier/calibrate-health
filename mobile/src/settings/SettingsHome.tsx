@@ -16,7 +16,7 @@ export type SettingsSheetId =
     | 'devices'
     | 'offline'
     | 'data'
-    | 'server';
+    | 'advanced';
 
 type SettingsHomeProps = {
     email?: string | null;
@@ -29,12 +29,12 @@ type SettingsHomeProps = {
     failedMutationCount: number;
     pendingMutationCount: number;
     isWeb: boolean;
-    serverUrl: string;
     onEditProfile: () => void;
     onOpenSheet: (sheet: SettingsSheetId) => void;
     onOpenActivity: () => void;
     onOpenSavedFoods: () => void;
     onOpenAbout: () => void;
+    onOpenProductLink: (link: 'support' | 'privacy' | 'terms') => void;
     onLogout: () => void;
 };
 
@@ -53,12 +53,12 @@ export function SettingsHome({
     failedMutationCount,
     pendingMutationCount,
     isWeb,
-    serverUrl,
     onEditProfile,
     onOpenSheet,
     onOpenActivity,
     onOpenSavedFoods,
     onOpenAbout,
+    onOpenProductLink,
     onLogout
 }: SettingsHomeProps) {
     const { colors } = useAppTheme();
@@ -167,7 +167,7 @@ export function SettingsHome({
                     label="Offline changes"
                     supportingText={isOutboxReady
                         ? 'Review work waiting to sync'
-                        : 'Browser changes require an active server connection'}
+                        : 'Browser changes require an active connection'}
                     value={isOutboxReady ? offlineSummary : 'Online only'}
                     onPress={() => onOpenSheet('offline')}
                 />
@@ -180,35 +180,54 @@ export function SettingsHome({
                 />
             </SettingsSection>
 
-            <SettingsSection title={isWeb ? 'Security' : 'Security & server'}>
+            <SettingsSection title="Security">
                 <SettingsRow
                     icon="key-outline"
                     label="Password"
                     supportingText="Change your account password"
-                    showDivider={!isWeb}
+                    showDivider={false}
                     onPress={() => onOpenSheet('password')}
                 />
-                {!isWeb && (
-                    <SettingsRow
-                        icon="server-outline"
-                        label="Calibrate server"
-                        supportingText="Hosted or self-hosted connection"
-                        value={serverUrl.replace(/^https?:\/\//, '')}
-                        showDivider={false}
-                        onPress={() => onOpenSheet('server')}
-                    />
-                )}
+            </SettingsSection>
+
+            <SettingsSection title="Help & legal">
+                <SettingsRow
+                    icon="help-circle-outline"
+                    label="Support and feedback"
+                    supportingText="Get help or tell us what could be better"
+                    onPress={() => onOpenProductLink('support')}
+                />
+                <SettingsRow
+                    icon="shield-checkmark-outline"
+                    label="Privacy policy"
+                    onPress={() => onOpenProductLink('privacy')}
+                />
+                <SettingsRow
+                    icon="document-text-outline"
+                    label="Terms of service"
+                    showDivider={false}
+                    onPress={() => onOpenProductLink('terms')}
+                />
             </SettingsSection>
 
             <SettingsSection title="App">
                 <SettingsRow
                     icon="information-circle-outline"
                     label="About Calibrate"
-                    supportingText="Version, build, and software updates"
+                    supportingText="Purpose, trust, version, and open-source licenses"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
-                    showDivider={false}
+                    showDivider={!isWeb}
                     onPress={onOpenAbout}
                 />
+                {!isWeb && (
+                    <SettingsRow
+                        icon="options-outline"
+                        label="Advanced"
+                        supportingText="Connection and technical options"
+                        showDivider={false}
+                        onPress={() => onOpenSheet('advanced')}
+                    />
+                )}
             </SettingsSection>
 
             <SettingsSection title="Account">

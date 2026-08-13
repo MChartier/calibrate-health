@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS, type ActivityLevel, type HeightUnit, type Sex, type WeightUnit } from '@calibrate/shared';
 import { AppButton } from '../../../src/components/AppButton';
@@ -14,6 +15,7 @@ import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
 import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
 import { TabScreen } from '../../../src/components/TabScreen';
 import { SectionHeader } from '../../../src/components/SectionHeader';
+import { ServerUrlControl } from '../../../src/components/ServerUrlControl';
 import { SegmentedControl } from '../../../src/components/SegmentedControl';
 import { TextField } from '../../../src/components/TextField';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
@@ -81,7 +83,7 @@ export default function SettingsScreen() {
     const router = useRouter();
     const {
         api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
-        serverUrl, setServerUrl, updateCurrentUser
+        serverUrl, serverConnection, setServerUrl, testServerUrl, updateCurrentUser
     } = useAuth();
     const {
         isReady: isOutboxReady,
@@ -398,8 +400,8 @@ export default function SettingsScreen() {
     });
 
     async function handleSaveServer() {
-        await setServerUrl(serverInput);
-        setActiveSheet(null);
+        const saved = await setServerUrl(serverInput);
+        if (saved) setActiveSheet(null);
     }
 
     function handleChangePassword() {
@@ -535,12 +537,12 @@ export default function SettingsScreen() {
                 failedMutationCount={failedMutations.length}
                 pendingMutationCount={pendingMutationCount}
                 isWeb={isWeb}
-                serverUrl={serverUrl}
                 onEditProfile={() => setIsProfileEditorOpen(true)}
                 onOpenSheet={setActiveSheet}
                 onOpenActivity={() => router.push('/activity')}
                 onOpenSavedFoods={() => router.push('/my-foods')}
                 onOpenAbout={() => router.push('/about')}
+                onOpenProductLink={(link) => router.push(CALIBRATE_PRODUCT_LINKS[link] as Href)}
                 onLogout={() => void logout()}
             />
 
@@ -626,7 +628,7 @@ export default function SettingsScreen() {
                         <AppButton
                             title="Disable push in this browser"
                             variant="secondary"
-                            accessibilityHint="Removes this browser from reminder delivery on the selected Calibrate server."
+                            accessibilityHint="Removes this browser from reminder delivery for the current account service."
                             leftIcon={<Ionicons name="notifications-off-outline" size={18} color={themeColors.onSurface} />}
                             onPress={() => void nativePush.disableRegistration?.()}
                         />
@@ -933,14 +935,23 @@ export default function SettingsScreen() {
 
             {!isWeb && (
                 <SettingsDetailSheet
-                    visible={activeSheet === 'server'}
+                    visible={activeSheet === 'advanced'}
                     title="Advanced"
-                    description="Hosted and self-hosted server connection."
+                    description="Optional connection settings for self-hosted services."
                     isDirty={serverIsDirty}
                     confirmDismiss={confirmDiscardChanges}
                     onClose={closeServerEditor}
                 >
-                    <TextField label="Server URL" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" />
+                    <ServerUrlControl
+                        presentation="editor"
+                        value={serverInput}
+                        onChangeText={setServerInput}
+                        connection={serverConnection}
+                        onTestConnection={testServerUrl}
+                    />
+                    <AppText variant="caption">
+                        Calibrate tests a new service before signing out of the current one.
+                    </AppText>
                     <AppButton
                         title="Save connection"
                         leftIcon={<Ionicons name="server-outline" size={18} color={themeColors.onPrimary} />}

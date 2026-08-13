@@ -1,4 +1,7 @@
+import type { ReactNode } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
+import { useAuth } from '../auth/AuthContext';
 import { useAppUpdateController } from '../updates/useAppUpdateController';
 import AboutScreen from '../../app/(tabs)/(settings)/about';
 
@@ -7,9 +10,15 @@ const mockRouter = {
     canGoBack: jest.fn(() => true),
     replace: jest.fn()
 };
+const mockLink = jest.fn();
 
 jest.mock('expo-router', () => ({
-    useRouter: () => mockRouter
+    useRouter: () => mockRouter,
+    Link: (props: { children: ReactNode; href: unknown }) => {
+        const ReactActual = jest.requireActual<typeof import('react')>('react');
+        mockLink(props);
+        return ReactActual.createElement(ReactActual.Fragment, null, props.children);
+    }
 }));
 jest.mock('@expo/vector-icons/Ionicons', () => ({
     __esModule: true,
@@ -21,10 +30,14 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.mock('../components/CalibrateLogo', () => ({
     CalibrateLogo: () => null
 }));
+jest.mock('../auth/AuthContext', () => ({
+    useAuth: jest.fn()
+}));
 jest.mock('../updates/useAppUpdateController', () => ({
     useAppUpdateController: jest.fn()
 }));
 
+const mockedUseAuth = jest.mocked(useAuth);
 const mockedUseAppUpdateController = jest.mocked(useAppUpdateController);
 
 function updateController(overrides: Partial<ReturnType<typeof useAppUpdateController>> = {}) {
@@ -58,21 +71,58 @@ function updateController(overrides: Partial<ReturnType<typeof useAppUpdateContr
 describe('AboutScreen', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockedUseAuth.mockReturnValue({
+            serverUrl: 'https://calibratehealth.app'
+        } as ReturnType<typeof useAuth>);
         mockedUseAppUpdateController.mockReturnValue(updateController());
     });
 
-    it('shows the native tag, native version, runtime, channel, and embedded update state', () => {
+    it('leads with consumer purpose, trust, and accurate launch availability', () => {
         const view = render(<AboutScreen />);
+
+        expect(view.getByText('About Calibrate')).toBeTruthy();
+        expect(view.getByText(/compare calories with a personalized target/)).toBeTruthy();
+        expect(view.getByText(/Available in English on the web as an installable PWA and on Android/)).toBeTruthy();
+        expect(view.queryByText('Service address')).toBeNull();
+        expect(view.queryByLabelText('Check for updates')).toBeNull();
+        expect(view.getByLabelText('Show advanced details')).toHaveProp(
+            'accessibilityState',
+            { expanded: false }
+        );
+    });
+
+    it('uses the canonical product, legal, support, feedback, license, and release destinations', () => {
+        render(<AboutScreen />);
+
+        const destinations = mockLink.mock.calls.map(([props]) => props.href);
+        expect(destinations).toEqual(expect.arrayContaining([
+            CALIBRATE_PRODUCT_LINKS.product,
+            CALIBRATE_PRODUCT_LINKS.privacy,
+            CALIBRATE_PRODUCT_LINKS.terms,
+            CALIBRATE_PRODUCT_LINKS.support,
+            CALIBRATE_PRODUCT_LINKS.feedback,
+            CALIBRATE_PRODUCT_LINKS.licenses,
+            CALIBRATE_PRODUCT_LINKS.releases
+        ]));
+    });
+
+    it('reveals native diagnostics and a supported update action only after expanding Advanced details', () => {
+        const view = render(<AboutScreen />);
+
+        fireEvent.press(view.getByLabelText('Show advanced details'));
 
         expect(view.getByText('v0.12.3')).toBeTruthy();
         expect(view.getByText('0.2.2 (build 4)')).toBeTruthy();
         expect(view.getAllByText('0.2.2')).toHaveLength(1);
         expect(view.getByText('internal')).toBeTruthy();
         expect(view.getByText('Embedded in native build')).toBeTruthy();
+        expect(view.getByText('Calibrate hosted service')).toBeTruthy();
+        expect(view.getByText(/can connect to compatible self-hosted services/)).toBeTruthy();
+        expect(view.getByText(/operator is responsible for privacy, security, availability, backups, and support/)).toBeTruthy();
         expect(view.getByLabelText('Check for updates')).toBeEnabled();
     });
 
-    it('offers an immediate install action for an available OTA', () => {
+    it('offers an immediate install action for an available OTA inside Advanced details', () => {
         const action = jest.fn(async () => undefined);
         mockedUseAppUpdateController.mockReturnValue(updateController({
             action,
@@ -83,9 +133,24 @@ describe('AboutScreen', () => {
         }));
 
         const view = render(<AboutScreen />);
+        fireEvent.press(view.getByLabelText('Show advanced details'));
         fireEvent.press(view.getByLabelText('Install and restart'));
 
         expect(action).toHaveBeenCalledTimes(1);
         expect(view.getByText(/compatible OTA update is available/)).toBeTruthy();
+    });
+
+    it('does not expose an inert update action on an unsupported runtime', () => {
+        mockedUseAppUpdateController.mockReturnValue(updateController({
+            actionTitle: 'Release builds only',
+            isSupported: false,
+            status: 'Manual OTA checks are available in signed release builds.'
+        }));
+
+        const view = render(<AboutScreen />);
+        fireEvent.press(view.getByLabelText('Show advanced details'));
+
+        expect(view.getByText('Manual OTA checks are available in signed release builds.')).toBeTruthy();
+        expect(view.queryByLabelText('Release builds only')).toBeNull();
     });
 });

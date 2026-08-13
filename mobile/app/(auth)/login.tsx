@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Link, useLocalSearchParams, type Href } from 'expo-router';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
@@ -12,7 +13,7 @@ import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { accountDeletionCleanupGuidance } from '../../src/account/accountDeletionNotice';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
-import { useAppTheme } from '../../src/theme';
+import { spacing, useAppTheme } from '../../src/theme';
 import { getAuthActionErrorMessage } from '../../src/errors/presentation';
 
 export default function LoginScreen() {
@@ -49,7 +50,7 @@ export default function LoginScreen() {
 
     return (
         <Screen safeTop style={styles.screen}>
-            <AuthBrand description="Track food, weight, and progress with your data on your server." />
+            <AuthBrand description="Track food, weight, and progress against a personalized calorie target." />
 
             {accountDeletionCleanupNotice && (
                 <AppCard accessibilityLiveRegion="polite" style={[styles.cleanupNotice, { borderColor: colors.warning }]}>
@@ -123,6 +124,24 @@ export default function LoginScreen() {
                     </Pressable>
                 </Link>
             )}
+
+            <View style={styles.trustLinks}>
+                <Link href={CALIBRATE_PRODUCT_LINKS.privacy as Href} asChild>
+                    <Pressable accessibilityRole="link" style={styles.trustLinkTarget}>
+                        <AppText style={[styles.link, { color: colors.primary }]}>Privacy policy</AppText>
+                    </Pressable>
+                </Link>
+                <Link href={CALIBRATE_PRODUCT_LINKS.terms as Href} asChild>
+                    <Pressable accessibilityRole="link" style={styles.trustLinkTarget}>
+                        <AppText style={[styles.link, { color: colors.primary }]}>Terms of service</AppText>
+                    </Pressable>
+                </Link>
+                <Link href={CALIBRATE_PRODUCT_LINKS.support as Href} asChild>
+                    <Pressable accessibilityRole="link" style={styles.trustLinkTarget}>
+                        <AppText style={[styles.link, { color: colors.primary }]}>Support</AppText>
+                    </Pressable>
+                </Link>
+            </View>
         </Screen>
     );
 }
@@ -147,6 +166,16 @@ const styles = StyleSheet.create({
         minHeight: 48,
         alignItems: 'flex-start',
         justifyContent: 'center'
+    },
+    trustLinks: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center'
+    },
+    trustLinkTarget: {
+        minHeight: 48,
+        justifyContent: 'center',
+        paddingHorizontal: spacing.sm
     },
     link: {
         fontWeight: '700',

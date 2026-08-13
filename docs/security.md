@@ -1,5 +1,9 @@
 # Security model
 
+The official hosted service operates its application, database, email delivery, logs, backups, retention, and abuse
+controls. Advanced self-hosting runs the same product contract, but responsibility for those controls belongs to the
+instance operator.
+
 ## Browser sessions and CSRF
 
 The web client uses an `HttpOnly` cookie session. Production and staging default to a secure,
@@ -54,8 +58,9 @@ verification or current legal acceptance retain only the narrow account-access f
 `account-access-and-recovery.md`.
 
 The official hosted service fails registration closed when SMTP is unavailable or incomplete.
-Self-hosted production instances may keep delivery disabled; operators who enable it must provide
-their own SMTP service, public HTTPS origin, retention terms, and abuse monitoring.
+Advanced self-hosted instances may keep delivery disabled; operators who enable it may use any
+SMTP provider and must define a public HTTPS origin, retention terms, credential handling, and
+abuse monitoring.
 
 ## Account and device sessions
 
@@ -69,8 +74,8 @@ Native push registrations are linked to the mobile session that registered them.
 account therefore removes its browser sessions, mobile sessions, web push subscriptions, and
 native push tokens through database cascades rather than relying on a hosted cleanup service.
 
-Native push defaults to disabled because Expo delivery crosses an external service boundary. Set
-`NATIVE_PUSH_MODE=expo` only for a private/internal deployment that accepts that dependency. While
+Native push defaults to disabled because Expo delivery crosses an external service boundary.
+Self-hosted operators set `NATIVE_PUSH_MODE=expo` only when they accept that dependency. While
 disabled, the public capability is false, Android does not request notification access, new token
 registration returns `NATIVE_PUSH_DISABLED`, and stored native tokens are not delivered.
 

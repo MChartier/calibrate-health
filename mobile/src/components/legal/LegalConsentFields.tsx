@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from '../AppText';
 import { useFocusVisible } from '../useFocusVisible';
@@ -80,8 +81,8 @@ export function LegalConsentFields({
                 testID="accept-privacy"
             />
             <View style={styles.links}>
-                <Link href="/terms" style={[styles.link, { color: theme.colors.primary }]}>Read Terms</Link>
-                <Link href="/privacy" style={[styles.link, { color: theme.colors.primary }]}>Read Privacy policy</Link>
+                <Link href={CALIBRATE_PRODUCT_LINKS.terms as Href} style={[styles.link, { color: theme.colors.primary }]}>Read Terms</Link>
+                <Link href={CALIBRATE_PRODUCT_LINKS.privacy as Href} style={[styles.link, { color: theme.colors.primary }]}>Read Privacy policy</Link>
             </View>
             {error && (
                 <AppText accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{ color: theme.colors.danger }}>

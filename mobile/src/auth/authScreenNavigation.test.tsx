@@ -5,6 +5,7 @@ import LoginScreen from '../../app/(auth)/login';
 import RegisterScreen from '../../app/(auth)/register';
 import { useAuth } from './AuthContext';
 import { Link, useLocalSearchParams } from 'expo-router';
+import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 
 jest.mock('./AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../account/accountDeletionNotice', () => ({ accountDeletionCleanupGuidance: jest.fn(() => '') }));
@@ -72,14 +73,18 @@ describe('auth screen server navigation', () => {
     it('carries the login server draft into the registration link', () => {
         const screen = render(<LoginScreen />);
 
-        expect(screen.getByText(SELF_HOSTED_URL)).toBeTruthy();
+        expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
+        fireEvent.press(screen.getByLabelText('Show advanced connection options'));
+        expect(screen.getByLabelText('Server URL')).toHaveProp('value', SELF_HOSTED_URL);
         expectAuthLink('/(auth)/register');
     });
 
     it('carries the registration server draft back to the login link', () => {
         const screen = render(<RegisterScreen />);
 
-        expect(screen.getByText(SELF_HOSTED_URL)).toBeTruthy();
+        expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
+        fireEvent.press(screen.getByLabelText('Show advanced connection options'));
+        expect(screen.getByLabelText('Server URL')).toHaveProp('value', SELF_HOSTED_URL);
         expectAuthLink('/(auth)/login');
     });
 
@@ -168,7 +173,7 @@ describe('auth screen server navigation', () => {
         const screen = render(<LoginScreen />);
 
         expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
-        expect(screen.queryByLabelText('Change server URL')).toBeNull();
+        expect(screen.queryByLabelText('Show advanced connection options')).toBeNull();
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'user@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
@@ -182,6 +187,18 @@ describe('auth screen server navigation', () => {
             );
         });
         expect(mockLink.mock.calls.some(([props]) => props.href === '/(auth)/register')).toBe(true);
+    });
+
+    it('uses canonical privacy, terms, and support destinations on auth surfaces', () => {
+        render(<LoginScreen />);
+        render(<RegisterScreen />);
+
+        const destinations = mockLink.mock.calls.map(([props]) => props.href);
+        expect(destinations).toEqual(expect.arrayContaining([
+            CALIBRATE_PRODUCT_LINKS.privacy,
+            CALIBRATE_PRODUCT_LINKS.terms,
+            CALIBRATE_PRODUCT_LINKS.support
+        ]));
     });
 
     it('restores the create-account action after registration fails', async () => {
