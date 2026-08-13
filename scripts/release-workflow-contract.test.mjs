@@ -36,6 +36,7 @@ function assertWindowsUxJob(workflow) {
 }
 test('master merges publish only when the reviewed manifest version advances', () => {
   const workflow = readWorkflow('cut-release.yml');
+  const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
 
   assertWindowsUxJob(workflow);
   assert.match(workflow, /publish:\s*\n\s+needs: \[ux-regression, database-rollback\]/);
@@ -45,6 +46,8 @@ test('master merges publish only when the reviewed manifest version advances', (
   assert.match(workflow, /node scripts\/release-config\.mjs plan/);
   assert.match(workflow, /npm run release:check:container/);
   assert.doesNotMatch(workflow, /npm run release:check:production/);
+  assert.doesNotMatch(packageConfig.scripts['release:check:container'], /--strict/);
+  assert.match(packageConfig.scripts['release:check:production'], /--strict/);
   assert.match(workflow, /packages: write/);
   assert.match(workflow, /build_release_image:/);
   assert.match(workflow, /needs: publish/);
@@ -377,6 +380,7 @@ test('release acceptance workflow separates implementation from external evidenc
   assert.match(workflow, /actions: read/);
   assert.match(external, /CALIBRATE_RELEASE_EVIDENCE: \$\{\{ inputs\.evidence_commit \}\}/);
   assert.match(external, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(external, /run: node scripts\/dependency-advisory-exceptions\.mjs --strict/);
   assert.match(external, /run: npm\.cmd run release:acceptance:external/);
   assert.match(external, /run: npm\.cmd run test:risk-evidence:release/);
   for (const runStep of external.split(/\n(?=\s+- name:)/).filter((step) => /\n\s+run:/.test(step))) {
