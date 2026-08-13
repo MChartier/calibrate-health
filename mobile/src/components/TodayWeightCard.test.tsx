@@ -1,6 +1,8 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import type { MetricEntry } from '@calibrate/api-client';
 import { TodayWeightCard } from './TodayWeightCard';
+import { themes } from '../theme';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -20,7 +22,7 @@ describe('TodayWeightCard', () => {
         expect(screen.getByText("Today's weight")).toBeTruthy();
         expect(screen.getByText('168.2 lb')).toBeTruthy();
         expect(screen.getByText('Logged today')).toBeTruthy();
-        expect(screen.getByText('Edit')).toBeTruthy();
+        expect(screen.getByText('Edit', { includeHiddenElements: true })).toBeTruthy();
 
         fireEvent.press(screen.getByRole('button'));
         expect(onPress).toHaveBeenCalledTimes(1);
@@ -33,7 +35,7 @@ describe('TodayWeightCard', () => {
 
         expect(screen.getByText('No weigh-in yet')).toBeTruthy();
         expect(screen.getByText("Add today's measurement")).toBeTruthy();
-        expect(screen.getByText('Log')).toBeTruthy();
+        expect(screen.getByText('Log', { includeHiddenElements: true })).toBeTruthy();
         expect(screen.getByLabelText("Today's weight. No weigh-in yet. Log weight")).toBeTruthy();
     });
 
@@ -44,5 +46,28 @@ describe('TodayWeightCard', () => {
 
         expect(screen.getByText('Weight')).toBeTruthy();
         expect(screen.getByText('Logged for this day')).toBeTruthy();
+    });
+
+    it('uses one full-card target and lets compact weight copy wrap', () => {
+        const onPress = jest.fn();
+        const screen = render(
+            <TodayWeightCard metric={TODAY_METRIC} weightUnit="LB" isToday onPress={onPress} compact />
+        );
+        const card = screen.getByTestId('today-weight-card');
+        const target = screen.getByTestId('today-weight-card-press-layer');
+
+        expect(within(target).getByRole('header', { name: "Today's weight" })).toBeTruthy();
+        expect(screen.getAllByRole('button')).toHaveLength(1);
+        expect(screen.getByText('168.2 lb').props.numberOfLines).toBeUndefined();
+        expect(StyleSheet.flatten(target.props.style)).toMatchObject({
+            minHeight: themes.light.interaction.minimumTouchTarget,
+            flex: 1
+        });
+
+        fireEvent(target, 'pressIn');
+        expect(card).toHaveStyle({ backgroundColor: themes.light.colors.surfacePressed });
+        fireEvent(target, 'pressOut');
+        fireEvent.press(target);
+        expect(onPress).toHaveBeenCalledTimes(1);
     });
 });

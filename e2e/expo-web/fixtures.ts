@@ -40,7 +40,7 @@ type StubTrendMetricEntry = StubMetricEntry & {
 
 export type AuthenticatedApiOptions = {
   caloriePlanFixture?: CaloriePlanFixtureState;
-  foodDayStatus?: 'OPEN' | 'PAUSED';
+  foodDayStatus?: 'OPEN' | 'COMPLETE' | 'INCOMPLETE' | 'PAUSED';
   foodEntries?: Array<{
     id: number;
     meal_period: 'BREAKFAST';
@@ -395,13 +395,12 @@ async function installAuthenticatedApi(
   options: AuthenticatedApiOptions,
   releaseLoading: Promise<void>,
 ): Promise<void> {
-  const foodEntries = options.foodEntries
-    ?? (state === 'empty' ? [] : DEFAULT_FOOD_ENTRIES);
+  const defaultFoodEntries = state === 'empty' ? [] : DEFAULT_FOOD_ENTRIES;
   const metrics = options.metrics
     ?? (state === 'empty' ? [] : TREND_METRICS.map(({ id, date, weight }) => ({ id, date, weight })));
   const trendMetrics = options.trendMetrics ?? (state === 'empty' ? [] : TREND_METRICS);
   const trendUnavailable = options.trendAvailability === 'unavailable';
-  const foodDayStatus = options.foodDayStatus ?? (state === 'paused' ? 'PAUSED' : 'OPEN');
+  const defaultFoodDayStatus = state === 'paused' ? 'PAUSED' : 'OPEN';
   const caloriePlan = getCaloriePlanFixture(options.caloriePlanFixture ?? 'available');
   const foodRequestCounts = new Map<string, number>();
   if (state === 'failed-request' || state === 'stale') {
@@ -437,6 +436,7 @@ async function installAuthenticatedApi(
     if (pathname === '/api/v1/food/recent') return fulfillJson(route, { items: [] });
     if (pathname === '/api/v1/my-foods') return fulfillJson(route, []);
     if (pathname === '/api/v1/food') {
+      const foodEntries = options.foodEntries ?? defaultFoodEntries;
       const requestDate = url.searchParams.get('date') ?? FROZEN_LOCAL_DATE;
       const requestCount = (foodRequestCounts.get(requestDate) ?? 0) + 1;
       foodRequestCounts.set(requestDate, requestCount);
@@ -453,6 +453,7 @@ async function installAuthenticatedApi(
       return fulfillJson(route, foodEntries);
     }
     if (pathname === '/api/v1/food-days/pause') {
+      const foodDayStatus = options.foodDayStatus ?? defaultFoodDayStatus;
       const isPaused = foodDayStatus === 'PAUSED';
       return fulfillJson(route, {
         pause: {
@@ -469,6 +470,8 @@ async function installAuthenticatedApi(
       });
     }
     if (pathname === '/api/v1/food-days/range') {
+      const foodDayStatus = options.foodDayStatus ?? defaultFoodDayStatus;
+      const isComplete = foodDayStatus === 'COMPLETE';
       const startDate = url.searchParams.get('start') ?? FROZEN_LOCAL_DATE;
       return fulfillJson(route, {
         start_date: startDate,
@@ -477,23 +480,25 @@ async function installAuthenticatedApi(
           date: startDate,
           status: foodDayStatus,
           origin: foodDayStatus === 'PAUSED' ? 'PAUSE' : null,
-          source: foodDayStatus === 'PAUSED' ? 'STORED' : 'DEFAULT',
-          is_representative: false,
-          is_complete: false,
-          completed_at: null,
+          source: foodDayStatus === 'OPEN' ? 'DEFAULT' : 'STORED',
+          is_representative: isComplete,
+          is_complete: isComplete,
+          completed_at: isComplete ? FROZEN_NOW : null,
           updated_at: null,
         }],
       });
     }
     if (pathname === '/api/v1/food-days') {
+      const foodDayStatus = options.foodDayStatus ?? defaultFoodDayStatus;
+      const isComplete = foodDayStatus === 'COMPLETE';
       return fulfillJson(route, {
         date: url.searchParams.get('date') ?? FROZEN_LOCAL_DATE,
         status: foodDayStatus,
         origin: foodDayStatus === 'PAUSED' ? 'PAUSE' : null,
-        source: foodDayStatus === 'PAUSED' ? 'STORED' : 'DEFAULT',
-        is_representative: false,
-        is_complete: false,
-        completed_at: null,
+        source: foodDayStatus === 'OPEN' ? 'DEFAULT' : 'STORED',
+        is_representative: isComplete,
+        is_complete: isComplete,
+        completed_at: isComplete ? FROZEN_NOW : null,
         updated_at: null,
       });
     }

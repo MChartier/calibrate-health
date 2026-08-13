@@ -73,6 +73,7 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
             style={style}
             contentStyle={[styles.card, compact && styles.cardCompact]}
             secondaryActionPlacement="footer"
+            secondaryActionTestID="food-log-card-secondary-region"
             secondaryAction={onAddFood ? (
                 <AppButton
                     title="Add food"
@@ -109,12 +110,14 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
                             </View>
                             <View style={[styles.summaryText, compact && styles.summaryTextCompact]}>
                                 <View style={styles.mealHeading}>
-                                    <AppText variant="subtitle" numberOfLines={1} style={styles.mealName}>
+                                    <AppText variant="subtitle" style={styles.mealName}>
                                         {formatMealPeriod(recentMeal.meal)}
                                     </AppText>
-                                    <AppText variant="label" numberOfLines={1}>{formatCalories(recentMeal.calories)}</AppText>
+                                    <AppText variant="label" style={styles.mealCalories}>
+                                        {formatCalories(recentMeal.calories)}
+                                    </AppText>
                                 </View>
-                                <AppText variant="muted" numberOfLines={1}>
+                                <AppText variant="muted">
                                     {formatEntryPreview(recentMeal.entries)}
                                 </AppText>
                             </View>
@@ -210,11 +213,15 @@ function createStyles(theme: AppTheme) {
         mealHeading: {
             flexDirection: 'row',
             alignItems: 'center',
+            flexWrap: 'wrap',
             gap: theme.spacing.sm
         },
         mealName: {
             flex: 1,
             minWidth: 0
+        },
+        mealCalories: {
+            flexShrink: 0
         },
         addFoodButton: {
             position: 'relative',

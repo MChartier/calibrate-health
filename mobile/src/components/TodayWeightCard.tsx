@@ -3,13 +3,13 @@ import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { MetricEntry } from '@calibrate/api-client';
 import type { WeightUnit } from '@calibrate/shared';
-import { AppPressableCard } from './AppPressableCard';
+import { NavigableCard } from './NavigableCard';
 import { AppText } from './AppText';
 import { CardHeader } from './CardHeader';
 import { formatWeight } from '../utils/format';
 import { type AppTheme, useAppTheme } from '../theme';
 
-type TodayWeightCardProps = Omit<React.ComponentProps<typeof AppPressableCard>, 'accessibilityLabel' | 'children' | 'onPress'> & {
+type TodayWeightCardProps = Omit<React.ComponentProps<typeof NavigableCard>, 'accessibilityLabel' | 'children' | 'onPress' | 'secondaryAction'> & {
     metric: MetricEntry | null;
     weightUnit: WeightUnit | undefined;
     isToday: boolean;
@@ -38,18 +38,26 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
         : (isToday ? 'Add today\'s measurement' : 'Add a measurement for this day');
 
     return (
-        <AppPressableCard
+        <NavigableCard
             {...props}
+            testID={props.testID ?? 'today-weight-card'}
+            primaryActionTestID="today-weight-card-press-layer"
             accessibilityRole="button"
             accessibilityLabel={`${title}. ${metricLabel}. ${action} weight`}
             accessibilityHint={metric ? 'Opens this weigh-in for editing' : 'Opens the weight entry form'}
             onPress={onPress}
-            style={[styles.card, compact && styles.cardCompact, style]}
+            style={style}
+            contentStyle={[styles.card, compact && styles.cardCompact]}
         >
             <CardHeader
                 title={title}
                 density="compact"
-                action={<View style={styles.viewAction}>
+                action={<View
+                    accessibilityElementsHidden
+                    aria-hidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={styles.viewAction}
+                >
                     <AppText style={[styles.viewActionText, compact && styles.viewActionTextCompact]}>{action}</AppText>
                     <Ionicons name="chevron-forward" size={compact ? 17 : 19} color={theme.colors.primary} />
                 </View>}
@@ -60,13 +68,13 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
                     <Ionicons name="scale-outline" size={compact ? 19 : 22} color={theme.colors.primary} />
                 </View>
                 <View style={[styles.summaryText, compact && styles.summaryTextCompact]}>
-                    <AppText variant={metricVariant} numberOfLines={1}>
+                    <AppText variant={metricVariant}>
                         {metricLabel}
                     </AppText>
                     <AppText variant="muted">{supportingLabel}</AppText>
                 </View>
             </View>
-        </AppPressableCard>
+        </NavigableCard>
     );
 };
 

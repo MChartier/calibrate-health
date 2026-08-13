@@ -3,4 +3,5 @@ import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 
 export type DateNavigationProps = ViewProps & {
     navigation: LogDateNavigation;
+    compact?: boolean;
 };

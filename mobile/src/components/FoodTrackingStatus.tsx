@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
 import { foodDayRangeQueryRoot } from '../food/calendar';
+import { getFoodDayStatusLabel } from '../food/dayPresentation';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { addDaysToDateOnly, getTodayDate } from '../utils/dates';
 import { type AppTheme, useAppTheme } from '../theme';
@@ -78,10 +79,11 @@ export function useFoodDayStatus(date: string, enabled = true) {
 export const DayStatusCard: React.FC<{
     date: string;
     isToday: boolean;
+    failed?: boolean;
     compact?: boolean;
     expanded?: boolean;
     style?: StyleProp<ViewStyle>;
-}> = ({ date, isToday, compact = false, expanded = false, style }) => {
+}> = ({ date, isToday, failed = false, compact = false, expanded = false, style }) => {
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
@@ -164,28 +166,30 @@ export const DayStatusCard: React.FC<{
     const useExpandedPauseLayout = expanded && isToday && day.status === 'PAUSED';
     const isBusy = setStatus.isPending || startPause.isPending || resume.isPending;
     const actionError = setStatus.error ?? startPause.error ?? resume.error;
+    const statusFailed = failed || dayQuery.isError;
     let icon: React.ComponentProps<typeof Ionicons>['name'] = 'options-outline';
-    let title = isToday ? 'Tracking options' : 'Resolve this day';
+    const title = getFoodDayStatusLabel({ status: day.status, failed: statusFailed });
     let description = isToday
         ? 'Complete the day when the log is finished, or pause tracking when you are taking time off.'
         : 'This day remains unresolved until its calorie log represents the full day.';
-    if (day.status === 'COMPLETE') {
+    if (statusFailed && day.status !== 'PAUSED') {
+        icon = 'alert-circle-outline';
+        description = dayQuery.isError
+            ? 'Day status could not be refreshed, so this day is not treated as fully logged.'
+            : 'Today data could not be refreshed, so this day is not treated as fully logged.';
+    } else if (day.status === 'COMPLETE') {
         icon = 'checkmark-circle';
-        title = 'Day complete';
         description = 'This is a signed-off full-day calorie record.';
     } else if (day.status === 'INCOMPLETE') {
         icon = 'alert-circle-outline';
-        title = day.source === 'INFERRED_EMPTY' ? 'Tracking was not completed' : 'Day incomplete';
         description = day.source === 'INFERRED_EMPTY'
             ? 'No food was logged for this past day, so it is not treated as a zero-calorie day.'
             : 'Calories are shown as raw entries and are not treated as a complete day.';
     } else if (day.status === 'PAUSED') {
         icon = 'pause-circle';
-        title = 'Calorie tracking paused';
         description = 'Food targets and reminders are paused. Your goal remains active, and you can still enter weight voluntarily.';
     } else if (!isToday) {
         icon = 'help-circle-outline';
-        title = 'Day unresolved';
         description = 'This past day has some tracking data but was never signed off as complete or incomplete.';
     }
 
@@ -205,7 +209,7 @@ export const DayStatusCard: React.FC<{
     if (useCompactOpenLayout) {
         headingContent = (
             <AppText accessibilityRole="header" aria-level={2} variant="label" style={styles.cardHeadingTitle}>
-                Tracking options
+                {title}
             </AppText>
         );
     } else if (useExpandedPauseLayout) {
@@ -286,7 +290,7 @@ export const DayStatusCard: React.FC<{
                 )}
                 {(day.status === 'COMPLETE' || day.status === 'INCOMPLETE' || (day.status === 'PAUSED' && !isToday)) && (
                     <AppButton
-                        title={day.status === 'COMPLETE' ? 'Edit or backfill' : 'Backfill this day'}
+                        title={day.status === 'COMPLETE' && !statusFailed ? 'Edit or backfill' : 'Backfill this day'}
                         variant="secondary"
                         disabled={isBusy}
                         onPress={() => setStatus.mutate('OPEN')}

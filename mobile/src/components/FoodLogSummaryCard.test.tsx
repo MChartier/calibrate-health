@@ -33,6 +33,11 @@ describe('FoodLogSummaryCard', () => {
         expect(screen.getByText('Nothing logged yet')).toBeTruthy();
         expect(screen.getByText('Add a food to start this day.')).toBeTruthy();
 
+        const primaryTarget = screen.getByTestId('food-log-card-press-layer');
+        const secondaryRegion = screen.getByTestId('food-log-card-secondary-region');
+        expect(within(primaryTarget).queryByRole('button', { name: 'Add food' })).toBeNull();
+        expect(within(secondaryRegion).getByRole('button', { name: 'Add food' })).toBeTruthy();
+
         fireEvent.press(screen.getByLabelText('Add food'));
         expect(onAddFood).toHaveBeenCalledTimes(1);
         expect(onPress).not.toHaveBeenCalled();
@@ -67,5 +72,13 @@ describe('FoodLogSummaryCard', () => {
         fireEvent(target, 'pressOut');
         fireEvent.press(target);
         expect(onPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('allows compact meal details to wrap instead of clipping scaled text', () => {
+        const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={jest.fn()} compact />);
+
+        expect(screen.getByText('Breakfast').props.numberOfLines).toBeUndefined();
+        expect(screen.getByText('425 kcal').props.numberOfLines).toBeUndefined();
+        expect(screen.getByText('Oatmeal, Coffee +1 more').props.numberOfLines).toBeUndefined();
     });
 });

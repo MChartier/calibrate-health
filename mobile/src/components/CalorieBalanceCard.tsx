@@ -20,10 +20,9 @@ const GAUGE_STROKE = 9;
 const COMPACT_GAUGE_SIZE = 88;
 const COMPACT_GAUGE_STROKE = 9;
 
-function getBalanceTone(remaining: number | null, progress: number): 'primary' | 'warning' | 'danger' {
+function getBalanceTone(remaining: number | null): 'primary' | 'danger' {
     if (remaining === null) return 'primary';
     if (remaining < 0) return 'danger';
-    if (progress >= 0.85) return 'warning';
     return 'primary';
 }
 
@@ -48,7 +47,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     const remaining = hasTarget ? Math.round(targetCalories - totalCalories) : null;
     const isOver = remaining !== null && remaining < 0;
     const progressValue = hasTarget ? Math.min(totalCalories / targetCalories, 1) : null;
-    const tone = getBalanceTone(remaining, progressValue ?? 0);
+    const tone = getBalanceTone(remaining);
     const balanceValue = remaining === null ? '-' : formatNumber(Math.abs(remaining), 0);
     const balanceLabel = remaining === null ? unavailableLabel : isOver ? 'kcal over target' : 'kcal remaining';
     const balanceSummary = remaining === null ? balanceLabel : `${balanceValue} ${balanceLabel}`;
@@ -59,8 +58,8 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
             {...props}
             accessible
             accessibilityLabel={hasTarget
-                ? `${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`
-                : `${balanceSummary}. ${formatNumber(totalCalories, 0)} calories logged.`}
+                ? `Daily balance. ${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`
+                : `Daily balance. ${balanceSummary}. ${formatNumber(totalCalories, 0)} calories logged.`}
             style={[compact && styles.cardCompact, style]}
         >
             <View style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}>
@@ -76,7 +75,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
                         </>
                     ) : (
                         <>
-                            <AppText style={[
+                            <AppText testID="calorie-balance-value" style={[
                                 styles.balanceValue,
                                 compact && styles.balanceValueCompact,
                                 styles[`${tone}Text`]
@@ -94,13 +93,13 @@ type CalorieBalanceStyles = ReturnType<typeof createStyles>;
 
 const CalorieGauge: React.FC<{
     value: number;
-    tone: 'primary' | 'warning' | 'danger';
+    tone: 'primary' | 'danger';
     compact: boolean;
     colors: AppThemeColors;
     styles: CalorieBalanceStyles;
 }> = ({ value, tone, compact, colors, styles }) => {
     const percent = Math.round(value * 100);
-    const toneColor = tone === 'danger' ? colors.danger : tone === 'warning' ? colors.warningDark : colors.primary;
+    const toneColor = tone === 'danger' ? colors.danger : colors.primary;
     const size = compact ? COMPACT_GAUGE_SIZE : GAUGE_SIZE;
     const stroke = compact ? COMPACT_GAUGE_STROKE : GAUGE_STROKE;
     const gaugeRadius = (size - stroke) / 2;
@@ -125,6 +124,7 @@ const CalorieGauge: React.FC<{
                     cy={size / 2}
                     r={gaugeRadius}
                     fill="none"
+                    testID="calorie-gauge-progress"
                     stroke={toneColor}
                     strokeWidth={stroke}
                     strokeLinecap="round"
@@ -150,9 +150,6 @@ function createStyles(colors: AppThemeColors) {
     },
     primaryText: {
         color: colors.primary
-    },
-    warningText: {
-        color: colors.warningDark
     },
     dangerText: {
         color: colors.danger
