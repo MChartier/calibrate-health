@@ -142,7 +142,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
         title: '6. Data Retention',
         paragraphs: [
             'Profile and tracking data remain in the active database while the account is active unless individual records are edited or deleted. Sessions expire or are revoked, and push subscriptions remain until disabled, rejected, revoked, or removed with the account.',
-            'Password-confirmed account deletion removes active profile data, avatar, goals, metrics, food history, day resolutions, tracking-pause history, My Foods, recipes, notifications, Health Connect source records, summaries, sessions, push subscriptions, and synchronization records.'
+            'Password-confirmed account deletion removes active profile data, avatar, goals, metrics, food history, day resolutions, tracking-pause history, Saved foods, recipes, notifications, Health Connect source records, summaries, sessions, push subscriptions, and synchronization records.'
         ],
         bullets: [
             'Operator-managed backups or security logs follow the operator retention schedule and legal requirements.',
@@ -153,7 +153,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
         title: '7. Your Rights and Choices',
         paragraphs: [
             'Depending on your location, you may have rights to access, correct, delete, or export personal data.',
-            'The signed-in versioned JSON export includes account profile, preferences, optional avatar, goals, body metrics, food history, day resolutions, tracking-pause history, My Foods, recipes, notification history, Health Connect source records, and daily activity summaries. Password hashes, tokens, sessions, push endpoints, and internal replay metadata are excluded.',
+            'The signed-in versioned JSON export includes account profile, preferences, optional avatar, goals, body metrics, food history, day resolutions, tracking-pause history, Saved foods, recipes, notification history, Health Connect source records, and daily activity summaries. Password hashes, tokens, sessions, push endpoints, and internal replay metadata are excluded.',
             'Account deletion requires the current password and cannot be undone. Use the public account deletion instructions for signed-in steps, hosted-service requests, timing, and retention details.'
         ]
     },
@@ -202,7 +202,7 @@ export const ACCOUNT_DELETION_SECTIONS: PublicLegalSection[] = [
     {
         title: 'Data deleted with the account',
         bullets: [
-            'Profile, preferences, inline avatar, goals, calorie-budget calibration recommendations and accepted revisions, body metrics, food logs, day resolutions, tracking-pause history, My Foods, and recipes.',
+            'Profile, preferences, inline avatar, goals, calorie-budget calibration recommendations and accepted revisions, body metrics, food logs, day resolutions, tracking-pause history, Saved foods, and recipes.',
             'Imported Health Connect source records, daily activity summaries, notifications, and internal synchronization records.',
             'Browser and mobile sessions, authentication tokens, and browser or native push subscriptions.'
         ]

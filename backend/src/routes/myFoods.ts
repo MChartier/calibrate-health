@@ -10,6 +10,11 @@ import {
 import { createHttpError, isHttpError, normalizeMyFoodName, normalizeServingUnitLabel } from './myFoodsUtils';
 import { logSafeOperationalError } from '../observability';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
+import {
+    listMyFoodsLibrary,
+    MyFoodsLibraryRequestError,
+    parseMyFoodsLibraryQuery
+} from '../services/myFoodsLibrary';
 
 /**
  * "My Foods" endpoints for user-defined foods and immutable recipe snapshots.
@@ -46,6 +51,21 @@ router.get('/', async (req, res) => {
     } catch (err) {
         logSafeOperationalError('my_foods.list', err, res.locals?.requestId);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.get('/library', async (req, res) => {
+    const user = getAuthenticatedUser(req);
+
+    try {
+        const query = parseMyFoodsLibraryQuery(req.query as Record<string, unknown>);
+        return res.json(await listMyFoodsLibrary(prisma, user.id, query));
+    } catch (err) {
+        if (err instanceof MyFoodsLibraryRequestError) {
+            return res.status(400).json({ message: err.message });
+        }
+        logSafeOperationalError('my_foods.library', err, res.locals?.requestId);
+        return res.status(500).json({ message: 'Server error' });
     }
 });
 

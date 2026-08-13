@@ -746,6 +746,66 @@ paths:
           description: Food log deleted; response has no body.
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/my-foods/library:
+    get:
+      operationId: listMyFoodsLibrary
+      description: List the authenticated user's saved foods and recipe snapshots using stable keyset pagination.
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 120 }
+        - name: type
+          in: query
+          schema: { $ref: '#/components/schemas/MyFoodType' }
+        - name: cursor
+          in: query
+          description: Opaque continuation cursor returned by the preceding response for the same filters.
+          schema: { type: string, maxLength: 2048 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 30 }
+      responses:
+        '200':
+          description: Saved foods ordered by pinned state, normalized name, and stable ID.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MyFoodsLibraryResponse' }
+        '400':
+          description: Invalid query, filter, limit, or cursor.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/my-foods/{myFoodId}/pin:
+    patch:
+      operationId: setMyFoodPinned
+      description: Set shortcut pin state on an authenticated user's saved food or recipe without changing snapshots.
+      parameters:
+        - $ref: '#/components/parameters/MyFoodId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetMyFoodPinnedRequest' }
+      responses:
+        '200':
+          description: Updated saved food summary.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MyFoodSummary' }
+        '400':
+          description: Invalid saved-food ID or pin state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Saved food does not exist or belongs to another account.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/metrics:
     get:
       operationId: listMetrics
@@ -1055,6 +1115,13 @@ components:
   parameters:
     FoodLogId:
       name: foodLogId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    MyFoodId:
+      name: myFoodId
       in: path
       required: true
       schema:
@@ -2227,6 +2294,48 @@ components:
       properties:
         receipt: { $ref: '#/components/schemas/OnboardingCompleteReceipt' }
         user: { $ref: '#/components/schemas/UserClientPayload' }
+    MyFoodType:
+
+      type: string
+      enum: [FOOD, RECIPE]
+    MyFoodSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - name
+        - serving_size_quantity
+        - serving_unit_label
+        - calories_per_serving
+        - is_pinned
+        - recipe_total_calories
+        - yield_servings
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/MyFoodType' }
+        name: { type: string }
+        serving_size_quantity: { type: number }
+        serving_unit_label: { type: string }
+        calories_per_serving: { type: number }
+        is_pinned: { type: boolean }
+        recipe_total_calories: { type: [number, 'null'] }
+        yield_servings: { type: [number, 'null'] }
+    MyFoodsLibraryResponse:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MyFoodSummary' }
+        next_cursor: { type: [string, 'null'] }
+    SetMyFoodPinnedRequest:
+      type: object
+      additionalProperties: false
+      required: [is_pinned]
+      properties:
+        is_pinned: { type: boolean }
     ApiError:
       type: object
       required: [message, code, retryable, request_id]

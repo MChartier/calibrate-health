@@ -64,3 +64,38 @@ test('recipe editing restores live source foods and preserves orphan snapshots',
         grams_total: 142
     }));
 });
+
+test('recipe editing keeps an off-page owned source attached using its persisted snapshot', () => {
+    const detail = {
+        recipe_ingredients: [{
+            id: 9,
+            source: 'MY_FOOD',
+            source_my_food_id: 44,
+            quantity_servings: 1.5,
+            name_snapshot: 'Deep library oats',
+            calories_total_snapshot: 225,
+            serving_size_quantity_snapshot: 0.5,
+            serving_unit_label_snapshot: 'cup',
+            calories_per_serving_snapshot: 150
+        }]
+    } as unknown as MyFoodDetail;
+
+    const drafts = hydrateRecipeIngredientDrafts(detail, []);
+
+    expect(drafts[0]).toEqual(expect.objectContaining({
+        source: 'MY_FOOD',
+        servings: 1.5,
+        myFood: expect.objectContaining({
+            id: 44,
+            name: 'Deep library oats',
+            serving_size_quantity: 0.5,
+            serving_unit_label: 'cup',
+            calories_per_serving: 150
+        })
+    }));
+    expect(serializeRecipeIngredientDrafts(drafts)[0]).toEqual(expect.objectContaining({
+        source: 'MY_FOOD',
+        my_food_id: 44,
+        quantity_servings: 1.5
+    }));
+});

@@ -98,7 +98,7 @@ describe('AddFoodSheet async resource states', () => {
 
         await waitFor(() => expect(screen.getByText('Offline - showing saved information')).toBeTruthy());
         expect(screen.getByText('Overnight oats')).toBeTruthy();
-        expect(screen.queryByText('No saved recipes yet. Create one in My Foods to reuse it here.')).toBeNull();
+        expect(screen.queryByText('No saved recipes yet. Create one in Saved foods to reuse it here.')).toBeNull();
     });
 
     it('does not describe an uncached offline recipe library as empty', async () => {
@@ -106,9 +106,18 @@ describe('AddFoodSheet async resource states', () => {
         fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
 
         await waitFor(() => expect(screen.getByText('Connect to the internet to load saved recipes.')).toBeTruthy());
-        expect(screen.queryByText('No saved recipes yet. Create one in My Foods to reuse it here.')).toBeNull();
+        expect(screen.queryByText('No saved recipes yet. Create one in Saved foods to reuse it here.')).toBeNull();
         expect(screen.queryByText('No recipes match this search.')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
         expect(mockApi.getMyFoods).not.toHaveBeenCalled();
+    });
+
+    it('links to Saved foods from the Add Food sheet', () => {
+        const screen = renderSheet();
+
+        fireEvent.press(screen.getByRole('button', { name: 'Saved foods' }));
+
+        const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
+        expect(router.push).toHaveBeenCalledWith('/my-foods');
     });
 });

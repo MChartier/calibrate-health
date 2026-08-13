@@ -346,6 +346,11 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         router.push({ pathname: '/barcode', params: { date, meal, returnTo } });
     }
 
+    function openSavedFoods() {
+        onClose();
+        router.push('/my-foods');
+    }
+
     function submitQuick(closeAfterLogging: boolean) {
         if (!canAddQuickEntry) return;
         logFood.mutate({
@@ -636,7 +641,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                         loading={<AppText style={styles.emptyMessage} variant="muted">Loading recipes...</AppText>}
                         empty={(
                             <AppText style={styles.emptyMessage} variant="muted">
-                                No saved recipes yet. Create one in My Foods to reuse it here.
+                                No saved recipes yet. Create one in Saved foods to reuse it here.
                             </AppText>
                         )}
                         onRetry={isOnline ? () => myFoodsQuery.refetch() : undefined}
@@ -693,6 +698,13 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 />
             </View>
             <SegmentedControl options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
+            <AppButton
+                title="Saved foods"
+                variant="ghost"
+                leftIcon={<Ionicons name="bookmark-outline" size={18} color={theme.colors.onSurface} />}
+                onPress={openSavedFoods}
+                style={styles.savedFoodsLink}
+            />
             <View style={styles.modeContent}>{renderModeContent()}</View>
         </BottomSheetModal>
     );
@@ -747,6 +759,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     modeContent: {
         flex: 1,
         minHeight: 0
+    },
+    savedFoodsLink: {
+        alignSelf: 'flex-end'
     },
     formContent: {
         gap: spacing.md,
