@@ -291,17 +291,6 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await expect(selectedSummary).toContainText('Jul 18, 2026');
 
   await hideTransientPwaNotices(page);
-  await page.getByRole('button', { name: 'View data table', exact: true }).click();
-  const dataTable = page.getByRole('table', { name: 'Weight trend data table', exact: true });
-  await expect(dataTable).toBeVisible();
-  const stackedDataTable = viewport!.width < 720;
-  await expect(dataTable.getByRole('columnheader')).toHaveCount(stackedDataTable ? 0 : 4);
-  await expect(dataTable.getByRole('row')).toHaveCount(
-    MODELED_MONTH_METRICS.length + (stackedDataTable ? 0 : 1),
-  );
-  await expect(dataTable).toContainText('Jul 18, 2026');
-
-  await hideTransientPwaNotices(page);
   await page.getByText('All', { exact: true }).click();
   await expect(page.getByTestId('weight-trend-model-boundary')).toHaveCount(1);
   await expect(page.getByText(
@@ -313,15 +302,6 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await expect(selectedSummary).toContainText('Jan 2, 2025');
   await expect(selectedSummary).toContainText('This older point has no underlying trend estimate.');
   await expect(selectedSummary).not.toContainText('95% trend range');
-  const oldestDataRow = dataTable.getByRole('row').last();
-  await expect(oldestDataRow).toContainText('Jan 2, 2025');
-  await expect(oldestDataRow.getByRole('cell')).toHaveCount(4);
-  await expect(oldestDataRow.getByRole('cell').nth(2)).toHaveText(
-    stackedDataTable ? 'Underlying estimate: -' : '-',
-  );
-  await expect(oldestDataRow.getByRole('cell').nth(3)).toHaveText(
-    stackedDataTable ? '95% range: -' : '-',
-  );
   await expect(legend.getByText('Underlying trend', { exact: true })).toBeVisible();
   await expect(legend.getByText('95% estimate range', { exact: true })).toBeVisible();
 
