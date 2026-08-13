@@ -13,8 +13,6 @@ export const LAUNCH_24_DATA_STATES = [
   'offline',
 ] as const;
 
-export type Launch24DataState = (typeof LAUNCH_24_DATA_STATES)[number];
-
 export type SurfaceExpectation = {
   kind: 'text' | 'testId';
   value: string;

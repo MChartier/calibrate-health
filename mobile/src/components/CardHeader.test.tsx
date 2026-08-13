@@ -1,7 +1,6 @@
 import { render } from '@testing-library/react-native';
 import { AppButton } from './AppButton';
 import { CardHeader } from './CardHeader';
-import { CompactCardHeader } from './CompactCardHeader';
 import { themes } from '../theme';
 
 describe('CardHeader', () => {
@@ -34,6 +33,7 @@ describe('CardHeader', () => {
             alignItems: 'baseline',
             flexWrap: 'wrap'
         });
+        expect(screen.getByTestId('card-header')).toHaveStyle({ minHeight: 22 });
         expect(screen.getByRole('button', { name: 'Details' })).toHaveStyle({ minHeight: 48 });
     });
 
@@ -44,12 +44,5 @@ describe('CardHeader', () => {
 
         expect(screen.getByTestId('card-header')).toHaveStyle({ minHeight: 48 });
         expect(screen.getByRole('header', { name: 'Security' }).props['aria-level']).toBe(3);
-    });
-
-    it('keeps CompactCardHeader as a compact compatibility wrapper', () => {
-        const screen = render(<CompactCardHeader testID="compact-header" title="Snapshot" />);
-
-        expect(screen.getByRole('header', { name: 'Snapshot' })).toBeTruthy();
-        expect(screen.getByTestId('compact-header')).toHaveStyle({ minHeight: 22 });
     });
 });

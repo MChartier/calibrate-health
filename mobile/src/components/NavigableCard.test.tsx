@@ -94,7 +94,17 @@ describe('NavigableCard', () => {
                 <AppText>Snapshot</AppText>
             </NavigableCard>
         );
-        fireEvent(focusedScreen.getByRole('link', { name: 'Open snapshot' }), 'focus');
+        const focusedTarget = focusedScreen.getByRole('link', { name: 'Open snapshot' });
+        expect(focusedTarget.props.android_ripple).toBeUndefined();
+        fireEvent(focusedTarget, 'pressIn');
+        expect(StyleSheet.flatten(focusedScreen.getByTestId('focused-surface').props.style)).toEqual(expect.objectContaining({
+            backgroundColor: themes.light.colors.surfacePressed,
+            borderColor: themes.light.colors.outline,
+            elevation: 0
+        }));
+
+        fireEvent(focusedTarget, 'pressOut');
+        fireEvent(focusedTarget, 'focus');
         expect(StyleSheet.flatten(focusedScreen.getByTestId('focused-surface').props.style)).toEqual(expect.objectContaining({
             borderColor: themes.light.colors.outline,
             outlineColor: themes.light.colors.focusRing,

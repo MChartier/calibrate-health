@@ -1,5 +1,3 @@
-import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '@calibrate/shared/legalVersions';
-
 export type PublicLegalSection = {
     title: string;
     paragraphs?: string[];
@@ -9,7 +7,6 @@ export type PublicLegalSection = {
 export const SUPPORT_EMAIL = 'support@calibratehealth.app';
 export const PRIVACY_EMAIL = 'privacy@calibratehealth.app';
 export const TERMS_LAST_UPDATED = 'August 9, 2026';
-export { CURRENT_PRIVACY_VERSION as PRIVACY_VERSION, CURRENT_TERMS_VERSION as TERMS_VERSION };
 
 export const TERMS_INTRO = [
     'These Terms govern use of the hosted Calibrate Health service. By creating or continuing an account, you agree to the current Terms and Privacy Policy.',
