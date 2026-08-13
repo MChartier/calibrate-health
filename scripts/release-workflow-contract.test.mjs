@@ -380,6 +380,7 @@ test('release acceptance workflow separates implementation from external evidenc
   assert.match(workflow, /actions: read/);
   assert.match(external, /CALIBRATE_RELEASE_EVIDENCE: \$\{\{ inputs\.evidence_commit \}\}/);
   assert.match(external, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(external, /run: node scripts\/dependency-advisory-exceptions\.mjs --strict/);
   assert.match(external, /run: npm\.cmd run release:acceptance:external/);
   assert.match(external, /run: npm\.cmd run test:risk-evidence:release/);
   for (const runStep of external.split(/\n(?=\s+- name:)/).filter((step) => /\n\s+run:/.test(step))) {

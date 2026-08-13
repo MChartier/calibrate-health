@@ -75,6 +75,9 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.evidence_commit || github.sha }}
 
+      - name: Enforce strict production dependency policy
+        run: node scripts/dependency-advisory-exceptions.mjs --strict
+
       - name: Verify integrated external-launch acceptance
         run: npm.cmd run release:acceptance:external
 

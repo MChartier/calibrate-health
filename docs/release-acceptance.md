@@ -71,12 +71,14 @@ its sole parent. Its diff may contain only `quality/risk-evidence.json` and allo
 Do not record A inside A. Verify from a clean checkout whose HEAD is A:
 
 ```powershell
+node scripts/dependency-advisory-exceptions.mjs --strict
 npm.cmd run release:acceptance:external -- --candidate <C> --evidence <A>
 npm.cmd run test:risk-evidence:release -- --candidate <C> --evidence <A>
 ```
 
-The external-launch verifier fails until all deferred receipts exist. This is intentional and does not block finishing
-or reviewing the implementation PR stack.
+The strict dependency check fails while any reviewed advisory exception remains active, even before its ordinary
+expiry. The external-launch verifier also fails until all deferred receipts exist. These failures are intentional and
+do not block finishing or reviewing the implementation PR stack.
 
 ## Rollback boundary
 
