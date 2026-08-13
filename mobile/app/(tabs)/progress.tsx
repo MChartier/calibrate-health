@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
 import { AppButton } from '../../src/components/AppButton';
 import { AppCard } from '../../src/components/AppCard';
 import { AppText } from '../../src/components/AppText';
@@ -18,10 +19,13 @@ import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { WeightTrendPreviewCard } from '../../src/components/progress/WeightTrendPreviewCard';
 import { CalibrationInsightCard } from '../../src/components/CalibrationInsightCard';
 import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
+import { isNeverEmpty } from '../../src/asyncState/resolveAsyncState';
+import { getCaloriePlanPresentation } from '../../src/caloriePlanning/presentation';
 import { useAuth } from '../../src/auth/AuthContext';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
 import { formatWeightUnit } from '../../src/utils/format';
 import {
+    DAILY_GOAL_CHANGE_OPTIONS,
     getGoalModeFromDailyDeficit,
     getSignedDailyDeficit,
     getTargetWeightAfterGoalModeChange,
@@ -32,14 +36,28 @@ import { getLatestMetric } from '../../src/utils/metrics';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { WEIGHT_INPUT_INCREMENT } from '../../src/config/inputPrecision';
 import { getSafeActionErrorMessage } from '../../src/errors/presentation';
+import { usePendingWeightMutation } from '../../src/offline/usePendingWeightMutation';
+import {
+    getWeightDisplayBounds,
+    getWeightPolicyError,
+    isWeightWithinPolicy
+} from '../../src/weightEntry/input';
 
 function formatWeightInput(value: number): string {
     return value.toFixed(1).replace(/\.0$/, '');
 }
 
-function getGoalValidationError(goalMode: GoalMode, startWeight: number, targetWeight: number): string | null {
+function getGoalValidationError(
+    goalMode: GoalMode,
+    startWeight: number,
+    targetWeight: number,
+    weightUnit: 'KG' | 'LB' | undefined
+): string | null {
     if (!Number.isFinite(startWeight) || startWeight <= 0 || !Number.isFinite(targetWeight) || targetWeight <= 0) {
         return 'Enter a valid start and target weight.';
+    }
+    if (!isWeightWithinPolicy(startWeight, weightUnit) || !isWeightWithinPolicy(targetWeight, weightUnit)) {
+        return getWeightPolicyError(weightUnit);
     }
 
     if (goalMode === 'lose' && targetWeight >= startWeight) {
@@ -54,7 +72,7 @@ function getGoalValidationError(goalMode: GoalMode, startWeight: number, targetW
 }
 
 export default function ProgressScreen() {
-    const routeParams = useLocalSearchParams<{ openNextGoal?: string }>();
+    const routeParams = useLocalSearchParams<{ openNextGoal?: string; openPlanReview?: string }>();
     const { api, user } = useAuth();
     const theme = useAppTheme();
     const { colors: themeColors } = theme;
@@ -68,6 +86,7 @@ export default function ProgressScreen() {
         queryFn: () => api.getTrendMetrics({ range: 'month' })
     });
     const isOnline = useOnlineStatus();
+    const hasPendingWeightChange = usePendingWeightMutation();
     const progressQueries = [goalQuery, profileQuery, metricsQuery, trendSummaryQuery] as const;
     const failedProgressQueries = progressQueries.filter((query) => query.isError);
     const allProgressDataResolved = progressQueries.every((query) => query.data !== undefined);
@@ -103,11 +122,56 @@ export default function ProgressScreen() {
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isDailyChangeSelectorOpen, setIsDailyChangeSelectorOpen] = useState(false);
     const handledNextGoalRouteRef = useRef(false);
+    const handledPlanReviewRouteRef = useRef(false);
     const latestMetric = getLatestMetric(metricsQuery.data);
     const latestTrendMetric = getLatestMetric(trendSummaryQuery.data?.metrics);
 
     const signedDailyDeficit = getSignedDailyDeficit(goalMode, dailyChangeAbs);
-    const canSave = Number(startWeight) > 0 && Number(targetWeight) > 0 && Number.isFinite(Number(dailyChangeAbs));
+    const hasExplicitDailyChange = goalMode === 'maintain'
+        || DAILY_GOAL_CHANGE_OPTIONS.some((value) => String(value) === dailyChangeAbs);
+    const goalWeightBounds = getWeightDisplayBounds(user?.weight_unit);
+    const caloriePlanDraft = useMemo<CaloriePlanOptionsRequest | null>(() => {
+        const profile = profileQuery.data?.profile;
+        const parsedStartWeight = Number(startWeight);
+        if (
+            !profile ||
+            !profile.timezone.trim() ||
+            !profile.date_of_birth ||
+            !profile.sex ||
+            !profile.activity_level ||
+            profile.height_mm === null ||
+            !Number.isFinite(parsedStartWeight)
+        ) {
+            return null;
+        }
+        return {
+            timezone: profile.timezone,
+            date_of_birth: profile.date_of_birth,
+            sex: profile.sex,
+            activity_level: profile.activity_level,
+            height: { unit: 'CM', centimeters: profile.height_mm / 10 },
+            weight: { unit: profile.weight_unit, value: parsedStartWeight }
+        };
+    }, [profileQuery.data?.profile, startWeight]);
+    const planOptionsQuery = useQuery({
+        queryKey: ['calorie-plan-options', 'goal-editor', caloriePlanDraft],
+        queryFn: () => api.getCaloriePlanOptions(caloriePlanDraft!),
+        enabled: isGoalEditorOpen && caloriePlanDraft !== null
+    });
+    const planPreviewState = useAsyncResourceState(planOptionsQuery, isNeverEmpty);
+    const selectedPlanOption = hasExplicitDailyChange
+        ? planOptionsQuery.data?.planOptions.find((option) => option.dailyDeficit === signedDailyDeficit)
+        : undefined;
+    const planOptionsAreFresh = isOnline
+        && planOptionsQuery.isSuccess
+        && !planOptionsQuery.isFetching;
+    const canSave = isWeightWithinPolicy(Number(startWeight), user?.weight_unit) &&
+        isWeightWithinPolicy(Number(targetWeight), user?.weight_unit) &&
+        hasExplicitDailyChange &&
+        !hasPendingWeightChange &&
+        planOptionsAreFresh &&
+        planOptionsQuery.data?.eligibility.status === 'eligible' &&
+        selectedPlanOption?.available === true;
     const saveGoal = useMutation({
         mutationFn: () =>
             api.createGoal({
@@ -128,9 +192,34 @@ export default function ProgressScreen() {
     });
 
     function handleSave() {
-        const error = getGoalValidationError(goalMode, Number(startWeight), Number(targetWeight));
+        const error = getGoalValidationError(
+            goalMode,
+            Number(startWeight),
+            Number(targetWeight),
+            user?.weight_unit
+        );
         setValidationError(error);
         if (error) return;
+        if (hasPendingWeightChange) {
+            setValidationError('Wait for the queued weight change to sync before replacing your calorie plan.');
+            return;
+        }
+        if (!planOptionsAreFresh) {
+            setValidationError(isOnline
+                ? 'Retry the calorie plan check before saving.'
+                : 'Reconnect to check the calorie plan before saving.');
+            return;
+        }
+        if (planOptionsQuery.data?.eligibility.status !== 'eligible') {
+            setValidationError(getCaloriePlanPresentation(
+                planOptionsQuery.data?.eligibility.reasonCode ?? 'SERVER_POLICY_UNAVAILABLE'
+            ).message);
+            return;
+        }
+        if (selectedPlanOption?.available !== true) {
+            setValidationError('Choose an available daily calorie change.');
+            return;
+        }
         saveGoal.mutate();
     }
 
@@ -183,6 +272,14 @@ export default function ProgressScreen() {
     }
 
     useEffect(() => {
+        if (goalMode === 'maintain' || !dailyChangeAbs || !planOptionsQuery.data) return;
+        if (selectedPlanOption?.available !== true) {
+            setDailyChangeAbs('');
+            setIsDailyChangeSelectorOpen(false);
+        }
+    }, [dailyChangeAbs, goalMode, planOptionsQuery.data, selectedPlanOption?.available]);
+
+    useEffect(() => {
         if (routeParams.openNextGoal !== 'true') {
             handledNextGoalRouteRef.current = false;
             return;
@@ -197,6 +294,22 @@ export default function ProgressScreen() {
         routeParams.openNextGoal,
         trendSummaryQuery.data
     ]); // Query data completes the one-shot handoff from a goal-reached receipt.
+
+    useEffect(() => {
+        if (routeParams.openPlanReview !== 'true') {
+            handledPlanReviewRouteRef.current = false;
+            return;
+        }
+        if (handledPlanReviewRouteRef.current || !getDefaultStartWeight()) return;
+        handledPlanReviewRouteRef.current = true;
+        openGoalEditor();
+    }, [
+        goalQuery.data,
+        metricsQuery.data,
+        profileQuery.data,
+        routeParams.openPlanReview,
+        trendSummaryQuery.data
+    ]);
 
     return (
         <>
@@ -224,6 +337,10 @@ export default function ProgressScreen() {
                         user={user}
                         onEditGoal={openGoalEditor}
                         onSetNextGoal={openNextGoalEditor}
+                        weightChangePending={hasPendingWeightChange}
+                        targetCalories={!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available'
+                            ? profileQuery.data.calorieSummary.dailyCalorieTarget
+                            : null}
                     />
                 </AsyncStateBoundary>
 
@@ -231,7 +348,7 @@ export default function ProgressScreen() {
                     onPress={() => router.push('/weight-trend')}
                 />
 
-                <CalibrationInsightCard />
+                {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <CalibrationInsightCard />}
             </TabScreen>
 
             <BottomSheetModal visible={isGoalEditorOpen} onRequestClose={() => setIsGoalEditorOpen(false)}>
@@ -256,7 +373,8 @@ export default function ProgressScreen() {
                         unit={user?.weight_unit}
                         onChangeText={setTargetWeight}
                         step={WEIGHT_INPUT_INCREMENT}
-                        min={WEIGHT_INPUT_INCREMENT}
+                        min={goalWeightBounds.minimum}
+                        max={goalWeightBounds.maximum}
                         editable={!saveGoal.isPending}
                         helperText="Use one decimal place to set a precise goal."
                     />
@@ -276,9 +394,38 @@ export default function ProgressScreen() {
                                     setDailyChangeAbs(nextValue);
                                     setIsDailyChangeSelectorOpen(false);
                                 }}
+                                planOptions={planOptionsQuery.data?.planOptions}
                             />
                         )}
                     </View>
+                    {caloriePlanDraft === null ? (
+                        <AppText variant="muted">Complete your profile and log a current weight to check safe calorie plans.</AppText>
+                    ) : (
+                        <AsyncStateBoundary
+                            state={planPreviewState}
+                            resourceLabel="calorie plan options"
+                            loading={<AppText variant="muted">Checking available calorie plans...</AppText>}
+                            empty={<AppText variant="muted">No calorie plan options are available.</AppText>}
+                            onRetry={isOnline ? () => planOptionsQuery.refetch() : undefined}
+                            retrying={planOptionsQuery.isFetching}
+                        >
+                            {planOptionsQuery.data && (
+                                planOptionsQuery.data.eligibility.status === 'eligible' ? (
+                                    <AppText variant="muted">
+                                        {selectedPlanOption?.dailyCalorieTarget
+                                            ? `Server target: ${selectedPlanOption.dailyCalorieTarget.toLocaleString()} kcal/day. Minimum: ${planOptionsQuery.data.minimumDailyCalorieTarget?.toLocaleString() ?? '-'} kcal/day.`
+                                            : 'Choose an available option to see the server-calculated target.'}
+                                    </AppText>
+                                ) : (
+                                    <AppText accessibilityRole="alert" style={styles.error}>
+                                        {getCaloriePlanPresentation(
+                                            planOptionsQuery.data.eligibility.reasonCode
+                                        ).message}
+                                    </AppText>
+                                )
+                            )}
+                        </AsyncStateBoundary>
+                    )}
                 </View>
                 {(validationError || saveGoal.error) && (
                     <AppText accessibilityRole="alert" style={styles.error}>

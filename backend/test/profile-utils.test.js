@@ -46,12 +46,10 @@ test('profile utils: calculateBmr matches Mifflin-St Jeor and rounds to 0.1', ()
   assert.equal(calculateBmr('FEMALE', 82, 175, 35), 1577.8);
 });
 
-test('profile utils: calculateBmr clamps ages outside 19-79 to avoid unrealistic extrapolation', () => {
-  assert.equal(calculateBmr('MALE', 82, 175, 18), calculateBmr('MALE', 82, 175, 19));
-  assert.equal(calculateBmr('MALE', 82, 175, -5), calculateBmr('MALE', 82, 175, 19));
-
-  assert.equal(calculateBmr('FEMALE', 82, 175, 80), calculateBmr('FEMALE', 82, 175, 79));
-  assert.equal(calculateBmr('FEMALE', 82, 175, 150), calculateBmr('FEMALE', 82, 175, 79));
+test('profile utils: calculateBmr uses the actual validated age', () => {
+  assert.notEqual(calculateBmr('MALE', 82, 175, 18), calculateBmr('MALE', 82, 175, 19));
+  assert.notEqual(calculateBmr('FEMALE', 82, 175, 80), calculateBmr('FEMALE', 82, 175, 79));
+  assert.equal(calculateBmr('FEMALE', 82, 175, 120), 1152.8);
 });
 
 test('profile utils: activityMultiplier matches the configured mapping', () => {
@@ -96,7 +94,7 @@ test('profile utils: buildCalorieSummary computes BMR/TDEE and daily target when
   assert.deepEqual(summary, {
     bmr: 1743.8,
     tdee: 2702.9,
-    dailyCalorieTarget: 2202.9,
+    dailyCalorieTarget: 2203,
     missing: [],
     sourceWeightKg: 82,
     deficit: 500
@@ -124,7 +122,7 @@ test('profile utils: buildCalorieSummary omits daily target when deficit is unse
   });
 });
 
-test('profile utils: buildCalorieSummary clamps negative calorie targets to 0', () => {
+test('profile utils: buildCalorieSummary omits unsafe calorie targets instead of clamping', () => {
   const summary = buildCalorieSummary({
     weight_grams: 82000,
     profile: {
@@ -137,7 +135,7 @@ test('profile utils: buildCalorieSummary clamps negative calorie targets to 0', 
     now: new Date(2025, 0, 15)
   });
 
-  assert.equal(summary.dailyCalorieTarget, 0);
+  assert.equal(summary.dailyCalorieTarget, undefined);
 });
 
 test('profile utils: buildCalorieSummary supports defaulting to the current date', () => {

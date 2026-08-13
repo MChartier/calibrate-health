@@ -65,7 +65,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 private const val SUMMARY_ROUTE = "summary"
@@ -217,6 +216,7 @@ private fun ReadySummaryDashboard(
     onOpenWeight: () -> Unit,
     onOpenConnection: () -> Unit
 ) {
+    val displaySummary = summary.suppressPlanForPendingWeight(homeState.pendingMutationTypes)
     val listState = rememberTransformingLazyColumnState()
     val ringVisible = !listState.canScrollBackward
     val ringVisibility by animateFloatAsState(
@@ -230,12 +230,12 @@ private fun ReadySummaryDashboard(
         ),
         label = "calorie ring visibility"
     )
-    val progress = if (summary.isFoodTrackingPaused) {
+    val progress = if (displaySummary.isFoodTrackingPaused || !displaySummary.isCaloriePlanAvailable) {
         null
     } else {
-        calorieProgressFraction(summary.caloriesConsumed, summary.calorieTarget)
+        calorieProgressFraction(displaySummary.caloriesConsumed, displaySummary.calorieTarget)
     }
-    val progressColor = if ((summary.caloriesRemaining ?: 0) < 0) CALIBRATE_DANGER else CALIBRATE_GREEN
+    val progressColor = if ((displaySummary.caloriesRemaining ?: 0) < 0) CALIBRATE_DANGER else CALIBRATE_GREEN
 
     BoxWithConstraints(
         modifier = Modifier
@@ -267,7 +267,7 @@ private fun ReadySummaryDashboard(
             ) {
                 item(key = "calorie-hero") {
                     CalorieHero(
-                        summary = summary,
+                        summary = displaySummary,
                         compactDashboard = compactDashboard,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -298,7 +298,7 @@ private fun ReadySummaryDashboard(
                             .padding(horizontal = SUMMARY_ITEM_HORIZONTAL_PADDING)
                     )
                 }
-                item(key = "goal") { GoalProgressSection(summary) }
+                item(key = "goal") { GoalProgressSection(displaySummary) }
                 summaryStatus(homeState)?.let { status ->
                     item(key = "status") {
                         Text(
@@ -338,7 +338,7 @@ private fun CalorieHero(
         contentAlignment = Alignment.Center,
         modifier = modifier.semantics(mergeDescendants = true) {
             contentDescription = calorieAccessibilityDescription(summary)
-            if (!summary.isFoodTrackingPaused) {
+            if (!summary.isFoodTrackingPaused && summary.isCaloriePlanAvailable) {
                 calorieProgressFraction(summary.caloriesConsumed, summary.calorieTarget)?.let {
                     progressBarRangeInfo = ProgressBarRangeInfo(it, 0f..1f)
                 }
@@ -375,7 +375,7 @@ private fun CalorieHero(
             return@Box
         }
 
-        val caloriesRemaining = summary.caloriesRemaining
+        val caloriesRemaining = summary.caloriesRemaining.takeIf { summary.isCaloriePlanAvailable }
         val balanceValue = caloriesRemaining?.let { SummaryFormatter.calorieCount(abs(it)) } ?: "--"
         val balanceLabel = when {
             caloriesRemaining == null -> "target unavailable"
@@ -603,6 +603,8 @@ internal fun goalProgressFraction(summary: WearSummary): Float? = when {
 
 internal fun calorieAccessibilityDescription(summary: WearSummary): String {
     if (summary.isFoodTrackingPaused) return "Calorie tracking paused. Review pause on phone."
+    if (summary.planStatus == WEIGHT_SYNCING_PLAN_STATUS) return "Weight change syncing. Calorie target will return after the server rechecks the plan."
+    if (!summary.isCaloriePlanAvailable) return "Calorie target unavailable. Review calorie plan on phone."
     val consumed = summary.caloriesConsumed
     val target = summary.calorieTarget
     val remaining = summary.caloriesRemaining
@@ -617,6 +619,8 @@ internal fun calorieAccessibilityDescription(summary: WearSummary): String {
 }
 
 internal fun goalProgressHeadline(summary: WearSummary): String = when {
+    summary.planStatus == WEIGHT_SYNCING_PLAN_STATUS -> "Rechecking calorie plan"
+    !summary.isCaloriePlanAvailable -> "Review calorie plan"
     summary.goalDailyDeficit == 0 -> "Maintenance goal"
     summary.goalIsComplete == true -> "Goal reached"
     summary.goalProgressPercent != null -> "${summary.goalProgressPercent.roundToInt()}% to goal"
@@ -631,17 +635,18 @@ internal fun goalProgressDetail(summary: WearSummary): String {
 }
 
 internal fun goalProjectionLabel(summary: WearSummary): String {
-    if (summary.goalTargetWeightGrams == null) return "Projection unavailable"
-    if (summary.goalDailyDeficit == 0) return "No projected date"
-    if (summary.goalIsComplete == true) return "Goal reached"
-    val dailyDeficit = summary.goalDailyDeficit ?: return "Projection unavailable"
-    val remainingWeightGrams = summary.goalRemainingWeightGrams ?: return "Projection unavailable"
-    if (remainingWeightGrams <= 0) return "Goal reached"
-    val localDate = runCatching { LocalDate.parse(summary.localDate) }.getOrNull()
-        ?: return "Projection unavailable"
-    val caloriesRemaining = (remainingWeightGrams / 1_000.0) * CALORIES_PER_KILOGRAM
-    val projectedDays = ceil(caloriesRemaining / abs(dailyDeficit.toDouble())).toLong()
-    return "Projected ${localDate.plusDays(projectedDays).format(GOAL_DATE_FORMATTER)}"
+    if (!summary.isCaloriePlanAvailable) return "Projection unavailable"
+    return when (summary.goalProjectionStatus) {
+        "maintenance" -> "No projected date"
+        "reached" -> "Goal reached"
+        "projected" -> {
+            val projectedDate = summary.goalProjectedEndDate
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                ?: return "Projection unavailable"
+            "Projected ${projectedDate.format(GOAL_DATE_FORMATTER)}"
+        }
+        else -> "Projection unavailable"
+    }
 }
 
 internal fun goalAccessibilityDescription(summary: WearSummary): String {
@@ -653,8 +658,6 @@ internal fun goalAccessibilityDescription(summary: WearSummary): String {
     }.orEmpty()
     return "$headline. $detail.$remaining ${goalProjectionLabel(summary)}."
 }
-
-private const val CALORIES_PER_KILOGRAM = 7_700.0
 
 @Composable
 private fun WeightScreen(summary: WearSummary, saving: Boolean, onSave: (Long) -> Unit) {
@@ -919,6 +922,8 @@ private fun SummaryPreview() {
         caloriesRemaining = 595,
         caloriesConsumed = 1_240,
         calorieTarget = 1_835,
+        planStatus = "available",
+        minimumCalorieTarget = 1_500,
         foodDayComplete = false,
         foodDayRevision = null,
         todayWeightGrams = 76_340,
@@ -933,6 +938,8 @@ private fun SummaryPreview() {
         goalProgressPercent = 59.6,
         goalRemainingWeightGrams = 3_840,
         goalIsComplete = false,
+        goalProjectionStatus = "projected",
+        goalProjectedEndDate = "2026-10-10",
         undoFoodLogId = null,
         undoName = null,
         undoCalories = null,

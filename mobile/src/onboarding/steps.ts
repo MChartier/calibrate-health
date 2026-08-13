@@ -23,12 +23,6 @@ const REQUIRED_STEPS: OnboardingStep[] = [
         description: 'Start with where you are today and where you want to go.'
     },
     {
-        key: 'pace',
-        label: 'Pace',
-        title: 'Set a sustainable pace',
-        description: 'This controls the calorie target we calculate each day.'
-    },
-    {
         key: 'about',
         label: 'You',
         title: 'Tell us the basics',
@@ -39,6 +33,12 @@ const REQUIRED_STEPS: OnboardingStep[] = [
         label: 'Burn',
         title: 'Estimate calorie burn',
         description: 'Height, activity, and time zone keep daily targets accurate.'
+    },
+    {
+        key: 'pace',
+        label: 'Pace',
+        title: 'Set a sustainable pace',
+        description: 'Choose from the calorie targets verified for your profile.'
     },
     {
         key: 'import',

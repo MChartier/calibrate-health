@@ -3,6 +3,10 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ActivityScreen from '../../app/(tabs)/activity';
 
+jest.mock('../offline/usePendingWeightMutation', () => ({
+    usePendingWeightMutation: () => false
+}));
+
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({}) }));
 

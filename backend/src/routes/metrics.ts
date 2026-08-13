@@ -1,6 +1,8 @@
 import express from 'express';
 import { type BodyMetric, type BodyMetricTrend, type Prisma } from '@prisma/client';
 import prisma from '../config/database';
+import { isPolicyWeight } from '../../../shared/caloriePolicy';
+import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
 import {
     gramsToWeight,
     isWeightUnit,
@@ -833,9 +835,14 @@ router.post('/', async (req, res) => {
 
         if (weight !== undefined && weight !== '') {
             try {
-                updateData.weight_grams = parseWeightToGrams(weight, weightUnit);
+                const weightGrams = parseWeightToGrams(weight, weightUnit);
+                if (!isPolicyWeight(weightGrams)) throw new Error('Weight outside policy range');
+                updateData.weight_grams = weightGrams;
             } catch {
-                return res.status(400).json({ message: 'Invalid weight' });
+                return res.status(400).json({
+                    message: 'Weight is outside the supported range.', code: 'WEIGHT_OUT_OF_RANGE', retryable: false,
+                    field_errors: { weight: ['Enter a weight within the supported range.'] }
+                });
             }
         }
 
@@ -945,10 +952,13 @@ router.post('/', async (req, res) => {
                     operationId: claimedOperationId,
                     payload: metric
                 });
+                const planningAfterWeight = updateData.weight_grams === undefined
+                    ? null
+                    : await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
 
                 const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
                 const progressUpdate =
-                    saveKind === null
+                    saveKind === null || (updateData.weight_grams !== undefined && planningAfterWeight?.goal && planningAfterWeight.evaluation.status !== 'available')
                         ? null
                         : evaluateMetricProgressUpdate({
                               saveKind,
@@ -1021,6 +1031,7 @@ router.delete('/:id', async (req, res) => {
                     action: 'delete',
                     operationId: claimedOperationId
                 });
+                await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
                 return { status: 204, body: null };
             }
         });

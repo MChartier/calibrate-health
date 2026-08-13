@@ -17,7 +17,7 @@ import { SegmentedControl } from '../../src/components/SegmentedControl';
 import { TextField } from '../../src/components/TextField';
 import { SkeletonBlock } from '../../src/components/SkeletonBlock';
 import { useAuth } from '../../src/auth/AuthContext';
-import { calibrationStatusQueryKey } from '../../src/calibration/queryKeys';
+import { invalidateProfilePlanningQueries } from '../../src/caloriePlanning/queryInvalidation';
 import {
     canSubmitAccountDeletion,
     deleteAccountAndClearLocalData,
@@ -25,6 +25,7 @@ import {
 } from '../../src/account/accountData';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { useOfflineOutbox } from '../../src/offline/provider';
+import { hasPendingWeightMutation } from '../../src/offline/pendingWeight';
 import { useNativePushRegistration } from '../../src/hooks/useNativePushRegistration';
 import { getPushStatusPresentation } from '../../src/notifications/workflow';
 import { millimetersToCentimeters, millimetersToFeetInches } from '../../src/utils/bodyMeasurements';
@@ -50,6 +51,8 @@ import {
     type AsyncResourceState
 } from '../../src/asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../../src/errors/presentation';
+import { getCaloriePlanPresentation } from '../../src/caloriePlanning/presentation';
+import { getHeightPolicyError, isHeightWithinPolicy } from '../../src/caloriePlanning/heightInput';
 
 const MIN_PASSWORD_LENGTH = 8;
 function getAvatarLabel(email?: string | null): string {
@@ -103,6 +106,7 @@ export default function SettingsScreen() {
     const initialImperialHeight = millimetersToFeetInches(user?.height_mm);
     const [heightFeet, setHeightFeet] = useState(initialImperialHeight.feet);
     const [heightInches, setHeightInches] = useState(initialImperialHeight.inches);
+    const [profileValidationError, setProfileValidationError] = useState<string | null>(null);
     const [weightUnit, setWeightUnit] = useState<WeightUnit>(user?.weight_unit ?? WEIGHT_UNITS.KG);
     const [heightUnit, setHeightUnit] = useState<HeightUnit>(user?.height_unit ?? HEIGHT_UNITS.CM);
     const [logFoodReminders, setLogFoodReminders] = useState(user?.reminder_log_food_enabled ?? true);
@@ -133,6 +137,7 @@ export default function SettingsScreen() {
     const pendingMutationCount = queuedMutations.filter(
         ({ state }) => state === OUTBOX_MUTATION_STATES.PENDING || state === OUTBOX_MUTATION_STATES.REPLAYING
     ).length;
+    const hasPendingWeightChange = hasPendingWeightMutation(queuedMutations);
     const failedMutations = queuedMutations.filter(({ state }) => state === OUTBOX_MUTATION_STATES.FAILED);
     const syncOutbox = useMutation({ mutationFn: () => reconcileOutbox() });
     const retryOutbox = useMutation({ mutationFn: () => retryFailedOutbox() });
@@ -200,10 +205,7 @@ export default function SettingsScreen() {
             }),
         onSuccess: async (response) => {
             updateCurrentUser(response.user);
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
-                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
-            ]);
+            await invalidateProfilePlanningQueries(queryClient);
             setIsProfileEditorOpen(false);
         }
     });
@@ -219,13 +221,25 @@ export default function SettingsScreen() {
             }),
         onSuccess: async (response) => {
             updateCurrentUser(response.user);
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
-                queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
-            ]);
+            await invalidateProfilePlanningQueries(queryClient);
             setActiveSheet(null);
         }
     });
+
+    function handleSaveProfile() {
+        const heightIsValid = isHeightWithinPolicy({
+            unit: heightUnit,
+            centimeters: Number(heightCm),
+            feet: Number(heightFeet),
+            inches: Number(heightInches || '0')
+        });
+        if (!heightIsValid) {
+            setProfileValidationError(getHeightPolicyError(heightUnit));
+            return;
+        }
+        setProfileValidationError(null);
+        saveProfile.mutate();
+    }
 
     const updateProfileImage = useMutation({
         mutationFn: async () => {
@@ -377,12 +391,51 @@ export default function SettingsScreen() {
     const sessionCount = hasResolvedResourceData(sessionsState)
         ? sessionsQuery.data?.sessions.length
         : undefined;
-    const calorieTarget = hasResolvedResourceData(profileState)
-        ? profileQuery.data?.calorieSummary.dailyCalorieTarget
+    const calorieTarget = !hasPendingWeightChange && hasResolvedResourceData(profileState)
+        && profileQuery.data?.calorieSummary.planStatus === 'available'
+        ? profileQuery.data.calorieSummary.dailyCalorieTarget
         : undefined;
+    const planRequiresReview = !hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'requires_review';
+    const planPresentation = getCaloriePlanPresentation(
+        profileQuery.data?.calorieSummary.planReasonCode,
+        profileQuery.data?.calorieSummary.planStatus
+    );
+    function handlePlanAction() {
+        if (planPresentation.actionKind === 'profile') {
+            setIsProfileEditorOpen(true);
+            return;
+        }
+        if (planPresentation.actionKind === 'weight') {
+            router.push('/(tabs)/weight');
+            return;
+        }
+        router.push({
+            pathname: '/(tabs)/progress',
+            params: { openPlanReview: 'true' }
+        });
+    }
 
     return (
         <TabScreen>
+            {hasPendingWeightChange && (
+                <AppCard>
+                    <AppText variant="subtitle">Weight change syncing</AppText>
+                    <AppText variant="muted">
+                        Calorie target and projection will return after the server rechecks your plan.
+                    </AppText>
+                </AppCard>
+            )}
+            {planRequiresReview && (
+                <AppCard>
+                    <AppText variant="subtitle">{planPresentation.title}</AppText>
+                    <AppText variant="muted">{planPresentation.message}</AppText>
+                    <AppButton
+                        title={planPresentation.actionLabel}
+                        variant="secondary"
+                        onPress={handlePlanAction}
+                    />
+                </AppCard>
+            )}
             {shouldShowResourceStatus(profileState) && (
                 <AsyncStateBoundary
                     state={profileState}
@@ -813,10 +866,11 @@ export default function SettingsScreen() {
                 heightInches={heightInches}
                 onHeightInchesChange={setHeightInches}
                 calorieTarget={calorieTarget}
+                validationError={profileValidationError}
                 saveError={saveProfile.error}
                 isSaving={saveProfile.isPending}
                 onClose={() => setIsProfileEditorOpen(false)}
-                onSave={() => saveProfile.mutate()}
+                onSave={handleSaveProfile}
             />
 
             <DeleteAccountSheet

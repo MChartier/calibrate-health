@@ -16,6 +16,7 @@ import { spacing, useAppTheme } from '../theme';
 import { getTodayDate } from '../utils/dates';
 import { formatCalories } from '../utils/format';
 import { getSafeActionErrorMessage } from '../errors/presentation';
+import { getMinimumDateOfBirth } from '../caloriePlanning/dateBounds';
 
 type ProfileEditorSheetProps = {
     visible: boolean;
@@ -35,6 +36,7 @@ type ProfileEditorSheetProps = {
     heightInches: string;
     onHeightInchesChange: (value: string) => void;
     calorieTarget?: number | null;
+    validationError?: string | null;
     saveError: Error | null;
     isSaving: boolean;
     onClose: () => void;
@@ -59,6 +61,7 @@ export function ProfileEditorSheet({
     heightInches,
     onHeightInchesChange,
     calorieTarget,
+    validationError,
     saveError,
     isSaving,
     onClose,
@@ -72,6 +75,7 @@ export function ProfileEditorSheet({
             <TimeZonePickerField value={timezone} onChange={onTimezoneChange} />
             <ProfileIdentityFields
                 dateOfBirth={dateOfBirth}
+                minimumDate={getMinimumDateOfBirth(getTodayDate(timezone))}
                 maximumDate={getTodayDate(timezone)}
                 onDateOfBirthChange={onDateOfBirthChange}
                 sex={sex}
@@ -90,6 +94,11 @@ export function ProfileEditorSheet({
                 heightLayout="row"
             />
             <AppText variant="muted">Current calorie target: {formatCalories(calorieTarget)}</AppText>
+            {validationError && (
+                <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                    {validationError}
+                </AppText>
+            )}
             {saveError && (
                 <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
                     {getSafeActionErrorMessage(saveError, 'Unable to save your profile.')}

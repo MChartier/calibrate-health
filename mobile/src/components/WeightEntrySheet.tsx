@@ -24,7 +24,14 @@ import { BottomSheetModal } from './BottomSheetModal';
 import { SectionHeader } from './SectionHeader';
 import { WeightSaveResult } from '../weightEntry/WeightSaveResult';
 import { WeightValueInput } from './WeightValueInput';
-import { formatWeightInput, isWeightOutlier, parseWeightInput } from '../weightEntry/input';
+import {
+    formatWeightInput,
+    getWeightDisplayBounds,
+    getWeightPolicyError,
+    isWeightOutlier,
+    isWeightWithinPolicy,
+    parseWeightInput
+} from '../weightEntry/input';
 import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
@@ -109,6 +116,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             queryClient.invalidateQueries({ queryKey: ['mobile-metrics'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-metrics-trend'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
+            queryClient.invalidateQueries({ queryKey: ['mobile-goal'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-in-app-notifications'] }),
             queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey })
         ]);
@@ -118,6 +126,9 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         mutationFn: () => {
             const parsedWeight = parseWeightInput(weight);
             if (parsedWeight === null) throw new Error('Enter a valid weight greater than zero.');
+            if (!isWeightWithinPolicy(parsedWeight, user?.weight_unit)) {
+                throw new Error(getWeightPolicyError(user?.weight_unit));
+            }
             const payload = { weight: parsedWeight, date };
             return executeOrQueueMutation<MetricSaveResponse>({
                 operation: OFFLINE_MUTATION_OPERATIONS.ADD_METRIC,
@@ -221,6 +232,10 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     }, [phase, reduceMotion, result?.action, result?.queued]);
 
     const parsedWeight = parseWeightInput(weight);
+    const weightBounds = getWeightDisplayBounds(user?.weight_unit);
+    const weightRangeError = parsedWeight !== null && !isWeightWithinPolicy(parsedWeight, user?.weight_unit)
+        ? getWeightPolicyError(user?.weight_unit)
+        : null;
     const didReachGoal = result?.action === 'save' && result.progressUpdate?.recognitions.some(
         (recognition) => recognition.type === 'goal_reached'
     ) === true;
@@ -229,7 +244,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         && parsedWeight !== null
         && Math.abs(parsedWeight - existingMetric.weight) < WEIGHT_INPUT_INCREMENT / 2
     );
-    const canSave = parsedWeight !== null && !isUnchanged;
+    const canSave = parsedWeight !== null && weightRangeError === null && !isUnchanged;
     const isBusy = phase === 'saving' || addWeight.isPending || deleteWeight.isPending;
     const loadError = metricsQuery.error
         ? getErrorPresentation(metricsQuery.error, 'weigh-ins').message
@@ -255,6 +270,10 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         Keyboard.dismiss();
         if (parsedWeight === null) {
             setValidationError(`Enter a valid weight in ${weightUnit}.`);
+            return;
+        }
+        if (weightRangeError) {
+            setValidationError(weightRangeError);
             return;
         }
         if (isUnchanged) return;
@@ -423,7 +442,8 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                     value={weight}
                     unit={user?.weight_unit}
                     step={WEIGHT_INPUT_INCREMENT}
-                    min={WEIGHT_INPUT_INCREMENT}
+                    min={weightBounds.minimum}
+                    max={weightBounds.maximum}
                     editable={!isBusy}
                     onChangeText={(nextWeight) => {
                         setWeight(nextWeight);
@@ -432,9 +452,9 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                     onStep={() => triggerHapticFeedback(user?.haptics_enabled, 'selection')}
                     onSubmitEditing={handleSaveAttempt}
                 />
-                {(validationError || loadError || saveError || deleteError) && (
+                {(validationError || weightRangeError || loadError || saveError || deleteError) && (
                     <LiveError
-                        message={validationError ?? loadError ?? saveError ?? deleteError ?? 'Unable to save weight.'}
+                        message={validationError ?? weightRangeError ?? loadError ?? saveError ?? deleteError ?? 'Unable to save weight.'}
                         color={colors.danger}
                     />
                 )}

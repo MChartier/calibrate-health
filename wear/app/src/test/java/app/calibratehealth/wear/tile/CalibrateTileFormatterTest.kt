@@ -13,7 +13,8 @@ class CalibrateTileFormatterTest {
                 caloriesConsumed = 1_500,
                 calorieTarget = 2_000,
                 caloriesRemaining = 500,
-                cachedAtEpochMs = NOW - 5 * MINUTE_MS
+                cachedAtEpochMs = NOW - 5 * MINUTE_MS,
+                planStatus = "available"
             ),
             NOW
         )
@@ -31,7 +32,8 @@ class CalibrateTileFormatterTest {
                 caloriesConsumed = 2_250,
                 calorieTarget = 2_000,
                 caloriesRemaining = -250,
-                cachedAtEpochMs = NOW - 7 * HOUR_MS
+                cachedAtEpochMs = NOW - 7 * HOUR_MS,
+                planStatus = "available"
             ),
             NOW
         )
@@ -49,7 +51,8 @@ class CalibrateTileFormatterTest {
                 caloriesConsumed = 400,
                 calorieTarget = null,
                 caloriesRemaining = null,
-                cachedAtEpochMs = NOW + MINUTE_MS
+                cachedAtEpochMs = NOW + MINUTE_MS,
+                planStatus = "available"
             ),
             NOW
         )
@@ -67,7 +70,8 @@ class CalibrateTileFormatterTest {
                 caloriesConsumed = 1_000,
                 calorieTarget = 2_000,
                 caloriesRemaining = 1_000,
-                cachedAtEpochMs = NOW - 2 * MINUTE_MS
+                cachedAtEpochMs = NOW - 2 * MINUTE_MS,
+                planStatus = "available"
             ),
             NOW
         )
@@ -101,6 +105,36 @@ class CalibrateTileFormatterTest {
         assertEquals("Paused", result.calorieLine)
         assertEquals("Calorie tracking paused", result.consumedLine)
         assertEquals("Open app to review", result.statusLine)
+    }
+
+    @Test
+    fun `shows logged calories without target math when plan needs review`() {
+        val result = CalibrateTileFormatter.format(
+            CalibrateTileSnapshot(
+                caloriesConsumed = 500,
+                calorieTarget = 2_000,
+                caloriesRemaining = 1_500,
+                cachedAtEpochMs = NOW,
+                planStatus = "requires_review"
+            ),
+            NOW
+        )
+
+        assertEquals("Plan unavailable", result.calorieLine)
+        assertEquals("500 kcal logged", result.consumedLine)
+        assertEquals("Open app to review", result.statusLine)
+    }
+
+    @Test
+    fun `pending weight mutation shows syncing without cached target math`() {
+        val cached = CalibrateTileSnapshot(500, 2_000, 1_500, NOW, planStatus = "available")
+        val pending = suppressTilePlanForPendingWeight(cached, setOf("metric.upsert"))
+        val result = CalibrateTileFormatter.format(pending, NOW)
+
+        assertEquals("Rechecking plan", result.calorieLine)
+        assertEquals("500 kcal logged", result.consumedLine)
+        assertEquals("Weight syncing", result.statusLine)
+        assertEquals(null, pending.calorieTarget)
     }
 
     private companion object {

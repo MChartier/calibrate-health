@@ -29,6 +29,7 @@ import syncRoutes from './routes/sync';
 import userRoutes from './routes/user';
 import watchRoutes from './routes/watch';
 import calibrationRoutes from './routes/calibration';
+import caloriePlanRoutes from './routes/caloriePlan';
 import { authenticateMobileBearerToken } from './middleware/mobileAuth';
 import { enforceNativeClientCompatibility } from './middleware/clientCompatibility';
 import { createCorsOptionsDelegate } from './middleware/cors';
@@ -269,6 +270,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/sync', syncRoutes);
   apiRouter.use('/watch', watchRoutes);
   apiRouter.use('/calibration', calibrationRoutes);
+  apiRouter.use('/calorie-plan', caloriePlanRoutes);
   apiRouter.use('/user/password', authRateLimiters.passwordChange);
   apiRouter.use('/user', userRoutes);
 

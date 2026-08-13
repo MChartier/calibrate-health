@@ -16,13 +16,15 @@ class CalibrateTileCacheReader(
         val session = runCatching { tokenStore.read() }.getOrNull() ?: return@withLock null
         val snapshot = database.dailySnapshotDao().observeLatest().first() ?: return@withLock null
         val metadata = database.syncMetadataDao().observe().first() ?: return@withLock null
+        val pendingMutationTypes = database.queuedMutationDao().activeInFifoOrder().map { it.mutationType }.toSet()
         if (metadata.serverOrigin != session.serverOrigin) return@withLock null
-        CalibrateTileSnapshot(
+        suppressTilePlanForPendingWeight(CalibrateTileSnapshot(
             caloriesConsumed = snapshot.caloriesConsumed,
             calorieTarget = snapshot.calorieTarget,
             caloriesRemaining = snapshot.caloriesRemaining,
             cachedAtEpochMs = metadata.lastSuccessAtEpochMs ?: snapshot.fetchedAtEpochMs,
-            foodDayStatus = snapshot.foodDayStatus
-        )
+            foodDayStatus = snapshot.foodDayStatus,
+            planStatus = snapshot.planStatus
+        ), pendingMutationTypes)
     }
 }

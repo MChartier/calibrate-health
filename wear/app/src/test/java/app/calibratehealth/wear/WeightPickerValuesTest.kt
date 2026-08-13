@@ -8,8 +8,8 @@ class WeightPickerValuesTest {
     fun `metric picker separates whole and decimal values`() {
         val picker = WeightPickerValues.from(72_400, "kg")
 
-        assertEquals(20, picker.minimumWhole)
-        assertEquals(500, picker.maximumWhole)
+        assertEquals(25, picker.minimumWhole)
+        assertEquals(400, picker.maximumWhole)
         assertEquals(72, picker.wholeAt(picker.selectedWholeIndex))
         assertEquals(4, picker.selectedDecimal)
         assertEquals(72_400, picker.gramsFor(picker.selectedWholeIndex, picker.selectedDecimal))
@@ -39,6 +39,16 @@ class WeightPickerValuesTest {
         val imperialMinimum = WeightPickerValues.from(WeightPickerValues.MIN_WEIGHT_GRAMS, "lb")
 
         assertEquals(0, metricMaximum.decimalAt(metricMaximum.selectedWholeIndex, 9))
-        assertEquals(1, imperialMinimum.decimalAt(imperialMinimum.selectedWholeIndex, 0))
+        assertEquals(2, imperialMinimum.decimalAt(imperialMinimum.selectedWholeIndex, 0))
+        assertEquals(55, imperialMinimum.minimumWhole)
+        assertEquals(881, WeightPickerValues.from(WeightPickerValues.MAX_WEIGHT_GRAMS, "lb").maximumWhole)
+        assertEquals(
+            8,
+            WeightPickerValues.from(WeightPickerValues.MAX_WEIGHT_GRAMS, "lb")
+                .decimalAt(
+                    WeightPickerValues.from(WeightPickerValues.MAX_WEIGHT_GRAMS, "lb").selectedWholeIndex,
+                    9
+                )
+        )
     }
 }

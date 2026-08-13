@@ -2,9 +2,8 @@ import crypto from 'node:crypto';
 import { Prisma, type FoodLog } from '@prisma/client';
 import prisma from '../config/database';
 import { getRecentFoodSuggestions, type RecentFoodSuggestion } from './recentFoods';
-import { buildCalorieSummary } from '../utils/profile';
+
 import {
-  formatDateToLocalDateString,
   getSafeUtcTodayDateOnlyInTimeZone,
   parseLocalDateOnly
 } from '../utils/date';
@@ -12,13 +11,21 @@ import { parseFoodLogCreateBody } from '../routes/foodUtils';
 import { executeIdempotentMutation, recordSyncChange, type MutationDatabase } from './clientOperations';
 import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightTrend';
 import { getFoodDayWriteBlock } from './foodTracking';
-import { getEffectiveCaloriePlan } from './caloriePlan';
+import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
+import { markCurrentCaloriePlanForReviewIfUnsafe } from './caloriePlanReview';
 import { calculateCanonicalGoalProgress } from '../../../shared/goalProgress';
+import { isPolicyWeight, localDateInTimeZone } from '../../../shared/caloriePolicy';
 
+export class WatchTimezoneInvalidError extends Error {
+  constructor() {
+    super('A valid account timezone is required for Watch data.');
+    this.name = 'WatchTimezoneInvalidError';
+  }
+}
 const WATCH_QUICK_ADD_LIMIT = 12;
 const WATCH_PINNED_LIMIT = 6;
 const WATCH_RECENT_LIMIT = 12;
-const MAX_WATCH_WEIGHT_GRAMS = 1_000_000;
+
 const ENTITY_REVISION_PATTERN = /^[a-f0-9]{24}$/;
 
 const FOOD_CREATE_KEYS = new Set([
@@ -35,7 +42,7 @@ type ParsedWatchMutation =
   | { ok: true; type: 'food.delete'; payload: { food_log_id: number } }
   | { ok: true; type: 'metric.upsert'; payload: { local_date: string; weight_grams: number; expected_revision: string | null }; metricDate: Date }
   | { ok: true; type: 'food_day.set_complete'; payload: { local_date: string; is_complete: boolean; expected_revision: string | null }; localDate: Date }
-  | { ok: false; status: 400; message: string };
+  | { ok: false; status: 400; message: string; code?: string };
 
 type WatchUndoCandidate = {
   food_log_id: number;
@@ -103,6 +110,9 @@ export function parseWatchMutation(body: unknown, options: {
   const type = body.type as WatchMutationType;
   const payload = body.payload;
   const now = options.now ?? new Date();
+  if (!localDateInTimeZone(now, options.timezone)) {
+    return { ok: false, status: 400, message: 'A valid account timezone is required', code: 'TIMEZONE_INVALID' };
+  }
 
   if (type === 'food.create') {
     if (!hasOnlyKeys(payload, FOOD_CREATE_KEYS) || typeof payload.date !== 'string') {
@@ -129,8 +139,8 @@ export function parseWatchMutation(body: unknown, options: {
     }
     const weightGrams = parsePositiveInteger(payload.weight_grams);
     const expectedRevision = parseExpectedRevision(payload.expected_revision);
-    if (!weightGrams || weightGrams > MAX_WATCH_WEIGHT_GRAMS) {
-      return { ok: false, status: 400, message: 'Invalid weight_grams' };
+    if (!isPolicyWeight(weightGrams)) {
+      return { ok: false, status: 400, message: 'Weight must be between 25000 and 400000 grams', code: 'WEIGHT_OUT_OF_RANGE' };
     }
     if (expectedRevision === undefined) {
       return { ok: false, status: 400, message: 'Invalid expected_revision' };
@@ -371,6 +381,7 @@ export async function executeWatchMutation(options: {
           create: { user_id: options.userId, date: mutation.metricDate, weight_grams: mutation.payload.weight_grams }
         });
         await recordSyncChange({ tx, userId: options.userId, entityType: 'body_metric', entityId: metric.id, action: 'upsert', operationId: claimedOperationId, payload: metric });
+        await markCurrentCaloriePlanForReviewIfUnsafe(tx, options.userId);
         return {
           status: 200,
           body: {
@@ -542,8 +553,16 @@ export async function buildWatchSnapshot(options: {
       select: { id: true, timezone: true, language: true, weight_unit: true, height_unit: true, sex: true, date_of_birth: true, height_mm: true, activity_level: true }
     });
     if (!user) return null;
-    const localDateKey = formatDateToLocalDateString(now, user.timezone);
+    const planLocalDateKey = localDateInTimeZone(now, user.timezone);
+    if (!planLocalDateKey) throw new WatchTimezoneInvalidError();
+    const localDateKey = planLocalDateKey;
     const localDate = parseLocalDateOnly(localDateKey);
+    const operationalTimezone = user.timezone;
+    const planning = await buildStoredCaloriePlanningSnapshot(tx, options.userId, now);
+    if (!planning) return null;
+    const goal = planning.goal;
+    const caloriePlan = planning.evaluation;
+    const goalProjection = planning.projection;
 
     const activeReminderPromise = 'inAppNotification' in tx
       ? tx.inAppNotification.findMany({
@@ -566,15 +585,7 @@ export async function buildWatchSnapshot(options: {
           select: { id: true }
         })
       : Promise.resolve(null);
-    const goal = await tx.goal.findFirst({
-      where: { user_id: options.userId },
-      orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
-    });
-    const effectivePlanPromise = goal
-      ? getEffectiveCaloriePlan(options.userId, goal.id, localDate, tx)
-      : Promise.resolve(null);
-    const [effectivePlan, latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
-      effectivePlanPromise,
+    const [latestWeight, todayWeight, foodAggregate, foodDay, activePause, pinned, recent, undoCandidate, activeReminderRows] = await Promise.all([
       tx.bodyMetric.findFirst({ where: { user_id: options.userId, date: { lte: localDate } }, orderBy: [{ date: 'desc' }, { id: 'desc' }] }),
       tx.bodyMetric.findUnique({ where: { user_id_date: { user_id: options.userId, date: localDate } } }),
       tx.foodLog.aggregate({ where: { user_id: options.userId, local_date: localDate }, _sum: { calories: true } }),
@@ -586,17 +597,15 @@ export async function buildWatchSnapshot(options: {
       activeReminderPromise
     ]);
 
-    const calorieSummary = buildCalorieSummary({
-      weight_grams: latestWeight?.weight_grams,
-      profile: user,
-      daily_deficit: goal?.daily_deficit,
-      target_adjustment_kcal: effectivePlan?.targetAdjustmentKcal ?? 0,
-      now
-    });
+
     const caloriesConsumed = foodAggregate._sum.calories ?? 0;
-    const calorieTarget = calorieSummary.dailyCalorieTarget === undefined ? null : Math.round(calorieSummary.dailyCalorieTarget);
-    const defaultMealPeriod = suggestedMealPeriod(now, user.timezone);
-    const goalProgress = buildWatchGoalSnapshot(goal, latestWeight?.weight_grams ?? null);
+    const calorieTarget = caloriePlan.dailyCalorieTarget;
+    const defaultMealPeriod = suggestedMealPeriod(now, operationalTimezone);
+    const safeLatestWeight = latestWeight && isPolicyWeight(latestWeight.weight_grams) ? latestWeight : null;
+    const safeTodayWeight = todayWeight && isPolicyWeight(todayWeight.weight_grams) ? todayWeight : null;
+    const safeGoal = caloriePlan.status === 'available' ? goal : null;
+    const goalProgress = buildWatchGoalSnapshot(safeGoal, safeLatestWeight?.weight_grams ?? null);
+
     const recentMyFoodIds = Array.from(new Set(
       recent.map((item) => item.my_food_id).filter((id): id is number => id !== null)
     ));
@@ -651,7 +660,8 @@ export async function buildWatchSnapshot(options: {
     const semantic = {
       local_date: localDateKey,
       weight_unit: user.weight_unit,
-      calories: { consumed: caloriesConsumed, target: calorieTarget, remaining: calorieTarget === null ? null : calorieTarget - caloriesConsumed, missing: calorieSummary.missing },
+      plan: { status: caloriePlan.status, reason_code: caloriePlan.reasonCode, minimum_daily_calorie_target: caloriePlan.minimumDailyCalorieTarget },
+      calories: { consumed: caloriesConsumed, target: calorieTarget, remaining: calorieTarget === null ? null : calorieTarget - caloriesConsumed, missing: caloriePlan.missing },
       food_day: {
         status: effectiveFoodDayStatus,
         source: effectiveFoodDaySource,
@@ -661,13 +671,16 @@ export async function buildWatchSnapshot(options: {
         revision: foodDay ? foodDayRevision(foodDay) : null
       },
       weight: {
-        today_grams: todayWeight?.weight_grams ?? null,
-        today_revision: todayWeight ? metricRevision(todayWeight) : null,
-        latest_grams: latestWeight?.weight_grams ?? null,
-        latest_revision: latestWeight ? metricRevision(latestWeight) : null,
-        latest_date: latestWeight?.date.toISOString().slice(0, 10) ?? null
+        today_grams: safeTodayWeight?.weight_grams ?? null,
+        today_revision: safeTodayWeight ? metricRevision(safeTodayWeight) : null,
+        latest_grams: safeLatestWeight?.weight_grams ?? null,
+        latest_revision: safeLatestWeight ? metricRevision(safeLatestWeight) : null,
+        latest_date: safeLatestWeight?.date.toISOString().slice(0, 10) ?? null
       },
-      goal: goalProgress,
+      goal: goalProgress && goalProjection ? {
+        ...goalProgress,
+        projection: { status: goalProjection.status, projected_end_date: goalProjection.projectedEndDate, reason_code: goalProjection.reasonCode }
+      } : null,
       quick_add: quickAdd,
       reminders,
       undo_candidate: undoCandidate

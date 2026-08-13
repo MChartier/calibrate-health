@@ -12,7 +12,8 @@ import {
   buildWatchSnapshot,
   executeWatchMutation,
   parseWatchMutation,
-  watchSnapshotEtag
+  watchSnapshotEtag,
+  WatchTimezoneInvalidError
 } from '../services/watch';
 import { getAuthenticatedUser } from '../middleware/authenticatedUser';
 
@@ -56,6 +57,9 @@ router.get('/', async (req, res) => {
     if (etagMatches(req.get('if-none-match'), etag)) return res.status(304).send();
     return res.json(snapshot);
   } catch (error) {
+    if (error instanceof WatchTimezoneInvalidError) {
+      return res.status(409).json({ message: error.message, code: 'TIMEZONE_INVALID', retryable: false });
+    }
     const errorType = safeErrorType(error);
     console.error(`Watch snapshot failed (request_id=${res.locals?.requestId ?? 'unavailable'}, error_type=${errorType}).`);
     return res.status(500).json({ message: 'Server error' });
@@ -79,10 +83,10 @@ router.post('/mutations', async (req, res) => {
     recordOutcome(400);
     return res.status(400).json({ message: 'Invalid x-client-operation-id' });
   }
-  const mutation = parseWatchMutation(req.body, { timezone: user.timezone ?? 'UTC' });
+  const mutation = parseWatchMutation(req.body, { timezone: user.timezone ?? '' });
   if (!mutation.ok) {
     recordOutcome(mutation.status);
-    return res.status(mutation.status).json({ message: mutation.message });
+    return res.status(mutation.status).json({ message: mutation.message, ...(mutation.code ? { code: mutation.code, retryable: false } : {}) });
   }
 
   try {

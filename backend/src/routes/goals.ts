@@ -1,5 +1,4 @@
 import express from 'express';
-import prisma from '../config/database';
 import { parseDailyDeficit } from '../utils/goalDeficit';
 import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/units';
 import { validateGoalWeightsForDailyDeficit } from '../utils/goalValidation';
@@ -10,6 +9,8 @@ import {
     recordSyncChange
 } from '../services/clientOperations';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
+import { evaluateCaloriePlan, isPolicyWeight, projectGoalEndDate } from '../../../shared/caloriePolicy';
+import { buildStoredCaloriePlanningSnapshot, getStoredCaloriePlanningSnapshot, projectionWire } from '../services/caloriePlanning';
 
 /**
  * Goal endpoints for creating and fetching the current goal.
@@ -22,28 +23,24 @@ router.use(requireAuthenticatedUser);
 
 router.get('/', async (req, res) => {
     const user = getAuthenticatedUser(req);
-    const weightUnit: WeightUnit = user.weight_unit ?? 'KG';
     try {
-        // Goals are append-only; the latest row is treated as the active goal.
-        const goal = await prisma.goal.findFirst({
-            where: { user_id: user.id },
-            orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
+        const snapshot = await getStoredCaloriePlanningSnapshot(user.id);
+        if (!snapshot) return res.status(404).json({ message: 'User not found' });
+        if (!snapshot.goal) return res.json(null);
+        const goal = snapshot.goal;
+        const { start_weight_grams: startWeightGrams, target_weight_grams: targetWeightGrams, ...goalFields } = goal;
+        return res.json({
+            ...goalFields,
+            start_weight: gramsToWeight(startWeightGrams, snapshot.user.weight_unit),
+            target_weight: gramsToWeight(targetWeightGrams, snapshot.user.weight_unit),
+            plan_status: snapshot.evaluation.status,
+            plan_reason_code: snapshot.evaluation.reasonCode,
+            projection: projectionWire(snapshot.projection!)
         });
-        if (!goal) {
-            return res.json(null);
-        }
-
-        const { start_weight_grams, target_weight_grams, ...rest } = goal;
-        res.json({
-            ...rest,
-            start_weight: gramsToWeight(start_weight_grams, weightUnit),
-            target_weight: gramsToWeight(target_weight_grams, weightUnit)
-        });
-    } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+    } catch {
+        return res.status(500).json({ message: 'Server error' });
     }
 });
-
 router.post('/', async (req, res) => {
     const user = getAuthenticatedUser(req);
     const { start_weight, target_weight, target_date, daily_deficit } = req.body;
@@ -59,7 +56,7 @@ router.post('/', async (req, res) => {
         // Validate allowed deficit choices to keep projections and targets consistent with the UI.
         const parsedDailyDeficit = parseDailyDeficit(daily_deficit);
         if (parsedDailyDeficit === null) {
-            return res.status(400).json({ message: 'daily_deficit must be one of 0, +/-250, +/-500, +/-750, or +/-1000' });
+            return res.status(400).json({ message: 'That calorie plan option is unavailable.', code: 'CALORIE_PLAN_OPTION_UNAVAILABLE', retryable: false, field_errors: { daily_deficit: ['Choose an available calorie plan option.'] } });
         }
 
         let start_weight_grams: number;
@@ -68,7 +65,10 @@ router.post('/', async (req, res) => {
             start_weight_grams = parseWeightToGrams(start_weight, weightUnit);
             target_weight_grams = parseWeightToGrams(target_weight, weightUnit);
         } catch {
-            return res.status(400).json({ message: 'Invalid start weight or target weight' });
+            return res.status(400).json({ message: 'Start and target weights are invalid.', code: 'WEIGHT_OUT_OF_RANGE', retryable: false, field_errors: { start_weight: ['Enter a weight within the supported range.'], target_weight: ['Enter a weight within the supported range.'] } });
+        }
+        if (!isPolicyWeight(start_weight_grams) || !isPolicyWeight(target_weight_grams)) {
+            return res.status(400).json({ message: 'Start and target weights must be within the supported range.', code: 'WEIGHT_OUT_OF_RANGE', retryable: false, field_errors: { start_weight: ['Enter a weight within the supported range.'], target_weight: ['Enter a weight within the supported range.'] } });
         }
 
         // Ensure the weight direction matches the deficit sign (loss vs gain vs maintain).
@@ -78,7 +78,7 @@ router.post('/', async (req, res) => {
             targetWeightGrams: target_weight_grams
         });
         if (coherenceError) {
-            return res.status(400).json({ message: coherenceError });
+            return res.status(400).json({ message: coherenceError, code: 'CALORIE_PLAN_OPTION_UNAVAILABLE', retryable: false, field_errors: { target_weight: [coherenceError] } });
         }
 
         let parsedTargetDate: Date | null = null;
@@ -96,35 +96,80 @@ router.post('/', async (req, res) => {
             operationKind: 'goal.create',
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                const snapshot = await buildStoredCaloriePlanningSnapshot(tx, user.id);
+                if (!snapshot) return { status: 404, body: { message: 'User not found' } };
+                const evaluation = evaluateCaloriePlan({
+                    profile: {
+                        timezone: snapshot.user.timezone,
+                        dateOfBirth: snapshot.user.date_of_birth,
+                        sex: snapshot.user.sex,
+                        heightMm: snapshot.user.height_mm,
+                        activityLevel: snapshot.user.activity_level
+                    },
+                    latestWeightGrams: snapshot.latestWeightGrams,
+                    goal: {
+                        startWeightGrams: start_weight_grams,
+                        targetWeightGrams: target_weight_grams,
+                        dailyDeficit: parsedDailyDeficit,
+                        reviewStatus: 'CLEAR'
+                    }
+                });
+                if (evaluation.eligibility.status !== 'eligible') {
+                    return {
+                        status: 400,
+                        body: {
+                            message: 'Complete a valid profile before creating a calorie plan.',
+                            code: 'CALORIE_PLAN_PROFILE_REQUIRED',
+                            retryable: false,
+                            field_errors: { date_of_birth: ['Complete the required profile fields before creating a goal.'] }
+                        }
+                    };
+                }
+                if (evaluation.status !== 'available') {
+                    return {
+                        status: 400,
+                        body: {
+                            message: 'That calorie plan option is unavailable.',
+                            code: 'CALORIE_PLAN_OPTION_UNAVAILABLE',
+                            retryable: false,
+                            field_errors: { daily_deficit: ['Choose an available calorie plan option.'] }
+                        }
+                    };
+                }
                 const goal = await tx.goal.create({
                     data: {
                         user_id: user.id,
                         start_weight_grams,
                         target_weight_grams,
                         target_date: parsedTargetDate,
-                        daily_deficit: parsedDailyDeficit
+                        daily_deficit: parsedDailyDeficit,
+                        calorie_plan_review_status: 'CLEAR',
+                        calorie_plan_review_reason: null
                     }
                 });
                 await recordSyncChange({
-                    tx,
-                    userId: user.id,
-                    entityType: 'goal',
-                    entityId: goal.id,
-                    action: 'upsert',
-                    operationId: claimedOperationId,
-                    payload: goal
+                    tx, userId: user.id, entityType: 'goal', entityId: goal.id, action: 'upsert',
+                    operationId: claimedOperationId, payload: goal
                 });
-                const {
-                    start_weight_grams: createdStartWeightGrams,
-                    target_weight_grams: createdTargetWeightGrams,
-                    ...createdGoal
-                } = goal;
+                const projection = projectGoalEndDate({
+                    planStatus: evaluation.status,
+                    planReasonCode: evaluation.reasonCode,
+                    localDate: snapshot.localToday,
+                    currentWeightGrams: snapshot.latestWeightGrams,
+                    targetWeightGrams: goal.target_weight_grams,
+                    dailyDeficit: goal.daily_deficit,
+                    weightUnit: snapshot.user.weight_unit
+                });
+                const { start_weight_grams: createdStartWeightGrams, target_weight_grams: createdTargetWeightGrams, ...createdGoal } = goal;
                 return {
                     status: 200,
                     body: {
                         ...createdGoal,
                         start_weight: gramsToWeight(createdStartWeightGrams, weightUnit),
-                        target_weight: gramsToWeight(createdTargetWeightGrams, weightUnit)
+                        target_weight: gramsToWeight(createdTargetWeightGrams, weightUnit),
+                        plan_status: evaluation.status,
+                        plan_reason_code: evaluation.reasonCode,
+                        projection: projectionWire(projection)
                     }
                 };
             }

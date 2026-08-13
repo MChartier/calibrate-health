@@ -12,15 +12,23 @@ function stubModule(path, exports) {
 function loadWatchService({ prismaStub, recentItems = [] }) {
   const dbPath = require.resolve('../src/config/database');
   const recentPath = require.resolve('../src/services/recentFoods');
+  const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
+  const caloriePlanReviewPath = require.resolve('../src/services/caloriePlanReview');
   const servicePath = require.resolve('../src/services/watch');
   const previousDb = require.cache[dbPath];
   const previousRecent = require.cache[recentPath];
+  const previousCaloriePlanning = require.cache[caloriePlanningPath];
+  const previousCaloriePlanReview = require.cache[caloriePlanReviewPath];
   delete require.cache[servicePath];
+  delete require.cache[caloriePlanningPath];
+  delete require.cache[caloriePlanReviewPath];
   stubModule(dbPath, prismaStub);
   stubModule(recentPath, { getRecentFoodSuggestions: async () => recentItems });
   const loaded = require('../src/services/watch');
   if (previousDb) require.cache[dbPath] = previousDb; else delete require.cache[dbPath];
   if (previousRecent) require.cache[recentPath] = previousRecent; else delete require.cache[recentPath];
+  if (previousCaloriePlanning) require.cache[caloriePlanningPath] = previousCaloriePlanning; else delete require.cache[caloriePlanningPath];
+  if (previousCaloriePlanReview) require.cache[caloriePlanReviewPath] = previousCaloriePlanReview; else delete require.cache[caloriePlanReviewPath];
   return loaded;
 }
 
@@ -29,11 +37,21 @@ function loadWatchMutationService(tx) {
   const recentPath = require.resolve('../src/services/recentFoods');
   const operationsPath = require.resolve('../src/services/clientOperations');
   const trendPath = require.resolve('../src/services/materializedWeightTrend');
+  const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
+  const caloriePlanReviewPath = require.resolve('../src/services/caloriePlanReview');
   const servicePath = require.resolve('../src/services/watch');
   const previous = new Map([
     [dbPath, require.cache[dbPath]], [recentPath, require.cache[recentPath]],
-    [operationsPath, require.cache[operationsPath]], [trendPath, require.cache[trendPath]]
+    [operationsPath, require.cache[operationsPath]], [trendPath, require.cache[trendPath]],
+    [caloriePlanningPath, require.cache[caloriePlanningPath]], [caloriePlanReviewPath, require.cache[caloriePlanReviewPath]]
   ]);
+  tx.user ??= { findUnique: async () => ({
+    id: 9, timezone: 'UTC', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), sex: 'MALE',
+    height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM'
+  }) };
+  tx.goal ??= { findFirst: async () => null };
+  tx.bodyMetric ??= {};
+  tx.bodyMetric.findFirst ??= async () => null;
   tx.foodLogDay ??= {
     findUnique: async ({ where }) => ({
       id: 7,
@@ -45,6 +63,8 @@ function loadWatchMutationService(tx) {
     })
   };
   delete require.cache[servicePath];
+  delete require.cache[caloriePlanningPath];
+  delete require.cache[caloriePlanReviewPath];
   const captured = { options: null, syncChanges: [], trendRefreshes: 0 };
   stubModule(dbPath, {});
   stubModule(recentPath, { getRecentFoodSuggestions: async () => [] });
@@ -73,6 +93,15 @@ test('watch mutation parser accepts canonical grams and rejects unknown fields',
   assert.equal(parsed.ok, true);
   assert.equal(parsed.payload.weight_grams, 81234);
   assert.equal(parseWatchMutation({
+    type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 81234, expected_revision: null }
+  }, { timezone: 'Not/A_Zone', now: new Date('2026-07-11T12:00:00.000Z') }).code, 'TIMEZONE_INVALID');
+  assert.equal(parseWatchMutation({
+    type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 24999, expected_revision: null }
+  }, { timezone: 'UTC', now: new Date('2026-07-11T12:00:00.000Z') }).code, 'WEIGHT_OUT_OF_RANGE');
+  assert.equal(parseWatchMutation({
+    type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 400001, expected_revision: null }
+  }, { timezone: 'UTC', now: new Date('2026-07-11T12:00:00.000Z') }).code, 'WEIGHT_OUT_OF_RANGE');
+  assert.equal(parseWatchMutation({
     type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 81234, expected_revision: null, user_id: 99 }
   }, { timezone: 'UTC', now: new Date('2026-07-11T12:00:00.000Z') }).ok, false);
   assert.deepEqual(parseWatchMutation({
@@ -84,22 +113,47 @@ test('watch mutation parser accepts canonical grams and rejects unknown fields',
   });
 });
 
+test('watch snapshot rejects an invalid stored timezone before reading any guessed local day', async () => {
+  let goalRead = false;
+  const tx = {
+    user: { findUnique: async () => ({ id: 9, timezone: 'Not/A_Zone' }) },
+    goal: { findFirst: async () => { goalRead = true; return null; } }
+  };
+  const { buildWatchSnapshot, WatchTimezoneInvalidError } = loadWatchService({
+    prismaStub: { $transaction: async (callback) => callback(tx) }
+  });
+  await assert.rejects(
+    buildWatchSnapshot({ userId: 9, mobileAuthSessionId: 73, now: new Date('2026-07-11T12:00:00.000Z') }),
+    WatchTimezoneInvalidError
+  );
+  assert.equal(goalRead, false);
+});
 test('watch snapshot is bounded, timezone-local, and derives current-session undo', async () => {
   let isolationLevel;
   let revisionFindFirstArgs = null;
+  let futureRevisions = [];
+  let latestWeight = { id: 4, date: new Date('2026-07-10T00:00:00.000Z'), weight_grams: 80000 };
+  let todayWeight = null;
   const tx = {
     user: { findUnique: async () => ({
       id: 9, timezone: 'America/Los_Angeles', language: 'en', weight_unit: 'KG', height_unit: 'CM',
       sex: 'MALE', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), height_mm: 1800, activity_level: 'SEDENTARY'
     }) },
-    goal: { findFirst: async () => ({ id: 41, start_weight_grams: 90000, target_weight_grams: 75000, daily_deficit: 500 }) },
-    caloriePlanRevision: { findFirst: async (args) => {
-      revisionFindFirstArgs = args;
-      return null;
-    } },
+    goal: { findFirst: async () => ({
+      id: 41, user_id: 9, start_weight_grams: 90000, target_weight_grams: 75000, daily_deficit: 250,
+      target_date: null, created_at: new Date('2026-01-01T00:00:00.000Z'),
+      calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+    }) },
+    caloriePlanRevision: {
+      findFirst: async (args) => {
+        revisionFindFirstArgs = args;
+        return null;
+      },
+      findMany: async () => futureRevisions
+    },
     bodyMetric: {
-      findFirst: async () => ({ id: 4, date: new Date('2026-07-10T00:00:00.000Z'), weight_grams: 80000 }),
-      findUnique: async () => null
+      findFirst: async () => latestWeight,
+      findUnique: async () => todayWeight
     },
     foodLog: {
       aggregate: async () => ({ _sum: { calories: 1200 } }),
@@ -160,7 +214,9 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   assert.equal(snapshot.local_date, '2026-07-11');
   assert.equal(snapshot.weight_unit, 'KG');
   assert.equal(snapshot.calories.consumed, 1200);
-  assert.equal(snapshot.calories.remaining, snapshot.calories.target - 1200);
+  assert.equal(snapshot.calories.target, 1850);
+  assert.equal(snapshot.calories.remaining, 650);
+  assert.deepEqual(snapshot.plan, { status: 'available', reason_code: null, minimum_daily_calorie_target: 1750 });
   assert.equal(snapshot.weight.today_grams, null);
   assert.equal(snapshot.weight.latest_grams, 80000);
   assert.match(snapshot.weight.latest_revision, /^[a-f0-9]{24}$/);
@@ -169,10 +225,11 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
     start_weight_grams: 90000,
     target_weight_grams: 75000,
     current_weight_grams: 80000,
-    daily_deficit: 500,
+    daily_deficit: 250,
     progress_percent: 66.7,
     remaining_weight_grams: 5000,
-    is_complete: false
+    is_complete: false,
+    projection: { status: 'projected', projected_end_date: '2026-12-12', reason_code: null }
   });
   assert.equal('activity' in snapshot, false);
   assert.equal('staleness' in snapshot, false);
@@ -194,6 +251,44 @@ test('watch snapshot is bounded, timezone-local, and derives current-session und
   assert.ok(snapshot.food_day.revision);
   assert.equal(snapshot.weight.today_revision, null);
   assert.match(watchSnapshotEtag(snapshot.revision), /^W\/"watch-/);
+
+  futureRevisions = [{
+    id: 52,
+    recommendation_id: 18,
+    target_adjustment_kcal: -125,
+    effective_local_date: new Date('2026-07-12T00:00:00.000Z'),
+    calorie_plan_review_status: 'CLEAR',
+    calorie_plan_review_reason: null
+  }];
+  const unsafeSnapshot = await buildWatchSnapshot({
+    userId: 9, mobileAuthSessionId: 73, now: new Date('2026-07-11T20:00:00.000Z')
+  });
+  assert.deepEqual(unsafeSnapshot.plan, {
+    status: 'requires_review',
+    reason_code: 'PLAN_REVISION_UNSAFE',
+    minimum_daily_calorie_target: 1750
+  });
+  assert.equal(unsafeSnapshot.calories.target, null);
+  assert.equal(unsafeSnapshot.calories.remaining, null);
+  assert.equal(unsafeSnapshot.goal, null);
+
+  futureRevisions = [];
+  latestWeight = { id: 5, date: new Date('2026-07-11T00:00:00.000Z'), weight_grams: 24000 };
+  todayWeight = latestWeight;
+  const invalidWeightSnapshot = await buildWatchSnapshot({
+    userId: 9, mobileAuthSessionId: 73, now: new Date('2026-07-11T20:00:00.000Z')
+  });
+  assert.deepEqual(invalidWeightSnapshot.plan, {
+    status: 'requires_review', reason_code: 'WEIGHT_OUT_OF_RANGE', minimum_daily_calorie_target: null
+  });
+  assert.deepEqual(invalidWeightSnapshot.weight, {
+    today_grams: null, today_revision: null, latest_grams: null, latest_revision: null, latest_date: null
+  });
+  assert.equal(invalidWeightSnapshot.calories.target, null);
+  assert.equal(invalidWeightSnapshot.goal, null);
+  assert.equal(invalidWeightSnapshot.food_day.status, 'OPEN');
+  assert.ok(invalidWeightSnapshot.quick_add.length > 0);
+  assert.ok(invalidWeightSnapshot.reminders.length > 0);
 });
 
 test('watch goal progress covers loss, gain, maintenance, missing goals, and completed targets', () => {

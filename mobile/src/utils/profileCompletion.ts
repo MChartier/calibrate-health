@@ -1,11 +1,14 @@
 import type { UserProfileResponse } from '@calibrate/api-client';
 
 /**
- * Mirror the PWA protected-route check: tabs need enough profile and goal data to compute calorie targets.
+ * Shared by onboarding and protected tabs so reviewed historical plans stay recoverable in-app.
  */
 export function isProfileSetupComplete(profile: UserProfileResponse | null | undefined): boolean {
     if (!profile) return false;
-    const hasTimezone = typeof profile.profile.timezone === 'string' && profile.profile.timezone.trim().length > 0;
     const hasGoal = profile.goal_daily_deficit !== null && profile.goal_daily_deficit !== undefined;
-    return hasTimezone && hasGoal && profile.calorieSummary.missing.length === 0;
+    const hasEligibleProfile = profile.calorieSummary.eligibility?.status === 'eligible';
+    if (!hasGoal || !hasEligibleProfile) return false;
+    if (profile.calorieSummary.planStatus === 'requires_review') return true;
+    return profile.calorieSummary.planStatus === 'available'
+        && profile.calorieSummary.missing.length === 0;
 }

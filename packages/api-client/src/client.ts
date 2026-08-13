@@ -5,6 +5,8 @@ import type {
     BrowserAuthResponse,
     BrowserPushSubscriptionPayload,
     CalibrationStatusResponse,
+    CaloriePlanOptionsRequest,
+    CaloriePlanOptionsResponse,
     ClientConfigResponse,
     CreateMyFoodPayload,
     CreateRecipeFromFoodLogsPayload,
@@ -511,6 +513,13 @@ export class CalibrateApiClient {
 
     getUserProfile(): Promise<UserProfileResponse> {
         return this.request<UserProfileResponse>('/api/user/profile');
+    }
+
+    getCaloriePlanOptions(payload: CaloriePlanOptionsRequest): Promise<CaloriePlanOptionsResponse> {
+        return this.request<CaloriePlanOptionsResponse>('/api/calorie-plan/options', {
+            method: 'POST',
+            json: payload
+        });
     }
 
     updateProfile(payload: Record<string, unknown>): Promise<{ user: UserClientPayload }> {

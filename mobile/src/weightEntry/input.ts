@@ -1,4 +1,4 @@
-import type { WeightUnit } from '@calibrate/shared';
+import { MAX_WEIGHT_GRAMS, MIN_WEIGHT_GRAMS, type WeightUnit } from '@calibrate/shared';
 
 const MAX_WEIGHT_DECIMAL_PLACES = 1;
 
@@ -20,6 +20,29 @@ export function parseWeightInput(value: string): number | null {
 
 export function formatWeightInput(value: number): string {
     return value.toFixed(MAX_WEIGHT_DECIMAL_PLACES).replace(/\.0$/, '');
+}
+
+export function weightInputToCanonicalGrams(value: number, unit: WeightUnit | undefined): number {
+    const grams = unit === 'LB' ? value * 453.59237 : value * 1_000;
+    return Math.round(grams);
+}
+
+export function isWeightWithinPolicy(value: number, unit: WeightUnit | undefined): boolean {
+    if (!Number.isFinite(value)) return false;
+    const grams = weightInputToCanonicalGrams(value, unit);
+    return grams >= MIN_WEIGHT_GRAMS && grams <= MAX_WEIGHT_GRAMS;
+}
+
+export function getWeightDisplayBounds(unit: WeightUnit | undefined): { minimum: number; maximum: number } {
+    return unit === 'LB'
+        ? { minimum: 55.2, maximum: 881.8 }
+        : { minimum: 25, maximum: 400 };
+}
+
+export function getWeightPolicyError(unit: WeightUnit | undefined): string {
+    const bounds = getWeightDisplayBounds(unit);
+    const unitLabel = unit === 'LB' ? 'lb' : 'kg';
+    return `Enter a weight from ${bounds.minimum} to ${bounds.maximum} ${unitLabel}.`;
 }
 
 export function getSpokenWeightUnit(unit: WeightUnit | undefined, plural = true): string {

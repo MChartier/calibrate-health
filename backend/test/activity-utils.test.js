@@ -60,6 +60,19 @@ test('activity utils enforce record-type-specific values and interval ordering',
   );
 });
 
+test('activity utils enforce exact Health Connect weight policy bounds', () => {
+  const weightSync = (weight_grams) => baseSync({
+    record_type: 'WEIGHT',
+    upserts: [{
+      record_id: 'weight-1', data_origin: 'com.google.android.apps.healthdata',
+      source_updated_at: '2026-07-11T12:00:00Z', start_time: '2026-07-11T12:00:00Z', weight_grams
+    }]
+  });
+  assert.equal(parseHealthConnectSyncBody(weightSync(25_000), 'UTC').upserts[0].weightGrams, 25_000);
+  assert.equal(parseHealthConnectSyncBody(weightSync(400_000), 'UTC').upserts[0].weightGrams, 400_000);
+  assert.throws(() => parseHealthConnectSyncBody(weightSync(24_999), 'UTC'), /Invalid weight_grams/);
+  assert.throws(() => parseHealthConnectSyncBody(weightSync(400_001), 'UTC'), /Invalid weight_grams/);
+});
 test('activity utils accept BigInt-safe client versions and nullable aggregate totals', () => {
   const parsed = parseHealthConnectSyncBody(baseSync({
     upserts: [{ ...baseSync().upserts[0], client_record_version: '9007199254740993' }],

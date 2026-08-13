@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 5;
+export const ACCOUNT_EXPORT_VERSION = 6;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. User-visible account, tracking, and derived plan history is exported.
@@ -92,6 +92,8 @@ export type AccountExport = {
     target_weight_grams: number;
     target_date: string | null;
     daily_deficit: number;
+    calorie_plan_review_status: string;
+    calorie_plan_review_reason: string | null;
     created_at: string;
   }>;
   body_metrics: Array<{
@@ -248,6 +250,8 @@ export type AccountExport = {
     source_goal_id: number;
     recommendation_id: number | null;
     target_adjustment_kcal: number;
+    calorie_plan_review_status: string;
+    calorie_plan_review_reason: string | null;
     effective_local_date: string;
     created_at: string;
   }>;
@@ -302,6 +306,8 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       target_weight_grams: goal.target_weight_grams,
       target_date: goal.target_date ? toIsoDateTime(goal.target_date) : null,
       daily_deficit: goal.daily_deficit,
+      calorie_plan_review_status: goal.calorie_plan_review_status,
+      calorie_plan_review_reason: goal.calorie_plan_review_reason,
       created_at: toIsoDateTime(goal.created_at)
     })),
     body_metrics: user.metrics.map((metric) => ({
@@ -463,6 +469,8 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       source_goal_id: revision.source_goal_id,
       recommendation_id: revision.recommendation_id,
       target_adjustment_kcal: revision.target_adjustment_kcal,
+      calorie_plan_review_status: revision.calorie_plan_review_status,
+      calorie_plan_review_reason: revision.calorie_plan_review_reason,
       effective_local_date: toIsoDate(revision.effective_local_date),
       created_at: toIsoDateTime(revision.created_at)
     }))

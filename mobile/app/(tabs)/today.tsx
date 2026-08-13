@@ -4,6 +4,9 @@ import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../src/components/AddFoodSheet';
+import { AppButton } from '../../src/components/AppButton';
+import { AppCard } from '../../src/components/AppCard';
+import { AppText } from '../../src/components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../src/components/AsyncStateBoundary';
 import { CalorieBalanceCard } from '../../src/components/CalorieBalanceCard';
 import { DateNavigation } from '../../src/components/DateNavigation';
@@ -18,10 +21,12 @@ import { useSharedLogDateNavigation } from '../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../src/context/AddFoodRequestContext';
 import { usePrefetchPreviousFoodLog } from '../../src/hooks/usePrefetchPreviousFoodLog';
 import { shouldEmphasizePausedStatus, shouldShowCalorieComparison } from '../../src/food/dayPresentation';
+import { getCaloriePlanPresentation } from '../../src/caloriePlanning/presentation';
 import { getActiveTabRoute } from '../../src/navigation/contextualFab';
 import { MEAL_OPTIONS } from '../../src/utils/meals';
 import { getTodayDate } from '../../src/utils/dates';
 import { getMetricDate } from '../../src/utils/metrics';
+import { usePendingWeightMutation } from '../../src/offline/usePendingWeightMutation';
 import { spacing } from '../../src/theme';
 
 export default function TodayScreen() {
@@ -42,6 +47,7 @@ export default function TodayScreen() {
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
     const isOnline = useOnlineStatus();
+    const hasPendingWeightChange = usePendingWeightMutation();
 
     const dashboardQueries = [profileQuery, foodQuery, foodDayQuery, metricsQuery] as const;
     const failedDashboardQueries = dashboardQueries.filter((query) => query.isError);
@@ -100,7 +106,25 @@ export default function TodayScreen() {
 
     const entries = foodQuery.data ?? [];
     const calories = entries.reduce((total, entry) => total + entry.calories, 0);
-    const target = profileQuery.data?.calorieSummary.dailyCalorieTarget ?? null;
+    const calorieSummary = profileQuery.data?.calorieSummary;
+    const planStatus = calorieSummary?.planStatus;
+    const planIsAvailable = planStatus === 'available' && !hasPendingWeightChange;
+    const target = planIsAvailable ? calorieSummary?.dailyCalorieTarget ?? null : null;
+    const planPresentation = getCaloriePlanPresentation(calorieSummary?.planReasonCode, planStatus);
+    function handlePlanAction() {
+        if (planPresentation.actionKind === 'weight') {
+            setIsWeightSheetOpen(true);
+            return;
+        }
+        if (planPresentation.actionKind === 'profile') {
+            router.push('/(tabs)/settings');
+            return;
+        }
+        router.push({
+            pathname: '/(tabs)/progress',
+            params: { openPlanReview: 'true' }
+        });
+    }
     const selectedDateMetric = (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === selectedDate) ?? null;
     const isToday = selectedDate === getTodayDate(user?.timezone);
     const dayStatus = foodDayQuery.data;
@@ -112,6 +136,8 @@ export default function TodayScreen() {
     });
     let unavailableLabel = 'Day unresolved';
     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
+    if (!planIsAvailable) unavailableLabel = planStatus === 'requires_review' ? 'Plan needs review' : 'Target unavailable';
+    if (hasPendingWeightChange) unavailableLabel = 'Rechecking target';
     const emphasizePausedStatus = shouldEmphasizePausedStatus({
         status: dayStatus?.status,
         isToday,
@@ -142,12 +168,32 @@ export default function TodayScreen() {
                         />
                     )}
                     {!isPaused && (
-                        <CalorieBalanceCard
-                            totalCalories={calories}
-                            targetCalories={showCalorieComparison ? target : null}
-                            unavailableLabel={unavailableLabel}
-                            compact
-                        />
+                        <>
+                            <CalorieBalanceCard
+                                totalCalories={calories}
+                                targetCalories={showCalorieComparison ? target : null}
+                                unavailableLabel={unavailableLabel}
+                                compact
+                            />
+                            {hasPendingWeightChange ? (
+                                <AppCard>
+                                    <AppText variant="subtitle">Weight change syncing</AppText>
+                                    <AppText variant="muted">
+                                        Calorie target and projection will return after the server rechecks your plan.
+                                    </AppText>
+                                </AppCard>
+                            ) : !planIsAvailable && (
+                                <AppCard>
+                                    <AppText variant="subtitle">{planPresentation.title}</AppText>
+                                    <AppText variant="muted">{planPresentation.message}</AppText>
+                                    <AppButton
+                                        title={planPresentation.actionLabel}
+                                        variant="secondary"
+                                        onPress={handlePlanAction}
+                                    />
+                                </AppCard>
+                            )}
+                        </>
                     )}
 
                     {(!isPaused || entries.length > 0) && (

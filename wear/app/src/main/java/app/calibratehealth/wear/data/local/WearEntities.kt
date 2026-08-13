@@ -16,6 +16,12 @@ data class DailySnapshotEntity(
     val calorieTarget: Int? = null,
     @ColumnInfo(name = "calories_remaining")
     val caloriesRemaining: Int? = null,
+    @ColumnInfo(name = "plan_status", defaultValue = "'unknown'")
+    val planStatus: String = "unknown",
+    @ColumnInfo(name = "plan_reason_code")
+    val planReasonCode: String? = null,
+    @ColumnInfo(name = "minimum_calorie_target")
+    val minimumCalorieTarget: Int? = null,
     @ColumnInfo(name = "food_day_complete", defaultValue = "0")
     val foodDayComplete: Boolean = false,
     @ColumnInfo(name = "food_day_status", defaultValue = "'OPEN'")
@@ -54,6 +60,10 @@ data class DailySnapshotEntity(
     val goalRemainingWeightGrams: Long? = null,
     @ColumnInfo(name = "goal_is_complete")
     val goalIsComplete: Boolean? = null,
+    @ColumnInfo(name = "goal_projection_status")
+    val goalProjectionStatus: String? = null,
+    @ColumnInfo(name = "goal_projected_end_date")
+    val goalProjectedEndDate: String? = null,
     @ColumnInfo(name = "undo_food_log_id")
     val undoFoodLogId: Long? = null,
     @ColumnInfo(name = "undo_name")

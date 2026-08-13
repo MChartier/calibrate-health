@@ -15,6 +15,7 @@ import { SectionHeader } from '../../src/components/SectionHeader';
 import { TabScreen } from '../../src/components/TabScreen';
 import { useAuth } from '../../src/auth/AuthContext';
 import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
+import { usePendingWeightMutation } from '../../src/offline/usePendingWeightMutation';
 import { radius, spacing, useAppTheme, type AppTheme } from '../../src/theme';
 import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../../src/utils/dates';
 import { gramsToDisplayWeight } from '../../src/utils/bodyMeasurements';
@@ -60,6 +61,7 @@ export default function ActivityScreen() {
         queryFn: () => api.getUserProfile()
     });
     const isOnline = useOnlineStatus();
+    const hasPendingWeightChange = usePendingWeightMutation();
     const selectedState = useAsyncResourceState(selectedQuery, (data) => data.days.length === 0);
     const historyState = useAsyncResourceState(historyQuery, (data) => data.days.length === 0);
     const profileState = useAsyncResourceState(profileQuery, () => false);
@@ -128,7 +130,9 @@ export default function ActivityScreen() {
                     <ActivitySummaryCard
                         day={selectedDay}
                         isToday={navigation.isToday}
-                        profileTdee={profileQuery.data?.calorieSummary.tdee}
+                        profileTdee={!hasPendingWeightChange && profileQuery.data?.calorieSummary.eligibility?.status === 'eligible'
+                            ? profileQuery.data.calorieSummary.tdee
+                            : undefined}
                     />
 
                     <AppCard>

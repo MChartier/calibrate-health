@@ -30,17 +30,29 @@ describe('offline replay query invalidation', () => {
             ['mobile-metrics'],
             ['mobile-metrics-trend'],
             ['mobile-profile'],
+            ['mobile-goal'],
             ['mobile-in-app-notifications'],
             ['mobile-calibration-status']
         ]);
     });
 
-    it('does not refresh weight state for unrelated replayed operations', async () => {
+    it('refreshes calibration after a replayed food or day-evidence mutation', async () => {
         const invalidateQueries = jest.fn(async () => undefined);
 
         await invalidateQueriesAfterOfflineReplay(
             { invalidateQueries } as never,
             replayResult([OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG])
+        );
+
+        expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['mobile-calibration-status'] });
+    });
+
+    it('does not refresh calibration for unrelated replayed operations', async () => {
+        const invalidateQueries = jest.fn(async () => undefined);
+
+        await invalidateQueriesAfterOfflineReplay(
+            { invalidateQueries } as never,
+            replayResult(['unrelated.future-operation'])
         );
 
         expect(invalidateQueries).not.toHaveBeenCalled();

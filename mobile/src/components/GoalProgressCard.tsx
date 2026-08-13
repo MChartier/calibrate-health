@@ -10,12 +10,11 @@ import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import {
     computeGoalProgress,
-    computeGoalProjection,
     formatDailyGoalChange,
     getGoalModeFromDailyDeficit,
     getGoalReachedDate
 } from '../utils/goals';
-import { formatWeight, formatWeightUnit } from '../utils/format';
+import { formatWeight } from '../utils/format';
 
 type GoalProgressCardProps = ViewProps & {
     title?: string;
@@ -24,6 +23,7 @@ type GoalProgressCardProps = ViewProps & {
     metrics?: ReadonlyArray<MetricEntry>;
     user: UserClientPayload | null;
     targetCalories?: number | null;
+    weightChangePending?: boolean;
     onEditGoal?: () => void;
     onSetNextGoal?: () => void;
 };
@@ -38,6 +38,11 @@ function formatMetricDate(value: string | null | undefined): string {
 }
 
 function describeGoalPlan(goal: GoalEntry): string {
+    if (goal.plan_status !== 'available') {
+        return goal.plan_status === 'requires_review'
+            ? 'Stored goal preserved. Calorie target unavailable until you review this plan.'
+            : 'Stored goal preserved. Calorie target unavailable until the server verifies this plan.';
+    }
     const mode = getGoalModeFromDailyDeficit(goal.daily_deficit);
     const dailyChange = `${Math.abs(goal.daily_deficit).toLocaleString()} kcal`;
     switch (mode) {
@@ -58,6 +63,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     metrics,
     user,
     targetCalories,
+    weightChangePending = false,
     onEditGoal,
     onSetNextGoal,
     style,
@@ -92,16 +98,17 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
         );
     }
 
-    const unitLabel = formatWeightUnit(user?.weight_unit);
     const currentWeight = latestMetric?.weight ?? null;
     const goalMode = getGoalModeFromDailyDeficit(goal.daily_deficit);
     const isMaintenance = goalMode === 'maintain';
+    const planIsAvailable = goal.plan_status === 'available' && !weightChangePending;
     const reachedDate = getGoalReachedDate({
         goal,
         metrics: metrics ?? (latestMetric ? [latestMetric] : []),
         timezone: user?.timezone
     });
-    const hasReachedGoal = reachedDate !== null;
+    const serverProjection = goal.projection;
+    const hasReachedGoal = planIsAvailable && serverProjection?.status === 'reached';
     const progress = isMaintenance || hasReachedGoal
         ? null
         : computeGoalProgress({
@@ -109,25 +116,27 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             targetWeight: goal.target_weight,
             currentWeight
         });
-    const projection = isMaintenance || hasReachedGoal
-        ? null
-        : computeGoalProjection({
-            startWeight: goal.start_weight,
-            targetWeight: goal.target_weight,
-            currentWeight,
-            dailyDeficit: goal.daily_deficit,
-            unitLabel
-        });
+    const projection = planIsAvailable && serverProjection?.status === 'projected' && serverProjection.projected_end_date
+        ? formatDateOnlyForDisplay(serverProjection.projected_end_date)
+        : 'Unavailable';
 
     let goalAction: React.ReactNode = null;
-    if (hasReachedGoal && onSetNextGoal) {
+    if (weightChangePending) {
+        goalAction = null;
+    } else if (hasReachedGoal && onSetNextGoal) {
         goalAction = <GoalActionButton label="Set next goal" onPress={onSetNextGoal} theme={theme} />;
     } else if (onEditGoal) {
-        goalAction = <GoalActionButton label="Edit goal" onPress={onEditGoal} theme={theme} />;
+        goalAction = (
+            <GoalActionButton
+                label={goal.plan_status === 'requires_review' ? 'Review calorie plan' : 'Edit goal'}
+                onPress={onEditGoal}
+                theme={theme}
+            />
+        );
     }
 
     let goalStatus: React.ReactNode;
-    if (isMaintenance) {
+    if (isMaintenance && planIsAvailable) {
         goalStatus = (
             <View style={styles.statusBlock}>
                 <AppText variant="muted">Goal status</AppText>
@@ -151,10 +160,16 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     }
 
     let progressDetails: React.ReactNode;
-    if (isMaintenance) {
+    if (isMaintenance && planIsAvailable) {
         progressDetails = (
             <AppText variant="muted">
                 Maintenance is ongoing, with no completion percentage or projected end date.
+            </AppText>
+        );
+    } else if (isMaintenance) {
+        progressDetails = (
+            <AppText variant="muted">
+                This stored maintenance goal is preserved, but its calorie target is unavailable pending review.
             </AppText>
         );
     } else if (hasReachedGoal) {
@@ -167,7 +182,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                     <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
                 </View>
                 <AppText variant="muted">
-                    Goal reached on {formatDateOnlyForDisplay(reachedDate)}.
+                    {reachedDate ? `Goal reached on ${formatDateOnlyForDisplay(reachedDate)}.` : 'Goal reached.'}
                 </AppText>
                 <View style={styles.planWarning}>
                     <Ionicons name="information-circle-outline" size={18} color={theme.colors.onWarningContainer} />
@@ -212,9 +227,13 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                 </View>
                 {goalStatus}
             </View>
-            <AppText variant="muted">{describeGoalPlan(goal)}</AppText>
+            <AppText variant="muted">
+                {weightChangePending
+                    ? 'Weight change syncing. Calorie target and projection will return after the server rechecks this plan.'
+                    : describeGoalPlan(goal)}
+            </AppText>
             {progressDetails}
-            {typeof targetCalories === 'number' && (
+            {!weightChangePending && typeof targetCalories === 'number' && (
                 <AppText variant="muted">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
             )}
         </AppCard>

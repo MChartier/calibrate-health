@@ -9,8 +9,8 @@ import {
     type CalibrationResult
 } from '../../../shared/calibration';
 import prisma from '../config/database';
-import { getEffectiveCaloriePlan } from './caloriePlan';
-import { calculateAge, buildCalorieSummary } from '../utils/profile';
+import { CALORIE_POLICY_VERSION, isPolicyWeight, type CaloriePlanReasonCode, type CaloriePlanStatus } from '../../../shared/caloriePolicy';
+import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
 import {
     addUtcDays,
     formatDateToLocalDateString,
@@ -20,13 +20,15 @@ import {
 import {
     ClientOperationConflictError,
     executeIdempotentMutation,
-    recordSyncChange
+    recordSyncChange,
+    type MutationDatabase
 } from './clientOperations';
 import { WEIGHT_TREND_MODEL_VERSION } from './weightTrend';
 
 const CALIBRATION_HISTORY_DAYS = 90; // Includes the bounded personal intake reference horizon.
 // One boundary day lets the largest food window support a full 42 elapsed days of pace evidence.
 const CALIBRATION_WEIGHT_LOOKBACK_DAYS = CALIBRATION_MAX_OBSERVATION_DAYS + 1;
+const CALIBRATION_APPLY_MAX_ATTEMPTS = 3;
 
 type MaterializedRecommendation = {
     id: number;
@@ -48,6 +50,8 @@ export type CalibrationStatus = {
     evaluation: CalibrationResult;
     recommendation: MaterializedRecommendation | null;
     scheduledChange: ScheduledCalibrationChange | null;
+    planStatus: CaloriePlanStatus;
+    planReasonCode: CaloriePlanReasonCode | null;
 };
 
 export class CalibrationConflictError extends Error {
@@ -56,6 +60,24 @@ export class CalibrationConflictError extends Error {
         this.name = 'CalibrationConflictError';
     }
 }
+function isRetryableCalibrationApplyConflict(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && 'code' in error
+        && String(error.code) === 'P2034';
+}
+
+async function retryCalibrationApply<T>(operation: () => Promise<T>): Promise<T> {
+    for (let attempt = 1; attempt <= CALIBRATION_APPLY_MAX_ATTEMPTS; attempt += 1) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (!isRetryableCalibrationApplyConflict(error) || attempt === CALIBRATION_APPLY_MAX_ATTEMPTS) {
+                throw error;
+            }
+        }
+    }
+    throw new Error('Calibration recommendation apply exhausted its bounded retry loop.');
+}
+
 
 function toDateKey(date: Date): string {
     return date.toISOString().slice(0, 10);
@@ -118,8 +140,8 @@ function buildUnavailableEvaluation(options: {
     };
 }
 
-async function stalePendingRecommendations(userId: number): Promise<void> {
-    await prisma.calibrationRecommendation.updateMany({
+async function stalePendingRecommendations(database: MutationDatabase, userId: number): Promise<void> {
+    await database.calibrationRecommendation.updateMany({
         where: { user_id: userId, status: 'PENDING' },
         data: { status: 'STALE' }
     });
@@ -186,6 +208,7 @@ function buildWeightEvidence(options: {
 }
 
 async function materializeRecommendation(options: {
+    database: MutationDatabase;
     userId: number;
     goalId: number;
     inputFingerprint: string;
@@ -195,12 +218,11 @@ async function materializeRecommendation(options: {
 }): Promise<MaterializedRecommendation | null> {
     const suggested = options.evaluation.recommendation;
     if (!suggested) {
-        await stalePendingRecommendations(options.userId);
+        await stalePendingRecommendations(options.database, options.userId);
         return null;
     }
 
-    const recommendation = await prisma.$transaction(async (tx) => {
-        await tx.calibrationRecommendation.updateMany({
+    await options.database.calibrationRecommendation.updateMany({
             where: {
                 user_id: options.userId,
                 status: 'PENDING',
@@ -208,7 +230,7 @@ async function materializeRecommendation(options: {
             },
             data: { status: 'STALE' }
         });
-        return tx.calibrationRecommendation.upsert({
+    const recommendation = await options.database.calibrationRecommendation.upsert({
             where: {
                 user_id_input_fingerprint: {
                     user_id: options.userId,
@@ -229,7 +251,6 @@ async function materializeRecommendation(options: {
                 result_snapshot: JSON.parse(JSON.stringify(options.evaluation)) as Prisma.InputJsonValue
             }
         });
-    });
 
     if (recommendation.status !== 'PENDING') return null;
     return {
@@ -240,79 +261,99 @@ async function materializeRecommendation(options: {
     };
 }
 
-/** Compute and, when actionable, materialize the latest user-specific calibration status. */
-export async function buildCalibrationStatus(userId: number, now = new Date()): Promise<CalibrationStatus> {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            timezone: true,
-            date_of_birth: true,
-            sex: true,
-            height_mm: true,
-            activity_level: true,
-            weight_unit: true
-        }
-    });
-    if (!user) throw new CalibrationConflictError('User not found.');
+/** Compute one planning-and-evidence snapshot on the caller's transaction connection. */
+async function buildCalibrationStatusSnapshot(
+    database: MutationDatabase,
+    userId: number,
+    now: Date,
+    persistRecommendation: boolean
+): Promise<CalibrationStatus> {
+    const planning = await buildStoredCaloriePlanningSnapshot(database, userId, now);
+    if (!planning) throw new CalibrationConflictError('User not found.');
+    const user = planning.user;
+    const today = planning.localToday
+        ? parseLocalDateOnly(planning.localToday)
+        : new Date(`${now.toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const generatedAt = now.toISOString();
+    const unavailableAsOfDate = addUtcDays(today, -1);
+    const unavailableAsOfDateKey = toDateKey(unavailableAsOfDate);
 
-    const today = getSafeUtcTodayDateOnlyInTimeZone(user.timezone, now);
-    const todayCompletion = await prisma.foodLogDay.findUnique({
+    if (planning.evaluation.status !== 'available') {
+        if (persistRecommendation) await stalePendingRecommendations(database, userId);
+        return {
+            generatedAt,
+            inputFingerprint: null,
+            evaluation: buildUnavailableEvaluation({
+                asOfDate: unavailableAsOfDateKey,
+                headline: 'Calorie planning needs review',
+                summary: 'Calibration is unavailable until the current calorie plan is safe and eligible.',
+                missingCriteria: [planning.evaluation.reasonCode ?? 'Review the current calorie plan.'],
+                weightUnit: user.weight_unit,
+                configuredDailyDeficitKcal: planning.goal?.daily_deficit
+            }),
+            recommendation: null,
+            scheduledChange: planning.nextRevision ? {
+                recommendationId: planning.nextRevision.recommendation_id,
+                targetAdjustmentKcal: planning.nextRevision.target_adjustment_kcal,
+                dailyCalorieBudgetKcal: null,
+                effectiveLocalDate: toDateKey(planning.nextRevision.effective_local_date)
+            } : null,
+            planStatus: planning.evaluation.status,
+            planReasonCode: planning.evaluation.reasonCode
+        };
+    }
+
+    const goal = planning.goal!;
+    if (goal.daily_deficit <= 0) {
+        if (persistRecommendation) await stalePendingRecommendations(database, userId);
+        return {
+            generatedAt,
+            inputFingerprint: null,
+            evaluation: buildUnavailableEvaluation({
+                asOfDate: unavailableAsOfDateKey,
+                headline: 'Calibration is available for active weight-loss goals',
+                summary: 'Choose a calorie-deficit goal before Calibrate evaluates weight-loss pacing.',
+                missingCriteria: ['Set an active weight-loss goal with a daily calorie deficit.'],
+                weightUnit: user.weight_unit,
+                configuredDailyDeficitKcal: goal.daily_deficit
+            }),
+            recommendation: null,
+            scheduledChange: null,
+            planStatus: planning.evaluation.status,
+            planReasonCode: planning.evaluation.reasonCode
+        };
+    }
+
+    const todayCompletion = await database.foodLogDay.findUnique({
         where: { user_id_local_date: { user_id: userId, local_date: today } },
         select: { status: true }
     });
     // An in-progress current day is not evidence of a missing log. Once completed, it participates immediately.
     const asOfDate = todayCompletion?.status === 'COMPLETE' ? today : addUtcDays(today, -1);
     const asOfDateKey = toDateKey(asOfDate);
-    const generatedAt = now.toISOString();
-
-    const goal = await prisma.goal.findFirst({
-        where: { user_id: userId },
-        orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
-    });
-    if (!goal || goal.daily_deficit <= 0) {
-        await stalePendingRecommendations(userId);
-        return {
-            generatedAt,
-            inputFingerprint: null,
-            evaluation: buildUnavailableEvaluation({
-                asOfDate: asOfDateKey,
-                headline: 'Calibration is available for active weight-loss goals',
-                summary: 'Choose a calorie-deficit goal before Calibrate evaluates weight-loss pacing.',
-                missingCriteria: ['Set an active weight-loss goal with a daily calorie deficit.'],
-                weightUnit: user.weight_unit,
-                configuredDailyDeficitKcal: goal?.daily_deficit
-            }),
-            recommendation: null,
-            scheduledChange: null
-        };
-    }
-
     const historyStart = addUtcDays(asOfDate, -(CALIBRATION_HISTORY_DAYS - 1));
     const weightStart = addUtcDays(asOfDate, -(CALIBRATION_WEIGHT_LOOKBACK_DAYS - 1));
-    const [latestMetric, currentPlan, scheduledRevision, logs, completionDays, weightRows] = await Promise.all([
-        prisma.bodyMetric.findFirst({
-            where: { user_id: userId, date: { lte: asOfDate } },
-            orderBy: [{ date: 'desc' }, { id: 'desc' }],
-            select: { weight_grams: true }
-        }),
-        getEffectiveCaloriePlan(userId, goal.id, today),
-        prisma.caloriePlanRevision.findFirst({
+    const currentPlan = planning.effectiveRevision ? {
+        targetAdjustmentKcal: planning.effectiveRevision.target_adjustment_kcal,
+        effectiveLocalDate: planning.effectiveRevision.effective_local_date
+    } : null;
+    const [scheduledRevision, logs, completionDays, weightRows] = await Promise.all([
+        database.caloriePlanRevision.findFirst({
             where: { user_id: userId, source_goal_id: goal.id, effective_local_date: { gt: today } },
             orderBy: [{ effective_local_date: 'asc' }, { id: 'asc' }],
-            select: { recommendation_id: true, target_adjustment_kcal: true, effective_local_date: true }
+            select: { recommendation_id: true, target_adjustment_kcal: true, effective_local_date: true, calorie_plan_review_status: true, calorie_plan_review_reason: true }
         }),
-        prisma.foodLog.findMany({
+        database.foodLog.findMany({
             where: { user_id: userId, local_date: { gte: historyStart, lte: asOfDate } },
             orderBy: [{ local_date: 'asc' }, { id: 'asc' }],
             select: { local_date: true, calories: true, meal_period: true }
         }),
-        prisma.foodLogDay.findMany({
+        database.foodLogDay.findMany({
             where: { user_id: userId, local_date: { gte: historyStart, lte: asOfDate } },
             orderBy: { local_date: 'asc' },
             select: { local_date: true, status: true }
         }),
-        prisma.bodyMetric.findMany({
+        database.bodyMetric.findMany({
             where: { user_id: userId, date: { gte: weightStart, lte: asOfDate } },
             orderBy: [{ date: 'asc' }, { id: 'asc' }],
             select: {
@@ -322,27 +363,18 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
         })
     ]);
 
-    const calorieSummary = buildCalorieSummary({
-        weight_grams: latestMetric?.weight_grams,
-        profile: user,
-        daily_deficit: goal.daily_deficit,
-        now: asOfDate
-    });
-    if (
-        calorieSummary.bmr === undefined ||
-        calorieSummary.tdee === undefined ||
-        !user.date_of_birth
-    ) {
-        const missing = calorieSummary.missing.map((field) => `Complete profile field: ${field.replace(/_/g, ' ')}.`);
-        await stalePendingRecommendations(userId);
+    const bmrKcal = planning.evaluation.bmr!;
+    const profileTdeeKcal = planning.evaluation.tdee!;
+    if (weightRows.some((row) => !isPolicyWeight(row.weight_grams))) {
+        if (persistRecommendation) await stalePendingRecommendations(database, userId);
         return {
             generatedAt,
             inputFingerprint: null,
             evaluation: buildUnavailableEvaluation({
                 asOfDate: asOfDateKey,
-                headline: 'Complete your calorie profile first',
-                summary: 'Calibration needs the same profile and current-weight inputs used to establish your baseline target.',
-                missingCriteria: missing,
+                headline: 'Calibration needs valid weight history',
+                summary: 'A weight in the calibration window is outside the supported range, so no calorie adjustment can be generated.',
+                missingCriteria: ['Review weight entries outside the supported range.'],
                 weightUnit: user.weight_unit,
                 configuredDailyDeficitKcal: goal.daily_deficit
             }),
@@ -352,10 +384,11 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
                 targetAdjustmentKcal: scheduledRevision.target_adjustment_kcal,
                 dailyCalorieBudgetKcal: null,
                 effectiveLocalDate: toDateKey(scheduledRevision.effective_local_date)
-            } : null
+            } : null,
+            planStatus: planning.evaluation.status,
+            planReasonCode: planning.evaluation.reasonCode
         };
     }
-
     const goalStartDate = formatDateToLocalDateString(goal.created_at, user.timezone);
     const revisionStartDate = currentPlan ? toDateKey(currentPlan.effectiveLocalDate) : goalStartDate;
     const planStartDate = goalStartDate > revisionStartDate ? goalStartDate : revisionStartDate;
@@ -367,26 +400,30 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
     const input: CalibrationInput = {
         asOfDate: asOfDateKey,
         weightUnit: user.weight_unit,
-        ageYears: calculateAge(user.date_of_birth, asOfDate),
-        bmrKcal: calorieSummary.bmr,
-        profileTdeeKcal: calorieSummary.tdee,
+        ageYears: planning.evaluation.eligibility.ageYears!,
+        bmrKcal,
+        profileTdeeKcal,
         configuredDailyDeficitKcal: goal.daily_deficit,
         currentTargetAdjustmentKcal: currentPlan?.targetAdjustmentKcal ?? 0,
         foodDays,
         trackingPaused: todayCompletion?.status === 'PAUSED',
         weightPoints: buildWeightEvidence({ rows: weightRows, planStartDate, latestPausedDate })
     };
+    const scheduledTarget = scheduledRevision
+        ? Math.round(profileTdeeKcal - goal.daily_deficit + scheduledRevision.target_adjustment_kcal)
+        : null;
     const scheduledChange = scheduledRevision ? {
         recommendationId: scheduledRevision.recommendation_id,
         targetAdjustmentKcal: scheduledRevision.target_adjustment_kcal,
-        dailyCalorieBudgetKcal: Math.max(
-            0,
-            Math.round(calorieSummary.tdee - goal.daily_deficit + scheduledRevision.target_adjustment_kcal)
-        ),
+        dailyCalorieBudgetKcal:
+            scheduledRevision.calorie_plan_review_status === 'CLEAR' && scheduledTarget !== null &&
+            scheduledTarget >= planning.evaluation.minimumDailyCalorieTarget!
+                ? scheduledTarget
+                : null,
         effectiveLocalDate: toDateKey(scheduledRevision.effective_local_date)
     } : null;
     if (WEIGHT_TREND_MODEL_VERSION !== 2) {
-        await stalePendingRecommendations(userId);
+        if (persistRecommendation) await stalePendingRecommendations(database, userId);
         return {
             generatedAt,
             inputFingerprint: null,
@@ -399,22 +436,26 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
                 configuredDailyDeficitKcal: goal.daily_deficit
             }),
             recommendation: null,
-            scheduledChange
+            scheduledChange,
+            planStatus: planning.evaluation.status,
+            planReasonCode: planning.evaluation.reasonCode
         };
     }
     const evaluation = evaluateCalibration(input);
     const { weightUnit: _displayWeightUnit, ...actionEvidence } = input;
     const inputFingerprint = fingerprintInput({
         modelVersion: CALIBRATION_MODEL_VERSION,
+        caloriePolicyVersion: CALORIE_POLICY_VERSION,
         goalId: goal.id,
         planStartDate,
         actionEvidence
     });
     let recommendation: MaterializedRecommendation | null = null;
     if (scheduledChange) {
-        await stalePendingRecommendations(userId);
-    } else {
+        if (persistRecommendation) await stalePendingRecommendations(database, userId);
+    } else if (persistRecommendation) {
         recommendation = await materializeRecommendation({
+            database,
             userId,
             goalId: goal.id,
             inputFingerprint,
@@ -422,10 +463,26 @@ export async function buildCalibrationStatus(userId: number, now = new Date()): 
             effectiveLocalDate: addUtcDays(today, 1),
             evaluation
         });
+    } else if (evaluation.recommendation) {
+        // Apply uses this transaction-local candidate only to compare the complete current fingerprint.
+        recommendation = {
+            id: 0,
+            status: 'pending',
+            inputFingerprint,
+            effectiveLocalDate: toDateKey(addUtcDays(today, 1))
+        };
     }
 
-    return { generatedAt, inputFingerprint, evaluation, recommendation, scheduledChange };
+    return { generatedAt, inputFingerprint, evaluation, recommendation, scheduledChange, planStatus: planning.evaluation.status, planReasonCode: planning.evaluation.reasonCode };
 }
+/** Compute and, when actionable, materialize the latest user-specific calibration status. */
+export function buildCalibrationStatus(userId: number, now = new Date()): Promise<CalibrationStatus> {
+    return prisma.$transaction(
+        (tx) => buildCalibrationStatusSnapshot(tx, userId, now, true),
+        { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+    );
+}
+
 
 /** Revalidate and accept one current recommendation as a next-local-day plan revision. */
 export async function applyCalibrationRecommendation(options: {
@@ -434,47 +491,88 @@ export async function applyCalibrationRecommendation(options: {
     operationId?: string;
     now?: Date;
 }): Promise<ScheduledCalibrationChange> {
-    const existing = await prisma.calibrationRecommendation.findFirst({
-        where: { id: options.recommendationId, user_id: options.userId },
-        include: { plan_revision: true }
-    });
-    if (existing?.status === 'APPLIED' && existing.plan_revision) {
-        return {
-            recommendationId: existing.id,
-            targetAdjustmentKcal: existing.plan_revision.target_adjustment_kcal,
-            dailyCalorieBudgetKcal: existing.recommended_target_kcal,
-            effectiveLocalDate: toDateKey(existing.plan_revision.effective_local_date)
-        };
-    }
-    if (!existing || existing.status !== 'PENDING') {
-        throw new CalibrationConflictError('This recommendation is no longer current. Refresh calibration before applying it.');
-    }
-
-    const status = await buildCalibrationStatus(options.userId, options.now);
-    if (!status.recommendation || status.recommendation.id !== options.recommendationId) {
-        throw new CalibrationConflictError('This recommendation is no longer current. Refresh calibration before applying it.');
-    }
-    const recommendation = await prisma.calibrationRecommendation.findFirst({
-        where: { id: options.recommendationId, user_id: options.userId, status: 'PENDING' }
-    });
-    if (!recommendation || recommendation.input_fingerprint !== status.inputFingerprint) {
-        throw new CalibrationConflictError('This recommendation is no longer current. Refresh calibration before applying it.');
-    }
-
-    const effectiveLocalDate = parseLocalDateOnly(status.recommendation.effectiveLocalDate);
     try {
-        const result = await executeIdempotentMutation<ScheduledCalibrationChange>({
+        const result = await retryCalibrationApply(() => executeIdempotentMutation<ScheduledCalibrationChange>({
             userId: options.userId,
             operationId: options.operationId,
             operationKind: 'calibration_recommendation.apply',
             requestPayload: { recommendation_id: options.recommendationId },
+            transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
             mutate: async (tx, claimedOperationId) => {
+                const recommendation = await tx.calibrationRecommendation.findFirst({
+                    where: { id: options.recommendationId, user_id: options.userId },
+                    include: { plan_revision: true }
+                });
+                if (!recommendation) {
+                    throw new CalibrationConflictError('This recommendation is no longer current. Refresh calibration before applying it.');
+                }
+
+                if (recommendation.status === 'APPLIED' && recommendation.plan_revision) {
+                    const planning = await buildStoredCaloriePlanningSnapshot(tx, options.userId, options.now ?? new Date());
+                    if (
+                        !planning ||
+                        planning.evaluation.status !== 'available' ||
+                        recommendation.source_goal_id !== planning.goal?.id
+                    ) {
+                        throw new CalibrationConflictError('This recommendation no longer matches the current calorie plan.');
+                    }
+                    const expectedTarget = Math.round(
+                        planning.evaluation.tdee! -
+                        planning.goal.daily_deficit +
+                        recommendation.recommended_target_adjustment_kcal
+                    );
+                    if (
+                        expectedTarget !== recommendation.recommended_target_kcal ||
+                        recommendation.plan_revision.calorie_plan_review_status === 'REQUIRES_REVIEW' ||
+                        recommendation.recommended_target_kcal < planning.evaluation.minimumDailyCalorieTarget!
+                    ) {
+                        throw new CalibrationConflictError('The applied calorie plan revision is no longer safe.');
+                    }
+                    return {
+                        status: 200,
+                        body: {
+                            recommendationId: recommendation.id,
+                            targetAdjustmentKcal: recommendation.plan_revision.target_adjustment_kcal,
+                            dailyCalorieBudgetKcal: recommendation.recommended_target_kcal,
+                            effectiveLocalDate: toDateKey(recommendation.plan_revision.effective_local_date)
+                        }
+                    };
+                }
+                if (recommendation.status !== 'PENDING') {
+                    throw new CalibrationConflictError('This recommendation is no longer current. Refresh calibration before applying it.');
+                }
+
+                const status = await buildCalibrationStatusSnapshot(
+                    tx,
+                    options.userId,
+                    options.now ?? new Date(),
+                    false
+                );
+                const currentSuggestion = status.evaluation.recommendation;
+                if (!status.recommendation || !currentSuggestion) {
+                    throw new CalibrationConflictError('This recommendation is no longer current. Refresh calibration before applying it.');
+                }
+                if (
+                    recommendation.current_target_adjustment_kcal !== currentSuggestion.currentTargetAdjustmentKcal ||
+                    recommendation.recommended_target_adjustment_kcal !== currentSuggestion.recommendedTargetAdjustmentKcal ||
+                    recommendation.current_target_kcal !== currentSuggestion.currentTargetKcal ||
+                    recommendation.recommended_target_kcal !== currentSuggestion.recommendedTargetKcal) {
+                    throw new CalibrationConflictError('The current calorie plan requires review before a recommendation can be applied.');
+                }
+                if (recommendation.input_fingerprint !== status.inputFingerprint ||
+                    recommendation.model_version !== status.evaluation.modelVersion ||
+                    toDateKey(recommendation.as_of_local_date) !== status.evaluation.asOfDate) {
+                    throw new CalibrationConflictError('This recommendation is no longer current. Refresh calibration before applying it.');
+                }
+                const effectiveLocalDate = parseLocalDateOnly(status.recommendation.effectiveLocalDate);
                 const revision = await tx.caloriePlanRevision.create({
                     data: {
                         user_id: options.userId,
                         source_goal_id: recommendation.source_goal_id,
                         recommendation_id: recommendation.id,
                         target_adjustment_kcal: recommendation.recommended_target_adjustment_kcal,
+                        calorie_plan_review_status: 'CLEAR',
+                        calorie_plan_review_reason: null,
                         effective_local_date: effectiveLocalDate
                     }
                 });
@@ -499,7 +597,7 @@ export async function applyCalibrationRecommendation(options: {
                 });
                 return { status: 200, body };
             }
-        });
+        }));
         return result.body;
     } catch (error) {
         if (error instanceof ClientOperationConflictError) throw error;

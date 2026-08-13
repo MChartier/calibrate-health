@@ -10,6 +10,9 @@ data class WearSummary(
     val caloriesRemaining: Int?,
     val caloriesConsumed: Int?,
     val calorieTarget: Int?,
+    val planStatus: String = "unknown",
+    val planReasonCode: String? = null,
+    val minimumCalorieTarget: Int? = null,
     val foodDayComplete: Boolean,
     val foodDayRevision: String?,
     val todayWeightGrams: Long?,
@@ -24,6 +27,8 @@ data class WearSummary(
     val goalProgressPercent: Double? = null,
     val goalRemainingWeightGrams: Long? = null,
     val goalIsComplete: Boolean? = null,
+    val goalProjectionStatus: String? = null,
+    val goalProjectedEndDate: String? = null,
     val undoFoodLogId: Long?,
     val undoName: String?,
     val undoCalories: Int?,
@@ -37,7 +42,20 @@ data class WearSummary(
     val hasUndoCandidate: Boolean
         get() = undoFoodLogId != null && !undoName.isNullOrBlank() && undoCalories != null
     val isFoodTrackingPaused: Boolean get() = foodDayStatus == "PAUSED"
+    val isCaloriePlanAvailable: Boolean get() = planStatus == "available"
 }
+
+internal const val WEIGHT_SYNCING_PLAN_STATUS = "weight_syncing"
+
+internal fun WearSummary.suppressPlanForPendingWeight(pendingMutationTypes: Set<String>): WearSummary =
+    if ("metric.upsert" !in pendingMutationTypes) this else copy(
+        caloriesRemaining = null,
+        calorieTarget = null,
+        planStatus = WEIGHT_SYNCING_PLAN_STATUS,
+        minimumCalorieTarget = null,
+        goalProjectionStatus = "unavailable",
+        goalProjectedEndDate = null
+    )
 
 sealed interface WearAppState {
     data object Unpaired : WearAppState
@@ -60,15 +78,19 @@ sealed interface WearSyncStatus {
 
 object SummaryFormatter {
     fun caloriesRemaining(summary: WearSummary): String =
-        summary.caloriesRemaining?.let { value ->
+        summary.caloriesRemaining.takeIf { summary.isCaloriePlanAvailable }?.let { value ->
             if (value >= 0) "${calorieCount(value)} kcal left" else "${calorieCount(-value)} kcal over"
         } ?: "Calorie target unavailable"
 
     fun calorieProgress(summary: WearSummary): String =
-        if (summary.caloriesConsumed != null && summary.calorieTarget != null) {
+        if (summary.isCaloriePlanAvailable && summary.caloriesConsumed != null && summary.calorieTarget != null) {
             "${calorieCount(summary.caloriesConsumed)} of ${calorieCount(summary.calorieTarget)} kcal"
         } else {
-            "Open phone to finish setup"
+            when (summary.planStatus) {
+                WEIGHT_SYNCING_PLAN_STATUS -> "Rechecking calorie plan"
+                "requires_review" -> "Review plan on phone"
+                else -> "Open phone to finish setup"
+            }
         }
 
     fun calorieCount(value: Int?): String = value?.let(::formatWholeNumber) ?: "--"
@@ -136,8 +158,8 @@ class WeightPickerValues private constructor(
     companion object {
         // Gives a first-time weigh-in a neutral picker starting point on the watch.
         const val DEFAULT_WEIGHT_GRAMS = 70_000L
-        const val MIN_WEIGHT_GRAMS = 20_000L
-        const val MAX_WEIGHT_GRAMS = 500_000L
+        const val MIN_WEIGHT_GRAMS = 25_000L
+        const val MAX_WEIGHT_GRAMS = 400_000L
         const val DECIMAL_OPTION_COUNT = 10
         private const val IMPERIAL_UNIT = "lb"
         private const val METRIC_UNIT = "kg"
@@ -148,8 +170,8 @@ class WeightPickerValues private constructor(
             val boundedGrams = grams.coerceIn(MIN_WEIGHT_GRAMS, MAX_WEIGHT_GRAMS)
             val unitLabel = if (unit.lowercase(Locale.US) == IMPERIAL_UNIT) IMPERIAL_UNIT else METRIC_UNIT
             val selectedTenths = displayTenths(boundedGrams, unitLabel)
-            val minimumTenths = displayTenths(MIN_WEIGHT_GRAMS, unitLabel)
-            val maximumTenths = displayTenths(MAX_WEIGHT_GRAMS, unitLabel)
+            val minimumTenths = minimumDisplayTenths(unitLabel)
+            val maximumTenths = maximumDisplayTenths(unitLabel)
             return WeightPickerValues(
                 initialGrams = boundedGrams,
                 unitLabel = unitLabel,
@@ -168,5 +190,17 @@ class WeightPickerValues private constructor(
             } else {
                 (grams / METRIC_TENTH_GRAMS.toDouble()).roundToInt()
             }
+
+        private fun minimumDisplayTenths(unit: String): Int = if (unit == IMPERIAL_UNIT) {
+            kotlin.math.ceil(MIN_WEIGHT_GRAMS * DECIMAL_OPTION_COUNT / GRAMS_PER_POUND).toInt()
+        } else {
+            (MIN_WEIGHT_GRAMS / METRIC_TENTH_GRAMS).toInt()
+        }
+
+        private fun maximumDisplayTenths(unit: String): Int = if (unit == IMPERIAL_UNIT) {
+            kotlin.math.floor(MAX_WEIGHT_GRAMS * DECIMAL_OPTION_COUNT / GRAMS_PER_POUND).toInt()
+        } else {
+            (MAX_WEIGHT_GRAMS / METRIC_TENTH_GRAMS).toInt()
+        }
     }
 }

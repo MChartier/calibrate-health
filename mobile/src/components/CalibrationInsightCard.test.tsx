@@ -6,6 +6,11 @@ import type { CalibrationStatusResponse } from '@calibrate/api-client';
 import { CalibrationInsightCard } from './CalibrationInsightCard';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 
+let mockHasPendingCalibrationEvidence = false;
+jest.mock('../offline/usePendingCalibrationEvidenceMutation', () => ({
+    usePendingCalibrationEvidenceMutation: () => mockHasPendingCalibrationEvidence
+}));
+
 jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'calibration-operation-id') }));
 jest.mock('expo-haptics', () => ({
@@ -206,6 +211,7 @@ function renderCard() {
 describe('CalibrationInsightCard', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockHasPendingCalibrationEvidence = false;
         Dimensions.set({
             window: { width: 1024, height: 768, scale: 1, fontScale: 1 },
             screen: { width: 1024, height: 768, scale: 1, fontScale: 1 }
@@ -224,6 +230,15 @@ describe('CalibrationInsightCard', () => {
         await act(async () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
+    });
+
+    it('suppresses stale calibration actions while queued evidence is syncing', () => {
+        mockHasPendingCalibrationEvidence = true;
+        const screen = renderCard();
+
+        expect(screen.getByText('Evidence change syncing')).toBeTruthy();
+        expect(screen.queryByText('Apply 1,750 kcal')).toBeNull();
+        expect(mockApi.applyCalibrationRecommendation).not.toHaveBeenCalled();
     });
 
     it('explains the value of calibration and presents one next step before the first insight', async () => {
@@ -515,6 +530,25 @@ describe('CalibrationInsightCard', () => {
         expect(screen.getByText('Undo and review')).toBeTruthy();
         expect(screen.queryByText('Current evidence supports a lower calorie budget.')).toBeNull();
         expect(screen.queryByText('See why')).toBeNull();
+    });
+
+    it('holds an unsafe scheduled revision without claiming that a budget starts', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...scheduledStatus(),
+            planStatus: 'requires_review',
+            planReasonCode: 'HISTORICAL_PLAN_REQUIRES_REVIEW',
+            scheduledChange: {
+                ...scheduledStatus().scheduledChange!,
+                dailyCalorieBudgetKcal: null
+            }
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Your saved calorie budget update is on hold')).toBeTruthy());
+        expect(screen.getByText('No updated calorie budget will start until you replace your calorie plan.')).toBeTruthy();
+        expect(screen.getByText(/saved update is preserved/)).toBeTruthy();
+        expect(screen.queryByText(/updated daily calorie budget starts/)).toBeNull();
+        expect(screen.queryByText(/daily calorie budget will be .* starting/)).toBeNull();
     });
 
     it('undoes a scheduled update and restores the recommendation for review', async () => {

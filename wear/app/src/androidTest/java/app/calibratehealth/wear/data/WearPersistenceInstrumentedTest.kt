@@ -326,6 +326,52 @@ class WearPersistenceInstrumentedTest {
     }
 
     @Test
+    fun versionSixMigrationFailsClosedForCachedCalorieTargets() {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(migrationDatabaseName)
+            .callback(object : SupportSQLiteOpenHelper.Callback(6) {
+                override fun onCreate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        """
+                        CREATE TABLE daily_snapshots (
+                            local_date TEXT NOT NULL PRIMARY KEY,
+                            calorie_target INTEGER,
+                            calories_remaining INTEGER
+                        )
+                        """.trimIndent()
+                    )
+                    database.execSQL(
+                        """
+                        INSERT INTO daily_snapshots (local_date, calorie_target, calories_remaining)
+                        VALUES ('2026-08-08', 2100, 450)
+                        """.trimIndent()
+                    )
+                }
+
+                override fun onUpgrade(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        val helper = FrameworkSQLiteOpenHelperFactory().create(configuration)
+        val database = helper.writableDatabase
+
+        CalibrateWearDatabase.MIGRATION_6_7.migrate(database)
+
+        database.query(
+            """
+            SELECT plan_status, plan_reason_code, minimum_calorie_target,
+                goal_projection_status, goal_projected_end_date,
+                calorie_target, calories_remaining
+            FROM daily_snapshots
+            """.trimIndent()
+        ).use { cursor ->
+            assertEquals(true, cursor.moveToFirst())
+            assertEquals("unknown", cursor.getString(0))
+            for (column in 1..6) assertEquals(true, cursor.isNull(column))
+        }
+        helper.close()
+    }
+
+    @Test
     fun roomAccountDataStoreClearsEveryAccountScopedTable() = runBlocking {
         val database = CalibrateWearDatabase.open(context, databaseName)
         database.dailySnapshotDao().cacheBounded(snapshot("2026-07-11"), maxRows = 2)

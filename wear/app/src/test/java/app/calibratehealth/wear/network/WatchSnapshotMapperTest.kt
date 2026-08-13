@@ -14,6 +14,8 @@ class WatchSnapshotMapperTest {
         assertEquals(750, result.dailySnapshot.caloriesConsumed)
         assertEquals(2_000, result.dailySnapshot.calorieTarget)
         assertEquals(1_250, result.dailySnapshot.caloriesRemaining)
+        assertEquals("available", result.dailySnapshot.planStatus)
+        assertEquals(1_500, result.dailySnapshot.minimumCalorieTarget)
         assertEquals(true, result.dailySnapshot.foodDayComplete)
         assertEquals("COMPLETE", result.dailySnapshot.foodDayStatus)
         assertEquals(true, result.dailySnapshot.foodDayRepresentative)
@@ -67,7 +69,9 @@ class WatchSnapshotMapperTest {
         val goal =
             "\"goal\":{\"start_weight_grams\":90000,\"target_weight_grams\":75000," +
                 "\"current_weight_grams\":80000,\"daily_deficit\":500,\"progress_percent\":66.7," +
-                "\"remaining_weight_grams\":5000,\"is_complete\":false},"
+                "\"remaining_weight_grams\":5000,\"is_complete\":false," +
+                "\"projection\":{\"status\":\"projected\",\"projected_end_date\":\"2026-10-10\"," +
+                "\"reason_code\":null}},"
         val withGoal = validSnapshot().replace("\"quick_add\":", "$goal\"quick_add\":")
         val mapped = WatchSnapshotMapper.map(withGoal, 42L).dailySnapshot
 
@@ -78,6 +82,8 @@ class WatchSnapshotMapperTest {
         assertEquals(66.7, mapped.goalProgressPercent)
         assertEquals(5_000L, mapped.goalRemainingWeightGrams)
         assertEquals(false, mapped.goalIsComplete)
+        assertEquals("projected", mapped.goalProjectionStatus)
+        assertEquals("2026-10-10", mapped.goalProjectedEndDate)
     }
 
     @Test
@@ -85,7 +91,8 @@ class WatchSnapshotMapperTest {
         val maintenanceGoal =
             "\"goal\":{\"start_weight_grams\":80000,\"target_weight_grams\":80000," +
                 "\"current_weight_grams\":80100,\"daily_deficit\":0,\"progress_percent\":null," +
-                "\"remaining_weight_grams\":100,\"is_complete\":false},"
+                "\"remaining_weight_grams\":100,\"is_complete\":false," +
+                "\"projection\":{\"status\":\"maintenance\",\"projected_end_date\":null,\"reason_code\":null}},"
         val mapped = WatchSnapshotMapper.map(
             validSnapshot().replace("\"quick_add\":", "$maintenanceGoal\"quick_add\":"),
             42L
@@ -94,6 +101,7 @@ class WatchSnapshotMapperTest {
         assertEquals(80_100L, mapped.goalCurrentWeightGrams)
         assertEquals(null, mapped.goalProgressPercent)
         assertEquals(false, mapped.goalIsComplete)
+        assertEquals("maintenance", mapped.goalProjectionStatus)
     }
 
     @Test
@@ -119,6 +127,64 @@ class WatchSnapshotMapperTest {
     fun `strict parser rejects duplicate keys and trailing input`() {
         assertTrue(runCatching { StrictJson.parse("{\"a\":1,\"a\":2}") }.isFailure)
         assertTrue(runCatching { StrictJson.parse("{}[]") }.isFailure)
+    }
+
+    @Test
+    fun `fails closed when server plan ownership is absent or unsafe`() {
+        val oldServer = validSnapshot().replace(
+            "\"plan\":{\"status\":\"available\",\"reason_code\":null,\"minimum_daily_calorie_target\":1500},",
+            ""
+        )
+        val oldMapped = WatchSnapshotMapper.map(oldServer, 42L).dailySnapshot
+        assertEquals("unknown", oldMapped.planStatus)
+        assertEquals(null, oldMapped.calorieTarget)
+        assertEquals(null, oldMapped.caloriesRemaining)
+
+        val unsafe = validSnapshot()
+            .replace("\"status\":\"available\"", "\"status\":\"requires_review\"")
+            .replaceFirst("\"reason_code\":null", "\"reason_code\":\"TARGET_BELOW_MINIMUM\"")
+            .replace("\"target\":2000,\"remaining\":1250", "\"target\":null,\"remaining\":null")
+        val unsafeMapped = WatchSnapshotMapper.map(unsafe, 42L).dailySnapshot
+        assertEquals("requires_review", unsafeMapped.planStatus)
+        assertEquals("TARGET_BELOW_MINIMUM", unsafeMapped.planReasonCode)
+        assertEquals(null, unsafeMapped.calorieTarget)
+        assertEquals(null, unsafeMapped.caloriesRemaining)
+    }
+
+    @Test
+    fun `accepts review-only snapshot with sanitized null weights and preserves other state`() {
+        val reviewOnly = validSnapshot()
+            .replace("\"status\":\"available\"", "\"status\":\"requires_review\"")
+            .replaceFirst("\"reason_code\":null", "\"reason_code\":\"WEIGHT_OUT_OF_RANGE\"")
+            .replace("\"target\":2000,\"remaining\":1250", "\"target\":null,\"remaining\":null")
+            .replace(
+                "\"weight\":{\"today_grams\":81500,\"today_revision\":\"abcdef0123456789abcdef01\",\"latest_grams\":81500,\"latest_revision\":\"abcdef0123456789abcdef01\",\"latest_date\":\"2026-07-11\"}",
+                "\"weight\":{\"today_grams\":null,\"today_revision\":null,\"latest_grams\":null,\"latest_revision\":null,\"latest_date\":null}"
+            )
+        val mapped = WatchSnapshotMapper.map(reviewOnly, 42L)
+
+        assertEquals("requires_review", mapped.dailySnapshot.planStatus)
+        assertEquals("WEIGHT_OUT_OF_RANGE", mapped.dailySnapshot.planReasonCode)
+        assertEquals(null, mapped.dailySnapshot.todayWeightGrams)
+        assertEquals(null, mapped.dailySnapshot.latestWeightGrams)
+        assertEquals(750, mapped.dailySnapshot.caloriesConsumed)
+        assertEquals(1, mapped.quickAddItems.size)
+        assertEquals(2, mapped.reminders.size)
+    }
+
+    @Test
+    fun `accepts a server-owned target above one hundred thousand for the Room cache`() {
+        val mapped = WatchSnapshotMapper.map(
+            validSnapshot().replace(
+                "\"target\":2000,\"remaining\":1250",
+                "\"target\":102000,\"remaining\":101250"
+            ),
+            42L
+        ).dailySnapshot
+
+        assertEquals(102_000, mapped.calorieTarget)
+        assertEquals(101_250, mapped.caloriesRemaining)
+        assertEquals("available", mapped.planStatus)
     }
 
     @Test
@@ -158,6 +224,7 @@ class WatchSnapshotMapperTest {
           "weight_unit":"LB",
           "revision":"0123456789abcdef01234567",
           "local_date":"2026-07-11",
+          "plan":{"status":"available","reason_code":null,"minimum_daily_calorie_target":1500},
           "calories":{"consumed":750,"target":2000,"remaining":1250,"missing":[]},
           "food_day":{"is_complete":true,"completed_at":"2026-07-11T01:00:00Z","revision":"fedcba9876543210fedcba98"},
           "weight":{"today_grams":81500,"today_revision":"abcdef0123456789abcdef01","latest_grams":81500,"latest_revision":"abcdef0123456789abcdef01","latest_date":"2026-07-11"},

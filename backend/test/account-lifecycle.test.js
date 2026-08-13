@@ -47,6 +47,8 @@ const exportRow = {
     target_weight_grams: 80000,
     target_date: null,
     daily_deficit: 500,
+    calorie_plan_review_status: 'REQUIRES_REVIEW',
+    calorie_plan_review_reason: 'HISTORICAL_PLAN_REQUIRES_REVIEW',
     created_at: at('2025-01-02T00:00:00.000Z')
   }],
   metrics: [{
@@ -217,6 +219,8 @@ const exportRow = {
     source_goal_id: 2,
     recommendation_id: 4,
     target_adjustment_kcal: -125,
+    calorie_plan_review_status: 'REQUIRES_REVIEW',
+    calorie_plan_review_reason: 'PLAN_REVISION_UNSAFE',
     effective_local_date: at('2025-01-05T00:00:00.000Z'),
     created_at: at('2025-01-04T20:00:00.000Z')
   }]
@@ -236,7 +240,7 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 5);
+  assert.equal(result.version, 6);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.deepEqual(result.account.profile_image, { mime_type: 'image/png', data_base64: 'AQID' });
@@ -254,6 +258,9 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(result.calibration_recommendations[0].input_fingerprint, undefined);
   assert.equal(result.calorie_plan_revisions[0].effective_local_date, '2025-01-05');
   assert.equal(result.calorie_plan_revisions[0].source_goal_id, 2);
+  assert.equal(result.goals[0].calorie_plan_review_reason, 'HISTORICAL_PLAN_REQUIRES_REVIEW');
+  assert.equal(result.calorie_plan_revisions[0].calorie_plan_review_status, 'REQUIRES_REVIEW');
+  assert.equal(result.calorie_plan_revisions[0].calorie_plan_review_reason, 'PLAN_REVISION_UNSAFE');
 
   assert.equal(findArgs.where.id, 7);
   assert.equal(findArgs.select.password_hash, undefined);

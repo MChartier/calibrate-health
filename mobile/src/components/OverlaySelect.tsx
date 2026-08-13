@@ -18,6 +18,8 @@ export type OverlaySelectOption<T extends string> = {
     value: T;
     label: string;
     description?: string;
+    disabled?: boolean;
+    disabledReason?: string;
 };
 
 type OverlaySelectProps<T extends string> = {
@@ -27,6 +29,7 @@ type OverlaySelectProps<T extends string> = {
     isOpen: boolean;
     onToggle: () => void;
     onChange: (value: T) => void;
+    placeholder?: string;
     style?: StyleProp<ViewStyle>;
 };
 
@@ -52,6 +55,7 @@ export function OverlaySelect<T extends string>({
     isOpen,
     onToggle,
     onChange,
+    placeholder = 'Choose an option',
     style
 }: OverlaySelectProps<T>) {
     const anchorRef = useRef<View>(null);
@@ -60,7 +64,7 @@ export function OverlaySelect<T extends string>({
     const [buttonHeight, setButtonHeight] = useState(0);
     const [anchorFrame, setAnchorFrame] = useState<AnchorFrame | null>(null);
     const window = useWindowDimensions();
-    const selectedOption = options.find((option) => option.value === value) ?? options[0];
+    const selectedOption = options.find((option) => option.value === value);
 
     function handleButtonLayout(event: LayoutChangeEvent) {
         setButtonHeight(event.nativeEvent.layout.height);
@@ -113,19 +117,25 @@ export function OverlaySelect<T extends string>({
             >
                 <View style={styles.valueText}>
                     <AppText variant="body" style={styles.valueLabel} numberOfLines={2}>
-                        {selectedOption.label}
+                        {selectedOption?.label ?? placeholder}
                     </AppText>
-                    {selectedOption.description && (
+                    {selectedOption?.description && (
                         <AppText variant="caption" numberOfLines={2}>{selectedOption.description}</AppText>
+                    )}
+                    {selectedOption?.disabledReason && (
+                        <AppText variant="caption" style={styles.disabledText} numberOfLines={3}>
+                            {selectedOption.disabledReason}
+                        </AppText>
                     )}
                 </View>
                 <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={20} color={theme.colors.onSurfaceVariant} />
             </Pressable>
 
             {isOpen && (
-                <Modal transparent animationType="fade" visible onRequestClose={onToggle}>
+                <Modal transparent animationType="none" visible onRequestClose={onToggle}>
                     <Pressable accessibilityRole="button" accessibilityLabel="Close options" style={StyleSheet.absoluteFill} onPress={onToggle} />
                     <View
+                        testID="overlay-select-menu"
                         style={[
                             styles.menu,
                             {
@@ -139,17 +149,20 @@ export function OverlaySelect<T extends string>({
                         <ScrollView keyboardShouldPersistTaps="handled">
                         {options.map((option, index) => {
                             const isSelected = option.value === value;
+                            const isDisabled = option.disabled === true;
                             return (
                                 <Pressable
                                     key={option.value}
                                     accessibilityRole="button"
-                                    accessibilityState={{ selected: isSelected }}
+                                    accessibilityState={{ selected: isSelected, disabled: isDisabled }}
+                                    disabled={isDisabled}
                                     onPress={() => onChange(option.value)}
                                     style={({ pressed }) => [
                                         styles.option,
                                         index === options.length - 1 && styles.optionLast,
                                         isSelected && styles.optionSelected,
-                                        pressed && styles.pressedSurface
+                                        isDisabled && styles.optionDisabled,
+                                        pressed && !isDisabled && styles.pressedSurface
                                     ]}
                                 >
                                     <View style={styles.valueText}>
@@ -158,6 +171,11 @@ export function OverlaySelect<T extends string>({
                                         </AppText>
                                         {option.description && (
                                             <AppText variant="caption" numberOfLines={2}>{option.description}</AppText>
+                                        )}
+                                        {option.disabledReason && (
+                                            <AppText variant="caption" style={styles.disabledText} numberOfLines={3}>
+                                                {option.disabledReason}
+                                            </AppText>
                                         )}
                                     </View>
                                     {isSelected && <Ionicons name="checkmark" size={20} color={theme.colors.primary} />}
@@ -202,11 +220,12 @@ function createStyles(theme: AppTheme) {
     menu: {
         ...theme.shadows.raised,
         position: 'absolute',
+        zIndex: 1,
         overflow: 'hidden',
         borderRadius: theme.radius.md,
         borderColor: theme.colors.outlineVariant,
         borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: theme.colors.surfaceContainerHigh
+        backgroundColor: theme.colors.surface
     },
     option: {
         minHeight: 56,
@@ -231,6 +250,12 @@ function createStyles(theme: AppTheme) {
     },
     optionTitleSelected: {
         color: theme.colors.onPrimaryContainer
+    },
+    optionDisabled: {
+        opacity: 0.58
+    },
+    disabledText: {
+        color: theme.colors.danger
     },
     pressedSurface: {
         backgroundColor: theme.colors.surfacePressed

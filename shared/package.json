@@ -35,6 +35,12 @@
       "react-native": "./goalDeficit.ts",
       "default": "./dist/cjs/goalDeficit.js"
     },
+    "./caloriePolicy": {
+      "types": "./caloriePolicy.ts",
+      "browser": "./caloriePolicy.ts",
+      "react-native": "./caloriePolicy.ts",
+      "default": "./dist/cjs/caloriePolicy.js"
+    },
     "./goalProgress": {
       "types": "./goalProgress.ts",
       "browser": "./goalProgress.ts",

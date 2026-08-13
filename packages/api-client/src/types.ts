@@ -9,9 +9,45 @@ import type {
     Sex,
     WeightUnit
 } from '@calibrate/shared';
+import type {
+    CaloriePlanOption as SharedCaloriePlanOption,
+    CaloriePlanReasonCode as SharedCaloriePlanReasonCode,
+    CaloriePlanStatus as SharedCaloriePlanStatus,
+    EligibilityStatus as SharedEligibilityStatus
+} from '@calibrate/shared/caloriePolicy';
 import type { CalibrationResult } from '@calibrate/shared/calibration';
 import type { InAppNotificationType } from '@calibrate/shared/inAppNotifications';
 
+export type EligibilityStatus = SharedEligibilityStatus;
+export type CaloriePlanStatus = SharedCaloriePlanStatus;
+export type CaloriePlanReasonCode = SharedCaloriePlanReasonCode;
+export type CaloriePlanOption = SharedCaloriePlanOption;
+
+export type CalorieEligibility = {
+    status: EligibilityStatus;
+    reasonCode: CaloriePlanReasonCode | null;
+    ageYears: number | null;
+    localDate: string | null;
+};
+
+export type CaloriePlanOptionsRequest = {
+    timezone: string;
+    date_of_birth: string | null;
+    sex: Sex | null;
+    activity_level: ActivityLevel | null;
+    height:
+        | { unit: 'CM'; centimeters: number }
+        | { unit: 'FT_IN'; feet: number; inches: number };
+    weight: { unit: WeightUnit; value: number };
+};
+
+export type CaloriePlanOptionsResponse = {
+    eligibility: CalorieEligibility;
+    bmr: number | null;
+    tdee: number | null;
+    minimumDailyCalorieTarget: number | null;
+    planOptions: CaloriePlanOption[];
+};
 export type UserClientPayload = {
     id: number;
     email: string;
@@ -32,7 +68,7 @@ export type UserClientPayload = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 5;
+    version: 6;
     exported_at: string;
     account: {
         id: number;
@@ -57,6 +93,8 @@ export type AccountExport = {
         target_weight_grams: number;
         target_date: string | null;
         daily_deficit: number;
+        calorie_plan_review_status: 'CLEAR' | 'REQUIRES_REVIEW';
+        calorie_plan_review_reason: string | null;
         created_at: string;
     }>;
     body_metrics: Array<{
@@ -213,6 +251,8 @@ export type AccountExport = {
         source_goal_id: number;
         recommendation_id: number | null;
         target_adjustment_kcal: number;
+        calorie_plan_review_status: 'CLEAR' | 'REQUIRES_REVIEW';
+        calorie_plan_review_reason: string | null;
         effective_local_date: string;
         created_at: string;
     }>;
@@ -323,6 +363,11 @@ export type WatchSnapshot = {
     local_date: string;
     weight_unit: 'KG' | 'LB';
     revision: string;
+    plan?: {
+        status: CaloriePlanStatus;
+        reason_code: CaloriePlanReasonCode | null;
+        minimum_daily_calorie_target: number | null;
+    };
     calories: {
         consumed: number;
         target: number | null;
@@ -345,6 +390,11 @@ export type WatchSnapshot = {
         progress_percent: number | null;
         remaining_weight_grams: number;
         is_complete: boolean;
+        projection?: {
+            status: 'projected' | 'maintenance' | 'reached' | 'unavailable';
+            projected_end_date: string | null;
+            reason_code: CaloriePlanReasonCode | null;
+        };
     } | null;
     quick_add: WatchQuickAddDraft[];
     reminders: Array<{
@@ -545,7 +595,13 @@ export type CalorieSummary = {
     bmr?: number;
     deficit?: number | null;
     targetAdjustment?: number;
+    sourceWeightKg?: number;
     missing: string[];
+    eligibility?: CalorieEligibility;
+    planStatus?: CaloriePlanStatus;
+    planReasonCode?: CaloriePlanReasonCode | null;
+    planOptions?: CaloriePlanOption[];
+    minimumDailyCalorieTarget?: number | null;
 };
 
 export type UserProfileResponse = {
@@ -574,15 +630,27 @@ export type CalibrationStatusResponse = {
         effectiveLocalDate: string;
     } | null;
     scheduledChange: ScheduledCalibrationChange | null;
+    planStatus?: CaloriePlanStatus;
+    planReasonCode?: CaloriePlanReasonCode | null;
 };
 
 export type GoalEntry = {
     id: number;
+    user_id?: number;
     start_weight: number;
     target_weight: number;
     target_date: string | null;
     daily_deficit: number;
     created_at: string;
+    calorie_plan_review_status?: 'CLEAR' | 'REQUIRES_REVIEW';
+    calorie_plan_review_reason?: string | null;
+    plan_status?: CaloriePlanStatus;
+    plan_reason_code?: CaloriePlanReasonCode | null;
+    projection?: {
+        status: 'projected' | 'maintenance' | 'reached' | 'unavailable';
+        projected_end_date: string | null;
+        reason_code: CaloriePlanReasonCode | null;
+    };
 };
 
 export type MetricEntry = {

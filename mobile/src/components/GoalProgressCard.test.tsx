@@ -11,7 +11,14 @@ const GOAL: GoalEntry = {
     target_weight: 165,
     target_date: null,
     daily_deficit: 500,
-    created_at: '2026-07-01T00:00:00.000Z'
+    created_at: '2026-07-01T00:00:00.000Z',
+    plan_status: 'available',
+    plan_reason_code: null,
+    projection: {
+        status: 'projected',
+        projected_end_date: '2026-10-20',
+        reason_code: null
+    }
 };
 
 describe('GoalProgressCard', () => {
@@ -65,7 +72,10 @@ describe('GoalProgressCard', () => {
         const onSetNextGoal = jest.fn();
         const screen = render(
             <GoalProgressCard
-                goal={GOAL}
+                goal={{
+                    ...GOAL,
+                    projection: { status: 'reached', projected_end_date: null, reason_code: null }
+                }}
                 latestMetric={{ id: 3, date: '2026-07-24', weight: 166 }}
                 metrics={[
                     { id: 3, date: '2026-07-24', weight: 166 },
@@ -92,7 +102,8 @@ describe('GoalProgressCard', () => {
         const maintenanceGoal: GoalEntry = {
             ...GOAL,
             target_weight: 170,
-            daily_deficit: 0
+            daily_deficit: 0,
+            projection: { status: 'maintenance', projected_end_date: null, reason_code: null }
         };
         const screen = render(
             <GoalProgressCard
@@ -109,5 +120,82 @@ describe('GoalProgressCard', () => {
         )).toBeTruthy();
         expect(screen.queryByText(/% complete/)).toBeNull();
         expect(screen.queryByText('Goal projection')).toBeNull();
+    });
+
+    it('preserves progress but suppresses unsafe projection and target details', () => {
+        const onEditGoal = jest.fn();
+        const screen = render(
+            <GoalProgressCard
+                goal={{
+                    ...GOAL,
+                    plan_status: 'requires_review',
+                    plan_reason_code: 'TARGET_BELOW_MINIMUM',
+                    projection: {
+                        status: 'unavailable',
+                        projected_end_date: null,
+                        reason_code: 'TARGET_BELOW_MINIMUM'
+                    }
+                }}
+                latestMetric={{ id: 1, date: '2026-07-20', weight: 172 }}
+                user={null}
+                targetCalories={null}
+                onEditGoal={onEditGoal}
+            />
+        );
+
+        expect(screen.getByText('59% complete')).toBeTruthy();
+        expect(screen.getByText('Unavailable')).toBeTruthy();
+        expect(screen.queryByText(/Current target:/)).toBeNull();
+        fireEvent.press(screen.getByLabelText('Review calorie plan'));
+        expect(onEditGoal).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ['requires_review', 'Stored goal preserved. Calorie target unavailable until you review this plan.'],
+        [undefined, 'Stored goal preserved. Calorie target unavailable until the server verifies this plan.']
+    ] as const)('does not describe %s maintenance as active', (planStatus, planCopy) => {
+        const screen = render(
+            <GoalProgressCard
+                goal={{
+                    ...GOAL,
+                    daily_deficit: 0,
+                    target_weight: 170,
+                    plan_status: planStatus,
+                    projection: {
+                        status: 'unavailable',
+                        projected_end_date: null,
+                        reason_code: 'SERVER_POLICY_UNAVAILABLE'
+                    }
+                }}
+                latestMetric={{ id: 2, date: '2026-07-24', weight: 170 }}
+                user={null}
+            />
+        );
+
+        expect(screen.getByText('Unavailable')).toBeTruthy();
+        expect(screen.getByText(planCopy)).toBeTruthy();
+        expect(screen.getByText(
+            'This stored maintenance goal is preserved, but its calorie target is unavailable pending review.'
+        )).toBeTruthy();
+        expect(screen.queryByText('Ongoing')).toBeNull();
+        expect(screen.queryByText('Maintaining weight with a steady calorie target.')).toBeNull();
+    });
+
+    it('suppresses cached target and projection while a weight change is syncing', () => {
+        const screen = render(
+            <GoalProgressCard
+                goal={GOAL}
+                latestMetric={{ id: 2, date: '2026-07-20', weight: 170 }}
+                user={null}
+                targetCalories={2_000}
+                weightChangePending
+                onSetNextGoal={jest.fn()}
+            />
+        );
+
+        expect(screen.getByText('Weight change syncing. Calorie target and projection will return after the server rechecks this plan.')).toBeTruthy();
+        expect(screen.getByText('Unavailable')).toBeTruthy();
+        expect(screen.queryByText('Current target: 2,000 kcal/day')).toBeNull();
+        expect(screen.queryByLabelText('Set next goal')).toBeNull();
     });
 });

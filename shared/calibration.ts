@@ -1,5 +1,6 @@
 import type { WeightUnit } from './domain';
 import { computeWeightTrend } from './weightTrend';
+import { ABSOLUTE_MIN_TARGET_KCAL, minimumTargetForBmr } from './caloriePolicy';
 
 export const CALIBRATION_MODEL_VERSION = 4;
 export const CALIBRATION_MAX_OBSERVATION_DAYS = 42;
@@ -7,7 +8,7 @@ export const CALIBRATION_REFERENCE_DAYS = 90;
 export const CALIBRATION_MIN_INSIGHT_DAYS = 7;
 export const CALIBRATION_MIN_ACTIONABLE_DAYS = 14;
 export const CALIBRATION_MAX_ADJUSTMENT_STEP_KCAL = 150;
-export const CALIBRATION_MIN_TARGET_KCAL = 1000;
+export const CALIBRATION_MIN_TARGET_KCAL = ABSOLUTE_MIN_TARGET_KCAL;
 export const CALIBRATION_BOOTSTRAP_REPLICATES = 400;
 
 const KCAL_PER_KILOGRAM = 7700;
@@ -502,7 +503,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             let roundedStep = Math.round(boundedStep / 25) * 25;
             const baseTarget = input.profileTdeeKcal - input.configuredDailyDeficitKcal;
             const currentTarget = baseTarget + currentAdjustment;
-            const minimumTarget = Math.max(input.bmrKcal, CALIBRATION_MIN_TARGET_KCAL);
+            const minimumTarget = minimumTargetForBmr(input.bmrKcal);
             if (roundedStep < 0) {
                 const maximumDecrease = Math.max(0, currentTarget - minimumTarget);
                 if (maximumDecrease < 25) {
@@ -796,7 +797,7 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
             const currentTarget = Math.round(
                 input.profileTdeeKcal - input.configuredDailyDeficitKcal + input.currentTargetAdjustmentKcal
             );
-            const minimumTarget = Math.round(Math.max(input.bmrKcal, CALIBRATION_MIN_TARGET_KCAL));
+            const minimumTarget = minimumTargetForBmr(input.bmrKcal);
             const floorName = input.bmrKcal >= CALIBRATION_MIN_TARGET_KCAL ? "Calibrate's BMR-based limit" : "Calibrate's calorie-budget limit";
             const floorPosition = currentTarget < minimumTarget ? 'below' : 'at';
             headline = "Calibrate won't recommend a lower budget";

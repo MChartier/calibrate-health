@@ -25,6 +25,7 @@ test('isValidIanaTimeZone validates common IANA time zones', () => {
   assert.equal(isValidIanaTimeZone('UTC'), true);
   assert.equal(isValidIanaTimeZone('America/Los_Angeles'), true);
   assert.equal(isValidIanaTimeZone('America/New_York'), true);
+  assert.equal(isValidIanaTimeZone('america/los_angeles'), true);
 
   assert.equal(isValidIanaTimeZone(''), false);
   assert.equal(isValidIanaTimeZone('   '), false);

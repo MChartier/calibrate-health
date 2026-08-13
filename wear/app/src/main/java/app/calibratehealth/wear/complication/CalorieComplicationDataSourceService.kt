@@ -35,7 +35,8 @@ class CalorieComplicationDataSourceService : SuspendingComplicationDataSourceSer
                 caloriesConsumed = 1_240,
                 calorieTarget = 1_835,
                 caloriesRemaining = 595,
-                cachedAtEpochMs = 0L
+                cachedAtEpochMs = 0L,
+                planStatus = "available"
             ),
             nowEpochMs = 0L
         )

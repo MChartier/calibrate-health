@@ -24,7 +24,8 @@ object WatchSnapshotMapper {
     private const val MAX_LABEL_CHARS = 240
     private const val MAX_DRAFT_CHARS = 8 * 1024
     private const val MAX_CALORIES = 100_000
-    private const val MAX_WEIGHT_GRAMS = 1_000_000L
+    private const val MIN_WEIGHT_GRAMS = 25_000L
+    private const val MAX_WEIGHT_GRAMS = 400_000L
     private const val MAX_REMINDERS = 2
     private val DAILY_DEFICITS = setOf(-1_000, -750, -500, -250, 0, 250, 500, 750, 1_000)
 
@@ -40,10 +41,41 @@ object WatchSnapshotMapper {
         val weightUnit = root.requiredString("weight_unit").also {
             require(it == "KG" || it == "LB") { "Invalid weight unit." }
         }
+        // Plan ownership was added after the first snapshot contract. Older servers omit it.
+        val plan = when (val value = root.values["plan"]) {
+            null, JsonValue.Null -> null
+            is JsonValue.Object -> value
+            else -> throw InvalidJsonException("plan must be an object or null.")
+        }
+        val planStatus = plan?.requiredString("status") ?: "unknown"
+        require(planStatus in setOf("available", "unavailable", "requires_review", "unknown")) {
+            "Invalid calorie plan status."
+        }
+        val planReasonCode = plan?.optionalString("reason_code")?.also(::requireReasonCode)
+        val minimumCalorieTarget = plan?.optionalLong("minimum_daily_calorie_target")
+            ?.boundedInt("plan.minimum_daily_calorie_target", 1_000, Int.MAX_VALUE)
+        if (planStatus == "available") {
+            require(planReasonCode == null && minimumCalorieTarget != null) {
+                "An available calorie plan requires a minimum target and no reason."
+            }
+        }
+
         val calories = root.requiredObject("calories")
         val consumed = calories.requiredLong("consumed").boundedInt("calories.consumed", 0, MAX_CALORIES)
-        val target = calories.optionalLong("target")?.boundedInt("calories.target", 0, MAX_CALORIES)
-        val remaining = calories.optionalLong("remaining")?.boundedInt("calories.remaining", -MAX_CALORIES, MAX_CALORIES)
+        val serverTarget = calories.optionalLong("target")
+            ?.boundedInt("calories.target", 1, Int.MAX_VALUE)
+        val serverRemaining = calories.optionalLong("remaining")
+            ?.boundedInt("calories.remaining", -MAX_CALORIES, Int.MAX_VALUE)
+        if (planStatus == "available") {
+            require(serverTarget != null && serverRemaining != null) {
+                "An available calorie plan requires target and remaining calories."
+            }
+            require(serverTarget >= minimumCalorieTarget!!) {
+                "Calorie target is below the server-owned minimum."
+            }
+        }
+        val target = serverTarget.takeIf { planStatus == "available" }
+        val remaining = serverRemaining.takeIf { planStatus == "available" }
 
         val foodDay = root.requiredObject("food_day")
         val foodDayComplete = foodDay.requiredBoolean("is_complete")
@@ -117,6 +149,24 @@ object WatchSnapshotMapper {
                 "A loss or gain goal with a current weight requires progress."
             }
         }
+        val goalProjection = goal?.optionalObject("projection")
+        val goalProjectionStatus = if (goal == null) {
+            null
+        } else {
+            goalProjection?.requiredString("status") ?: "unavailable"
+        }
+        goalProjectionStatus?.also {
+            require(it in setOf("projected", "maintenance", "reached", "unavailable")) {
+                "Invalid goal projection status."
+            }
+        }
+        val goalProjectedEndDate = goalProjection?.optionalString("projected_end_date")
+            ?.also(::requireLocalDate)
+        if (goalProjectionStatus == "projected") {
+            require(goalProjectedEndDate != null) { "A projected goal requires an end date." }
+        } else {
+            require(goalProjectedEndDate == null) { "Only a projected goal may include an end date." }
+        }
 
         val quickAdds = root.requiredArray("quick_add")
         require(quickAdds.size <= WearCacheLimits.QUICK_ADD_ITEMS) { "Too many quick-add items." }
@@ -161,6 +211,9 @@ object WatchSnapshotMapper {
                 caloriesConsumed = consumed,
                 calorieTarget = target,
                 caloriesRemaining = remaining,
+                planStatus = planStatus,
+                planReasonCode = planReasonCode,
+                minimumCalorieTarget = minimumCalorieTarget,
                 foodDayComplete = foodDayComplete,
                 foodDayStatus = foodDayStatus,
                 foodDaySource = foodDaySource,
@@ -180,6 +233,8 @@ object WatchSnapshotMapper {
                 goalProgressPercent = goalProgressPercent,
                 goalRemainingWeightGrams = goalRemainingWeight,
                 goalIsComplete = goalIsComplete,
+                goalProjectionStatus = goalProjectionStatus,
+                goalProjectedEndDate = goalProjectedEndDate,
                 undoFoodLogId = undoFoodLogId,
                 undoName = undoName,
                 undoCalories = undoCalories,
@@ -264,7 +319,13 @@ object WatchSnapshotMapper {
     }
 
     private fun requireWeight(value: Long) {
-        require(value in 1..MAX_WEIGHT_GRAMS) { "Weight is outside its allowed range." }
+        require(value in MIN_WEIGHT_GRAMS..MAX_WEIGHT_GRAMS) { "Weight is outside its allowed range." }
+    }
+
+    private fun requireReasonCode(value: String) {
+        require(value.length in 1..80 && value.all { it == '_' || it in 'A'..'Z' }) {
+            "Invalid calorie plan reason code."
+        }
     }
 
     private fun Long.boundedInt(field: String, minimum: Int, maximum: Int): Int {

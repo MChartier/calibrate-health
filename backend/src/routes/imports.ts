@@ -3,6 +3,9 @@ import multer from 'multer';
 import type { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { parseWeightToGrams, isWeightUnit, type WeightUnit } from '../utils/units';
+import { isPolicyWeight } from '../../../shared/caloriePolicy';
+import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
+import type { MutationDatabase } from '../services/clientOperations';
 import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 import { refreshMaterializedWeightTrendsBestEffort } from '../services/materializedWeightTrend';
 import {
@@ -45,6 +48,23 @@ function buildFutureWeightWarning(count: number): string | null {
   return `${count} future-dated weight ${count === 1 ? 'entry was' : 'entries were'} excluded.`;
 }
 
+function partitionWeightsByPolicy(imports: LoseItWeightImport[], unit: WeightUnit) {
+  return imports.reduce<{ eligible: LoseItWeightImport[]; invalid: LoseItWeightImport[] }>((result, entry) => {
+    try {
+      const weightGrams = parseWeightToGrams(entry.weightValue, unit);
+      (isPolicyWeight(weightGrams) ? result.eligible : result.invalid).push(entry);
+    } catch {
+      result.invalid.push(entry);
+    }
+    return result;
+  }, { eligible: [], invalid: [] });
+}
+
+function buildInvalidWeightWarning(count: number): string | null {
+  if (count <= 0) return null;
+  return `${count} weight ${count === 1 ? 'entry was' : 'entries were'} outside the supported range and excluded.`;
+}
+
 router.use(requireAuthenticatedUser);
 
 router.post('/loseit/preview', upload.single('file'), async (req, res) => {
@@ -64,10 +84,12 @@ router.post('/loseit/preview', upload.single('file'), async (req, res) => {
   const unitGuess = inferLoseItWeightUnit(parsed.profile, fallbackUnit);
   const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
   const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, currentLocalDate);
+  const boundedWeights = partitionWeightsByPolicy(partitionedWeights.eligible, unitGuess.unit);
   const futureWeightWarning = buildFutureWeightWarning(partitionedWeights.future.length);
+  const invalidWeightWarning = buildInvalidWeightWarning(boundedWeights.invalid.length);
 
   const foodDates = new Set(parsed.foodLogs.map((log) => log.localDate));
-  const weightDates = new Set(partitionedWeights.eligible.map((weight) => weight.localDate));
+  const weightDates = new Set(boundedWeights.eligible.map((weight) => weight.localDate));
   const { startDate, endDate } = computeDateRange([...foodDates, ...weightDates]);
 
   const existingFoodDays = foodDates.size > 0 ? await countExistingFoodDays(user.id, foodDates) : 0;
@@ -86,7 +108,7 @@ router.post('/loseit/preview', upload.single('file'), async (req, res) => {
       foodLogDays: existingFoodDays,
       weightDays: existingWeightDays,
     },
-    warnings: futureWeightWarning ? [...parsed.warnings, futureWeightWarning] : parsed.warnings,
+    warnings: [...parsed.warnings, ...[futureWeightWarning, invalidWeightWarning].filter((warning): warning is string => warning !== null)],
     weightUnitGuess: unitGuess.unit,
     weightUnitGuessSource: unitGuess.source,
     foodDayCompletionStatus: parsed.foodDayCompletionStatus,
@@ -116,7 +138,9 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   const bodyFatByDate = new Map(parsed.bodyFat.map((entry) => [entry.localDate, entry.value]));
   const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
   const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, currentLocalDate);
+  const boundedWeights = partitionWeightsByPolicy(partitionedWeights.eligible, options.value.weightUnit);
   const futureWeightWarning = buildFutureWeightWarning(partitionedWeights.future.length);
+  const invalidWeightWarning = buildInvalidWeightWarning(boundedWeights.invalid.length);
 
   let importedFoodLogs = 0;
   let skippedFoodLogs = 0;
@@ -139,18 +163,25 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   importedFoodLogs = foodLogsToInsert.rows.length;
   skippedFoodLogs = foodLogsToInsert.skippedCount;
 
-  const weightResult = await applyWeightImports({
-    userId: user.id,
-    imports: partitionedWeights.eligible,
-    bodyFatByDate,
-    weightUnit: options.value.weightUnit,
-    conflictMode: options.value.weightConflictMode,
-    includeBodyFat: options.value.includeBodyFat,
+  const weightResult = await prisma.$transaction(async (tx) => {
+    const result = await applyWeightImports({
+      database: tx,
+      userId: user.id,
+      imports: boundedWeights.eligible,
+      bodyFatByDate,
+      weightUnit: options.value.weightUnit,
+      conflictMode: options.value.weightConflictMode,
+      includeBodyFat: options.value.includeBodyFat,
+    });
+    if (result.imported > 0 || result.updated > 0) {
+      await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
+    }
+    return result;
   });
 
   importedWeights = weightResult.imported;
   updatedWeights = weightResult.updated;
-  skippedWeights = weightResult.skipped + partitionedWeights.future.length;
+  skippedWeights = weightResult.skipped + partitionedWeights.future.length + boundedWeights.invalid.length;
   updatedBodyFat = weightResult.bodyFatUpdated;
   if (importedWeights > 0 || updatedWeights > 0) {
     await refreshMaterializedWeightTrendsBestEffort(user.id);
@@ -173,7 +204,7 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
     updatedWeights,
     skippedWeights,
     updatedBodyFat,
-    warnings: futureWeightWarning ? [...parsed.warnings, futureWeightWarning] : parsed.warnings,
+    warnings: [...parsed.warnings, ...[futureWeightWarning, invalidWeightWarning].filter((warning): warning is string => warning !== null)],
     foodDayCompletionStatus: parsed.foodDayCompletionStatus,
     foodDayCompletionMessage:
       'Completion history was unavailable, so imported food days remain unresolved.',
@@ -404,6 +435,7 @@ function buildFoodFingerprint(entry: LoseItFoodLogImport): string {
  * Apply weight imports, honoring KEEP/OVERWRITE behavior and optional body fat updates.
  */
 async function applyWeightImports(opts: {
+  database: MutationDatabase;
   userId: number;
   imports: LoseItWeightImport[];
   bodyFatByDate: Map<string, number>;
@@ -419,7 +451,7 @@ async function applyWeightImports(opts: {
   const minDate = dateValues.reduce((min, value) => (value < min ? value : min));
   const maxDate = dateValues.reduce((max, value) => (value > max ? value : max));
 
-  const existing = await prisma.bodyMetric.findMany({
+  const existing = await opts.database.bodyMetric.findMany({
     where: { user_id: opts.userId, date: { gte: minDate, lte: maxDate } },
     select: { id: true, date: true, body_fat_percent: true },
   });
@@ -456,7 +488,7 @@ async function applyWeightImports(opts: {
     }
 
     if (createRows.length > 0) {
-      await prisma.bodyMetric.createMany({ data: createRows });
+      await opts.database.bodyMetric.createMany({ data: createRows });
       imported = createRows.length;
     }
 
@@ -468,7 +500,7 @@ async function applyWeightImports(opts: {
         const existingMetric = existingByDate.get(entry.localDate);
         if (!existingMetric || existingMetric.bodyFat !== null) continue;
 
-        await prisma.bodyMetric.update({
+        await opts.database.bodyMetric.update({
           where: { id: existingMetric.id },
           data: { body_fat_percent: bodyFatValue },
         });
@@ -495,7 +527,7 @@ async function applyWeightImports(opts: {
       body_fat_percent: bodyFatValue ?? null,
     };
 
-    return prisma.bodyMetric.upsert({
+    return opts.database.bodyMetric.upsert({
       where: { user_id_date: { user_id: opts.userId, date: entry.localDateValue } },
       update: updateData,
       create: createData,
@@ -503,7 +535,7 @@ async function applyWeightImports(opts: {
   });
 
   for (const batch of chunkArray(upserts, WEIGHT_UPSERT_BATCH_SIZE)) {
-    await prisma.$transaction(batch);
+    await Promise.all(batch);
   }
 
   for (const entry of opts.imports) {

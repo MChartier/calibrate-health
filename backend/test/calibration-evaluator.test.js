@@ -333,6 +333,18 @@ test('truncates a supported decrease when the normal step would cross the BMR fl
   assert.ok(result.recommendation.currentTargetKcal - 150 < 1900);
 });
 
+test('a fractional BMR cannot generate a recommendation below the canonical ceiling floor', () => {
+  const input = cloneScenarioInput('bmr-floor');
+  input.bmrKcal = 1900.1;
+  input.profileTdeeKcal = 2250.1;
+  const result = evaluateCalibration(input);
+
+  assert.equal(result.status, 'recommendation');
+  assert.equal(result.recommendation.adjustmentStepKcal, -75);
+  assert.equal(result.recommendation.recommendedTargetKcal, 1925);
+  assert.ok(result.recommendation.recommendedTargetKcal >= Math.ceil(input.bmrKcal));
+});
+
 test('does not reverse recommendation direction when the current target is below the BMR floor', () => {
   const result = evaluateScenario('bmr-floor-blocked');
   assert.ok(result.estimates.targetAdjustmentKcal.midpoint < 0);

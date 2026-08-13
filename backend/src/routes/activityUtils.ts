@@ -2,6 +2,7 @@ import {
   ACTIVITY_RECORD_TYPES,
   type ActivityRecordType
 } from '../../../shared/domain';
+import { MAX_WEIGHT_GRAMS, MIN_WEIGHT_GRAMS } from '../../../shared/caloriePolicy';
 import {
   addUtcDays,
   formatDateToLocalDateString,
@@ -190,7 +191,7 @@ function parseActivityRecord(value: unknown, recordType: ActivityRecordType, tim
     ? parseNullableNumber(value.energy_kcal, 'energy_kcal')
     : null;
   const weightGrams = recordType === ACTIVITY_RECORD_TYPES.WEIGHT
-    ? parseNullableInteger(value.weight_grams, 'weight_grams', { minimum: 1 })
+    ? parseNullableInteger(value.weight_grams, 'weight_grams', { minimum: MIN_WEIGHT_GRAMS, maximum: MAX_WEIGHT_GRAMS })
     : null;
   const exerciseType = recordType === ACTIVITY_RECORD_TYPES.EXERCISE_SESSION
     ? parseNullableInteger(value.exercise_type, 'exercise_type', { minimum: 0 })
