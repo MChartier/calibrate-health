@@ -227,6 +227,7 @@ test('Activity keeps connection, sync, source, and calorie-target truth across r
     await expectNoHorizontalOverflow(page);
     await captureEvidence(page, testInfo);
 
+    await hideTransientPwaNotices(page);
     await page.getByRole('button', { name: 'Connect Health Connect', exact: true }).click();
     await expect(page.getByText(
       'Health Connect is connected. No imported activity is available yet.',
