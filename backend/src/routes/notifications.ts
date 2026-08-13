@@ -110,7 +110,9 @@ router.post('/subscription', isBrowserSession, async (req, res) => {
       expiration_time: expirationTime,
       // Registration is an explicit opt-in. Clear any delivery date inherited
       // from a previous owner of this globally unique browser endpoint.
-      last_sent_local_date: null
+      last_sent_local_date: null,
+      last_sent_weight_local_date: null,
+      last_sent_food_local_date: null
     },
     create: {
       user_id: user.id,
@@ -208,6 +210,8 @@ router.post('/native-subscription', async (req, res) => {
       device_id: deviceId,
       platform,
       last_sent_local_date: null,
+      last_sent_weight_local_date: null,
+      last_sent_food_local_date: null,
       revoked_at: null
     },
     create: {

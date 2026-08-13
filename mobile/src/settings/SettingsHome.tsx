@@ -1,8 +1,7 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { HEIGHT_UNITS, WEIGHT_UNITS, type HeightUnit, type WeightUnit } from '@calibrate/shared';
-import { AppCard } from '../components/AppCard';
 import { AppText } from '../components/AppText';
-import { SettingsRow, SettingsSection } from '../components/settings/SettingsList';
+import { SettingsRow, SettingsSection, SettingsStatusRow } from '../components/settings/SettingsList';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
 
@@ -18,8 +17,11 @@ export type SettingsSheetId =
     | 'data'
     | 'advanced';
 
+type ProductLink = 'support' | 'privacy' | 'terms' | 'licenses';
+
 type SettingsHomeProps = {
     email?: string | null;
+    emailVerified?: boolean;
     profileImageUrl?: string | null;
     goalSummary: string;
     weightUnit: WeightUnit;
@@ -34,7 +36,8 @@ type SettingsHomeProps = {
     onOpenActivity: () => void;
     onOpenSavedFoods: () => void;
     onOpenAbout: () => void;
-    onOpenProductLink: (link: 'support' | 'privacy' | 'terms') => void;
+    onOpenProductLink: (link: ProductLink) => void;
+    onDeleteAccount: () => void;
     onLogout: () => void;
 };
 
@@ -44,6 +47,7 @@ function getAvatarLabel(email?: string | null): string {
 
 export function SettingsHome({
     email,
+    emailVerified,
     profileImageUrl,
     goalSummary,
     weightUnit,
@@ -59,6 +63,7 @@ export function SettingsHome({
     onOpenSavedFoods,
     onOpenAbout,
     onOpenProductLink,
+    onDeleteAccount,
     onLogout
 }: SettingsHomeProps) {
     const { colors } = useAppTheme();
@@ -69,10 +74,25 @@ export function SettingsHome({
         ? `${failedMutationCount} failed`
         : `${pendingMutationCount} pending`;
 
+    let verificationValue = 'Not reported';
+    let verificationText = email ?? 'Verification status for this account email.';
+    if (emailVerified === true) {
+        verificationValue = 'Verified';
+    } else if (emailVerified === false) {
+        verificationValue = 'Action required';
+        verificationText = 'Verify this email before using all account features.';
+    }
     return (
-        <>
-            <AppCard style={{ backgroundColor: colors.surface, borderColor: colors.outlineVariant }}>
-                <View style={styles.accountSummary}>
+        <View testID="settings-home" style={styles.home}>
+            <SettingsSection
+                testID="settings-section-account"
+                title="Account"
+                description="Identity and access to this Calibrate account."
+            >
+                <View
+                    testID="settings-account-summary"
+                    style={[styles.accountSummary, { borderBottomColor: colors.outlineVariant }]}
+                >
                     <View style={[styles.summaryAvatar, { backgroundColor: colors.primaryContainer }]}>
                         {profileImageUrl ? (
                             <Image source={{ uri: profileImageUrl }} style={styles.avatarImage} />
@@ -85,7 +105,7 @@ export function SettingsHome({
                     <View style={styles.summaryText}>
                         <AppText
                             accessibilityRole="header"
-                            aria-level={2}
+                            aria-level={3}
                             ellipsizeMode="middle"
                             numberOfLines={1}
                             style={styles.summaryEmail}
@@ -95,9 +115,33 @@ export function SettingsHome({
                         <AppText variant="caption" numberOfLines={2}>{goalSummary}</AppText>
                     </View>
                 </View>
-            </AppCard>
+                <SettingsStatusRow
+                    testID="settings-email-verification"
+                    icon="checkmark-circle-outline"
+                    label="Email verification"
+                    supportingText={verificationText}
+                    value={verificationValue}
+                    tone={emailVerified === true ? 'success' : 'warning'}
+                />
+                <SettingsRow
+                    icon="image-outline"
+                    label="Profile photo"
+                    supportingText="Your avatar across Calibrate"
+                    onPress={() => onOpenSheet('profile-photo')}
+                />
+                <SettingsRow
+                    icon="log-out-outline"
+                    label="Log out"
+                    showDivider={false}
+                    onPress={onLogout}
+                />
+            </SettingsSection>
 
-            <SettingsSection title="Personal" description="Your profile and how Calibrate works for you.">
+            <SettingsSection
+                testID="settings-section-personal"
+                title="Personal details"
+                description="Profile, units, reminders, and app behavior."
+            >
                 <SettingsRow
                     icon="person-outline"
                     label="Profile details"
@@ -105,22 +149,21 @@ export function SettingsHome({
                     onPress={onEditProfile}
                 />
                 <SettingsRow
+                    testID="settings-open-preferences"
                     icon="options-outline"
                     label="Preferences"
-                    supportingText="Units, reminders, notifications, and haptics"
+                    supportingText="Units, reminder intent, quiet hours, permissions, and haptics"
                     value={unitSummary}
-                    onPress={() => onOpenSheet('preferences')}
-                />
-                <SettingsRow
-                    icon="image-outline"
-                    label="Profile photo"
-                    supportingText="Your avatar across Calibrate"
                     showDivider={false}
-                    onPress={() => onOpenSheet('profile-photo')}
+                    onPress={() => onOpenSheet('preferences')}
                 />
             </SettingsSection>
 
-            <SettingsSection title="Connections" description="Health data and companion devices.">
+            <SettingsSection
+                testID="settings-section-connections"
+                title="Connections"
+                description="Imported activity and companion devices."
+            >
                 <SettingsRow
                     icon="walk-outline"
                     label="Activity"
@@ -137,19 +180,38 @@ export function SettingsHome({
                     icon="watch-outline"
                     label="Galaxy Watch"
                     supportingText="Pair, sync, and manage the Wear OS companion"
+                    showDivider={false}
                     onPress={() => onOpenSheet('watch')}
                 />
+            </SettingsSection>
+
+            <SettingsSection
+                testID="settings-section-security"
+                title="Security"
+                description="Password and every signed-in browser, phone, or watch."
+            >
                 <SettingsRow
+                    icon="key-outline"
+                    label="Password"
+                    supportingText="Change your password with current-password confirmation"
+                    onPress={() => onOpenSheet('password')}
+                />
+                <SettingsRow
+                    testID="settings-open-sessions"
                     icon="phone-portrait-outline"
                     label="Signed-in devices"
-                    supportingText="Review and revoke phone and watch sessions"
+                    supportingText="Review and revoke browser, phone, and watch sessions"
                     value={sessionCount === undefined ? undefined : String(sessionCount)}
                     showDivider={false}
                     onPress={() => onOpenSheet('devices')}
                 />
             </SettingsSection>
 
-            <SettingsSection title="Data" description="Import, sync, export, and privacy controls.">
+            <SettingsSection
+                testID="settings-section-data"
+                title="Data"
+                description="Saved content, imports, offline changes, export, and deletion."
+            >
                 <SettingsRow
                     icon="restaurant-outline"
                     label="Saved foods"
@@ -172,25 +234,28 @@ export function SettingsHome({
                     onPress={() => onOpenSheet('offline')}
                 />
                 <SettingsRow
-                    icon="shield-checkmark-outline"
-                    label="Your data"
-                    supportingText="Export or permanently delete your account"
-                    showDivider={false}
+                    testID="settings-export"
+                    icon="share-outline"
+                    label="Export account data"
+                    supportingText="Download a portable JSON copy"
                     onPress={() => onOpenSheet('data')}
                 />
-            </SettingsSection>
-
-            <SettingsSection title="Security">
                 <SettingsRow
-                    icon="key-outline"
-                    label="Password"
-                    supportingText="Change your account password"
+                    testID="settings-delete-account"
+                    icon="trash-outline"
+                    label="Delete account"
+                    supportingText="Permanently delete this account after reauthentication"
+                    danger
                     showDivider={false}
-                    onPress={() => onOpenSheet('password')}
+                    onPress={onDeleteAccount}
                 />
             </SettingsSection>
 
-            <SettingsSection title="Help & legal">
+            <SettingsSection
+                testID="settings-section-help"
+                title="Help"
+                description="Support and documents about your rights and the software."
+            >
                 <SettingsRow
                     icon="help-circle-outline"
                     label="Support and feedback"
@@ -205,16 +270,25 @@ export function SettingsHome({
                 <SettingsRow
                     icon="document-text-outline"
                     label="Terms of service"
-                    showDivider={false}
                     onPress={() => onOpenProductLink('terms')}
+                />
+                <SettingsRow
+                    icon="code-slash-outline"
+                    label="Open-source licenses"
+                    showDivider={false}
+                    onPress={() => onOpenProductLink('licenses')}
                 />
             </SettingsSection>
 
-            <SettingsSection title="App">
+            <SettingsSection
+                testID="settings-section-app"
+                title={isWeb ? 'App' : 'App & Advanced'}
+                description="Version, product information, and optional connection controls."
+            >
                 <SettingsRow
                     icon="information-circle-outline"
                     label="About Calibrate"
-                    supportingText="Purpose, trust, version, and open-source licenses"
+                    supportingText="Purpose, trust, version, and update details"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
                     showDivider={!isWeb}
                     onPress={onOpenAbout}
@@ -229,25 +303,22 @@ export function SettingsHome({
                     />
                 )}
             </SettingsSection>
-
-            <SettingsSection title="Account">
-                <SettingsRow
-                    icon="log-out-outline"
-                    label="Log out"
-                    danger
-                    showDivider={false}
-                    onPress={onLogout}
-                />
-            </SettingsSection>
-        </>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    home: {
+        gap: spacing.lg
+    },
     accountSummary: {
+        minHeight: 78,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md
+        gap: spacing.md,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth
     },
     summaryAvatar: {
         width: 54,

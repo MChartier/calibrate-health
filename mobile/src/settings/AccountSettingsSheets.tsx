@@ -189,6 +189,7 @@ export function DeleteAccountSheet({
             confirmDismiss={confirmDiscardChanges}
             onRequestClose={onClose}
         >
+            <View testID="settings-delete-account-sheet" style={styles.sheetContent}>
             <TextField
                 label="Current password"
                 secureTextEntry
@@ -224,11 +225,15 @@ export function DeleteAccountSheet({
                     style={styles.rowButton}
                 />
             </View>
+            </View>
         </BottomSheetModal>
     );
 }
 
 const styles = StyleSheet.create({
+    sheetContent: {
+        gap: spacing.md
+    },
     row: {
         flexDirection: 'row',
         gap: spacing.md

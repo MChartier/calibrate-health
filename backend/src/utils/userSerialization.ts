@@ -1,6 +1,7 @@
 import type { ActivityLevel, HeightUnit, Prisma, Sex, WeightUnit } from '@prisma/client';
 import { isSupportedLanguage, SUPPORTED_LANGUAGES, type SupportedLanguage } from './language';
 import { buildBase64DataUrl } from './profileImage';
+import { formatLocalWallClockMinute } from '../services/reminderSchedule';
 import {
   ACCOUNT_ACCESS_SELECT,
   serializeAccountAccess,
@@ -19,6 +20,10 @@ export type UserClientPayload = {
   language: SupportedLanguage;
   reminder_log_weight_enabled: boolean;
   reminder_log_food_enabled: boolean;
+  reminder_log_weight_time: string;
+  reminder_log_food_time: string;
+  reminder_quiet_hours_start: string | null;
+  reminder_quiet_hours_end: string | null;
   haptics_enabled: boolean;
   date_of_birth: string | null;
   sex: Sex | null;
@@ -43,6 +48,10 @@ export const USER_CLIENT_SELECT = {
   language: true,
   reminder_log_weight_enabled: true,
   reminder_log_food_enabled: true,
+  reminder_log_weight_minute: true,
+  reminder_log_food_minute: true,
+  reminder_quiet_hours_start_minute: true,
+  reminder_quiet_hours_end_minute: true,
   haptics_enabled: true,
   date_of_birth: true,
   sex: true,
@@ -53,8 +62,22 @@ export const USER_CLIENT_SELECT = {
   ...ACCOUNT_ACCESS_SELECT
 } satisfies Prisma.UserSelect;
 
-export type UserForClient = Omit<UserClientPayload, 'profile_image_url' | 'language' | 'date_of_birth' | 'account_access'> & AccountAccessSource & {
+export type UserForClient = Omit<
+  UserClientPayload,
+  | 'profile_image_url'
+  | 'language'
+  | 'date_of_birth'
+  | 'account_access'
+  | 'reminder_log_weight_time'
+  | 'reminder_log_food_time'
+  | 'reminder_quiet_hours_start'
+  | 'reminder_quiet_hours_end'
+> & AccountAccessSource & {
   date_of_birth: Date | null;
+  reminder_log_weight_minute: number;
+  reminder_log_food_minute: number;
+  reminder_quiet_hours_start_minute: number | null;
+  reminder_quiet_hours_end_minute: number | null;
   // `User.language` is stored as a string (not a Prisma enum), so validate it before returning to the client.
   language: string;
   profile_image?: Uint8Array | null;
@@ -79,6 +102,14 @@ export const serializeUserForClient = (user: UserForClient): UserClientPayload =
     language: isSupportedLanguage(user.language) ? user.language : SUPPORTED_LANGUAGES.EN,
     reminder_log_weight_enabled: user.reminder_log_weight_enabled,
     reminder_log_food_enabled: user.reminder_log_food_enabled,
+    reminder_log_weight_time: formatLocalWallClockMinute(user.reminder_log_weight_minute),
+    reminder_log_food_time: formatLocalWallClockMinute(user.reminder_log_food_minute),
+    reminder_quiet_hours_start: user.reminder_quiet_hours_start_minute === null
+      ? null
+      : formatLocalWallClockMinute(user.reminder_quiet_hours_start_minute),
+    reminder_quiet_hours_end: user.reminder_quiet_hours_end_minute === null
+      ? null
+      : formatLocalWallClockMinute(user.reminder_quiet_hours_end_minute),
     haptics_enabled: user.haptics_enabled,
     date_of_birth: user.date_of_birth ? user.date_of_birth.toISOString().slice(0, 10) : null,
     sex: user.sex,

@@ -13,40 +13,18 @@ import { materializeActiveFoodTrackingPauses } from './foodTracking';
 import { deliverUserNotification, type InAppNotificationDeliveryRequest } from './notificationDelivery';
 import { buildReminderPayload } from './pushNotificationPayloads';
 import { DEFAULT_NOTIFICATION_DELIVERY_CHANNELS } from '../../../shared/notificationDelivery';
+import { getLocalWallClock, isReminderDue, isWithinQuietHours } from './reminderSchedule';
 import {
     diagnosticsRegistry,
     emitDiagnosticEvent,
     resolveObservabilityConfig
 } from '../observability';
 
-const DEFAULT_REMINDER_SEND_HOUR_LOCAL = 9; // Local hour (0-23) to begin sending reminders.
 const DEFAULT_REMINDER_JOB_INTERVAL_MINUTES = 15; // How often to scan for eligible reminders.
 
 let hasLoggedMissingConfig = false;
 let isReminderCheckInProgress = false;
 const observabilityConfig = resolveObservabilityConfig(process.env);
-
-const parseReminderHour = (value: string | undefined): number | null => {
-    if (!value) return null;
-    const parsed = Number.parseInt(value, 10);
-    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 23) {
-        return null;
-    }
-    return parsed;
-};
-
-const resolveReminderHour = (env: NodeJS.ProcessEnv = process.env): number => {
-    const parsed = parseReminderHour(env.REMINDER_SEND_LOCAL_HOUR);
-    if (parsed === null) {
-        if (env.REMINDER_SEND_LOCAL_HOUR) {
-            console.warn(
-                `REMINDER_SEND_LOCAL_HOUR="${env.REMINDER_SEND_LOCAL_HOUR}" is invalid; using ${DEFAULT_REMINDER_SEND_HOUR_LOCAL}.`
-            );
-        }
-        return DEFAULT_REMINDER_SEND_HOUR_LOCAL;
-    }
-    return parsed;
-};
 
 const resolveJobIntervalMinutes = (env: NodeJS.ProcessEnv = process.env): number => {
     const parsed = parsePositiveInteger(env.REMINDER_JOB_INTERVAL_MINUTES);
@@ -59,21 +37,6 @@ const resolveJobIntervalMinutes = (env: NodeJS.ProcessEnv = process.env): number
         return DEFAULT_REMINDER_JOB_INTERVAL_MINUTES;
     }
     return parsed;
-};
-
-const getLocalHour = (timeZone: string, now: Date): number => {
-    try {
-        const parts = new Intl.DateTimeFormat('en-US', {
-            timeZone,
-            hour: '2-digit',
-            hourCycle: 'h23'
-        }).formatToParts(now);
-        const hourPart = parts.find((part) => part.type === 'hour')?.value;
-        const parsed = hourPart ? Number.parseInt(hourPart, 10) : Number.NaN;
-        return Number.isFinite(parsed) ? parsed : now.getUTCHours();
-    } catch {
-        return now.getUTCHours();
-    }
 };
 
 /**
@@ -105,10 +68,23 @@ const resolveInactiveInAppReminders = async (now: Date): Promise<void> => {
     }
 };
 
+export const groupDueReminderTypes = ({
+    dueWeight,
+    dueFood
+}: {
+    dueWeight: boolean;
+    dueFood: boolean;
+}): InAppNotificationType[][] => {
+    return [
+        ...(dueWeight ? [[InAppNotificationType.LOG_WEIGHT_REMINDER]] : []),
+        ...(dueFood ? [[InAppNotificationType.LOG_FOOD_REMINDER]] : [])
+    ];
+};
+
 /**
  * Create scheduled in-app reminders and optionally fan out matching push notifications.
  */
-const createAndSendScheduledReminders = async (reminderHour: number, now: Date): Promise<void> => {
+export const createAndSendScheduledReminders = async (now: Date): Promise<void> => {
     const channels = [...DEFAULT_NOTIFICATION_DELIVERY_CHANNELS];
 
     const users = await prisma.user.findMany({
@@ -120,14 +96,22 @@ const createAndSendScheduledReminders = async (reminderHour: number, now: Date):
             id: true,
             timezone: true,
             reminder_log_weight_enabled: true,
-            reminder_log_food_enabled: true
+            reminder_log_food_enabled: true,
+            reminder_log_weight_minute: true,
+            reminder_log_food_minute: true,
+            reminder_quiet_hours_start_minute: true,
+            reminder_quiet_hours_end_minute: true
         }
     });
 
     for (const user of users) {
         const timeZone = user.timezone || 'UTC';
-        const localHour = getLocalHour(timeZone, now);
-        if (localHour < reminderHour) {
+        const { minuteOfDay } = getLocalWallClock(timeZone, now);
+        if (isWithinQuietHours(
+            minuteOfDay,
+            user.reminder_quiet_hours_start_minute,
+            user.reminder_quiet_hours_end_minute
+        )) {
             continue;
         }
 
@@ -139,54 +123,57 @@ const createAndSendScheduledReminders = async (reminderHour: number, now: Date):
             reminderLogFoodEnabled: user.reminder_log_food_enabled
         });
 
-        if (!missingWeight && !missingFood) {
+        const dueWeight = missingWeight && isReminderDue(minuteOfDay, user.reminder_log_weight_minute);
+        const dueFood = missingFood && isReminderDue(minuteOfDay, user.reminder_log_food_minute);
+        if (!dueWeight && !dueFood) {
             continue;
         }
 
-        const inAppNotifications: InAppNotificationDeliveryRequest[] = [];
-        if (missingWeight) {
-            inAppNotifications.push({
-                type: InAppNotificationType.LOG_WEIGHT_REMINDER,
-                localDate: todayLocalDate,
-                dedupeKey: buildReminderInAppDedupeKey(InAppNotificationType.LOG_WEIGHT_REMINDER, todayLocalDate)
-            });
-        }
-        if (missingFood) {
-            inAppNotifications.push({
-                type: InAppNotificationType.LOG_FOOD_REMINDER,
-                localDate: todayLocalDate,
-                dedupeKey: buildReminderInAppDedupeKey(InAppNotificationType.LOG_FOOD_REMINDER, todayLocalDate)
-            });
-        }
-        const payload = buildReminderPayload({ missingFood, missingWeight });
-        const result = await deliverUserNotification({
-            userId: user.id,
-            channels,
-            inApp: inAppNotifications,
-            push: {
-                payload,
-                skipIfLastSentLocalDate: todayLocalDate,
-                markSentLocalDate: todayLocalDate
-            }
+        const reminderGroups = groupDueReminderTypes({
+            dueWeight,
+            dueFood
         });
 
-        if (result.push.failed > 0 && result.push.message) {
-            console.warn(`Reminder push delivery had ${result.push.failed} failure(s); affected subscriptions remain eligible for retry.`);
-        }
-        if (result.push.skipped && result.push.message?.startsWith('Web push is disabled') && !hasLoggedMissingConfig) {
-            console.warn(`${result.push.message} Native push delivery can still run when native tokens are registered.`);
-            hasLoggedMissingConfig = true;
+        for (const reminderTypes of reminderGroups) {
+            const includesWeight = reminderTypes.includes(InAppNotificationType.LOG_WEIGHT_REMINDER);
+            const includesFood = reminderTypes.includes(InAppNotificationType.LOG_FOOD_REMINDER);
+            const inAppNotifications: InAppNotificationDeliveryRequest[] = reminderTypes.map((type) => ({
+                type,
+                localDate: todayLocalDate,
+                dedupeKey: buildReminderInAppDedupeKey(type, todayLocalDate)
+            }));
+            const result = await deliverUserNotification({
+                userId: user.id,
+                channels,
+                inApp: inAppNotifications,
+                push: {
+                    payload: buildReminderPayload({
+                        missingFood: includesFood,
+                        missingWeight: includesWeight
+                    }),
+                    reminderTypes,
+                    skipIfLastSentLocalDate: todayLocalDate,
+                    markSentLocalDate: todayLocalDate
+                }
+            });
+
+            if (result.push.failed > 0 && result.push.message) {
+                console.warn(`Reminder push delivery had ${result.push.failed} failure(s); affected subscriptions remain eligible for retry.`);
+            }
+            if (result.push.skipped && result.push.message?.startsWith('Web push is disabled') && !hasLoggedMissingConfig) {
+                console.warn(`${result.push.message} Native push delivery can still run when native tokens are registered.`);
+                hasLoggedMissingConfig = true;
+            }
         }
     }
 };
 
 const runReminderCheck = async (): Promise<void> => {
-    const reminderHour = resolveReminderHour();
     const now = new Date();
 
     await materializeActiveFoodTrackingPauses(now);
     await resolveInactiveInAppReminders(now);
-    await createAndSendScheduledReminders(reminderHour, now);
+    await createAndSendScheduledReminders(now);
 };
 
 /**
@@ -239,7 +226,7 @@ export const startReminderScheduler = (): void => {
     emitDiagnosticEvent(observabilityConfig, 'background_job.scheduled', {
         job: 'reminder_scheduler',
         interval_minutes: intervalMinutes,
-        local_send_hour: resolveReminderHour()
+        schedule_source: 'account_local_wall_clock'
     });
 
     void runReminderCheckSafely();

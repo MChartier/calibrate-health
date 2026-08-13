@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 
 export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const POSTGRES_UNDEFINED_TABLE_CODE = '42P01';
+const POSTGRES_UNDEFINED_COLUMN_CODE = '42703';
 
 /**
  * Lightweight Postgres-backed session store to avoid in-memory session loss
@@ -61,10 +62,10 @@ export class PostgresSessionStore extends session.Store {
 
     try {
       await this.pool.query(
-        `INSERT INTO session_store (sid, sess, expire, user_id)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO session_store (sid, sess, expire, user_id, last_used_at)
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
          ON CONFLICT (sid)
-         DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire, user_id = EXCLUDED.user_id`,
+         DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire, user_id = EXCLUDED.user_id, last_used_at = CURRENT_TIMESTAMP`,
         [sid, sessionData, expire, userId]
       );
       callback?.();
@@ -88,7 +89,7 @@ export class PostgresSessionStore extends session.Store {
     const userId = this.resolvePassportUserId(sess);
 
     try {
-      await this.pool.query('UPDATE session_store SET expire = $2, sess = $3, user_id = $4 WHERE sid = $1', [
+      await this.pool.query('UPDATE session_store SET expire = $2, sess = $3, user_id = $4, last_used_at = CURRENT_TIMESTAMP WHERE sid = $1', [
         sid,
         expire,
         sessionData,
@@ -127,9 +128,9 @@ export class PostgresSessionStore extends session.Store {
    */
   private async assertSessionStoreSchema(): Promise<void> {
     try {
-      await this.pool.query('SELECT 1 FROM session_store LIMIT 1');
+      await this.pool.query('SELECT public_id, created_at, last_used_at FROM session_store LIMIT 1');
     } catch (error) {
-      if (this.isUndefinedTableError(error)) {
+      if (this.isMissingSessionSchemaError(error)) {
         throw new Error(
           'Session store table is missing. Apply database migrations (npm run db:migrate) and restart the server.'
         );
@@ -142,10 +143,10 @@ export class PostgresSessionStore extends session.Store {
   /**
    * Detect the Postgres "undefined_table" error across pg driver versions.
    */
-  private isUndefinedTableError(error: unknown): boolean {
+  private isMissingSessionSchemaError(error: unknown): boolean {
     if (!error || typeof error !== 'object') return false;
 
     const code = (error as { code?: unknown }).code;
-    return code === POSTGRES_UNDEFINED_TABLE_CODE;
+    return code === POSTGRES_UNDEFINED_TABLE_CODE || code === POSTGRES_UNDEFINED_COLUMN_CODE;
   }
 }

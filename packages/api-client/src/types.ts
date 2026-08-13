@@ -92,6 +92,11 @@ export type UserClientPayload = {
     language: string;
     reminder_log_weight_enabled: boolean;
     reminder_log_food_enabled: boolean;
+    /** Absent only on legacy self-hosts that predate reminder scheduling preferences. */
+    reminder_log_weight_time?: string;
+    reminder_log_food_time?: string;
+    reminder_quiet_hours_start?: string | null;
+    reminder_quiet_hours_end?: string | null;
     haptics_enabled: boolean;
     date_of_birth: string | null;
     sex: Sex | null;
@@ -409,6 +414,15 @@ export type MobileSessionSummary = {
     created_at: string;
     last_used_at: string | null;
     refresh_expires_at: string;
+    current: boolean;
+};
+
+export type AccountSessionSummary = {
+    id: string;
+    kind: 'browser' | 'android_phone' | 'wear_os';
+    device_label: string | null;
+    created_at: string;
+    last_activity_at: string | null;
     current: boolean;
 };
 

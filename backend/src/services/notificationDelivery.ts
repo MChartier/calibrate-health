@@ -29,6 +29,7 @@ export type PushNotificationDeliveryRequest = {
     endpoint?: string;
     skipIfLastSentLocalDate?: Date;
     markSentLocalDate?: Date;
+    reminderTypes?: InAppNotificationType[];
 };
 
 type DeliverUserNotificationRequest = {
@@ -67,6 +68,8 @@ type NormalizedPushSubscription = {
     p256dh: string;
     auth: string;
     last_sent_local_date: Date | null;
+    last_sent_weight_local_date: Date | null;
+    last_sent_food_local_date: Date | null;
 };
 
 type NormalizedNativePushSubscription = {
@@ -74,11 +77,53 @@ type NormalizedNativePushSubscription = {
     provider: NativePushProvider;
     token: string;
     last_sent_local_date: Date | null;
+    last_sent_weight_local_date: Date | null;
+    last_sent_food_local_date: Date | null;
 };
 
 const isSameUtcDate = (left: Date | null | undefined, right: Date): boolean => {
     if (!left) return false;
     return left.getTime() === right.getTime();
+};
+
+const hasSentForRequest = (
+    subscription: Pick<
+        NormalizedPushSubscription,
+        'last_sent_local_date' | 'last_sent_weight_local_date' | 'last_sent_food_local_date'
+    >,
+    reminderTypes: PushNotificationDeliveryRequest['reminderTypes'],
+    localDate: Date
+): boolean => {
+    if (!reminderTypes || reminderTypes.length === 0) {
+        return isSameUtcDate(subscription.last_sent_local_date, localDate);
+    }
+    return reminderTypes.every((reminderType) => {
+        const lastSent = reminderType === InAppNotificationType.LOG_WEIGHT_REMINDER
+            ? subscription.last_sent_weight_local_date
+            : subscription.last_sent_food_local_date;
+        return isSameUtcDate(lastSent, localDate);
+    });
+};
+
+const sentDateUpdateForRequest = (
+    reminderTypes: PushNotificationDeliveryRequest['reminderTypes'],
+    localDate: Date
+): {
+    last_sent_local_date?: Date;
+    last_sent_weight_local_date?: Date;
+    last_sent_food_local_date?: Date;
+} => {
+    if (!reminderTypes || reminderTypes.length === 0) {
+        return { last_sent_local_date: localDate };
+    }
+    return {
+        ...(reminderTypes.includes(InAppNotificationType.LOG_WEIGHT_REMINDER)
+            ? { last_sent_weight_local_date: localDate }
+            : {}),
+        ...(reminderTypes.includes(InAppNotificationType.LOG_FOOD_REMINDER)
+            ? { last_sent_food_local_date: localDate }
+            : {})
+    };
 };
 
 const shouldDeleteSubscription = (error: unknown): boolean => {
@@ -200,7 +245,9 @@ const resolvePushSubscriptions = async (
                 endpoint: true,
                 p256dh: true,
                 auth: true,
-                last_sent_local_date: true
+                last_sent_local_date: true,
+                last_sent_weight_local_date: true,
+                last_sent_food_local_date: true
             }
         });
 
@@ -214,7 +261,9 @@ const resolvePushSubscriptions = async (
             endpoint: true,
             p256dh: true,
             auth: true,
-            last_sent_local_date: true
+            last_sent_local_date: true,
+            last_sent_weight_local_date: true,
+            last_sent_food_local_date: true
         }
     });
 };
@@ -249,7 +298,9 @@ const resolveNativePushSubscriptions = async (
             id: true,
             provider: true,
             token: true,
-            last_sent_local_date: true
+            last_sent_local_date: true,
+            last_sent_weight_local_date: true,
+            last_sent_food_local_date: true
         }
     });
 };
@@ -291,13 +342,23 @@ const sendPushNotifications = async (
     const filteredWebSubscriptions =
         skipIfLastSentLocalDate instanceof Date
             ? deliverableWebSubscriptions.filter(
-                  (subscription) => !isSameUtcDate(subscription.last_sent_local_date, skipIfLastSentLocalDate)
+                  (subscription) =>
+                      !hasSentForRequest(
+                          subscription,
+                          pushRequest.reminderTypes,
+                          skipIfLastSentLocalDate
+                      )
               )
             : deliverableWebSubscriptions;
     const filteredNativeSubscriptions =
         skipIfLastSentLocalDate instanceof Date
             ? nativeSubscriptions.filter(
-                  (subscription) => !isSameUtcDate(subscription.last_sent_local_date, skipIfLastSentLocalDate)
+                  (subscription) =>
+                      !hasSentForRequest(
+                          subscription,
+                          pushRequest.reminderTypes,
+                          skipIfLastSentLocalDate
+                      )
               )
             : nativeSubscriptions;
 
@@ -338,7 +399,7 @@ const sendPushNotifications = async (
             if (pushRequest.markSentLocalDate instanceof Date) {
                 await prisma.pushSubscription.update({
                     where: { id: subscription.id },
-                    data: { last_sent_local_date: pushRequest.markSentLocalDate }
+                    data: sentDateUpdateForRequest(pushRequest.reminderTypes, pushRequest.markSentLocalDate)
                 });
             }
         } catch (error) {
@@ -371,7 +432,7 @@ const sendPushNotifications = async (
             if (pushRequest.markSentLocalDate instanceof Date && nativePushSubscription) {
                 await nativePushSubscription.update({
                     where: { id: subscription.id },
-                    data: { last_sent_local_date: pushRequest.markSentLocalDate }
+                    data: sentDateUpdateForRequest(pushRequest.reminderTypes, pushRequest.markSentLocalDate)
                 });
             }
         } catch (error) {

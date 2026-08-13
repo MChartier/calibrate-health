@@ -103,6 +103,39 @@ paths:
               schema: { $ref: '#/components/schemas/ApiError' }
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/user/preferences:
+    patch:
+      operationId: updateUserPreferences
+      description: Update account display preferences and reminder intent using local wall-clock times interpreted in the current account timezone.
+      parameters:
+        - $ref: '#/components/parameters/ClientOperationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserPreferencesUpdateRequest' }
+      responses:
+        '200':
+          description: Updated account preferences.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/UserClientPayload' }
+        '400':
+          description: Invalid preference, wall-clock time, or incomplete quiet-hours pair.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Client operation id is already in progress or was reused with a different payload.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/goals:
     get:
       operationId: getGoal
@@ -350,6 +383,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MobileRefreshResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/sessions:
+    get:
+      operationId: getAccountSessions
+      description: List privacy-safe active browser, Android phone, and Wear OS sessions owned by the authenticated account.
+      responses:
+        '200':
+          description: Active account sessions with the calling session identified.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessions]
+                properties:
+                  sessions:
+                    type: array
+                    items: { $ref: '#/components/schemas/AccountSessionSummary' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/sessions/{sessionId}:
+    delete:
+      operationId: revokeAccountSession
+      description: Revoke one non-current account session. Unknown and other-account ids are indistinguishable and return revoked false.
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+            pattern: '^(browser|mobile)_[0-9a-fA-F-]{36}$'
+      responses:
+        '200':
+          description: Owner-scoped idempotent revocation result.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, revoked]
+                properties:
+                  ok: { type: boolean, const: true }
+                  revoked: { type: boolean }
+        '400':
+          description: Invalid id or an attempt to revoke the current session; sign out owns current-session revocation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/sessions/revoke-others:
+    post:
+      operationId: revokeOtherAccountSessions
+      description: Atomically revoke every other browser and native session while preserving the calling session.
+      responses:
+        '200':
+          description: Number of sessions revoked across all device kinds.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, revoked]
+                properties:
+                  ok: { type: boolean, const: true }
+                  revoked: { type: integer, minimum: 0 }
         '401':
           $ref: '#/components/responses/Unauthorized'
   /auth/mobile/sessions:
@@ -2729,6 +2826,29 @@ components:
       oneOf:
         - $ref: '#/components/schemas/MobileAuthResponse'
         - $ref: '#/components/schemas/WearMobileAuthResponse'
+    AccountSessionKind:
+      type: string
+      enum: [browser, android_phone, wear_os]
+    AccountSessionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, kind, device_label, created_at, last_activity_at, current]
+      properties:
+        id:
+          type: string
+          pattern: '^(browser|mobile)_[0-9a-fA-F-]{36}$'
+        kind:
+          $ref: '#/components/schemas/AccountSessionKind'
+        device_label:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+        last_activity_at:
+          type: [string, 'null']
+          format: date-time
+        current:
+          type: boolean
     MobileSessionSummary:
       type: object
       required:
@@ -3119,6 +3239,30 @@ components:
           pattern: '^\d+$'
         has_more:
           type: boolean
+    UserPreferencesUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Quiet-hours start and end must be supplied together. Two null values disable quiet hours; equal non-null times are invalid.
+      properties:
+        weight_unit: { type: string, enum: [KG, LB] }
+        height_unit: { type: string, enum: [CM, FT_IN] }
+        language: { type: string }
+        reminder_log_weight_enabled: { type: boolean }
+        reminder_log_food_enabled: { type: boolean }
+        reminder_log_weight_time:
+          type: string
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
+        reminder_log_food_time:
+          type: string
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
+        reminder_quiet_hours_start:
+          type: [string, 'null']
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
+        reminder_quiet_hours_end:
+          type: [string, 'null']
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
+        haptics_enabled: { type: boolean }
     UserClientPayload:
       type: object
       required:
@@ -3131,6 +3275,10 @@ components:
         - language
         - reminder_log_weight_enabled
         - reminder_log_food_enabled
+        - reminder_log_weight_time
+        - reminder_log_food_time
+        - reminder_quiet_hours_start
+        - reminder_quiet_hours_end
         - haptics_enabled
       properties:
         id:
@@ -3155,6 +3303,18 @@ components:
           type: boolean
         reminder_log_food_enabled:
           type: boolean
+        reminder_log_weight_time:
+          type: string
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
+        reminder_log_food_time:
+          type: string
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
+        reminder_quiet_hours_start:
+          type: [string, 'null']
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
+        reminder_quiet_hours_end:
+          type: [string, 'null']
+          pattern: '^(?:[01]\\d|2[0-3]):[0-5]\\d$'
         haptics_enabled:
           type: boolean
         date_of_birth:

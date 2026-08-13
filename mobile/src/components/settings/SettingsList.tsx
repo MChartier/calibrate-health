@@ -11,6 +11,7 @@ type SettingsSectionProps = {
     description?: string;
     children: React.ReactNode;
     style?: ViewStyle;
+    testID?: string;
 };
 
 type SettingsRowProps = {
@@ -20,14 +21,25 @@ type SettingsRowProps = {
     value?: string;
     danger?: boolean;
     showDivider?: boolean;
+    testID?: string;
     onPress: () => void;
 };
 
-export const SettingsSection: React.FC<SettingsSectionProps> = ({ title, description, children, style }) => {
+type SettingsStatusRowProps = Omit<SettingsRowProps, 'danger' | 'onPress'> & {
+    tone?: 'success' | 'warning';
+};
+
+export const SettingsSection: React.FC<SettingsSectionProps> = ({
+    title,
+    description,
+    children,
+    style,
+    testID
+}) => {
     const { colors } = useAppTheme();
 
     return (
-        <View style={[styles.section, style]}>
+        <View testID={testID} style={[styles.section, style]}>
             <CardHeader
                 title={title}
                 metadata={description}
@@ -49,6 +61,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
     value,
     danger = false,
     showDivider = true,
+    testID,
     onPress
 }) => {
     const theme = useAppTheme();
@@ -59,6 +72,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
 
     return (
         <Pressable
+            testID={testID}
             accessibilityRole="button"
             accessibilityLabel={value ? `${label}, ${value}` : label}
             onPress={onPress}
@@ -91,6 +105,40 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
             {value && <AppText variant="muted" style={styles.rowValue}>{value}</AppText>}
             <Ionicons name="chevron-forward" size={18} color={danger ? colors.danger : colors.onSurfaceVariant} />
         </Pressable>
+    );
+};
+
+export const SettingsStatusRow: React.FC<SettingsStatusRowProps> = ({
+    icon,
+    label,
+    supportingText,
+    value,
+    showDivider = true,
+    testID,
+    tone = 'success'
+}) => {
+    const { colors } = useAppTheme();
+    const iconBackground = tone === 'success' ? colors.successContainer : colors.warningContainer;
+    const iconColor = tone === 'success' ? colors.success : colors.warning;
+    return (
+        <View
+            testID={testID}
+            accessible
+            accessibilityLabel={[label, value, supportingText].filter(Boolean).join(', ')}
+            style={[
+                styles.row,
+                showDivider && { borderBottomColor: colors.outlineVariant, borderBottomWidth: StyleSheet.hairlineWidth }
+            ]}
+        >
+            <View style={[styles.iconContainer, { backgroundColor: iconBackground }]}>
+                <Ionicons name={icon} size={20} color={iconColor} />
+            </View>
+            <View style={styles.rowText}>
+                <AppText variant="body" style={styles.rowLabel}>{label}</AppText>
+                {supportingText && <AppText variant="caption">{supportingText}</AppText>}
+            </View>
+            {value && <AppText variant="muted" style={styles.rowValue}>{value}</AppText>}
+        </View>
     );
 };
 
