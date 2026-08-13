@@ -344,10 +344,11 @@ jobs:
       - name: Share Android debug APK with emulator E2E
         uses: actions/upload-artifact@v4
         with:
-          name: android-debug-apk-${{ github.run_id }}-${{ github.run_attempt }}
+          name: android-debug-apk-${{ github.event.pull_request.head.sha }}
           path: mobile/android/app/build/outputs/apk/debug
           if-no-files-found: error
           retention-days: 1
+          overwrite: true
 
   wear-build:
     name: Wear Build and JVM Tests
@@ -508,7 +509,7 @@ jobs:
       - name: Download reviewed Android debug APK
         uses: actions/download-artifact@v4
         with:
-          name: android-debug-apk-${{ github.run_id }}-${{ github.run_attempt }}
+          name: android-debug-apk-${{ github.event.pull_request.head.sha }}
           path: .ci-artifacts/android-debug
 
       - name: Run Android online, offline, process-death, and replay E2E
