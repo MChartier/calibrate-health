@@ -168,6 +168,7 @@ describe('WeightEntrySheet', () => {
     it('allows a new weigh-in equal to the previous day but disables an unchanged same-day edit', async () => {
         const newEntry = renderSheet();
         await waitFor(() => expect(newEntry.getByLabelText('Weight in pounds')).toHaveProp('value', '170'));
+        expect(AccessibilityInfo.isScreenReaderEnabled).not.toHaveBeenCalled();
         expect(newEntry.getByRole('button', { name: 'Log weight' }).props.accessibilityState.disabled).toBe(false);
         newEntry.unmount();
 
