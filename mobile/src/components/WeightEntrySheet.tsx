@@ -6,7 +6,6 @@ import {
     Platform,
     Pressable,
     StyleSheet,
-    TextInput,
     View
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -83,7 +82,6 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     const queryClient = useQueryClient();
     const reduceMotion = useReducedMotionPreference();
     const isOnline = useOnlineStatus();
-    const inputRef = useRef<TextInput>(null);
     const resultHeadingRef = useRef<View>(null);
     const [phase, setPhase] = useState<SheetPhase>('loading');
     const [pendingAction, setPendingAction] = useState<'save' | 'delete'>('save');
@@ -198,20 +196,6 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         setWeight(prefillMetric ? formatWeightInput(prefillMetric.weight) : '');
         setPhase('editing');
     }, [isOnline, metricsQuery.data, metricsQuery.isError, metricsQuery.isLoading, phase, prefillMetric, visible]);
-
-    useEffect(() => {
-        if (!visible || phase !== 'editing' || metricsQuery.isLoading) return;
-        let active = true;
-        let focusTimer: ReturnType<typeof setTimeout> | undefined;
-        void AccessibilityInfo.isScreenReaderEnabled().then((screenReaderEnabled) => {
-            if (!active || screenReaderEnabled) return;
-            focusTimer = setTimeout(() => inputRef.current?.focus(), reduceMotion ? 0 : 240);
-        });
-        return () => {
-            active = false;
-            if (focusTimer) clearTimeout(focusTimer);
-        };
-    }, [metricsQuery.isLoading, phase, reduceMotion, visible]);
 
     useEffect(() => {
         if (phase !== 'synced-result' && phase !== 'queued-result') return;
@@ -441,7 +425,6 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                     </AppText>
                 )}
                 <WeightValueInput
-                    inputRef={inputRef}
                     value={weight}
                     unit={user?.weight_unit}
                     step={WEIGHT_INPUT_INCREMENT}
