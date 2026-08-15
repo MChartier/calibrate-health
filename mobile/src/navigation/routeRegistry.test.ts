@@ -6,6 +6,7 @@ import {
   getRouteByPath,
   getRouteFallback,
   getRouteParent,
+  isRouteActive,
   type RouteId,
 } from './routeRegistry';
 
@@ -99,5 +100,11 @@ describe('route registry', () => {
       isAlias: true,
     });
     expect(getRouteByPath('/not-registered')).toBeNull();
+  });
+  it('recognizes the active route without treating another stack entry as active', () => {
+    expect(isRouteActive('/today', 'today')).toBe(true);
+    expect(isRouteActive('/log', 'today')).toBe(true);
+    expect(isRouteActive('/progress', 'today')).toBe(false);
+    expect(isRouteActive('/missing', 'today')).toBe(false);
   });
 });

@@ -37,6 +37,7 @@ import {
     canonicalPathForRoute,
     getRouteByPath,
     getRouteFallback,
+    isRouteActive,
     type RouteId
 } from '../../src/navigation/routeRegistry';
 import { getRouteBackLabel, hasBrowserHistorySinceMount } from '../../src/navigation/routePresentation';
@@ -342,6 +343,7 @@ export default function TabsLayout() {
                                         colors={theme.colors}
                                         styles={styles}
                                         desktop={usesNavigationRail}
+                                        isTodayRoute={isRouteActive(pathname, 'today')}
                                     />
                                 );
                             }
@@ -423,7 +425,8 @@ const TabHeader: React.FC<{
     colors: AppThemeColors;
     styles: TabStyles;
     desktop: boolean;
-}> = ({ topInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop }) => (
+    isTodayRoute: boolean;
+}> = ({ topInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop, isTodayRoute }) => (
     <View role="banner" style={[styles.headerRoot, { paddingTop: topInset }]}>
         <View
             style={[
@@ -445,7 +448,7 @@ const TabHeader: React.FC<{
                         <Ionicons name="chevron-back" size={24} color={colors.text} />
                     </NavigationPressable>
                 ) : (
-                    <HeaderBrand styles={styles} />
+                    <HeaderBrand styles={styles} isTodayRoute={isTodayRoute} />
                 )}
                 <AppText
                     accessibilityRole="header"
@@ -470,14 +473,17 @@ const TabHeader: React.FC<{
     </View>
 );
 
-const HeaderBrand: React.FC<{ styles: TabStyles }> = ({ styles }) => (
+const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ styles, isTodayRoute }) => (
     <NavigationPressable
         accessibilityRole="button"
         accessibilityLabel="Go to Today"
         accessibilityHint="Opens the Today dashboard"
         focusStyle={styles.navigationFocus}
         hoverStyle={styles.navigationHover}
-        onPress={() => router.push(canonicalPathForRoute('today') as Href)}
+        onPress={() => {
+            if (isTodayRoute) return;
+            router.push(canonicalPathForRoute('today') as Href);
+        }}
         style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
     >
         <CalibrateLogo size={30} />
