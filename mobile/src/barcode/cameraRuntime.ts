@@ -1,5 +1,4 @@
 import { Linking } from 'react-native';
-import { CameraView } from 'expo-camera';
 
 export const cameraPermissionCopy = {
     blockedDescription: 'Camera access is blocked for Calibrate. Enable it from the app permissions screen.',
@@ -12,11 +11,9 @@ export const cameraPermissionCopy = {
 } as const;
 
 export async function isBarcodeCameraAvailable(): Promise<boolean> {
-    try {
-        return await CameraView.isAvailableAsync();
-    } catch {
-        return false;
-    }
+    // Expo's availability preflight is web-only. Native startup failures are reported by
+    // CameraView.onMountError after permission is granted, so allow the real camera to mount.
+    return true;
 }
 
 export async function openBarcodeCameraSettings(): Promise<boolean> {
