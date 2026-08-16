@@ -43,14 +43,14 @@ including [`GHSA-p6gq-j5cr-w38f`](https://github.com/advisories/GHSA-p6gq-j5cr-w
 and compatible patched releases remain pinned for the production and Prisma dependency edges. API
 contract generation, backend coverage, and the full test suite exercise those overrides.
 
-The root/mobile production audit currently reports 15 high package entries, all transitive effects
+As of 2026-08-15, the root/mobile production audit reports 15 high package entries, all transitive effects
 of two `image-size@1.2.1` findings reached through Metro 0.84.4:
 [`GHSA-w3rx-r6r6-pgpr`](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr) and
 [`GHSA-5p2g-fcmc-qvqq`](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq). Both advisories affect
 every published `image-size` release through 2.0.2, and neither has a patched release. Metro uses
 this parser only while bundling repository-owned assets; deployed web, Android, Wear, and backend
 artifacts do not execute it. The production audit therefore permits only those two advisory IDs at
-the exact `node_modules/image-size@1.2.1` path through 2026-08-16. The checker fails closed for any
+the exact `node_modules/image-size@1.2.1` path through 2026-08-22. The checker fails closed for any
 other high/critical advisory, version, or path. Container publication honors the active exception because the
 affected Metro parser is absent from the published server image; external production launch remains strict and
 rejects the exception even before expiry.
