@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { useAuth } from '../auth/AuthContext';
+import { SAVED_FOODS_LIBRARY_QUERY_KEY } from '../savedFoods/queryKeys';
 import { getFoodLogAmountText } from '../food/foodLogAmount';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
@@ -53,7 +54,10 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
         onSuccess: async () => {
             const savedName = name.trim();
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            await queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['mobile-my-foods'] }),
+                queryClient.invalidateQueries({ queryKey: SAVED_FOODS_LIBRARY_QUERY_KEY })
+            ]);
             onSaved(savedName);
         }
     });
