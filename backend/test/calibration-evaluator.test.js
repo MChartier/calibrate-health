@@ -66,8 +66,8 @@ test('reports progress before the seven-day insight threshold', () => {
   assert.equal(result.dataQuality.confidentDays, 6);
   assert.equal(result.dataQuality.weightSpanDays, 5);
   assert.equal(result.headline, 'See how your calorie plan is working');
-  assert.match(result.summary, /whether your plan is on track or a small calorie-budget adjustment/);
-  assert.equal(result.nextStep, 'Your first pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.');
+  assert.match(result.summary, /first estimates your average weekly weight change/);
+  assert.equal(result.nextStep, 'Your first weight-trend estimate is available after 7 well-tracked food days and weigh-ins spanning 7 days.');
   assert.deepEqual(result.historyProgress, {
     stage: 'pace_check',
     observedDays: 5,
@@ -82,7 +82,7 @@ test('reports progress before the seven-day insight threshold', () => {
   });
   assert.deepEqual(result.missingCriteria, [
     'Complete at least 7 plausible food-log days with entries across multiple meals.',
-    'Record weights spanning at least 7 days so a pace can be estimated.'
+    'Record weights spanning at least 7 days so average weekly weight change can be estimated.'
   ]);
   assert.doesNotMatch(`${result.headline} ${result.summary} ${result.nextStep}`, /building your calibration history|unlock an initial|track food and weight across/i);
 });
@@ -90,7 +90,7 @@ test('reports progress before the seven-day insight threshold', () => {
 test('provides a descriptive insight after seven days without recommending a change', () => {
   const result = evaluateScenario('early-insight');
   assert.equal(result.status, 'insight');
-  assert.equal(result.headline, 'Your early pace check is tracking as expected');
+  assert.equal(result.headline, 'Your early weight-trend estimate is tracking as expected');
   assert.equal(result.selectedWindowDays, 7);
   assert.equal(result.recommendation, null);
   assert.ok(Math.abs(result.estimates.observedWeeklyWeightChangeKg.midpoint + 0.45) < 0.02);
@@ -159,7 +159,7 @@ test('a post-gap pair cannot establish pace or recommend a change', () => {
   assert.equal(result.dataQuality.weightPoints, 1);
   assert.ok(result.missingCriteria.some((criterion) => criterion.includes('spanning at least 7 days')));
   assert.equal(result.historyProgress.stage, 'pace_check');
-  assert.equal(result.nextStep, 'Your next pace check is available once your weigh-ins span 7 days.');
+  assert.equal(result.nextStep, 'Your next weight-trend estimate is available once your weigh-ins span 7 days.');
   assert.match(result.summary, /a single weigh-in cannot establish a reliable trend/);
 });
 
@@ -234,7 +234,7 @@ test('attributes slow progress to logged intake rather than changing a sound tar
   const result = evaluateScenario('adherence-not-target');
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
-  assert.equal(result.headline, 'Your pace matches your logged intake');
+  assert.equal(result.headline, 'Your weight-change rate matches your logged intake');
   assert.match(result.summary, /logged about 2,200 kcal per day compared with your 1,900 kcal daily budget/);
   assert.match(result.summary, /weight trended down about 0\.19 kg per week/);
   assert.match(result.summary, /calorie budget estimate itself appears sound/);
@@ -274,7 +274,7 @@ test('explains when weight uncertainty prevents a safe budget assessment', () =>
   assert.equal(result.status, 'insight');
   assert.equal(result.recommendation, null);
   assert.equal(result.headline, 'Weight uncertainty limits this insight');
-  assert.match(result.summary, /plausible pace could mean losing 0\.07 to 0\.77 kg per week/);
+  assert.match(result.summary, /plausible weekly rate could mean losing 0\.07 to 0\.77 kg per week/);
   assert.match(result.summary, /not enough certainty to assess the calorie budget safely yet/);
   assert.match(result.nextStep, /same time of day/);
 });
@@ -287,7 +287,7 @@ test('describes a broad pace range that includes both loss and gain', () => {
   }));
   const result = evaluateCalibration(input);
   assert.equal(result.headline, 'Weight uncertainty limits this insight');
-  assert.match(result.summary, /plausible pace could mean losing up to \d+\.\d{2} or gaining up to \d+\.\d{2} kg per week/);
+  assert.match(result.summary, /plausible weekly rate could mean losing up to \d+\.\d{2} or gaining up to \d+\.\d{2} kg per week/);
 });
 
 test('an isolated three-kilogram spike cannot create an unsafe recommendation', () => {
@@ -441,7 +441,7 @@ test('restarts evidence after the latest tracking pause instead of averaging acr
   assert.equal(result.dataQuality.missingDays, 0);
   assert.equal(result.historyProgress.restartedAfterPause, true);
   assert.equal(result.historyProgress.completeFoodDays, 3);
-  assert.match(result.nextStep, /next pace check is available after 7 well-tracked food days/);
+  assert.match(result.nextStep, /next weight-trend estimate is available after 7 well-tracked food days/);
 });
 
 test('acknowledges an active pause that starts after the latest completed evidence day', () => {
@@ -453,7 +453,7 @@ test('acknowledges an active pause that starts after the latest completed eviden
   assert.equal(result.status, 'not_ready');
   assert.equal(result.headline, 'Calibration is paused with food tracking');
   assert.equal(result.summary, 'Paused days are excluded from calibration, so your break is not treated as uncertain intake.');
-  assert.equal(result.nextStep, 'After you resume, your next pace check will be available after 7 well-tracked food days and weigh-ins spanning 7 days.');
+  assert.equal(result.nextStep, 'After you resume, your next weight-trend estimate will be available after 7 well-tracked food days and weigh-ins spanning 7 days.');
   assert.equal(result.dataQuality.observationDays, 0);
   assert.equal(result.historyProgress.restartedAfterPause, true);
   assert.equal(result.recommendation, null);

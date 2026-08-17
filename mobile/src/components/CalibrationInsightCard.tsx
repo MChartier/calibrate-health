@@ -219,10 +219,10 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
         ? `${Math.round(evaluation.estimates.averageIntakeKcal.midpoint).toLocaleString()} kcal`
         : 'Not enough evidence';
     const plannedPaceDescription = plannedDirection === 'stable'
-        ? 'your planned steady pace'
+        ? 'your planned steady weight'
         : `your planned ${plannedPace} ${plannedDirection}`;
     const recommendationReason = actionableRecommendation
-        ? `Your average pace across this ${selectedHistoryDays}-day window is ${observedPaceWithDirection}, compared with ${plannedPaceDescription}. If this pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your pace closer to plan.`
+        ? `Your average weight-change rate across this ${selectedHistoryDays}-day window is ${observedPaceWithDirection}, compared with ${plannedPaceDescription}. If this pattern continues, a slightly ${actionableRecommendation.adjustmentStepKcal < 0 ? 'lower' : 'higher'} daily budget could bring your weekly rate closer to plan.`
         : null;
     const budgetEstimateExplanation = actionableRecommendation
         ? describeCalorieBudgetEstimate(
@@ -246,7 +246,12 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     const reviewApplyButtonTitle = actionableRecommendation
         ? `${applyButtonTitle} ${effectiveDateLabel}`
         : applyButtonTitle;
+    const historyProgress = evaluation.historyProgress;
+    const isBuildingBudgetReview = historyProgress?.stage === 'budget_review';
     let cardDescription = evaluation.headline;
+    if (isBuildingBudgetReview && evaluation.selectedWindowDays) {
+        cardDescription = `${evaluation.selectedWindowDays}-day calibration average`;
+    }
     if (scheduledChange && !actionableRecommendation) {
         cardDescription = scheduledChangeIsOnHold
             ? 'Your saved calorie budget update is on hold'
@@ -258,24 +263,57 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     if (scheduledChangeIsOnHold) {
         scheduledReviewMessage = 'The saved update is preserved. Undo it to review the suggestion again, or replace your calorie plan before targets resume.';
     }
-    const historyProgress = evaluation.historyProgress;
     let historyProgressTitle = '';
-    let foodProgressLabel = '';
-    let weightProgressLabel = '';
-    let weighInProgressLabel = '';
+    let historyProgressDescription = '';
+    let historyTrackingValue = '';
     if (historyProgress) {
         historyProgressTitle = historyProgress.stage === 'pace_check'
-            ? `Progress toward your ${historyProgress.restartedAfterPause ? 'next' : 'first'} pace check`
-            : 'Progress toward a calorie-budget review';
-        foodProgressLabel = historyProgress.completeFoodDays >= historyProgress.requiredCompleteFoodDays
-            ? `${historyProgress.completeFoodDays} logged - ready`
-            : `${historyProgress.completeFoodDays} of ${historyProgress.requiredCompleteFoodDays}`;
-        weightProgressLabel = historyProgress.weightSpanDays >= historyProgress.requiredWeightSpanDays
-            ? `${historyProgress.weightSpanDays} days - ready`
-            : `${historyProgress.weightSpanDays} of ${historyProgress.requiredWeightSpanDays} days`;
-        weighInProgressLabel = historyProgress.weightPoints >= historyProgress.requiredWeightPoints
-            ? `${historyProgress.weightPoints} logged - ready`
-            : `${historyProgress.weightPoints} of ${historyProgress.requiredWeightPoints}`;
+            ? `${historyProgress.restartedAfterPause ? 'Next' : 'First'} available: weight-trend estimate`
+            : 'Coming next: calorie-budget review';
+        historyProgressDescription = historyProgress.stage === 'pace_check'
+            ? 'After these requirements are met, Calibrate can estimate your average weekly weight change. It will not assess your calorie budget yet; that requires at least 14 days of food and weight history.'
+            : 'Once the remaining requirements are met, Calibrate can compare your average logged calories with your weight-change rate. If the evidence supports an adjustment, you can review a suggested calorie budget before deciding whether to apply it.';
+        historyTrackingValue = historyProgress.stage === 'pace_check'
+            ? 'Complete food logs and regular weigh-ins help establish an early trend without overreacting to day-to-day scale changes.'
+            : 'Keep completing each food day across multiple meals and weighing in regularly. Better coverage helps separate a true calorie-budget mismatch from missed food entries and normal scale changes.';
+    }
+    const historyRequirements = historyProgress ? [
+        {
+            key: 'food',
+            label: 'Well-tracked food days',
+            accessibilityLabel: 'Well-tracked food days for calibration',
+            current: historyProgress.completeFoodDays,
+            required: historyProgress.requiredCompleteFoodDays,
+            displayValue: `${historyProgress.completeFoodDays} of ${historyProgress.requiredCompleteFoodDays} days`,
+            accessibilityValue: `${historyProgress.completeFoodDays} of ${historyProgress.requiredCompleteFoodDays} well-tracked food days`
+        },
+        {
+            key: 'weight-history',
+            label: 'Weight history',
+            accessibilityLabel: 'Weight history for calibration',
+            current: historyProgress.weightSpanDays,
+            required: historyProgress.requiredWeightSpanDays,
+            displayValue: `${historyProgress.weightSpanDays} of ${historyProgress.requiredWeightSpanDays} days`,
+            accessibilityValue: `${historyProgress.weightSpanDays} of ${historyProgress.requiredWeightSpanDays} days of weight history`
+        },
+        ...(historyProgress.stage === 'budget_review' ? [{
+            key: 'weigh-ins',
+            label: 'Weigh-ins',
+            accessibilityLabel: 'Weigh-ins for a calorie-budget review',
+            current: historyProgress.weightPoints,
+            required: historyProgress.requiredWeightPoints,
+            displayValue: `${historyProgress.weightPoints} of ${historyProgress.requiredWeightPoints}`,
+            accessibilityValue: `${historyProgress.weightPoints} of ${historyProgress.requiredWeightPoints} weigh-ins`
+        }] : [])
+    ].filter((requirement) => requirement.current < requirement.required) : [];
+    let nonActionableSummary = evaluation.summary;
+    let calibrationRateExplanation: string | null = null;
+    if (isBuildingBudgetReview && observedPaceKg !== null && evaluation.selectedWindowDays) {
+        let rateDescription = `an average change rate of ${observedPace}`;
+        if (observedDirection === 'loss') rateDescription = `an average loss rate of ${observedPace}`;
+        if (observedDirection === 'gain') rateDescription = `an average gain rate of ${observedPace}`;
+        nonActionableSummary = `Over the ${evaluation.selectedWindowDays} days ending ${formatDateOnlyForDisplay(evaluation.asOfDate)}, your smoothed weight trend had ${rateDescription}.`;
+        calibrationRateExplanation = `This weekly rate is fitted across Calibration's full ${evaluation.selectedWindowDays}-day window. The Trend chart's 7-day number is the total change between the visible endpoints, so it is a different measurement and the values are not expected to match.`;
     }
 
     return (
@@ -331,7 +369,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                         ]} testID="calibration-recommendation-panels">
                             <View style={styles.pacePanel}>
                                 <AppText variant="metric">{observedPaceWithDirection}</AppText>
-                                <AppText variant="label">{selectedHistoryDays}-day average pace</AppText>
+                                <AppText variant="label">{selectedHistoryDays}-day average weight-change rate</AppText>
                                 <AppText variant="caption">
                                     Planned: {plannedPace}{plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}
                                 </AppText>
@@ -391,72 +429,44 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                     </>
                 ) : (
                     <>
-                        <AppText variant="muted">{evaluation.summary}</AppText>
+                        <View style={styles.insightSummary}>
+                            {isBuildingBudgetReview && <AppText variant="label">Available now</AppText>}
+                            <AppText variant="muted">{nonActionableSummary}</AppText>
+                            {calibrationRateExplanation && (
+                                <AppText variant="caption">{calibrationRateExplanation}</AppText>
+                            )}
+                        </View>
                         {historyProgress && (
                             <View style={styles.historyProgress}>
                                 <AppText variant="label">{historyProgressTitle}</AppText>
-                                <View style={styles.historyRequirement}>
-                                    <View style={styles.historyProgressHeader}>
-                                        <AppText variant="muted">Well-tracked food days</AppText>
-                                        <AppText variant="caption">{foodProgressLabel}</AppText>
-                                    </View>
-                                    <ProgressBar
-                                        accessible
-                                        accessibilityRole="progressbar"
-                                        accessibilityLabel="Well-tracked food days for calibration"
-                                        accessibilityValue={{
-                                            min: 0,
-                                            max: historyProgress.requiredCompleteFoodDays,
-                                            now: Math.min(historyProgress.completeFoodDays, historyProgress.requiredCompleteFoodDays),
-                                            text: `${historyProgress.completeFoodDays} of ${historyProgress.requiredCompleteFoodDays} well-tracked food days`
-                                        }}
-                                        value={Math.min(1, historyProgress.completeFoodDays / historyProgress.requiredCompleteFoodDays)}
-                                    />
-                                </View>
-                                <View style={styles.historyRequirement}>
-                                    <View style={styles.historyProgressHeader}>
-                                        <AppText variant="muted">Weight history</AppText>
-                                        <AppText variant="caption">{weightProgressLabel}</AppText>
-                                    </View>
-                                    <ProgressBar
-                                        accessible
-                                        accessibilityRole="progressbar"
-                                        accessibilityLabel="Weight history for calibration"
-                                        accessibilityValue={{
-                                            min: 0,
-                                            max: historyProgress.requiredWeightSpanDays,
-                                            now: Math.min(historyProgress.weightSpanDays, historyProgress.requiredWeightSpanDays),
-                                            text: `${historyProgress.weightSpanDays} of ${historyProgress.requiredWeightSpanDays} days of weight history`
-                                        }}
-                                        value={Math.min(1, historyProgress.weightSpanDays / historyProgress.requiredWeightSpanDays)}
-                                    />
-                                </View>
-                                {historyProgress.stage === 'budget_review' && (
-                                    <View style={styles.historyRequirement}>
+                                <AppText variant="muted">{historyProgressDescription}</AppText>
+                                {historyRequirements.map((requirement) => (
+                                    <View key={requirement.key} style={styles.historyRequirement}>
                                         <View style={styles.historyProgressHeader}>
-                                            <AppText variant="muted">Weigh-ins</AppText>
-                                            <AppText variant="caption">{weighInProgressLabel}</AppText>
+                                            <AppText variant="muted">{requirement.label}</AppText>
+                                            <AppText variant="caption">{requirement.displayValue}</AppText>
                                         </View>
                                         <ProgressBar
                                             accessible
                                             accessibilityRole="progressbar"
-                                            accessibilityLabel="Weigh-ins for a calorie-budget review"
+                                            accessibilityLabel={requirement.accessibilityLabel}
                                             accessibilityValue={{
                                                 min: 0,
-                                                max: historyProgress.requiredWeightPoints,
-                                                now: Math.min(historyProgress.weightPoints, historyProgress.requiredWeightPoints),
-                                                text: `${historyProgress.weightPoints} of ${historyProgress.requiredWeightPoints} weigh-ins`
+                                                max: requirement.required,
+                                                now: Math.min(requirement.current, requirement.required),
+                                                text: requirement.accessibilityValue
                                             }}
-                                            value={Math.min(1, historyProgress.weightPoints / historyProgress.requiredWeightPoints)}
+                                            value={Math.min(1, requirement.current / requirement.required)}
                                         />
                                     </View>
-                                )}
+                                ))}
+                                <AppText variant="caption">{historyTrackingValue}</AppText>
                             </View>
                         )}
-                        {evaluation.selectedWindowDays && (
+                        {evaluation.selectedWindowDays && !historyProgress && (
                             <AppText variant="caption">{describeCalibrationEvidence(evaluation)}</AppText>
                         )}
-                        {evaluation.nextStep && (
+                        {evaluation.nextStep && !historyProgress && (
                             <View style={styles.list}>
                                 <AppText variant="label">Next step</AppText>
                                 <AppText variant="muted">{evaluation.nextStep}</AppText>
@@ -504,7 +514,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                                     stackRecommendation && styles.evidenceRowStacked
                                 ]}>
                                     <AppText variant="muted" style={styles.evidenceLabel}>
-                                        Average pace ({selectedHistoryDays} days)
+                                        Average weight-change rate ({selectedHistoryDays} days)
                                     </AppText>
                                     <AppText variant="subtitle" style={styles.evidenceValue}>{observedPaceWithDirection}</AppText>
                                 </View>
@@ -513,7 +523,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
                                     styles.evidenceRow,
                                     stackRecommendation && styles.evidenceRowStacked
                                 ]}>
-                                    <AppText variant="muted" style={styles.evidenceLabel}>Planned pace</AppText>
+                                    <AppText variant="muted" style={styles.evidenceLabel}>Planned weekly rate</AppText>
                                     <AppText variant="subtitle" style={styles.evidenceValue}>
                                         {plannedPace}{plannedDirection === 'stable' ? '' : ` ${plannedDirection}`}
                                     </AppText>
@@ -740,6 +750,9 @@ function createStyles(theme: AppTheme) {
         alignSelf: 'flex-start'
     },
     list: {
+        gap: spacing.xs
+    },
+    insightSummary: {
         gap: spacing.xs
     },
     historyProgress: {

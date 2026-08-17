@@ -151,8 +151,8 @@ function buildingHistoryStatus(): CalibrationStatusResponse {
             ...status.evaluation,
             status: 'not_ready',
             headline: 'See how your calorie plan is working',
-            summary: 'Calibrate compares your logged food with your weight trend to show whether your plan is on track or a small calorie-budget adjustment could improve your pace.',
-            nextStep: 'Your first pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
+            summary: 'Calibrate first estimates your average weekly weight change. With more history, it can compare that rate with your logged calories and assess whether your calorie budget may need an adjustment.',
+            nextStep: 'Your first weight-trend estimate is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
             historyProgress: {
                 stage: 'pace_check',
                 observedDays: 6,
@@ -178,7 +178,7 @@ function buildingHistoryStatus(): CalibrationStatusResponse {
             },
             missingCriteria: [
                 'Complete at least 7 plausible food-log days with entries across multiple meals.',
-                'Record weights spanning at least 7 days so a pace can be estimated.'
+                'Record weights spanning at least 7 days so average weekly weight change can be estimated.'
             ],
             estimates: {
                 averageIntakeKcal: null,
@@ -241,13 +241,14 @@ describe('CalibrationInsightCard', () => {
         expect(mockApi.applyCalibrationRecommendation).not.toHaveBeenCalled();
     });
 
-    it('explains the value of calibration and presents one next step before the first insight', async () => {
+    it('explains the staged value of calibration before the first estimate', async () => {
         mockApi.getCalibrationStatus.mockResolvedValue(buildingHistoryStatus());
         const screen = renderCard();
 
         await waitFor(() => expect(screen.getByText('See how your calorie plan is working')).toBeTruthy());
-        expect(screen.getByText(/whether your plan is on track or a small calorie-budget adjustment/)).toBeTruthy();
-        expect(screen.getByText('Progress toward your first pace check')).toBeTruthy();
+        expect(screen.getByText(/first estimates your average weekly weight change/)).toBeTruthy();
+        expect(screen.getByText('First available: weight-trend estimate')).toBeTruthy();
+        expect(screen.getByText(/It will not assess your calorie budget yet/)).toBeTruthy();
         expect(screen.getByRole('progressbar', { name: 'Well-tracked food days for calibration' }).props.accessibilityValue).toEqual({
             min: 0,
             max: 7,
@@ -260,8 +261,8 @@ describe('CalibrationInsightCard', () => {
             now: 6,
             text: '6 of 7 days of weight history'
         });
-        expect(screen.getByText('Next step')).toBeTruthy();
-        expect(screen.getByText(/first pace check is available after 7 well-tracked food days/)).toBeTruthy();
+        expect(screen.getByText(/help establish an early trend without overreacting/)).toBeTruthy();
+        expect(screen.queryByText('Next step')).toBeNull();
         expect(screen.queryByText('What would improve this insight')).toBeNull();
         expect(screen.queryByText(/^- Track food and weight/)).toBeNull();
     });
@@ -273,8 +274,8 @@ describe('CalibrationInsightCard', () => {
             evaluation: {
                 ...status.evaluation,
                 headline: 'Gathering new history after your break',
-                summary: 'Paused days and history from before your break are excluded, so they are not averaged into your current pace check.',
-                nextStep: 'Your next pace check is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
+                summary: 'Paused days and history from before your break are excluded, so they are not averaged into your current weight-trend estimate.',
+                nextStep: 'Your next weight-trend estimate is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
                 historyProgress: {
                     ...status.evaluation.historyProgress!,
                     observedDays: 1,
@@ -288,22 +289,22 @@ describe('CalibrationInsightCard', () => {
         const screen = renderCard();
 
         await waitFor(() => expect(screen.getByText('Gathering new history after your break')).toBeTruthy());
-        expect(screen.getByText(/not averaged into your current pace check/)).toBeTruthy();
-        expect(screen.getByText('Progress toward your next pace check')).toBeTruthy();
-        expect(screen.getByText('1 of 7')).toBeTruthy();
-        expect(screen.getByText('1 of 7 days')).toBeTruthy();
+        expect(screen.getByText(/not averaged into your current weight-trend estimate/)).toBeTruthy();
+        expect(screen.getByText('Next available: weight-trend estimate')).toBeTruthy();
+        expect(screen.getAllByText('1 of 7 days')).toHaveLength(2);
     });
 
-    it('shows the exact remaining gates before a calorie-budget review', async () => {
+    it('explains the current rate and shows only unfinished budget-review requirements', async () => {
         const status = buildingHistoryStatus();
         mockApi.getCalibrationStatus.mockResolvedValue({
             ...status,
             evaluation: {
                 ...status.evaluation,
+                weightUnit: 'LB',
                 status: 'insight',
-                headline: 'Your latest pace is available',
-                summary: 'Your latest pace can be described, but a budget review needs more history.',
-                nextStep: 'Keep tracking for 1 more day. Calibrate can assess a budget change after at least 14 days of food and weight history.',
+                headline: 'Your 13-day weight-trend estimate is ready',
+                summary: 'Across this 13-day calibration window, weight trended down about 0.98 lb per week.',
+                nextStep: 'Keep tracking for 1 more day before a calorie-budget review.',
                 historyProgress: {
                     stage: 'budget_review',
                     observedDays: 13,
@@ -312,7 +313,7 @@ describe('CalibrationInsightCard', () => {
                     requiredCompleteFoodDays: 7,
                     weightSpanDays: 13,
                     requiredWeightSpanDays: 14,
-                    weightPoints: 2,
+                    weightPoints: 14,
                     requiredWeightPoints: 3,
                     restartedAfterPause: false
                 },
@@ -322,19 +323,34 @@ describe('CalibrationInsightCard', () => {
                     observationDays: 13,
                     completeDays: 13,
                     confidentDays: 13,
-                    weightPoints: 2,
+                    weightPoints: 14,
                     weightSpanDays: 13
+                },
+                estimates: {
+                    ...status.evaluation.estimates,
+                    observedWeeklyWeightChangeKg: { low: -0.5, midpoint: -0.445, high: -0.39 }
                 }
             }
         });
         const screen = renderCard();
 
-        await waitFor(() => expect(screen.getByText('Progress toward a calorie-budget review')).toBeTruthy());
-        expect(screen.getByText('13 logged - ready')).toBeTruthy();
-        expect(screen.getByText('13 of 14 days')).toBeTruthy();
-        expect(screen.getByText('2 of 3')).toBeTruthy();
-        expect(screen.getByRole('progressbar', { name: 'Weigh-ins for a calorie-budget review' })).toBeTruthy();
-        expect(screen.getByText(/Keep tracking for 1 more day/)).toBeTruthy();
+        await waitFor(() => expect(screen.getByText('13-day calibration average')).toBeTruthy());
+        expect(screen.getByText('Available now')).toBeTruthy();
+        expect(screen.getByText(/Over the 13 days ending Jul 31, 2026.*average loss rate of 0.98 lb\/week/)).toBeTruthy();
+        expect(screen.getByText(/weekly rate is fitted across Calibration's full 13-day window/)).toBeTruthy();
+        expect(screen.getByText(/Trend chart's 7-day number is the total change between the visible endpoints/)).toBeTruthy();
+        expect(screen.getByText('Coming next: calorie-budget review')).toBeTruthy();
+        expect(screen.getByText(/you can review a suggested calorie budget before deciding whether to apply it/)).toBeTruthy();
+        expect(screen.queryByRole('progressbar', { name: 'Well-tracked food days for calibration' })).toBeNull();
+        expect(screen.queryByRole('progressbar', { name: 'Weigh-ins for a calorie-budget review' })).toBeNull();
+        expect(screen.getByRole('progressbar', { name: 'Weight history for calibration' }).props.accessibilityValue).toEqual({
+            min: 0,
+            max: 14,
+            now: 13,
+            text: '13 of 14 days of weight history'
+        });
+        expect(screen.getByText(/helps separate a true calorie-budget mismatch/)).toBeTruthy();
+        expect(screen.queryByText(/logged - ready/)).toBeNull();
     });
 
     it('makes the recommendation visual and directly actionable without opening the evidence sheet', async () => {
@@ -343,7 +359,7 @@ describe('CalibrationInsightCard', () => {
 
         expect(screen.getByText('Calibration')).toBeTruthy();
         expect(screen.getByText('0.36 kg/week loss')).toBeTruthy();
-        expect(screen.getByText('28-day average pace')).toBeTruthy();
+        expect(screen.getByText('28-day average weight-change rate')).toBeTruthy();
         expect(screen.getByText('Planned: 0.46 kg/week loss')).toBeTruthy();
         expect(screen.getByText('1,750 kcal')).toBeTruthy();
         expect(screen.getByText('150 kcal less than your current 1,900 kcal budget.')).toBeTruthy();
