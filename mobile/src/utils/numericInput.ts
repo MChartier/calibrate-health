@@ -24,7 +24,8 @@ function getDecimalPlaces(value: string | number): number {
 
 export function formatDecimalInput(value: number, decimalPlaces = MAX_INPUT_DECIMAL_PLACES): string {
     const boundedDecimalPlaces = Math.max(0, Math.min(MAX_INPUT_DECIMAL_PLACES, decimalPlaces));
-    return value.toFixed(boundedDecimalPlaces).replace(/\.?0+$/, '');
+    const fixedValue = value.toFixed(boundedDecimalPlaces);
+    return boundedDecimalPlaces === 0 ? fixedValue : fixedValue.replace(/\.?0+$/, '');
 }
 
 export function adjustDecimalInput(options: {

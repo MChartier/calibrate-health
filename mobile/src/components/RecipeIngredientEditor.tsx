@@ -4,6 +4,7 @@ import type { MyFoodSummary } from '@calibrate/api-client';
 import { getFoodQuantityStep } from '../food/quantityInput';
 import { formatCalories } from '../utils/format';
 import type { RecipeIngredientDraft } from '../utils/myFoodEditing';
+import { adjustDecimalInput, parseDecimalInput } from '../utils/numericInput';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
@@ -42,12 +43,14 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
     function adjustServings(index: number, delta: number) {
         onChange((current) => current.map((ingredient, currentIndex) => {
             if (currentIndex !== index || ingredient.source !== 'MY_FOOD') return ingredient;
+            const minimumServings = Math.min(ingredient.servings, RECIPE_INGREDIENT_INCREMENT);
             return {
                 ...ingredient,
-                servings: Math.max(
-                    RECIPE_INGREDIENT_INCREMENT,
-                    Math.round((ingredient.servings + delta) / RECIPE_INGREDIENT_INCREMENT) * RECIPE_INGREDIENT_INCREMENT
-                )
+                servings: parseDecimalInput(adjustDecimalInput({
+                    value: String(ingredient.servings),
+                    delta,
+                    min: minimumServings
+                }))
             };
         }));
     }
@@ -93,6 +96,7 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
                                     iconSize={16}
                                     accessibilityLabel={`Decrease ${name} servings`}
                                     variant="surface"
+                                    disabled={ingredient.servings <= RECIPE_INGREDIENT_INCREMENT}
                                     onPress={() => adjustServings(index, -RECIPE_INGREDIENT_INCREMENT)}
                                 />
                                 <AppText variant="label">{ingredient.servings}x</AppText>
