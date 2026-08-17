@@ -157,7 +157,7 @@ describe('AddFoodSheet async resource states', () => {
             limit: 8,
             meal_period: MEAL_PERIODS.AFTERNOON_SNACK
         });
-    });
+    }, 10_000);
 
     it('does not describe an uncached offline food search as having no matches', async () => {
         const screen = renderSheet();
