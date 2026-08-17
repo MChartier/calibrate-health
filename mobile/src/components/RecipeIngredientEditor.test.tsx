@@ -121,8 +121,8 @@ describe('RecipeIngredientEditor', () => {
         await waitFor(() => expect(screen.getAllByText('Renamed authoritative oats')).toHaveLength(2));
         expect(screen.getByText('180 kcal')).toBeTruthy();
         fireEvent.press(screen.getByRole('button', { name: 'Increase Renamed authoritative oats servings' }));
-        expect(screen.getByText('1.1x')).toBeTruthy();
-        expect(screen.getByText('198 kcal')).toBeTruthy();
+        expect(screen.getByText('1.25x')).toBeTruthy();
+        expect(screen.getByText('225 kcal')).toBeTruthy();
         fireEvent.press(screen.getByRole('button', { name: 'Remove Renamed authoritative oats' }));
         expect(screen.queryByRole('button', { name: 'Remove Renamed authoritative oats' })).toBeNull();
         expect(screen.getAllByText('Renamed authoritative oats')).toHaveLength(1);

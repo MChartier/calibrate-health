@@ -47,6 +47,21 @@ describe('KeyboardAwareScrollView', () => {
         expect(animationFrame).not.toHaveBeenCalled();
     });
 
+    it('can reveal a focused field immediately for keyboard-first editors', () => {
+        const animationFrame = jest.spyOn(global, 'requestAnimationFrame').mockImplementation(() => 1);
+        const view = render(
+            <KeyboardAwareScrollView revealFocusedInputOnFocus>
+                <AppText>Form content</AppText>
+            </KeyboardAwareScrollView>
+        );
+
+        act(() => {
+            view.UNSAFE_getByType(ScrollView).props.onFocus({ target: {} });
+        });
+
+        expect(animationFrame).toHaveBeenCalledTimes(1);
+    });
+
     it('reserves room for related content while the software keyboard is visible', () => {
         const view = render(
             <KeyboardAwareScrollView

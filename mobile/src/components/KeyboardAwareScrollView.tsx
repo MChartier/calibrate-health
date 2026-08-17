@@ -11,6 +11,7 @@ import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
 
 type KeyboardAwareScrollViewProps = ScrollViewProps & {
     keyboardContextHeight?: number;
+    revealFocusedInputOnFocus?: boolean;
 };
 
 const DEFAULT_KEYBOARD_CONTEXT_HEIGHT = 192; // Keeps validation, actions, or the first search result visible below the active field.
@@ -28,6 +29,7 @@ export const KeyboardAwareScrollView: React.FC<KeyboardAwareScrollViewProps> = (
     keyboardShouldPersistTaps = 'handled',
     onContentSizeChange,
     onFocus,
+    revealFocusedInputOnFocus = false,
     showsVerticalScrollIndicator = false,
     ...props
 }) => {
@@ -109,7 +111,7 @@ export const KeyboardAwareScrollView: React.FC<KeyboardAwareScrollViewProps> = (
             onFocus={(event) => {
                 onFocus?.(event);
                 focusedInputRef.current = event.target;
-                if (shouldRevealKeyboardContext) revealFocusedInput(event.target);
+                if (revealFocusedInputOnFocus || shouldRevealKeyboardContext) revealFocusedInput(event.target);
             }}
             showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         />

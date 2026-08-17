@@ -46,6 +46,7 @@ export type BottomSheetModalProps = {
     isDirty?: boolean;
     confirmDismiss?: () => boolean | Promise<boolean>;
     contentStyle?: StyleProp<ViewStyle>;
+    revealFocusedInputOnFocus?: boolean;
 };
 
 export const ADAPTIVE_DIALOG_BREAKPOINT = 840;
@@ -176,7 +177,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     returnFocusRef,
     isDirty = false,
     confirmDismiss,
-    contentStyle
+    contentStyle,
+    revealFocusedInputOnFocus = false
 }) => {
     const insets = useSafeAreaInsets();
     const theme = useAppTheme();
@@ -389,6 +391,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                             key={contentKey}
                             testID="bottom-sheet-scroll"
                             style={styles.scroll}
+                            revealFocusedInputOnFocus={revealFocusedInputOnFocus}
                             contentContainerStyle={[
                                 styles.content,
                                 {

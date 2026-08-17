@@ -41,7 +41,8 @@ import { triggerHapticFeedback } from '../../../src/utils/haptics';
 import { formatDateOnlyForDisplay } from '../../../src/utils/dates';
 import { MEAL_SELECT_OPTIONS } from '../../../src/utils/meals';
 import { type AppTheme, useAppTheme } from '../../../src/theme';
-import { SERVING_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
+import { getFoodQuantityStep, MINIMUM_FOOD_QUANTITY } from '../../../src/food/quantityInput';
+import { parseDecimalInput } from '../../../src/utils/numericInput';
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
 import { reportClientOperationFailure } from '../../../src/diagnostics/operationDiagnostics';
 
@@ -82,6 +83,7 @@ export default function FoodLogScreen() {
     const foodDayState = useAsyncResourceState(foodDayQuery, () => false);
     const canEditFood = foodDayQuery.data?.status === 'OPEN';
     const editAmountConfig = editEntry ? getFoodLogEditableAmount(editEntry) : null;
+    const editAmountStep = editAmountConfig ? getFoodQuantityStep(editAmountConfig.unitLabel) : 1;
 
     useEffect(() => {
         if (typeof routeParams.date === 'string') dateNavigation.setDate(routeParams.date);
@@ -184,7 +186,7 @@ export default function FoodLogScreen() {
             };
 
             if (editAmountConfig && editAmountDirty && editAmount.trim()) {
-                payload.servings_consumed = editAmountConfig.toServings(Number(editAmount));
+                payload.servings_consumed = editAmountConfig.toServings(parseDecimalInput(editAmount));
             }
             const hasPreciseCalorieBasis = typeof editEntry.calories_per_serving_snapshot === 'number'
                 && Number.isFinite(editEntry.calories_per_serving_snapshot);
@@ -231,7 +233,7 @@ export default function FoodLogScreen() {
 
     function handleEditAmountChange(nextAmount: string) {
         setEditAmount(nextAmount);
-        const parsedAmount = Number(nextAmount);
+        const parsedAmount = parseDecimalInput(nextAmount);
         setEditAmountDirty(
             !nextAmount.trim()
             || !Number.isFinite(parsedAmount)
@@ -265,7 +267,7 @@ export default function FoodLogScreen() {
         }
 
         if (editAmountConfig) {
-            const parsedAmount = Number(editAmount);
+            const parsedAmount = parseDecimalInput(editAmount);
             if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
                 setEditError('Amount must be a positive number.');
                 return;
@@ -398,6 +400,7 @@ export default function FoodLogScreen() {
 
             <BottomSheetModal
                 visible={Boolean(editEntry)}
+                revealFocusedInputOnFocus
                 title="Edit food"
                 description="Update this log entry snapshot."
                 onRequestClose={() => {
@@ -411,9 +414,10 @@ export default function FoodLogScreen() {
                         label="Amount"
                         value={editAmount}
                         onChangeText={handleEditAmountChange}
-                        step={editAmountConfig.unitLabel.toLowerCase() === 'g' ? 1 : SERVING_INPUT_INCREMENT}
-                        min={editAmountConfig.unitLabel.toLowerCase() === 'g' ? 1 : SERVING_INPUT_INCREMENT}
+                        step={editAmountStep}
+                        min={MINIMUM_FOOD_QUANTITY}
                         suffix={editAmountConfig.unitLabel}
+                        helperText={`Use +/- ${editAmountStep} ${editAmountConfig.unitLabel}; type any positive decimal.`}
                     />
                 )}
                 <NumberStepperField

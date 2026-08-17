@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { MyFoodSummary } from '@calibrate/api-client';
-import { SERVING_INPUT_INCREMENT } from '../config/inputPrecision';
+import { getFoodQuantityStep } from '../food/quantityInput';
 import { formatCalories } from '../utils/format';
 import type { RecipeIngredientDraft } from '../utils/myFoodEditing';
 import { type AppTheme, useAppTheme } from '../theme';
@@ -14,6 +14,8 @@ type RecipeIngredientEditorProps = {
     ingredients: RecipeIngredientDraft[];
     onChange: React.Dispatch<React.SetStateAction<RecipeIngredientDraft[]>>;
 };
+
+const RECIPE_INGREDIENT_INCREMENT = getFoodQuantityStep('serving');
 
 /** Owns scalable ingredient selection while preserving the recipe editor's row controls. */
 export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
@@ -43,8 +45,8 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
             return {
                 ...ingredient,
                 servings: Math.max(
-                    SERVING_INPUT_INCREMENT,
-                    Math.round((ingredient.servings + delta) / SERVING_INPUT_INCREMENT) * SERVING_INPUT_INCREMENT
+                    RECIPE_INGREDIENT_INCREMENT,
+                    Math.round((ingredient.servings + delta) / RECIPE_INGREDIENT_INCREMENT) * RECIPE_INGREDIENT_INCREMENT
                 )
             };
         }));
@@ -91,7 +93,7 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
                                     iconSize={16}
                                     accessibilityLabel={`Decrease ${name} servings`}
                                     variant="surface"
-                                    onPress={() => adjustServings(index, -SERVING_INPUT_INCREMENT)}
+                                    onPress={() => adjustServings(index, -RECIPE_INGREDIENT_INCREMENT)}
                                 />
                                 <AppText variant="label">{ingredient.servings}x</AppText>
                                 <AppIconButton
@@ -99,7 +101,7 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
                                     iconSize={16}
                                     accessibilityLabel={`Increase ${name} servings`}
                                     variant="surface"
-                                    onPress={() => adjustServings(index, SERVING_INPUT_INCREMENT)}
+                                    onPress={() => adjustServings(index, RECIPE_INGREDIENT_INCREMENT)}
                                 />
                             </View>
                         )}
