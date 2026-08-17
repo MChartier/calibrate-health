@@ -399,6 +399,10 @@ export function getRouteByPath(pathname: string): RouteMatch | null {
   return null;
 }
 
+export function isRouteActive(pathname: string, routeId: RouteId): boolean {
+  return getRouteByPath(pathname)?.routeId === routeId;
+}
+
 export function getRouteParent(routeId: RouteId): RouteDefinition | null {
   const parent = ROUTE_REGISTRY[routeId].parent;
   return parent ? ROUTE_REGISTRY[parent] : null;

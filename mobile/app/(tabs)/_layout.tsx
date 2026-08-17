@@ -37,6 +37,7 @@ import {
     canonicalPathForRoute,
     getRouteByPath,
     getRouteFallback,
+    isRouteActive,
     type RouteId
 } from '../../src/navigation/routeRegistry';
 import { getRouteBackLabel, hasBrowserHistorySinceMount } from '../../src/navigation/routePresentation';
@@ -96,7 +97,9 @@ type NavigationPressableProps = PressableProps & {
 
 /** Adds explicit keyboard focus and pointer-hover feedback to shell actions. */
 const NavigationPressable: React.FC<NavigationPressableProps> = ({
+    disabled,
     focusStyle,
+    focusable = true,
     hoverStyle,
     onBlur,
     onFocus,
@@ -111,7 +114,8 @@ const NavigationPressable: React.FC<NavigationPressableProps> = ({
     return (
         <Pressable
             {...props}
-            focusable
+            disabled={disabled}
+            focusable={focusable && !disabled}
             onBlur={(event) => {
                 setIsFocused(false);
                 onBlur?.(event);
@@ -130,8 +134,8 @@ const NavigationPressable: React.FC<NavigationPressableProps> = ({
             }}
             style={(state) => [
                 typeof style === 'function' ? style(state) : style,
-                isHovered && hoverStyle,
-                isFocused && focusStyle
+                !disabled && isHovered && hoverStyle,
+                !disabled && isFocused && focusStyle
             ]}
         />
     );
@@ -342,6 +346,7 @@ export default function TabsLayout() {
                                         colors={theme.colors}
                                         styles={styles}
                                         desktop={usesNavigationRail}
+                                        isTodayRoute={isRouteActive(pathname, 'today')}
                                     />
                                 );
                             }
@@ -423,7 +428,8 @@ const TabHeader: React.FC<{
     colors: AppThemeColors;
     styles: TabStyles;
     desktop: boolean;
-}> = ({ topInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop }) => (
+    isTodayRoute: boolean;
+}> = ({ topInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop, isTodayRoute }) => (
     <View role="banner" style={[styles.headerRoot, { paddingTop: topInset }]}>
         <View
             style={[
@@ -445,7 +451,7 @@ const TabHeader: React.FC<{
                         <Ionicons name="chevron-back" size={24} color={colors.text} />
                     </NavigationPressable>
                 ) : (
-                    <HeaderBrand styles={styles} />
+                    <HeaderBrand styles={styles} isTodayRoute={isTodayRoute} />
                 )}
                 <AppText
                     accessibilityRole="header"
@@ -470,11 +476,13 @@ const TabHeader: React.FC<{
     </View>
 );
 
-const HeaderBrand: React.FC<{ styles: TabStyles }> = ({ styles }) => (
+const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ styles, isTodayRoute }) => (
     <NavigationPressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to Today"
-        accessibilityHint="Opens the Today dashboard"
+        accessibilityRole={isTodayRoute ? undefined : 'button'}
+        accessibilityLabel={isTodayRoute ? undefined : 'Go to Today'}
+        accessibilityHint={isTodayRoute ? undefined : 'Opens the Today dashboard'}
+        accessible={!isTodayRoute}
+        disabled={isTodayRoute}
         focusStyle={styles.navigationFocus}
         hoverStyle={styles.navigationHover}
         onPress={() => router.push(canonicalPathForRoute('today') as Href)}
