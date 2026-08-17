@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, Keyboard, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +8,7 @@ import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@ca
 import { AppButton } from './AppButton';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { AppText } from './AppText';
-import { BottomSheetModal } from './BottomSheetModal';
+import { ADAPTIVE_DIALOG_BREAKPOINT, BottomSheetModal } from './BottomSheetModal';
 import { FoodSelectionEditor, type FoodSelectionSubmitRequest } from './FoodSelectionEditor';
 import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 import { OverlaySelect } from './OverlaySelect';
@@ -80,6 +80,7 @@ const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
     { value: 'recipes', label: 'Recipes' }
 ];
 const SEARCH_DEBOUNCE_MS = 350;
+const SEARCH_WORKSPACE_BLUR_DELAY_MS = 150; // Keeps mobile-web results mounted through input blur and the following press.
 const MINIMUM_SEARCH_LENGTH = 2;
 const DEFAULT_RECENT_LIMIT = 8;
 const DEFAULT_PINNED_LIMIT = 8;
@@ -141,6 +142,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const { width: viewportWidth } = useWindowDimensions();
     const isOnline = useOnlineStatus();
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
@@ -156,8 +158,18 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const [requestedRecipeQuery, setRequestedRecipeQuery] = useState('');
     const [selection, setSelection] = useState<FoodLogSelection | null>(null);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
+    const [isSearchFieldFocused, setIsSearchFieldFocused] = useState(false);
+    const searchBlurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const normalizedQuery = query.trim();
     const normalizedRecipeQuery = recipeQuery.trim();
+    const isMobileSearchWorkspace = (Platform.OS !== 'web' || viewportWidth < ADAPTIVE_DIALOG_BREAKPOINT)
+        && (mode === 'search' || mode === 'recipes')
+        && isSearchFieldFocused
+        && selection === null;
+
+    useEffect(() => () => {
+        if (searchBlurTimeoutRef.current) clearTimeout(searchBlurTimeoutRef.current);
+    }, []);
 
     useEffect(() => {
         if (!visible || mode !== 'search' || normalizedQuery.length < MINIMUM_SEARCH_LENGTH) {
@@ -275,6 +287,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         setRequestedRecipeQuery('');
         setSelection(null);
         setIsMealSelectorOpen(false);
+        setIsSearchFieldFocused(false);
         logFood.reset();
     }, [initialMeal, visible]);
 
@@ -404,10 +417,26 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         });
     }
 
+    function focusSearchField() {
+        if (searchBlurTimeoutRef.current) clearTimeout(searchBlurTimeoutRef.current);
+        searchBlurTimeoutRef.current = null;
+        setIsSearchFieldFocused(true);
+    }
+
+    function blurSearchField() {
+        if (searchBlurTimeoutRef.current) clearTimeout(searchBlurTimeoutRef.current);
+        searchBlurTimeoutRef.current = setTimeout(() => {
+            searchBlurTimeoutRef.current = null;
+            setIsSearchFieldFocused(false);
+        }, SEARCH_WORKSPACE_BLUR_DELAY_MS);
+    }
+
     function selectMode(nextMode: AddFoodMode) {
+        Keyboard.dismiss();
         setMode(nextMode);
         setSelection(null);
         setIsMealSelectorOpen(false);
+        setIsSearchFieldFocused(false);
         logFood.reset();
     }
 
@@ -422,7 +451,9 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 disabled={logFood.isPending || item.disabled}
                 disabledReason={item.disabledReason}
                 onPress={() => {
+                    Keyboard.dismiss();
                     logFood.reset();
+                    setIsSearchFieldFocused(false);
                     setSelection(item.selection);
                 }}
             />
@@ -628,20 +659,25 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         if (mode === 'search') {
             return (
                 <View style={styles.flex}>
-                    <View style={styles.modeFieldHeader}>
-                        <AppText variant="label">Search foods</AppText>
-                        {renderSavedFoodsAction()}
-                    </View>
+                    {!isMobileSearchWorkspace && (
+                        <View style={styles.modeFieldHeader}>
+                            <AppText variant="label">Search foods</AppText>
+                            {renderSavedFoodsAction()}
+                        </View>
+                    )}
                     <View style={styles.searchControls}>
                         <TextField
                             label="Search foods"
                             hideLabel
                             value={query}
+                            placeholder="Search food name or brand"
                             onChangeText={(value) => {
                                 setQuery(value);
                                 setSelection(null);
                                 logFood.reset();
                             }}
+                            onFocus={focusSearchField}
+                            onBlur={blurSearchField}
                             returnKeyType="search"
                             editable={!logFood.isPending}
                             onSubmitEditing={() => {
@@ -651,14 +687,16 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                             }}
                             containerStyle={styles.searchField}
                         />
-                        <AppButton
-                            title="Scan"
-                            variant="secondary"
-                            disabled={logFood.isPending}
-                            leftIcon={<Ionicons name="barcode-outline" size={18} color={theme.colors.onSurface} />}
-                            onPress={() => void openBarcodeScanner()}
-                            style={styles.scanButton}
-                        />
+                        {!isMobileSearchWorkspace && (
+                            <AppButton
+                                title="Scan"
+                                variant="secondary"
+                                disabled={logFood.isPending}
+                                leftIcon={<Ionicons name="barcode-outline" size={18} color={theme.colors.onSurface} />}
+                                onPress={() => void openBarcodeScanner()}
+                                style={styles.scanButton}
+                            />
+                        )}
                     </View>
                     {selection ? renderSelectionEditor() : (
                         <FlatList
@@ -683,10 +721,12 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 
         return (
             <View style={styles.flex}>
-                <View style={styles.modeFieldHeader}>
-                    <AppText variant="label">Search recipes</AppText>
-                    {renderSavedFoodsAction()}
-                </View>
+                {!isMobileSearchWorkspace && (
+                    <View style={styles.modeFieldHeader}>
+                        <AppText variant="label">Search recipes</AppText>
+                        {renderSavedFoodsAction()}
+                    </View>
+                )}
                 <TextField
                     label="Search recipes"
                     hideLabel
@@ -696,6 +736,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                         setSelection(null);
                         logFood.reset();
                     }}
+                    onFocus={focusSearchField}
+                    onBlur={blurSearchField}
                     placeholder="e.g. chili, overnight oats"
                     editable={!logFood.isPending}
                 />
@@ -753,8 +795,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         <BottomSheetModal
             visible={visible}
             accessibilityLabel="Add food"
-            title="Add food"
-            description={`${formatDateOnlyForDisplay(date)} | ${formatMealPeriod(meal)}`}
+            title={isMobileSearchWorkspace ? undefined : 'Add food'}
+            description={isMobileSearchWorkspace ? undefined : `${formatDateOnlyForDisplay(date)} | ${formatMealPeriod(meal)}`}
             maxHeight={ADD_FOOD_SHEET_HEIGHT}
             size="wide"
             showCloseButton
@@ -765,21 +807,25 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             onRequestClose={onClose}
             contentStyle={Platform.OS === 'web' ? styles.webSheetContent : undefined}
         >
-            <View style={styles.mealControl}>
-                <AppText variant="label">Meal</AppText>
-                <OverlaySelect
-                    accessibilityLabel="Select meal"
-                    value={meal}
-                    options={MEAL_SELECT_OPTIONS}
-                    isOpen={isMealSelectorOpen}
-                    onToggle={() => setIsMealSelectorOpen((current) => !current)}
-                    onChange={(nextMeal) => {
-                        setMeal(nextMeal);
-                        setIsMealSelectorOpen(false);
-                    }}
-                />
-            </View>
-            <SegmentedControl accessibilityLabel="Add food method" options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
+            {!isMobileSearchWorkspace && (
+                <>
+                    <View style={styles.mealControl}>
+                        <AppText variant="label">Meal</AppText>
+                        <OverlaySelect
+                            accessibilityLabel="Select meal"
+                            value={meal}
+                            options={MEAL_SELECT_OPTIONS}
+                            isOpen={isMealSelectorOpen}
+                            onToggle={() => setIsMealSelectorOpen((current) => !current)}
+                            onChange={(nextMeal) => {
+                                setMeal(nextMeal);
+                                setIsMealSelectorOpen(false);
+                            }}
+                        />
+                    </View>
+                    <SegmentedControl accessibilityLabel="Add food method" options={ADD_FOOD_MODES} value={mode} onChange={selectMode} />
+                </>
+            )}
             <View style={styles.modeContent}>{renderModeContent()}</View>
         </BottomSheetModal>
     );
