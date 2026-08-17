@@ -473,22 +473,29 @@ const TabHeader: React.FC<{
     </View>
 );
 
-const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ styles, isTodayRoute }) => (
-    <NavigationPressable
-        accessibilityRole="button"
-        accessibilityLabel="Go to Today"
-        accessibilityHint="Opens the Today dashboard"
-        focusStyle={styles.navigationFocus}
-        hoverStyle={styles.navigationHover}
-        onPress={() => {
-            if (isTodayRoute) return;
-            router.push(canonicalPathForRoute('today') as Href);
-        }}
-        style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
-    >
-        <CalibrateLogo size={30} />
-    </NavigationPressable>
-);
+const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ styles, isTodayRoute }) => {
+    if (isTodayRoute) {
+        return (
+            <View style={styles.brand}>
+                <CalibrateLogo size={30} />
+            </View>
+        );
+    }
+
+    return (
+        <NavigationPressable
+            accessibilityRole="button"
+            accessibilityLabel="Go to Today"
+            accessibilityHint="Opens the Today dashboard"
+            focusStyle={styles.navigationFocus}
+            hoverStyle={styles.navigationHover}
+            onPress={() => router.push(canonicalPathForRoute('today') as Href)}
+            style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
+        >
+            <CalibrateLogo size={30} />
+        </NavigationPressable>
+    );
+};
 
 const HeaderActions: React.FC<{
     unreadCount: number | null;
