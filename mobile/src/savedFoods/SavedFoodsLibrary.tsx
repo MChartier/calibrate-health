@@ -16,8 +16,14 @@ import { getSafeActionErrorMessage } from '../errors/presentation';
 import { formatCalories } from '../utils/format';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { useClientQueryFailureDiagnostic } from '../diagnostics/operationDiagnostics';
+import {
+    getSavedFoodsLibraryQueryKey,
+    SAVED_FOODS_LIBRARY_QUERY_KEY,
+    SAVED_FOODS_LIBRARY_PAGE_SIZE,
+    type SavedFoodsFilter
+} from './queryKeys';
 
-type SavedFoodsFilter = 'ALL' | MyFoodSummary['type'];
+export { getSavedFoodsLibraryQueryKey, SAVED_FOODS_LIBRARY_QUERY_KEY } from './queryKeys';
 
 type SavedFoodsLibraryProps = {
     onCreateFood: () => void;
@@ -25,20 +31,13 @@ type SavedFoodsLibraryProps = {
     onEdit: (item: MyFoodSummary) => void;
 };
 
-export const SAVED_FOODS_LIBRARY_QUERY_KEY = ['mobile-my-foods-library'] as const;
-
 const SEARCH_DEBOUNCE_MS = 350;
-const LIBRARY_PAGE_SIZE = 24;
 const NARROW_LIBRARY_BREAKPOINT = 520; // Stacks primary actions on small phone viewports.
 const FILTER_OPTIONS: Array<{ value: SavedFoodsFilter; label: string }> = [
     { value: 'ALL', label: 'All' },
     { value: 'FOOD', label: 'Foods' },
     { value: 'RECIPE', label: 'Recipes' }
 ];
-
-export function getSavedFoodsLibraryQueryKey(query: string, filter: SavedFoodsFilter) {
-    return [...SAVED_FOODS_LIBRARY_QUERY_KEY, query, filter] as const;
-}
 
 export function SavedFoodsLibrary({
     onCreateFood,
@@ -68,7 +67,7 @@ export function SavedFoodsLibrary({
             q: debouncedSearch || undefined,
             type: filter === 'ALL' ? undefined : filter,
             cursor: pageParam,
-            limit: LIBRARY_PAGE_SIZE
+            limit: SAVED_FOODS_LIBRARY_PAGE_SIZE
         }),
         initialPageParam: undefined as string | undefined,
         getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined

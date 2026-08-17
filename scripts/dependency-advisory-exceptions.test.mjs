@@ -123,7 +123,7 @@ test('models the full published image-size affected range', () => {
 test('accepts only the reviewed image-size install before its deadline', () => {
   const installs = getLockedImageSizeInstalls(imageSizeLockfile());
   const accepted = evaluateImageSizeAdvisoryException(installs, {
-    now: new Date('2026-08-15T23:59:59.999Z')
+    now: new Date('2026-08-22T23:59:59.999Z')
   });
   const wrongPath = evaluateImageSizeAdvisoryException(
     getLockedImageSizeInstalls(imageSizeLockfile('node_modules/metro/node_modules/image-size')),

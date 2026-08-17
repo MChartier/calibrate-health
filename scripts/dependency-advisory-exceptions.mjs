@@ -20,8 +20,8 @@ export const IMAGE_SIZE_ADVISORY_EXCEPTION = Object.freeze({
   packageName: 'image-size',
   packagePath: 'node_modules/image-size',
   lockedVersion: '1.2.1',
-  reviewedOn: '2026-08-09',
-  expiresAt: '2026-08-16T00:00:00.000Z',
+  reviewedOn: '2026-08-15',
+  expiresAt: '2026-08-23T00:00:00.000Z',
   advisories: Object.freeze([
     Object.freeze({
       id: 'GHSA-w3rx-r6r6-pgpr',

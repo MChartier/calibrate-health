@@ -17,7 +17,7 @@ test('root-render failure remains anonymous and normal diagnostics do not reques
         operation: 'root_render',
         route: 'app_shell',
         platform: 'web',
-        version: '0.33.5',
+        version: '0.33.6',
         outcome: 'failure',
         duration_bucket: 'not_applicable',
         request_id: REQUEST_ID

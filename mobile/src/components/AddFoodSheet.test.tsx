@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-nati
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MEAL_PERIODS } from '@calibrate/shared';
 import { AddFoodSheet } from './AddFoodSheet';
+import { getSavedFoodsLibraryQueryKey } from '../savedFoods/queryKeys';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
@@ -19,6 +20,7 @@ const mockApi = {
     getRecentFoods: jest.fn(),
     searchFood: jest.fn(),
     getMyFoods: jest.fn(),
+    getMyFoodsLibrary: jest.fn(),
     createFoodLog: jest.fn()
 };
 
@@ -69,6 +71,7 @@ describe('AddFoodSheet async resource states', () => {
         mockApi.getRecentFoods.mockResolvedValue({ items: [] });
         mockApi.searchFood.mockResolvedValue({ items: [] });
         mockApi.getMyFoods.mockResolvedValue([]);
+        mockApi.getMyFoodsLibrary.mockResolvedValue({ items: [], next_cursor: null });
         onlineManager.setOnline(false);
     });
 
@@ -101,13 +104,23 @@ describe('AddFoodSheet async resource states', () => {
 
     it('keeps cached recipes usable while labeling them stale offline', async () => {
         const screen = renderSheet((queryClient) => {
-            queryClient.setQueryData(['mobile-my-foods'], [{
-                id: 14,
-                type: 'RECIPE',
-                name: 'Overnight oats',
-                is_pinned: false,
-                calories_per_serving: 320
-            }]);
+            queryClient.setQueryData(getSavedFoodsLibraryQueryKey('', 'RECIPE'), {
+                pages: [{
+                    items: [{
+                        id: 14,
+                        type: 'RECIPE',
+                        name: 'Overnight oats',
+                        is_pinned: false,
+                        serving_size_quantity: 1,
+                        serving_unit_label: 'serving',
+                        calories_per_serving: 320,
+                        recipe_total_calories: 640,
+                        yield_servings: 2
+                    }],
+                    next_cursor: null
+                }],
+                pageParams: [undefined]
+            });
         });
         fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
 
@@ -124,7 +137,37 @@ describe('AddFoodSheet async resource states', () => {
         expect(screen.queryByText('No saved recipes yet. Create one in Saved foods to reuse it here.')).toBeNull();
         expect(screen.queryByText('No recipes match this search.')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
-        expect(mockApi.getMyFoods).not.toHaveBeenCalled();
+        expect(mockApi.getMyFoodsLibrary).not.toHaveBeenCalled();
+    });
+
+    it('searches the recipe library on the server instead of filtering the legacy saved-food cache', async () => {
+        onlineManager.setOnline(true);
+        mockApi.getMyFoodsLibrary.mockImplementation(({ q }: { q?: string }) => Promise.resolve({
+            items: q === 'oats' ? [{
+                id: 14,
+                type: 'RECIPE',
+                name: 'Overnight oats',
+                is_pinned: false,
+                serving_size_quantity: 1,
+                serving_unit_label: 'serving',
+                calories_per_serving: 320,
+                recipe_total_calories: 640,
+                yield_servings: 2
+            }] : [],
+            next_cursor: null
+        }));
+        const screen = renderSheet();
+
+        fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
+        fireEvent.changeText(screen.getByLabelText('Search recipes'), '  oats  ');
+
+        await waitFor(() => expect(mockApi.getMyFoodsLibrary).toHaveBeenCalledWith({
+            q: 'oats',
+            type: 'RECIPE',
+            cursor: undefined,
+            limit: 24
+        }));
+        expect(await screen.findByText('Overnight oats')).toBeTruthy();
     });
 
     it('links to Saved foods from the Add Food sheet', () => {

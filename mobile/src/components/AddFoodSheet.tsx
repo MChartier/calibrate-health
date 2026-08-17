@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@calibrate/api-client';
 import { AppButton } from './AppButton';
@@ -44,6 +44,10 @@ import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { confirmDiscardChanges } from './confirmDiscardChanges';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
+import {
+    getSavedFoodsLibraryQueryKey,
+    SAVED_FOODS_LIBRARY_PAGE_SIZE
+} from '../savedFoods/queryKeys';
 
 export type AddFoodReturnTo = 'today' | 'food-log';
 
@@ -149,9 +153,11 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const [query, setQuery] = useState('');
     const [requestedQuery, setRequestedQuery] = useState('');
     const [recipeQuery, setRecipeQuery] = useState('');
+    const [requestedRecipeQuery, setRequestedRecipeQuery] = useState('');
     const [selection, setSelection] = useState<FoodLogSelection | null>(null);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
     const normalizedQuery = query.trim();
+    const normalizedRecipeQuery = recipeQuery.trim();
 
     useEffect(() => {
         if (!visible || mode !== 'search' || normalizedQuery.length < MINIMUM_SEARCH_LENGTH) {
@@ -161,6 +167,18 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         const timeout = setTimeout(() => setRequestedQuery(normalizedQuery), SEARCH_DEBOUNCE_MS);
         return () => clearTimeout(timeout);
     }, [mode, normalizedQuery, visible]);
+
+    useEffect(() => {
+        if (!visible || mode !== 'recipes' || normalizedRecipeQuery.length === 0) {
+            setRequestedRecipeQuery('');
+            return;
+        }
+        const timeout = setTimeout(
+            () => setRequestedRecipeQuery(normalizedRecipeQuery),
+            SEARCH_DEBOUNCE_MS
+        );
+        return () => clearTimeout(timeout);
+    }, [mode, normalizedRecipeQuery, visible]);
 
     const recentFoodsQuery = useQuery({
         queryKey: ['mobile-recent-foods', requestedQuery || 'browse'],
@@ -178,11 +196,26 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const myFoodsQuery = useQuery({
         queryKey: ['mobile-my-foods'],
         queryFn: () => api.getMyFoods(),
-        enabled: visible && (mode === 'search' || mode === 'recipes')
+        enabled: visible && mode === 'search'
+    });
+    const recipeLibraryQuery = useInfiniteQuery({
+        queryKey: getSavedFoodsLibraryQueryKey(requestedRecipeQuery, 'RECIPE'),
+        queryFn: ({ pageParam }) => api.getMyFoodsLibrary({
+            q: requestedRecipeQuery || undefined,
+            type: 'RECIPE',
+            cursor: pageParam,
+            limit: SAVED_FOODS_LIBRARY_PAGE_SIZE
+        }),
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+        enabled: visible && mode === 'recipes'
     });
     const recentFoodsState = useAsyncResourceState(recentFoodsQuery, (data) => data.items.length === 0);
     const providerSearchState = useAsyncResourceState(providerSearchQuery, (data) => data.items.length === 0);
     const myFoodsState = useAsyncResourceState(myFoodsQuery, (data) => data.length === 0);
+    const recipeLibraryState = useAsyncResourceState(recipeLibraryQuery, (data) =>
+        data.pages.every((page) => page.items.length === 0)
+    );
 
     const createFoodLog = useCallback((payload: FoodLogCreatePayload) => {
         if (foodDayQuery.data?.status !== 'OPEN') {
@@ -239,6 +272,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         setQuery('');
         setRequestedQuery('');
         setRecipeQuery('');
+        setRequestedRecipeQuery('');
         setSelection(null);
         setIsMealSelectorOpen(false);
         logFood.reset();
@@ -320,10 +354,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         savedFoods
     ]);
 
-    const recipes = savedFoods.filter((item) => item.type === 'RECIPE');
-    const normalizedRecipeQuery = recipeQuery.trim().toLocaleLowerCase();
+    const recipes = recipeLibraryQuery.data?.pages.flatMap((page) => page.items) ?? [];
     const recipeRows: FoodBrowseRow[] = recipes
-        .filter((item) => !normalizedRecipeQuery || item.name.toLocaleLowerCase().includes(normalizedRecipeQuery))
         .map((item) => ({
             kind: 'selection',
             key: `recipe:${item.id}`,
@@ -331,6 +363,10 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             subtitle: describeMyFood(item),
             selection: createMyFoodSelection(item)
         }));
+    const isWaitingForRecipeSearch = normalizedRecipeQuery !== requestedRecipeQuery;
+    const displayedRecipeState: AsyncResourceState = isWaitingForRecipeSearch
+        ? { kind: ASYNC_RESOURCE_STATES.LOADING, error: null }
+        : recipeLibraryState;
     const activeAttribution = getProviderAttribution(providerData?.provider, providerData?.attribution);
     const isWaitingForSearch = normalizedQuery.length >= MINIMUM_SEARCH_LENGTH && requestedQuery !== normalizedQuery;
     const isSearchLoading = isWaitingForSearch
@@ -665,16 +701,22 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 />
                 {selection ? renderSelectionEditor() : (
                     <AsyncStateBoundary
-                        state={myFoodsState}
+                        state={displayedRecipeState}
                         resourceLabel="saved recipes"
-                        loading={<AppText style={styles.emptyMessage} variant="muted">Loading recipes...</AppText>}
-                        empty={(
+                        loading={(
                             <AppText style={styles.emptyMessage} variant="muted">
-                                No saved recipes yet. Create one in Saved foods to reuse it here.
+                                {normalizedRecipeQuery ? 'Searching recipes...' : 'Loading recipes...'}
                             </AppText>
                         )}
-                        onRetry={isOnline ? () => myFoodsQuery.refetch() : undefined}
-                        retrying={myFoodsQuery.isFetching}
+                        empty={(
+                            <AppText style={styles.emptyMessage} variant="muted">
+                                {requestedRecipeQuery
+                                    ? 'No recipes match this search.'
+                                    : 'No saved recipes yet. Create one in Saved foods to reuse it here.'}
+                            </AppText>
+                        )}
+                        onRetry={isOnline ? () => recipeLibraryQuery.refetch() : undefined}
+                        retrying={recipeLibraryQuery.isFetching}
                     >
                         <FlatList
                             data={recipeRows}
@@ -685,6 +727,16 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                                     No recipes match this search.
                                 </AppText>
                             )}
+                            ListFooterComponent={recipeLibraryQuery.hasNextPage ? (
+                                <AppButton
+                                    title="Load more recipes"
+                                    variant="secondary"
+                                    busy={recipeLibraryQuery.isFetchingNextPage}
+                                    busyLabel="Loading more recipes..."
+                                    disabled={!isOnline}
+                                    onPress={() => void recipeLibraryQuery.fetchNextPage()}
+                                />
+                            ) : null}
                             contentContainerStyle={styles.resultsContent}
                             keyboardDismissMode="none"
                             keyboardShouldPersistTaps="always"
