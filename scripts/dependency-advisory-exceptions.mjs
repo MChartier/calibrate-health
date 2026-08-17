@@ -20,8 +20,8 @@ export const IMAGE_SIZE_ADVISORY_EXCEPTION = Object.freeze({
   packageName: 'image-size',
   packagePath: 'node_modules/image-size',
   lockedVersion: '1.2.1',
-  reviewedOn: '2026-08-15',
-  expiresAt: '2026-08-23T00:00:00.000Z',
+  reviewedOn: '2026-08-17',
+  expiresAt: '2026-08-24T00:00:00.000Z',
   advisories: Object.freeze([
     Object.freeze({
       id: 'GHSA-w3rx-r6r6-pgpr',
@@ -50,7 +50,7 @@ export const IMAGE_SIZE_ADVISORY_EXCEPTION = Object.freeze({
     'react-native-worklets': Object.freeze(['node_modules/react-native-worklets'])
   }),
   rationale:
-    'Metro uses image-size only while bundling repository-owned assets; deployed web, Android, Wear, and backend artifacts do not execute these parsers. No patched npm release existed at review time.'
+    'Metro uses image-size only while bundling repository-owned assets; deployed web, Android, Wear, and backend artifacts do not execute these parsers. The npm registry and upstream advisories still list no patched release as of 2026-08-17.'
 });
 
 /** Match every affected range published for GHSA-w5hq-g745-h8pq, including UUID 12 and 13. */
