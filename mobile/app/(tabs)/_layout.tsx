@@ -97,7 +97,9 @@ type NavigationPressableProps = PressableProps & {
 
 /** Adds explicit keyboard focus and pointer-hover feedback to shell actions. */
 const NavigationPressable: React.FC<NavigationPressableProps> = ({
+    disabled,
     focusStyle,
+    focusable = true,
     hoverStyle,
     onBlur,
     onFocus,
@@ -112,7 +114,8 @@ const NavigationPressable: React.FC<NavigationPressableProps> = ({
     return (
         <Pressable
             {...props}
-            focusable
+            disabled={disabled}
+            focusable={focusable && !disabled}
             onBlur={(event) => {
                 setIsFocused(false);
                 onBlur?.(event);
@@ -131,8 +134,8 @@ const NavigationPressable: React.FC<NavigationPressableProps> = ({
             }}
             style={(state) => [
                 typeof style === 'function' ? style(state) : style,
-                isHovered && hoverStyle,
-                isFocused && focusStyle
+                !disabled && isHovered && hoverStyle,
+                !disabled && isFocused && focusStyle
             ]}
         />
     );
@@ -473,29 +476,21 @@ const TabHeader: React.FC<{
     </View>
 );
 
-const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ styles, isTodayRoute }) => {
-    if (isTodayRoute) {
-        return (
-            <View style={styles.brand}>
-                <CalibrateLogo size={30} />
-            </View>
-        );
-    }
-
-    return (
-        <NavigationPressable
-            accessibilityRole="button"
-            accessibilityLabel="Go to Today"
-            accessibilityHint="Opens the Today dashboard"
-            focusStyle={styles.navigationFocus}
-            hoverStyle={styles.navigationHover}
-            onPress={() => router.push(canonicalPathForRoute('today') as Href)}
-            style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
-        >
-            <CalibrateLogo size={30} />
-        </NavigationPressable>
-    );
-};
+const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ styles, isTodayRoute }) => (
+    <NavigationPressable
+        accessibilityRole={isTodayRoute ? undefined : 'button'}
+        accessibilityLabel={isTodayRoute ? undefined : 'Go to Today'}
+        accessibilityHint={isTodayRoute ? undefined : 'Opens the Today dashboard'}
+        accessible={!isTodayRoute}
+        disabled={isTodayRoute}
+        focusStyle={styles.navigationFocus}
+        hoverStyle={styles.navigationHover}
+        onPress={() => router.push(canonicalPathForRoute('today') as Href)}
+        style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
+    >
+        <CalibrateLogo size={30} />
+    </NavigationPressable>
+);
 
 const HeaderActions: React.FC<{
     unreadCount: number | null;
