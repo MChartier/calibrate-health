@@ -14,6 +14,7 @@ import {
     recordSyncChange
 } from '../services/clientOperations';
 import { parseLocalDateOnly } from '../utils/date';
+import { parseMealPeriod } from '../utils/mealPeriod';
 import { parsePositiveInteger } from '../utils/requestParsing';
 import { parseFoodLogCreateBody, parseFoodLogUpdateBody, parseFoodSearchParams } from './foodUtils';
 import { diagnosticsRegistry, safeErrorType } from '../observability';
@@ -166,9 +167,20 @@ router.get('/recent', async (req, res) => {
         limitRaw !== null
             ? Math.min(Math.max(limitRaw, 1), RECENT_FOOD_MAX_LIMIT)
             : RECENT_FOOD_DEFAULT_LIMIT;
+    const mealPeriodRaw = req.query.meal_period;
+    const mealPeriod = mealPeriodRaw === undefined ? undefined : parseMealPeriod(mealPeriodRaw);
+    if (mealPeriodRaw !== undefined && mealPeriod === null) {
+        return res.status(400).json({ message: 'Invalid meal period' });
+    }
 
     try {
-        const items = await getRecentFoodSuggestions({ userId: user.id, limit, query: q, database: prisma });
+        const items = await getRecentFoodSuggestions({
+            userId: user.id,
+            limit,
+            query: q,
+            mealPeriod: mealPeriod ?? undefined,
+            database: prisma
+        });
         return res.json({ items });
     } catch (err) {
         const errorType = safeErrorType(err);

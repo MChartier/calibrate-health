@@ -1,4 +1,4 @@
-import type { FoodLog, Prisma } from '@prisma/client';
+import type { FoodLog, MealPeriod, Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 const RECENT_FOOD_LOOKBACK_LIMIT = 200;
@@ -9,7 +9,7 @@ export const RECENT_FOOD_MAX_LIMIT = 40;
 export type RecentFoodSuggestion = {
   id: string;
   name: string;
-  meal_period: string;
+  meal_period: MealPeriod;
   calories: number;
   my_food_id: number | null;
   servings_consumed: number | null;
@@ -30,6 +30,13 @@ export type RecentFoodSuggestion = {
 };
 
 type RecentFoodDatabase = Prisma.TransactionClient | typeof prisma;
+
+type RankedRecentFoodSuggestion = {
+  suggestion: RecentFoodSuggestion;
+  recencyIndex: number;
+  selectedMealTimesLogged: number;
+  lastSelectedMealLogAt: Date | null;
+};
 
 /** Build a stable key so repeated logs collapse into one reusable suggestion. */
 export const getRecentFoodKey = (log: FoodLog): string => {
@@ -75,11 +82,12 @@ const buildSuggestion = (log: FoodLog, key: string): RecentFoodSuggestion => ({
   times_logged: 1
 });
 
-/** Return a bounded, deduplicated recent-food list from newest logs. */
+/** Return a bounded, deduplicated recent-food list, biased toward the selected meal when provided. */
 export async function getRecentFoodSuggestions(options: {
   userId: number;
   limit: number;
   query?: string;
+  mealPeriod?: MealPeriod;
   database?: RecentFoodDatabase;
 }): Promise<RecentFoodSuggestion[]> {
   const database = options.database ?? prisma;
@@ -91,17 +99,39 @@ export async function getRecentFoodSuggestions(options: {
     take: RECENT_FOOD_LOOKBACK_LIMIT
   });
 
-  const byKey = new Map<string, RecentFoodSuggestion>();
+  const byKey = new Map<string, RankedRecentFoodSuggestion>();
   for (const log of logs) {
     if (query && !String(log.name ?? '').toLowerCase().includes(query)) continue;
     const key = getRecentFoodKey(log);
     const existing = byKey.get(key);
     if (existing) {
-      existing.times_logged += 1;
+      existing.suggestion.times_logged += 1;
+      if (log.meal_period === options.mealPeriod) {
+        existing.selectedMealTimesLogged += 1;
+        existing.lastSelectedMealLogAt ??= log.created_at;
+      }
       continue;
     }
-    byKey.set(key, buildSuggestion(log, key));
-    if (byKey.size >= limit) break;
+    byKey.set(key, {
+      suggestion: buildSuggestion(log, key),
+      recencyIndex: byKey.size,
+      selectedMealTimesLogged: log.meal_period === options.mealPeriod ? 1 : 0,
+      lastSelectedMealLogAt: log.meal_period === options.mealPeriod ? log.created_at : null
+    });
   }
-  return Array.from(byKey.values());
+
+  const ranked = Array.from(byKey.values());
+  if (options.mealPeriod) {
+    ranked.sort((left, right) => {
+      if (left.selectedMealTimesLogged !== right.selectedMealTimesLogged) {
+        return right.selectedMealTimesLogged - left.selectedMealTimesLogged;
+      }
+      const selectedMealRecency = (right.lastSelectedMealLogAt?.getTime() ?? 0)
+        - (left.lastSelectedMealLogAt?.getTime() ?? 0);
+      if (selectedMealRecency !== 0) return selectedMealRecency;
+      return left.recencyIndex - right.recencyIndex;
+    });
+  }
+
+  return ranked.slice(0, limit).map(({ suggestion }) => suggestion);
 }

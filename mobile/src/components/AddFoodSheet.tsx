@@ -193,10 +193,11 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     }, [mode, normalizedRecipeQuery, visible]);
 
     const recentFoodsQuery = useQuery({
-        queryKey: ['mobile-recent-foods', requestedQuery || 'browse'],
+        queryKey: ['mobile-recent-foods', meal, requestedQuery || 'browse'],
         queryFn: () => api.getRecentFoods({
             q: requestedQuery || undefined,
-            limit: DEFAULT_RECENT_LIMIT
+            limit: DEFAULT_RECENT_LIMIT,
+            meal_period: meal
         }),
         enabled: visible && mode === 'search'
     });
