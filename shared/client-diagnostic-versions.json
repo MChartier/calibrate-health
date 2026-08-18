@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "previous_web_release": "0.33.7",
+  "previous_web_release": "0.33.8",
   "supported_versions": {
     "web": [
-      "0.33.8",
-      "0.33.7"
+      "0.33.9",
+      "0.33.8"
     ],
     "android_phone": [
       "0.2.6",
