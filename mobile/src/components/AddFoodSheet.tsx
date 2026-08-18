@@ -470,6 +470,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             <KeyboardAwareScrollView
                 style={styles.flex}
                 contentContainerStyle={styles.editorContent}
+                revealFocusedInputOnFocus
                 keyboardShouldPersistTaps="handled"
             >
                 {selectionAttribution && renderProviderAttribution(selectionAttribution)}

@@ -7,6 +7,8 @@ import {
     getPreferredFoodMeasureIndex,
     type SearchedFoodItem
 } from './serving';
+import { getFoodQuantityStep } from './quantityInput';
+import { parseDecimalInput } from '../utils/numericInput';
 
 export type FoodLogSelection =
     | {
@@ -276,7 +278,7 @@ export function changeFoodSelectionMeasure(
 
     const currentMeasure = selection.item.measures[Number(draft.measureIndex)] ?? null;
     const nextMeasure = selection.item.measures[Number(nextMeasureIndex)] ?? null;
-    const currentQuantity = Number(draft.quantity);
+    const currentQuantity = parseDecimalInput(draft.quantity);
     if (!currentMeasure || !nextMeasure || !isFinitePositive(currentQuantity)) {
         return { ...draft, measureIndex: nextMeasureIndex };
     }
@@ -302,8 +304,7 @@ export function getFoodSelectionUnit(selection: FoodLogSelection, draft: FoodSel
 }
 
 export function getFoodSelectionStep(selection: FoodLogSelection, draft: FoodSelectionDraft): number {
-    const unit = getFoodSelectionUnit(selection, draft).trim().toLowerCase();
-    return unit === 'g' || unit === 'gram' || unit === 'grams' ? 1 : 0.1;
+    return getFoodQuantityStep(getFoodSelectionUnit(selection, draft));
 }
 
 export function buildFoodSelectionPayload(options: {
@@ -316,7 +317,7 @@ export function buildFoodSelectionPayload(options: {
 
     if (selection.kind === 'provider') {
         const measure = selection.item.measures[Number(draft.measureIndex)] ?? null;
-        const displayQuantity = Number(draft.quantity);
+        const displayQuantity = parseDecimalInput(draft.quantity);
         const measureCount = measure
             ? displayQuantity / getFoodMeasureDisplayAmount(measure).quantity
             : displayQuantity;
@@ -344,7 +345,7 @@ export function buildFoodSelectionPayload(options: {
     }
 
     if (selection.kind === 'my-food') {
-        const servings = Number(draft.quantity);
+        const servings = parseDecimalInput(draft.quantity);
         if (!isFinitePositive(servings)) return { ok: false, message: 'Servings must be a positive number.' };
         return {
             ok: true,
@@ -367,7 +368,7 @@ export function buildFoodSelectionPayload(options: {
     const { recent } = selection;
     if (isManualRecentSelection(selection)) {
         if (!draft.calories.trim()) return { ok: false, message: 'Calories are required.' };
-        const calories = Number(draft.calories);
+        const calories = parseDecimalInput(draft.calories);
         if (!isFiniteNonNegative(calories)) return { ok: false, message: 'Calories must be zero or greater.' };
         return {
             ok: true,
@@ -382,7 +383,7 @@ export function buildFoodSelectionPayload(options: {
         };
     }
 
-    const quantity = Number(draft.quantity);
+    const quantity = parseDecimalInput(draft.quantity);
     if (!isFinitePositive(quantity)) return { ok: false, message: 'Amount must be a positive number.' };
     if (selection.currentMyFood) {
         return {

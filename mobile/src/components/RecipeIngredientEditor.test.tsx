@@ -121,10 +121,49 @@ describe('RecipeIngredientEditor', () => {
         await waitFor(() => expect(screen.getAllByText('Renamed authoritative oats')).toHaveLength(2));
         expect(screen.getByText('180 kcal')).toBeTruthy();
         fireEvent.press(screen.getByRole('button', { name: 'Increase Renamed authoritative oats servings' }));
-        expect(screen.getByText('1.1x')).toBeTruthy();
-        expect(screen.getByText('198 kcal')).toBeTruthy();
+        expect(screen.getByText('1.25x')).toBeTruthy();
+        expect(screen.getByText('225 kcal')).toBeTruthy();
         fireEvent.press(screen.getByRole('button', { name: 'Remove Renamed authoritative oats' }));
         expect(screen.queryByRole('button', { name: 'Remove Renamed authoritative oats' })).toBeNull();
         expect(screen.getAllByText('Renamed authoritative oats')).toHaveLength(1);
+    });
+
+    it('applies serving deltas without snapping precise legacy quantities to a new grid', async () => {
+        const legacyFood = savedFood(45, 'Legacy precise oats', 160);
+        const initial: RecipeIngredientDraft[] = [{
+            key: 'existing-10',
+            source: 'MY_FOOD',
+            myFood: legacyFood,
+            servings: 1.1
+        }];
+        const Harness = () => {
+            const [ingredients, setIngredients] = useState(initial);
+            return <RecipeIngredientEditor enabled ingredients={ingredients} onChange={setIngredients} />;
+        };
+        const screen = renderWithQueryClient(<Harness />);
+
+        fireEvent.press(screen.getByRole('button', { name: 'Increase Legacy precise oats servings' }));
+        expect(screen.getByText('1.35x')).toBeTruthy();
+        fireEvent.press(screen.getByRole('button', { name: 'Decrease Legacy precise oats servings' }));
+        expect(screen.getByText('1.1x')).toBeTruthy();
+    });
+
+    it('never increases a legacy quantity that is below the current decrement step', () => {
+        const tinyFood = savedFood(46, 'Tiny precise amount');
+        const initial: RecipeIngredientDraft[] = [{
+            key: 'existing-11',
+            source: 'MY_FOOD',
+            myFood: tinyFood,
+            servings: 0.125
+        }];
+        const Harness = () => {
+            const [ingredients, setIngredients] = useState(initial);
+            return <RecipeIngredientEditor enabled ingredients={ingredients} onChange={setIngredients} />;
+        };
+        const screen = renderWithQueryClient(<Harness />);
+
+        const decrease = screen.getByRole('button', { name: 'Decrease Tiny precise amount servings' });
+        expect(decrease.props.accessibilityState.disabled).toBe(true);
+        expect(screen.getByText('0.125x')).toBeTruthy();
     });
 });

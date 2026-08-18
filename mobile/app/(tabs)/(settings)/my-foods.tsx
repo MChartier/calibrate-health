@@ -21,7 +21,7 @@ import {
     type RecipeIngredientDraft
 } from '../../../src/utils/myFoodEditing';
 import { spacing, useAppTheme, type AppTheme } from '../../../src/theme';
-import { SERVING_INPUT_INCREMENT } from '../../../src/config/inputPrecision';
+import { getFoodQuantityStep, MINIMUM_FOOD_QUANTITY } from '../../../src/food/quantityInput';
 import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
 import {
     getRecipeNameError,
@@ -299,8 +299,8 @@ export default function MyFoodsScreen() {
                         label="Serving"
                         value={servingQuantity}
                         onChangeText={setServingQuantity}
-                        step={SERVING_INPUT_INCREMENT}
-                        min={SERVING_INPUT_INCREMENT}
+                        step={getFoodQuantityStep(servingUnit)}
+                        min={MINIMUM_FOOD_QUANTITY}
                         containerStyle={styles.field}
                     />
                     <TextField label="Unit" value={servingUnit} onChangeText={setServingUnit} containerStyle={styles.field} />
@@ -377,8 +377,8 @@ export default function MyFoodsScreen() {
                         label="Serving"
                         value={recipeServingQuantity}
                         onChangeText={setRecipeServingQuantity}
-                        step={SERVING_INPUT_INCREMENT}
-                        min={SERVING_INPUT_INCREMENT}
+                        step={getFoodQuantityStep(recipeServingUnit)}
+                        min={MINIMUM_FOOD_QUANTITY}
                         containerStyle={styles.field}
                     />
                     <TextField

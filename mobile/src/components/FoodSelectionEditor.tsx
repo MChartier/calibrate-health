@@ -17,6 +17,7 @@ import {
     isManualRecentSelection,
     type FoodLogSelection
 } from '../food/foodLogSelection';
+import { MINIMUM_FOOD_QUANTITY } from '../food/quantityInput';
 import { formatCalories } from '../utils/format';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 
@@ -68,6 +69,7 @@ export const FoodSelectionEditor: React.FC<FoodSelectionEditorProps> = ({
     const manualCalories = isManualRecentSelection(selection);
     const quantityUnit = getFoodSelectionUnit(selection, draft);
     const isGramUnit = ['g', 'gram', 'grams'].includes(quantityUnit.trim().toLowerCase());
+    const quantityStep = getFoodSelectionStep(selection, draft);
 
     function submit(closeAfterLogging: boolean) {
         if (!result.ok) return;
@@ -126,9 +128,10 @@ export const FoodSelectionEditor: React.FC<FoodSelectionEditorProps> = ({
                     label={isGramUnit ? 'Weight' : 'Amount'}
                     value={draft.quantity}
                     onChangeText={(quantity) => setDraft((current) => ({ ...current, quantity }))}
-                    step={getFoodSelectionStep(selection, draft)}
-                    min={getFoodSelectionStep(selection, draft)}
+                    step={quantityStep}
+                    min={MINIMUM_FOOD_QUANTITY}
                     suffix={quantityUnit}
+                    helperText={`Use +/- ${quantityStep} ${quantityUnit}; type any positive decimal.`}
                     editable={!isSubmitting}
                 />
             )}

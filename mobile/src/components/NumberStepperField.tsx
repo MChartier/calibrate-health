@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
 import { TextField } from './TextField';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
+import { adjustDecimalInput, normalizeDecimalInput, parseDecimalInput } from '../utils/numericInput';
 
 type NumberStepperFieldProps = {
     label: string;
@@ -18,11 +19,6 @@ type NumberStepperFieldProps = {
     editable?: boolean;
     containerStyle?: StyleProp<ViewStyle>;
 };
-
-function formatStepperValue(value: number, step: number): string {
-    const hasFractionalStep = !Number.isInteger(step);
-    return hasFractionalStep ? value.toFixed(1).replace(/\.0$/, '') : String(Math.round(value));
-}
 
 /**
  * Numeric input with native-sized increment buttons for weights, calories, servings, and recipe yields.
@@ -42,14 +38,14 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const parsed = Number(value);
-    const currentValue = Number.isFinite(parsed) ? parsed : 0;
+    const parsedValue = parseDecimalInput(value);
+    const decreaseDisabled = !editable
+        || (Number.isFinite(parsedValue) && typeof min === 'number' && parsedValue - step < min);
+    const increaseDisabled = !editable
+        || (Number.isFinite(parsedValue) && typeof max === 'number' && parsedValue + step > max);
 
     function adjust(delta: number) {
-        let nextValue = currentValue + delta;
-        if (typeof min === 'number') nextValue = Math.max(min, nextValue);
-        if (typeof max === 'number') nextValue = Math.min(max, nextValue);
-        onChangeText(formatStepperValue(nextValue, step));
+        onChangeText(adjustDecimalInput({ value, delta, min, max }));
     }
 
     return (
@@ -61,10 +57,14 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
             <View style={styles.inputRow}>
                 <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Decrease ${label}`}
-                    disabled={!editable}
+                    accessibilityLabel={`Decrease ${label} by ${step}`}
+                    disabled={decreaseDisabled}
                     onPress={() => adjust(-step)}
-                    style={({ pressed }) => [styles.stepperButton, !editable && styles.disabled, pressed && editable && styles.pressed]}
+                    style={({ pressed }) => [
+                        styles.stepperButton,
+                        decreaseDisabled && styles.disabled,
+                        pressed && !decreaseDisabled && styles.pressed
+                    ]}
                 >
                     <Ionicons name="remove" size={18} color={theme.colors.onSurface} />
                 </Pressable>
@@ -72,9 +72,11 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                     label={label}
                     hideLabel
                     value={value}
-                    onChangeText={onChangeText}
+                    onChangeText={(nextValue) => onChangeText(normalizeDecimalInput(nextValue))}
                     placeholder={placeholder}
                     keyboardType="decimal-pad"
+                    returnKeyType={'done'}
+                    selectTextOnFocus
                     containerStyle={styles.field}
                     style={styles.input}
                     accessibilityLabel={label}
@@ -82,10 +84,14 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                 />
                 <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Increase ${label}`}
-                    disabled={!editable}
+                    accessibilityLabel={`Increase ${label} by ${step}`}
+                    disabled={increaseDisabled}
                     onPress={() => adjust(step)}
-                    style={({ pressed }) => [styles.stepperButton, !editable && styles.disabled, pressed && editable && styles.pressed]}
+                    style={({ pressed }) => [
+                        styles.stepperButton,
+                        increaseDisabled && styles.disabled,
+                        pressed && !increaseDisabled && styles.pressed
+                    ]}
                 >
                     <Ionicons name="add" size={18} color={theme.colors.onSurface} />
                 </Pressable>

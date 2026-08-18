@@ -1,9 +1,10 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { MyFoodSummary } from '@calibrate/api-client';
-import { SERVING_INPUT_INCREMENT } from '../config/inputPrecision';
+import { getFoodQuantityStep } from '../food/quantityInput';
 import { formatCalories } from '../utils/format';
 import type { RecipeIngredientDraft } from '../utils/myFoodEditing';
+import { adjustDecimalInput, parseDecimalInput } from '../utils/numericInput';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
@@ -14,6 +15,8 @@ type RecipeIngredientEditorProps = {
     ingredients: RecipeIngredientDraft[];
     onChange: React.Dispatch<React.SetStateAction<RecipeIngredientDraft[]>>;
 };
+
+const RECIPE_INGREDIENT_INCREMENT = getFoodQuantityStep('serving');
 
 /** Owns scalable ingredient selection while preserving the recipe editor's row controls. */
 export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
@@ -40,12 +43,14 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
     function adjustServings(index: number, delta: number) {
         onChange((current) => current.map((ingredient, currentIndex) => {
             if (currentIndex !== index || ingredient.source !== 'MY_FOOD') return ingredient;
+            const minimumServings = Math.min(ingredient.servings, RECIPE_INGREDIENT_INCREMENT);
             return {
                 ...ingredient,
-                servings: Math.max(
-                    SERVING_INPUT_INCREMENT,
-                    Math.round((ingredient.servings + delta) / SERVING_INPUT_INCREMENT) * SERVING_INPUT_INCREMENT
-                )
+                servings: parseDecimalInput(adjustDecimalInput({
+                    value: String(ingredient.servings),
+                    delta,
+                    min: minimumServings
+                }))
             };
         }));
     }
@@ -91,7 +96,8 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
                                     iconSize={16}
                                     accessibilityLabel={`Decrease ${name} servings`}
                                     variant="surface"
-                                    onPress={() => adjustServings(index, -SERVING_INPUT_INCREMENT)}
+                                    disabled={ingredient.servings <= RECIPE_INGREDIENT_INCREMENT}
+                                    onPress={() => adjustServings(index, -RECIPE_INGREDIENT_INCREMENT)}
                                 />
                                 <AppText variant="label">{ingredient.servings}x</AppText>
                                 <AppIconButton
@@ -99,7 +105,7 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
                                     iconSize={16}
                                     accessibilityLabel={`Increase ${name} servings`}
                                     variant="surface"
-                                    onPress={() => adjustServings(index, SERVING_INPUT_INCREMENT)}
+                                    onPress={() => adjustServings(index, RECIPE_INGREDIENT_INCREMENT)}
                                 />
                             </View>
                         )}
