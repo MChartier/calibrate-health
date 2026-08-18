@@ -186,7 +186,7 @@ describe('AddFoodSheet async resource states', () => {
 
         try {
             const screen = renderSheet((queryClient) => {
-                queryClient.setQueryData(['mobile-recent-foods', 'browse'], {
+                queryClient.setQueryData(['mobile-recent-foods', MEAL_PERIODS.BREAKFAST, 'browse'], {
                     items: [createRecentFoodFixture()]
                 });
                 queryClient.setQueryData(['mobile-my-foods'], []);
