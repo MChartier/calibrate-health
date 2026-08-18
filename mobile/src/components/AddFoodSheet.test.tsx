@@ -2,7 +2,8 @@ import React from 'react';
 import { Keyboard, Platform } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MEAL_PERIODS } from '@calibrate/shared';
+import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
+import type { RecentFoodSummary } from '@calibrate/api-client';
 import { AddFoodSheet } from './AddFoodSheet';
 import { getSavedFoodsLibraryQueryKey } from '../savedFoods/queryKeys';
 
@@ -69,6 +70,31 @@ jest.mock('./BottomSheetModal', () => {
     };
 });
 
+function recentFood(name: string, mealPeriod: MealPeriod): RecentFoodSummary {
+    return {
+        id: `recent:${name.toLocaleLowerCase().replaceAll(' ', '-')}`,
+        name,
+        meal_period: mealPeriod,
+        calories: 150,
+        my_food_id: null,
+        servings_consumed: 1,
+        serving_size_quantity_snapshot: 1,
+        serving_unit_label_snapshot: 'serving',
+        calories_per_serving_snapshot: 150,
+        external_source: null,
+        external_id: null,
+        brand_snapshot: null,
+        locale_snapshot: null,
+        barcode_snapshot: null,
+        measure_label_snapshot: null,
+        grams_per_measure_snapshot: null,
+        measure_quantity_snapshot: null,
+        grams_total_snapshot: null,
+        last_logged_at: '2026-08-08T12:00:00.000Z',
+        times_logged: 1
+    };
+}
+
 function renderSheet(seed?: (queryClient: QueryClient) => void) {
     const queryClient = new QueryClient({
         defaultOptions: {
@@ -105,6 +131,34 @@ describe('AddFoodSheet async resource states', () => {
         onlineManager.setOnline(true);
     });
 
+    it('preloads meal-aware recent foods before typing and refreshes them when the meal changes', async () => {
+        onlineManager.setOnline(true);
+        mockApi.getRecentFoods.mockImplementation(({ meal_period }: { meal_period?: MealPeriod }) => Promise.resolve({
+            items: meal_period === MEAL_PERIODS.AFTERNOON_SNACK
+                ? [recentFood('Snack yogurt', MEAL_PERIODS.AFTERNOON_SNACK)]
+                : [recentFood('Breakfast oats', MEAL_PERIODS.BREAKFAST)]
+        }));
+        const screen = renderSheet();
+
+        expect(await screen.findByText('Breakfast oats')).toBeTruthy();
+        expect(mockApi.getRecentFoods).toHaveBeenCalledWith({
+            q: undefined,
+            limit: 8,
+            meal_period: MEAL_PERIODS.BREAKFAST
+        });
+        expect(mockApi.searchFood).not.toHaveBeenCalled();
+
+        fireEvent.press(screen.getByLabelText('Select meal'));
+        fireEvent.press(screen.getByLabelText('Afternoon Snack'));
+
+        expect(await screen.findByText('Snack yogurt')).toBeTruthy();
+        expect(mockApi.getRecentFoods).toHaveBeenLastCalledWith({
+            q: undefined,
+            limit: 8,
+            meal_period: MEAL_PERIODS.AFTERNOON_SNACK
+        });
+    }, 10_000);
+
     it('does not describe an uncached offline food search as having no matches', async () => {
         const screen = renderSheet();
         const searchField = screen.getByLabelText('Search foods');
@@ -132,7 +186,7 @@ describe('AddFoodSheet async resource states', () => {
 
         try {
             const screen = renderSheet((queryClient) => {
-                queryClient.setQueryData(['mobile-recent-foods', 'browse'], {
+                queryClient.setQueryData(['mobile-recent-foods', MEAL_PERIODS.BREAKFAST, 'browse'], {
                     items: [createRecentFoodFixture()]
                 });
                 queryClient.setQueryData(['mobile-my-foods'], []);

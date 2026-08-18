@@ -549,6 +549,86 @@ test('food route: GET /recent returns deduped recent food suggestions', async ()
   assert.equal(res.body.items[0].external_source, 'openFoodFacts');
 });
 
+test('food route: GET /recent prioritizes foods frequently logged for the selected meal', async () => {
+  const rows = [
+    {
+      id: 4,
+      name: 'Dinner favorite',
+      meal_period: 'DINNER',
+      calories: 500,
+      my_food_id: 4,
+      created_at: new Date('2026-08-04T19:00:00Z')
+    },
+    {
+      id: 3,
+      name: 'Oatmeal',
+      meal_period: 'BREAKFAST',
+      calories: 280,
+      my_food_id: 1,
+      created_at: new Date('2026-08-03T08:00:00Z')
+    },
+    {
+      id: 2,
+      name: 'Smoothie',
+      meal_period: 'BREAKFAST',
+      calories: 240,
+      my_food_id: 2,
+      created_at: new Date('2026-08-02T08:00:00Z')
+    },
+    {
+      id: 1,
+      name: 'Oatmeal',
+      meal_period: 'BREAKFAST',
+      calories: 280,
+      my_food_id: 1,
+      created_at: new Date('2026-08-01T08:00:00Z')
+    }
+  ];
+  const prismaStub = {
+    foodLog: {
+      findMany: async () => rows
+    }
+  };
+  const router = loadFoodRouter({
+    prismaStub,
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'get', '/recent');
+  const req = {
+    user: { id: 7 },
+    query: { meal_period: 'BREAKFAST', limit: '2' }
+  };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body.items.map((item) => item.name), ['Oatmeal', 'Smoothie']);
+  assert.equal(res.body.items[0].times_logged, 2);
+});
+
+test('food route: GET /recent rejects an invalid meal period', async () => {
+  const prismaStub = {
+    foodLog: {
+      findMany: async () => {
+        throw new Error('should not be called');
+      }
+    }
+  };
+  const router = loadFoodRouter({
+    prismaStub,
+    foodDataStub: { getFoodDataProvider: () => ({}) }
+  });
+  const handler = getRouteHandler(router, 'get', '/recent');
+  const req = { user: { id: 7 }, query: { meal_period: 'BRUNCH' } };
+  const res = createRes();
+
+  await handler(req, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: 'Invalid meal period' });
+});
+
 test('food route: GET / validates local_date/date query params', async () => {
   const prismaStub = {
     foodLog: {

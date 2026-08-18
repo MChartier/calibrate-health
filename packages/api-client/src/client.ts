@@ -62,6 +62,7 @@ import type {
     NativePushSubscriptionPayload,
     OnboardingCompleteRequest,
     OnboardingCompleteResponse,
+    RecentFoodsQuery,
     RecentFoodsResponse,
     SyncChangesResponse,
     ScheduledCalibrationChange,
@@ -751,10 +752,11 @@ export class CalibrateApiClient {
         return this.request<FoodSearchResponse>(`/api/food/search?${params.toString()}`);
     }
 
-    getRecentFoods(params: { q?: string; limit?: number } = {}): Promise<RecentFoodsResponse> {
+    getRecentFoods(params: RecentFoodsQuery = {}): Promise<RecentFoodsResponse> {
         const query = new URLSearchParams();
         if (params.q?.trim()) query.set('q', params.q.trim());
         if (typeof params.limit === 'number') query.set('limit', String(params.limit));
+        if (params.meal_period) query.set('meal_period', params.meal_period);
         const suffix = query.toString() ? `?${query.toString()}` : '';
         return this.request<RecentFoodsResponse>(`/api/food/recent${suffix}`);
     }

@@ -1043,6 +1043,12 @@ export type RecentFoodsResponse = {
     items: RecentFoodSummary[];
 };
 
+export type RecentFoodsQuery = {
+    q?: string;
+    limit?: number;
+    meal_period?: MealPeriod;
+};
+
 export type MyFoodType = 'FOOD' | 'RECIPE';
 
 export type MyFoodSummary = {
