@@ -130,7 +130,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                 state={trendState}
                 resourceLabel="weight trend"
                 loading={(
-                    <AppCard style={styles.card}>
+                    <AppCard density="compact">
                         <SkeletonBlock width="34%" height={26} />
                         <SkeletonBlock height={PREVIEW_HEIGHT} />
                     </AppCard>
@@ -142,7 +142,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                         accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
                         onPress={onPress}
                         style={styles.pressable}
-                        contentStyle={styles.card}
+                        contentDensity="compact"
                     >
                             <CardHeader
                                 density="compact"
@@ -175,7 +175,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                     accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
                     onPress={onPress}
                     style={styles.pressable}
-                    contentStyle={styles.card}
+                    contentDensity="compact"
                     secondaryAction={estimateIsOutdated ? (
                         <AppButton
                             title="Log weight"
@@ -312,7 +312,6 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     flexSlot: { width: '100%', minHeight: PREVIEW_CARD_MIN_HEIGHT },
     pressable: { width: '100%' },
-    card: { gap: spacing.sm },
     detailsAction: { minHeight: theme.interaction.minimumTouchTarget, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     detailsText: { color: theme.colors.primary },
     preview: {

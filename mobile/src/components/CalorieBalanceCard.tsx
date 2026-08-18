@@ -56,11 +56,12 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     return (
         <AppCard
             {...props}
+            density={compact ? 'compact' : 'comfortable'}
             accessible
             accessibilityLabel={hasTarget
                 ? `Daily balance. ${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`
                 : `Daily balance. ${balanceSummary}. ${formatNumber(totalCalories, 0)} calories logged.`}
-            style={[compact && styles.cardCompact, style]}
+            style={style}
         >
             <View style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}>
                 {progressValue !== null && (
@@ -143,11 +144,6 @@ const CalorieGauge: React.FC<{
 
 function createStyles(colors: AppThemeColors) {
     return StyleSheet.create({
-    cardCompact: {
-        padding: spacing.md,
-        paddingTop: spacing.lg,
-        gap: spacing.sm
-    },
     primaryText: {
         color: colors.primary
     },

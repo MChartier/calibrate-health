@@ -71,7 +71,8 @@ export const FoodLogSummaryCard: React.FC<FoodLogSummaryCardProps> = ({
             accessibilityHint="Opens the detailed food log for this day"
             onPress={onPress}
             style={style}
-            contentStyle={[styles.card, compact && styles.cardCompact]}
+            contentDensity={compact ? 'compact' : 'comfortable'}
+            contentStyle={styles.card}
             secondaryActionPlacement="footer"
             secondaryActionTestID="food-log-card-secondary-region"
             secondaryAction={onAddFood ? (
@@ -145,10 +146,6 @@ function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         card: {
             gap: theme.spacing.sm
-        },
-        cardCompact: {
-            padding: theme.spacing.md,
-            paddingTop: theme.spacing.lg
         },
         logSection: {
             position: 'relative',

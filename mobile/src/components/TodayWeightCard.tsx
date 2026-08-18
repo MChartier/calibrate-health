@@ -47,6 +47,7 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
             accessibilityHint={metric ? 'Opens this weigh-in for editing' : 'Opens the weight entry form'}
             onPress={onPress}
             style={style}
+            contentDensity={compact ? 'compact' : 'comfortable'}
             contentStyle={[styles.card, compact && styles.cardCompact]}
         >
             <CardHeader
@@ -84,8 +85,6 @@ function createStyles(theme: AppTheme) {
             gap: theme.spacing.md
         },
         cardCompact: {
-            padding: theme.spacing.md,
-            paddingTop: theme.spacing.lg,
             gap: theme.spacing.xs
         },
         viewAction: {

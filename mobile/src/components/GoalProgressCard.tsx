@@ -74,7 +74,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
 
     if (!goal) {
         return (
-            <AppCard {...props} style={[styles.card, style]}>
+            <AppCard {...props} density="compact" style={style}>
                 <CardHeader
                     title={title}
                     density="compact"
@@ -212,7 +212,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     }
 
     return (
-        <AppCard {...props} style={[styles.card, style]}>
+        <AppCard {...props} density="compact" style={style}>
             <CardHeader
                 title={title}
                 density="compact"
@@ -259,9 +259,6 @@ const GoalActionButton: React.FC<{ label: string; onPress: () => void; theme: Ap
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-    card: {
-        gap: spacing.sm
-    },
     actionButton: {
         minHeight: 48,
         flexDirection: 'row',
