@@ -166,6 +166,8 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         && (mode === 'search' || mode === 'recipes')
         && isSearchFieldFocused
         && selection === null;
+    const usesEdgeToEdgeSheetContent = Platform.OS === 'web'
+        || (Platform.OS === 'android' && isMobileSearchWorkspace);
 
     useEffect(() => () => {
         if (searchBlurTimeoutRef.current) clearTimeout(searchBlurTimeoutRef.current);
@@ -807,7 +809,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             isDirty={hasUnsavedDraft}
             confirmDismiss={confirmDiscardChanges}
             onRequestClose={onClose}
-            contentStyle={Platform.OS === 'web' ? styles.webSheetContent : undefined}
+            contentStyle={usesEdgeToEdgeSheetContent ? styles.edgeToEdgeSheetContent : undefined}
         >
             {!isMobileSearchWorkspace && (
                 <>
@@ -883,7 +885,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1,
         minHeight: 0
     },
-    webSheetContent: {
+    edgeToEdgeSheetContent: {
+        // The focused Android workspace already ends above the software keyboard.
         paddingBottom: 0
     },
     savedFoodsLink: {
