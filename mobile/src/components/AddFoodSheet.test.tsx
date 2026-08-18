@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { Keyboard, Platform } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MEAL_PERIODS } from '@calibrate/shared';
@@ -23,6 +23,31 @@ const mockApi = {
     getMyFoodsLibrary: jest.fn(),
     createFoodLog: jest.fn()
 };
+
+function createRecentFoodFixture() {
+    return {
+        id: 'recent-1',
+        name: 'Greek yogurt',
+        meal_period: MEAL_PERIODS.BREAKFAST,
+        calories: 150,
+        my_food_id: null,
+        servings_consumed: 1,
+        serving_size_quantity_snapshot: 1,
+        serving_unit_label_snapshot: 'container',
+        calories_per_serving_snapshot: 150,
+        external_source: null,
+        external_id: null,
+        brand_snapshot: null,
+        locale_snapshot: null,
+        barcode_snapshot: null,
+        measure_label_snapshot: null,
+        grams_per_measure_snapshot: null,
+        measure_quantity_snapshot: null,
+        grams_total_snapshot: null,
+        last_logged_at: '2026-08-08T12:00:00.000Z',
+        times_logged: 1
+    };
+}
 
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({
@@ -99,6 +124,37 @@ describe('AddFoodSheet async resource states', () => {
             expect(screen.getByTestId('food-search-results').props.tabIndex).toBe(0);
         } finally {
             replacedPlatform.restore();
+        }
+    });
+
+    it('keeps results visible and actionable while the mobile search field is focused', () => {
+        const dismissKeyboard = jest.spyOn(Keyboard, 'dismiss');
+
+        try {
+            const screen = renderSheet((queryClient) => {
+                queryClient.setQueryData(['mobile-recent-foods', 'browse'], {
+                    items: [createRecentFoodFixture()]
+                });
+                queryClient.setQueryData(['mobile-my-foods'], []);
+            });
+            const searchField = screen.getByLabelText('Search foods');
+
+            fireEvent(searchField, 'focus');
+
+            expect(screen.queryByRole('button', { name: 'Scan' })).toBeNull();
+            expect(screen.queryByRole('button', { name: 'Saved foods' })).toBeNull();
+            expect(screen.queryByLabelText('Select meal')).toBeNull();
+            expect(screen.queryByRole('radio', { name: 'Quick' })).toBeNull();
+            expect(screen.getByTestId('food-search-results')).toBeTruthy();
+
+            fireEvent(searchField, 'blur');
+            expect(screen.getByTestId('food-search-results')).toBeTruthy();
+            fireEvent.press(screen.getByLabelText('Choose amount for Greek yogurt'));
+
+            expect(dismissKeyboard).toHaveBeenCalled();
+            expect(screen.queryByTestId('food-search-results')).toBeNull();
+        } finally {
+            dismissKeyboard.mockRestore();
         }
     });
 
@@ -188,28 +244,7 @@ describe('AddFoodSheet async resource states', () => {
     it('confirms before Saved foods or Scan discards a selected food draft', async () => {
         onlineManager.setOnline(true);
         mockConfirmDiscardChanges.mockResolvedValue(false);
-        const recentFood = {
-            id: 'recent-1',
-            name: 'Greek yogurt',
-            meal_period: MEAL_PERIODS.BREAKFAST,
-            calories: 150,
-            my_food_id: null,
-            servings_consumed: 1,
-            serving_size_quantity_snapshot: 1,
-            serving_unit_label_snapshot: 'container',
-            calories_per_serving_snapshot: 150,
-            external_source: null,
-            external_id: null,
-            brand_snapshot: null,
-            locale_snapshot: null,
-            barcode_snapshot: null,
-            measure_label_snapshot: null,
-            grams_per_measure_snapshot: null,
-            measure_quantity_snapshot: null,
-            grams_total_snapshot: null,
-            last_logged_at: '2026-08-08T12:00:00.000Z',
-            times_logged: 1
-        };
+        const recentFood = createRecentFoodFixture();
         mockApi.getRecentFoods.mockResolvedValue({ items: [recentFood] });
         const screen = renderSheet();
         const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
