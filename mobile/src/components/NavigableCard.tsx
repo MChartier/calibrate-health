@@ -9,7 +9,7 @@ import {
     type ViewStyle
 } from 'react-native';
 import { type AppTheme, useAppTheme } from '../theme';
-import { AppCard } from './AppCard';
+import { AppCard, compactCardContentStyle, type CardDensity } from './AppCard';
 import { useFocusVisible } from './useFocusVisible';
 
 export type NavigableCardProps = Omit<PressableProps, 'children' | 'style' | 'testID'> & {
@@ -18,6 +18,7 @@ export type NavigableCardProps = Omit<PressableProps, 'children' | 'style' | 'te
     secondaryAction?: React.ReactNode;
     style?: StyleProp<ViewStyle>;
     contentStyle?: StyleProp<ViewStyle>;
+    contentDensity?: CardDensity;
     secondaryActionStyle?: StyleProp<ViewStyle>;
     secondaryActionPlacement?: 'trailing' | 'footer';
     selected?: boolean;
@@ -34,6 +35,7 @@ export const NavigableCard: React.FC<NavigableCardProps> = ({
     secondaryAction,
     style,
     contentStyle,
+    contentDensity = 'comfortable',
     secondaryActionStyle,
     secondaryActionPlacement = 'trailing',
     selected = false,
@@ -109,7 +111,14 @@ export const NavigableCard: React.FC<NavigableCardProps> = ({
                     secondaryActionPlacement === 'footer' && styles.primaryActionFooter
                 ]}
             >
-                <View pointerEvents="none" style={[styles.content, contentStyle]}>
+                <View
+                    pointerEvents="none"
+                    style={[
+                        styles.content,
+                        contentDensity === 'compact' && compactCardContentStyle,
+                        contentStyle
+                    ]}
+                >
                     {children}
                     {busy ? <ActivityIndicator color={theme.colors.onSurfaceVariant} /> : null}
                 </View>

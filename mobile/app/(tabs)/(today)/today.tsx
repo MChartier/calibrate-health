@@ -168,14 +168,14 @@ export default function TodayScreen() {
                     {!isPaused && (
                         <>
                             {hasPendingWeightChange ? (
-                                <AppCard>
+                                <AppCard density="compact">
                                     <CardHeader title="Weight change syncing" density="compact" />
                                     <AppText variant="muted">
                                         Calorie target and projection will return after the server rechecks your plan.
                                     </AppText>
                                 </AppCard>
                             ) : !planIsAvailable && (
-                                <AppCard>
+                                <AppCard density="compact">
                                     <CardHeader title={planPresentation.title} density="compact" />
                                     <AppText variant="muted">{planPresentation.message}</AppText>
                                     <AppButton

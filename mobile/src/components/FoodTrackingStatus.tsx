@@ -245,9 +245,9 @@ export const DayStatusCard: React.FC<{
     return (
         <>
             <AppCard
+                density={useCompactOpenLayout ? 'compact' : 'comfortable'}
                 accessibilityLabel={`${title}. ${description}`}
                 style={[
-                    useCompactOpenLayout && styles.cardCompact,
                     useExpandedPauseLayout && styles.cardExpanded,
                     style
                 ]}
@@ -500,11 +500,6 @@ export const ResumeTrackingPrompt: React.FC = () => {
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-        cardCompact: {
-            padding: theme.spacing.md,
-            paddingTop: theme.spacing.lg,
-            gap: theme.spacing.sm
-        },
         cardExpanded: {
             flex: 1,
             alignItems: 'center',

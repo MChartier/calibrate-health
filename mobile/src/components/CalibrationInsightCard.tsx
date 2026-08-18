@@ -56,7 +56,7 @@ export const CalibrationInsightCard: React.FC<CalibrationInsightCardProps> = ({ 
 
     if (hasPendingEvidence) {
         return (
-            <AppCard {...props}>
+            <AppCard {...props} density="compact">
                 <CardHeader title="Calibration" metadata="Evidence change syncing" density="compact" />
                 <AppText variant="muted">
                     Calibration will return after your pending food and weight changes are checked by the server.
@@ -187,7 +187,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
     if (error && !status) {
         const presentation = getErrorPresentation(error, 'calibration insight');
         return (
-            <AppCard {...props} style={style}>
+            <AppCard {...props} density="compact" style={style}>
                 <CardHeader title="Calibration" metadata="Unable to evaluate your latest history." density="compact" />
                 <AppText accessibilityRole="alert" style={styles.error}>{presentation.message}</AppText>
                 {presentation.requestId && <AppText variant="caption">Reference: {presentation.requestId}</AppText>}
@@ -198,7 +198,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
 
     if (isLoading || !evaluation) {
         return (
-            <AppCard {...props} style={style} accessibilityLabel="Loading calibration insight">
+            <AppCard {...props} density="compact" style={style} accessibilityLabel="Loading calibration insight">
                 <CardHeader title="Calibration" metadata="Checking your latest completed history..." density="compact" />
             </AppCard>
         );
@@ -318,7 +318,7 @@ export const CalibrationInsightCardView: React.FC<CalibrationInsightCardViewProp
 
     return (
         <>
-            <AppCard {...props} style={style}>
+            <AppCard {...props} density="compact" style={style}>
                 <CardHeader title="Calibration" metadata={cardDescription} density="compact" />
                 {scheduledChange ? (
                     <View style={styles.scheduledPanel}>
