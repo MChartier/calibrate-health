@@ -221,10 +221,13 @@ describe('AddFoodSheet async resource states', () => {
         }
     });
 
-    it('lets search results use the sheet space above the native keyboard', () => {
+    it('removes the Android bottom inset only while the search workspace is focused', () => {
         const replacedPlatform = jest.replaceProperty(Platform, 'OS', 'android');
         try {
             const screen = renderSheet();
+
+            expect(screen.getByTestId('add-food-sheet-content').props.style).toBeUndefined();
+            fireEvent(screen.getByLabelText('Search foods'), 'focus');
             expect(screen.getByTestId('add-food-sheet-content').props.style).toMatchObject({
                 paddingBottom: 0
             });
