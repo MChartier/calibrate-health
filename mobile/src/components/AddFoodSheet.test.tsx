@@ -65,8 +65,17 @@ jest.mock('./BottomSheetModal', () => {
     const ReactModule = require('react');
     const { View } = require('react-native');
     return {
-        BottomSheetModal: ({ visible, children }: { visible: boolean; children: React.ReactNode }) =>
-            visible ? ReactModule.createElement(View, null, children) : null
+        BottomSheetModal: ({
+            visible,
+            children,
+            contentStyle
+        }: {
+            visible: boolean;
+            children: React.ReactNode;
+            contentStyle?: object;
+        }) => visible
+            ? ReactModule.createElement(View, { testID: 'add-food-sheet-content', style: contentStyle }, children)
+            : null
     };
 });
 
@@ -209,6 +218,18 @@ describe('AddFoodSheet async resource states', () => {
             expect(screen.queryByTestId('food-search-results')).toBeNull();
         } finally {
             dismissKeyboard.mockRestore();
+        }
+    });
+
+    it('lets search results use the sheet space above the native keyboard', () => {
+        const replacedPlatform = jest.replaceProperty(Platform, 'OS', 'android');
+        try {
+            const screen = renderSheet();
+            expect(screen.getByTestId('add-food-sheet-content').props.style).toMatchObject({
+                paddingBottom: 0
+            });
+        } finally {
+            replacedPlatform.restore();
         }
     });
 

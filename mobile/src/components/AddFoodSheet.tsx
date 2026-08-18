@@ -807,7 +807,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             isDirty={hasUnsavedDraft}
             confirmDismiss={confirmDiscardChanges}
             onRequestClose={onClose}
-            contentStyle={Platform.OS === 'web' ? styles.webSheetContent : undefined}
+            contentStyle={styles.sheetContent}
         >
             {!isMobileSearchWorkspace && (
                 <>
@@ -883,7 +883,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1,
         minHeight: 0
     },
-    webSheetContent: {
+    sheetContent: {
+        // Inner scrollers own their end spacing so results can reach the keyboard edge.
         paddingBottom: 0
     },
     savedFoodsLink: {
