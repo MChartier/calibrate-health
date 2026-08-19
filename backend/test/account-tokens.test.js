@@ -60,7 +60,7 @@ test('issued recovery token stores only its hash with a 30 minute expiry', async
   assert.equal(JSON.stringify(created).includes(raw), false);
 });
 
-test('password reset atomically revokes browser, phone, Wear, push, and pairing credentials', async () => {
+test('password reset atomically revokes browser, phone, Wear, push, pairing, and connected-assistant credentials', async () => {
   const now = new Date('2026-08-09T12:00:00.000Z');
   const calls = {};
   const transaction = {
@@ -82,7 +82,9 @@ test('password reset atomically revokes browser, phone, Wear, push, and pairing 
     sessionStore: { deleteMany: async (args) => { calls.browser = args; } },
     mobileAuthSession: { updateMany: async (args) => { calls.mobile = args; } },
     wearPairingCredential: { updateMany: async (args) => { calls.wearPairing = args; } },
-    nativePushSubscription: { updateMany: async (args) => { calls.nativePush = args; } }
+    nativePushSubscription: { updateMany: async (args) => { calls.nativePush = args; } },
+    mcpOAuthGrant: { updateMany: async (args) => { calls.mcpOAuth = args; } },
+    mcpOAuthAuthorizationCode: { deleteMany: async (args) => { calls.mcpOAuthCodes = args; } }
   };
   const prismaStub = { $transaction: async (callback) => callback(transaction) };
   const service = loadAccountTokens({ prismaStub });
@@ -94,8 +96,11 @@ test('password reset atomically revokes browser, phone, Wear, push, and pairing 
   assert.deepEqual(calls.mobile.where, { user_id: 7, revoked_at: null });
   assert.deepEqual(calls.wearPairing.where, { user_id: 7, consumed_at: null });
   assert.deepEqual(calls.nativePush.where, { user_id: 7, revoked_at: null });
+  assert.deepEqual(calls.mcpOAuth.where, { user_id: 7, revoked_at: null });
+  assert.deepEqual(calls.mcpOAuthCodes.where, { user_id: 7 });
   assert.equal(calls.mobile.data.revoked_at, now);
   assert.equal(calls.wearPairing.data.consumed_at, now);
+  assert.equal(calls.mcpOAuth.data.revoked_at, now);
 });
 
 test('expired or already-consumed reset tokens cannot change credentials', async () => {

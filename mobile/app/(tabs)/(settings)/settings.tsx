@@ -46,6 +46,7 @@ import {
     type SettingsSheetId
 } from '../../../src/settings/SettingsHome';
 import { AccountSessionsPanel } from '../../../src/settings/AccountSessionsPanel';
+import { ConnectedAppsPanel } from '../../../src/settings/ConnectedAppsPanel';
 import { ReminderSettingsPanel } from '../../../src/settings/ReminderSettingsPanel';
 import {
     getReminderScheduleErrors,
@@ -163,11 +164,19 @@ export default function SettingsScreen() {
         queryKey: ['account-sessions'],
         queryFn: () => api.getAccountSessions()
     });
+    const connectedAppsQuery = useQuery({
+        queryKey: ['connected-apps'],
+        queryFn: () => api.getConnectedApps()
+    });
     const profileState = useAsyncResourceState(profileQuery, isNeverEmpty);
     const goalState = useAsyncResourceState(goalQuery, isNullResource);
     const sessionsState = useAsyncResourceState(
         sessionsQuery,
         ({ sessions }) => sessions.length === 0
+    );
+    const connectedAppsState = useAsyncResourceState(
+        connectedAppsQuery,
+        ({ connections }) => connections.length === 0
     );
     const pendingMutationCount = queuedMutations.filter(
         ({ state }) => state === OUTBOX_MUTATION_STATES.PENDING || state === OUTBOX_MUTATION_STATES.REPLAYING
@@ -395,6 +404,13 @@ export default function SettingsScreen() {
         }
     });
 
+    const revokeConnectedApp = useMutation({
+        mutationFn: (connectionId: string) => api.revokeConnectedApp(connectionId),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['connected-apps'] });
+        }
+    });
+
     const importMutation = useMutation({
         mutationFn: async () => {
             const DocumentPicker = await import('expo-document-picker');
@@ -458,6 +474,9 @@ export default function SettingsScreen() {
     }
     const sessionCount = hasResolvedResourceData(sessionsState)
         ? sessionsQuery.data?.sessions.length
+        : undefined;
+    const connectedAppCount = hasResolvedResourceData(connectedAppsState)
+        ? connectedAppsQuery.data?.connections.length
         : undefined;
     const calorieTarget = !hasPendingWeightChange && hasResolvedResourceData(profileState)
         && profileQuery.data?.calorieSummary.planStatus === 'available'
@@ -533,6 +552,7 @@ export default function SettingsScreen() {
                 weightUnit={weightUnit}
                 heightUnit={heightUnit}
                 sessionCount={sessionCount}
+                connectedAppCount={connectedAppCount}
                 isOutboxReady={isOutboxReady}
                 failedMutationCount={failedMutations.length}
                 pendingMutationCount={pendingMutationCount}
@@ -779,6 +799,48 @@ export default function SettingsScreen() {
                             {getSafeActionErrorMessage(
                                 revokeSession.error ?? revokeOtherSessions.error,
                                 'Unable to revoke that signed-in session.'
+                            )}
+                        </AppText>
+                    )}
+                </View>
+            </SettingsDetailSheet>
+
+            <SettingsDetailSheet
+                visible={activeSheet === 'connected-apps'}
+                maxHeight="92%"
+                title="Connected assistants"
+                description="Assistants use revocable, read-only OAuth access. They never receive your Calibrate password."
+                onClose={() => setActiveSheet(null)}
+            >
+                <View testID="settings-connected-apps" style={styles.sheetContent}>
+                    <AsyncStateBoundary
+                        state={connectedAppsState}
+                        resourceLabel="connected assistants"
+                        loading={<DeviceListSkeleton />}
+                        empty={(
+                            <AppCard>
+                                <AppText variant="subtitle">No connected assistants</AppText>
+                                <AppText variant="muted">Connections you approve will appear here.</AppText>
+                            </AppCard>
+                        )}
+                        onRetry={isOnline ? () => connectedAppsQuery.refetch() : undefined}
+                        retrying={connectedAppsQuery.isFetching}
+                    >
+                        <ConnectedAppsPanel
+                            connections={connectedAppsQuery.data?.connections ?? []}
+                            pendingConnectionId={revokeConnectedApp.isPending
+                                ? revokeConnectedApp.variables
+                                : undefined}
+                            onRevoke={async (connectionId) => {
+                                await revokeConnectedApp.mutateAsync(connectionId);
+                            }}
+                        />
+                    </AsyncStateBoundary>
+                    {revokeConnectedApp.error && (
+                        <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
+                            {getSafeActionErrorMessage(
+                                revokeConnectedApp.error,
+                                'Unable to revoke that connected assistant.'
                             )}
                         </AppText>
                     )}

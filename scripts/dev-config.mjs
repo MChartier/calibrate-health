@@ -318,6 +318,9 @@ export async function resolveDevConfig({
     SESSION_COOKIE_NAME: `cal.${worktreeHash}.sid`,
     AUTO_LOGIN_TEST_USER: "true",
     EXPO_PUBLIC_CALIBRATE_AUTO_LOGIN_TEST_USER: "true",
+    MCP_ENABLED: readUserValue("MCP_ENABLED") || "false",
+    MCP_PUBLIC_URL:
+      readUserValue("MCP_PUBLIC_URL") || `http://localhost:${ports.backendPort}/mcp`,
     FOOD_DATA_PROVIDER: foodDataProvider,
     WEIGHT_TREND_MODEL: readUserValue("WEIGHT_TREND_MODEL") || "v2",
     FATSECRET_CLIENT_ID: fatsecretClientId,

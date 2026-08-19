@@ -37,7 +37,7 @@ export const TERMS_SECTIONS: PublicLegalSection[] = [
     {
         title: '4. Your data and third-party services',
         paragraphs: [
-            'You retain responsibility for information you submit. Calibrate processes it to provide the service as described in the Privacy Policy. Food databases, Health Connect, notification providers, and self-hosted operators may have separate terms and policies.'
+            'You retain responsibility for information you submit. Calibrate processes it to provide the service as described in the Privacy Policy. Food databases, Health Connect, notification providers, connected-assistant providers, and self-hosted operators may have separate terms and policies.'
         ]
     },
     {
@@ -77,7 +77,7 @@ export const SUPPORT_SECTIONS: PublicLegalSection[] = [
     }
 ];
 
-export const PRIVACY_LAST_UPDATED = 'July 24, 2026';
+export const PRIVACY_LAST_UPDATED = 'August 19, 2026';
 export const PRIVACY_INTRO = [
     'Calibrate Health ("Calibrate", "we", "us", or "our") respects your privacy. This Privacy Policy explains what information we collect, how we use it, and the choices you have when you use the Calibrate Health application at https://calibratehealth.app.',
     'Calibrate Health is a calorie and weight-tracking tool. It is not a medical service and does not provide medical advice.'
@@ -96,7 +96,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
             'Imported data: food logs and weight entries from supported exports such as Lose It CSV files.',
             'Technical data: IP address, browser and device type, operating system, access dates, and application or session information needed for security.',
             'Food-provider requests: food search text, barcode, requested language, and serving context may be sent to FatSecret, Open Food Facts, or USDA FoodData Central. Calibrate does not include your email or account ID.',
-            'Session and notification records: browser sessions linked to an HttpOnly cookie; hashed mobile tokens and device metadata; enabled browser or native push endpoints; and in-app reminder state.',
+            'Session, connection, and notification records: browser sessions linked to an HttpOnly cookie; hashed mobile and connected-assistant OAuth credentials; public OAuth client metadata, approved scopes, and revocable grant history; enabled browser or native push endpoints; and in-app reminder state.',
             'Android Health Connect: when explicitly connected, Calibrate may read enabled steps, active calories, total calories, exercise sessions, and separately enabled weight data.',
             'Health Connect imports include source attribution and synchronization state. Calibrate does not write food records to Health Connect, use Health Connect data for advertising, or automatically change calorie targets from imported activity.',
             'Health Connect records already sent to the selected Calibrate server remain in activity history and exports until account deletion or operator cleanup, even after future synchronization is paused or disconnected.'
@@ -104,11 +104,15 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
     },
     {
         title: '2. How We Use Your Information',
-        paragraphs: ['We use information only to operate and improve the Service. We do not sell or rent data or use it for targeted advertising.'],
+        paragraphs: [
+            'We use information only to operate and improve the Service. We do not sell or rent data or use it for targeted advertising.',
+            'When you explicitly authorize a connected assistant, Calibrate responds to that assistant with only the food-log or weight-progress data covered by the approved read-only scopes. The assistant never receives your Calibrate password. Once data reaches the assistant, its provider handles that copy under its own terms and privacy policy. You can revoke a connection from Calibrate at any time.'
+        ],
         bullets: [
             'Create and manage accounts, authenticate requests, and maintain sessions.',
             'Calculate calorie targets and projections and display trends, Health Connect activity, and optional imported weight.',
             'Store and retrieve tracking data and deliver reminders you enable.',
+            'Fulfill read-only requests from connected assistants that you authorize and maintain or revoke their OAuth grants.',
             'Prepare portable account exports, permanently delete accounts on request, diagnose bugs, and maintain reliability.'
         ]
     },
@@ -122,7 +126,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
     {
         title: '4. Data Storage and Security',
         paragraphs: [
-            'Calibrate uses encrypted HTTPS connections, salted password hashes, access-controlled databases, and hashed native authentication tokens. Optional profile photos are resized and stored with the account rather than uploaded to a separate image service.',
+            'Calibrate uses encrypted HTTPS connections, salted password hashes, access-controlled databases, hashed native authentication tokens, and purpose-bound hashes for connected-assistant authorization codes and OAuth tokens. Optional profile photos are resized and stored with the account rather than uploaded to a separate image service.',
             'No system can guarantee absolute security, but we take reasonable measures against unauthorized access, loss, or misuse.'
         ]
     },
@@ -138,8 +142,8 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
     {
         title: '6. Data Retention',
         paragraphs: [
-            'Profile and tracking data remain in the active database while the account is active unless individual records are edited or deleted. Sessions expire or are revoked, and push subscriptions remain until disabled, rejected, revoked, or removed with the account.',
-            'Password-confirmed account deletion removes active profile data, avatar, goals, metrics, food history, day resolutions, tracking-pause history, Saved foods, recipes, notifications, Health Connect source records, summaries, sessions, push subscriptions, and synchronization records.'
+            'Profile and tracking data remain in the active database while the account is active unless individual records are edited or deleted. Sessions and connected-assistant grants expire or are revoked, and push subscriptions remain until disabled, rejected, revoked, or removed with the account.',
+            'Password-confirmed account deletion removes active profile data, avatar, goals, metrics, food history, day resolutions, tracking-pause history, Saved foods, recipes, notifications, Health Connect source records, summaries, sessions, connected-assistant grants and credentials, push subscriptions, and synchronization records.'
         ],
         bullets: [
             'Operator-managed backups or security logs follow the operator retention schedule and legal requirements.',
@@ -150,7 +154,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
         title: '7. Your Rights and Choices',
         paragraphs: [
             'Depending on your location, you may have rights to access, correct, delete, or export personal data.',
-            'The signed-in versioned JSON export includes account profile, preferences, optional avatar, goals, body metrics, food history, day resolutions, tracking-pause history, Saved foods, recipes, notification history, Health Connect source records, and daily activity summaries. Password hashes, tokens, sessions, push endpoints, and internal replay metadata are excluded.',
+            'The signed-in versioned JSON export includes account profile, preferences, optional avatar, goals, body metrics, food history, day resolutions, tracking-pause history, Saved foods, recipes, notification history, Health Connect source records, and daily activity summaries. Password hashes, tokens, sessions, push endpoints, connected-assistant client/grant records, and internal replay metadata are excluded.',
             'Account deletion requires the current password and cannot be undone. Use the public account deletion instructions for signed-in steps, hosted-service requests, timing, and retention details.'
         ]
     },
@@ -201,7 +205,7 @@ export const ACCOUNT_DELETION_SECTIONS: PublicLegalSection[] = [
         bullets: [
             'Profile, preferences, inline avatar, goals, calorie-budget calibration recommendations and accepted revisions, body metrics, food logs, day resolutions, tracking-pause history, Saved foods, and recipes.',
             'Imported Health Connect source records, daily activity summaries, notifications, and internal synchronization records.',
-            'Browser and mobile sessions, authentication tokens, and browser or native push subscriptions.'
+            'Browser and mobile sessions, connected-assistant OAuth grants and credentials, authentication tokens, and browser or native push subscriptions.'
         ]
     },
     {

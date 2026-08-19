@@ -21,6 +21,7 @@ Note: calibrate is not medical advice.
 - Weight logging + trend visualization
 - Goal projection from a steady deficit
 - Observational Health Connect activity that never automatically changes the calorie target
+- Read-only MCP access to recent food logs and weight trends through revocable OAuth connections
 
 #### FatSecret terms + attribution
 
@@ -32,6 +33,7 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 ## Docs
 
 - Weight trend model: `docs/weight-trend-model.md`
+- MCP, OAuth, and the Codex plugin: `docs/mcp.md`
 - Deployment (Compose self-hosting): `deploy/README.md`
 - Expo web dev/build/PWA: `docs/expo-web.md`
 - Expo Android client: `mobile/README.md`

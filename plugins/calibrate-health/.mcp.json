@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "calibrate": {
+      "type": "http",
+      "url": "https://calibratehealth.app/mcp",
+      "auth": "oauth"
+    }
+  }
+}

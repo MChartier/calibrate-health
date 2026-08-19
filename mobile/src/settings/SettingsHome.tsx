@@ -14,6 +14,7 @@ export type SettingsSheetId =
     | 'profile-photo'
     | 'password'
     | 'devices'
+    | 'connected-apps'
     | 'offline'
     | 'data';
 
@@ -26,6 +27,7 @@ type SettingsHomeProps = {
     weightUnit: WeightUnit;
     heightUnit: HeightUnit;
     sessionCount?: number;
+    connectedAppCount?: number;
     isOutboxReady: boolean;
     failedMutationCount: number;
     pendingMutationCount: number;
@@ -57,6 +59,7 @@ export function SettingsHome({
     weightUnit,
     heightUnit,
     sessionCount,
+    connectedAppCount,
     isOutboxReady,
     failedMutationCount,
     pendingMutationCount,
@@ -151,7 +154,7 @@ export function SettingsHome({
             <SettingsSection
                 testID="settings-section-connections"
                 title="Connections"
-                description="Imported activity and companion devices."
+                description="Imported activity, companion devices, and assistants."
             >
                 <SettingsRow
                     icon="walk-outline"
@@ -163,7 +166,6 @@ export function SettingsHome({
                     icon="fitness-outline"
                     label="Health Connect"
                     supportingText="Read activity and weight from Android"
-                    showDivider={!isWeb}
                     onPress={() => onOpenSheet('health-connect')}
                 />
                 {!isWeb ? (
@@ -171,10 +173,18 @@ export function SettingsHome({
                         icon="watch-outline"
                         label="Galaxy Watch"
                         supportingText="Pair, sync, and manage the Wear OS companion"
-                        showDivider={false}
                         onPress={() => onOpenSheet('watch')}
                     />
                 ) : null}
+                <SettingsRow
+                    testID="settings-open-connected-apps"
+                    icon="link-outline"
+                    label="Connected assistants"
+                    supportingText="Review and revoke read-only Calibrate access"
+                    value={connectedAppCount === undefined ? undefined : String(connectedAppCount)}
+                    showDivider={false}
+                    onPress={() => onOpenSheet('connected-apps')}
+                />
             </SettingsSection>
 
             <SettingsSection

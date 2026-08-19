@@ -1,0 +1,14 @@
+interface:
+  display_name: "Calibrate Progress"
+  short_description: "Discuss logged food and weight trends"
+  brand_color: "#2E7D32"
+  default_prompt: "Use $calibrate-progress to analyze my recent food logs and weight trend."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "calibrate"
+      description: "Private Calibrate food-log and weight-trend service"
+      transport: "streamable_http"
+      url: "https://calibratehealth.app/mcp"
+policy:
+  allow_implicit_invocation: true

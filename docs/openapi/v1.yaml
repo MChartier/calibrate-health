@@ -1278,6 +1278,51 @@ paths:
               schema: { $ref: '#/components/schemas/ApiError' }
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/user/connected-apps:
+    get:
+      operationId: getConnectedApps
+      description: List active read-only OAuth grants owned by the authenticated account without exposing credentials.
+      responses:
+        '200':
+          description: Revocable connected-assistant grants.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [connections]
+                properties:
+                  connections:
+                    type: array
+                    items: { $ref: '#/components/schemas/ConnectedAppSummary' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/user/connected-apps/{connectionId}:
+    delete:
+      operationId: revokeConnectedApp
+      description: Revoke one OAuth grant owned by the authenticated account and immediately invalidate its tokens.
+      parameters:
+        - in: path
+          name: connectionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The connected assistant was revoked.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No active owned connection has that identifier.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/user/account/export:
     get:
       operationId: exportAccount
@@ -2973,6 +3018,35 @@ components:
           format: date-time
         current:
           type: boolean
+    ConnectedAppSummary:
+      type: object
+      additionalProperties: false
+      required: [id, client_id, client_name, scopes, resource, created_at, last_used_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+        client_name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+            enum: [calibrate:food:read, calibrate:weight:read]
+        resource:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: [string, 'null']
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
     MobileSessionSummary:
       type: object
       required:
