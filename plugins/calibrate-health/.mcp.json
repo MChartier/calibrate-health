@@ -2,7 +2,7 @@
   "mcpServers": {
     "calibrate": {
       "type": "http",
-      "url": "https://calibratehealth.app/mcp",
+      "url": "https://calibratehealth.darkmachines.net/mcp",
       "auth": "oauth"
     }
   }
