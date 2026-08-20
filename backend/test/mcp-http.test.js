@@ -4,6 +4,10 @@ const assert = require('node:assert/strict');
 process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5432/test';
 
 const { createCalibrateMcpHttpApp } = require('../src/mcp/server');
+const {
+  MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_MAX,
+  MCP_OAUTH_REGISTRATION_RATE_LIMIT_MAX
+} = require('../src/mcp/oauth');
 
 async function withServer(run, overrides = {}) {
   const app = createCalibrateMcpHttpApp({
@@ -152,5 +156,95 @@ test('dynamic registration rejects insecure non-loopback callbacks before persis
     assert.equal(response.status, 400);
     const body = await response.json();
     assert.equal(body.error, 'invalid_client_metadata');
+  });
+});
+
+test('dynamic registration is rate-limited before another client is persisted', async () => {
+  let persistedClients = 0;
+  await withServer(async (baseUrl) => {
+    const body = JSON.stringify({
+      client_name: 'Rate-limit test client',
+      redirect_uris: ['https://chatgpt.com/callback'],
+      token_endpoint_auth_method: 'none',
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code']
+    });
+    for (let attempt = 0; attempt < MCP_OAUTH_REGISTRATION_RATE_LIMIT_MAX; attempt += 1) {
+      const response = await fetch(`${baseUrl}/register`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body
+      });
+      assert.equal(response.status, 201);
+    }
+
+    const limited = await fetch(`${baseUrl}/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body
+    });
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('cache-control'), 'no-store');
+    assert.equal((await limited.json()).error, 'too_many_requests');
+    assert.equal(persistedClients, MCP_OAUTH_REGISTRATION_RATE_LIMIT_MAX);
+  }, {
+    oauthService: {
+      saveClient: async (client) => {
+        persistedClients += 1;
+        return client;
+      }
+    }
+  });
+});
+
+test('authorization is rate-limited before another approval request is persisted', async () => {
+  let persistedRequests = 0;
+  const client = {
+    client_id: 'rate-limit-client',
+    client_name: 'Rate-limit test client',
+    redirect_uris: ['http://127.0.0.1/callback'],
+    token_endpoint_auth_method: 'none',
+    grant_types: ['authorization_code', 'refresh_token'],
+    response_types: ['code']
+  };
+  await withServer(async (baseUrl) => {
+    const authorizeUrl = new URL(`${baseUrl}/authorize`);
+    authorizeUrl.search = new URLSearchParams({
+      response_type: 'code',
+      client_id: client.client_id,
+      redirect_uri: client.redirect_uris[0],
+      scope: 'calibrate:food:read calibrate:weight:read',
+      state: 'rate-limit-state',
+      code_challenge: 'A'.repeat(43),
+      code_challenge_method: 'S256',
+      resource: 'https://calibratehealth.app/mcp'
+    }).toString();
+    for (let attempt = 0; attempt < MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_MAX; attempt += 1) {
+      const response = await fetch(authorizeUrl);
+      assert.equal(response.status, 200);
+    }
+
+    const limited = await fetch(authorizeUrl);
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('cache-control'), 'no-store');
+    assert.equal((await limited.json()).error, 'too_many_requests');
+    assert.equal(persistedRequests, MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_MAX);
+  }, {
+    oauthService: {
+      getClient: async (clientId) => clientId === client.client_id ? client : undefined,
+      beginAuthorization: async (input) => {
+        persistedRequests += 1;
+        return {
+          id: `request-${persistedRequests}`,
+          clientId: input.clientId,
+          clientName: client.client_name,
+          redirectUri: input.redirectUri,
+          state: input.state,
+          scopes: input.scopes,
+          resource: input.resource,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+        };
+      }
+    }
   });
 });

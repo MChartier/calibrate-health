@@ -1,4 +1,5 @@
 import express, { type Express, type Request, type RequestHandler, type Response } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js';
 import {
   InvalidClientMetadataError,
@@ -33,6 +34,10 @@ import { logSafeOperationalError } from '../observability';
 export const MCP_FOOD_READ_SCOPE = 'calibrate:food:read';
 export const MCP_WEIGHT_READ_SCOPE = 'calibrate:weight:read';
 export const MCP_OAUTH_SCOPES = [MCP_FOOD_READ_SCOPE, MCP_WEIGHT_READ_SCOPE] as const;
+export const MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_MAX = 100;
+export const MCP_OAUTH_REGISTRATION_RATE_LIMIT_MAX = 20;
+const MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const MCP_OAUTH_REGISTRATION_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const MAX_DYNAMIC_CLIENT_METADATA_BYTES = 16 * 1024;
 
 export type CalibrateOAuthSetup = {
@@ -71,6 +76,26 @@ export function installCalibrateOAuth(app: Express, setup: CalibrateOAuthSetup) 
     response.setHeader('cache-control', 'no-store');
     next();
   };
+  const authorizationRateLimiter = rateLimit({
+    windowMs: MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_WINDOW_MS,
+    limit: MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_MAX,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+      error: 'too_many_requests',
+      error_description: 'Too many OAuth authorization requests. Try again later.'
+    }
+  });
+  const registrationRateLimiter = rateLimit({
+    windowMs: MCP_OAUTH_REGISTRATION_RATE_LIMIT_WINDOW_MS,
+    limit: MCP_OAUTH_REGISTRATION_RATE_LIMIT_MAX,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+      error: 'too_many_requests',
+      error_description: 'Too many OAuth client registration requests. Try again later.'
+    }
+  });
 
   app.get('/.well-known/oauth-authorization-server', (_request, response) => {
     response.set('Cache-Control', 'public, max-age=300').json(metadata);
@@ -78,7 +103,11 @@ export function installCalibrateOAuth(app: Express, setup: CalibrateOAuthSetup) 
   app.get(['/.well-known/oauth-protected-resource', resourceMetadataPath], (_request, response) => {
     response.set('Cache-Control', 'public, max-age=300').json(protectedResourceMetadata);
   });
-  app.use(['/register', '/authorize', '/token', '/revoke'], markNoStore);
+  // These routes create durable or short-lived database rows, so keep their IP ceilings
+  // explicit here instead of relying on the MCP SDK's transitive defaults.
+  app.use('/register', markNoStore, registrationRateLimiter);
+  app.use('/authorize', markNoStore, authorizationRateLimiter);
+  app.use(['/token', '/revoke'], markNoStore);
   app.post(
     '/oauth/approve',
     markNoStore,
@@ -101,7 +130,9 @@ export function installCalibrateOAuth(app: Express, setup: CalibrateOAuthSetup) 
     resourceServerUrl: resourceUrl,
     scopesSupported: [...MCP_OAUTH_SCOPES],
     resourceName: 'Calibrate progress data',
-    serviceDocumentationUrl: new URL('/privacy', issuerUrl)
+    serviceDocumentationUrl: new URL('/privacy', issuerUrl),
+    authorizationOptions: { rateLimit: false },
+    clientRegistrationOptions: { rateLimit: false }
   }));
 
   return { provider, resourceMetadataUrl };
