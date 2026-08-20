@@ -56,6 +56,17 @@ unauthenticated, non-redirecting JSON response. The package and signing-certific
 recorded in `../docs/android-app-links.md`; self-hosted domains are not automatically associated
 with the official Android app.
 
+### Connected assistants (MCP)
+
+The official hosted service enables its read-only Streamable HTTP MCP endpoint automatically. Same-origin advanced
+self-hosts opt in with `MCP_ENABLED=true`; the resource URL and allowed hostname derive from `PUBLIC_APP_ORIGIN`.
+Set `MCP_PUBLIC_URL` or `MCP_ALLOWED_HOSTS` only for an intentional routing override. The existing Caddy and Traefik routes already forward the MCP,
+OAuth, and discovery paths to the app; no extra port or sidecar is required.
+
+OAuth uses dynamic public-client registration, authorization code with S256 PKCE, rotating refresh tokens, and
+revocable user grants. Apply the included Prisma migration before enabling the endpoint. See `../docs/mcp.md` for the
+tool data contract, discovery routes, local testing, privacy boundaries, and the tracked Codex plugin.
+
 ### Split frontend and API origins
 
 The standard Compose files serve the frontend and API from `APP_HOST`. If a separate frontend origin is intentional,

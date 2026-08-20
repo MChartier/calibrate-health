@@ -216,6 +216,9 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
     if (pathname === '/api/v1/user/profile') {
       return fulfillJson(route, options.profileResponse ?? PROFILE_RESPONSE);
     }
+    if (pathname === '/api/v1/user/connected-apps') {
+      return fulfillJson(route, { connections: [] });
+    }
     if (pathname === '/api/v1/calorie-plan/options') {
       return fulfillJson(route, CALORIE_PLAN_OPTIONS_RESPONSE);
     }

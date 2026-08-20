@@ -118,7 +118,7 @@ test('migration contract pins exact v0.14.0 and candidate ledgers', () => {
     baseVersion: ROLLBACK_BASE.version,
   });
   assert.equal(contract.baseNames.at(-1), '0031_calibration_insights');
-  assert.equal(contract.candidateNames.at(-1), '0038_settings_trust_center');
+  assert.equal(contract.candidateNames.at(-1), '0039_mcp_oauth');
   assert.equal(ledgerFingerprint(baseNames), ROLLBACK_BASE.ledgerSha256);
   assert.equal(ledgerFingerprint(candidateNames), ROLLBACK_CANDIDATE.ledgerSha256);
 
@@ -206,7 +206,7 @@ test('success evidence is sanitized, exact, and contains no resource target', ()
   assert.equal(evidence.status, 'passed');
   assert.equal(evidence.base.tag, 'v0.14.0');
   assert.equal(evidence.base.last_migration, '0031_calibration_insights');
-  assert.equal(evidence.candidate.last_migration, '0038_settings_trust_center');
+  assert.equal(evidence.candidate.last_migration, '0039_mcp_oauth');
   assert.equal(evidence.checks.restored_candidate_reupgrade_verified, true);
   const encoded = JSON.stringify(evidence);
   assert.doesNotMatch(encoded, /password|127\.0\.0\.1|calibrate-rb-smoke|schema\.prisma/i);

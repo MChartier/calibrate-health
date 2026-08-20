@@ -27,6 +27,7 @@ import { logSafeOperationalError } from '../observability';
 import { clearSessionCookie } from '../utils/sessionCookie';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 import { parseLocalWallClockTime } from '../services/reminderSchedule';
+import { mcpOAuthService } from '../services/mcpOAuth';
 
 /**
  * Authenticated user account routes (profile, preferences, password, avatar).
@@ -82,6 +83,44 @@ const destroyRequestSession = (req: express.Request): Promise<void> =>
   });
 
 router.use(requireAuthenticatedUser);
+
+router.get('/connected-apps', async (req, res) => {
+  const user = getAuthenticatedUser(req);
+  try {
+    const connections = await mcpOAuthService.listConnectionsForUser(user.id);
+    res.setHeader('cache-control', 'no-store');
+    res.json({
+      connections: connections.map((connection) => ({
+        id: connection.id,
+        client_id: connection.clientId,
+        client_name: connection.clientName,
+        scopes: connection.scopes,
+        resource: connection.resource,
+        created_at: connection.createdAt,
+        last_used_at: connection.lastUsedAt,
+        expires_at: connection.expiresAt
+      }))
+    });
+  } catch (error) {
+    logSafeOperationalError('mcp.connections.list', error, res.locals?.requestId);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.delete('/connected-apps/:connectionId', async (req, res) => {
+  const user = getAuthenticatedUser(req);
+  try {
+    const revoked = await mcpOAuthService.revokeConnectionForUser(user.id, req.params.connectionId);
+    if (!revoked) {
+      res.status(404).json({ message: 'Connected app not found' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    logSafeOperationalError('mcp.connections.revoke', error, res.locals?.requestId);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 router.get('/me', async (req, res) => {
   const user = getAuthenticatedUser(req);
@@ -188,10 +227,20 @@ router.patch('/password', async (req, res) => {
     }
 
     const password_hash = await bcrypt.hash(parsed.newPassword, 10);
-    await prisma.user.update({
-      where: { id: dbUser.id },
-      data: { password_hash }
-    });
+    const revokedAt = new Date();
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: dbUser.id },
+        data: { password_hash }
+      }),
+      prisma.mcpOAuthGrant.updateMany({
+        where: { user_id: dbUser.id, revoked_at: null },
+        data: { revoked_at: revokedAt }
+      }),
+      prisma.mcpOAuthAuthorizationCode.deleteMany({
+        where: { user_id: dbUser.id }
+      })
+    ]);
     await Promise.all([
       revokeOtherMobileSessionsForUser(dbUser.id, res.locals.mobileAuthSessionId),
       revokeOtherBrowserSessionsForUser(dbUser.id, req.sessionID)

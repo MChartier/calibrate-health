@@ -177,6 +177,13 @@ export async function resetPasswordWithToken(
         where: { user_id: credential.user_id, revoked_at: null },
         data: { revoked_at: now }
       });
+      await transaction.mcpOAuthGrant.updateMany({
+        where: { user_id: credential.user_id, revoked_at: null },
+        data: { revoked_at: now }
+      });
+      await transaction.mcpOAuthAuthorizationCode.deleteMany({
+        where: { user_id: credential.user_id }
+      });
       // A credential issued before reset must not be able to mint a replacement Wear session.
       await transaction.wearPairingCredential.updateMany({
         where: { user_id: credential.user_id, consumed_at: null },

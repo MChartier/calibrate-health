@@ -9,7 +9,7 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
-function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
+function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuthStub }) {
   const dbPath = require.resolve('../src/config/database');
   const bcryptPath = require.resolve('bcryptjs');
   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
@@ -18,6 +18,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
   const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
   const caloriePlanReviewPath = require.resolve('../src/services/caloriePlanReview');
+  const mcpOAuthPath = require.resolve('../src/services/mcpOAuth');
   const userPath = require.resolve('../src/routes/user');
 
   const previousDbModule = require.cache[dbPath];
@@ -28,6 +29,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   const previousClientOperationsModule = require.cache[clientOperationsPath];
   const previousCaloriePlanningModule = require.cache[caloriePlanningPath];
   const previousCaloriePlanReviewModule = require.cache[caloriePlanReviewPath];
+  const previousMcpOAuthModule = require.cache[mcpOAuthPath];
 
   delete require.cache[userPath];
   delete require.cache[mobileAuthPath];
@@ -36,6 +38,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   delete require.cache[clientOperationsPath];
   delete require.cache[caloriePlanningPath];
   delete require.cache[caloriePlanReviewPath];
+  delete require.cache[mcpOAuthPath];
 
   const normalizedPrismaStub = {
     ...prismaStub,
@@ -53,6 +56,13 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   stubModule(dbPath, normalizedPrismaStub);
   stubModule(bcryptPath, bcryptStub);
   if (accountLifecycleStub) stubModule(accountLifecyclePath, accountLifecycleStub);
+  stubModule(mcpOAuthPath, mcpOAuthStub ?? {
+    mcpOAuthService: {
+      listConnectionsForUser: async () => [],
+      revokeConnectionForUser: async () => false,
+      revokeAllForUser: async () => 0
+    }
+  });
 
   const loaded = require('../src/routes/user');
 
@@ -78,6 +88,8 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub }) {
   else delete require.cache[caloriePlanningPath];
   if (previousCaloriePlanReviewModule) require.cache[caloriePlanReviewPath] = previousCaloriePlanReviewModule;
   else delete require.cache[caloriePlanReviewPath];
+  if (previousMcpOAuthModule) require.cache[mcpOAuthPath] = previousMcpOAuthModule;
+  else delete require.cache[mcpOAuthPath];
 
   return loaded.default ?? loaded;
 }
@@ -335,6 +347,8 @@ test('user route: PATCH /password updates password when current password matches
   let updated = false;
   let sessionLookup = null;
   let browserSessionDeletion = null;
+  let mcpOAuthRevocation = null;
+  let mcpOAuthCodeDeletion = null;
 
   const prismaStub = {
     $transaction: async (operations) => Promise.all(operations),
@@ -353,6 +367,18 @@ test('user route: PATCH /password updates password when current password matches
     },
     nativePushSubscription: {
       updateMany: async () => ({ count: 1 })
+    },
+    mcpOAuthGrant: {
+      updateMany: async (args) => {
+        mcpOAuthRevocation = args;
+        return { count: 1 };
+      }
+    },
+    mcpOAuthAuthorizationCode: {
+      deleteMany: async (args) => {
+        mcpOAuthCodeDeletion = args;
+        return { count: 1 };
+      }
     },
     sessionStore: {
       deleteMany: async (args) => {
@@ -383,6 +409,9 @@ test('user route: PATCH /password updates password when current password matches
   assert.deepEqual(browserSessionDeletion, {
     where: { user_id: 7, sid: { not: 'browser-session-11' } }
   });
+  assert.deepEqual(mcpOAuthRevocation.where, { user_id: 7, revoked_at: null });
+  assert.ok(mcpOAuthRevocation.data.revoked_at instanceof Date);
+  assert.deepEqual(mcpOAuthCodeDeletion.where, { user_id: 7 });
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { message: 'Password updated' });
 });

@@ -4,7 +4,7 @@ const Module = require('node:module');
 
 const CURRENT_LEGAL_ACCEPTANCE = {
   terms_version: '2026-08-09',
-  privacy_version: '2026-07-24',
+  privacy_version: '2026-08-19',
   accept_terms: true,
   accept_privacy: true
 };

@@ -764,6 +764,40 @@ export interface paths {
         patch: operations["dismissInAppNotification"];
         trace?: never;
     };
+    "/api/v1/user/connected-apps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List active read-only OAuth grants owned by the authenticated account without exposing credentials. */
+        get: operations["getConnectedApps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/user/connected-apps/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Revoke one OAuth grant owned by the authenticated account and immediately invalidate its tokens. */
+        delete: operations["revokeConnectedApp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/user/account/export": {
         parameters: {
             query?: never;
@@ -1805,7 +1839,7 @@ export interface components {
             /** @constant */
             platform?: "web";
             /** @enum {unknown} */
-            version?: "0.33.10" | "0.33.9";
+            version?: "0.33.11" | "0.33.10";
         } | {
             /** @constant */
             platform?: "android_phone";
@@ -2088,6 +2122,21 @@ export interface components {
             /** Format: date-time */
             last_activity_at: string | null;
             current: boolean;
+        };
+        ConnectedAppSummary: {
+            /** Format: uuid */
+            id: string;
+            client_id: string;
+            client_name: string;
+            scopes: ("calibrate:food:read" | "calibrate:weight:read")[];
+            /** Format: uri */
+            resource: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            last_used_at: string | null;
+            /** Format: date-time */
+            expires_at: string;
         };
         MobileSessionSummary: {
             id: number;
@@ -4267,6 +4316,62 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getConnectedApps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revocable connected-assistant grants. */
+            200: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        connections: components["schemas"]["ConnectedAppSummary"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    revokeConnectedApp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connected assistant was revoked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description No active owned connection has that identifier. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     exportAccount: {

@@ -180,6 +180,10 @@ model User {
   account_action_tokens AccountActionToken[]
   /// Versioned user consent history for Terms and Privacy.
   legal_acceptances LegalAcceptance[]
+  /// OAuth authorization codes issued after this account approves a remote MCP client.
+  mcp_oauth_authorization_codes McpOAuthAuthorizationCode[]
+  /// Revocable OAuth grants that let remote MCP clients read this account's selected data.
+  mcp_oauth_grants McpOAuthGrant[]
 }
 
 enum AccountTokenPurpose {
@@ -210,6 +214,96 @@ model LegalAcceptance {
 
   @@unique([user_id, terms_version, privacy_version])
   @@index([user_id, accepted_at])
+}
+
+model McpOAuthClient {
+  client_id String @id
+  /// Complete dynamic-client-registration metadata. Client secrets are never accepted or stored.
+  metadata_json Json
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  authorization_requests McpOAuthAuthorizationRequest[]
+  authorization_codes McpOAuthAuthorizationCode[]
+  grants McpOAuthGrant[]
+
+  @@index([updated_at])
+}
+
+model McpOAuthAuthorizationRequest {
+  /// Purpose-bound SHA-256 hash of the opaque request credential rendered in the approval form.
+  request_hash String @id @db.VarChar(64)
+  client_id String
+  client McpOAuthClient @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+  redirect_uri String
+  state String?
+  scopes String[]
+  code_challenge String
+  resource String
+  failed_attempts Int @default(0)
+  created_at DateTime @default(now())
+  expires_at DateTime
+  @@index([expires_at])
+  @@index([client_id, expires_at])
+}
+
+model McpOAuthAuthorizationCode {
+  /// Purpose-bound SHA-256 hash of the one-use authorization code.
+  code_hash String @id @db.VarChar(64)
+  client_id String
+  client McpOAuthClient @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+  user_id Int
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  redirect_uri String
+  scopes String[]
+  code_challenge String
+  resource String
+  created_at DateTime @default(now())
+  expires_at DateTime
+  @@index([expires_at])
+  @@index([user_id, expires_at])
+}
+
+model McpOAuthGrant {
+  /// Public revocation identifier. Credential hashes remain private.
+  id String @id @default(uuid()) @db.Uuid
+  client_id String
+  client McpOAuthClient @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+  user_id Int
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  scopes String[]
+  resource String
+  created_at DateTime @default(now())
+  last_used_at DateTime?
+  revoked_at DateTime?
+  access_tokens McpOAuthAccessToken[]
+  refresh_tokens McpOAuthRefreshToken[]
+  @@index([user_id, revoked_at, created_at(sort: Desc)])
+  @@index([client_id, revoked_at])
+}
+
+model McpOAuthAccessToken {
+  /// Purpose-bound SHA-256 hash of the opaque bearer token.
+  token_hash String @id @db.VarChar(64)
+  grant_id String @db.Uuid
+  grant McpOAuthGrant @relation(fields: [grant_id], references: [id], onDelete: Cascade)
+  scopes String[]
+  created_at DateTime @default(now())
+  expires_at DateTime
+  @@index([grant_id, expires_at])
+  @@index([expires_at])
+}
+
+model McpOAuthRefreshToken {
+  /// Purpose-bound SHA-256 hash of the opaque rotating refresh token.
+  token_hash String @id @db.VarChar(64)
+  grant_id String @db.Uuid
+  grant McpOAuthGrant @relation(fields: [grant_id], references: [id], onDelete: Cascade)
+  scopes String[]
+  created_at DateTime @default(now())
+  expires_at DateTime
+  used_at DateTime?
+  @@index([grant_id, used_at, expires_at])
+  @@index([expires_at])
 }
 
 model ActivityRecord {

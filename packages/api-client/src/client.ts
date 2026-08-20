@@ -12,6 +12,7 @@ import type {
     ClientDiagnosticInput,
     ClientDiagnosticResponse,
     ClientConfigResponse,
+    ConnectedAppSummary,
     CreateMyFoodPayload,
     CreateRecipeFromFoodLogsPayload,
     FoodLogCopyPayload,
@@ -530,6 +531,17 @@ export class CalibrateApiClient {
 
     getAccountSessions(): Promise<{ sessions: AccountSessionSummary[] }> {
         return this.request<{ sessions: AccountSessionSummary[] }>('/auth/sessions');
+    }
+
+    getConnectedApps(): Promise<{ connections: ConnectedAppSummary[] }> {
+        return this.request<{ connections: ConnectedAppSummary[] }>('/api/user/connected-apps');
+    }
+
+    revokeConnectedApp(connectionId: string): Promise<{ ok: true }> {
+        return this.request<{ ok: true }>(
+            '/api/user/connected-apps/' + encodeURIComponent(connectionId),
+            { method: 'DELETE' }
+        );
     }
 
     revokeAccountSession(sessionId: string): Promise<{ ok: true; revoked: boolean }> {

@@ -11,6 +11,7 @@ import { resolveBrowserOriginPolicy } from './config/cors';
 import prisma, { pgPool } from './config/database';
 import { isProductionOrStagingEnv } from './config/environment';
 import { getNativePushModeConfigurationWarning } from './config/nativePush';
+import { resolveMcpConfiguration } from './config/mcp';
 import { configureFrontendStaticAssets } from './frontendStatic';
 import { isAuthenticatedUser } from './middleware/authenticatedUser';
 import authRoutes from './routes/auth';
@@ -48,6 +49,7 @@ import {
   createClientDiagnosticsRateLimiter
 } from './middleware/security';
 import { startReminderScheduler } from './services/reminderScheduler';
+import { createCalibrateMcpHttpApp, isCalibrateMcpPath } from './mcp/server';
 import { checkDatabaseReadiness } from './services/readiness';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
 import { autoLoginTestUser } from './utils/devAuth';
@@ -108,6 +110,7 @@ const bootstrap = async (): Promise<void> => {
   const isProductionOrStaging = isProductionOrStagingEnv(process.env.NODE_ENV);
   const observabilityConfig = resolveObservabilityConfig(process.env);
   const nativePushConfigurationWarning = getNativePushModeConfigurationWarning(process.env);
+  const mcpConfiguration = resolveMcpConfiguration(process.env);
 
   // Reduce fingerprinting surface for minimal Express signature.
   app.disable('x-powered-by');
@@ -144,6 +147,25 @@ const bootstrap = async (): Promise<void> => {
   if (useSecureCookies) {
     app.set('trust proxy', 1);
   }
+
+  const mcpHttpApp = mcpConfiguration.enabled
+    ? createCalibrateMcpHttpApp({
+      publicUrl: mcpConfiguration.publicUrl,
+      allowedHosts: mcpConfiguration.allowedHosts,
+      trustedProxyHops: useSecureCookies ? 1 : 0,
+      // Share one credential-guess budget across ordinary and connected-assistant login.
+      oauthApprovalRateLimiter: authRateLimiters.login
+    })
+    : null;
+  // MCP and its OAuth protocol endpoints own cross-origin policy and bearer auth. Mount them
+  // before browser CORS and mobile bearer middleware so remote public clients can connect safely.
+  app.use((req, res, next) => {
+    if (!mcpHttpApp || !isCalibrateMcpPath(req.path)) {
+      next();
+      return;
+    }
+    mcpHttpApp(req, res, next);
+  });
 
   const browserOriginPolicy = resolveBrowserOriginPolicy(process.env.CORS_ORIGINS, isProductionOrStaging);
   const allowedOriginSet = browserOriginPolicy.exactOrigins;
@@ -310,6 +332,7 @@ const bootstrap = async (): Promise<void> => {
       secure_cookies: useSecureCookies,
       cors_origin_count: allowedOriginSet.size,
       metrics_enabled: observabilityConfig.metricsEnabled,
+      mcp_enabled: mcpConfiguration.enabled,
       reminder_scheduler_enabled: true
     });
     startReminderScheduler();

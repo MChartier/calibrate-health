@@ -9,8 +9,8 @@ database. It never connects to a caller-provided database.
 - Predecessor: annotated tag `v0.14.0`, commit `190e55c625fe106c2c85a7439b60a5a02f4257be`.
 - Predecessor ledger: 35 migration folders through `0031_calibration_insights`, SHA-256
   `80165f5680e7fe93541a59d4bac0317f8233a7f160bcedac033f3c78c1876a38`.
-- Candidate ledger: 42 migration folders through `0038_settings_trust_center`, SHA-256
-  `5d0eb7f2ec2f997b31adb9fe60e5ae2a23e8a1d7a74e688e3952df5502ceadd0`.
+- Candidate ledger: 43 migration folders through `0039_mcp_oauth`, SHA-256
+  `20bad428af0aa6c434e95999d409f7066c2a5bd611a7cceaf3caad99871e801b`.
 
 The script verifies the tag object, commit, release manifest, migration names, migration bytes, candidate ancestry,
 and a clean candidate checkout before contacting Docker. `v0.13.3` is not the rollback base.

@@ -432,6 +432,17 @@ export type AccountSessionSummary = {
     current: boolean;
 };
 
+export type ConnectedAppSummary = {
+    id: string;
+    client_id: string;
+    client_name: string;
+    scopes: string[];
+    resource: string;
+    created_at: string;
+    last_used_at: string | null;
+    expires_at: string;
+};
+
 export type WearPairingCredentialRequest = {
     server_origin: string;
     watch_device_id: string;
