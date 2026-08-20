@@ -103,4 +103,4 @@ The plugin MCP declaration uses remote OAuth and contains no secret:
 The tracked plugin currently targets the Dark Machines self-hosted instance. Install it from a
 personal or team marketplace, choose **Authenticate**, complete the Calibrate consent page, and
 start a new task so Codex loads the installed skill and MCP dependency. For a different hosted
-origin, update `.mcp.json` before installing.
+origin, update both `.mcp.json` and the skill dependency URL before installing.
