@@ -9,6 +9,6 @@ dependencies:
       value: "calibrate"
       description: "Private Calibrate food-log and weight-trend service"
       transport: "streamable_http"
-      url: "https://calibratehealth.app/mcp"
+      url: "https://calibratehealth.darkmachines.net/mcp"
 policy:
   allow_implicit_invocation: true
