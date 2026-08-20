@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FlatList, Keyboard, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@calibrate/api-client';
 import { AppButton } from './AppButton';
@@ -44,10 +44,6 @@ import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { confirmDiscardChanges } from './confirmDiscardChanges';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
-import {
-    getSavedFoodsLibraryQueryKey,
-    SAVED_FOODS_LIBRARY_PAGE_SIZE
-} from '../savedFoods/queryKeys';
 
 type AddFoodReturnTo = 'today' | 'food-log';
 
@@ -60,7 +56,7 @@ type AddFoodSheetProps = {
     onLogged?: () => void;
 };
 
-type AddFoodMode = 'quick' | 'search' | 'recipes';
+type AddFoodMode = 'quick' | 'search';
 type FoodBrowseRow =
     | { kind: 'header'; key: string; title: string }
     | {
@@ -76,8 +72,7 @@ type FoodBrowseRow =
 const DEFAULT_ADD_FOOD_MODE: AddFoodMode = 'search';
 const ADD_FOOD_MODES: Array<{ value: AddFoodMode; label: string }> = [
     { value: 'quick', label: 'Quick' },
-    { value: 'search', label: 'Search' },
-    { value: 'recipes', label: 'Recipes' }
+    { value: 'search', label: 'Search' }
 ];
 const SEARCH_DEBOUNCE_MS = 350;
 const SEARCH_WORKSPACE_BLUR_DELAY_MS = 150; // Keeps mobile-web results mounted through input blur and the following press.
@@ -154,16 +149,13 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const [quickName, setQuickName] = useState('');
     const [query, setQuery] = useState('');
     const [requestedQuery, setRequestedQuery] = useState('');
-    const [recipeQuery, setRecipeQuery] = useState('');
-    const [requestedRecipeQuery, setRequestedRecipeQuery] = useState('');
     const [selection, setSelection] = useState<FoodLogSelection | null>(null);
     const [isMealSelectorOpen, setIsMealSelectorOpen] = useState(false);
     const [isSearchFieldFocused, setIsSearchFieldFocused] = useState(false);
     const searchBlurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const normalizedQuery = query.trim();
-    const normalizedRecipeQuery = recipeQuery.trim();
     const isMobileSearchWorkspace = (Platform.OS !== 'web' || viewportWidth < ADAPTIVE_DIALOG_BREAKPOINT)
-        && (mode === 'search' || mode === 'recipes')
+        && mode === 'search'
         && isSearchFieldFocused
         && selection === null;
     const usesEdgeToEdgeSheetContent = Platform.OS === 'web'
@@ -181,18 +173,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         const timeout = setTimeout(() => setRequestedQuery(normalizedQuery), SEARCH_DEBOUNCE_MS);
         return () => clearTimeout(timeout);
     }, [mode, normalizedQuery, visible]);
-
-    useEffect(() => {
-        if (!visible || mode !== 'recipes' || normalizedRecipeQuery.length === 0) {
-            setRequestedRecipeQuery('');
-            return;
-        }
-        const timeout = setTimeout(
-            () => setRequestedRecipeQuery(normalizedRecipeQuery),
-            SEARCH_DEBOUNCE_MS
-        );
-        return () => clearTimeout(timeout);
-    }, [mode, normalizedRecipeQuery, visible]);
 
     const recentFoodsQuery = useQuery({
         queryKey: ['mobile-recent-foods', meal, requestedQuery || 'browse'],
@@ -213,24 +193,9 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         queryFn: () => api.getMyFoods(),
         enabled: visible && mode === 'search'
     });
-    const recipeLibraryQuery = useInfiniteQuery({
-        queryKey: getSavedFoodsLibraryQueryKey(requestedRecipeQuery, 'RECIPE'),
-        queryFn: ({ pageParam }) => api.getMyFoodsLibrary({
-            q: requestedRecipeQuery || undefined,
-            type: 'RECIPE',
-            cursor: pageParam,
-            limit: SAVED_FOODS_LIBRARY_PAGE_SIZE
-        }),
-        initialPageParam: undefined as string | undefined,
-        getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
-        enabled: visible && mode === 'recipes'
-    });
     const recentFoodsState = useAsyncResourceState(recentFoodsQuery, (data) => data.items.length === 0);
     const providerSearchState = useAsyncResourceState(providerSearchQuery, (data) => data.items.length === 0);
     const myFoodsState = useAsyncResourceState(myFoodsQuery, (data) => data.length === 0);
-    const recipeLibraryState = useAsyncResourceState(recipeLibraryQuery, (data) =>
-        data.pages.every((page) => page.items.length === 0)
-    );
 
     const createFoodLog = useCallback((payload: FoodLogCreatePayload) => {
         if (foodDayQuery.data?.status !== 'OPEN') {
@@ -286,8 +251,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         setQuickName('');
         setQuery('');
         setRequestedQuery('');
-        setRecipeQuery('');
-        setRequestedRecipeQuery('');
         setSelection(null);
         setIsMealSelectorOpen(false);
         setIsSearchFieldFocused(false);
@@ -370,19 +333,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         savedFoods
     ]);
 
-    const recipes = recipeLibraryQuery.data?.pages.flatMap((page) => page.items) ?? [];
-    const recipeRows: FoodBrowseRow[] = recipes
-        .map((item) => ({
-            kind: 'selection',
-            key: `recipe:${item.id}`,
-            title: item.name,
-            subtitle: describeMyFood(item),
-            selection: createMyFoodSelection(item)
-        }));
-    const isWaitingForRecipeSearch = normalizedRecipeQuery !== requestedRecipeQuery;
-    const displayedRecipeState: AsyncResourceState = isWaitingForRecipeSearch
-        ? { kind: ASYNC_RESOURCE_STATES.LOADING, error: null }
-        : recipeLibraryState;
     const activeAttribution = getProviderAttribution(providerData?.provider, providerData?.attribution);
     const isWaitingForSearch = normalizedQuery.length >= MINIMUM_SEARCH_LENGTH && requestedQuery !== normalizedQuery;
     const isSearchLoading = isWaitingForSearch
@@ -723,76 +673,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             );
         }
 
-        return (
-            <View style={styles.flex}>
-                {!isMobileSearchWorkspace && (
-                    <View style={styles.modeFieldHeader}>
-                        <AppText variant="label">Search recipes</AppText>
-                        {renderSavedFoodsAction()}
-                    </View>
-                )}
-                <TextField
-                    label="Search recipes"
-                    hideLabel
-                    value={recipeQuery}
-                    onChangeText={(value) => {
-                        setRecipeQuery(value);
-                        setSelection(null);
-                        logFood.reset();
-                    }}
-                    onFocus={focusSearchField}
-                    onBlur={blurSearchField}
-                    placeholder="e.g. chili, overnight oats"
-                    editable={!logFood.isPending}
-                />
-                {selection ? renderSelectionEditor() : (
-                    <AsyncStateBoundary
-                        state={displayedRecipeState}
-                        resourceLabel="saved recipes"
-                        loading={(
-                            <AppText style={styles.emptyMessage} variant="muted">
-                                {normalizedRecipeQuery ? 'Searching recipes...' : 'Loading recipes...'}
-                            </AppText>
-                        )}
-                        empty={(
-                            <AppText style={styles.emptyMessage} variant="muted">
-                                {requestedRecipeQuery
-                                    ? 'No recipes match this search.'
-                                    : 'No saved recipes yet. Create one in Saved foods to reuse it here.'}
-                            </AppText>
-                        )}
-                        onRetry={isOnline ? () => recipeLibraryQuery.refetch() : undefined}
-                        retrying={recipeLibraryQuery.isFetching}
-                    >
-                        <FlatList
-                            data={recipeRows}
-                            keyExtractor={(item) => item.key}
-                            renderItem={renderBrowseRow}
-                            ListEmptyComponent={(
-                                <AppText style={styles.emptyMessage} variant="muted">
-                                    No recipes match this search.
-                                </AppText>
-                            )}
-                            ListFooterComponent={recipeLibraryQuery.hasNextPage ? (
-                                <AppButton
-                                    title="Load more recipes"
-                                    variant="secondary"
-                                    busy={recipeLibraryQuery.isFetchingNextPage}
-                                    busyLabel="Loading more recipes..."
-                                    disabled={!isOnline}
-                                    onPress={() => void recipeLibraryQuery.fetchNextPage()}
-                                />
-                            ) : null}
-                            contentContainerStyle={styles.resultsContent}
-                            keyboardDismissMode="none"
-                            keyboardShouldPersistTaps="always"
-                            showsVerticalScrollIndicator
-                            style={styles.resultsList}
-                        />
-                    </AsyncStateBoundary>
-                )}
-            </View>
-        );
+        return null;
     }
 
     return (
