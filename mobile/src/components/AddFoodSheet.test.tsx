@@ -5,7 +5,6 @@ import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { RecentFoodSummary } from '@calibrate/api-client';
 import { AddFoodSheet } from './AddFoodSheet';
-import { getSavedFoodsLibraryQueryKey } from '../savedFoods/queryKeys';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
@@ -21,7 +20,6 @@ const mockApi = {
     getRecentFoods: jest.fn(),
     searchFood: jest.fn(),
     getMyFoods: jest.fn(),
-    getMyFoodsLibrary: jest.fn(),
     createFoodLog: jest.fn()
 };
 
@@ -131,7 +129,6 @@ describe('AddFoodSheet async resource states', () => {
         mockApi.getRecentFoods.mockResolvedValue({ items: [] });
         mockApi.searchFood.mockResolvedValue({ items: [] });
         mockApi.getMyFoods.mockResolvedValue([]);
-        mockApi.getMyFoodsLibrary.mockResolvedValue({ items: [], next_cursor: null });
         onlineManager.setOnline(false);
     });
 
@@ -236,72 +233,32 @@ describe('AddFoodSheet async resource states', () => {
         }
     });
 
-    it('keeps cached recipes usable while labeling them stale offline', async () => {
-        const screen = renderSheet((queryClient) => {
-            queryClient.setQueryData(getSavedFoodsLibraryQueryKey('', 'RECIPE'), {
-                pages: [{
-                    items: [{
-                        id: 14,
-                        type: 'RECIPE',
-                        name: 'Overnight oats',
-                        is_pinned: false,
-                        serving_size_quantity: 1,
-                        serving_unit_label: 'serving',
-                        calories_per_serving: 320,
-                        recipe_total_calories: 640,
-                        yield_servings: 2
-                    }],
-                    next_cursor: null
-                }],
-                pageParams: [undefined]
-            });
-        });
-        fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
-
-        await waitFor(() => expect(screen.getByText('Offline - showing saved information')).toBeTruthy());
-        expect(screen.getByText('Overnight oats')).toBeTruthy();
-        expect(screen.queryByText('No saved recipes yet. Create one in Saved foods to reuse it here.')).toBeNull();
-    });
-
-    it('does not describe an uncached offline recipe library as empty', async () => {
-        const screen = renderSheet();
-        fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
-
-        await waitFor(() => expect(screen.getByText('Connect to the internet to load saved recipes.')).toBeTruthy());
-        expect(screen.queryByText('No saved recipes yet. Create one in Saved foods to reuse it here.')).toBeNull();
-        expect(screen.queryByText('No recipes match this search.')).toBeNull();
-        expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
-        expect(mockApi.getMyFoodsLibrary).not.toHaveBeenCalled();
-    });
-
-    it('searches the recipe library on the server instead of filtering the legacy saved-food cache', async () => {
+    it('offers only Quick and Search while keeping saved recipes discoverable in Search', async () => {
         onlineManager.setOnline(true);
-        mockApi.getMyFoodsLibrary.mockImplementation(({ q }: { q?: string }) => Promise.resolve({
-            items: q === 'oats' ? [{
-                id: 14,
-                type: 'RECIPE',
-                name: 'Overnight oats',
-                is_pinned: false,
-                serving_size_quantity: 1,
-                serving_unit_label: 'serving',
-                calories_per_serving: 320,
-                recipe_total_calories: 640,
-                yield_servings: 2
-            }] : [],
-            next_cursor: null
-        }));
+        mockApi.getMyFoods.mockResolvedValue([{
+            id: 14,
+            type: 'RECIPE',
+            name: 'Overnight oats',
+            is_pinned: false,
+            serving_size_quantity: 1,
+            serving_unit_label: 'serving',
+            calories_per_serving: 320,
+            recipe_total_calories: 640,
+            yield_servings: 2
+        }]);
         const screen = renderSheet();
 
-        fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
-        fireEvent.changeText(screen.getByLabelText('Search recipes'), '  oats  ');
+        expect(screen.getByRole('radio', { name: 'Quick' })).toBeTruthy();
+        expect(screen.getByRole('radio', { name: 'Search' })).toBeTruthy();
+        expect(screen.queryByRole('radio', { name: 'Recipes' })).toBeNull();
+        expect(screen.queryByLabelText('Search recipes')).toBeNull();
 
-        await waitFor(() => expect(mockApi.getMyFoodsLibrary).toHaveBeenCalledWith({
-            q: 'oats',
-            type: 'RECIPE',
-            cursor: undefined,
-            limit: 24
-        }));
+        const searchField = screen.getByLabelText('Search foods');
+        fireEvent.changeText(searchField, '  oats  ');
+        fireEvent(searchField, 'submitEditing');
+
         expect(await screen.findByText('Overnight oats')).toBeTruthy();
+        expect(screen.getByText('Recipe | 320 kcal per serving')).toBeTruthy();
     });
 
     it('links to Saved foods from the Add Food sheet', () => {
@@ -314,9 +271,6 @@ describe('AddFoodSheet async resource states', () => {
 
         fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
         expect(screen.queryByRole('button', { name: 'Saved foods' })).toBeNull();
-
-        fireEvent.press(screen.getByRole('radio', { name: 'Recipes' }));
-        expect(screen.getByRole('button', { name: 'Saved foods' })).toBeTruthy();
     });
 
     it('confirms before Saved foods or Scan discards a selected food draft', async () => {
