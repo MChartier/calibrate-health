@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import {
     CALIBRATION_MAX_OBSERVATION_DAYS,
     CALIBRATION_MODEL_VERSION,
+    buildUnavailableCalibrationSignals,
     evaluateCalibration,
     type CalibrationFoodDay,
     type CalibrationInput,
@@ -136,7 +137,11 @@ function buildUnavailableEvaluation(options: {
             configuredWeeklyWeightChangeKg: -((options.configuredDailyDeficitKcal ?? 0) * 7) / 7700
         },
         recommendation: null,
-        activityContext: null
+        activityContext: null,
+        signals: buildUnavailableCalibrationSignals(
+            options.asOfDate,
+            options.configuredDailyDeficitKcal
+        )
     };
 }
 
@@ -304,25 +309,6 @@ async function buildCalibrationStatusSnapshot(
     }
 
     const goal = planning.goal!;
-    if (goal.daily_deficit <= 0) {
-        if (persistRecommendation) await stalePendingRecommendations(database, userId);
-        return {
-            generatedAt,
-            inputFingerprint: null,
-            evaluation: buildUnavailableEvaluation({
-                asOfDate: unavailableAsOfDateKey,
-                headline: 'Calibration is available for active weight-loss goals',
-                summary: 'Choose a calorie-deficit goal before Calibrate evaluates weight-loss pacing.',
-                missingCriteria: ['Set an active weight-loss goal with a daily calorie deficit.'],
-                weightUnit: user.weight_unit,
-                configuredDailyDeficitKcal: goal.daily_deficit
-            }),
-            recommendation: null,
-            scheduledChange: null,
-            planStatus: planning.evaluation.status,
-            planReasonCode: planning.evaluation.reasonCode
-        };
-    }
 
     const todayCompletion = await database.foodLogDay.findUnique({
         where: { user_id_local_date: { user_id: userId, local_date: today } },
@@ -337,6 +323,12 @@ async function buildCalibrationStatusSnapshot(
         targetAdjustmentKcal: planning.effectiveRevision.target_adjustment_kcal,
         effectiveLocalDate: planning.effectiveRevision.effective_local_date
     } : null;
+    const goalStartDate = formatDateToLocalDateString(goal.created_at, user.timezone);
+    const goalStart = parseLocalDateOnly(goalStartDate);
+    const revisionStartDate = currentPlan ? toDateKey(currentPlan.effectiveLocalDate) : goalStartDate;
+    const planStartDate = goalStartDate > revisionStartDate ? goalStartDate : revisionStartDate;
+    const actionHistoryStartDate = [planStartDate, toDateKey(historyStart)].sort().reverse()[0];
+    const actionWeightStartDate = [planStartDate, toDateKey(weightStart)].sort().reverse()[0];
     const [scheduledRevision, logs, completionDays, weightRows] = await Promise.all([
         database.caloriePlanRevision.findFirst({
             where: { user_id: userId, source_goal_id: goal.id, effective_local_date: { gt: today } },
@@ -344,17 +336,17 @@ async function buildCalibrationStatusSnapshot(
             select: { recommendation_id: true, target_adjustment_kcal: true, effective_local_date: true, calorie_plan_review_status: true, calorie_plan_review_reason: true }
         }),
         database.foodLog.findMany({
-            where: { user_id: userId, local_date: { gte: historyStart, lte: asOfDate } },
+            where: { user_id: userId, local_date: { gte: goalStart, lte: asOfDate } },
             orderBy: [{ local_date: 'asc' }, { id: 'asc' }],
             select: { local_date: true, calories: true, meal_period: true }
         }),
         database.foodLogDay.findMany({
-            where: { user_id: userId, local_date: { gte: historyStart, lte: asOfDate } },
+            where: { user_id: userId, local_date: { gte: goalStart, lte: asOfDate } },
             orderBy: { local_date: 'asc' },
             select: { local_date: true, status: true }
         }),
         database.bodyMetric.findMany({
-            where: { user_id: userId, date: { gte: weightStart, lte: asOfDate } },
+            where: { user_id: userId, date: { gte: goalStart, lte: asOfDate } },
             orderBy: [{ date: 'asc' }, { id: 'asc' }],
             select: {
                 date: true,
@@ -365,7 +357,8 @@ async function buildCalibrationStatusSnapshot(
 
     const bmrKcal = planning.evaluation.bmr!;
     const profileTdeeKcal = planning.evaluation.tdee!;
-    if (weightRows.some((row) => !isPolicyWeight(row.weight_grams))) {
+    const actionWeightRows = weightRows.filter((row) => toDateKey(row.date) >= actionWeightStartDate);
+    if (actionWeightRows.some((row) => !isPolicyWeight(row.weight_grams))) {
         if (persistRecommendation) await stalePendingRecommendations(database, userId);
         return {
             generatedAt,
@@ -389,14 +382,26 @@ async function buildCalibrationStatusSnapshot(
             planReasonCode: planning.evaluation.reasonCode
         };
     }
-    const goalStartDate = formatDateToLocalDateString(goal.created_at, user.timezone);
-    const revisionStartDate = currentPlan ? toDateKey(currentPlan.effectiveLocalDate) : goalStartDate;
-    const planStartDate = goalStartDate > revisionStartDate ? goalStartDate : revisionStartDate;
-    const foodDays = buildFoodEvidence({ logs, completionDays, planStartDate, asOfDate: asOfDateKey });
+    const signalFoodDays = buildFoodEvidence({
+        logs,
+        completionDays,
+        planStartDate: goalStartDate,
+        asOfDate: asOfDateKey
+    });
+    const foodDays = signalFoodDays.filter((day) => day.date >= actionHistoryStartDate);
     const latestPausedDate = foodDays
         .filter((day) => day.isPaused)
         .map((day) => day.date)
         .sort((left, right) => right.localeCompare(left))[0] ?? null;
+    const signalWeightPoints = buildWeightEvidence({
+        rows: weightRows.filter((row) => isPolicyWeight(row.weight_grams)),
+        planStartDate: goalStartDate,
+        latestPausedDate: null
+    });
+    const actionWeightBoundary = [
+        actionWeightStartDate,
+        latestPausedDate ? toDateKey(addUtcDays(parseLocalDateOnly(latestPausedDate), 1)) : actionWeightStartDate
+    ].sort().reverse()[0];
     const input: CalibrationInput = {
         asOfDate: asOfDateKey,
         weightUnit: user.weight_unit,
@@ -406,8 +411,15 @@ async function buildCalibrationStatusSnapshot(
         configuredDailyDeficitKcal: goal.daily_deficit,
         currentTargetAdjustmentKcal: currentPlan?.targetAdjustmentKcal ?? 0,
         foodDays,
+        recommendationsEnabled: goal.daily_deficit > 0,
         trackingPaused: todayCompletion?.status === 'PAUSED',
-        weightPoints: buildWeightEvidence({ rows: weightRows, planStartDate, latestPausedDate })
+        weightPoints: signalWeightPoints.filter((point) => point.date >= actionWeightBoundary),
+        signalHistory: {
+            goalStartDate,
+            goalStartWeightKg: goal.start_weight_grams / 1000,
+            foodDays: signalFoodDays,
+            weightPoints: signalWeightPoints
+        }
     };
     const scheduledTarget = scheduledRevision
         ? Math.round(profileTdeeKcal - goal.daily_deficit + scheduledRevision.target_adjustment_kcal)
@@ -442,7 +454,17 @@ async function buildCalibrationStatusSnapshot(
         };
     }
     const evaluation = evaluateCalibration(input);
-    const { weightUnit: _displayWeightUnit, ...actionEvidence } = input;
+    const actionEvidence = {
+        asOfDate: input.asOfDate,
+        ageYears: input.ageYears,
+        bmrKcal: input.bmrKcal,
+        profileTdeeKcal: input.profileTdeeKcal,
+        configuredDailyDeficitKcal: input.configuredDailyDeficitKcal,
+        currentTargetAdjustmentKcal: input.currentTargetAdjustmentKcal,
+        foodDays: input.foodDays,
+        trackingPaused: input.trackingPaused,
+        weightPoints: input.weightPoints
+    };
     const inputFingerprint = fingerprintInput({
         modelVersion: CALIBRATION_MODEL_VERSION,
         caloriePolicyVersion: CALORIE_POLICY_VERSION,
