@@ -17,7 +17,6 @@ import {
     type FoodCopySelection,
     type FoodCopySource
 } from '../../../src/components/CopyFoodSheet';
-import { DateNavigation } from '../../../src/components/DateNavigation';
 import { FoodLogTimelineCard } from '../../../src/components/FoodLogTimelineCard';
 import { useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
 import { NumberStepperField } from '../../../src/components/NumberStepperField';
@@ -279,9 +278,7 @@ export default function FoodLogScreen() {
     }
 
     return (
-        <TabScreen reserveFab={canEditFood}>
-            <DateNavigation navigation={dateNavigation} />
-
+        <TabScreen reserveFab={canEditFood} style={styles.screenContent}>
             <AsyncStateBoundary
                 state={foodState}
                 resourceLabel="food log"
@@ -495,6 +492,9 @@ const skeletonStyles = StyleSheet.create({
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
+        screenContent: {
+            paddingTop: 0
+        },
         row: {
             flexDirection: 'row',
             gap: theme.spacing.md
