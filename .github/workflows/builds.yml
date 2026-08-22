@@ -19,6 +19,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
+      backend: ${{ steps.filter.outputs.backend }}
       web: ${{ steps.filter.outputs.web }}
       wear: ${{ steps.filter.outputs.wear }}
       native_package: ${{ steps.filter.outputs.native_package }}
@@ -29,8 +30,10 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
+            backend:
+              - 'backend/**'
+              - 'shared/**'
             web:
-              - '.github/workflows/builds.yml'
               - 'backend/**'
               - 'e2e/expo-web/**'
               - 'mobile/app/**'
@@ -55,14 +58,12 @@ jobs:
               - 'scripts/ux-gates.mjs'
               - 'shared/**'
             wear:
-              - '.github/workflows/builds.yml'
               - 'wear/**'
               - 'scripts/hosted-native-evidence.mjs'
               - 'scripts/release-acceptance.mjs'
               - 'scripts/wear-emulator-smoke.mjs'
               - 'shared/release.json'
             native_package:
-              - '.github/workflows/builds.yml'
               - 'wear/**'
               - 'mobile/app.config.js'
               - 'mobile/app.json'
@@ -112,6 +113,8 @@ jobs:
 
   backend-build:
     name: Backend Build
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -141,6 +144,8 @@ jobs:
 
   performance-regression:
     name: Deterministic Performance Regression
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: windows-latest
     timeout-minutes: 10
 

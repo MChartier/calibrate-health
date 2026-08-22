@@ -144,7 +144,7 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
 
   assertWindowsUxJob(workflow);
   assert.match(workflow, /on:\s*\n\s+pull_request:/);
-  assert.match(webPaths, /- '\.github\/workflows\/builds\.yml'/);
+  assert.doesNotMatch(webPaths, /\.github\/workflows/);
   assert.match(webPaths, /- 'backend\/\*\*'/);
   assert.match(webPaths, /- 'mobile\/src\/\*\*'/);
   assert.match(webPaths, /- 'e2e\/expo-web\/\*\*'/);
@@ -153,6 +153,24 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
     assert.match(job, /if: needs\.changes\.outputs\.web == 'true'/);
   }
   assert.doesNotMatch(releaseConfig, /needs\.changes\.outputs/);
+});
+
+test('pull requests run backend builds only for backend-impacting paths', () => {
+  const workflow = readWorkflow('builds.yml');
+  const changes = workflowJobBlock(workflow, 'changes');
+  const backendPaths = workflowPathFilterBlock(changes, 'backend');
+  const backendJobs = [
+    workflowJobBlock(workflow, 'backend-build'),
+    workflowJobBlock(workflow, 'performance-regression')
+  ];
+
+  assert.doesNotMatch(backendPaths, /\.github\/workflows/);
+  assert.match(backendPaths, /- 'backend\/\*\*'/);
+  assert.match(backendPaths, /- 'shared\/\*\*'/);
+  for (const job of backendJobs) {
+    assert.match(job, /needs: changes/);
+    assert.match(job, /if: needs\.changes\.outputs\.backend == 'true'/);
+  }
 });
 
 test('pull requests path-gate native builds while retaining OTA-level checks', () => {
@@ -172,8 +190,8 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
 
   assert.match(changes, /uses: dorny\/paths-filter@v3/);
   const wearPaths = workflowPathFilterBlock(changes, 'wear');
+  assert.doesNotMatch(wearPaths, /\.github\/workflows/);
   for (const expectedPath of [
-    '.github/workflows/builds.yml',
     'wear/**',
     'scripts/hosted-native-evidence.mjs',
     'scripts/release-acceptance.mjs',
@@ -182,8 +200,8 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
     assert.ok(wearPaths.includes(`- '${expectedPath}'`), `wear filter must include ${expectedPath}`);
   }
   const nativePackagePaths = workflowPathFilterBlock(changes, 'native_package');
+  assert.doesNotMatch(nativePackagePaths, /\.github\/workflows/);
   for (const expectedPath of [
-    '.github/workflows/builds.yml',
     'mobile/assets/adaptive-icon.png',
     'mobile/assets/icon.png',
     'mobile/assets/notification-icon.png',
