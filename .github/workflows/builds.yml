@@ -320,6 +320,8 @@ jobs:
           retention-days: 90
   mobile-build:
     name: Mobile Build
+    needs: changes
+    if: needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -440,7 +442,8 @@ jobs:
 
   android-emulator-e2e:
     name: Android Emulator End-to-End
-    needs: mobile-build
+    needs: [changes, mobile-build]
+    if: needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

@@ -23,7 +23,7 @@ outcomes, run IDs, receipts, or hashes of evidence that does not yet exist.
 Evidence child A declares one or more scopes in `releaseAcceptanceEvidence.releaseScopes` using canonical order:
 
 - `server-web` covers the API, database, production container, exported Web/PWA, browser data states, and Web UX.
-- `ota` covers an Expo JavaScript/assets update, shared Web/UX behavior, Android emulator behavior, and OTA promotion.
+- `ota` covers an Expo JavaScript/assets update, shared Web/UX behavior, and OTA promotion.
 - `native` covers phone and Wear packages, emulator behavior, signing, package upgrade, Play Console, and physical
   devices.
 
@@ -34,9 +34,10 @@ data is invalid and falls back to the full requirement set so malformed metadata
 ## Implementation completion
 
 Run the repository-owned checks and require the hosted jobs selected by the release scopes to pass. Server/Web
-releases use Web, data-state, database, dependency, container, UX, and contract results. OTA releases add Android
-emulator behavior without requiring Wear or native-package evidence. Native releases use Android, Wear, package
-upgrade, dependency, and contract results. Every retained job still checks out C. The Windows Web suites continue to
+releases use Web, data-state, database, dependency, container, UX, and contract results. OTA releases use Web,
+data-state, dependency, UX, and contract results without native package or emulator evidence. Native releases use
+Android, Wear, package upgrade, dependency, and contract results. Every retained job still checks out C. The Windows
+Web suites continue to
 use the repository-pinned Playwright version and its bundled Chromium.
 
 The data-state lane uses only synthetic `.invalid` fixtures. Its raw Playwright JSON remains runner-local because

@@ -127,7 +127,7 @@ test('pull requests run the reviewed Windows UX gate and retain sanitized eviden
   assert.match(workflow, /on:\s*\n\s+pull_request:/);
 });
 
-test('pull requests run hosted Android, Wear release, and two-emulator package upgrade gates', () => {
+test('pull requests path-gate native builds while retaining OTA-level checks', () => {
   const workflow = readWorkflow('builds.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
   const changes = workflowJobBlock(workflow, 'changes');
@@ -145,14 +145,17 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.match(changes, /uses: dorny\/paths-filter@v3/);
   assert.match(changes, /wear:\s*\n\s+- 'wear\/\*\*'/);
   assert.match(changes, /native_package:[\s\S]*- 'mobile\/plugins\/\*\*'/);
+  assert.doesNotMatch(changes, /mobile\/src/);
   for (const job of [wearBuild, wear]) {
     assert.match(job, /needs: changes/);
     assert.match(job, /if: needs\.changes\.outputs\.wear == 'true'/);
   }
-  assert.match(upgrade, /needs: changes/);
-  assert.match(upgrade, /if: needs\.changes\.outputs\.native_package == 'true'/);
-  assert.doesNotMatch(mobileBuild, /needs\.changes\.outputs/);
-  assert.doesNotMatch(android, /needs\.changes\.outputs/);
+  for (const job of [mobileBuild, upgrade]) {
+    assert.match(job, /needs: changes/);
+    assert.match(job, /if: needs\.changes\.outputs\.native_package == 'true'/);
+  }
+  assert.match(android, /needs: \[changes, mobile-build\]/);
+  assert.match(android, /if: needs\.changes\.outputs\.native_package == 'true'/);
 
   assert.match(workflow, /Share Android debug APK with emulator E2E/);
   assert.match(
@@ -162,7 +165,7 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.match(android, /name: android-debug-apk-\$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
   assert.doesNotMatch(mobileBuild, /android-debug-apk-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.doesNotMatch(android, /android-debug-apk-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
-  assert.match(android, /needs: mobile-build/);
+  assert.match(android, /needs: \[changes, mobile-build\]/);
   assert.match(android, /ANDROID_ADB_SERIAL: emulator-5554/);
   assert.match(android, /image: postgres:15-alpine/);
   assert.match(android, /reactivecircus\/android-emulator-runner@v2/);
