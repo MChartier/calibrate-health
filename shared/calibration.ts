@@ -10,12 +10,15 @@ export const CALIBRATION_MIN_ACTIONABLE_DAYS = 14;
 export const CALIBRATION_MAX_ADJUSTMENT_STEP_KCAL = 150;
 export const CALIBRATION_MIN_TARGET_KCAL = ABSOLUTE_MIN_TARGET_KCAL;
 export const CALIBRATION_BOOTSTRAP_REPLICATES = 400;
+export const CALIBRATION_SIGNAL_VERSION = 1;
+export const CALIBRATION_ALIGNMENT_TOLERANCE_KCAL = 75;
 
 const KCAL_PER_KILOGRAM = 7700;
-const ACTION_THRESHOLD_KCAL = 75;
+const ACTION_THRESHOLD_KCAL = CALIBRATION_ALIGNMENT_TOLERANCE_KCAL;
 const MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL = 300;
 const OBSERVATION_WINDOWS = [14, 21, 28, 35, 42] as const;
 const POUNDS_PER_KILOGRAM = 2.2046226218;
+const KCAL_PER_POUND = 3500;
 
 export type CalibrationFoodDay = {
     date: string;
@@ -50,6 +53,15 @@ export type CalibrationInput = {
     weightPoints: CalibrationWeightPoint[];
     activityDays?: CalibrationActivityDay[];
     trackingPaused?: boolean;
+    /** Production can suppress target changes while retaining descriptive signals. */
+    recommendationsEnabled?: boolean;
+    /** Goal-to-date evidence used only for descriptive progress signals, never recommendation fingerprints. */
+    signalHistory?: {
+        goalStartDate: string;
+        goalStartWeightKg: number;
+        foodDays: CalibrationFoodDay[];
+        weightPoints: CalibrationWeightPoint[];
+    };
 };
 
 export type CalibrationInterval = {
@@ -75,6 +87,77 @@ export type CalibrationRecommendation = {
     adjustmentStepKcal: number;
     currentTargetAdjustmentKcal: number;
     recommendedTargetAdjustmentKcal: number;
+};
+
+export type CalibrationSignalScopeKind =
+    | 'recent_7_days'
+    | 'since_goal_start'
+    | 'since_tracking_resumed'
+    | 'current_tracking_period';
+
+export type CalibrationGoalPaceStatus =
+    | 'faster'
+    | 'aligned'
+    | 'slower'
+    | 'above_maintenance'
+    | 'below_maintenance'
+    | 'uncertain';
+
+export type CalibrationLogsAgreementStatus = 'consistent' | 'divergent' | 'uncertain';
+
+export type CalibrationReadinessRequirementCode =
+    | 'complete_food_days'
+    | 'weight_span_days'
+    | 'weight_points'
+    | 'current_weigh_in'
+    | 'food_uncertainty'
+    | 'weight_uncertainty'
+    | 'adult_only'
+    | 'safety_floor';
+
+export type CalibrationReadinessRequirement = {
+    code: CalibrationReadinessRequirementCode;
+    current: number | null;
+    required: number | null;
+    status: 'complete' | 'remaining' | 'blocked';
+};
+
+export type CalibrationSignalWindow = {
+    availability: 'partial' | 'available' | 'unavailable';
+    scope: CalibrationSignalScopeKind;
+    startDate: string;
+    endDate: string;
+    calendarDays: number;
+    confidenceLevel: 0.95;
+    dataQuality: CalibrationDataQuality;
+    averageIntakeKcal: CalibrationInterval | null;
+    estimatedDailyDeficitKcal: CalibrationInterval | null;
+    expectedWeightChangeKg: CalibrationInterval | null;
+    observedWeightChangeKg: CalibrationInterval | null;
+    plannedWeightChangeKg: number;
+    goalPaceStatus: CalibrationGoalPaceStatus;
+    logsAgreementStatus: CalibrationLogsAgreementStatus;
+};
+
+export type CalibrationSignals = {
+    version: 1;
+    minimumDailyCalorieTargetKcal: number | null;
+    recent: CalibrationSignalWindow;
+    longTerm: CalibrationSignalWindow;
+    readiness: {
+        weeklySignals: {
+            status: 'building' | 'available';
+            progressDays: number;
+            requiredDays: 7;
+            requirements: CalibrationReadinessRequirement[];
+        };
+        targetReview: {
+            status: 'not_eligible' | 'building' | 'available' | 'limited';
+            progressDays: number;
+            requiredDays: 14;
+            requirements: CalibrationReadinessRequirement[];
+        };
+    };
 };
 
 export type CalibrationResult = {
@@ -113,6 +196,7 @@ export type CalibrationResult = {
         averageSteps: number | null;
         averageActiveCaloriesKcal: number | null;
     } | null;
+    signals: CalibrationSignals;
 };
 
 type ClassifiedFoodDay = CalibrationFoodDay & {
@@ -373,6 +457,541 @@ function summarizeDataQuality(days: ClassifiedFoodDay[], weights: CalibrationWei
     };
 }
 
+type CalibrationResultWithoutSignals = Omit<CalibrationResult, 'signals'>;
+
+function seedFromText(value: string): number {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+}
+
+function scaleInterval(value: CalibrationInterval, factor: number, precision = 3): CalibrationInterval {
+    const values = [value.low * factor, value.midpoint * factor, value.high * factor]
+        .sort((left, right) => left - right);
+    return {
+        low: round(values[0], precision),
+        midpoint: round(values[1], precision),
+        high: round(values[2], precision)
+    };
+}
+
+function signalKcalPerKilogram(weightUnit: WeightUnit): number {
+    return weightUnit === 'LB'
+        ? KCAL_PER_POUND * POUNDS_PER_KILOGRAM
+        : KCAL_PER_KILOGRAM;
+}
+
+function getGoalPaceStatus(
+    observed: CalibrationInterval | null,
+    plannedWeightChangeKg: number,
+    calendarDays: number,
+    configuredDailyDeficitKcal: number,
+    weightUnit: WeightUnit
+): CalibrationGoalPaceStatus {
+    if (!observed || calendarDays <= 0) return 'uncertain';
+    const toleranceKg = CALIBRATION_ALIGNMENT_TOLERANCE_KCAL * calendarDays /
+        signalKcalPerKilogram(weightUnit);
+    const plannedLow = plannedWeightChangeKg - toleranceKg;
+    const plannedHigh = plannedWeightChangeKg + toleranceKg;
+    if (configuredDailyDeficitKcal > 0) {
+        if (observed.high < plannedLow) return 'faster';
+        if (observed.low > plannedHigh) return 'slower';
+    } else if (configuredDailyDeficitKcal < 0) {
+        if (observed.low > plannedHigh) return 'faster';
+        if (observed.high < plannedLow) return 'slower';
+    } else {
+        if (observed.low > plannedHigh) return 'above_maintenance';
+        if (observed.high < plannedLow) return 'below_maintenance';
+    }
+    const dailyWidthKcal = (observed.high - observed.low) *
+        signalKcalPerKilogram(weightUnit) / calendarDays;
+    return observed.midpoint >= plannedLow &&
+        observed.midpoint <= plannedHigh &&
+        dailyWidthKcal <= MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL
+        ? 'aligned'
+        : 'uncertain';
+}
+
+function getLogsAgreementStatus(
+    observed: CalibrationInterval | null,
+    expected: CalibrationInterval | null
+): CalibrationLogsAgreementStatus {
+    if (!observed || !expected) return 'uncertain';
+    return observed.high >= expected.low && expected.high >= observed.low
+        ? 'consistent'
+        : 'divergent';
+}
+
+function summarizeSignalFood(
+    input: CalibrationInput,
+    startDate: string,
+    endDate: string,
+    weights: CalibrationWeightPoint[]
+): {
+    dataQuality: CalibrationDataQuality;
+    averageIntakeKcal: CalibrationInterval | null;
+    estimatedDailyDeficitKcal: CalibrationInterval | null;
+    expectedWeightChangeKg: CalibrationInterval | null;
+} {
+    const calendarDays = inclusiveDateSpan(startDate, endDate);
+    if (calendarDays <= 0) {
+        return {
+            dataQuality: emptyQuality(),
+            averageIntakeKcal: null,
+            estimatedDailyDeficitKcal: null,
+            expectedWeightChangeKg: null
+        };
+    }
+    const scopedInput = { ...input, asOfDate: endDate };
+    const days = classifyFoodDays(scopedInput, calendarDays);
+    const dataQuality = summarizeDataQuality(days, weights);
+    if (dataQuality.confidentDays === 0) {
+        return {
+            dataQuality,
+            averageIntakeKcal: null,
+            estimatedDailyDeficitKcal: null,
+            expectedWeightChangeKg: null
+        };
+    }
+
+    const random = createRandom(seedFromText(JSON.stringify({
+        startDate,
+        endDate,
+        profileTdeeKcal: input.profileTdeeKcal,
+        days: days.map((day) => [day.date, day.low, day.high])
+    })));
+    const intakeSamples: number[] = [];
+    const deficitSamples: number[] = [];
+    const expectedChangeSamples: number[] = [];
+    for (let replicate = 0; replicate < CALIBRATION_BOOTSTRAP_REPLICATES; replicate += 1) {
+        const intake = days.reduce(
+            (total, day) => total + day.low + random() * (day.high - day.low),
+            0
+        ) / calendarDays;
+        const deficit = input.profileTdeeKcal - intake;
+        intakeSamples.push(intake);
+        deficitSamples.push(deficit);
+        expectedChangeSamples.push(
+            -deficit * calendarDays / signalKcalPerKilogram(input.weightUnit)
+        );
+    }
+    return {
+        dataQuality,
+        averageIntakeKcal: interval(intakeSamples),
+        estimatedDailyDeficitKcal: interval(deficitSamples),
+        expectedWeightChangeKg: interval(expectedChangeSamples, 3)
+    };
+}
+
+function emptySignalWindow(
+    asOfDate: string,
+    scope: CalibrationSignalScopeKind
+): CalibrationSignalWindow {
+    return {
+        availability: 'unavailable',
+        scope,
+        startDate: asOfDate,
+        endDate: asOfDate,
+        calendarDays: 0,
+        confidenceLevel: 0.95,
+        dataQuality: emptyQuality(),
+        averageIntakeKcal: null,
+        estimatedDailyDeficitKcal: null,
+        expectedWeightChangeKg: null,
+        observedWeightChangeKg: null,
+        plannedWeightChangeKg: 0,
+        goalPaceStatus: 'uncertain',
+        logsAgreementStatus: 'uncertain'
+    };
+}
+
+export function buildUnavailableCalibrationSignals(
+    asOfDate: string,
+    configuredDailyDeficitKcal = 0,
+    bmrKcal?: number
+): CalibrationSignals {
+    return {
+        version: CALIBRATION_SIGNAL_VERSION,
+        minimumDailyCalorieTargetKcal: bmrKcal === undefined ? null : minimumTargetForBmr(bmrKcal),
+        recent: emptySignalWindow(asOfDate, 'recent_7_days'),
+        longTerm: emptySignalWindow(asOfDate, 'since_goal_start'),
+        readiness: {
+            weeklySignals: {
+                status: 'building',
+                progressDays: 0,
+                requiredDays: 7,
+                requirements: []
+            },
+            targetReview: {
+                status: configuredDailyDeficitKcal > 0 ? 'building' : 'not_eligible',
+                progressDays: 0,
+                requiredDays: 14,
+                requirements: []
+            }
+        }
+    };
+}
+
+function readinessRequirement(
+    code: CalibrationReadinessRequirementCode,
+    current: number,
+    required: number
+): CalibrationReadinessRequirement {
+    return {
+        code,
+        current,
+        required,
+        status: current >= required ? 'complete' : 'remaining'
+    };
+}
+
+function buildCalibrationSignals(
+    sourceInput: CalibrationInput,
+    evaluation: CalibrationResultWithoutSignals
+): CalibrationSignals {
+    const history = sourceInput.signalHistory ?? {
+        goalStartDate: [
+            ...sourceInput.foodDays.map((day) => day.date),
+            ...sourceInput.weightPoints.map((point) => point.date),
+            sourceInput.asOfDate
+        ].sort()[0],
+        goalStartWeightKg: sourceInput.weightPoints.slice().sort((left, right) =>
+            left.date.localeCompare(right.date))[0]?.weightKg ?? 0,
+        foodDays: sourceInput.foodDays,
+        weightPoints: sourceInput.weightPoints
+    };
+    const signalInput: CalibrationInput = {
+        ...sourceInput,
+        foodDays: history.foodDays,
+        weightPoints: history.weightPoints,
+        signalHistory: undefined
+    };
+    const latestPauseDate = history.foodDays
+        .filter((day) => day.isPaused && day.date <= sourceInput.asOfDate)
+        .map((day) => day.date)
+        .sort((left, right) => right.localeCompare(left))[0] ?? null;
+    let activeStartDate = history.goalStartDate;
+    if (sourceInput.trackingPaused) {
+        activeStartDate = addDateDays(sourceInput.asOfDate, 1);
+    } else if (latestPauseDate) {
+        activeStartDate = addDateDays(latestPauseDate, 1);
+    }
+    const activeWeights = history.weightPoints
+        .filter((point) => point.date >= activeStartDate && point.date <= sourceInput.asOfDate)
+        .slice();
+    if (
+        !latestPauseDate &&
+        !sourceInput.trackingPaused &&
+        history.goalStartWeightKg > 0 &&
+        !activeWeights.some((point) => point.date === history.goalStartDate)
+    ) {
+        activeWeights.push({ date: history.goalStartDate, weightKg: history.goalStartWeightKg });
+    }
+    activeWeights.sort((left, right) => left.date.localeCompare(right.date));
+    const trendResult = computeWeightTrend(activeWeights.map((point) => ({
+        date: new Date(`${point.date}T00:00:00.000Z`),
+        weight: point.weightKg
+    })), {
+        asOfDate: new Date(`${sourceInput.asOfDate}T23:59:59.999Z`)
+    });
+    const latestSegmentId = trendResult.points[trendResult.points.length - 1]?.segmentId;
+    const segmentTrendPoints = latestSegmentId === undefined
+        ? []
+        : trendResult.points.filter((point) => point.segmentId === latestSegmentId);
+    const resetByWeightGap = trendResult.segments.length > 1;
+    const segmentStartDate = segmentTrendPoints[0]?.date.toISOString().slice(0, 10) ?? activeStartDate;
+    const measurementStartDate = resetByWeightGap && segmentStartDate > activeStartDate
+        ? segmentStartDate
+        : activeStartDate;
+    const segmentWeights = activeWeights.filter((point) => point.date >= measurementStartDate);
+    const activeCalendarDays = measurementStartDate <= sourceInput.asOfDate
+        ? inclusiveDateSpan(measurementStartDate, sourceInput.asOfDate)
+        : 0;
+
+    const recentStartDate = activeCalendarDays > 0
+        ? [measurementStartDate, addDateDays(sourceInput.asOfDate, -6)].sort().reverse()[0]
+        : sourceInput.asOfDate;
+    const recentCalendarDays = activeCalendarDays > 0
+        ? inclusiveDateSpan(recentStartDate, sourceInput.asOfDate)
+        : 0;
+    const recentWeights = segmentWeights.filter((point) =>
+        point.date >= addDateDays(recentStartDate, -1) && point.date <= sourceInput.asOfDate
+    );
+    const recentFood = recentCalendarDays > 0
+        ? summarizeSignalFood(
+            signalInput,
+            recentStartDate,
+            sourceInput.asOfDate,
+            recentWeights
+        )
+        : {
+            dataQuality: emptyQuality(),
+            averageIntakeKcal: null,
+            estimatedDailyDeficitKcal: null,
+            expectedWeightChangeKg: null
+        };
+    let recentObserved: CalibrationInterval | null = null;
+    if (recentCalendarDays >= CALIBRATION_MIN_INSIGHT_DAYS) {
+        const recentEvaluation = evaluateWindow({
+            ...signalInput,
+            foodDays: history.foodDays.filter((day) => day.date >= measurementStartDate),
+            weightPoints: segmentWeights
+        }, CALIBRATION_MIN_INSIGHT_DAYS);
+        if (recentEvaluation.weeklyWeightChange) {
+            recentObserved = scaleInterval(recentEvaluation.weeklyWeightChange, 1);
+        }
+    }
+    const recentPlanned = round(
+        -sourceInput.configuredDailyDeficitKcal * recentCalendarDays /
+            signalKcalPerKilogram(sourceInput.weightUnit),
+        3
+    );
+    const recentEvidenceReady = Boolean(
+        recentObserved &&
+        recentFood.estimatedDailyDeficitKcal &&
+        recentCalendarDays === CALIBRATION_MIN_INSIGHT_DAYS &&
+        recentFood.dataQuality.confidentDays >= CALIBRATION_MIN_INSIGHT_DAYS &&
+        recentFood.dataQuality.weightSpanDays >= CALIBRATION_MIN_INSIGHT_DAYS &&
+        recentFood.dataQuality.weightPoints >= 2
+    );
+    const recentAvailability = recentEvidenceReady
+        ? 'available'
+        : recentFood.estimatedDailyDeficitKcal || recentWeights.length > 0 ? 'partial' : 'unavailable';
+    const recent: CalibrationSignalWindow = {
+        availability: recentAvailability,
+        scope: 'recent_7_days',
+        startDate: recentStartDate,
+        endDate: sourceInput.asOfDate,
+        calendarDays: recentCalendarDays,
+        confidenceLevel: 0.95,
+        dataQuality: recentFood.dataQuality,
+        averageIntakeKcal: recentFood.averageIntakeKcal,
+        estimatedDailyDeficitKcal: recentFood.estimatedDailyDeficitKcal,
+        expectedWeightChangeKg: recentFood.expectedWeightChangeKg,
+        observedWeightChangeKg: recentObserved,
+        plannedWeightChangeKg: recentPlanned,
+        goalPaceStatus: getGoalPaceStatus(
+            recentObserved,
+            recentPlanned,
+            recentCalendarDays,
+            sourceInput.configuredDailyDeficitKcal,
+            sourceInput.weightUnit
+        ),
+        logsAgreementStatus: getLogsAgreementStatus(recentObserved, recentFood.expectedWeightChangeKg)
+    };
+
+    let longTermScope: CalibrationSignalScopeKind = 'since_goal_start';
+    if (resetByWeightGap) {
+        longTermScope = 'current_tracking_period';
+    } else if (latestPauseDate || sourceInput.trackingPaused) {
+        longTermScope = 'since_tracking_resumed';
+    }
+    const longTermFood = activeCalendarDays > 0
+        ? summarizeSignalFood(
+            signalInput,
+            measurementStartDate,
+            sourceInput.asOfDate,
+            segmentWeights
+        )
+        : {
+            dataQuality: emptyQuality(),
+            averageIntakeKcal: null,
+            estimatedDailyDeficitKcal: null,
+            expectedWeightChangeKg: null
+        };
+    let longTermObserved: CalibrationInterval | null = null;
+    const firstTrendPoint = segmentTrendPoints[0];
+    const latestTrendPoint = segmentTrendPoints[segmentTrendPoints.length - 1];
+    if (latestTrendPoint && segmentWeights.length >= 2) {
+        const continuousGoal = !latestPauseDate &&
+            !resetByWeightGap &&
+            history.goalStartWeightKg > 0 &&
+            inclusiveDateSpan(history.goalStartDate, latestTrendPoint.date.toISOString().slice(0, 10)) - 1 >=
+                CALIBRATION_MIN_INSIGHT_DAYS;
+        if (continuousGoal) {
+            // The stored start weight is the exact baseline for an uninterrupted goal.
+            longTermObserved = {
+                low: round(latestTrendPoint.lower95 - history.goalStartWeightKg, 3),
+                midpoint: round(latestTrendPoint.trendWeight - history.goalStartWeightKg, 3),
+                high: round(latestTrendPoint.upper95 - history.goalStartWeightKg, 3)
+            };
+        } else if (
+            firstTrendPoint &&
+            inclusiveDateSpan(
+                firstTrendPoint.date.toISOString().slice(0, 10),
+                latestTrendPoint.date.toISOString().slice(0, 10)
+            ) - 1 >= CALIBRATION_MIN_INSIGHT_DAYS
+        ) {
+            // Reset periods propagate uncertainty from both smoothed endpoints.
+            longTermObserved = {
+                low: round(latestTrendPoint.lower95 - firstTrendPoint.upper95, 3),
+                midpoint: round(latestTrendPoint.trendWeight - firstTrendPoint.trendWeight, 3),
+                high: round(latestTrendPoint.upper95 - firstTrendPoint.lower95, 3)
+            };
+        }
+    }
+    const longTermPlanned = round(
+        -sourceInput.configuredDailyDeficitKcal * activeCalendarDays /
+            signalKcalPerKilogram(sourceInput.weightUnit),
+        3
+    );
+    const longTermAvailability = longTermObserved && longTermFood.estimatedDailyDeficitKcal
+        ? 'available'
+        : longTermFood.estimatedDailyDeficitKcal || segmentWeights.length > 0 ? 'partial' : 'unavailable';
+    const longTerm: CalibrationSignalWindow = {
+        availability: longTermAvailability,
+        scope: longTermScope,
+        startDate: activeCalendarDays > 0 ? measurementStartDate : sourceInput.asOfDate,
+        endDate: sourceInput.asOfDate,
+        calendarDays: activeCalendarDays,
+        confidenceLevel: 0.95,
+        dataQuality: longTermFood.dataQuality,
+        averageIntakeKcal: longTermFood.averageIntakeKcal,
+        estimatedDailyDeficitKcal: longTermFood.estimatedDailyDeficitKcal,
+        expectedWeightChangeKg: longTermFood.expectedWeightChangeKg,
+        observedWeightChangeKg: longTermObserved,
+        plannedWeightChangeKg: longTermPlanned,
+        goalPaceStatus: getGoalPaceStatus(
+            longTermObserved,
+            longTermPlanned,
+            activeCalendarDays,
+            sourceInput.configuredDailyDeficitKcal,
+            sourceInput.weightUnit
+        ),
+        logsAgreementStatus: getLogsAgreementStatus(longTermObserved, longTermFood.expectedWeightChangeKg)
+    };
+
+    const latestWeightDate = segmentWeights[segmentWeights.length - 1]?.date;
+    const daysSinceLatestWeight = latestWeightDate
+        ? Math.max(0, inclusiveDateSpan(latestWeightDate, sourceInput.asOfDate) - 1)
+        : Number.POSITIVE_INFINITY;
+    const weeklyRequirements: CalibrationReadinessRequirement[] = [
+        readinessRequirement(
+            'complete_food_days',
+            Math.min(recent.dataQuality.confidentDays, CALIBRATION_MIN_INSIGHT_DAYS),
+            CALIBRATION_MIN_INSIGHT_DAYS
+        ),
+        readinessRequirement(
+            'weight_span_days',
+            Math.min(recent.dataQuality.weightSpanDays, CALIBRATION_MIN_INSIGHT_DAYS),
+            CALIBRATION_MIN_INSIGHT_DAYS
+        ),
+        readinessRequirement('weight_points', recent.dataQuality.weightPoints, 2)
+    ];
+    if (daysSinceLatestWeight > 14) {
+        weeklyRequirements.push({
+            code: 'current_weigh_in',
+            current: 0,
+            required: 1,
+            status: 'remaining'
+        });
+    }
+    const targetRequirements: CalibrationReadinessRequirement[] = [
+        readinessRequirement(
+            'complete_food_days',
+            evaluation.dataQuality.confidentDays,
+            CALIBRATION_MIN_INSIGHT_DAYS
+        ),
+        readinessRequirement(
+            'weight_span_days',
+            evaluation.dataQuality.weightSpanDays,
+            CALIBRATION_MIN_ACTIONABLE_DAYS
+        ),
+        readinessRequirement('weight_points', evaluation.dataQuality.weightPoints, 3)
+    ];
+    if (daysSinceLatestWeight > 7) {
+        targetRequirements.push({
+            code: 'current_weigh_in',
+            current: 0,
+            required: 1,
+            status: 'remaining'
+        });
+    }
+    const uncertainFoodDays = evaluation.dataQuality.suspiciousDays +
+        evaluation.dataQuality.incompleteDays +
+        evaluation.dataQuality.missingDays;
+    const targetIntervalWidth = evaluation.estimates.targetAdjustmentKcal
+        ? evaluation.estimates.targetAdjustmentKcal.high - evaluation.estimates.targetAdjustmentKcal.low
+        : 0;
+    if (targetIntervalWidth > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) {
+        targetRequirements.push({
+            code: uncertainFoodDays > 0 ? 'food_uncertainty' : 'weight_uncertainty',
+            current: null,
+            required: null,
+            status: 'blocked'
+        });
+    }
+    if (sourceInput.ageYears < 18) {
+        targetRequirements.push({
+            code: 'adult_only',
+            current: null,
+            required: null,
+            status: 'blocked'
+        });
+    }
+    if (evaluation.missingCriteria.some((criterion) => criterion.includes('BMR-based limit'))) {
+        targetRequirements.push({
+            code: 'safety_floor',
+            current: null,
+            required: null,
+            status: 'blocked'
+        });
+    }
+    const targetHistoryRemaining = targetRequirements.some((requirement) =>
+        requirement.status === 'remaining'
+    );
+    const targetBlocked = targetRequirements.some((requirement) => requirement.status === 'blocked');
+    let targetStatus: CalibrationSignals['readiness']['targetReview']['status'];
+    if (sourceInput.configuredDailyDeficitKcal <= 0 || sourceInput.recommendationsEnabled === false) {
+        targetStatus = 'not_eligible';
+    } else if (targetHistoryRemaining) {
+        targetStatus = 'building';
+    } else if (targetBlocked) {
+        targetStatus = 'limited';
+    } else {
+        targetStatus = 'available';
+    }
+    return {
+        version: CALIBRATION_SIGNAL_VERSION,
+        minimumDailyCalorieTargetKcal: minimumTargetForBmr(sourceInput.bmrKcal),
+        recent,
+        longTerm,
+        readiness: {
+            weeklySignals: {
+                status: recentEvidenceReady ? 'available' : 'building',
+                progressDays: Math.min(
+                    CALIBRATION_MIN_INSIGHT_DAYS,
+                    recentCalendarDays,
+                    recent.dataQuality.confidentDays,
+                    recent.dataQuality.weightSpanDays
+                ),
+                requiredDays: 7,
+                requirements: weeklyRequirements
+            },
+            targetReview: {
+                status: targetStatus,
+                progressDays: Math.min(
+                    CALIBRATION_MIN_ACTIONABLE_DAYS,
+                    evaluation.dataQuality.observationDays,
+                    evaluation.dataQuality.weightSpanDays
+                ),
+                requiredDays: 14,
+                requirements: targetRequirements
+            }
+        }
+    };
+}
+
+function attachCalibrationSignals(
+    evaluation: CalibrationResultWithoutSignals,
+    input: CalibrationInput
+): CalibrationResult {
+    return { ...evaluation, signals: buildCalibrationSignals(input, evaluation) };
+}
+
 function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEvaluation {
     const startDate = addDateDays(input.asOfDate, -(windowDays - 1));
     // Pace over N elapsed days needs a boundary weigh-in one local date before the N food days.
@@ -492,6 +1111,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             dataQuality.confidentDays >= 7 &&
             daysSinceLatestWeight <= 7;
         actionable =
+            input.recommendationsEnabled !== false &&
             input.ageYears >= 18 &&
             hasMinimumHistory &&
             intervalWidth <= MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL &&
@@ -709,7 +1329,7 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
                 ? 'After you resume, your next weight-trend estimate will be available after 7 well-tracked food days and weigh-ins spanning 7 days.'
                 : 'Your next weight-trend estimate is available after 7 well-tracked food days and weigh-ins spanning 7 days.';
         }
-        return {
+        return attachCalibrationSignals({
             modelVersion: CALIBRATION_MODEL_VERSION,
             asOfDate: input.asOfDate,
             weightUnit: input.weightUnit,
@@ -733,7 +1353,7 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
             },
             recommendation: null,
             activityContext: null
-        };
+        }, sourceInput);
     }
 
     const candidateWindows = OBSERVATION_WINDOWS.filter((days) => days <= availableSpan);
@@ -861,7 +1481,7 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
         }
     }
 
-    return {
+    return attachCalibrationSignals({
         modelVersion: CALIBRATION_MODEL_VERSION,
         asOfDate: input.asOfDate,
         weightUnit: input.weightUnit,
@@ -889,5 +1509,5 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
         },
         recommendation,
         activityContext: null
-    };
+    }, sourceInput);
 }

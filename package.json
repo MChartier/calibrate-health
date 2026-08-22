@@ -19,6 +19,7 @@
     "dev:reset-test-user-onboarding": "node scripts/dev-stack.mjs reset-test-user",
     "dev:expo": "node scripts/expo-native-dev.mjs",
     "dev:calibration-lab": "npm --prefix shared run build && node scripts/calibration-lab.mjs",
+    "capture:calibration-lab": "node scripts/calibration-lab-screenshots.mjs",
     "preview": "node scripts/preview.mjs",
     "prisma:generate": "npm --prefix backend run prisma:generate",
     "db:migrate": "node scripts/dev-stack.mjs db:migrate",

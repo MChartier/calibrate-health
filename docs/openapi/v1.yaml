@@ -2241,6 +2241,72 @@ components:
         missingDays: { type: integer, minimum: 0 }
         weightPoints: { type: integer, minimum: 0 }
         weightSpanDays: { type: integer, minimum: 0 }
+    CalibrationReadinessRequirement:
+      type: object
+      required: [code, current, required, status]
+      properties:
+        code:
+          type: string
+          enum: [complete_food_days, weight_span_days, weight_points, current_weigh_in, food_uncertainty, weight_uncertainty, adult_only, safety_floor]
+        current: { type: [integer, 'null'], minimum: 0 }
+        required: { type: [integer, 'null'], minimum: 0 }
+        status: { type: string, enum: [complete, remaining, blocked] }
+    CalibrationSignalWindow:
+      type: object
+      required: [availability, scope, startDate, endDate, calendarDays, confidenceLevel, dataQuality, averageIntakeKcal, estimatedDailyDeficitKcal, expectedWeightChangeKg, observedWeightChangeKg, plannedWeightChangeKg, goalPaceStatus, logsAgreementStatus]
+      properties:
+        availability: { type: string, enum: [partial, available, unavailable] }
+        scope: { type: string, enum: [recent_7_days, since_goal_start, since_tracking_resumed, current_tracking_period] }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        calendarDays: { type: integer, minimum: 0 }
+        confidenceLevel: { type: number, enum: [0.95] }
+        dataQuality: { $ref: '#/components/schemas/CalibrationDataQuality' }
+        averageIntakeKcal:
+          oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+        estimatedDailyDeficitKcal:
+          oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+        expectedWeightChangeKg:
+          oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+        observedWeightChangeKg:
+          oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+        plannedWeightChangeKg: { type: number }
+        goalPaceStatus:
+          type: string
+          enum: [faster, aligned, slower, above_maintenance, below_maintenance, uncertain]
+        logsAgreementStatus: { type: string, enum: [consistent, divergent, uncertain] }
+    CalibrationSignals:
+      type: object
+      required: [version, minimumDailyCalorieTargetKcal, recent, longTerm, readiness]
+      properties:
+        version: { type: integer, enum: [1] }
+        minimumDailyCalorieTargetKcal: { type: [integer, 'null'], minimum: 1000 }
+        recent: { $ref: '#/components/schemas/CalibrationSignalWindow' }
+        longTerm: { $ref: '#/components/schemas/CalibrationSignalWindow' }
+        readiness:
+          type: object
+          required: [weeklySignals, targetReview]
+          properties:
+            weeklySignals:
+              type: object
+              required: [status, progressDays, requiredDays, requirements]
+              properties:
+                status: { type: string, enum: [building, available] }
+                progressDays: { type: integer, minimum: 0, maximum: 7 }
+                requiredDays: { type: integer, enum: [7] }
+                requirements:
+                  type: array
+                  items: { $ref: '#/components/schemas/CalibrationReadinessRequirement' }
+            targetReview:
+              type: object
+              required: [status, progressDays, requiredDays, requirements]
+              properties:
+                status: { type: string, enum: [not_eligible, building, available, limited] }
+                progressDays: { type: integer, minimum: 0, maximum: 14 }
+                requiredDays: { type: integer, enum: [14] }
+                requirements:
+                  type: array
+                  items: { $ref: '#/components/schemas/CalibrationReadinessRequirement' }
     CalibrationRecommendation:
       type: object
       required: [currentTargetKcal, recommendedTargetKcal, adjustmentStepKcal, currentTargetAdjustmentKcal, recommendedTargetAdjustmentKcal]
@@ -2252,7 +2318,7 @@ components:
         recommendedTargetAdjustmentKcal: { type: integer }
     CalibrationEvaluation:
       type: object
-      required: [modelVersion, asOfDate, weightUnit, status, headline, summary, nextStep, historyProgress, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext]
+      required: [modelVersion, asOfDate, weightUnit, status, headline, summary, nextStep, historyProgress, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext, signals]
       properties:
         modelVersion: { type: integer }
         asOfDate: { type: string, format: date }
@@ -2303,6 +2369,7 @@ components:
             observedDays: { type: integer, minimum: 0 }
             averageSteps: { type: [integer, 'null'] }
             averageActiveCaloriesKcal: { type: [integer, 'null'] }
+        signals: { $ref: '#/components/schemas/CalibrationSignals' }
     ScheduledCalibrationChange:
       type: object
       required: [recommendationId, targetAdjustmentKcal, dailyCalorieBudgetKcal, effectiveLocalDate]

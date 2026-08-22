@@ -56,12 +56,152 @@ jest.mock('./BottomSheetModal', () => {
     };
 });
 
+type Signals = CalibrationStatusResponse['evaluation']['signals'];
+type SignalWindow = Signals['recent'];
+
+function signalWindow(overrides: Partial<SignalWindow> = {}): SignalWindow {
+    return {
+        availability: 'available',
+        scope: 'recent_7_days',
+        startDate: '2026-07-25',
+        endDate: '2026-07-31',
+        calendarDays: 7,
+        confidenceLevel: 0.95,
+        dataQuality: {
+            observationDays: 7,
+            completeDays: 7,
+            confidentDays: 7,
+            suspiciousDays: 0,
+            incompleteDays: 0,
+            missingDays: 0,
+            weightPoints: 4,
+            weightSpanDays: 7
+        },
+        averageIntakeKcal: { low: 1825, midpoint: 1900, high: 1975 },
+        estimatedDailyDeficitKcal: { low: 350, midpoint: 400, high: 450 },
+        expectedWeightChangeKg: { low: -0.41, midpoint: -0.36, high: -0.32 },
+        observedWeightChangeKg: { low: -0.4, midpoint: -0.36, high: -0.3 },
+        plannedWeightChangeKg: -0.455,
+        goalPaceStatus: 'slower',
+        logsAgreementStatus: 'consistent',
+        ...overrides
+    };
+}
+
+function matureSignals(): Signals {
+    const completeRequirements: Signals['readiness']['weeklySignals']['requirements'] = [
+        { code: 'complete_food_days', current: 7, required: 7, status: 'complete' },
+        { code: 'weight_span_days', current: 7, required: 7, status: 'complete' },
+        { code: 'weight_points', current: 4, required: 2, status: 'complete' }
+    ];
+    return {
+        version: 1,
+        minimumDailyCalorieTargetKcal: 1650,
+        recent: signalWindow(),
+        longTerm: signalWindow({
+            scope: 'since_goal_start',
+            startDate: '2026-07-04',
+            calendarDays: 28,
+            dataQuality: {
+                observationDays: 28,
+                completeDays: 28,
+                confidentDays: 28,
+                suspiciousDays: 0,
+                incompleteDays: 0,
+                missingDays: 0,
+                weightPoints: 14,
+                weightSpanDays: 28
+            },
+            expectedWeightChangeKg: { low: -1.65, midpoint: -1.45, high: -1.27 },
+            observedWeightChangeKg: { low: -1.6, midpoint: -1.44, high: -1.2 },
+            plannedWeightChangeKg: -1.82
+        }),
+        readiness: {
+            weeklySignals: {
+                status: 'available',
+                progressDays: 7,
+                requiredDays: 7,
+                requirements: completeRequirements
+            },
+            targetReview: {
+                status: 'available',
+                progressDays: 14,
+                requiredDays: 14,
+                requirements: completeRequirements
+            }
+        }
+    };
+}
+
+function buildingSignals(): Signals {
+    const requirements: Signals['readiness']['weeklySignals']['requirements'] = [
+        { code: 'complete_food_days', current: 6, required: 7, status: 'remaining' },
+        { code: 'weight_span_days', current: 6, required: 7, status: 'remaining' },
+        { code: 'weight_points', current: 6, required: 2, status: 'complete' }
+    ];
+    return {
+        version: 1,
+        minimumDailyCalorieTargetKcal: 1650,
+        recent: signalWindow({
+            availability: 'partial',
+            startDate: '2026-07-26',
+            calendarDays: 6,
+            dataQuality: {
+                observationDays: 6,
+                completeDays: 6,
+                confidentDays: 6,
+                suspiciousDays: 0,
+                incompleteDays: 0,
+                missingDays: 0,
+                weightPoints: 6,
+                weightSpanDays: 6
+            },
+            observedWeightChangeKg: null,
+            goalPaceStatus: 'uncertain',
+            logsAgreementStatus: 'uncertain'
+        }),
+        longTerm: signalWindow({
+            availability: 'partial',
+            scope: 'since_goal_start',
+            startDate: '2026-07-26',
+            calendarDays: 6,
+            dataQuality: {
+                observationDays: 6,
+                completeDays: 6,
+                confidentDays: 6,
+                suspiciousDays: 0,
+                incompleteDays: 0,
+                missingDays: 0,
+                weightPoints: 6,
+                weightSpanDays: 6
+            },
+            observedWeightChangeKg: null,
+            goalPaceStatus: 'uncertain',
+            logsAgreementStatus: 'uncertain'
+        }),
+        readiness: {
+            weeklySignals: {
+                status: 'building',
+                progressDays: 6,
+                requiredDays: 7,
+                requirements
+            },
+            targetReview: {
+                status: 'building',
+                progressDays: 6,
+                requiredDays: 14,
+                requirements
+            }
+        }
+    };
+}
+
 function recommendationStatus(weightUnit: 'KG' | 'LB' = 'KG'): CalibrationStatusResponse {
     return {
         generatedAt: '2026-07-31T20:00:00.000Z',
         inputFingerprint: 'current-input',
         evaluation: {
-            modelVersion: 2,
+            modelVersion: 4,
             asOfDate: '2026-07-31',
             weightUnit,
             status: 'recommendation',
@@ -95,7 +235,8 @@ function recommendationStatus(weightUnit: 'KG' | 'LB' = 'KG'): CalibrationStatus
                 currentTargetAdjustmentKcal: 0,
                 recommendedTargetAdjustmentKcal: -150
             },
-            activityContext: null
+            activityContext: null,
+            signals: matureSignals()
         },
         recommendation: {
             id: 7,
@@ -104,29 +245,6 @@ function recommendationStatus(weightUnit: 'KG' | 'LB' = 'KG'): CalibrationStatus
             effectiveLocalDate: '2026-08-01'
         },
         scheduledChange: null
-    };
-}
-
-function fasterRecommendationStatus(): CalibrationStatusResponse {
-    const status = recommendationStatus();
-    return {
-        ...status,
-        evaluation: {
-            ...status.evaluation,
-            headline: "You're losing weight faster than planned",
-            estimates: {
-                ...status.evaluation.estimates,
-                observedWeeklyWeightChangeKg: { low: -0.7, midpoint: -0.61, high: -0.55 },
-                targetAdjustmentKcal: { low: 175, midpoint: 225, high: 275 }
-            },
-            recommendation: {
-                currentTargetKcal: 1900,
-                recommendedTargetKcal: 2050,
-                adjustmentStepKcal: 150,
-                currentTargetAdjustmentKcal: 0,
-                recommendedTargetAdjustmentKcal: 150
-            }
-        }
     };
 }
 
@@ -150,9 +268,9 @@ function buildingHistoryStatus(): CalibrationStatusResponse {
         evaluation: {
             ...status.evaluation,
             status: 'not_ready',
-            headline: 'See how your calorie plan is working',
-            summary: 'Calibrate first estimates your average weekly weight change. With more history, it can compare that rate with your logged calories and assess whether your calorie budget may need an adjustment.',
-            nextStep: 'Your first weight-trend estimate is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
+            headline: 'Legacy headline must not render',
+            summary: 'Legacy summary must not render.',
+            nextStep: 'Legacy next step must not render.',
             historyProgress: {
                 stage: 'pace_check',
                 observedDays: 6,
@@ -176,17 +294,15 @@ function buildingHistoryStatus(): CalibrationStatusResponse {
                 weightPoints: 6,
                 weightSpanDays: 6
             },
-            missingCriteria: [
-                'Complete at least 7 plausible food-log days with entries across multiple meals.',
-                'Record weights spanning at least 7 days so average weekly weight change can be estimated.'
-            ],
+            missingCriteria: ['Legacy missing criterion must not render.'],
             estimates: {
                 averageIntakeKcal: null,
                 observedWeeklyWeightChangeKg: null,
                 targetAdjustmentKcal: null,
                 configuredWeeklyWeightChangeKg: -0.455
             },
-            recommendation: null
+            recommendation: null,
+            signals: buildingSignals()
         },
         recommendation: null,
         scheduledChange: null
@@ -232,274 +348,220 @@ describe('CalibrationInsightCard', () => {
         });
     });
 
-    it('suppresses stale calibration actions while queued evidence is syncing', () => {
+    it('suppresses stale actions while queued evidence is syncing', () => {
         mockHasPendingCalibrationEvidence = true;
         const screen = renderCard();
 
-        expect(screen.getByText('Evidence change syncing')).toBeTruthy();
+        expect(screen.getByText('Updating measured signals...')).toBeTruthy();
+        expect(screen.getByText(/latest food and weight changes are syncing/)).toBeTruthy();
         expect(screen.queryByText('Apply 1,750 kcal')).toBeNull();
-        expect(mockApi.applyCalibrationRecommendation).not.toHaveBeenCalled();
     });
 
-    it('explains the staged value of calibration before the first estimate', async () => {
+    it('shows one evidence-based weekly milestone and the calorie balance available now', async () => {
         mockApi.getCalibrationStatus.mockResolvedValue(buildingHistoryStatus());
         const screen = renderCard();
 
-        await waitFor(() => expect(screen.getByText('See how your calorie plan is working')).toBeTruthy());
-        expect(screen.getByText(/first estimates your average weekly weight change/)).toBeTruthy();
-        expect(screen.getByText('First available: weight-trend estimate')).toBeTruthy();
-        expect(screen.getByText(/It will not assess your calorie budget yet/)).toBeTruthy();
-        expect(screen.getByRole('progressbar', { name: 'Well-tracked food days for calibration' }).props.accessibilityValue).toEqual({
+        await waitFor(() => expect(screen.getByText('Building your weekly signal')).toBeTruthy());
+        expect(screen.getByRole('progressbar', { name: 'Weekly calibration signal progress' })
+            .props.accessibilityValue).toEqual({
             min: 0,
             max: 7,
             now: 6,
-            text: '6 of 7 well-tracked food days'
+            text: '6 of 7 evidence days'
         });
-        expect(screen.getByRole('progressbar', { name: 'Weight history for calibration' }).props.accessibilityValue).toEqual({
-            min: 0,
-            max: 7,
-            now: 6,
-            text: '6 of 7 days of weight history'
-        });
-        expect(screen.getByText(/help establish an early trend without overreacting/)).toBeTruthy();
-        expect(screen.queryByText('Next step')).toBeNull();
-        expect(screen.queryByText('What would improve this insight')).toBeNull();
-        expect(screen.queryByText(/^- Track food and weight/)).toBeNull();
-    });
-
-    it('acknowledges a tracking break and shows fresh post-pause progress', async () => {
-        const status = buildingHistoryStatus();
-        mockApi.getCalibrationStatus.mockResolvedValue({
-            ...status,
-            evaluation: {
-                ...status.evaluation,
-                headline: 'Gathering new history after your break',
-                summary: 'Paused days and history from before your break are excluded, so they are not averaged into your current weight-trend estimate.',
-                nextStep: 'Your next weight-trend estimate is available after 7 well-tracked food days and weigh-ins spanning 7 days.',
-                historyProgress: {
-                    ...status.evaluation.historyProgress!,
-                    observedDays: 1,
-                    completeFoodDays: 1,
-                    weightSpanDays: 1,
-                    weightPoints: 1,
-                    restartedAfterPause: true
-                }
-            }
-        });
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText('Gathering new history after your break')).toBeTruthy());
-        expect(screen.getByText(/not averaged into your current weight-trend estimate/)).toBeTruthy();
-        expect(screen.getByText('Next available: weight-trend estimate')).toBeTruthy();
-        expect(screen.getAllByText('1 of 7 days')).toHaveLength(2);
-    });
-
-    it('explains the current rate and shows only unfinished budget-review requirements', async () => {
-        const status = buildingHistoryStatus();
-        mockApi.getCalibrationStatus.mockResolvedValue({
-            ...status,
-            evaluation: {
-                ...status.evaluation,
-                weightUnit: 'LB',
-                status: 'insight',
-                headline: 'Your 13-day weight-trend estimate is ready',
-                summary: 'Across this 13-day calibration window, weight trended down about 0.98 lb per week.',
-                nextStep: 'Keep tracking for 1 more day before a calorie-budget review.',
-                historyProgress: {
-                    stage: 'budget_review',
-                    observedDays: 13,
-                    requiredDays: 14,
-                    completeFoodDays: 13,
-                    requiredCompleteFoodDays: 7,
-                    weightSpanDays: 13,
-                    requiredWeightSpanDays: 14,
-                    weightPoints: 14,
-                    requiredWeightPoints: 3,
-                    restartedAfterPause: false
-                },
-                selectedWindowDays: 13,
-                dataQuality: {
-                    ...status.evaluation.dataQuality,
-                    observationDays: 13,
-                    completeDays: 13,
-                    confidentDays: 13,
-                    weightPoints: 14,
-                    weightSpanDays: 13
-                },
-                estimates: {
-                    ...status.evaluation.estimates,
-                    observedWeeklyWeightChangeKg: { low: -0.5, midpoint: -0.445, high: -0.39 }
-                }
-            }
-        });
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText('13-day calibration average')).toBeTruthy());
+        expect(screen.getByText('6 of 7 well-tracked food days')).toBeTruthy();
+        expect(screen.getByText('6 of 7 days of weight history')).toBeTruthy();
         expect(screen.getByText('Available now')).toBeTruthy();
-        expect(screen.getByText(/Over the 13 days ending Jul 31, 2026.*average loss rate of 0.98 lb\/week/)).toBeTruthy();
-        expect(screen.getByText(/weekly rate is fitted across Calibration's full 13-day window/)).toBeTruthy();
-        expect(screen.getByText(/Trend chart's 7-day number is the total change between the visible endpoints/)).toBeTruthy();
-        expect(screen.getByText('Coming next: calorie-budget review')).toBeTruthy();
-        expect(screen.getByText(/you can review a suggested calorie budget before deciding whether to apply it/)).toBeTruthy();
-        expect(screen.queryByRole('progressbar', { name: 'Well-tracked food days for calibration' })).toBeNull();
-        expect(screen.queryByRole('progressbar', { name: 'Weigh-ins for a calorie-budget review' })).toBeNull();
-        expect(screen.getByRole('progressbar', { name: 'Weight history for calibration' }).props.accessibilityValue).toEqual({
-            min: 0,
-            max: 14,
-            now: 13,
-            text: '13 of 14 days of weight history'
-        });
-        expect(screen.getByText(/helps separate a true calorie-budget mismatch/)).toBeTruthy();
-        expect(screen.queryByText(/logged - ready/)).toBeNull();
+        expect(screen.getByText('400 kcal/day deficit')).toBeTruthy();
+        expect(screen.queryByText('Legacy headline must not render')).toBeNull();
+        expect(screen.queryByText('Legacy summary must not render.')).toBeNull();
+        expect(screen.queryByText('Legacy next step must not render.')).toBeNull();
+        expect(screen.queryByText('Legacy missing criterion must not render.')).toBeNull();
     });
 
-    it('makes the recommendation visual and directly actionable without opening the evidence sheet', async () => {
+    it('renders both mature scopes with numeric ranges and accessible comparisons', async () => {
         const screen = renderCard();
-        await waitFor(() => expect(screen.getByText("You're losing weight, but slower than planned")).toBeTruthy());
 
-        expect(screen.getByText('Calibration')).toBeTruthy();
-        expect(screen.getByText('0.36 kg/week loss')).toBeTruthy();
-        expect(screen.getByText('28-day average weight-change rate')).toBeTruthy();
-        expect(screen.getByText('Planned: 0.46 kg/week loss')).toBeTruthy();
-        expect(screen.getByText('1,750 kcal')).toBeTruthy();
-        expect(screen.getByText('150 kcal less than your current 1,900 kcal budget.')).toBeTruthy();
-        expect(screen.getByText('If applied, your new budget starts tomorrow. Your weight goal stays the same.')).toBeTruthy();
-        expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy();
-        expect(screen.getByText('See why')).toBeTruthy();
+        await waitFor(() => expect(screen.getByText('Past 7 days')).toBeTruthy());
+        expect(screen.getByText('Since goal start')).toBeTruthy();
+        expect(screen.getAllByText('Slower than goal')).toHaveLength(2);
+        expect(screen.getByTestId('calibration-range-chart-recent_7_days')).toBeTruthy();
+        expect(screen.getByTestId('calibration-range-chart-since_goal_start')).toBeTruthy();
+        expect(screen.getByLabelText(/Past 7 days comparison.*Observed 0.36 kg loss.*Goal 0.46 kg loss/))
+            .toBeTruthy();
+        expect(screen.getAllByText('0.36 kg loss')).toHaveLength(2);
+        expect(screen.getByText('1.44 kg loss')).toBeTruthy();
+        expect(screen.getByText('1.45 kg loss')).toBeTruthy();
+        expect(screen.getByText('95% range 350-450 kcal/day deficit')).toBeTruthy();
+        expect(screen.queryByText("You're losing weight, but slower than planned")).toBeNull();
         expect(screen.queryByText('Current evidence supports a lower calorie budget.')).toBeNull();
-        expect(screen.queryByText(/confident food days/)).toBeNull();
-        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
     });
 
-    it('uses the evidence sheet to explain the model estimate and conservative first step', async () => {
-        const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('See why')).toBeTruthy());
-
-        fireEvent.press(screen.getByText('See why'));
-        expect(screen.getByText('Why we suggest 1,750 kcal')).toBeTruthy();
-        expect(screen.getByText('What we observed')).toBeTruthy();
-        expect(screen.getByText('1,900 kcal/day')).toBeTruthy();
-        expect(screen.getByText('1,900 kcal')).toBeTruthy();
-        expect(screen.getByText('What the pattern suggests')).toBeTruthy();
-        expect(screen.getByText('Why start with 150 kcal?')).toBeTruthy();
-        expect(screen.getByText('Estimated change')).toBeTruthy();
-        expect(screen.getByText(/budget about 200 kcal lower than your current budget/)).toBeTruthy();
-        expect(screen.getByText('Uncertainty')).toBeTruthy();
-        expect(screen.getByText(/estimate could reasonably be 150-250 kcal lower/)).toBeTruthy();
-        expect(screen.getByText('Recommended first step')).toBeTruthy();
-        expect(screen.getByText('Current')).toBeTruthy();
-        expect(screen.getByText('Proposed')).toBeTruthy();
-        expect(screen.getByText(/This review uses 28 well-tracked food days and 14 weigh-ins across 28 days/)).toBeTruthy();
-        expect(screen.queryByText('estimated budget difference')).toBeNull();
-        fireEvent.press(screen.getByText('Close'));
-
-        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
-        expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy();
-        expect(mockApi.applyCalibrationRecommendation).not.toHaveBeenCalled();
-    });
-
-    it('mirrors the visual hierarchy for a higher-budget recommendation', async () => {
-        mockApi.getCalibrationStatus.mockResolvedValue(fasterRecommendationStatus());
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText("You're losing weight faster than planned")).toBeTruthy());
-        expect(screen.getByText('0.61 kg/week loss')).toBeTruthy();
-        expect(screen.getByText('2,050 kcal')).toBeTruthy();
-        expect(screen.getByText('150 kcal more than your current 1,900 kcal budget.')).toBeTruthy();
-        expect(screen.getByText('Apply 2,050 kcal')).toBeTruthy();
-    });
-
-    it('explains when the BMR-based limit caps a decrease below the normal step', async () => {
+    it.each([
+        ['maintenance', 'aligned' as const, 0, 'Aligned with goal'],
+        ['gain', 'slower' as const, 0.45, 'Slower than goal']
+    ])('shows descriptive signals without an adjustment for a %s goal', async (
+        _goal,
+        goalPaceStatus,
+        plannedWeightChangeKg,
+        expectedLabel
+    ) => {
         const status = recommendationStatus();
-        mockApi.getCalibrationStatus.mockResolvedValue({
-            ...status,
-            evaluation: {
-                ...status.evaluation,
-                headline: 'Weight is trending up instead of down',
-                estimates: {
-                    ...status.evaluation.estimates,
-                    observedWeeklyWeightChangeKg: { low: 0.02, midpoint: 0.05, high: 0.08 },
-                    targetAdjustmentKcal: { low: -347, midpoint: -302, high: -255 },
-                    configuredWeeklyWeightChangeKg: -0.227
-                },
-                recommendation: {
-                    currentTargetKcal: 2000,
-                    recommendedTargetKcal: 1900,
-                    adjustmentStepKcal: -100,
-                    currentTargetAdjustmentKcal: 0,
-                    recommendedTargetAdjustmentKcal: -100
-                }
-            }
+        const recent = signalWindow({
+            plannedWeightChangeKg,
+            goalPaceStatus,
+            observedWeightChangeKg: plannedWeightChangeKg === 0
+                ? { low: -0.02, midpoint: 0, high: 0.02 }
+                : { low: 0.15, midpoint: 0.2, high: 0.25 }
         });
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText('Apply 1,900 kcal')).toBeTruthy());
-        fireEvent.press(screen.getByText('See why'));
-        expect(screen.getByText('Safety limit')).toBeTruthy();
-        expect(screen.getByText(/BMR-based limit caps this suggestion at 1,900 kcal/)).toBeTruthy();
-        expect(screen.queryByText(/limits this first change to 100 kcal per day to avoid overcorrecting/)).toBeNull();
-    });
-
-    it('identifies a suggestion that restores the previous baseline budget', async () => {
-        const status = fasterRecommendationStatus();
-        mockApi.getCalibrationStatus.mockResolvedValue({
-            ...status,
-            evaluation: {
-                ...status.evaluation,
-                recommendation: {
-                    currentTargetKcal: 1750,
-                    recommendedTargetKcal: 1900,
-                    adjustmentStepKcal: 150,
-                    currentTargetAdjustmentKcal: -150,
-                    recommendedTargetAdjustmentKcal: 0
-                }
-            }
-        });
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText('This returns you to your previous 1,900 kcal daily budget.')).toBeTruthy());
-    });
-
-    it('does not show observational activity that cannot change the conclusion', async () => {
-        const status = recommendationStatus();
         mockApi.getCalibrationStatus.mockResolvedValue({
             ...status,
             evaluation: {
                 ...status.evaluation,
                 status: 'insight',
-                headline: 'Your progress is tracking as expected',
-                summary: 'The evidence shows progress is consistent with tracking expectations.',
                 recommendation: null,
-                activityContext: {
-                    observedDays: 28,
-                    averageSteps: 8135,
-                    averageActiveCaloriesKcal: 364
+                signals: {
+                    ...matureSignals(),
+                    recent,
+                    longTerm: {
+                        ...recent,
+                        scope: 'since_goal_start',
+                        startDate: '2026-07-04',
+                        calendarDays: 28
+                    }
                 }
             },
             recommendation: null
         });
         const screen = renderCard();
 
-        await waitFor(() => expect(screen.getByText('Your progress is tracking as expected')).toBeTruthy());
-        expect(screen.queryByText('Activity context')).toBeNull();
-        expect(screen.queryByText(/8,135 steps/)).toBeNull();
+        await waitFor(() => expect(screen.getAllByText(expectedLabel)).toHaveLength(2));
+        expect(screen.queryByText('High-confidence target adjustment')).toBeNull();
+    });
+
+    it('shows a compact second milestone after weekly signals unlock', async () => {
+        const status = recommendationStatus();
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...status,
+            evaluation: {
+                ...status.evaluation,
+                status: 'insight',
+                recommendation: null,
+                signals: {
+                    ...matureSignals(),
+                    readiness: {
+                        ...matureSignals().readiness,
+                        targetReview: {
+                            status: 'building',
+                            progressDays: 13,
+                            requiredDays: 14,
+                            requirements: [
+                                { code: 'weight_span_days', current: 13, required: 14, status: 'remaining' }
+                            ]
+                        }
+                    }
+                }
+            },
+            recommendation: null
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Calorie-target review')).toBeTruthy());
+        expect(screen.getByRole('progressbar', { name: 'Calorie target review progress' })
+            .props.accessibilityValue).toEqual({
+            min: 0,
+            max: 14,
+            now: 13,
+            text: '13 of 14 days'
+        });
+        expect(screen.getByText('13 of 14 days of weight history')).toBeTruthy();
+    });
+
+    it('replaces elapsed-time prose with structured blockers once thresholds are met', async () => {
+        const status = recommendationStatus();
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...status,
+            evaluation: {
+                ...status.evaluation,
+                status: 'insight',
+                recommendation: null,
+                signals: {
+                    ...matureSignals(),
+                    readiness: {
+                        ...matureSignals().readiness,
+                        targetReview: {
+                            status: 'limited',
+                            progressDays: 14,
+                            requiredDays: 14,
+                            requirements: [
+                                { code: 'current_weigh_in', current: 0, required: 1, status: 'remaining' },
+                                { code: 'food_uncertainty', current: null, required: null, status: 'remaining' }
+                            ]
+                        }
+                    }
+                }
+            },
+            recommendation: null
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('More confidence needed')).toBeTruthy());
+        expect(screen.getByText('Add a current weigh-in')).toBeTruthy();
+        expect(screen.getByText('Food-log range still wide')).toBeTruthy();
+        expect(screen.queryByRole('progressbar', { name: 'Calorie target review progress' })).toBeNull();
+    });
+
+    it('makes a high-confidence adjustment directly actionable without legacy prose', async () => {
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('High-confidence target adjustment')).toBeTruthy());
+        expect(screen.getByText('Based on the latest 28-day calibration window')).toBeTruthy();
+        expect(screen.getByText('1,900 kcal')).toBeTruthy();
+        expect(screen.getByText('1,750 kcal')).toBeTruthy();
+        expect(screen.getByText(/150 kcal\/day lower.*starts tomorrow/)).toBeTruthy();
+        expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy();
+        expect(screen.getByText('Review adjustment')).toBeTruthy();
+        expect(screen.queryByText("You're losing weight, but slower than planned")).toBeNull();
+        expect(screen.queryByText('Current evidence supports a lower calorie budget.')).toBeNull();
+    });
+
+    it('uses a compact metric review with the modeled range and conservative step', async () => {
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Review adjustment')).toBeTruthy());
+
+        fireEvent.press(screen.getByText('Review adjustment'));
+        expect(screen.getByText('Observed weight rate')).toBeTruthy();
+        expect(screen.getByText('0.36 kg loss/week')).toBeTruthy();
+        expect(screen.getByText('Average logged intake')).toBeTruthy();
+        expect(screen.getByText('1,900 kcal/day')).toBeTruthy();
+        expect(screen.getByText('Modeled target correction')).toBeTruthy();
+        expect(screen.getByText('-250 to -150 kcal/day')).toBeTruthy();
+        expect(screen.getByText('Conservative first step')).toBeTruthy();
+        expect(screen.getByText('150 kcal/day lower')).toBeTruthy();
+        expect(screen.getByText('BMR-based safety limit')).toBeTruthy();
+        expect(screen.getByText('1,650 kcal/day minimum')).toBeTruthy();
+        expect(screen.getByText(/BMR-based calorie-budget limit/)).toBeTruthy();
+        expect(screen.getByText('Proposed target')).toBeTruthy();
+        expect(screen.getByText('Close')).toBeTruthy();
+        fireEvent.press(screen.getByText('Close'));
+        expect(screen.queryByText('Observed weight rate')).toBeNull();
     });
 
     it.each([
         ['compact width', { width: 390, height: 844, scale: 1, fontScale: 1 }],
         ['large text', { width: 800, height: 900, scale: 1, fontScale: 1.5 }]
-    ])('stacks the recommendation panels and actions for %s', async (_label, dimensions) => {
+    ])('stacks signals and actions for %s', async (_label, dimensions) => {
         Dimensions.set({ window: dimensions, screen: dimensions });
         const screen = renderCard();
 
-        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
-        expect(StyleSheet.flatten(screen.getByTestId('calibration-recommendation-panels').props.style))
+        await waitFor(() => expect(screen.getByText('Past 7 days')).toBeTruthy());
+        expect(StyleSheet.flatten(screen.getByTestId('calibration-signal-grid').props.style))
             .toMatchObject({ flexDirection: 'column' });
         expect(StyleSheet.flatten(screen.getByTestId('calibration-recommendation-actions').props.style))
             .toMatchObject({ flexDirection: 'column' });
     });
 
-    it('uses the actual effective date when a suggestion is not for tomorrow', async () => {
+    it('uses the actual effective date when the change is not scheduled for tomorrow', async () => {
         const status = recommendationStatus();
         mockApi.getCalibrationStatus.mockResolvedValue({
             ...status,
@@ -507,16 +569,101 @@ describe('CalibrationInsightCard', () => {
         });
         const screen = renderCard();
 
-        await waitFor(() => expect(screen.getByText(/If applied, your new budget starts on Aug 3, 2026/)).toBeTruthy());
-        fireEvent.press(screen.getByText('See why'));
-        expect(screen.getByText('Apply 1,750 kcal on Aug 3, 2026')).toBeTruthy();
+        await waitFor(() => expect(screen.getByText(/starts on Aug 3, 2026/)).toBeTruthy());
+        fireEvent.press(screen.getByText('Review adjustment'));
+        expect(screen.getByText('Starts on Aug 3, 2026 only if you apply it.')).toBeTruthy();
     });
 
-    it('closes an open review if the suggestion becomes stale', async () => {
+    it('keeps descriptive signal panels visible with a scheduled update banner', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(scheduledStatus());
         const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('See why')).toBeTruthy());
-        fireEvent.press(screen.getByText('See why'));
-        expect(screen.getByText('Why we suggest 1,750 kcal')).toBeTruthy();
+
+        await waitFor(() => expect(screen.getByText('Calorie budget update scheduled')).toBeTruthy());
+        expect(screen.getByText('Past 7 days')).toBeTruthy();
+        expect(screen.getByText('Since goal start')).toBeTruthy();
+        expect(screen.getByText('1,900 kcal/day starts Aug 1, 2026.')).toBeTruthy();
+        expect(screen.getByText('Undo')).toBeTruthy();
+        expect(screen.queryByText('High-confidence target adjustment')).toBeNull();
+    });
+
+    it('shows an unsafe scheduled revision as on hold without hiding signals', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue({
+            ...scheduledStatus(),
+            planStatus: 'requires_review',
+            planReasonCode: 'HISTORICAL_PLAN_REQUIRES_REVIEW',
+            scheduledChange: {
+                ...scheduledStatus().scheduledChange!,
+                dailyCalorieBudgetKcal: null
+            }
+        });
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Saved update on hold')).toBeTruthy());
+        expect(screen.getByText('No updated budget starts until the calorie plan is replaced.')).toBeTruthy();
+        expect(screen.getByText('Past 7 days')).toBeTruthy();
+    });
+
+    it('undoes a scheduled update and restores the adjustment for review', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(scheduledStatus());
+        mockApi.cancelCalibrationRecommendation.mockResolvedValue(recommendationStatus());
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getByText('Undo')).toBeTruthy());
+        fireEvent.press(screen.getByText('Undo'));
+
+        await waitFor(() => expect(mockApi.cancelCalibrationRecommendation).toHaveBeenCalledWith(
+            7,
+            'calibration-operation-id'
+        ));
+        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
+        expect(screen.queryByText('Calorie budget update scheduled')).toBeNull();
+    });
+
+    it('formats all measured weight changes in pounds', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(recommendationStatus('LB'));
+        const screen = renderCard();
+
+        await waitFor(() => expect(screen.getAllByText('0.79 lb loss')).toHaveLength(2));
+        expect(screen.getByText('3.17 lb loss')).toBeTruthy();
+        expect(screen.getByLabelText(/Goal 1.00 lb loss/)).toBeTruthy();
+    });
+
+    it('applies directly from the card and shows the accepted schedule', async () => {
+        mockApi.getCalibrationStatus
+            .mockResolvedValueOnce(recommendationStatus())
+            .mockResolvedValue(scheduledStatus());
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
+
+        fireEvent.press(screen.getByText('Apply 1,750 kcal'));
+
+        await waitFor(() => expect(mockApi.applyCalibrationRecommendation).toHaveBeenCalledWith(
+            7,
+            'calibration-operation-id'
+        ));
+        await waitFor(() => expect(screen.getByText('Calorie budget update scheduled')).toBeTruthy());
+        await waitFor(() => expect(screen.queryClient.isFetching()).toBe(0));
+    });
+
+    it('keeps an accepted schedule visible if its status refresh fails', async () => {
+        mockApi.getCalibrationStatus
+            .mockResolvedValueOnce(recommendationStatus())
+            .mockRejectedValueOnce(new Error('Refresh failed'));
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
+
+        fireEvent.press(screen.getByText('Apply 1,750 kcal'));
+
+        await waitFor(() => expect(screen.getByText('Calorie budget update scheduled')).toBeTruthy());
+        expect(screen.getByText('1,750 kcal/day starts Aug 1, 2026.')).toBeTruthy();
+        expect(screen.getByText('Past 7 days')).toBeTruthy();
+    });
+
+    it('closes an open review when the recommendation becomes stale', async () => {
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Review adjustment')).toBeTruthy());
+        fireEvent.press(screen.getByText('Review adjustment'));
+        expect(screen.getByText('Observed weight rate')).toBeTruthy();
 
         const staleStatus = recommendationStatus();
         await act(async () => {
@@ -532,128 +679,21 @@ describe('CalibrationInsightCard', () => {
             await Promise.resolve();
         });
 
-        await waitFor(() => expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull());
-        expect(screen.queryByText(/Apply suggested budget/)).toBeNull();
-    });
-
-    it('renders a scheduled rollback as its resulting budget instead of an ambiguous zero-kcal change', async () => {
-        mockApi.getCalibrationStatus.mockResolvedValue(scheduledStatus());
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
-        expect(screen.getByText(/daily calorie budget will be 1,900 kcal starting/)).toBeTruthy();
-        expect(screen.getByText(/Undo this update before it starts/)).toBeTruthy();
-        expect(screen.getByText('Undo and review')).toBeTruthy();
-        expect(screen.queryByText('Current evidence supports a lower calorie budget.')).toBeNull();
-        expect(screen.queryByText('See why')).toBeNull();
-    });
-
-    it('holds an unsafe scheduled revision without claiming that a budget starts', async () => {
-        mockApi.getCalibrationStatus.mockResolvedValue({
-            ...scheduledStatus(),
-            planStatus: 'requires_review',
-            planReasonCode: 'HISTORICAL_PLAN_REQUIRES_REVIEW',
-            scheduledChange: {
-                ...scheduledStatus().scheduledChange!,
-                dailyCalorieBudgetKcal: null
-            }
-        });
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText('Your saved calorie budget update is on hold')).toBeTruthy());
-        expect(screen.getByText('No updated calorie budget will start until you replace your calorie plan.')).toBeTruthy();
-        expect(screen.getByText(/saved update is preserved/)).toBeTruthy();
-        expect(screen.queryByText(/updated daily calorie budget starts/)).toBeNull();
-        expect(screen.queryByText(/daily calorie budget will be .* starting/)).toBeNull();
-    });
-
-    it('undoes a scheduled update and restores the recommendation for review', async () => {
-        mockApi.getCalibrationStatus.mockResolvedValue(scheduledStatus());
-        mockApi.cancelCalibrationRecommendation.mockResolvedValue(recommendationStatus());
-        const screen = renderCard();
-
-        await waitFor(() => expect(screen.getByText('Undo and review')).toBeTruthy());
-        fireEvent.press(screen.getByText('Undo and review'));
-
-        await waitFor(() => expect(mockApi.cancelCalibrationRecommendation).toHaveBeenCalledWith(
-            7,
-            'calibration-operation-id'
-        ));
-        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
-        expect(screen.queryByText('Your calorie budget update is scheduled')).toBeNull();
-    });
-
-    it('formats observed pace in the evaluation display unit', async () => {
-        mockApi.getCalibrationStatus.mockResolvedValue(recommendationStatus('LB'));
-        const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('0.79 lb/week loss')).toBeTruthy());
-
-        expect(screen.getByText('Planned: 1.00 lb/week loss')).toBeTruthy();
-    });
-
-    it('applies directly from the card with a fresh operation id', async () => {
-        mockApi.getCalibrationStatus
-            .mockResolvedValueOnce(recommendationStatus())
-            .mockResolvedValue(scheduledStatus());
-        const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
-
-        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
-        fireEvent.press(screen.getByText('Apply 1,750 kcal'));
-
-        await waitFor(() => expect(mockApi.applyCalibrationRecommendation).toHaveBeenCalledWith(
-            7,
-            'calibration-operation-id'
-        ));
-        await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
-        await waitFor(() => expect(screen.queryClient.isFetching()).toBe(0));
-    });
-
-    it('keeps the accepted schedule visible if the status refresh fails', async () => {
-        mockApi.getCalibrationStatus
-            .mockResolvedValueOnce(recommendationStatus())
-            .mockRejectedValueOnce(new Error('Refresh failed'));
-        const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
-
-        fireEvent.press(screen.getByText('Apply 1,750 kcal'));
-
-        await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
-        await waitFor(() => expect(mockApi.getCalibrationStatus).toHaveBeenCalledTimes(2));
-        await waitFor(() => expect(screen.queryClient.isFetching()).toBe(0));
-        expect(screen.getByText(/daily calorie budget will be 1,750 kcal starting/)).toBeTruthy();
-        expect(screen.queryByText('Unable to evaluate your latest history.')).toBeNull();
-    });
-
-    it('keeps the apply action available after the user reviews the evidence', async () => {
-        mockApi.getCalibrationStatus
-            .mockResolvedValueOnce(recommendationStatus())
-            .mockResolvedValue(scheduledStatus());
-        const screen = renderCard();
-        await waitFor(() => expect(screen.getByText('See why')).toBeTruthy());
-
-        fireEvent.press(screen.getByText('See why'));
-        const applyButtons = screen.getAllByText(/Apply 1,750 kcal/);
-        fireEvent.press(applyButtons[applyButtons.length - 1]);
-
-        await waitFor(() => expect(mockApi.applyCalibrationRecommendation).toHaveBeenCalledWith(
-            7,
-            'calibration-operation-id'
-        ));
-        await waitFor(() => expect(screen.getByText('Your calorie budget update is scheduled')).toBeTruthy());
-        await waitFor(() => expect(screen.queryClient.isFetching()).toBe(0));
+        await waitFor(() => expect(screen.queryByText('Observed weight rate')).toBeNull());
+        expect(screen.queryByText('Apply suggested budget')).toBeNull();
     });
 
     it('keeps direct-apply errors visible on the card', async () => {
-        mockApi.applyCalibrationRecommendation.mockRejectedValueOnce(new Error('Recommendation is no longer current.'));
+        mockApi.applyCalibrationRecommendation.mockRejectedValueOnce(
+            new Error('Recommendation is no longer current.')
+        );
         const screen = renderCard();
         await waitFor(() => expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy());
 
         fireEvent.press(screen.getByText('Apply 1,750 kcal'));
 
         await waitFor(() => expect(screen.getByText('Unable to apply this recommendation.')).toBeTruthy());
-        expect(screen.queryByText('Recommendation is no longer current.')).toBeNull();
         expect(screen.getByRole('alert')).toBeTruthy();
-        expect(screen.queryByText('Why we suggest 1,750 kcal')).toBeNull();
+        expect(screen.queryByText('Recommendation is no longer current.')).toBeNull();
     });
 });
