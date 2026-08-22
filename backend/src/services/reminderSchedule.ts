@@ -1,5 +1,5 @@
-export const DEFAULT_REMINDER_LOCAL_MINUTE = 9 * 60;
-export const MINUTES_PER_DAY = 24 * 60;
+const DEFAULT_REMINDER_LOCAL_MINUTE = 9 * 60;
+const MINUTES_PER_DAY = 24 * 60;
 
 export type LocalWallClock = {
   localDate: string;

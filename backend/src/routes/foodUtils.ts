@@ -14,7 +14,7 @@ import { normalizeOptionalString, normalizeServingUnitLabel } from './myFoodsUti
  *
  * These stay Prisma-free so they can be unit tested without database setup.
  */
-export type FoodSearchParams = {
+type FoodSearchParams = {
   query: string | undefined;
   barcode: string | undefined;
   page: number | undefined;
@@ -338,7 +338,7 @@ export function parseFoodLogCreateBody(opts: {
   };
 }
 
-export type FoodLogUpdateData = Partial<{
+type FoodLogUpdateData = Partial<{
   name: string;
   calories: number;
   meal_period: MealPeriod;

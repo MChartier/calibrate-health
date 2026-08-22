@@ -14,7 +14,7 @@ export const NATIVE_PUSH_STATES = {
 
 export type NativePushState = (typeof NATIVE_PUSH_STATES)[keyof typeof NATIVE_PUSH_STATES];
 
-export type NotificationRoute =
+type NotificationRoute =
     | '/today'
     | '/progress'
     | { pathname: '/log' | '/weight'; params?: { date: string } };

@@ -24,7 +24,7 @@ import type { MutationDatabase, MutationResult } from './clientOperations';
 
 const MIN_ACCOUNT_AGE_YEARS = 18;
 
-export type CompleteOnboardingData = {
+type CompleteOnboardingData = {
   weight_unit: WeightUnit;
   height_unit: HeightUnit;
   timezone: string;
@@ -41,7 +41,7 @@ export type CompleteOnboardingInput = {
   data: CompleteOnboardingData;
 };
 
-export type OnboardingCompletionReceipt = {
+type OnboardingCompletionReceipt = {
   operation_id: string;
   completed_at: string;
   goal_id: number;
@@ -61,7 +61,7 @@ export type OnboardingWriteStage =
   | 'sync_marker'
   | 'completion';
 
-export type OnboardingParseFailure = {
+type OnboardingParseFailure = {
   ok: false;
   code: 'INVALID_ONBOARDING';
   message: string;

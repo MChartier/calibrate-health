@@ -4,9 +4,9 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
-export const HOSTED_NATIVE_EVIDENCE_SCHEMA_VERSION = 1;
+const HOSTED_NATIVE_EVIDENCE_SCHEMA_VERSION = 1;
 
-export const HOSTED_NATIVE_CHECKPOINTS = Object.freeze({
+const HOSTED_NATIVE_CHECKPOINTS = Object.freeze({
   android: Object.freeze([
     'emulatorValidated',
     'backendReady',

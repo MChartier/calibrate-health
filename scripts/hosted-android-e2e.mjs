@@ -8,15 +8,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { buildAndroidE2eAdbArgs, resolveAndroidE2eAdb } from './android-e2e.mjs';
 
-export const HOSTED_ANDROID_METRO_TIMEOUT_MS = 90_000;
+const HOSTED_ANDROID_METRO_TIMEOUT_MS = 90_000;
 export const HOSTED_ANDROID_LOG_MAX_BYTES = 256 * 1024;
-export const HOSTED_ANDROID_DIAGNOSTIC_LINES = 80;
+const HOSTED_ANDROID_DIAGNOSTIC_LINES = 80;
 const METRO_STATUS_URL = 'http://localhost:8081/status';
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-export function assertHostedAndroidRunner(environment = process.env, platform = process.platform) {
+function assertHostedAndroidRunner(environment = process.env, platform = process.platform) {
   if (environment.GITHUB_ACTIONS !== 'true' || environment.RUNNER_OS !== 'Linux' || platform !== 'linux') {
     throw new Error('Hosted Android E2E is restricted to GitHub Actions Linux runners.');
   }
@@ -79,7 +79,7 @@ export function boundHostedAndroidLog(value, maxBytes = HOSTED_ANDROID_LOG_MAX_B
   return sanitized.subarray(start).toString('utf8');
 }
 
-export function createHostedAndroidLog(logFile) {
+function createHostedAndroidLog(logFile) {
   fs.mkdirSync(path.dirname(logFile), { recursive: true });
   fs.writeFileSync(logFile, '', { encoding: 'utf8', mode: 0o600 });
   let retained = '';
@@ -159,7 +159,7 @@ async function runCommand(request, environment = process.env) {
   }
 }
 
-export async function terminateHostedAndroidMetro(child, options = {}) {
+async function terminateHostedAndroidMetro(child, options = {}) {
   if (!child?.pid || metroExited(child)) return;
   const kill = options.kill ?? process.kill.bind(process);
   const sleepImpl = options.sleepImpl ?? sleep;

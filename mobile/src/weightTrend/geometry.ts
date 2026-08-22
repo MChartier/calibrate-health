@@ -1,12 +1,12 @@
 import type { TrendMetricEntry } from '@calibrate/api-client';
 import { isVisibleWeightTrendPoint } from './presentation';
 
-export const WEIGHT_TREND_SEGMENT_GAP_DAYS = 14;
+const WEIGHT_TREND_SEGMENT_GAP_DAYS = 14;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const TARGET_Y_AXIS_INTERVALS = 3;
 
-export type WeightTrendChartPadding = {
+type WeightTrendChartPadding = {
     left: number;
     right: number;
     top: number;
@@ -26,7 +26,7 @@ export type WeightTrendChartPoint = {
     upperY: number;
 };
 
-export type WeightTrendModelBoundary = {
+type WeightTrendModelBoundary = {
     dateKey: string;
     dateMs: number;
     x: number;
@@ -78,7 +78,7 @@ type WeightTrendChartGeometryOptions = {
  * Bound dense raw history to first/min/max/last per horizontal pixel bucket.
  * Trend geometry stays complete; this only controls measurement-dot rendering.
  */
-export function downsampleWeightTrendMeasurements(
+function downsampleWeightTrendMeasurements(
     points: WeightTrendChartPoint[],
     drawableWidth: number,
     leftEdge: number
@@ -119,7 +119,7 @@ export function downsampleWeightTrendMeasurements(
         .map(([, point]) => point);
 }
 
-export function getWeightTrendDateKey(value: string): string {
+function getWeightTrendDateKey(value: string): string {
     return value.split('T')[0] ?? value;
 }
 

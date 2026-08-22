@@ -22,7 +22,7 @@ export function formatWeightInput(value: number): string {
     return value.toFixed(MAX_WEIGHT_DECIMAL_PLACES).replace(/\.0$/, '');
 }
 
-export function weightInputToCanonicalGrams(value: number, unit: WeightUnit | undefined): number {
+function weightInputToCanonicalGrams(value: number, unit: WeightUnit | undefined): number {
     const grams = unit === 'LB' ? value * 453.59237 : value * 1_000;
     return Math.round(grams);
 }

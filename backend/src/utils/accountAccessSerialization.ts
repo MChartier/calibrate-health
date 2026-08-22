@@ -5,7 +5,7 @@ import {
 } from '../../../shared/legalVersions';
 import { isHostedServiceDeployment } from '../config/emailDelivery';
 
-export type AccountAccessState =
+type AccountAccessState =
   | 'full'
   | 'email_verification_required'
   | 'legal_acceptance_required';

@@ -6,7 +6,7 @@ import {
     type HealthConnectFeatureSelection
 } from './types';
 
-export const HEALTH_CONNECT_RECORD_TYPES = {
+const HEALTH_CONNECT_RECORD_TYPES = {
     [HEALTH_CONNECT_FEATURES.STEPS]: 'Steps',
     [HEALTH_CONNECT_FEATURES.ACTIVE_CALORIES]: 'ActiveCaloriesBurned',
     [HEALTH_CONNECT_FEATURES.TOTAL_CALORIES]: 'TotalCaloriesBurned',

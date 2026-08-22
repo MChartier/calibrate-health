@@ -7,7 +7,7 @@ export const ASYNC_RESOURCE_STATES = {
     DEGRADED: 'degraded'
 } as const;
 
-export type AsyncResourceStateKind = typeof ASYNC_RESOURCE_STATES[keyof typeof ASYNC_RESOURCE_STATES];
+type AsyncResourceStateKind = typeof ASYNC_RESOURCE_STATES[keyof typeof ASYNC_RESOURCE_STATES];
 
 export type AsyncQuerySnapshot<T> = {
     data: T | undefined;

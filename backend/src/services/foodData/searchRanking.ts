@@ -18,7 +18,7 @@ export function normalizeFoodSearchText(value?: string): string {
 }
 
 /** Apply intentionally small stemming so common plural queries match singular product names. */
-export function stemFoodSearchToken(token: string): string {
+function stemFoodSearchToken(token: string): string {
   if (!token) return '';
   if (token.length > 4 && token.endsWith('ies')) return `${token.slice(0, -3)}y`;
   if (token.length > 3 && token.endsWith('s') && !token.endsWith('ss')) {

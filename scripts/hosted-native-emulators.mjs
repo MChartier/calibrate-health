@@ -26,7 +26,7 @@ export function assertHostedNativeRunner(environment = process.env) {
   if (!environment.RUNNER_TEMP?.trim()) throw new Error('RUNNER_TEMP is required.');
 }
 
-export function resolveHostedWearConfiguration(environment = process.env, platform = process.platform) {
+function resolveHostedWearConfiguration(environment = process.env, platform = process.platform) {
   assertHostedNativeRunner(environment);
   const pathApi = platform === 'win32' ? path.win32 : path.posix;
   const sdkRoot = environment.ANDROID_HOME.trim();
@@ -116,12 +116,12 @@ function adbOutput(config, args, options = {}) {
   return result.stdout?.trim() ?? '';
 }
 
-export function prepareHostedWearAvd(environment = process.env) {
+function prepareHostedWearAvd(environment = process.env) {
   const plan = createHostedWearCommandPlan(environment);
   for (const request of plan.prepare) runCommand(request);
 }
 
-export function startHostedWearAvd(environment = process.env) {
+function startHostedWearAvd(environment = process.env) {
   const { config, start } = createHostedWearCommandPlan(environment);
   if (adbOutput(config, ['get-state'], { allowFailure: true }) === 'device') {
     throw new Error(`${config.serial} is already occupied; refusing to replace an unknown adb target.`);
@@ -142,7 +142,7 @@ export function startHostedWearAvd(environment = process.env) {
   }
 }
 
-export function waitForHostedWearAvd(environment = process.env) {
+function waitForHostedWearAvd(environment = process.env) {
   const { config, wait } = createHostedWearCommandPlan(environment);
   runCommand(wait, { timeout: BOOT_TIMEOUT_MS });
   const deadline = Date.now() + BOOT_TIMEOUT_MS;
@@ -160,7 +160,7 @@ export function waitForHostedWearAvd(environment = process.env) {
   throw new Error('Timed out waiting for the hosted Wear emulator to finish booting.');
 }
 
-export function stopHostedWearAvd(environment = process.env) {
+function stopHostedWearAvd(environment = process.env) {
   const { stop } = createHostedWearCommandPlan(environment);
   runCommand(stop, { allowFailure: true, timeout: 30_000 });
 }

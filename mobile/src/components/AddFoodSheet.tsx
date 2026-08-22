@@ -49,7 +49,7 @@ import {
     SAVED_FOODS_LIBRARY_PAGE_SIZE
 } from '../savedFoods/queryKeys';
 
-export type AddFoodReturnTo = 'today' | 'food-log';
+type AddFoodReturnTo = 'today' | 'food-log';
 
 type AddFoodSheetProps = {
     visible: boolean;

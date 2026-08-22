@@ -81,7 +81,7 @@ function timeZoneParts(instant: Date, timeZone: string): number[] {
 }
 
 /** Convert an IANA-local midnight to an instant, including DST boundary days. */
-export function localDateStartInstant(localDate: string, timeZone: string): Date {
+function localDateStartInstant(localDate: string, timeZone: string): Date {
     const [year, month, day] = localDate.split('-').map(Number);
     const targetWallTime = Date.UTC(year, month - 1, day);
     let candidate = targetWallTime;

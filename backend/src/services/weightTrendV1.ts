@@ -35,9 +35,9 @@ export type WeightTrendObservation = {
   weight: number;
 };
 
-export type VolatilityLevel = 'low' | 'medium' | 'high';
+type VolatilityLevel = 'low' | 'medium' | 'high';
 
-export type WeightTrendPoint = WeightTrendObservation & {
+type WeightTrendPoint = WeightTrendObservation & {
   trendWeight: number;
   trendStd: number;
   lower95: number;

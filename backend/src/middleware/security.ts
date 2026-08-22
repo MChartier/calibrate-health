@@ -3,8 +3,8 @@ import { rateLimit, type RateLimitRequestHandler } from 'express-rate-limit';
 import { isOriginTrustedByPolicy } from '../config/cors';
 
 const AUTH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-export const CLIENT_DIAGNOSTICS_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-export const CLIENT_DIAGNOSTICS_RATE_LIMIT_MAX = 120;
+const CLIENT_DIAGNOSTICS_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const CLIENT_DIAGNOSTICS_RATE_LIMIT_MAX = 120;
 const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 type AuthRateLimiters = {

@@ -25,10 +25,6 @@ type SettingsRowProps = {
     onPress: () => void;
 };
 
-type SettingsStatusRowProps = Omit<SettingsRowProps, 'danger' | 'onPress'> & {
-    tone?: 'success' | 'warning';
-};
-
 export const SettingsSection: React.FC<SettingsSectionProps> = ({
     title,
     description,
@@ -105,40 +101,6 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
             {value && <AppText variant="muted" style={styles.rowValue}>{value}</AppText>}
             <Ionicons name="chevron-forward" size={18} color={danger ? colors.danger : colors.onSurfaceVariant} />
         </Pressable>
-    );
-};
-
-export const SettingsStatusRow: React.FC<SettingsStatusRowProps> = ({
-    icon,
-    label,
-    supportingText,
-    value,
-    showDivider = true,
-    testID,
-    tone = 'success'
-}) => {
-    const { colors } = useAppTheme();
-    const iconBackground = tone === 'success' ? colors.successContainer : colors.warningContainer;
-    const iconColor = tone === 'success' ? colors.success : colors.warning;
-    return (
-        <View
-            testID={testID}
-            accessible
-            accessibilityLabel={[label, value, supportingText].filter(Boolean).join(', ')}
-            style={[
-                styles.row,
-                showDivider && { borderBottomColor: colors.outlineVariant, borderBottomWidth: StyleSheet.hairlineWidth }
-            ]}
-        >
-            <View style={[styles.iconContainer, { backgroundColor: iconBackground }]}>
-                <Ionicons name={icon} size={20} color={iconColor} />
-            </View>
-            <View style={styles.rowText}>
-                <AppText variant="body" style={styles.rowLabel}>{label}</AppText>
-                {supportingText && <AppText variant="caption">{supportingText}</AppText>}
-            </View>
-            {value && <AppText variant="muted" style={styles.rowValue}>{value}</AppText>}
-        </View>
     );
 };
 

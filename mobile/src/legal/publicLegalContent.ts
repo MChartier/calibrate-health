@@ -5,7 +5,7 @@ export type PublicLegalSection = {
 };
 
 export const SUPPORT_EMAIL = 'support@calibratehealth.app';
-export const PRIVACY_EMAIL = 'privacy@calibratehealth.app';
+const PRIVACY_EMAIL = 'privacy@calibratehealth.app';
 export const TERMS_LAST_UPDATED = 'August 9, 2026';
 
 export const TERMS_INTRO = [
@@ -179,8 +179,8 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
     }
 ];
 
-export const ACCOUNT_DELETION_RESPONSE_DAYS = 7;
-export const ACCOUNT_DELETION_COMPLETION_DAYS = 30;
+const ACCOUNT_DELETION_RESPONSE_DAYS = 7;
+const ACCOUNT_DELETION_COMPLETION_DAYS = 30;
 
 export const ACCOUNT_DELETION_INTRO = [
     'Calibrate Health is a food, weight, and activity tracking service. This page explains how to permanently delete an account and its associated data.'

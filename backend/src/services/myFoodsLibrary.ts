@@ -3,9 +3,9 @@ import type { MyFoodType } from '@prisma/client';
 import { createHash } from 'node:crypto';
 import { MY_FOOD_NAME_MAX_LENGTH } from '../routes/myFoodsUtils';
 
-export const DEFAULT_MY_FOODS_LIBRARY_LIMIT = 30;
-export const MAX_MY_FOODS_LIBRARY_LIMIT = 100;
-export const MAX_MY_FOODS_LIBRARY_QUERY_LENGTH = MY_FOOD_NAME_MAX_LENGTH;
+const DEFAULT_MY_FOODS_LIBRARY_LIMIT = 30;
+const MAX_MY_FOODS_LIBRARY_LIMIT = 100;
+const MAX_MY_FOODS_LIBRARY_QUERY_LENGTH = MY_FOOD_NAME_MAX_LENGTH;
 
 const CURSOR_VERSION = 1;
 const MAX_CURSOR_LENGTH = 2048;
@@ -29,7 +29,7 @@ export type MyFoodsLibraryQuery = {
   limit: number;
 };
 
-export type MyFoodsLibraryItem = {
+type MyFoodsLibraryItem = {
   id: number;
   type: MyFoodType;
   name: string;

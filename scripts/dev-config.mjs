@@ -13,8 +13,8 @@ const PORT_BANDS = {
 };
 const PORT_SLOTS = 10_000;
 
-export const DEV_ENV_FILENAME = ".dev.env";
-export const DEV_COMPOSE_FILENAME = "compose.dev.yaml";
+const DEV_ENV_FILENAME = ".dev.env";
+const DEV_COMPOSE_FILENAME = "compose.dev.yaml";
 
 /**
  * Convert a worktree name into a Docker-safe identifier.
@@ -84,7 +84,7 @@ export function readDotenv(filePath) {
  * @param {number} port
  * @returns {Promise<boolean>}
  */
-export function isPortAvailable(port) {
+function isPortAvailable(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
     server.unref();

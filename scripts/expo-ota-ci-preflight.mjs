@@ -155,7 +155,7 @@ Options:
 `);
 }
 
-export function runExpoOtaCiPreflight(options = {}) {
+function runExpoOtaCiPreflight(options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
   const config = options.config ?? parseExpoOtaCiArgs(process.argv.slice(2));
   if (config.help) {

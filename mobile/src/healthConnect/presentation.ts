@@ -5,9 +5,9 @@ import {
     type HealthConnectFeatureSelection
 } from './types';
 
-export const HEALTH_CONNECT_STALE_AFTER_MS = 6 * 60 * 60 * 1000; // Flag foreground imports that have not succeeded for most of a waking day.
+const HEALTH_CONNECT_STALE_AFTER_MS = 6 * 60 * 60 * 1000; // Flag foreground imports that have not succeeded for most of a waking day.
 
-export type HealthConnectPresentationState =
+type HealthConnectPresentationState =
     | 'loading'
     | 'unavailable'
     | 'disconnected'
@@ -20,7 +20,7 @@ export type HealthConnectPresentationState =
     | 'ready'
     | 'error';
 
-export type HealthConnectConnectionActionKind =
+type HealthConnectConnectionActionKind =
     | 'connect'
     | 'manage'
     | 'update_provider'
