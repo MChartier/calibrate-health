@@ -1,27 +1,197 @@
-name: Publish Manifest Release
+name: Cut release
+
+run-name: Cut ${{ inputs.bump }} release from ${{ github.ref_name }}
 
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Semantic server/web version component to bump
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 concurrency:
-  group: publish-manifest-release
+  group: cut-release
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    name: Prepare exact release candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      source_sha: ${{ steps.release.outputs.source_sha }}
+      release_sha: ${{ steps.release.outputs.release_sha }}
+      previous_version: ${{ steps.release.outputs.previous_version }}
+      version: ${{ steps.release.outputs.version }}
+      release_tag: ${{ steps.release.outputs.release_tag }}
+      release_branch: ${{ steps.release.outputs.release_branch }}
+
+    steps:
+      - name: Require master
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
+            echo "Run Cut release from master; current ref is ${GITHUB_REF}." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact master source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Prepare synchronized release commit
+        id: release
+        shell: bash
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+          git fetch origin master --tags
+
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          REMOTE_MASTER_SHA="$(git rev-parse origin/master)"
+          if [[ "${SOURCE_SHA}" != "${REMOTE_MASTER_SHA}" ]]; then
+            echo "master advanced from ${SOURCE_SHA} to ${REMOTE_MASTER_SHA} before preparation. Rerun Cut release." >&2
+            exit 1
+          fi
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Release preparation requires a clean checkout." >&2
+            exit 1
+          fi
+
+          LATEST_TAG="$(git tag --list --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+          if [[ -z "${LATEST_TAG}" ]]; then
+            echo "Cannot prepare a release without an existing stable release tag." >&2
+            exit 1
+          fi
+          MANIFEST_TAG="$(node scripts/release-config.mjs tag)"
+          if [[ "${MANIFEST_TAG}" != "${LATEST_TAG}" ]]; then
+            echo "Manifest ${MANIFEST_TAG} does not match latest release ${LATEST_TAG}. Publish or repair the pending release first." >&2
+            exit 1
+          fi
+
+          VERSION="$(npm run --silent release:prepare -- --bump "${BUMP}")"
+          TAG="v${VERSION}"
+          BRANCH="release/${TAG}"
+          if git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
+            echo "Release tag ${TAG} already exists." >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
+            echo "Release branch ${BRANCH} already exists. Resolve that candidate before retrying." >&2
+            exit 1
+          fi
+
+          EXPECTED_FILES=(
+            backend/package-lock.json
+            backend/package.json
+            docs/openapi/v1.yaml
+            package-lock.json
+            package.json
+            packages/api-client/src/generated/v1.ts
+            shared/client-diagnostic-versions.json
+            shared/release.json
+          )
+          mapfile -t CHANGED_FILES < <(git diff --name-only)
+          if [[ "${#CHANGED_FILES[@]}" -ne "${#EXPECTED_FILES[@]}" ]]; then
+            printf 'Release preparation changed an unexpected number of files:\n%s\n' "${CHANGED_FILES[*]}" >&2
+            exit 1
+          fi
+          for file in "${EXPECTED_FILES[@]}"; do
+            if ! printf '%s\n' "${CHANGED_FILES[@]}" | grep -Fxq "${file}"; then
+              echo "Release preparation did not update expected mirror ${file}." >&2
+              exit 1
+            fi
+          done
+
+          npm run release:check
+          git diff --check
+          git switch -c "${BRANCH}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${EXPECTED_FILES[@]}"
+          git diff --cached --check
+          git commit -m "Prepare release ${TAG}"
+          RELEASE_SHA="$(git rev-parse HEAD)"
+          git push --set-upstream origin "${BRANCH}"
+
+          {
+            echo "source_sha=${SOURCE_SHA}"
+            echo "release_sha=${RELEASE_SHA}"
+            echo "previous_version=${LATEST_TAG#v}"
+            echo "version=${VERSION}"
+            echo "release_tag=${TAG}"
+            echo "release_branch=${BRANCH}"
+          } >> "${GITHUB_OUTPUT}"
+
+  release-validation:
+    name: Validate release configuration and container gates
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout exact release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install release dependencies
+        run: |
+          npm ci --no-audit --fund=false
+          npm --prefix backend ci --no-audit --fund=false
+
+      - name: Validate prepared release
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ needs.prepare.outputs.release_sha }}"
+          npm run release:check:container
+          npm run test:release
+          npm run test:expo-web:release
+          npm run test:deploy
+          npm run api:contract:check
+          git diff --exit-code
+          git diff --check
+
   ux-regression:
     name: Release UX Accessibility and Visual Regression
+    needs: prepare
     runs-on: windows-latest
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Checkout exact release candidate
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
 
       - name: Setup reviewed UX Node
         uses: actions/setup-node@v4
@@ -52,7 +222,7 @@ jobs:
           node scripts/release-acceptance.mjs hosted-result
           --workflow cut-release
           --gate hosted-ux-regression
-          --candidate "${{ github.sha }}"
+          --candidate "${{ needs.prepare.outputs.release_sha }}"
           --outcome "${{ steps.release_ux_gate.outcome }}"
           --output .codex-screenshots/expo-web-ux-results/release-acceptance.json
 
@@ -68,16 +238,18 @@ jobs:
 
   database-rollback:
     name: Release v0.14.0 Upgrade and Encrypted Rollback
+    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     env:
-      CALIBRATE_SOURCE_COMMIT: ${{ github.sha }}
+      CALIBRATE_SOURCE_COMMIT: ${{ needs.prepare.outputs.release_sha }}
 
     steps:
-      - name: Checkout full release history
+      - name: Checkout exact release candidate
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -105,84 +277,180 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
-  publish:
-    needs: [ux-regression, database-rollback]
-    name: Tag Validated Manifest Version
+
+  finalize:
+    name: Merge validated release PR
+    needs: [prepare, release-validation, ux-regression, database-rollback]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     outputs:
-      should_release: ${{ steps.version.outputs.should_release }}
-      release_tag: ${{ steps.version.outputs.new_tag }}
+      merge_commit: ${{ steps.merge.outputs.merge_commit }}
+      pull_request_url: ${{ steps.merge.outputs.pull_request_url }}
 
     steps:
-      - name: Require master
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
-            echo "This workflow publishes only from master; current ref is ${GITHUB_REF}." >&2
-            exit 1
-          fi
-
-      - name: Checkout full release history
+      - name: Checkout exact release candidate
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Plan manifest release
-        id: version
+      - name: Refuse master drift
         shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+          RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
         run: |
           set -euo pipefail
-          LATEST_TAG="$(git tag --list --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
-          if [[ -n "${LATEST_TAG}" ]]; then
-            node scripts/release-config.mjs plan --latest-tag "${LATEST_TAG}" >> "$GITHUB_OUTPUT"
-          else
-            node scripts/release-config.mjs plan >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Validate container release
-        if: steps.version.outputs.should_release == 'true'
-        run: |
-          npm run release:check:container
-          npm run test:release
-          npm run test:expo-web:release
-          npm run test:deploy
-
-      - name: Configure release tag identity
-        if: steps.version.outputs.should_release == 'true'
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Create and push release tag
-        if: steps.version.outputs.should_release == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          NEW_TAG="${{ steps.version.outputs.new_tag }}"
-          if git show-ref --tags --verify --quiet "refs/tags/${NEW_TAG}"; then
-            echo "Tag ${NEW_TAG} already exists." >&2
+          git fetch origin master "${RELEASE_BRANCH}"
+          if [[ "$(git rev-parse origin/master)" != "${SOURCE_SHA}" ]]; then
+            echo "master advanced after release validation. This candidate will not be merged; rerun Cut release." >&2
             exit 1
           fi
-          git tag -a "${NEW_TAG}" -m "Release ${NEW_TAG}" "${GITHUB_SHA}"
-          git push origin "${NEW_TAG}"
+          if [[ "$(git rev-parse "origin/${RELEASE_BRANCH}")" != "${RELEASE_SHA}" ]]; then
+            echo "Release branch ${RELEASE_BRANCH} no longer points to validated commit ${RELEASE_SHA}." >&2
+            exit 1
+          fi
 
-      - name: Report no-op release check
-        if: steps.version.outputs.should_release != 'true'
-        run: echo "No release published because ${{ steps.version.outputs.new_tag }} is already the latest manifest release."
+      - name: Open and merge release pull request
+        id: merge
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9.0.0
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.release_tag }}
+          BRANCH: ${{ needs.prepare.outputs.release_branch }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+        with:
+          script: |
+            const { VERSION: version, TAG: tag, BRANCH: branch, RELEASE_SHA: releaseSha } = process.env;
+            const body = [
+              '## Summary',
+              '',
+              `- synchronize the server and web release mirrors at ${version}`,
+              `- prepare immutable source tag ${tag}`,
+              '- leave Android phone and Wear release identities unchanged',
+              '',
+              '## Validation',
+              '',
+              '- container release checks and release contract tests',
+              '- Expo web release and generated API contract checks',
+              '- Windows UX accessibility and visual regression gate',
+              '- encrypted database rollback rehearsal',
+              '',
+              'Cut release validated this exact candidate before creating the PR and will publish it after merge.',
+            ].join('\n');
+            const { data: pull } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: branch,
+              base: 'master',
+              title: `Release ${tag}`,
+              body,
+            });
+            const { data: merge } = await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pull.number,
+              sha: releaseSha,
+              merge_method: 'merge',
+              commit_title: `Release ${tag}`,
+              commit_message: `Merge validated server/web release ${tag}.`,
+            });
+            if (!merge.merged) {
+              core.setFailed(`Release PR #${pull.number} was not merged: ${merge.message}`);
+              return;
+            }
+            core.setOutput('merge_commit', merge.sha);
+            core.setOutput('pull_request_url', pull.html_url);
 
-  build_release_image:
-    name: Build Validated Release Image
-    needs: publish
-    if: needs.publish.outputs.should_release == 'true'
-    uses: ./.github/workflows/container.yml
+      - name: Verify exact release ancestry
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+          MERGE_SHA: ${{ steps.merge.outputs.merge_commit }}
+        run: |
+          set -euo pipefail
+          git fetch origin master
+          git merge-base --is-ancestor "${RELEASE_SHA}" origin/master
+          git merge-base --is-ancestor "${MERGE_SHA}" origin/master
+          if [[ "$(git rev-parse "${MERGE_SHA}^1")" != "${SOURCE_SHA}" ]]; then
+            echo "Release PR merged after master advanced; refusing to publish an unvalidated merge." >&2
+            exit 1
+          fi
+          if [[ "$(git rev-parse "${MERGE_SHA}^{tree}")" != "$(git rev-parse "${RELEASE_SHA}^{tree}")" ]]; then
+            echo "Merged release tree differs from validated candidate ${RELEASE_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Summarize prepared release
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.release_tag }}
+          PR_URL: ${{ steps.merge.outputs.pull_request_url }}
+        run: |
+          {
+            echo "## Prepared ${TAG}"
+            echo
+            echo "- Version: \`${{ needs.prepare.outputs.previous_version }}\` -> \`${VERSION}\`"
+            echo "- Source: \`${SOURCE_SHA}\`"
+            echo "- Validated release commit: \`${RELEASE_SHA}\`"
+            echo "- Release PR: ${PR_URL}"
+            echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`"
+            echo
+            echo "If publishing fails, rerun Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  cleanup-candidate:
+    name: Clean up unmerged candidate
+    if: ${{ always() && needs.prepare.result == 'success' && needs.finalize.result != 'success' }}
+    needs: [prepare, release-validation, ux-regression, database-rollback, finalize]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+          fetch-depth: 0
+
+      - name: Delete only an abandoned action-owned branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+          RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
+        run: |
+          set -euo pipefail
+          git fetch origin master
+          if git merge-base --is-ancestor "${RELEASE_SHA}" origin/master; then
+            echo "Release commit is already on master; preserve it for Publish prepared release."
+            exit 0
+          fi
+          OPEN_PR="$(gh pr list --state open --head "${RELEASE_BRANCH}" --json url --jq '.[0].url // empty')"
+          if [[ -n "${OPEN_PR}" ]]; then
+            echo "Preserving ${RELEASE_BRANCH} because ${OPEN_PR} still needs attention."
+            exit 0
+          fi
+          REMOTE_SHA="$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | awk '{print $1}')"
+          if [[ -z "${REMOTE_SHA}" ]]; then
+            echo "Release candidate branch is already absent."
+            exit 0
+          fi
+          if [[ "${REMOTE_SHA}" != "${RELEASE_SHA}" ]]; then
+            echo "Refusing to delete ${RELEASE_BRANCH}; it moved from action-owned commit ${RELEASE_SHA} to ${REMOTE_SHA}." >&2
+            exit 1
+          fi
+          git push origin --delete "${RELEASE_BRANCH}"
+
+  publish:
+    name: Tag and publish validated release
+    needs: [prepare, finalize]
+    uses: ./.github/workflows/publish-release.yml
     with:
-      release_tag: ${{ needs.publish.outputs.release_tag }}
-      publish_latest: true
+      release_commit: ${{ needs.prepare.outputs.release_sha }}
+      release_branch: ${{ needs.prepare.outputs.release_branch }}

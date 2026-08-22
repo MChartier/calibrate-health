@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -11,8 +11,24 @@ export const RELEASE_MANIFEST_PATH = path.join(REPOSITORY_ROOT, 'shared', 'relea
 
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const STABLE_SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const RELEASE_BUMPS = new Set(['major', 'minor', 'patch']);
 
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'));
+
+const formatJson = (value, originalSource) => {
+  const newline = originalSource.includes('\r\n') ? '\r\n' : '\n';
+  const formatted = `${JSON.stringify(value, null, 2)}\n`;
+  return newline === '\r\n' ? formatted.replaceAll('\n', '\r\n') : formatted;
+};
+
+const replaceExactlyOnce = (source, current, replacement, label) => {
+  const firstIndex = source.indexOf(current);
+  if (firstIndex < 0) throw new Error(`${label} does not contain the expected current release value.`);
+  if (source.indexOf(current, firstIndex + current.length) >= 0) {
+    throw new Error(`${label} contains the expected current release value more than once.`);
+  }
+  return `${source.slice(0, firstIndex)}${replacement}${source.slice(firstIndex + current.length)}`;
+};
 
 const readOptionalFile = async (filePath) => {
   try {
@@ -66,6 +82,25 @@ export const compareSemver = (left, right) => {
   }
   return 0;
 };
+
+/** Calculate the next strict stable server release without losing precision. */
+export function nextReleaseVersion(version, bump) {
+  if (!STABLE_SEMVER_PATTERN.test(version)) throw new Error(`Invalid stable release version: ${version}`);
+  if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
+
+  let [major, minor, patch] = version.split('.').map((part) => BigInt(part));
+  if (bump === 'major') {
+    major += 1n;
+    minor = 0n;
+    patch = 0n;
+  } else if (bump === 'minor') {
+    minor += 1n;
+    patch = 0n;
+  } else {
+    patch += 1n;
+  }
+  return `${major}.${minor}.${patch}`;
+}
 
 const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'wear_os'];
 const MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM = 16;
@@ -248,7 +283,9 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
   const errors = validateManifest(manifest);
   const [
     rootPackage,
+    rootPackageLock,
     backendPackage,
+    backendPackageLock,
     mobilePackage,
     expoConfig,
     easConfig,
@@ -256,10 +293,13 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     wearGradle,
     pairingGradle,
     diagnosticVersions,
-    openApiSource
+    openApiSource,
+    generatedApiClientSource
   ] = await Promise.all([
     readJson(path.join(root, 'package.json')),
+    readJson(path.join(root, 'package-lock.json')),
     readJson(path.join(root, 'backend', 'package.json')),
+    readJson(path.join(root, 'backend', 'package-lock.json')),
     readJson(path.join(root, 'mobile', 'package.json')),
     readJson(path.join(root, 'mobile', 'app.json')),
     readJson(path.join(root, 'mobile', 'eas.json')),
@@ -267,12 +307,22 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     readFile(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'utf8'),
     readFile(path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'), 'utf8'),
     readJson(path.join(root, 'shared', 'client-diagnostic-versions.json')),
-    readFile(path.join(root, 'docs', 'openapi', 'v1.yaml'), 'utf8')
+    readFile(path.join(root, 'docs', 'openapi', 'v1.yaml'), 'utf8'),
+    readFile(path.join(root, 'packages', 'api-client', 'src', 'generated', 'v1.ts'), 'utf8')
   ]);
   errors.push(...validateClientDiagnosticVersionContract(manifest, diagnosticVersions, openApiSource));
 
   assertMatch(errors, 'package.json version', rootPackage.version, manifest.server.version);
+  assertMatch(errors, 'package-lock.json version', rootPackageLock.version, manifest.server.version);
+  assertMatch(errors, 'package-lock.json root package version', rootPackageLock.packages?.['']?.version, manifest.server.version);
   assertMatch(errors, 'backend/package.json version', backendPackage.version, manifest.server.version);
+  assertMatch(errors, 'backend/package-lock.json version', backendPackageLock.version, manifest.server.version);
+  assertMatch(
+    errors,
+    'backend/package-lock.json root package version',
+    backendPackageLock.packages?.['']?.version,
+    manifest.server.version
+  );
   assertMatch(errors, 'mobile/package.json version', mobilePackage.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.version', expoConfig.expo?.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.android.versionCode', expoConfig.expo?.android?.versionCode, manifest.android.mobile.version_code);
@@ -320,6 +370,14 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     }
   }
 
+  const diagnosticWebVersions = diagnosticVersions?.supported_versions?.web;
+  if (Array.isArray(diagnosticWebVersions)) {
+    const expectedGeneratedWebVersions = `version?: "${diagnosticWebVersions.join('" | "')}";`;
+    if (!generatedApiClientSource.includes(expectedGeneratedWebVersions)) {
+      errors.push('Generated API client web diagnostic versions do not match client-diagnostic-versions.json.');
+    }
+  }
+
   return { manifest, errors };
 }
 
@@ -330,6 +388,97 @@ const gitValue = (root, args, fallback = null) => {
     return fallback;
   }
 };
+
+export function getLatestStableTag(root = REPOSITORY_ROOT) {
+  const tags = gitValue(root, ['tag', '--list', '--sort=-v:refname'], '');
+  return tags.split(/\r?\n/).find((tag) => /^v\d+\.\d+\.\d+$/.test(tag)) || null;
+}
+
+/** Prepare every checked-in server/web release mirror and roll back the batch on validation failure. */
+export async function prepareServerRelease({ root = REPOSITORY_ROOT, bump, latestTag = getLatestStableTag(root) }) {
+  if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
+  if (latestTag === null) throw new Error('Cannot prepare a release without an existing stable release tag.');
+
+  const beforeCheck = await checkRepository(root);
+  if (beforeCheck.errors.length > 0) {
+    throw new Error(`Release configuration is inconsistent before preparation:\n- ${beforeCheck.errors.join('\n- ')}`);
+  }
+
+  const currentVersion = beforeCheck.manifest.server.version;
+  const currentPlan = getReleasePlan(beforeCheck.manifest, latestTag);
+  if (currentPlan.should_release) {
+    throw new Error(
+      `Manifest version ${currentVersion} is already ahead of ${latestTag}. Publish the pending release before preparing another.`
+    );
+  }
+  const nextVersion = nextReleaseVersion(currentVersion, bump);
+  const files = {
+    manifest: path.join(root, 'shared', 'release.json'),
+    diagnostics: path.join(root, 'shared', 'client-diagnostic-versions.json'),
+    rootPackage: path.join(root, 'package.json'),
+    rootLock: path.join(root, 'package-lock.json'),
+    backendPackage: path.join(root, 'backend', 'package.json'),
+    backendLock: path.join(root, 'backend', 'package-lock.json'),
+    openApi: path.join(root, 'docs', 'openapi', 'v1.yaml'),
+    generatedApi: path.join(root, 'packages', 'api-client', 'src', 'generated', 'v1.ts')
+  };
+  const originals = Object.fromEntries(
+    await Promise.all(Object.entries(files).map(async ([key, filePath]) => [key, await readFile(filePath, 'utf8')]))
+  );
+  const manifest = JSON.parse(originals.manifest);
+  const diagnostics = JSON.parse(originals.diagnostics);
+  const rootPackage = JSON.parse(originals.rootPackage);
+  const rootLock = JSON.parse(originals.rootLock);
+  const backendPackage = JSON.parse(originals.backendPackage);
+  const backendLock = JSON.parse(originals.backendLock);
+  const previousVersion = diagnostics.previous_web_release;
+
+  manifest.server.version = nextVersion;
+  diagnostics.previous_web_release = currentVersion;
+  diagnostics.supported_versions.web = [nextVersion, currentVersion];
+  rootPackage.version = nextVersion;
+  rootLock.version = nextVersion;
+  rootLock.packages[''].version = nextVersion;
+  backendPackage.version = nextVersion;
+  backendLock.version = nextVersion;
+  backendLock.packages[''].version = nextVersion;
+
+  const openApiCurrent = `- properties: { platform: { const: web }, version: { enum: [${currentVersion}, ${previousVersion}] } }`;
+  const openApiNext = `- properties: { platform: { const: web }, version: { enum: [${nextVersion}, ${currentVersion}] } }`;
+  const generatedCurrent = `version?: "${currentVersion}" | "${previousVersion}";`;
+  const generatedNext = `version?: "${nextVersion}" | "${currentVersion}";`;
+  const replacements = {
+    manifest: formatJson(manifest, originals.manifest),
+    diagnostics: formatJson(diagnostics, originals.diagnostics),
+    rootPackage: formatJson(rootPackage, originals.rootPackage),
+    rootLock: formatJson(rootLock, originals.rootLock),
+    backendPackage: formatJson(backendPackage, originals.backendPackage),
+    backendLock: formatJson(backendLock, originals.backendLock),
+    openApi: replaceExactlyOnce(originals.openApi, openApiCurrent, openApiNext, 'docs/openapi/v1.yaml'),
+    generatedApi: replaceExactlyOnce(
+      originals.generatedApi,
+      generatedCurrent,
+      generatedNext,
+      'packages/api-client/src/generated/v1.ts'
+    )
+  };
+
+  const writtenKeys = [];
+  try {
+    for (const [key, filePath] of Object.entries(files)) {
+      await writeFile(filePath, replacements[key]);
+      writtenKeys.push(key);
+    }
+    const afterCheck = await checkRepository(root);
+    if (afterCheck.errors.length > 0) {
+      throw new Error(`Prepared release configuration is inconsistent:\n- ${afterCheck.errors.join('\n- ')}`);
+    }
+  } catch (error) {
+    await Promise.all(writtenKeys.map((key) => writeFile(files[key], originals[key])));
+    throw error;
+  }
+  return nextVersion;
+}
 
 const artifactMetadata = async (root, artifact) => {
   const [label, rawPath] = artifact.includes('=') ? artifact.split(/=(.*)/s, 2) : [path.basename(artifact), artifact];
@@ -374,11 +523,12 @@ export async function createReleaseMetadata({ manifest, channel, artifacts = [],
 }
 
 const parseArguments = (args) => {
-  const result = { command: args[0] ?? 'check', channel: null, artifacts: [], latestTag: null };
+  const result = { command: args[0] ?? 'check', channel: null, artifacts: [], latestTag: null, bump: null };
   for (let index = 1; index < args.length; index += 1) {
     if (args[index] === '--channel') result.channel = args[++index];
     else if (args[index] === '--artifact') result.artifacts.push(args[++index]);
     else if (args[index] === '--latest-tag') result.latestTag = args[++index];
+    else if (args[index] === '--bump') result.bump = args[++index];
     else throw new Error(`Unknown argument: ${args[index]}`);
   }
   return result;
@@ -386,6 +536,12 @@ const parseArguments = (args) => {
 
 async function main() {
   const options = parseArguments(process.argv.slice(2));
+  if (options.command === 'prepare') {
+    if (!options.bump) throw new Error('prepare requires --bump major, minor, or patch.');
+    if (options.latestTag !== null) throw new Error('prepare reads the latest stable tag from Git; do not pass --latest-tag.');
+    console.log(await prepareServerRelease({ bump: options.bump }));
+    return;
+  }
   const { manifest, errors } = await checkRepository();
   if (errors.length > 0) {
     for (const error of errors) console.error(`- ${error}`);

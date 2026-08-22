@@ -257,6 +257,18 @@ UI code style:
 - Close both Prisma and adapter-owned `pg.Pool` connections in scripts/tests
   that need deterministic shutdown.
 
+## Release Versioning
+
+- Ordinary feature and fix PRs must not change `shared/release.json` `server.version` or its package, lockfile,
+  diagnostic, OpenAPI, and generated-client mirrors.
+- After the desired changes land on `master`, run **Cut release** in GitHub Actions and choose `patch`, `minor`, or
+  `major`. The action owns the synchronized release commit, version-only PR, tag, and GHCR publication.
+- If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
+  generated release branch.
+- Android phone, Wear, and Expo OTA versions remain independent of the server/web release selector.
+- Use **Publish prepared release** with the recorded release commit and branch to recover a post-merge tag failure;
+  use **Build Release Image** to rebuild an existing immutable tag.
+
 ## Git And PR Workflow
 
 - Local default branch is `master`.

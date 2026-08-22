@@ -34,29 +34,87 @@ function assertWindowsUxJob(workflow) {
   assert.match(job, /if-no-files-found: error/);
   assert.doesNotMatch(job, /update-snapshots|CALIBRATE_APPROVE_UX_SNAPSHOTS/);
 }
-test('master merges publish only when the reviewed manifest version advances', () => {
+test('manual release preparation validates one exact candidate before auto-merging its release PR', () => {
   const workflow = readWorkflow('cut-release.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  const prepare = workflowJobBlock(workflow, 'prepare');
+  const validation = workflowJobBlock(workflow, 'release-validation');
+  const finalize = workflowJobBlock(workflow, 'finalize');
+  const cleanup = workflowJobBlock(workflow, 'cleanup-candidate');
+  const publish = workflowJobBlock(workflow, 'publish');
 
   assertWindowsUxJob(workflow);
-  assert.match(workflow, /publish:\s*\n\s+needs: \[ux-regression, database-rollback\]/);
-  assert.ok(workflow.indexOf('  ux-regression:') < workflow.indexOf('git tag -a'));
+  assert.match(workflow, /workflow_dispatch:[\s\S]*bump:[\s\S]*type: choice/);
+  assert.match(workflow, /options:\s*\n\s+- patch\s*\n\s+- minor\s*\n\s+- major/);
+  assert.doesNotMatch(workflow, /push:\s*\n\s+branches: \[master\]/);
+  assert.match(workflow, /group: cut-release/);
+  assert.match(workflow, /cancel-in-progress: false/);
+  assert.match(workflow, /pull-requests: write/);
+  assert.match(workflow, /packages: write/);
+  assert.match(packageConfig.scripts['release:prepare'], /release-config\.mjs prepare/);
 
-  assert.match(workflow, /push:\s*\n\s+branches: \[master\]/);
-  assert.match(workflow, /node scripts\/release-config\.mjs plan/);
-  assert.match(workflow, /npm run release:check:container/);
+  assert.match(prepare, /if \[\[ "\$\{GITHUB_REF\}" != "refs\/heads\/master" \]\]/);
+  assert.match(prepare, /git fetch origin master --tags/);
+  assert.match(prepare, /MANIFEST_TAG.*LATEST_TAG/);
+  assert.match(prepare, /release:prepare -- --bump/);
+  assert.doesNotMatch(prepare, /release:prepare.*--latest-tag/);
+  assert.match(prepare, /BRANCH="release\/\$\{TAG\}"/);
+  assert.match(prepare, /git commit -m "Prepare release \$\{TAG\}"/);
+  assert.match(prepare, /git push --set-upstream origin/);
+
+  assert.match(validation, /ref: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
+  assert.match(validation, /npm run release:check:container/);
+  assert.match(validation, /npm run test:release/);
+  assert.match(validation, /npm run test:expo-web:release/);
+  assert.match(validation, /npm run test:deploy/);
+  assert.match(validation, /npm run api:contract:check/);
+  assert.match(validation, /git diff --exit-code/);
   assert.doesNotMatch(workflow, /npm run release:check:production/);
   assert.doesNotMatch(packageConfig.scripts['release:check:container'], /--strict/);
   assert.match(packageConfig.scripts['release:check:production'], /--strict/);
-  assert.match(workflow, /packages: write/);
-  assert.match(workflow, /build_release_image:/);
-  assert.match(workflow, /needs: publish/);
-  assert.match(workflow, /uses: \.\/\.github\/workflows\/container\.yml/);
-  assert.match(workflow, /release_tag: \$\{\{ needs\.publish\.outputs\.release_tag \}\}/);
-  assert.match(workflow, /publish_latest: true/);
+
+  assert.match(finalize, /needs: \[prepare, release-validation, ux-regression, database-rollback\]/);
+  assert.match(finalize, /Refuse master drift/);
+  assert.match(finalize, /origin\/master.*SOURCE_SHA/);
+  assert.match(finalize, /github\.rest\.pulls\.create/);
+  assert.match(finalize, /github\.rest\.pulls\.merge/);
+  assert.match(finalize, /merge_method: 'merge'/);
+  assert.match(finalize, /git merge-base --is-ancestor "\$\{RELEASE_SHA\}" origin\/master/);
+  assert.match(finalize, /MERGE_SHA\}\^1/);
+  assert.match(finalize, /MERGE_SHA\}\^\{tree\}/);
+
+  assert.match(cleanup, /always\(\).*needs\.finalize\.result != 'success'/);
+  assert.match(cleanup, /gh pr list --state open/);
+  assert.match(cleanup, /REMOTE_SHA.*RELEASE_SHA/);
+  assert.match(cleanup, /git push origin --delete/);
+
+  assert.match(publish, /uses: \.\/\.github\/workflows\/publish-release\.yml/);
+  assert.match(publish, /release_commit: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
+  assert.match(publish, /release_branch: \$\{\{ needs\.prepare\.outputs\.release_branch \}\}/);
   assert.doesNotMatch(workflow, /createWorkflowDispatch|workflow_id:/);
 });
 
+test('prepared release publishing is reusable, recoverable, and idempotent', () => {
+  const workflow = readWorkflow('publish-release.yml');
+  const tag = workflowJobBlock(workflow, 'tag_release');
+  const image = workflowJobBlock(workflow, 'build_release_image');
+
+  assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /release_commit:/);
+  assert.match(workflow, /release_branch:/);
+  assert.match(workflow, /group: publish-prepared-release-\$\{\{ inputs\.release_commit \}\}/);
+  assert.match(tag, /ref: \$\{\{ inputs\.release_commit \}\}/);
+  assert.match(tag, /git merge-base --is-ancestor "\$\{RELEASE_COMMIT\}" origin\/master/);
+  assert.match(tag, /EXPECTED_BRANCH="release\/\$\{TAG\}"/);
+  assert.match(tag, /node scripts\/release-config\.mjs check/);
+  assert.match(tag, /Existing tag \$\{TAG\} points to/);
+  assert.match(tag, /node scripts\/release-config\.mjs tag --latest-tag/);
+  assert.match(tag, /git tag -a "\$\{RELEASE_TAG\}"/);
+  assert.match(image, /uses: \.\/\.github\/workflows\/container\.yml/);
+  assert.match(image, /publish_latest: true/);
+  assert.doesNotMatch(workflow, /pull_request_target|createWorkflowDispatch/);
+});
 test('pull requests run the reviewed Windows UX gate and retain sanitized evidence', () => {
   const workflow = readWorkflow('builds.yml');
 
@@ -351,20 +409,21 @@ test('PR and release workflows rehearse v0.14.0 upgrade and encrypted rollback b
   const pullRequest = workflowJobBlock(readWorkflow('database-upgrade.yml'), 'release-upgrade-rollback');
   const release = readWorkflow('cut-release.yml');
   const releaseRollback = workflowJobBlock(release, 'database-rollback');
+  const releaseFinalize = workflowJobBlock(release, 'finalize');
 
   assert.match(pullRequest, /fetch-depth: 0/);
   assert.match(pullRequest, /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
   assert.match(pullRequest, /name: postgres-rollback-smoke-summary-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(pullRequest, /--gate hosted-database-upgrade-rollback/);
-  assert.match(releaseRollback, /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.sha \}\}/);
+  assert.match(releaseRollback, /CALIBRATE_SOURCE_COMMIT: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
   for (const job of [pullRequest, releaseRollback]) {
     assert.match(job, /npm run test:db:rollback:unit/);
     assert.match(job, /npm run test:db:rollback/);
     assert.match(job, /path: \.codex-screenshots\/postgres-rollback-smoke\/result\.json/);
     assert.match(job, /retention-days: 30/);
   }
-  assert.match(release, /publish:\s*\n\s+needs: \[ux-regression, database-rollback\]/);
-  assert.ok(release.indexOf('  database-rollback:') < release.indexOf('git tag -a'));
+  assert.match(releaseFinalize, /needs: \[prepare, release-validation, ux-regression, database-rollback\]/);
+  assert.ok(release.indexOf('  database-rollback:') < release.indexOf('github.rest.pulls.merge'));
 });
 
 test('release acceptance workflow separates implementation from external evidence-only launch', () => {

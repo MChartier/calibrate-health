@@ -50,41 +50,66 @@ validated signing environment to the phone and Wear release builds. Any future E
 with a Wear artifact signed by that same certificate. Never place signing material in `shared/release.json` or
 generated metadata.
 
-## Version bump and fast validation
+## Explicit server/web releases
 
-1. Update `shared/release.json` first.
-2. Mirror phone values in `mobile/package.json` and `mobile/app.json`; Expo prebuild generates the ignored native files.
-3. Mirror Wear values in `wear/app/build.gradle.kts`; keep the pairing module aligned with the phone release.
-4. If the server version changes, update the root and backend package versions and lockfiles.
-5. Run the fast checks before building:
+Ordinary feature and fix PRs must not change `server.version` or its package, diagnostic, OpenAPI, generated-client,
+or lockfile mirrors. Merge the desired changes to `master`, then run **Cut release** from the GitHub Actions page and
+choose the semantic component to advance:
+
+- `patch` for compatible fixes: `X.Y.Z` to `X.Y.(Z+1)`.
+- `minor` for compatible features: `X.Y.Z` to `X.(Y+1).0`.
+- `major` for breaking server, API, or deployment contracts: `X.Y.Z` to `(X+1).0.0`.
+
+The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
+`release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It runs the container release gates, generated API
+contract check, Expo web release tests, deploy tests, Windows UX regression gate, and encrypted rollback rehearsal.
+If `master` advances while those gates run, the candidate is not merged; rerun the action so the later change is part
+of a newly validated candidate.
+
+After validation, the action creates and auto-merges a version-only release PR with a merge commit. **Publish prepared
+release** verifies that the exact candidate is now an ancestor of `master`, creates or verifies its annotated tag, and
+calls the reusable GHCR image workflow with `publish_latest: true`. It is called directly rather than relying on
+token-generated push or PR events, whose workflow behavior is restricted by
+[GitHub's `GITHUB_TOKEN` rules](https://docs.github.com/en/actions/concepts/security/github_token).
+
+The preparation command is also available for isolated release tooling tests:
+
+```powershell
+npm.cmd run release:prepare -- --bump patch
+```
+
+It updates `shared/release.json`, root/backend package manifests and lockfiles, the two-version web diagnostics
+window, the OpenAPI enum, and its generated TypeScript union as one validated batch. Do not run it in an ordinary
+feature worktree and commit the result manually.
+
+Recovery is deliberately state-specific:
+
+- Before merge, failed validation or `master` drift deletes only the unchanged action-owned candidate branch. Fix the
+  failure on `master` and rerun **Cut release**.
+- If the release PR merged but tagging failed, rerun **Publish prepared release** with the release commit and branch
+  shown in the action summary. A manifest ahead of the latest tag blocks another version bump until this is resolved.
+- If tagging succeeded but the image build failed, run **Build Release Image** for the immutable tag. Moving `latest`
+  is allowed only for the highest stable tag.
+
+The reusable image workflow still prevents rebuilding an older tag from executing historical deployment jobs.
+Validated releases publish version, source-SHA, and moving `latest` tags to GHCR; deployment to a self-host remains an
+operator-controlled Docker Compose operation. No GitHub Release object or generated changelog is created.
+
+Container publication uses `release:check:container`, including the encrypted backup/restore drill, dependency policy,
+canonical version checks, and risk-contract validation. It does not claim physical Android/Wear readiness:
+`release:check:production` remains the stricter native distribution gate and still requires retained Galaxy
+phone/watch evidence. This allows an immutable server image to exist for production-like device testing without
+weakening the native release gate.
+
+Phone and Wear releases remain independent. For a native release, update `shared/release.json`, mirror phone values in
+`mobile/package.json` and `mobile/app.json`, mirror Wear values in `wear/app/build.gradle.kts`, and keep the pairing
+module aligned with the phone release. Expo prebuild continues to generate ignored native files. Run the fast checks
+before building:
 
 ```powershell
 npm.cmd run release:check
 npm.cmd run test:release
 ```
-
-These checks parse release configuration, dependency policy, workflow contracts, and retained risk-evidence
-references. They do not invoke Gradle, Expo, Docker, or the full CI suite.
-
-The `Publish Manifest Release` workflow does not calculate or mutate versions. Every merge to `master` validates the
-exact stable `server.version` declared in `shared/release.json`. If that version is newer than the latest stable tag,
-the workflow runs the container release gates, creates the tag, and directly calls the current GHCR-only image
-workflow as a dependent job.
-If the version is already published, it exits without building an image. Regressions and prerelease versions fail
-closed. A manual dispatch on `master` is retained only as a recovery mechanism; ordinary releases require no step
-beyond merging the reviewed version bump.
-
-The reusable image workflow receives the immutable tag as an explicit input while its workflow definition is loaded
-from `master`. This prevents rebuilding an older tag from executing historical AWS/ECS deployment jobs. Validated
-manifest releases publish version, source-SHA, and moving `latest` tags to GHCR. Manual recovery builds leave `latest`
-unchanged by default and reject attempts to move it to anything other than the highest stable release. Deployment to
-a self-host remains an operator-controlled Docker Compose operation.
-
-Container publication runs `release:check:container`, including the encrypted backup/restore drill, exact and
-time-bounded dependency policy, canonical version checks, and risk-contract validation. It intentionally does not
-claim physical Android/Wear readiness: `release:check:production` remains the stricter native
-distribution gate and still requires the retained Galaxy phone/watch evidence. This allows an immutable server image to exist for the production-like device testing
-that produces that evidence without weakening the final native release gate.
 
 ## Reproducible artifact metadata
 
