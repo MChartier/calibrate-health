@@ -11,6 +11,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Native Build Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      wear: ${{ steps.filter.outputs.wear }}
+      native_package: ${{ steps.filter.outputs.native_package }}
+
+    steps:
+      - name: Detect native build inputs
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            wear:
+              - 'wear/**'
+              - 'scripts/hosted-native-evidence.mjs'
+              - 'scripts/wear-emulator-smoke.mjs'
+              - 'shared/release.json'
+            native_package:
+              - 'wear/**'
+              - 'mobile/app.config.js'
+              - 'mobile/app.json'
+              - 'mobile/eas.json'
+              - 'mobile/modules/**'
+              - 'mobile/package.json'
+              - 'mobile/plugins/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'scripts/hosted-native-emulators.mjs'
+              - 'scripts/hosted-native-evidence.mjs'
+              - 'scripts/native-release-build.mjs'
+              - 'scripts/native-upgrade-rehearsal.mjs'
+              - 'scripts/wear-emulator-smoke.mjs'
+              - 'shared/release.json'
+
   release-config:
     name: Release Configuration
     runs-on: ubuntu-latest
@@ -352,6 +391,8 @@ jobs:
 
   wear-build:
     name: Wear Build and JVM Tests
+    needs: changes
+    if: needs.changes.outputs.wear == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -559,6 +600,8 @@ jobs:
 
   wear-release-emulator-smoke:
     name: Wear Release Emulator Smoke
+    needs: changes
+    if: needs.changes.outputs.wear == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -697,6 +740,8 @@ jobs:
 
   native-package-upgrade:
     name: Native Two-Emulator Package Upgrade
+    needs: changes
+    if: needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
 

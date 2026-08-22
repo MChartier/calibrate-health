@@ -130,8 +130,10 @@ test('pull requests run the reviewed Windows UX gate and retain sanitized eviden
 test('pull requests run hosted Android, Wear release, and two-emulator package upgrade gates', () => {
   const workflow = readWorkflow('builds.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  const changes = workflowJobBlock(workflow, 'changes');
   const mobileBuild = workflowJobBlock(workflow, 'mobile-build');
   const android = workflowJobBlock(workflow, 'android-emulator-e2e');
+  const wearBuild = workflowJobBlock(workflow, 'wear-build');
   const wear = workflowJobBlock(workflow, 'wear-release-emulator-smoke');
   const upgrade = workflowJobBlock(workflow, 'native-package-upgrade');
 
@@ -139,6 +141,18 @@ test('pull requests run hosted Android, Wear release, and two-emulator package u
   assert.match(packageConfig.scripts['test:native-release'], /hosted-android-e2e\.test\.mjs/);
   assert.match(packageConfig.scripts['test:native-release'], /native-upgrade-rehearsal\.test\.mjs/);
   assert.match(packageConfig.scripts['test:native-release'], /wear-build-task-guard\.test\.mjs/);
+
+  assert.match(changes, /uses: dorny\/paths-filter@v3/);
+  assert.match(changes, /wear:\s*\n\s+- 'wear\/\*\*'/);
+  assert.match(changes, /native_package:[\s\S]*- 'mobile\/plugins\/\*\*'/);
+  for (const job of [wearBuild, wear]) {
+    assert.match(job, /needs: changes/);
+    assert.match(job, /if: needs\.changes\.outputs\.wear == 'true'/);
+  }
+  assert.match(upgrade, /needs: changes/);
+  assert.match(upgrade, /if: needs\.changes\.outputs\.native_package == 'true'/);
+  assert.doesNotMatch(mobileBuild, /needs\.changes\.outputs/);
+  assert.doesNotMatch(android, /needs\.changes\.outputs/);
 
   assert.match(workflow, /Share Android debug APK with emulator E2E/);
   assert.match(
