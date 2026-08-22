@@ -66,7 +66,21 @@ function fingerprint(value) {
   return crypto.createHash('sha256').update(JSON.stringify(canonicalize(value)), 'utf8').digest('hex');
 }
 
-function createHarness({ scenarioId = 'target-too-high', scheduledRevision = null, currentPlan = null, pausedDates = [], todayStatus = null, trendModelVersion = 2 } = {}) {
+function addDays(date, delta) {
+  const parsed = new Date(date + 'T00:00:00.000Z');
+  parsed.setUTCDate(parsed.getUTCDate() + delta);
+  return parsed.toISOString().slice(0, 10);
+}
+
+function createHarness({
+  scenarioId = 'target-too-high',
+  scheduledRevision = null,
+  currentPlan = null,
+  pausedDates = [],
+  todayStatus = null,
+  trendModelVersion = 2,
+  goalCreatedAt = '2026-06-01T00:00:00.000Z'
+} = {}) {
   const scenario = getCalibrationScenario(scenarioId);
   assert.ok(scenario);
   const safeScheduledRevision = scheduledRevision ? {
@@ -83,6 +97,8 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     deletedRevisionId: null,
     appliedAt: null,
     sync: null,
+    foodQuery: null,
+    completionQuery: null,
     weightQuery: null
   };
   let storedRecommendation = null;
@@ -139,18 +155,26 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
       id: 41,
       user_id: 7,
       daily_deficit: scenario.input.configuredDailyDeficitKcal,
-      created_at: new Date('2026-06-01T00:00:00.000Z')
+      created_at: new Date(goalCreatedAt)
     }) },
     foodLogDay: {
       findUnique: async () => todayStatus ? { status: todayStatus } : null,
-      findMany: async () => completionDays
+      findMany: async (args) => {
+        captured.completionQuery = args;
+        return completionDays.slice().sort((left, right) => left.local_date - right.local_date);
+      }
     },
-    foodLog: { findMany: async () => logs },
+    foodLog: {
+      findMany: async (args) => {
+        captured.foodQuery = args;
+        return logs.slice().sort((left, right) => left.local_date - right.local_date);
+      }
+    },
     bodyMetric: {
       findFirst: async () => ({ weight_grams: 82000 }),
       findMany: async (args) => {
         captured.weightQuery = args;
-        return weightRows;
+        return weightRows.slice().sort((left, right) => left.date - right.date);
       }
     },
     activityDaySummary: { findMany: async () => [] },
@@ -208,7 +232,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     goal: {
       id: 41, user_id: 7, start_weight_grams: 82_000, target_weight_grams: 75_000,
       daily_deficit: scenario.input.configuredDailyDeficitKcal, target_date: null,
-      created_at: new Date('2026-06-01T00:00:00.000Z'),
+      created_at: new Date(goalCreatedAt),
       calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
     },
     latestWeightGrams: 82_000,
@@ -275,8 +299,11 @@ test('calibration status materializes a deterministic model-scoped recommendatio
   }));
   assert.equal(
     harness.captured.weightQuery.where.date.gte.toISOString().slice(0, 10),
-    '2026-06-19'
+    '2026-06-01'
   );
+  assert.equal(harness.captured.foodQuery.where.local_date.gte.toISOString().slice(0, 10), '2026-06-01');
+  assert.equal(harness.captured.completionQuery.where.local_date.gte.toISOString().slice(0, 10), '2026-06-01');
+  assert.equal(status.evaluation.signals.longTerm.scope, 'current_tracking_period');
 });
 
 test('calibration status maps paused food days into a post-break evidence restart', async () => {
@@ -293,7 +320,67 @@ test('calibration status maps paused food days into a post-break evidence restar
   assert.equal(status.evaluation.dataQuality.confidentDays, 3);
   assert.equal(status.evaluation.dataQuality.incompleteDays, 0);
   assert.equal(status.evaluation.historyProgress.restartedAfterPause, true);
+  assert.equal(status.evaluation.signals.longTerm.scope, 'since_tracking_resumed');
+  assert.equal(status.evaluation.signals.longTerm.startDate, '2026-07-29');
   assert.equal(status.recommendation, null);
+});
+
+for (const scenarioId of ['maintenance', 'gain']) {
+  test('calibration status exposes descriptive signals without materializing actions for ' + scenarioId, async () => {
+    const harness = createHarness({ scenarioId });
+    const status = await harness.service.buildCalibrationStatus(
+      7,
+      new Date('2026-08-01T12:00:00.000Z')
+    );
+
+    assert.equal(status.evaluation.signals.recent.availability, 'available');
+    assert.equal(status.evaluation.signals.readiness.targetReview.status, 'not_eligible');
+    assert.equal(status.evaluation.recommendation, null);
+    assert.equal(status.recommendation, null);
+    assert.equal(harness.captured.upserts.length, 0);
+  });
+}
+
+test('goal-to-date descriptive history does not stale an unchanged recommendation fingerprint', async () => {
+  const harness = createHarness({ goalCreatedAt: '2026-03-01T00:00:00.000Z' });
+  for (let offset = 0; offset <= 119; offset += 7) {
+    harness.evidenceState.weightRows.push({
+      id: 1000 + offset,
+      date: new Date(addDays('2026-03-01', offset) + 'T00:00:00.000Z'),
+      weight_grams: 90_000 - offset * 60
+    });
+  }
+  const now = new Date('2026-08-01T12:00:00.000Z');
+  const baseline = await harness.service.buildCalibrationStatus(7, now);
+
+  harness.evidenceState.completionDays.push({
+    local_date: new Date('2026-03-10T00:00:00.000Z'),
+    status: 'COMPLETE'
+  });
+  harness.evidenceState.logs.push(
+    {
+      local_date: new Date('2026-03-10T00:00:00.000Z'),
+      calories: 900,
+      meal_period: 'BREAKFAST'
+    },
+    {
+      local_date: new Date('2026-03-10T00:00:00.000Z'),
+      calories: 1000,
+      meal_period: 'DINNER'
+    }
+  );
+  const changedHistory = await harness.service.buildCalibrationStatus(7, now);
+
+  assert.equal(baseline.inputFingerprint, changedHistory.inputFingerprint);
+  assert.equal(baseline.recommendation.id, changedHistory.recommendation.id);
+  assert.notDeepEqual(
+    baseline.evaluation.signals.longTerm.averageIntakeKcal,
+    changedHistory.evaluation.signals.longTerm.averageIntakeKcal
+  );
+  assert.equal(
+    harness.captured.foodQuery.where.local_date.gte.toISOString().slice(0, 10),
+    '2026-03-01'
+  );
 });
 
 test('calibration status acknowledges a pause started on the current incomplete day', async () => {
@@ -305,6 +392,9 @@ test('calibration status acknowledges a pause started on the current incomplete 
   assert.equal(status.evaluation.headline, 'Calibration is paused with food tracking');
   assert.equal(status.evaluation.summary, 'Paused days are excluded from calibration, so your break is not treated as uncertain intake.');
   assert.equal(status.evaluation.historyProgress.restartedAfterPause, true);
+  assert.equal(status.evaluation.signals.longTerm.scope, 'since_tracking_resumed');
+  assert.equal(status.evaluation.signals.longTerm.calendarDays, 0);
+  assert.equal(status.evaluation.signals.readiness.weeklySignals.progressDays, 0);
   assert.equal(status.recommendation, null);
   assert.equal(harness.captured.upserts.length, 0);
 });
