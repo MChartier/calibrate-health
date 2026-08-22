@@ -174,6 +174,31 @@ test('repository manifest covers every required capability and reports the physi
   ]);
 });
 
+test('physical-device waivers block only releases that include the native scope', () => {
+  const server = validateRiskEvidence({
+    ...repositoryFixture(),
+    releaseMode: true,
+    releaseScopes: ['server-web']
+  });
+  const ota = validateRiskEvidence({
+    ...repositoryFixture(),
+    releaseMode: true,
+    releaseScopes: ['ota']
+  });
+  const native = validateRiskEvidence({
+    ...repositoryFixture(),
+    releaseMode: true,
+    releaseScopes: ['native']
+  });
+
+  assert.deepEqual(server.releaseBlockers, []);
+  assert.deepEqual(ota.releaseBlockers, []);
+  assert.deepEqual(
+    native.releaseBlockers.map((blocker) => blocker.id),
+    ['physical-galaxy-phone-and-watch-validation']
+  );
+});
+
 test('missing risk capability fails even when the rest of the area has evidence', () => {
   const fixture = repositoryFixture();
   const area = fixture.manifest.riskAreas.find(

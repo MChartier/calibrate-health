@@ -6,13 +6,14 @@ import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const RELEASE_ACCEPTANCE_PLAN_SCHEMA_VERSION = 1;
-export const RELEASE_ACCEPTANCE_RESULT_SCHEMA_VERSION = 1;
+export const RELEASE_ACCEPTANCE_PLAN_SCHEMA_VERSION = 2;
+export const RELEASE_ACCEPTANCE_RESULT_SCHEMA_VERSION = 2;
 export const HOSTED_RELEASE_RESULT_SCHEMA_VERSION = 1;
 export const RELEASE_ACCEPTANCE_PLAN_PATH = 'quality/release-acceptance-plan.json';
 export const RELEASE_ACCEPTANCE_RISK_PATH = 'quality/risk-evidence.json';
 export const RELEASE_ACCEPTANCE_RESULT_PROPERTY = 'releaseAcceptanceEvidence';
 export const RELEASE_ACCEPTANCE_CHECKOUT_EXPRESSION = '${{ github.event.pull_request.head.sha || github.sha }}';
+export const RELEASE_ACCEPTANCE_SCOPES = Object.freeze(['server-web', 'ota', 'native']);
 const RELEASE_ACCEPTANCE_PR_HEAD_EXPRESSION = '${{ github.event.pull_request.head.sha }}';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,7 @@ const PLAN_FIELDS = Object.freeze([
   'protocolPath',
   'releaseManifestPath',
   'releaseNotesPath',
+  'releaseScopes',
   'candidateContract',
   'evidenceCommitContract',
   'checkoutWorkflows',
@@ -51,6 +53,7 @@ const HOSTED_REQUIREMENT_FIELDS = Object.freeze([
   'execution',
   'blocksImplementation',
   'blocksExternalLaunch',
+  'releaseScopes',
   'workflowPath',
   'jobId',
   'command',
@@ -62,6 +65,7 @@ const OPERATOR_REQUIREMENT_FIELDS = Object.freeze([
   'execution',
   'blocksImplementation',
   'blocksExternalLaunch',
+  'releaseScopes',
   'protocolPath'
 ]);
 const ARTIFACT_CONTRACT_FIELDS = Object.freeze(['namePrefix', 'retentionDays', 'requiredResults']);
@@ -69,6 +73,7 @@ const RESULT_FIELDS = Object.freeze([
   'schemaVersion',
   'sourceCommit',
   'completedOn',
+  'releaseScopes',
   'plan',
   'releaseManifest',
   'requirements'
@@ -114,6 +119,36 @@ function hasExactFields(value, expected, label, errors) {
 
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+export function normalizeReleaseAcceptanceScopes(value) {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  if (value.some((scope) => typeof scope !== 'string' || !RELEASE_ACCEPTANCE_SCOPES.includes(scope))) return null;
+  if (new Set(value).size !== value.length) return null;
+  return RELEASE_ACCEPTANCE_SCOPES.filter((scope) => value.includes(scope));
+}
+
+function validateReleaseScopes(value, label, errors, expected = null) {
+  const normalized = normalizeReleaseAcceptanceScopes(value);
+  if (normalized === null) {
+    errors.push(`${label} must contain unique supported scopes: ${RELEASE_ACCEPTANCE_SCOPES.join(', ')}.`);
+    return null;
+  }
+  if (JSON.stringify(value) !== JSON.stringify(normalized)) {
+    errors.push(`${label} must use canonical scope order: ${RELEASE_ACCEPTANCE_SCOPES.join(', ')}.`);
+  }
+  if (expected && JSON.stringify(normalized) !== JSON.stringify(expected)) {
+    errors.push(`${label} must define exactly: ${expected.join(', ')}.`);
+  }
+  return normalized;
+}
+
+export function requirementsForReleaseScopes(plan, releaseScopes) {
+  const normalized = normalizeReleaseAcceptanceScopes(releaseScopes) ?? [...RELEASE_ACCEPTANCE_SCOPES];
+  return (plan?.requirements ?? []).filter((requirement) => (
+    Array.isArray(requirement.releaseScopes)
+      && requirement.releaseScopes.some((scope) => normalized.includes(scope))
+  ));
 }
 
 function normalizedRepositoryPath(value) {
@@ -188,6 +223,12 @@ export function validateReleaseAcceptancePlan(plan, options = {}) {
   if (protocol && !protocol.includes('candidate C') && !protocol.includes('Candidate C')) {
     errors.push('Release acceptance protocol must explain frozen candidate C.');
   }
+  validateReleaseScopes(
+    plan?.releaseScopes,
+    'Release acceptance plan releaseScopes',
+    errors,
+    [...RELEASE_ACCEPTANCE_SCOPES]
+  );
 
   hasExactFields(plan?.candidateContract, CANDIDATE_FIELDS, 'Candidate contract', errors);
   if (plan?.candidateContract?.source !== 'pull-request-head') {
@@ -249,6 +290,7 @@ export function validateReleaseAcceptancePlan(plan, options = {}) {
     ids.add(requirement?.id);
     if (!isNonEmptyString(requirement?.title)) errors.push(`${label} must have a title.`);
     if (requirement?.blocksExternalLaunch !== true) errors.push(`${label} must block external launch.`);
+    validateReleaseScopes(requirement?.releaseScopes, `${label} releaseScopes`, errors);
 
     if (requirement?.execution === 'hosted') {
       hosted.push(requirement);
@@ -307,6 +349,14 @@ export function validateReleaseAcceptancePlan(plan, options = {}) {
   }
   if (hosted.length === 0) errors.push('Release acceptance plan must include hosted implementation gates.');
   if (operator.length === 0) errors.push('Release acceptance plan must explicitly ledger operator gates.');
+  for (const scope of RELEASE_ACCEPTANCE_SCOPES) {
+    if (!hosted.some((requirement) => requirement.releaseScopes?.includes(scope))) {
+      errors.push(`Release scope ${scope} must include at least one hosted gate.`);
+    }
+    if (!operator.some((requirement) => requirement.releaseScopes?.includes(scope))) {
+      errors.push(`Release scope ${scope} must include at least one operator gate.`);
+    }
+  }
   return { errors, hosted, operator };
 }
 
@@ -448,6 +498,11 @@ export function validateReleaseAcceptanceResult(result, options) {
   } else if (result.completedOn > now.toISOString().slice(0, 10)) {
     errors.push('Release acceptance result completedOn cannot be in the future.');
   }
+  const selectedScopes = validateReleaseScopes(
+    result?.releaseScopes,
+    'Release acceptance result releaseScopes',
+    errors
+  );
   validateHashedPath(result?.plan, RELEASE_ACCEPTANCE_PLAN_PATH, 'Release acceptance result plan', planContent, errors);
   validateHashedPath(
     result?.releaseManifest,
@@ -461,7 +516,12 @@ export function validateReleaseAcceptanceResult(result, options) {
     errors.push('Release acceptance result requirements must be an array.');
     return errors;
   }
-  const expectedById = new Map(plan.requirements.map((requirement) => [requirement.id, requirement]));
+  // Invalid or missing scope data must never reduce the required evidence set.
+  const activeRequirements = selectedScopes === null
+    ? plan.requirements
+    : requirementsForReleaseScopes(plan, selectedScopes);
+  const expectedById = new Map(activeRequirements.map((requirement) => [requirement.id, requirement]));
+  const planById = new Map(plan.requirements.map((requirement) => [requirement.id, requirement]));
   const actualIds = new Set();
   for (const record of result.requirements) {
     const label = `Acceptance result requirement ${record?.id ?? 'unknown'}`;
@@ -469,7 +529,10 @@ export function validateReleaseAcceptanceResult(result, options) {
     if (actualIds.has(record?.id)) errors.push(`${label} is duplicated.`);
     actualIds.add(record?.id);
     const requirement = expectedById.get(record?.id);
-    if (!requirement) errors.push(`${label} is not in the frozen plan.`);
+    if (!requirement) {
+      if (planById.has(record?.id)) errors.push(`${label} is not required for the selected release scopes.`);
+      else errors.push(`${label} is not in the frozen plan.`);
+    }
     if (!RESULT_OUTCOMES.has(record?.outcome)) errors.push(`${label} must pass before external launch.`);
     if (!Array.isArray(record?.evidence) || record.evidence.length === 0) {
       errors.push(`${label} must retain at least one evidence reference.`);

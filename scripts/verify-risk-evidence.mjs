@@ -8,6 +8,11 @@ import {
   validateEvidenceOnlyAttestation,
   validateNativeReleaseEvidence
 } from './native-release-evidence.mjs';
+import {
+  RELEASE_ACCEPTANCE_SCOPES,
+  RELEASE_ACCEPTANCE_RESULT_PROPERTY,
+  normalizeReleaseAcceptanceScopes
+} from './release-acceptance.mjs';
 
 const EXPECTED_RISK_AREAS = Object.freeze({
   'authentication-and-authorization': [
@@ -69,6 +74,7 @@ const REQUIRED_PHYSICAL_WAIVER = Object.freeze({
   owner: 'MChartier',
   trackingIssues: ['#219', '#222', '#303'],
   expiresOn: '2026-08-26',
+  releaseScopes: ['native'],
   capabilities: [
     'android-physical-happy-path',
     'android-physical-offline-reconnect',
@@ -150,6 +156,18 @@ function validateWaiver(waiver, now, errors) {
   if (typeof waiver?.reason !== 'string' || !waiver.reason.trim()) {
     errors.push(`${label} must explain why evidence is outstanding.`);
   }
+  const releaseScopes = normalizeReleaseAcceptanceScopes(waiver?.releaseScopes);
+  if (releaseScopes === null) {
+    errors.push(
+      `${label} releaseScopes must contain unique supported scopes: ` +
+      `${RELEASE_ACCEPTANCE_SCOPES.join(', ')}.`
+    );
+  } else if (JSON.stringify(waiver.releaseScopes) !== JSON.stringify(releaseScopes)) {
+    errors.push(
+      `${label} releaseScopes must use canonical scope order: ` +
+      `${RELEASE_ACCEPTANCE_SCOPES.join(', ')}.`
+    );
+  }
 
   const trackingIssues = sortedUniqueStrings(waiver?.trackingIssues);
   if (
@@ -195,6 +213,11 @@ function validateWaiver(waiver, now, errors) {
     if (!sameStrings(waiver.trackingIssues, REQUIRED_PHYSICAL_WAIVER.trackingIssues)) {
       errors.push(
         `${label} trackingIssues is invalid: ${describeSetMismatch(waiver.trackingIssues, REQUIRED_PHYSICAL_WAIVER.trackingIssues)}.`
+      );
+    }
+    if (!sameStrings(waiver.releaseScopes, REQUIRED_PHYSICAL_WAIVER.releaseScopes)) {
+      errors.push(
+        `${label} releaseScopes must be native-only.`
       );
     }
   }
@@ -342,7 +365,8 @@ export function validateRiskEvidence({
   candidateCommit,
   evidenceCommit,
   evidenceAttestation,
-  candidateManifestContent
+  candidateManifestContent,
+  releaseScopes
 }) {
   const errors = [];
   const blockers = [];
@@ -565,7 +589,14 @@ export function validateRiskEvidence({
     });
   }
 
-  return { errors, blockers, rows };
+  const selectedReleaseScopes = normalizeReleaseAcceptanceScopes(releaseScopes)
+    ?? [...RELEASE_ACCEPTANCE_SCOPES];
+  const releaseBlockers = blockers.filter((blocker) => {
+    const blockerScopes = normalizeReleaseAcceptanceScopes(blocker.releaseScopes)
+      ?? RELEASE_ACCEPTANCE_SCOPES;
+    return blockerScopes.some((scope) => selectedReleaseScopes.includes(scope));
+  });
+  return { errors, blockers, releaseBlockers, rows };
 }
 
 export function loadRepositoryRiskEvidence(repoRoot = repositoryRoot) {
@@ -657,9 +688,13 @@ if (invokedPath === import.meta.url) {
         };
       }
     }
-    const result = validateRiskEvidence({ ...input, releaseMode: cli.releaseMode });
-    printResult(result);
-    if (result.errors.length || (cli.releaseMode && result.blockers.length)) {
+    const result = validateRiskEvidence({
+      ...input,
+      releaseMode: cli.releaseMode,
+      releaseScopes: input.manifest?.[RELEASE_ACCEPTANCE_RESULT_PROPERTY]?.releaseScopes
+    });
+    printResult(cli.releaseMode ? { ...result, blockers: result.releaseBlockers } : result);
+    if (result.errors.length || (cli.releaseMode && result.releaseBlockers.length)) {
       if (!result.errors.length) {
         console.error('Release gate is blocked until all release-blocking evidence is recorded.');
       }

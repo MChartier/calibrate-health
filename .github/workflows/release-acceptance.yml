@@ -81,5 +81,5 @@ jobs:
       - name: Verify integrated external-launch acceptance
         run: npm.cmd run release:acceptance:external
 
-      - name: Verify release-blocking native risk evidence
+      - name: Verify scoped release-blocking risk evidence
         run: npm.cmd run test:risk-evidence:release

@@ -385,6 +385,7 @@
       "id": "physical-galaxy-phone-and-watch-validation",
       "riskArea": "critical-client-workflows",
       "status": "release-blocking",
+      "releaseScopes": ["native"],
       "owner": "MChartier",
       "trackingIssues": ["#219", "#222", "#303"],
       "expiresOn": "2026-08-26",

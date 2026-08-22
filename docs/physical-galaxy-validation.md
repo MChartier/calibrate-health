@@ -15,7 +15,8 @@ As of the Launch 23 implementation PR:
 - No physical Galaxy phone or Galaxy Watch validation has been executed by this work.
 - No OTA update has been published or verified on a physical release client by this work.
 - No v2 physical result or evidence-only child commit A exists yet.
-- The physical waiver remains release-blocking, so `npm run test:risk-evidence:release` is expected to fail.
+- The physical waiver remains blocking for the `native` release scope. It does not block `server-web` or `ota`
+  acceptance; release verification without valid scope metadata still fails safe as a full release.
 
 The implementation PR must use `Refs #303` and leave the issue open. Replace this ledger only after the retained
 result and release gate below actually pass.
