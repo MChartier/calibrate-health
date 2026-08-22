@@ -1,14 +1,51 @@
 import assert from 'node:assert/strict';
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
+  checkRepository,
   compareSemver,
   createReleaseMetadata,
   getReleasePlan,
   getReleaseTag,
+  nextReleaseVersion,
+  prepareServerRelease,
   validateClientDiagnosticVersionContract,
   validateManifest
 } from './release-config.mjs';
+
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const releaseFixturePaths = [
+  'package.json',
+  'package-lock.json',
+  'backend/package.json',
+  'backend/package-lock.json',
+  'mobile/package.json',
+  'mobile/app.json',
+  'mobile/eas.json',
+  'mobile/modules/wear-pairing/android/build.gradle',
+  'wear/app/build.gradle.kts',
+  'shared/release.json',
+  'shared/client-diagnostic-versions.json',
+  'docs/openapi/v1.yaml',
+  'packages/api-client/src/generated/v1.ts'
+];
+
+async function createReleaseFixture(t) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'calibrate-release-config-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  for (const relativePath of releaseFixturePaths) {
+    const target = path.join(root, relativePath);
+    await mkdir(path.dirname(target), { recursive: true });
+    await copyFile(path.join(repositoryRoot, relativePath), target);
+  }
+  return root;
+}
+
+const readFixtureJson = async (root, relativePath) => JSON.parse(await readFile(path.join(root, relativePath), 'utf8'));
 
 const validManifest = {
   schema_version: 1,
@@ -48,6 +85,15 @@ test('semantic versions compare numerically', () => {
   assert.equal(compareSemver('2.0.0-internal.10', '2.0.0-internal.2'), 1);
   assert.equal(compareSemver('999999999999999999999.0.0', '999999999999999999998.0.0'), 1);
   assert.equal(compareSemver('2.0.0+build.2', '2.0.0+build.1'), 0);
+});
+
+test('server release versions bump strict semantic components without numeric precision loss', () => {
+  assert.equal(nextReleaseVersion('1.2.3', 'patch'), '1.2.4');
+  assert.equal(nextReleaseVersion('1.2.3', 'minor'), '1.3.0');
+  assert.equal(nextReleaseVersion('1.2.3', 'major'), '2.0.0');
+  assert.equal(nextReleaseVersion('999999999999999999999.2.3', 'major'), '1000000000000000000000.0.0');
+  assert.throws(() => nextReleaseVersion('1.2.3', 'build'), /major, minor, or patch/);
+  assert.throws(() => nextReleaseVersion('1.2.3-internal', 'patch'), /Invalid stable release version/);
 });
 
 test('diagnostics rollout versions must track the current release and exact OpenAPI enums', () => {
@@ -148,4 +194,71 @@ test('automatic release planning publishes advances, skips an existing version, 
     should_release: false
   });
   assert.throws(() => getReleasePlan(validManifest, 'v1.2.4'), /cannot be older/);
+});
+
+for (const [bump, expectedVersion] of [
+  ['patch', '0.33.12'],
+  ['minor', '0.34.0'],
+  ['major', '1.0.0']
+]) {
+  test(`release preparation synchronizes every server/web mirror for a ${bump} bump`, async (t) => {
+    const root = await createReleaseFixture(t);
+    const nativeBefore = (await readFixtureJson(root, 'shared/release.json')).android;
+
+    assert.equal(
+      await prepareServerRelease({ root, bump, latestTag: 'v0.33.11' }),
+      expectedVersion
+    );
+
+    const manifest = await readFixtureJson(root, 'shared/release.json');
+    const diagnostics = await readFixtureJson(root, 'shared/client-diagnostic-versions.json');
+    const rootPackage = await readFixtureJson(root, 'package.json');
+    const rootLock = await readFixtureJson(root, 'package-lock.json');
+    const backendPackage = await readFixtureJson(root, 'backend/package.json');
+    const backendLock = await readFixtureJson(root, 'backend/package-lock.json');
+    const openApi = await readFile(path.join(root, 'docs/openapi/v1.yaml'), 'utf8');
+    const generatedApi = await readFile(path.join(root, 'packages/api-client/src/generated/v1.ts'), 'utf8');
+
+    assert.equal(manifest.server.version, expectedVersion);
+    assert.deepEqual(manifest.android, nativeBefore);
+    assert.equal(rootPackage.version, expectedVersion);
+    assert.equal(rootLock.version, expectedVersion);
+    assert.equal(rootLock.packages[''].version, expectedVersion);
+    assert.equal(backendPackage.version, expectedVersion);
+    assert.equal(backendLock.version, expectedVersion);
+    assert.equal(backendLock.packages[''].version, expectedVersion);
+    assert.equal(diagnostics.previous_web_release, '0.33.11');
+    assert.deepEqual(diagnostics.supported_versions.web, [expectedVersion, '0.33.11']);
+    assert.ok(openApi.includes(`version: { enum: [${expectedVersion}, 0.33.11]`));
+    assert.ok(generatedApi.includes(`version?: "${expectedVersion}" | "0.33.11";`));
+    assert.deepEqual((await checkRepository(root)).errors, []);
+  });
+}
+
+test('release preparation rejects a pending manifest release without changing files', async (t) => {
+  const root = await createReleaseFixture(t);
+  const manifestPath = path.join(root, 'shared/release.json');
+  const before = await readFile(manifestPath, 'utf8');
+
+  await assert.rejects(
+    prepareServerRelease({ root, bump: 'patch', latestTag: 'v0.33.10' }),
+    /already ahead.*Publish the pending release/
+  );
+  assert.equal(await readFile(manifestPath, 'utf8'), before);
+});
+
+test('release preparation rejects stale mirrors before making any writes', async (t) => {
+  const root = await createReleaseFixture(t);
+  const lockPath = path.join(root, 'package-lock.json');
+  const lock = await readFixtureJson(root, 'package-lock.json');
+  lock.packages[''].version = '0.14.0';
+  await writeFile(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+  const manifestPath = path.join(root, 'shared/release.json');
+  const before = await readFile(manifestPath, 'utf8');
+
+  await assert.rejects(
+    prepareServerRelease({ root, bump: 'patch', latestTag: 'v0.33.11' }),
+    /root package version.*expected "0.33.11"/
+  );
+  assert.equal(await readFile(manifestPath, 'utf8'), before);
 });

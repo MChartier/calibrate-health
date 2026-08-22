@@ -1,7 +1,10 @@
 # ADR 0002: Use one canonical release manifest
 
-- Status: Accepted
+- Status: Superseded in part by ADR 0008
 - Date: 2026-07-12
+
+The canonical-manifest decision remains active. ADR 0008 supersedes only the automatic per-merge versioning and
+publication trigger described below.
 
 ## Context
 

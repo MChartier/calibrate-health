@@ -1,0 +1,149 @@
+name: Publish prepared release
+
+on:
+  workflow_call:
+    inputs:
+      release_commit:
+        description: Exact validated release commit that is now an ancestor of master
+        required: true
+        type: string
+      release_branch:
+        description: Release branch name matching release/vMAJOR.MINOR.PATCH
+        required: true
+        type: string
+    outputs:
+      release_tag:
+        description: Immutable stable release tag
+        value: ${{ jobs.tag_release.outputs.release_tag }}
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Exact validated release commit to recover or republish
+        required: true
+        type: string
+      release_branch:
+        description: Original release/vMAJOR.MINOR.PATCH branch name
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: publish-prepared-release-${{ inputs.release_commit }}
+  cancel-in-progress: false
+
+jobs:
+  tag_release:
+    name: Verify and tag prepared release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
+
+    steps:
+      - name: Checkout exact prepared release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_commit }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Resolve and verify prepared release
+        id: release
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ inputs.release_commit }}
+          RELEASE_BRANCH: ${{ inputs.release_branch }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${RELEASE_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "release_commit must be a full lowercase Git commit SHA." >&2
+            exit 1
+          fi
+          if [[ ! "${RELEASE_BRANCH}" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "release_branch must match release/vMAJOR.MINOR.PATCH." >&2
+            exit 1
+          fi
+          if [[ "$(git rev-parse HEAD)" != "${RELEASE_COMMIT}" ]]; then
+            echo "Checkout does not match prepared release commit ${RELEASE_COMMIT}." >&2
+            exit 1
+          fi
+
+          git fetch origin master --tags
+          if ! git merge-base --is-ancestor "${RELEASE_COMMIT}" origin/master; then
+            echo "Prepared release commit ${RELEASE_COMMIT} is not on origin/master." >&2
+            exit 1
+          fi
+          node scripts/release-config.mjs check
+          TAG="$(node scripts/release-config.mjs tag)"
+          EXPECTED_BRANCH="release/${TAG}"
+          if [[ "${RELEASE_BRANCH}" != "${EXPECTED_BRANCH}" ]]; then
+            echo "Release branch ${RELEASE_BRANCH} does not match manifest tag ${TAG}." >&2
+            exit 1
+          fi
+
+          CREATE_TAG=true
+          if git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
+            TAG_COMMIT="$(git rev-list -n 1 "${TAG}")"
+            if [[ "${TAG_COMMIT}" != "${RELEASE_COMMIT}" ]]; then
+              echo "Existing tag ${TAG} points to ${TAG_COMMIT}, not prepared commit ${RELEASE_COMMIT}." >&2
+              exit 1
+            fi
+            CREATE_TAG=false
+          else
+            LATEST_TAG="$(git tag --list --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+            if [[ -n "${LATEST_TAG}" ]]; then
+              node scripts/release-config.mjs tag --latest-tag "${LATEST_TAG}" >/dev/null
+            fi
+          fi
+
+          {
+            echo "release_tag=${TAG}"
+            echo "create_tag=${CREATE_TAG}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Create and push annotated release tag
+        if: steps.release.outputs.create_tag == 'true'
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ inputs.release_commit }}
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${RELEASE_TAG}" -m "Release ${RELEASE_TAG}" "${RELEASE_COMMIT}"
+          git push origin "${RELEASE_TAG}"
+
+      - name: Summarize immutable release
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ inputs.release_commit }}
+          RELEASE_BRANCH: ${{ inputs.release_branch }}
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+        run: |
+          {
+            echo "## Publishing ${RELEASE_TAG}"
+            echo
+            echo "- Prepared branch: \`${RELEASE_BRANCH}\`"
+            echo "- Immutable source: \`${RELEASE_COMMIT}\`"
+            echo "- Source tag: \`${RELEASE_TAG}\`"
+            echo "- Image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${RELEASE_TAG}\`"
+            echo "- Moving image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:latest\`"
+            echo
+            echo "If the image build fails after tagging, rerun Build Release Image for \`${RELEASE_TAG}\`."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  build_release_image:
+    name: Build validated release image
+    needs: tag_release
+    uses: ./.github/workflows/container.yml
+    with:
+      release_tag: ${{ needs.tag_release.outputs.release_tag }}
+      publish_latest: true
