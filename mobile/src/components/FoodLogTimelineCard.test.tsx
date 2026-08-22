@@ -26,8 +26,8 @@ const LEGACY_GRAMS_ENTRY: FoodLogEntry = {
 };
 
 describe('FoodLogTimelineCard', () => {
-    it('leaves the detailed page add-food entry point to its FAB', () => {
-        const { queryByLabelText, getByLabelText, getByText } = render(
+    it('omits unlogged meals and leaves the detailed page add-food entry point to its FAB', () => {
+        const { queryByLabelText, queryByText, getByLabelText, getByText } = render(
             <FoodLogTimelineCard
                 entries={[MORNING_SNACK_ENTRY]}
                 onEditEntry={jest.fn()}
@@ -39,6 +39,9 @@ describe('FoodLogTimelineCard', () => {
         expect(getByLabelText('Collapse Morning Snack')).toBeTruthy();
         expect(getByText('Oatmeal')).toBeTruthy();
         expect(queryByLabelText('Expand Breakfast')).toBeNull();
+        expect(queryByText('Breakfast')).toBeNull();
+        expect(queryByText('Lunch')).toBeNull();
+        expect(queryByText('Dinner')).toBeNull();
     });
 
     it('shows the real snapshot amount after expanding a meal', () => {

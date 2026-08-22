@@ -61,14 +61,16 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
     const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     const mealGroups = useMemo<MealGroup[]>(() => {
-        return MEAL_OPTIONS.map((meal) => {
-            const mealEntries = entries.filter((entry) => entry.meal_period === meal);
-            return {
-                meal,
-                entries: mealEntries,
-                calories: mealEntries.reduce((total, entry) => total + entry.calories, 0)
-            };
-        });
+        return MEAL_OPTIONS
+            .map((meal) => {
+                const mealEntries = entries.filter((entry) => entry.meal_period === meal);
+                return {
+                    meal,
+                    entries: mealEntries,
+                    calories: mealEntries.reduce((total, entry) => total + entry.calories, 0)
+                };
+            })
+            .filter((group) => group.entries.length > 0);
     }, [entries]);
 
     function toggleMeal(meal: MealPeriod) {
