@@ -8,8 +8,10 @@ import { fileURLToPath } from 'node:url';
 import {
   RELEASE_ACCEPTANCE_CHECKOUT_EXPRESSION,
   RELEASE_ACCEPTANCE_PLAN_PATH,
+  RELEASE_ACCEPTANCE_SCOPES,
   createHostedReleaseResult,
   parseReleaseAcceptanceArgs,
+  requirementsForReleaseScopes,
   resolveReleaseAcceptanceEvidence,
   validateEvidenceChildContext,
   validateHostedReleaseResult,
@@ -90,9 +92,9 @@ function validPlan() {
   return structuredClone(repositoryPlan);
 }
 
-function validExternalFixture(plan = validPlan()) {
+function validExternalFixture(plan = validPlan(), releaseScopes = RELEASE_ACCEPTANCE_SCOPES) {
   const evidenceContentByReference = new Map();
-  const requirements = plan.requirements.map((requirement) => {
+  const requirements = requirementsForReleaseScopes(plan, releaseScopes).map((requirement) => {
     const requiredResults = requirement.execution === 'hosted'
       ? requirement.retainedArtifact.requiredResults
       : 1;
@@ -130,9 +132,10 @@ function validExternalFixture(plan = validPlan()) {
   });
   return {
     result: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       sourceCommit: 'a'.repeat(40),
       completedOn: '2026-08-09',
+      releaseScopes: [...releaseScopes],
       plan: {
         path: RELEASE_ACCEPTANCE_PLAN_PATH,
         sha256: digest(repositoryPlanContent)
@@ -169,6 +172,20 @@ test('static plan contains requirements without concrete commits or outcomes', (
   assert.ok(result.hosted.length > 0);
   assert.ok(result.operator.length > 0);
   assert.ok(result.operator.every((item) => !item.blocksImplementation && item.blocksExternalLaunch));
+});
+
+test('static plan rejects unknown or non-canonical release scopes', () => {
+  const plan = validPlan();
+  plan.releaseScopes = ['native', 'server-web', 'ota'];
+  plan.requirements[0].releaseScopes = ['unknown'];
+
+  const result = validateReleaseAcceptancePlan(plan, {
+    repositoryRoot,
+    readFileSync: planReadFixture(plan)
+  });
+
+  assert.ok(result.errors.some((error) => error.includes('canonical scope order')));
+  assert.ok(result.errors.some((error) => error.includes('unique supported scopes')));
 });
 
 test('static plan rejects self-referential candidate data and result fields', () => {
@@ -247,6 +264,64 @@ test('external launch requires resolved, content-addressed results for every fro
     result,
     externalValidationOptions(plan, evidenceContentByReference)
   ).some((error) => error.includes('missing requirements')));
+});
+
+test('external launch selects only requirements for the declared release scope', () => {
+  const plan = validPlan();
+  const expectations = {
+    'server-web': {
+      includes: ['hosted-exported-web-e2e', 'hosted-database-upgrade-rollback', 'hosted-container-scan'],
+      excludes: ['hosted-android-emulator-e2e', 'hosted-wear-release-emulator-smoke', 'operator-physical-galaxy-validation']
+    },
+    ota: {
+      includes: ['hosted-exported-web-e2e', 'hosted-android-emulator-e2e', 'operator-ota-promotion'],
+      excludes: ['hosted-wear-release-emulator-smoke', 'hosted-native-package-upgrade', 'operator-permanent-signing']
+    },
+    native: {
+      includes: ['hosted-android-emulator-e2e', 'hosted-wear-release-emulator-smoke', 'operator-physical-galaxy-validation'],
+      excludes: ['hosted-exported-web-e2e', 'hosted-database-upgrade-rollback', 'operator-ota-promotion']
+    }
+  };
+
+  for (const [scope, expectation] of Object.entries(expectations)) {
+    const fixture = validExternalFixture(plan, [scope]);
+    const errors = validateReleaseAcceptanceResult(
+      fixture.result,
+      externalValidationOptions(plan, fixture.evidenceContentByReference)
+    );
+    assert.deepEqual(errors, [], `${scope} acceptance should pass with scoped evidence`);
+    const ids = new Set(fixture.result.requirements.map((requirement) => requirement.id));
+    for (const id of expectation.includes) assert.ok(ids.has(id), `${scope} should require ${id}`);
+    for (const id of expectation.excludes) assert.equal(ids.has(id), false, `${scope} should not require ${id}`);
+  }
+});
+
+test('mixed release scopes require the union without unrelated scope evidence', () => {
+  const plan = validPlan();
+  const fixture = validExternalFixture(plan, ['server-web', 'native']);
+  const ids = new Set(fixture.result.requirements.map((requirement) => requirement.id));
+
+  assert.deepEqual(validateReleaseAcceptanceResult(
+    fixture.result,
+    externalValidationOptions(plan, fixture.evidenceContentByReference)
+  ), []);
+  assert.ok(ids.has('hosted-exported-web-e2e'));
+  assert.ok(ids.has('operator-physical-galaxy-validation'));
+  assert.equal(ids.has('operator-ota-promotion'), false);
+});
+
+test('missing release scopes fall back to the full evidence set', () => {
+  const plan = validPlan();
+  const fixture = validExternalFixture(plan, ['server-web']);
+  delete fixture.result.releaseScopes;
+
+  const errors = validateReleaseAcceptanceResult(
+    fixture.result,
+    externalValidationOptions(plan, fixture.evidenceContentByReference)
+  );
+
+  assert.ok(errors.some((error) => error.includes('unique supported scopes')));
+  assert.ok(errors.some((error) => error.includes('missing requirements')));
 });
 
 test('external launch accepts evidence completed on the verifier UTC date', () => {

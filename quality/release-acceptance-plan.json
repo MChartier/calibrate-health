@@ -1,8 +1,13 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "protocolPath": "docs/release-acceptance.md",
   "releaseManifestPath": "shared/release.json",
   "releaseNotesPath": "docs/releases/0.33.5-native-0.2.6-wear-0.2.6.md",
+  "releaseScopes": [
+    "server-web",
+    "ota",
+    "native"
+  ],
   "candidateContract": {
     "source": "pull-request-head",
     "shaFormat": "lowercase-40-hex",
@@ -34,6 +39,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota", "native"],
       "workflowPath": ".github/workflows/release-acceptance.yml",
       "jobId": "implementation-contract",
       "command": "npm.cmd run release:acceptance",
@@ -49,6 +55,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota"],
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "exported-web-e2e",
       "command": "npm.cmd run test:expo-web",
@@ -64,6 +71,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota"],
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "ux-regression",
       "command": "npm.cmd run test:ux",
@@ -79,6 +87,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota"],
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "data-state-acceptance",
       "command": "npm.cmd run test:data-states",
@@ -94,6 +103,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["ota", "native"],
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "android-emulator-e2e",
       "command": "node scripts/hosted-android-e2e.mjs",
@@ -109,6 +119,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["native"],
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "wear-release-emulator-smoke",
       "command": "npm run test:wear:emulator",
@@ -124,6 +135,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["native"],
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "native-package-upgrade",
       "command": "npm run test:native:upgrade",
@@ -139,6 +151,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web"],
       "workflowPath": ".github/workflows/database-upgrade.yml",
       "jobId": "release-upgrade-rollback",
       "command": "npm run test:db:rollback",
@@ -154,6 +167,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota", "native"],
       "workflowPath": ".github/workflows/dependency-audit.yml",
       "jobId": "production-audit",
       "command": "npm run audit:production",
@@ -169,6 +183,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web"],
       "workflowPath": ".github/workflows/container-scan.yml",
       "jobId": "scan",
       "command": "aquasecurity/trivy-action",
@@ -184,6 +199,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web"],
       "protocolPath": "docs/performance-operations-runbook.md"
     },
     {
@@ -192,6 +208,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota", "native"],
       "protocolPath": "docs/release-acceptance.md"
     },
     {
@@ -200,6 +217,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["native"],
       "protocolPath": "docs/physical-galaxy-validation.md"
     },
     {
@@ -208,6 +226,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["native"],
       "protocolPath": "docs/mobile-release.md"
     },
     {
@@ -216,6 +235,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["ota"],
       "protocolPath": "docs/mobile-release.md"
     },
     {
@@ -224,6 +244,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["native"],
       "protocolPath": "docs/play-console-health-release-checklist.md"
     },
     {
@@ -232,6 +253,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota", "native"],
       "protocolPath": "docs/release-acceptance.md"
     },
     {
@@ -240,6 +262,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota", "native"],
       "protocolPath": "docs/release-acceptance.md"
     },
     {
@@ -248,6 +271,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["native"],
       "protocolPath": "docs/release-acceptance.md"
     },
     {
@@ -256,6 +280,7 @@
       "execution": "operator",
       "blocksImplementation": false,
       "blocksExternalLaunch": true,
+      "releaseScopes": ["server-web", "ota", "native"],
       "protocolPath": "docs/release-acceptance.md"
     }
   ]
