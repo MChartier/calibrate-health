@@ -4,7 +4,8 @@ import {
     BottomSheetModal,
     createWebBottomSheetContainerObserver,
     resolveAdaptiveDialogWidth,
-    resolveFixedSheetHeight
+    resolveFixedSheetHeight,
+    resolveSheetEntranceOffset
 } from './BottomSheetModal';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -36,6 +37,27 @@ describe('BottomSheetModal', () => {
         expect(resolveAdaptiveDialogWidth(840, 'standard', 24)).toBe(640);
         expect(resolveAdaptiveDialogWidth(840, 'wide', 24)).toBe(792);
         expect(resolveAdaptiveDialogWidth(1440, 'wide', 24)).toBe(800);
+    });
+
+    it('starts bottom sheets below the viewport while keeping dialog travel subtle', () => {
+        expect(resolveSheetEntranceOffset(844, false)).toBe(844);
+        expect(resolveSheetEntranceOffset(844, true)).toBe(32);
+    });
+
+    it('keeps the panel hidden until the native modal reports that it is mounted', () => {
+        const screen = render(
+            <BottomSheetModal visible onRequestClose={jest.fn()}>
+                <Text>Choose a date</Text>
+            </BottomSheetModal>
+        );
+
+        expect(StyleSheet.flatten(screen.getByTestId('adaptive-dialog-panel').props.style).opacity).toBe(0);
+
+        act(() => {
+            screen.UNSAFE_getByType(Modal).props.onShow();
+        });
+
+        expect(StyleSheet.flatten(screen.getByTestId('adaptive-dialog-panel').props.style).opacity).toBe(1);
     });
 
     it('anchors the web viewport root while the underlying page is scrolled', () => {
