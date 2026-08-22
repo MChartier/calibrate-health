@@ -2688,7 +2688,7 @@ components:
           pattern: '^(?:[a-fA-F0-9]{16,64}|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})$'
       allOf:
         - oneOf:
-            - properties: { platform: { const: web }, version: { enum: [0.33.11, 0.33.10] } }
+            - properties: { platform: { const: web }, version: { enum: [0.33.12, 0.33.11] } }
             - properties: { platform: { const: android_phone }, version: { enum: [0.2.6, 0.2.5, 0.2.4, 0.2.3, 0.2.2, 0.2.1, 0.1.0] } }
             - properties: { platform: { const: wear_os }, version: { enum: [0.2.6, 0.2.5, 0.2.3, 0.2.2, 0.2.1, 0.2.0] } }
         - oneOf:
