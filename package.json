@@ -82,7 +82,7 @@
     "operations:collect": "node scripts/operational-alert-collector.mjs",
     "smoke:alerts:staging": "node scripts/operational-alert-collector.mjs --synthetic-staging-smoke",
     "test:expo-web": "npm run test:expo-web:release && npm run test:expo-web:e2e",
-    "test:data-states": "node scripts/expo-web-playwright.mjs --project=desktop-chrome --workers=4 --reporter=json e2e/expo-web/launch-24-data-state-matrix.spec.ts",
+    "test:data-states": "node scripts/expo-web-playwright.mjs --project=desktop-chrome --workers=2 --reporter=json e2e/expo-web/launch-24-data-state-matrix.spec.ts",
     "test:container:web": "node scripts/production-container-smoke.mjs",
     "test:android:e2e": "node scripts/android-e2e.mjs",
     "test:wear:emulator": "node scripts/wear-emulator-smoke.mjs",
