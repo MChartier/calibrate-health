@@ -11,6 +11,81 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Build Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      web: ${{ steps.filter.outputs.web }}
+      wear: ${{ steps.filter.outputs.wear }}
+      native_package: ${{ steps.filter.outputs.native_package }}
+
+    steps:
+      - name: Detect affected build surfaces
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'shared/**'
+            web:
+              - 'backend/**'
+              - 'e2e/expo-web/**'
+              - 'mobile/app/**'
+              - 'mobile/assets/**'
+              - 'mobile/public/**'
+              - 'mobile/src/**'
+              - 'mobile/test/**'
+              - 'mobile/app.config.js'
+              - 'mobile/app.json'
+              - 'mobile/babel.config.js'
+              - 'mobile/index.js'
+              - 'mobile/metro.config.js'
+              - 'mobile/modules/**'
+              - 'mobile/package.json'
+              - 'mobile/tsconfig.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'packages/api-client/**'
+              - 'playwright.expo-web.config.ts'
+              - 'playwright.ux.config.ts'
+              - 'scripts/expo-web-*.mjs'
+              - 'scripts/ux-gates.mjs'
+              - 'shared/**'
+            wear:
+              - 'wear/**'
+              - 'scripts/hosted-native-evidence.mjs'
+              - 'scripts/release-acceptance.mjs'
+              - 'scripts/wear-emulator-smoke.mjs'
+              - 'shared/release.json'
+            native_package:
+              - 'wear/**'
+              - 'mobile/app.config.js'
+              - 'mobile/app.json'
+              - 'mobile/eas.json'
+              - 'mobile/assets/adaptive-icon.png'
+              - 'mobile/assets/icon.png'
+              - 'mobile/assets/notification-icon.png'
+              - 'mobile/modules/**'
+              - 'mobile/package.json'
+              - 'mobile/plugins/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'scripts/android-e2e.mjs'
+              - 'scripts/hosted-android-e2e.mjs'
+              - 'scripts/hosted-native-emulators.mjs'
+              - 'scripts/hosted-native-evidence.mjs'
+              - 'scripts/native-release-build.mjs'
+              - 'scripts/native-upgrade-rehearsal.mjs'
+              - 'scripts/release-acceptance.mjs'
+              - 'scripts/wear-emulator-smoke.mjs'
+              - 'shared/release.json'
+
   release-config:
     name: Release Configuration
     runs-on: ubuntu-latest
@@ -38,6 +113,8 @@ jobs:
 
   backend-build:
     name: Backend Build
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -67,6 +144,8 @@ jobs:
 
   performance-regression:
     name: Deterministic Performance Regression
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: windows-latest
     timeout-minutes: 10
 
@@ -95,6 +174,8 @@ jobs:
 
   expo-web-build:
     name: Expo Web Build
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 15
 
@@ -123,6 +204,8 @@ jobs:
 
   exported-web-e2e:
     name: Full Exported Web and PWA End-to-End
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -170,6 +253,8 @@ jobs:
           retention-days: 90
   data-state-acceptance:
     name: Six-State Data-Backed Route Acceptance
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -219,6 +304,8 @@ jobs:
           retention-days: 90
   ux-regression:
     name: UX Accessibility and Visual Regression
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -281,6 +368,8 @@ jobs:
           retention-days: 90
   mobile-build:
     name: Mobile Build
+    needs: changes
+    if: needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -352,6 +441,8 @@ jobs:
 
   wear-build:
     name: Wear Build and JVM Tests
+    needs: changes
+    if: needs.changes.outputs.wear == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -399,7 +490,8 @@ jobs:
 
   android-emulator-e2e:
     name: Android Emulator End-to-End
-    needs: mobile-build
+    needs: [changes, mobile-build]
+    if: needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -559,6 +651,8 @@ jobs:
 
   wear-release-emulator-smoke:
     name: Wear Release Emulator Smoke
+    needs: changes
+    if: needs.changes.outputs.wear == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -697,6 +791,8 @@ jobs:
 
   native-package-upgrade:
     name: Native Two-Emulator Package Upgrade
+    needs: changes
+    if: needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
 

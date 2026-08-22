@@ -103,7 +103,7 @@
       "execution": "hosted",
       "blocksImplementation": true,
       "blocksExternalLaunch": true,
-      "releaseScopes": ["ota", "native"],
+      "releaseScopes": ["native"],
       "workflowPath": ".github/workflows/builds.yml",
       "jobId": "android-emulator-e2e",
       "command": "node scripts/hosted-android-e2e.mjs",

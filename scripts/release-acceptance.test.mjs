@@ -274,8 +274,8 @@ test('external launch selects only requirements for the declared release scope',
       excludes: ['hosted-android-emulator-e2e', 'hosted-wear-release-emulator-smoke', 'operator-physical-galaxy-validation']
     },
     ota: {
-      includes: ['hosted-exported-web-e2e', 'hosted-android-emulator-e2e', 'operator-ota-promotion'],
-      excludes: ['hosted-wear-release-emulator-smoke', 'hosted-native-package-upgrade', 'operator-permanent-signing']
+      includes: ['hosted-exported-web-e2e', 'hosted-ux-regression', 'operator-ota-promotion'],
+      excludes: ['hosted-android-emulator-e2e', 'hosted-wear-release-emulator-smoke', 'hosted-native-package-upgrade']
     },
     native: {
       includes: ['hosted-android-emulator-e2e', 'hosted-wear-release-emulator-smoke', 'operator-physical-galaxy-validation'],
