@@ -20,15 +20,17 @@ match the highest stable tag, prepares all server/web mirrors on `release/vMAJOR
 commit with the existing release, UX, API, deployment, and rollback gates.
 
 The candidate is merged through an action-created version-only PR only when `master` still points to the source commit
-selected at dispatch. Publishing tags the validated candidate commit after proving it is an ancestor of `master`, then
-calls the reusable GHCR workflow directly. A separate manual/reusable publisher accepts the exact release commit and
-branch for post-merge recovery. Android phone, Wear, Expo OTA, and self-host deployment remain independent.
+selected at dispatch. The workflow verifies and pushes the exact GitHub-generated PR merge commit without force; the
+server-side fast-forward check atomically rejects a concurrent `master` update. Publishing tags the validated candidate
+commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate
+manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone, Wear,
+Expo OTA, and self-host deployment remain independent.
 
 ## Consequences
 
 - Parallel feature work no longer reserves or guesses release versions.
 - A forgotten version bump cannot block a deployment because feature PRs do not own release identity.
 - Release validation runs only for an explicit cut and is bound to one immutable candidate.
-- `master` drift aborts the candidate instead of silently including unvalidated changes.
+- `master` drift, including a change racing the final merge, aborts before the protected branch is updated.
 - A manifest ahead of the latest tag represents one pending prepared release and blocks another bump until recovered.
 - The release PR and tag add explicit provenance without creating a GitHub Release object or generated changelog.

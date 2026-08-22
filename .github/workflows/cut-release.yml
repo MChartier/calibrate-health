@@ -285,7 +285,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       merge_commit: ${{ steps.merge.outputs.merge_commit }}
-      pull_request_url: ${{ steps.merge.outputs.pull_request_url }}
+      pull_request_url: ${{ steps.pr.outputs.pull_request_url }}
 
     steps:
       - name: Checkout exact release candidate
@@ -312,17 +312,16 @@ jobs:
             exit 1
           fi
 
-      - name: Open and merge release pull request
-        id: merge
+      - name: Open release pull request
+        id: pr
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9.0.0
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
           TAG: ${{ needs.prepare.outputs.release_tag }}
           BRANCH: ${{ needs.prepare.outputs.release_branch }}
-          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
         with:
           script: |
-            const { VERSION: version, TAG: tag, BRANCH: branch, RELEASE_SHA: releaseSha } = process.env;
+            const { VERSION: version, TAG: tag, BRANCH: branch } = process.env;
             const body = [
               '## Summary',
               '',
@@ -347,21 +346,54 @@ jobs:
               title: `Release ${tag}`,
               body,
             });
-            const { data: merge } = await github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pull.number,
-              sha: releaseSha,
-              merge_method: 'merge',
-              commit_title: `Release ${tag}`,
-              commit_message: `Merge validated server/web release ${tag}.`,
-            });
-            if (!merge.merged) {
-              core.setFailed(`Release PR #${pull.number} was not merged: ${merge.message}`);
-              return;
-            }
-            core.setOutput('merge_commit', merge.sha);
+            core.setOutput('pull_request_number', pull.number);
             core.setOutput('pull_request_url', pull.html_url);
+
+      - name: Atomically merge the exact release pull request
+        id: merge
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+          PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
+        run: |
+          set -euo pipefail
+          MERGE_REF="refs/remotes/origin/release-pr-${PULL_REQUEST_NUMBER}-merge"
+          for attempt in {1..30}; do
+            if git fetch origin "refs/pull/${PULL_REQUEST_NUMBER}/merge:${MERGE_REF}"; then
+              break
+            fi
+            if [[ "${attempt}" -eq 30 ]]; then
+              echo "GitHub did not prepare a merge commit for release PR #${PULL_REQUEST_NUMBER}." >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+          MERGE_SHA="$(git rev-parse "${MERGE_REF}")"
+          if [[ "$(git rev-parse "${MERGE_SHA}^1")" != "${SOURCE_SHA}" ]]; then
+            echo "Release PR base moved from validated source ${SOURCE_SHA}; rerun Cut release." >&2
+            exit 1
+          fi
+          if [[ "$(git rev-parse "${MERGE_SHA}^2")" != "${RELEASE_SHA}" ]]; then
+            echo "Release PR merge head is not validated candidate ${RELEASE_SHA}." >&2
+            exit 1
+          fi
+          if [[ "$(git rev-parse "${MERGE_SHA}^{tree}")" != "$(git rev-parse "${RELEASE_SHA}^{tree}")" ]]; then
+            echo "Release PR merge tree differs from validated candidate ${RELEASE_SHA}." >&2
+            exit 1
+          fi
+
+          git fetch origin master
+          if [[ "$(git rev-parse origin/master)" != "${SOURCE_SHA}" ]]; then
+            echo "master advanced before the atomic release merge; rerun Cut release." >&2
+            exit 1
+          fi
+          if ! git push origin "${MERGE_SHA}:refs/heads/master"; then
+            echo "Atomic release merge failed because master moved or repository rules rejected the exact PR merge commit." >&2
+            exit 1
+          fi
+          echo "merge_commit=${MERGE_SHA}" >> "${GITHUB_OUTPUT}"
 
       - name: Verify exact release ancestry
         shell: bash
@@ -390,7 +422,7 @@ jobs:
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           VERSION: ${{ needs.prepare.outputs.version }}
           TAG: ${{ needs.prepare.outputs.release_tag }}
-          PR_URL: ${{ steps.merge.outputs.pull_request_url }}
+          PR_URL: ${{ steps.pr.outputs.pull_request_url }}
         run: |
           {
             echo "## Prepared ${TAG}"
@@ -431,10 +463,9 @@ jobs:
             echo "Release commit is already on master; preserve it for Publish prepared release."
             exit 0
           fi
-          OPEN_PR="$(gh pr list --state open --head "${RELEASE_BRANCH}" --json url --jq '.[0].url // empty')"
-          if [[ -n "${OPEN_PR}" ]]; then
-            echo "Preserving ${RELEASE_BRANCH} because ${OPEN_PR} still needs attention."
-            exit 0
+          OPEN_PR_NUMBER="$(gh pr list --state open --base master --head "${RELEASE_BRANCH}" --json number,headRefOid --jq ".[] | select(.headRefOid == \"${RELEASE_SHA}\") | .number" | head -n 1)"
+          if [[ -n "${OPEN_PR_NUMBER}" ]]; then
+            gh pr close "${OPEN_PR_NUMBER}" --comment "Cut release did not merge this exact candidate. Rerun the action from current master."
           fi
           REMOTE_SHA="$(git ls-remote origin "refs/heads/${RELEASE_BRANCH}" | awk '{print $1}')"
           if [[ -z "${REMOTE_SHA}" ]]; then

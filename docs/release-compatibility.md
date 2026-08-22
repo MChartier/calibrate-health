@@ -66,9 +66,12 @@ contract check, Expo web release tests, deploy tests, Windows UX regression gate
 If `master` advances while those gates run, the candidate is not merged; rerun the action so the later change is part
 of a newly validated candidate.
 
-After validation, the action creates and auto-merges a version-only release PR with a merge commit. **Publish prepared
-release** verifies that the exact candidate is now an ancestor of `master`, creates or verifies its annotated tag, and
-calls the reusable GHCR image workflow with `publish_latest: true`. It is called directly rather than relying on
+After validation, the action creates a version-only release PR, fetches the exact merge commit GitHub generated for
+that PR, and verifies its base parent, candidate parent, and tree. It pushes that commit to `master` without force, so
+GitHub atomically rejects the merge if `master` changed after the final drift check while retaining the PR audit trail.
+**Publish prepared release** verifies that the exact candidate is now an ancestor of `master`, creates or verifies its
+annotated tag, and calls the reusable GHCR image workflow with `publish_latest: true`. It is called directly rather
+than relying on
 token-generated push or PR events, whose workflow behavior is restricted by
 [GitHub's `GITHUB_TOKEN` rules](https://docs.github.com/en/actions/concepts/security/github_token).
 

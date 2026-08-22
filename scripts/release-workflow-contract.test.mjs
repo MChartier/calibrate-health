@@ -77,14 +77,19 @@ test('manual release preparation validates one exact candidate before auto-mergi
   assert.match(finalize, /Refuse master drift/);
   assert.match(finalize, /origin\/master.*SOURCE_SHA/);
   assert.match(finalize, /github\.rest\.pulls\.create/);
-  assert.match(finalize, /github\.rest\.pulls\.merge/);
-  assert.match(finalize, /merge_method: 'merge'/);
+  assert.doesNotMatch(finalize, /github\.rest\.pulls\.merge/);
+  assert.match(finalize, /refs\/pull\/\$\{PULL_REQUEST_NUMBER\}\/merge/);
+  assert.match(finalize, /MERGE_SHA\}\^1.*SOURCE_SHA/);
+  assert.match(finalize, /MERGE_SHA\}\^2.*RELEASE_SHA/);
+  assert.match(finalize, /git push origin "\$\{MERGE_SHA\}:refs\/heads\/master"/);
+  assert.doesNotMatch(finalize, /git push[^\n]*--force/);
   assert.match(finalize, /git merge-base --is-ancestor "\$\{RELEASE_SHA\}" origin\/master/);
   assert.match(finalize, /MERGE_SHA\}\^1/);
   assert.match(finalize, /MERGE_SHA\}\^\{tree\}/);
 
   assert.match(cleanup, /always\(\).*needs\.finalize\.result != 'success'/);
   assert.match(cleanup, /gh pr list --state open/);
+  assert.match(cleanup, /gh pr close/);
   assert.match(cleanup, /REMOTE_SHA.*RELEASE_SHA/);
   assert.match(cleanup, /git push origin --delete/);
 
@@ -423,7 +428,7 @@ test('PR and release workflows rehearse v0.14.0 upgrade and encrypted rollback b
     assert.match(job, /retention-days: 30/);
   }
   assert.match(releaseFinalize, /needs: \[prepare, release-validation, ux-regression, database-rollback\]/);
-  assert.ok(release.indexOf('  database-rollback:') < release.indexOf('github.rest.pulls.merge'));
+  assert.ok(release.indexOf('  database-rollback:') < release.indexOf('Atomically merge the exact release pull request'));
 });
 
 test('release acceptance workflow separates implementation from external evidence-only launch', () => {
