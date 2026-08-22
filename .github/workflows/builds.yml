@@ -30,6 +30,7 @@ jobs:
         with:
           filters: |
             web:
+              - '.github/workflows/builds.yml'
               - 'backend/**'
               - 'e2e/expo-web/**'
               - 'mobile/app/**'
@@ -54,24 +55,33 @@ jobs:
               - 'scripts/ux-gates.mjs'
               - 'shared/**'
             wear:
+              - '.github/workflows/builds.yml'
               - 'wear/**'
               - 'scripts/hosted-native-evidence.mjs'
+              - 'scripts/release-acceptance.mjs'
               - 'scripts/wear-emulator-smoke.mjs'
               - 'shared/release.json'
             native_package:
+              - '.github/workflows/builds.yml'
               - 'wear/**'
               - 'mobile/app.config.js'
               - 'mobile/app.json'
               - 'mobile/eas.json'
+              - 'mobile/assets/adaptive-icon.png'
+              - 'mobile/assets/icon.png'
+              - 'mobile/assets/notification-icon.png'
               - 'mobile/modules/**'
               - 'mobile/package.json'
               - 'mobile/plugins/**'
               - 'package.json'
               - 'package-lock.json'
+              - 'scripts/android-e2e.mjs'
+              - 'scripts/hosted-android-e2e.mjs'
               - 'scripts/hosted-native-emulators.mjs'
               - 'scripts/hosted-native-evidence.mjs'
               - 'scripts/native-release-build.mjs'
               - 'scripts/native-upgrade-rehearsal.mjs'
+              - 'scripts/release-acceptance.mjs'
               - 'scripts/wear-emulator-smoke.mjs'
               - 'shared/release.json'
 

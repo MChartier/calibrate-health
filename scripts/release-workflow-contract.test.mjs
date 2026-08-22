@@ -144,10 +144,10 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
 
   assertWindowsUxJob(workflow);
   assert.match(workflow, /on:\s*\n\s+pull_request:/);
+  assert.match(webPaths, /- '\.github\/workflows\/builds\.yml'/);
   assert.match(webPaths, /- 'backend\/\*\*'/);
   assert.match(webPaths, /- 'mobile\/src\/\*\*'/);
   assert.match(webPaths, /- 'e2e\/expo-web\/\*\*'/);
-  assert.doesNotMatch(webPaths, /\.github\/workflows/);
   for (const job of webJobs) {
     assert.match(job, /needs: changes/);
     assert.match(job, /if: needs\.changes\.outputs\.web == 'true'/);
@@ -171,9 +171,37 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   assert.match(packageConfig.scripts['test:native-release'], /wear-build-task-guard\.test\.mjs/);
 
   assert.match(changes, /uses: dorny\/paths-filter@v3/);
-  assert.match(workflowPathFilterBlock(changes, 'wear'), /- 'wear\/\*\*'/);
+  const wearPaths = workflowPathFilterBlock(changes, 'wear');
+  for (const expectedPath of [
+    '.github/workflows/builds.yml',
+    'wear/**',
+    'scripts/hosted-native-evidence.mjs',
+    'scripts/release-acceptance.mjs',
+    'scripts/wear-emulator-smoke.mjs'
+  ]) {
+    assert.ok(wearPaths.includes(`- '${expectedPath}'`), `wear filter must include ${expectedPath}`);
+  }
   const nativePackagePaths = workflowPathFilterBlock(changes, 'native_package');
-  assert.match(nativePackagePaths, /- 'mobile\/plugins\/\*\*'/);
+  for (const expectedPath of [
+    '.github/workflows/builds.yml',
+    'mobile/assets/adaptive-icon.png',
+    'mobile/assets/icon.png',
+    'mobile/assets/notification-icon.png',
+    'mobile/plugins/**',
+    'scripts/android-e2e.mjs',
+    'scripts/hosted-android-e2e.mjs',
+    'scripts/hosted-native-emulators.mjs',
+    'scripts/hosted-native-evidence.mjs',
+    'scripts/native-release-build.mjs',
+    'scripts/native-upgrade-rehearsal.mjs',
+    'scripts/release-acceptance.mjs',
+    'scripts/wear-emulator-smoke.mjs'
+  ]) {
+    assert.ok(
+      nativePackagePaths.includes(`- '${expectedPath}'`),
+      `native_package filter must include ${expectedPath}`
+    );
+  }
   assert.doesNotMatch(nativePackagePaths, /mobile\/src/);
   for (const job of [wearBuild, wear]) {
     assert.match(job, /needs: changes/);
