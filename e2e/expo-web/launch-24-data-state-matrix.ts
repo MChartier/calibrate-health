@@ -253,10 +253,10 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
     },
     loading: { kind: 'testId', value: 'food-log-loading' },
     content: { kind: 'text', value: 'Fixture breakfast' },
-    empty: { kind: 'text', value: '0 kcal' },
+    empty: { kind: 'text', value: 'Meals' },
     errorText: "Can't load food log",
     staleText: "Couldn't refresh food log",
-    terminalEmptyText: '0 kcal',
+    terminalEmptyText: 'Meals',
   }),
   routeCase('weight-trend', {
     resource: {
