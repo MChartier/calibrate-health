@@ -20,7 +20,7 @@ import { SectionHeader } from './SectionHeader';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 
 export const foodDayQueryKey = (date: string) => ['mobile-food-day', date] as const;
-export const foodTrackingPauseQueryKey = ['mobile-food-tracking-pause'] as const;
+const foodTrackingPauseQueryKey = ['mobile-food-tracking-pause'] as const;
 
 const EXPANDED_STATUS_CONTENT_MAX_WIDTH = 520; // Keeps the status message readable on wide dashboards.
 const EXPANDED_STATUS_ACTION_MAX_WIDTH = 320; // Keeps the primary action prominent without spanning a desktop card.

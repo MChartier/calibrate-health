@@ -12,7 +12,7 @@ const lintWorkflow = fs.readFileSync(path.join(repositoryRoot, '.github', 'workf
 test('Knip is pinned and dead-code scripts never auto-fix', () => {
   assert.equal(packageJson.devDependencies.knip, '6.29.0');
   assert.equal(packageJson.scripts.knip, 'knip');
-  assert.equal(packageJson.scripts['knip:production'], 'knip --production');
+  assert.equal(packageJson.scripts['knip:production'], 'knip --production --exclude exports,types');
   assert.match(packageJson.scripts['test:dead-code'], /npm run knip/);
   assert.match(packageJson.scripts['test:dead-code'], /npm run knip:production/);
   assert.match(packageJson.scripts['test:dead-code'], /^node --test scripts\/knip-config\.test\.mjs/);
@@ -27,16 +27,21 @@ test('Knip models every package boundary in the repository', () => {
   }
 });
 
-test('dynamic workflow and Playwright entry points stay discoverable', () => {
+test('dynamic workflow, plugin, scenario, and Playwright entry points stay discoverable', () => {
   const rootConfig = knipConfig.workspaces['.'];
   assert.equal(rootConfig['github-actions'], true);
   assert.deepEqual(rootConfig.playwright.config, ['playwright.expo-web.config.ts', 'playwright.ux.config.ts']);
   assert.ok(rootConfig.entry.includes('.codex/local-environment.setup.mjs'));
   assert.ok(rootConfig.entry.includes('scripts/reset-test-user-onboarding.mjs'));
+  assert.deepEqual(knipConfig.workspaces.mobile.entry, [
+    'plugins/withHealthConnect.js',
+    'plugins/withSharedAndroidSigning.js',
+  ]);
+  assert.deepEqual(knipConfig.workspaces.shared.entry, ['calibrationScenarios.ts']);
 });
 
-test('Knip keeps staged rules and generated/config boundaries explicit', () => {
-  assert.deepEqual(knipConfig.rules, { exports: 'warn', types: 'warn' });
+test('Knip keeps blocking rules and generated/config boundaries explicit', () => {
+  assert.deepEqual(knipConfig.rules, { exports: 'error', types: 'error' });
   assert.equal(knipConfig.treatConfigHintsAsErrors, true);
   assert.deepEqual(knipConfig.workspaces['packages/api-client'].ignoreFiles, ['src/generated/v1.ts']);
   assert.deepEqual(knipConfig.workspaces.backend.prisma, { config: [] });

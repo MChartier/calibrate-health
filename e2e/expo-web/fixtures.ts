@@ -50,7 +50,7 @@ export const UX_FIXTURE_STATES = [
 ] as const;
 
 export type UxFixtureState = (typeof UX_FIXTURE_STATES)[number];
-export type CaloriePlanFixtureState =
+type CaloriePlanFixtureState =
   | 'available'
   | 'requires-review'
   | 'selected-options-unavailable';

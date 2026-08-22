@@ -28,8 +28,8 @@ export const ROUTE_IDS = [
 
 export type RouteId = (typeof ROUTE_IDS)[number];
 export type RouteAuthClass = 'public' | 'signed-out-only' | 'authenticated';
-export type RouteShellPolicy = 'public' | 'app' | 'overlay' | 'standalone';
-export type RouteDeepLinkBehavior = 'render' | 'session-redirect';
+type RouteShellPolicy = 'public' | 'app' | 'overlay' | 'standalone';
+type RouteDeepLinkBehavior = 'render' | 'session-redirect';
 
 export type RouteAlias = {
   path: `/${string}`;

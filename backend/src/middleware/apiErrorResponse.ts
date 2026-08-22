@@ -247,7 +247,7 @@ function defaultRetryableForStatus(statusCode: number): boolean {
 }
 
 /** Add the current request's stable error envelope without mutating route/idempotency bodies. */
-export function normalizeApiErrorResponse(
+function normalizeApiErrorResponse(
   statusCode: number,
   body: unknown,
   requestId: string

@@ -6,7 +6,7 @@ export const OUTBOX_MUTATION_STATES = {
 
 export type OutboxMutationState = typeof OUTBOX_MUTATION_STATES[keyof typeof OUTBOX_MUTATION_STATES];
 
-export type JsonPrimitive = string | number | boolean | null;
+type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
 export type QueuedMutation = {

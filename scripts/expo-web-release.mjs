@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WEB_ROUTE_METADATA = JSON.parse(fs.readFileSync(path.join(SCRIPT_DIR, '..', 'shared', 'webRouteMetadata.json'), 'utf8'));
 const LANDING_METADATA = WEB_ROUTE_METADATA.landing;
-export const DEFAULT_EXPO_WEB_DIST = path.join(SCRIPT_DIR, '..', 'mobile', 'dist');
+const DEFAULT_EXPO_WEB_DIST = path.join(SCRIPT_DIR, '..', 'mobile', 'dist');
 const ENTRY_BUNDLE_PATTERN = /^_expo\/static\/js\/web\/index-[a-f0-9]+\.js$/;
 const PWA_FILES = ['manifest.webmanifest', 'sw.js', 'calibrate-icon.svg', 'calibrate-icon-192.png', 'calibrate-icon-512.png', 'calibrate-icon-maskable-512.png'];
 const PRECACHE_SHELL_FILES = PWA_FILES.filter((fileName) => fileName !== 'sw.js');

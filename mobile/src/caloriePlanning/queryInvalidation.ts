@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 
-export const PROFILE_PLANNING_QUERY_KEYS = [
+const PROFILE_PLANNING_QUERY_KEYS = [
     ['mobile-profile'],
     ['mobile-goal'],
     calibrationStatusQueryKey

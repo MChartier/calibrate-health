@@ -4,7 +4,7 @@ import path from 'node:path';
 
 export const EXPO_PROJECT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const EXPO_UPDATE_CHANNEL_PATTERN = /^[a-z0-9][a-z0-9._-]*$/i;
-export const OTA_BASELINE_RELATIVE_PATH = path.join(
+const OTA_BASELINE_RELATIVE_PATH = path.join(
   'mobile',
   'android',
   'app',

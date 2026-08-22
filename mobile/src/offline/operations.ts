@@ -22,7 +22,7 @@ export const OFFLINE_MUTATION_OPERATIONS = {
     RESUME_FOOD_TRACKING: 'food-tracking-pause.resume'
 } as const;
 
-export type OfflineMutationOperation =
+type OfflineMutationOperation =
     typeof OFFLINE_MUTATION_OPERATIONS[keyof typeof OFFLINE_MUTATION_OPERATIONS];
 
 export type OutboxMutationResult<T> =

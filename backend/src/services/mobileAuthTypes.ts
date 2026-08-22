@@ -15,7 +15,7 @@ export type WearAuthPrincipal = Pick<
   'id' | 'timezone' | 'language' | 'weight_unit' | 'height_unit'
 >;
 
-export type MobileAuthPrincipal = UserClientPayload | WearAuthPrincipal;
+type MobileAuthPrincipal = UserClientPayload | WearAuthPrincipal;
 
 export type MobileAuthSessionPayload = MobileTokenPair & {
   user: MobileAuthPrincipal;

@@ -6,8 +6,8 @@ import {
   type RouteId,
 } from '../../mobile/src/navigation/routeRegistry';
 
-export type RouteAuthentication = 'public' | 'signed-out-only' | 'authenticated';
-export type DeepLinkBehavior = 'render' | 'session-redirect' | 'alias-redirect';
+type RouteAuthentication = 'public' | 'signed-out-only' | 'authenticated';
+type DeepLinkBehavior = 'render' | 'session-redirect' | 'alias-redirect';
 
 export type RouteExpectation = {
   path: string;

@@ -18,7 +18,7 @@ const CANONICAL_ROUNDING_TOLERANCE_GRAMS = 1;
 
 export type MetricSaveKind = 'created' | 'updated' | 'unchanged';
 
-export type MetricProgressRecognition =
+type MetricProgressRecognition =
     | { type: 'goal_reached' }
     | { type: 'goal_percent'; threshold_percent: (typeof GOAL_PERCENT_THRESHOLDS)[number] }
     | { type: 'goal_weight'; threshold_grams: number }

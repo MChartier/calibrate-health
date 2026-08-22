@@ -11,7 +11,7 @@ import { AppText } from './AppText';
 import { TextField } from './TextField';
 
 // Keeps ingredient search responsive without issuing a request for every keystroke.
-export const RECIPE_INGREDIENT_SEARCH_DEBOUNCE_MS = 250;
+const RECIPE_INGREDIENT_SEARCH_DEBOUNCE_MS = 250;
 // Keeps each selector page compact on phones while allowing useful scanning on desktop.
 export const RECIPE_INGREDIENT_PAGE_SIZE = 20;
 

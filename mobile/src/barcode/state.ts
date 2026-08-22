@@ -38,7 +38,7 @@ export const BARCODE_LOOKUP_STATES = {
     ERROR: 'error'
 } as const;
 
-export type BarcodeLookupFailureKind =
+type BarcodeLookupFailureKind =
     | 'offline'
     | 'authentication'
     | 'rate-limited'

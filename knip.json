@@ -2,8 +2,8 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "treatConfigHintsAsErrors": true,
   "rules": {
-    "exports": "warn",
-    "types": "warn"
+    "exports": "error",
+    "types": "error"
   },
   "workspaces": {
     ".": {
@@ -29,6 +29,7 @@
       "prisma": { "config": [] }
     },
     "mobile": {
+      "entry": ["plugins/withHealthConnect.js", "plugins/withSharedAndroidSigning.js"],
       "project": [
         "app/**/*.{ts,tsx}!",
         "src/**/*.{ts,tsx}!",
@@ -40,7 +41,8 @@
       "ignoreDependencies": ["@babel/runtime!", "abort-controller", "regenerator-runtime", "uuid", "whatwg-fetch"]
     },
     "shared": {
-      "project": ["*.ts!", "!calibrationScenarios.ts!", "calibrationScenarios.ts"]
+      "entry": ["calibrationScenarios.ts"],
+      "project": ["*.ts!", "!calibrationScenarios.ts!"]
     },
     "packages/api-client": {
       "project": ["src/**/*.ts!", "test/**/*.test.ts"],

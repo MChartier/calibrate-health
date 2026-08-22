@@ -26,7 +26,7 @@ export function shouldDevAutoLogin(
 type BrowserSessionClient = Pick<CalibrateApiClient, 'getMe' | 'loginBrowser'>;
 
 // Cover the normal backend/Prisma startup window without leaving the auth shell waiting indefinitely.
-export const DEV_SESSION_RETRY_DELAYS_MS = [250, 500, 750, 1_000, 1_000, 1_000, 1_000] as const;
+const DEV_SESSION_RETRY_DELAYS_MS = [250, 500, 750, 1_000, 1_000, 1_000, 1_000] as const;
 
 type BrowserDevelopmentSessionOptions = {
     isDevelopment?: boolean;

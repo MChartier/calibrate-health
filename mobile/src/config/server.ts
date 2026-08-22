@@ -5,9 +5,9 @@ import { CALIBRATE_HOSTED_ORIGIN } from '@calibrate/shared/product';
 import release from '../../../shared/release.json';
 
 export const HOSTED_SERVER_URL = CALIBRATE_HOSTED_ORIGIN;
-export const ANDROID_EMULATOR_SERVER_URL = 'http://10.0.2.2:3000';
-export const LOCAL_WEB_BACKEND_PORT = '3000';
-export const MOBILE_API_VERSION = release.server.api.current;
+const ANDROID_EMULATOR_SERVER_URL = 'http://10.0.2.2:3000';
+const LOCAL_WEB_BACKEND_PORT = '3000';
+const MOBILE_API_VERSION = release.server.api.current;
 
 const SERVER_CONNECTION_TIMEOUT_MS = 8000; // Fails quickly enough to keep sign-in setup responsive on bad LAN addresses.
 

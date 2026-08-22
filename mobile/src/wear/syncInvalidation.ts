@@ -15,7 +15,7 @@ type SyncInvalidationTransport = {
     sendMessage(nodeId: string, path: string, payload: string): Promise<number>;
 };
 
-export type PendingWearSyncInvalidation = {
+type PendingWearSyncInvalidation = {
     invalidationId: string;
     nodeId: string;
     serverOrigin: string;

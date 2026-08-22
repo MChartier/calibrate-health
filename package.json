@@ -103,7 +103,7 @@
     "test:coverage:backend": "npm --prefix backend run test:coverage",
     "test:coverage:mobile": "npm --prefix mobile test -- --coverage --runInBand",
     "knip": "knip",
-    "knip:production": "knip --production",
+    "knip:production": "knip --production --exclude exports,types",
     "test:dead-code": "node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production"
   },
   "keywords": [],

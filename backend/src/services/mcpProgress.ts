@@ -39,9 +39,9 @@ const POUNDS_PER_KILOGRAM = 2.2046226218487757;
 const TREND_CURRENT_MAX_AGE_DAYS = 7; // A reading from the last week is current evidence.
 const TREND_STALE_MAX_AGE_DAYS = 14; // Evidence is stale through two weeks, then outdated.
 
-export type McpProgressDatabase = MutationDatabase;
+type McpProgressDatabase = MutationDatabase;
 
-export type CalorieTargetContext = {
+type CalorieTargetContext = {
   as_of_date: string | null;
   plan_status: StoredCaloriePlanningSnapshot['evaluation']['status'] | 'unavailable';
   plan_reason_code: StoredCaloriePlanningSnapshot['evaluation']['reasonCode'];
@@ -53,7 +53,7 @@ export type CalorieTargetContext = {
   configured_daily_deficit_kcal: number | null;
 };
 
-export type RecentFoodLogEntry = {
+type RecentFoodLogEntry = {
   meal_period: MealPeriod;
   name: string;
   calories_kcal: number;
@@ -62,7 +62,7 @@ export type RecentFoodLogEntry = {
   serving_unit: string | null;
 };
 
-export type RecentFoodLogDay = {
+type RecentFoodLogDay = {
   date: string;
   status: FoodDayStatus;
   source: FoodDaySource;
@@ -90,8 +90,8 @@ export type RecentFoodLogsSnapshot = {
   interpretation_notes: string[];
 };
 
-export type WeightTrendFreshness = 'current' | 'stale' | 'outdated' | 'unavailable';
-export type WeightTrendSnapshotStatus = 'insufficient' | 'provisional' | 'sufficient' | 'stale';
+type WeightTrendFreshness = 'current' | 'stale' | 'outdated' | 'unavailable';
+type WeightTrendSnapshotStatus = 'insufficient' | 'provisional' | 'sufficient' | 'stale';
 
 export type WeightTrendSnapshot = {
   as_of_date: string;

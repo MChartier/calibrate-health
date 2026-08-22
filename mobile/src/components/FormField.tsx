@@ -14,7 +14,7 @@ export type FocusableFormControl = {
     focus: () => void;
 };
 
-export type FormControlAccessibilityProps = {
+type FormControlAccessibilityProps = {
     nativeID: string;
     accessibilityLabel: string;
     accessibilityHint?: string;

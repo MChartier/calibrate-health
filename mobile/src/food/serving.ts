@@ -63,7 +63,7 @@ const isGenericPer100GramsLabel = (label: string): boolean =>
     label.trim().toLowerCase() === GENERIC_PER_100_GRAMS_LABEL;
 
 /** Identify the client-only gram measure used in place of a provider's generic per-100g option. */
-export const isSyntheticGramMeasure = (measure: ProviderFoodMeasure): boolean =>
+const isSyntheticGramMeasure = (measure: ProviderFoodMeasure): boolean =>
     measure.label === SYNTHETIC_GRAMS_LABEL &&
     measure.gramWeight === 1 &&
     measure.quantity === 1 &&

@@ -85,7 +85,7 @@ export const typography = {
 
 export const interaction = { ...calibrateDesignTokens.interaction };
 
-export const stroke = {
+const stroke = {
     control: 1 // Keeps rounded interactive outlines stable across Android display densities.
 };
 
@@ -145,10 +145,3 @@ export function useAppTheme(preference: AppThemePreference = 'system'): AppTheme
     const systemScheme = useColorScheme();
     return resolveAppTheme(preference === 'system' ? systemScheme : preference);
 }
-
-/**
- * Legacy light-theme exports. Static StyleSheets can keep using these during
- * migration; new and shared primitives should use `useAppTheme()`.
- */
-export const colors = themes.light.colors;
-export const shadows = themes.light.shadows;

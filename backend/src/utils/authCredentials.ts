@@ -5,7 +5,7 @@ import {
   utf8ByteLength
 } from '../../../shared/authCredentials';
 
-export { MAX_AUTH_PASSWORD_BYTES, MIN_AUTH_PASSWORD_LENGTH };
+export { MAX_AUTH_PASSWORD_BYTES };
 // Comparing against a fixed valid hash keeps unknown-account login timing close to wrong-password timing.
 export const DUMMY_AUTH_PASSWORD_HASH = '$2b$10$24sOV1l/uVCwMwPmB4.2X.K6q10fTODGqeX7xEILbzcoM0zIgAwFC';
 

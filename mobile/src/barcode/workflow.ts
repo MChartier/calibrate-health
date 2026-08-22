@@ -5,10 +5,10 @@ const BARCODE_DUPLICATE_WINDOW_MS = 1_200;
 const FATSECRET_URL = 'https://www.fatsecret.com';
 const UPC_E_NUMBER_SYSTEMS = new Set(['0', '1']);
 
-export type BarcodeFormat = 'ean-8' | 'ean-13' | 'upc-a' | 'upc-e';
+type BarcodeFormat = 'ean-8' | 'ean-13' | 'upc-a' | 'upc-e';
 export type BarcodeFormatHint = BarcodeFormat | 'ean8' | 'ean13' | 'upc_a' | 'upc_e';
 
-export type NormalizedBarcode = {
+type NormalizedBarcode = {
     barcode: string;
     canonicalKey: string;
     format: BarcodeFormat;

@@ -27,7 +27,7 @@ type SessionConfirmation =
     | { kind: 'one'; session: AccountSessionSummary }
     | { kind: 'others' };
 
-export function formatAccountSessionTimestamp(value: string | null): string {
+function formatAccountSessionTimestamp(value: string | null): string {
     if (!value) return 'Not recorded';
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return 'Not recorded';

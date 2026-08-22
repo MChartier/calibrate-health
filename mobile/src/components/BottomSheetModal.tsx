@@ -51,7 +51,7 @@ export type BottomSheetModalProps = {
 
 export const ADAPTIVE_DIALOG_BREAKPOINT = 840;
 export const STANDARD_DIALOG_WIDTH = 640;
-export const WIDE_DIALOG_WIDTH = 800;
+const WIDE_DIALOG_WIDTH = 800;
 const SHEET_TRANSLATE_Y = 32; // Subtle sheet-only movement; the backdrop fades independently.
 const WEB_FIXED_POSITION = 'fixed' as ViewStyle['position']; // Keeps portal sheets anchored while the underlying web page is scrolled.
 const SHEET_CLOSE_ROW_MAX_WIDTH = 800; // Aligns an optional close action with wide detail-sheet content.
@@ -73,7 +73,7 @@ let webModalAccessibilityObserver: WebModalAccessibilityObserver | null = null;
  * removing their dialog role. Keep the inactive wrapper out of the accessibility
  * tree contract while the active BottomSheet panel remains the modal dialog.
  */
-export function normalizeInactiveWebBottomSheetContainers(documentRoot: Pick<WebBottomSheetDocument, 'querySelectorAll'>) {
+function normalizeInactiveWebBottomSheetContainers(documentRoot: Pick<WebBottomSheetDocument, 'querySelectorAll'>) {
     for (const element of documentRoot.querySelectorAll('[aria-modal="true"]')) {
         const role = element.getAttribute('role');
         if (role === 'dialog' || role === 'alertdialog') continue;

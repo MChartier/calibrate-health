@@ -1,7 +1,7 @@
 export const MIN_AUTH_PASSWORD_LENGTH = 8;
 // bcrypt only uses the first 72 UTF-8 bytes of a password; cap input so users do not create misleading secrets.
 export const MAX_AUTH_PASSWORD_BYTES = 72;
-export const MAX_AUTH_EMAIL_LENGTH = 254;
+const MAX_AUTH_EMAIL_LENGTH = 254;
 
 const BASIC_AUTH_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

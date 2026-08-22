@@ -33,7 +33,7 @@ import { logSafeOperationalError } from '../observability';
 
 export const MCP_FOOD_READ_SCOPE = 'calibrate:food:read';
 export const MCP_WEIGHT_READ_SCOPE = 'calibrate:weight:read';
-export const MCP_OAUTH_SCOPES = [MCP_FOOD_READ_SCOPE, MCP_WEIGHT_READ_SCOPE] as const;
+const MCP_OAUTH_SCOPES = [MCP_FOOD_READ_SCOPE, MCP_WEIGHT_READ_SCOPE] as const;
 export const MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_MAX = 100;
 export const MCP_OAUTH_REGISTRATION_RATE_LIMIT_MAX = 20;
 const MCP_OAUTH_AUTHORIZATION_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -138,7 +138,7 @@ export function installCalibrateOAuth(app: Express, setup: CalibrateOAuthSetup) 
   return { provider, resourceMetadataUrl };
 }
 
-export class CalibrateOAuthProvider implements OAuthServerProvider {
+class CalibrateOAuthProvider implements OAuthServerProvider {
   readonly clientsStore: OAuthRegisteredClientsStore;
 
   constructor(
@@ -399,7 +399,7 @@ function tokenResponse(tokens: {
   };
 }
 
-export function safeRedirectUri(value: string): boolean {
+function safeRedirectUri(value: string): boolean {
   try {
     const url = new URL(value);
     if (url.hash || url.username || url.password) return false;
