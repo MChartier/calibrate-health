@@ -21,6 +21,15 @@ function workflowJobBlock(workflow, jobName) {
   return match[0];
 }
 
+function workflowPathFilterBlock(job, filterName) {
+  assert.match(filterName, /^[a-z_]+$/, 'workflow path filter selector must be a literal safe identifier');
+  const match = job.match(
+    new RegExp(`\\n            ${filterName}:\\n[\\s\\S]*?(?=\\n            [a-z_]+:|\\n\\n|$)`)
+  );
+  assert.ok(match, `workflow must define one ${filterName} path filter`);
+  return match[0];
+}
+
 function assertWindowsUxJob(workflow) {
   const job = uxJobBlock(workflow);
   assert.match(job, /runs-on: windows-latest/);
@@ -120,11 +129,30 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(image, /publish_latest: true/);
   assert.doesNotMatch(workflow, /pull_request_target|createWorkflowDispatch/);
 });
-test('pull requests run the reviewed Windows UX gate and retain sanitized evidence', () => {
+
+test('pull requests run Web gates only for Web-impacting paths', () => {
   const workflow = readWorkflow('builds.yml');
+  const changes = workflowJobBlock(workflow, 'changes');
+  const webPaths = workflowPathFilterBlock(changes, 'web');
+  const releaseConfig = workflowJobBlock(workflow, 'release-config');
+  const webJobs = [
+    workflowJobBlock(workflow, 'expo-web-build'),
+    workflowJobBlock(workflow, 'exported-web-e2e'),
+    workflowJobBlock(workflow, 'data-state-acceptance'),
+    workflowJobBlock(workflow, 'ux-regression')
+  ];
 
   assertWindowsUxJob(workflow);
   assert.match(workflow, /on:\s*\n\s+pull_request:/);
+  assert.match(webPaths, /- 'backend\/\*\*'/);
+  assert.match(webPaths, /- 'mobile\/src\/\*\*'/);
+  assert.match(webPaths, /- 'e2e\/expo-web\/\*\*'/);
+  assert.doesNotMatch(webPaths, /\.github\/workflows/);
+  for (const job of webJobs) {
+    assert.match(job, /needs: changes/);
+    assert.match(job, /if: needs\.changes\.outputs\.web == 'true'/);
+  }
+  assert.doesNotMatch(releaseConfig, /needs\.changes\.outputs/);
 });
 
 test('pull requests path-gate native builds while retaining OTA-level checks', () => {
@@ -143,9 +171,10 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   assert.match(packageConfig.scripts['test:native-release'], /wear-build-task-guard\.test\.mjs/);
 
   assert.match(changes, /uses: dorny\/paths-filter@v3/);
-  assert.match(changes, /wear:\s*\n\s+- 'wear\/\*\*'/);
-  assert.match(changes, /native_package:[\s\S]*- 'mobile\/plugins\/\*\*'/);
-  assert.doesNotMatch(changes, /mobile\/src/);
+  assert.match(workflowPathFilterBlock(changes, 'wear'), /- 'wear\/\*\*'/);
+  const nativePackagePaths = workflowPathFilterBlock(changes, 'native_package');
+  assert.match(nativePackagePaths, /- 'mobile\/plugins\/\*\*'/);
+  assert.doesNotMatch(nativePackagePaths, /mobile\/src/);
   for (const job of [wearBuild, wear]) {
     assert.match(job, /needs: changes/);
     assert.match(job, /if: needs\.changes\.outputs\.wear == 'true'/);

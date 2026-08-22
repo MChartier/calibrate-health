@@ -12,22 +12,47 @@ concurrency:
 
 jobs:
   changes:
-    name: Classify Native Build Inputs
+    name: Classify Build Inputs
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       pull-requests: read
     outputs:
+      web: ${{ steps.filter.outputs.web }}
       wear: ${{ steps.filter.outputs.wear }}
       native_package: ${{ steps.filter.outputs.native_package }}
 
     steps:
-      - name: Detect native build inputs
+      - name: Detect affected build surfaces
         id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
+            web:
+              - 'backend/**'
+              - 'e2e/expo-web/**'
+              - 'mobile/app/**'
+              - 'mobile/assets/**'
+              - 'mobile/public/**'
+              - 'mobile/src/**'
+              - 'mobile/test/**'
+              - 'mobile/app.config.js'
+              - 'mobile/app.json'
+              - 'mobile/babel.config.js'
+              - 'mobile/index.js'
+              - 'mobile/metro.config.js'
+              - 'mobile/modules/**'
+              - 'mobile/package.json'
+              - 'mobile/tsconfig.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'packages/api-client/**'
+              - 'playwright.expo-web.config.ts'
+              - 'playwright.ux.config.ts'
+              - 'scripts/expo-web-*.mjs'
+              - 'scripts/ux-gates.mjs'
+              - 'shared/**'
             wear:
               - 'wear/**'
               - 'scripts/hosted-native-evidence.mjs'
@@ -134,6 +159,8 @@ jobs:
 
   expo-web-build:
     name: Expo Web Build
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 15
 
@@ -162,6 +189,8 @@ jobs:
 
   exported-web-e2e:
     name: Full Exported Web and PWA End-to-End
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -209,6 +238,8 @@ jobs:
           retention-days: 90
   data-state-acceptance:
     name: Six-State Data-Backed Route Acceptance
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -258,6 +289,8 @@ jobs:
           retention-days: 90
   ux-regression:
     name: UX Accessibility and Visual Regression
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
