@@ -145,7 +145,6 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   const workflow = readWorkflow('publish-release.yml');
   const tag = workflowJobBlock(workflow, 'tag_release');
   const image = workflowJobBlock(workflow, 'build_release_image');
-  const waitForDeploy = workflowJobBlock(workflow, 'wait_for_hosted_release');
   const ota = workflowJobBlock(workflow, 'publish_ota');
 
   assert.match(workflow, /workflow_call:/);
@@ -165,17 +164,14 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(tag, /git tag -a "\$\{RELEASE_TAG\}"/);
   assert.match(image, /uses: \.\/\.github\/workflows\/container\.yml/);
   assert.match(image, /publish_latest: true/);
-  assert.match(waitForDeploy, /needs: \[tag_release, build_release_image\]/);
-  assert.match(waitForDeploy, /https:\/\/calibratehealth\.app\/api\/v1\/client-config/);
-  assert.match(waitForDeploy, /server_version/);
-  assert.match(waitForDeploy, /for attempt in \{1\.\.60\}/);
-  assert.match(ota, /needs: \[tag_release, wait_for_hosted_release\]/);
+  assert.match(ota, /needs: \[tag_release, build_release_image\]/);
   assert.match(ota, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
   assert.match(ota, /source_ref: \$\{\{ inputs\.release_commit \}\}/);
   assert.match(ota, /native_build_ref: \$\{\{ needs\.tag_release\.outputs\.native_release_tag \}\}/);
   assert.match(ota, /message: Release \$\{\{ needs\.tag_release\.outputs\.release_tag \}\}/);
   assert.match(ota, /secrets: inherit/);
   assert.doesNotMatch(workflow, /pull_request_target|createWorkflowDispatch/);
+  assert.doesNotMatch(workflow, /calibratehealth\.app\/api\/v1\/client-config|wait_for_hosted_release/);
 });
 
 test('pull requests build and smoke only Web-impacting changes while exhaustive suites stay manual', () => {
@@ -577,7 +573,7 @@ test('hidden workflow evidence paths are explicitly included in artifact uploads
   }
 });
 
-test('Expo OTA updates follow a deployed explicit release and retain a manual recovery dispatch', () => {
+test('Expo OTA updates follow explicit image publication and retain a manual recovery dispatch', () => {
   const workflow = readWorkflow('expo-ota-update.yml');
   const publishReleaseWorkflow = readWorkflow('publish-release.yml');
   const internal = workflowJobBlock(workflow, 'publish-internal');
@@ -612,7 +608,7 @@ test('Expo OTA updates follow a deployed explicit release and retain a manual re
   assert.match(workflow, /--non-interactive/);
   assert.doesNotMatch(workflow, /\n\s+push:|github\.event\.(before|head_commit)|--previous-ref/);
   assert.match(releaseOta, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
-  assert.match(releaseOta, /needs: \[tag_release, wait_for_hosted_release\]/);
+  assert.match(releaseOta, /needs: \[tag_release, build_release_image\]/);
 });
 
 test('pull request test suites run only for their affected surfaces', () => {

@@ -55,8 +55,8 @@ the served web application.
 Affected pull requests already own unit and integration tests, generated API and deploy contracts, dependency checks,
 database upgrade/rollback rehearsal, and vulnerability scanning. The release cut deliberately does not rerun them.
 Successful metadata and container smoke validation opens and atomically merges the version-only PR before the prepared
-release is tagged and published. After the hosted service reports that exact server version, the same release commit
-is published to the Expo internal channel. Production OTA publishing remains held behind the protected production
+release is tagged and its image is published. The same release commit is then published to the Expo internal channel
+without waiting for self-host deployment. Production OTA publishing remains held behind the protected production
 environment approval.
 
 ## Performance and owner judgment

@@ -71,7 +71,7 @@
     },
     {
       "id": "prepared-release-integrity",
-      "title": "Publish the exact merged release, wait for deployment, then publish OTA",
+      "title": "Publish the exact merged release image, then publish OTA",
       "releaseScopes": ["server-web", "ota"],
       "trigger": "release",
       "workflowPaths": [
@@ -86,7 +86,6 @@
         "publish",
         "tag_release",
         "build_release_image",
-        "wait_for_hosted_release",
         "publish_ota",
         "publish-internal",
         "publish-production"

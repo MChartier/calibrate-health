@@ -27,10 +27,10 @@ selected at dispatch. The workflow verifies and pushes the exact GitHub-generate
 server-side fast-forward check atomically rejects a concurrent `master` update. Publishing tags the validated candidate
 commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate
 manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone, Wear,
-and self-host deployment remain independent. For the official hosted service, publishing waits until
-`/api/v1/client-config` reports the new server version, then invokes the reusable Expo OTA workflow for the exact
-release commit. The native-build reference comes from the canonical manifest. OTA publishes internal first and waits
-for protected production approval; it is never triggered by an ordinary `master` push.
+and self-host deployment remain independent. After the GHCR image is published, the publisher invokes the reusable
+Expo OTA workflow for the exact release commit without waiting for or triggering self-host deployment. The
+native-build reference comes from the canonical manifest. OTA publishes internal first and waits for protected
+production approval; it is never triggered by an ordinary `master` push.
 
 ## Consequences
 
@@ -42,5 +42,5 @@ for protected production approval; it is never triggered by an ordinary `master`
 - `master` drift, including a change racing the final merge, aborts before the protected branch is updated.
 - A manifest ahead of the latest tag represents one pending prepared release and blocks another bump until recovered.
 - The release PR and tag add explicit provenance without creating a GitHub Release object or generated changelog.
-- OTA updates follow the explicit hosted server release, remain tied to the installed native build, and never publish
+- OTA updates follow explicit release image publication, remain tied to the installed native build, and never publish
   merely because `master` advanced.

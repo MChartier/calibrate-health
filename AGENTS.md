@@ -267,11 +267,12 @@ UI code style:
   workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
-- Android phone and Wear versions remain independent of the server/web release selector. After the hosted server
-  reports the new version, **Cut release** publishes the exact release commit to Expo internal and then waits for the
-  protected production approval. The native-build reference comes from `shared/release.json`.
-- Use **Publish prepared release** with the recorded release commit and branch to recover any post-merge tag, image,
-  hosted-deployment wait, or OTA failure. **Build Release Image** remains an image-only recovery tool.
+- Android phone and Wear versions remain independent of the server/web release selector. After the GHCR image is
+  published, **Cut release** publishes the exact release commit to Expo internal and then waits for the protected
+  production approval. It does not wait for or trigger self-host deployment. The native-build reference comes from
+  `shared/release.json`.
+- Use **Publish prepared release** with the recorded release commit and branch to recover any post-merge tag, image, or
+  OTA failure. **Build Release Image** remains an image-only recovery tool.
 
 ## Git And PR Workflow
 

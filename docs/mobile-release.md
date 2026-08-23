@@ -245,9 +245,9 @@ and a native incompatibility must be corrected with a higher-version signed APK/
 ### Publish OTA updates from GitHub Actions
 
 The `Publish Expo OTA Update` workflow is reusable by **Cut release** and also retains a manual recovery dispatch.
-It is never triggered by an ordinary `master` push. After the hosted service reports the newly released server
-version, the release pipeline publishes that exact release commit's Android phone JavaScript/assets to the `internal`
-channel, then starts a dependent production job. The production job targets the protected GitHub `production`
+It is never triggered by an ordinary `master` push. After the release image is published, the pipeline publishes that
+exact release commit's Android phone JavaScript/assets to the `internal` channel without waiting for self-host
+deployment, then starts a dependent production job. The production job targets the protected GitHub `production`
 environment, so it remains blocked until a required reviewer verifies the internal devices and approves the
 deployment.
 
