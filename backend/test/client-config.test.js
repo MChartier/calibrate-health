@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { CALIBRATE_HOSTED_ORIGIN } = require('../../shared/product');
+const release = require('../../shared/release.json');
 
 const loaded = require('../src/routes/clientConfig');
 const router = loaded.default ?? loaded;
@@ -32,8 +33,12 @@ function readClientConfig() {
   );
   assert.ok(layer);
   let body = null;
-  layer.route.stack[0].handle({}, { json: (payload) => { body = payload; } });
-  return body;
+  const headers = {};
+  layer.route.stack[0].handle({}, {
+    set: (name, value) => { headers[name.toLowerCase()] = value; },
+    json: (payload) => { body = payload; }
+  });
+  return { body, headers };
 }
 
 test('client config advertises the stable v1 API, release floors, and privacy-safe push default', () => {
@@ -43,10 +48,12 @@ test('client config advertises the stable v1 API, release floors, and privacy-sa
     WEB_PUSH_PRIVATE_KEY: undefined,
     WEB_PUSH_SUBJECT: undefined
   }, () => {
-    const body = readClientConfig();
+    const { body, headers } = readClientConfig();
 
     assert.equal(body.api_version, 1);
     assert.equal(body.api_versions.current, 'v1');
+    assert.equal(body.server_version, release.server.version);
+    assert.equal(headers['cache-control'], 'no-store');
     assert.deepEqual(body.api_versions.supported, ['v1']);
     assert.equal(body.api_versions.legacy_alias, '/api');
     assert.equal(body.hosted_origin, CALIBRATE_HOSTED_ORIGIN);
@@ -66,14 +73,21 @@ test('client config advertises browser push only with complete VAPID configurati
     WEB_PUSH_PRIVATE_KEY: 'private-key',
     WEB_PUSH_SUBJECT: 'mailto:operator@example.com'
   }, () => {
-    const body = readClientConfig();
+    const { body } = readClientConfig();
     assert.equal(body.capabilities.web_push, true);
   });
 });
 
 test('client config advertises native push only after the operator enables Expo mode', () => {
   withEnvironment({ NATIVE_PUSH_MODE: 'expo' }, () => {
-    const body = readClientConfig();
+    const { body } = readClientConfig();
     assert.equal(body.capabilities.native_push, true);
+  });
+});
+
+test('client config ignores an injected package version in favor of the canonical manifest', () => {
+  withEnvironment({ npm_package_version: '99.99.99' }, () => {
+    const { body } = readClientConfig();
+    assert.equal(body.server_version, release.server.version);
   });
 });

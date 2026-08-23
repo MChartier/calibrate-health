@@ -12,3 +12,4 @@ export * from './weightTrend';
 export * from './weightTrendParameters';
 export * from './legalVersions';
 export * from './product';
+export * from './releaseCompatibility';

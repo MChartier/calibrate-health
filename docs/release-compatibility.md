@@ -12,11 +12,24 @@ Android `version_code` values for upgrades. A self-hosted server should support 
 `server.api.supported`. It may raise a minimum client version only when older releases cannot operate safely or
 correctly; routine feature additions should remain backward compatible.
 
-The phone fetches `/api/v1/client-config` before saving a server or sending credentials. It refuses an unsupported API
-or a release older than `min_supported_mobile_version` with an actionable update message. Native phone and Wear HTTP
+The Android native version remains independent from the server/web version. Each JavaScript bundle separately carries
+the `shared/release.json` server version whose contract it expects. Bundle and server versions must have equal major
+and minor components; patch differences remain compatible. This conservative release-line boundary protects a
+self-host whose deployment can lag OTA publication, even when the v1 wire changes are additive.
+
+The phone fetches uncached `/api/v1/client-config` before saving a server or refreshing a saved session. It refuses an
+unsupported API, a mismatched server release line, or a native release older than
+`min_supported_mobile_version` with actionable guidance. Native phone and Wear HTTP
 requests also send `X-Calibrate-Client-Platform` plus `X-Calibrate-Client-Version`. The server compares the trusted
 bearer-session platform with those headers on every authenticated request and requires Wear identity during the
 one-time pairing exchange. Browser cookie sessions omit these headers and are unaffected.
+
+Expo retains its normal update lifecycle; the client does not veto an update download based on the selected server.
+If an incompatible bundle starts, the runtime preflight blocks normal authenticated use before session refresh and
+synchronization. Longer term, production/public channel promotion should require an explicit deployment-readiness
+signal for the matching server release line. Internal publication remains available for validation, and CI does not
+poll private self-hosted servers. That signal can attest readiness only for the release owner's declared server
+rollout; independently managed self-hosts still rely on the runtime mismatch guard.
 
 An incompatible native request receives HTTP 426 with `CLIENT_UPGRADE_REQUIRED`, the applicable minimum version, and
 a non-retryable user message. Phone keeps its credentials and offline outbox behind an update-required screen. Wear
@@ -80,13 +93,12 @@ After image publication, the workflow publishes the exact release commit to Expo
 production approval. It does not wait for or trigger self-host deployment. The compatible native-build baseline is
 read from `shared/release.json`.
 
-Expo clients cannot atomically fetch the exact update returned by `checkForUpdateAsync()`:
-`fetchUpdateAsync()` performs another latest-channel selection. The client must inspect both manifests, refuse an
-immediate restart when the fetched release line is incompatible, and enforce the compatibility gate again at startup.
-An incompatible update that was already fetched may nevertheless remain launchable on a later cold start. CI
-serialization and production approval limit concurrent publication, but they do not eliminate this device-side race.
-Do not add a live-server CI poll as a substitute. Fully atomic selection would require server-release-specific EAS
-channels or aliases chosen after reading client configuration, or a custom update server.
+Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
+running: native startup compares its bundled server release line with uncached client configuration before restoring
+the saved session or synchronizing. An incompatible update can therefore download and start before the runtime gate
+blocks normal authenticated use. Protected production approval is the current public-channel promotion control. A
+future automated gate may require an explicit deployment-readiness signal for the release owner's declared server
+rollout, but independent self-hosts still require the runtime guard. CI must not poll private servers.
 
 The preparation command is also available for isolated release tooling tests:
 

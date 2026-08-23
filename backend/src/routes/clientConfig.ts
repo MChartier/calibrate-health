@@ -15,6 +15,7 @@ const CURRENT_API_VERSION = release.server.api.current;
 router.get('/', (_req, res) => {
   const nativePushMode = resolveNativePushMode();
   const webPushEnabled = Boolean(getWebPushPublicKey().publicKey);
+  res.set('Cache-Control', 'no-store');
   res.json({
     api_version: CLIENT_API_VERSION,
     api_versions: {
@@ -23,7 +24,7 @@ router.get('/', (_req, res) => {
       legacy_alias: release.server.api.legacy_alias,
       legacy_deprecation: 'Supported until released clients have migrated to /api/v1.'
     },
-    server_version: process.env.npm_package_version || release.server.version,
+    server_version: release.server.version,
     hosted_origin: CALIBRATE_HOSTED_ORIGIN,
     min_supported_mobile_version: release.android.mobile.minimum_supported_version,
     min_supported_wear_version: release.android.wear.minimum_supported_version,

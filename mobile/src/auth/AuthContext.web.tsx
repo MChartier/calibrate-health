@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ClientUpgradeRequirement } from '@calibrate/shared';
+import type { ClientServerReleaseMismatch } from '@calibrate/shared/releaseCompatibility';
 import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '@calibrate/shared/legalVersions';
 import {
     getDefaultServerUrl,
@@ -28,6 +29,7 @@ type AuthContextValue = {
     isLoading: boolean;
     authError: string | null;
     clientUpgradeRequired: ClientUpgradeRequirement | null;
+    clientServerIncompatibility: ClientServerReleaseMismatch | null;
     accountDeletionCleanupNotice: AccountDeletionCleanupNotice | null;
     serverConnection: ServerConnectionState;
     updateCurrentUser: (user: UserClientPayload) => void;
@@ -188,6 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         authError,
         clientUpgradeRequired: null,
+        clientServerIncompatibility: null,
         accountDeletionCleanupNotice: null,
         serverConnection,
         updateCurrentUser: setUser,

@@ -112,7 +112,8 @@ describe('testCalibrateServerConnection', () => {
 
         const result = await testCalibrateServerConnection('https://calibrate.example', {
             fetchImpl: fetchImpl as typeof fetch,
-            mobileVersion: '0.2.0'
+            mobileVersion: '0.2.0',
+            clientServerVersion: '1.2.99'
         });
 
         expect(result).toEqual(expect.objectContaining({
@@ -183,5 +184,34 @@ describe('testCalibrateServerConnection', () => {
             mobileVersion: 'development'
         });
         expect(malformedLocalVersion).toEqual(expect.objectContaining({ ok: false, code: 'incompatible' }));
+    });
+
+    it('allows patch drift but rejects either major/minor mismatch direction', async () => {
+        const fetchImpl = jest.fn(async () => new Response(JSON.stringify(compatibleConfig), { status: 200 }));
+        await expect(testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.2.99'
+        })).resolves.toEqual(expect.objectContaining({ ok: true }));
+
+        const serverBehind = await testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.3.0'
+        });
+        expect(serverBehind).toEqual(expect.objectContaining({
+            ok: false,
+            code: 'incompatible',
+            message: 'This Calibrate update requires server 1.3.x, but this server is 1.2.3. Update the server first.',
+            mismatch: expect.objectContaining({ status: 'server_behind' })
+        }));
+
+        const clientBehind = await testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.1.9'
+        });
+        expect(clientBehind).toEqual(expect.objectContaining({
+            ok: false,
+            code: 'incompatible',
+            mismatch: expect.objectContaining({ status: 'client_behind' })
+        }));
     });
 });
