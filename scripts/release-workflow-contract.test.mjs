@@ -166,10 +166,11 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
   const webPaths = workflowPathFilterBlock(changes, 'web');
   const expoWebBuild = workflowJobBlock(workflow, 'expo-web-build');
   const exportedWeb = workflowJobBlock(workflow, 'exported-web-e2e');
-  const webVitalsSpec = readFileSync(
-    path.join(repositoryRoot, 'e2e', 'expo-web', 'launch-21-performance-budgets.spec.ts'),
+  const playwrightConfig = readFileSync(
+    path.join(repositoryRoot, 'playwright.expo-web.config.ts'),
     'utf8'
   );
+  const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
   assertPathFilterOutputs(changes, ['backend', 'web', 'wear', 'native_runtime', 'native_package'], 'decision');
   const releaseConfig = workflowJobBlock(workflow, 'release-config');
   const webJobs = [
@@ -193,13 +194,13 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
   assert.match(webPaths, /- 'scripts\/expo-cli-environment\.mjs'/);
   assert.match(webPaths, /- 'scripts\/performance-budgets\.mjs'/);
   assert.match(webPaths, /- 'scripts\/release-acceptance\.mjs'/);
-  assert.match(expoWebBuild, /name: Measure hosted Web Vitals \(diagnostic\)/);
-  assert.match(expoWebBuild, /continue-on-error: true/);
-  assert.match(expoWebBuild, /CALIBRATE_RUN_HOSTED_WEB_VITALS: "1"/);
-  assert.equal((expoWebBuild.match(/npm\.cmd run test:performance:web/g) ?? []).length, 1);
+  assert.doesNotMatch(expoWebBuild, /test:performance:web|CALIBRATE_RUN_HOSTED_WEB_VITALS/);
   assert.match(exportedWeb, /npm\.cmd run test:expo-web/);
-  assert.match(webVitalsSpec, /Boolean\(process\.env\.CI\) && !RUN_HOSTED_WEB_VITALS/);
-  assert.match(webVitalsSpec, /diagnostic-only/);
+  assert.match(playwrightConfig, /process\.env\.CI \? \[\/launch-21-performance-budgets\\\.spec\\\.ts\/\] : \[\]/);
+  assert.equal(
+    packageConfig.scripts['test:performance:web'],
+    'playwright test --config=playwright.expo-web.config.ts --project=desktop-chrome e2e/expo-web/launch-21-performance-budgets.spec.ts'
+  );
   for (const job of webJobs) {
     assert.match(job, /needs: changes/);
     assert.match(job, /if: needs\.changes\.outputs\.web == 'true'/);

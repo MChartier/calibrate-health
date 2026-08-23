@@ -263,12 +263,6 @@ jobs:
           npm.cmd run test:expo-web:release
           npm.cmd run performance:bundle
 
-      - name: Measure hosted Web Vitals (diagnostic)
-        continue-on-error: true
-        env:
-          CALIBRATE_RUN_HOSTED_WEB_VITALS: "1"
-        run: npm.cmd run test:performance:web
-
   exported-web-e2e:
     name: Full Exported Web and PWA End-to-End
     needs: changes

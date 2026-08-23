@@ -3,8 +3,6 @@ import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
-const RUN_HOSTED_WEB_VITALS = process.env.CALIBRATE_RUN_HOSTED_WEB_VITALS === '1';
-
 const manifest = JSON.parse(readFileSync(path.resolve('quality/performance-budgets.json'), 'utf8')) as {
   limits: {
     largest_contentful_paint_ms: number;
@@ -110,10 +108,6 @@ test.describe('Launch 21 route and Core Web Vitals budgets', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      Boolean(process.env.CI) && !RUN_HOSTED_WEB_VITALS,
-      'Hosted Web Vitals are diagnostic-only and run in their dedicated non-blocking step.',
-    );
     test.skip(
       testInfo.project.name !== 'desktop-chrome',
       'One deterministic desktop Chromium profile owns the CWV diagnostic.',

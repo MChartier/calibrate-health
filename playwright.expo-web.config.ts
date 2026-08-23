@@ -20,6 +20,7 @@ export default defineConfig({
   testDir: './e2e/expo-web',
   testIgnore: [
     /launch-22-(?:accessibility|visual)\.spec\.ts/,
+    ...(process.env.CI ? [/launch-21-performance-budgets\.spec\.ts/] : []),
     ...(process.env.CALIBRATE_INCLUDE_DATA_STATE_MATRIX === '1'
       ? []
       : [/launch-24-data-state-matrix\.spec\.ts/]),
