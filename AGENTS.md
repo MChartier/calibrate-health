@@ -271,6 +271,10 @@ UI code style:
   published, **Cut release** publishes the exact release commit to Expo internal and then waits for the protected
   production approval. It does not wait for or trigger self-host deployment. The native-build reference comes from
   `shared/release.json`.
+- Expo's public client API cannot atomically pin a checked update through the later fetch. Client code must revalidate
+  fetched metadata and gate startup, but a fetched mismatched update may still be selected on a later cold start.
+  Do not try to solve this with a live-server CI poll; atomic selection requires release-specific channels/aliases or
+  a custom update server.
 - Use **Publish prepared release** with the recorded release commit and branch to recover any post-merge tag, image, or
   OTA failure. **Build Release Image** remains an image-only recovery tool.
 

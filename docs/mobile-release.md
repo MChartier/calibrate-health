@@ -251,6 +251,14 @@ deployment, then starts a dependent production job. The production job targets t
 environment, so it remains blocked until a required reviewer verifies the internal devices and approves the
 deployment.
 
+Workflow concurrency serializes repository OTA publications, but it does not make client selection atomic. Expo's
+public API checks and fetches the latest channel update in separate requests, and `fetchUpdateAsync()` cannot be
+pinned to the manifest returned by `checkForUpdateAsync()`. Client guards must revalidate the fetched manifest,
+refuse an immediate restart when its server release line is incompatible, and repeat the compatibility check at every
+startup. An already-fetched mismatched update can still remain eligible on a later cold start. A future atomic design
+would need server-release-specific EAS channels or aliases selected on-device, or a custom update server; polling a
+private self-hosted server from GitHub Actions would not fix this race.
+
 Before its first use:
 
 1. Create an Expo access token and save it as the repository Actions secret `EXPO_TOKEN`.

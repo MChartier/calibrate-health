@@ -32,6 +32,13 @@ Expo OTA workflow for the exact release commit without waiting for or triggering
 native-build reference comes from the canonical manifest. OTA publishes internal first and waits for protected
 production approval; it is never triggered by an ordinary `master` push.
 
+Expo's public client API performs update check and update fetch as separate latest-channel selections; it cannot pin
+the fetch to the manifest returned by the check. The client therefore revalidates fetched metadata, does not
+immediately restart into a mismatched update, and gates every startup. That containment is not atomic: an already
+fetched mismatched update can remain eligible for a later cold start. A future atomic design requires EAS channels or
+aliases scoped to a server release and selected on-device, or a custom update server. A live-server check in GitHub
+Actions cannot close this client-side race and is not part of the release workflow.
+
 ## Consequences
 
 - Parallel feature work no longer reserves or guesses release versions.
@@ -44,3 +51,5 @@ production approval; it is never triggered by an ordinary `master` push.
 - The release PR and tag add explicit provenance without creating a GitHub Release object or generated changelog.
 - OTA updates follow explicit release image publication, remain tied to the installed native build, and never publish
   merely because `master` advanced.
+- Serialized OTA publication and production approval reduce channel churn but cannot make Expo's separate client
+  check/fetch operations atomic.
