@@ -19,6 +19,22 @@ compatible. A newer client minor is incompatible with an older server minor beca
 missing. Patch drift remains compatible. This directional boundary protects a self-host whose deployment can lag OTA
 publication, even when the v1 wire changes are additive.
 
+For example, these running-bundle checks follow `shared/releaseCompatibility.ts`:
+
+| Bundled server contract | Selected server | Result |
+| --- | --- | --- |
+| `0.35.0` | `0.35.2` | Compatible; patch differences do not block use. |
+| `0.34.0` | `0.35.0` | Compatible; the server supports the older client minor. |
+| `0.35.0` | `0.34.0` | Blocked; update the selected server before using this bundle. |
+| `0.35.0` | `1.0.0` | Blocked; the client and server majors must match. |
+| `1.0.0` | `0.35.0` | Blocked; the client and server majors must match. |
+
+These are runtime results, not promises about whether Expo downloads or launches an update. During production
+approval, compare the candidate bundle's contract with the release owner's intended server rollout. An approval
+cannot establish compatibility for independently managed self-hosts, so each device must still perform its own
+uncached check before restoring a session or synchronizing. Do not replace that check with private-server polling
+from CI or require equal minor versions when the server minor is newer.
+
 The server returns `/api/v1/client-config` with `Cache-Control: no-store`. Before saving a server, refreshing a saved
 session, or manually rechecking compatibility, the phone also requests it with Fetch `cache: 'no-store'`. It refuses
 an unsupported API, an incompatible server contract version, or a native release older than
