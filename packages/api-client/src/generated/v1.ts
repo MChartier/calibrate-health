@@ -1839,7 +1839,7 @@ export interface components {
             /** @constant */
             platform?: "web";
             /** @enum {unknown} */
-            version?: "0.34.0" | "0.33.11";
+            version?: "0.34.1" | "0.34.0";
         } | {
             /** @constant */
             platform?: "android_phone";
