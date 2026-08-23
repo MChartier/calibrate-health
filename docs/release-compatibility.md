@@ -80,13 +80,13 @@ After image publication, the workflow publishes the exact release commit to Expo
 production approval. It does not wait for or trigger self-host deployment. The compatible native-build baseline is
 read from `shared/release.json`.
 
-Expo clients cannot atomically fetch the exact update returned by `checkForUpdateAsync()`:
-`fetchUpdateAsync()` performs another latest-channel selection. The client must inspect both manifests, refuse an
-immediate restart when the fetched release line is incompatible, and enforce the compatibility gate again at startup.
-An incompatible update that was already fetched may nevertheless remain launchable on a later cold start. CI
-serialization and production approval limit concurrent publication, but they do not eliminate this device-side race.
-Do not add a live-server CI poll as a substitute. Fully atomic selection would require server-release-specific EAS
-channels or aliases chosen after reading client configuration, or a custom update server.
+Expo retains its native automatic check/download behavior. The short-term compatibility check does not inspect a
+candidate manifest or veto a download. Instead, the running bundle compares its required server major/minor release
+line with the selected server's `/api/v1/client-config` response and shows a dedicated incompatibility gate when they
+differ. A downloaded incompatible bundle can therefore launch and then be gated. Keep public channels compatible by
+controlling what is published and promoted; production approval is the current enforcement point. If public clients
+must follow different server release lines, introduce release-specific EAS channels or aliases, or a custom update
+server. Do not add a live-server CI poll as a substitute.
 
 The preparation command is also available for isolated release tooling tests:
 
