@@ -267,10 +267,16 @@ UI code style:
   workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
-- Android phone and Wear versions remain independent of the server/web release selector. Expo OTA publishing is a
-  separate operator dispatch against an installed native-build reference and is never triggered by **Cut release**.
-- Use **Publish prepared release** with the recorded release commit and branch to recover a post-merge tag failure;
-  use **Build Release Image** to rebuild an existing immutable tag.
+- Android phone and Wear versions remain independent of the server/web release selector. After the GHCR image is
+  published, **Cut release** publishes the exact release commit to Expo internal and then waits for the protected
+  production approval. It does not wait for or trigger self-host deployment. The native-build reference comes from
+  `shared/release.json`.
+- Expo's public client API cannot atomically pin a checked update through the later fetch. Client code must revalidate
+  fetched metadata and gate startup, but a fetched mismatched update may still be selected on a later cold start.
+  Do not try to solve this with a live-server CI poll; atomic selection requires release-specific channels/aliases or
+  a custom update server.
+- Use **Publish prepared release** with the recorded release commit and branch to recover any post-merge tag, image, or
+  OTA failure. **Build Release Image** remains an image-only recovery tool.
 
 ## Git And PR Workflow
 

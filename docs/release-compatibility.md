@@ -76,6 +76,17 @@ annotated tag, and calls the reusable GHCR image workflow with `publish_latest: 
 than relying on
 token-generated push or PR events, whose workflow behavior is restricted by
 [GitHub's `GITHUB_TOKEN` rules](https://docs.github.com/en/actions/concepts/security/github_token).
+After image publication, the workflow publishes the exact release commit to Expo internal and waits for the protected
+production approval. It does not wait for or trigger self-host deployment. The compatible native-build baseline is
+read from `shared/release.json`.
+
+Expo clients cannot atomically fetch the exact update returned by `checkForUpdateAsync()`:
+`fetchUpdateAsync()` performs another latest-channel selection. The client must inspect both manifests, refuse an
+immediate restart when the fetched release line is incompatible, and enforce the compatibility gate again at startup.
+An incompatible update that was already fetched may nevertheless remain launchable on a later cold start. CI
+serialization and production approval limit concurrent publication, but they do not eliminate this device-side race.
+Do not add a live-server CI poll as a substitute. Fully atomic selection would require server-release-specific EAS
+channels or aliases chosen after reading client configuration, or a custom update server.
 
 The preparation command is also available for isolated release tooling tests:
 
@@ -91,10 +102,11 @@ Recovery is deliberately state-specific:
 
 - Before merge, failed validation or `master` drift deletes only the unchanged action-owned candidate branch. Fix the
   failure on `master` and rerun **Cut release**.
-- If the release PR merged but tagging failed, rerun **Publish prepared release** with the release commit and branch
-  shown in the action summary. A manifest ahead of the latest tag blocks another version bump until this is resolved.
-- If tagging succeeded but the image build failed, run **Build Release Image** for the immutable tag. Moving `latest`
-  is allowed only for the highest stable tag.
+- If any post-merge tag, image, or OTA stage failed, rerun **Publish prepared release** with the release commit and
+  branch shown in the action summary. Tag creation is idempotent, and a manifest ahead of the latest tag blocks
+  another version bump until this is resolved.
+- **Build Release Image** remains available for an image-only rebuild. Moving `latest` is allowed only for the highest
+  stable tag; use **Publish prepared release** when the ordered image and OTA stages must also resume.
 
 The reusable image workflow still prevents rebuilding an older tag from executing historical deployment jobs.
 Validated releases publish version, source-SHA, and moving `latest` tags to GHCR; deployment to a self-host remains an

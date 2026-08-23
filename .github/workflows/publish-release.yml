@@ -11,6 +11,9 @@ on:
         description: Release branch name matching release/vMAJOR.MINOR.PATCH
         required: true
         type: string
+    secrets:
+      EXPO_TOKEN:
+        required: true
     outputs:
       release_tag:
         description: Immutable stable release tag
@@ -41,6 +44,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       release_tag: ${{ steps.release.outputs.release_tag }}
+      native_release_tag: ${{ steps.release.outputs.native_release_tag }}
 
     steps:
       - name: Checkout exact prepared release
@@ -82,9 +86,14 @@ jobs:
           fi
           node scripts/release-config.mjs check
           TAG="$(node scripts/release-config.mjs tag)"
+          NATIVE_RELEASE_TAG="$(node -p "require('./shared/release.json').android.mobile.native_release_tag")"
           EXPECTED_BRANCH="release/${TAG}"
           if [[ "${RELEASE_BRANCH}" != "${EXPECTED_BRANCH}" ]]; then
             echo "Release branch ${RELEASE_BRANCH} does not match manifest tag ${TAG}." >&2
+            exit 1
+          fi
+          if [[ ! "${NATIVE_RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Native release tag ${NATIVE_RELEASE_TAG} is invalid." >&2
             exit 1
           fi
 
@@ -105,6 +114,7 @@ jobs:
 
           {
             echo "release_tag=${TAG}"
+            echo "native_release_tag=${NATIVE_RELEASE_TAG}"
             echo "create_tag=${CREATE_TAG}"
           } >> "${GITHUB_OUTPUT}"
 
@@ -136,8 +146,9 @@ jobs:
             echo "- Source tag: \`${RELEASE_TAG}\`"
             echo "- Image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${RELEASE_TAG}\`"
             echo "- Moving image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:latest\`"
+            echo "- OTA: publish internal after image publication, then await production approval"
             echo
-            echo "If the image build fails after tagging, rerun Build Release Image for \`${RELEASE_TAG}\`."
+            echo "If a post-merge stage fails, rerun Publish prepared release for \`${RELEASE_TAG}\`."
           } >> "${GITHUB_STEP_SUMMARY}"
 
   build_release_image:
@@ -147,3 +158,13 @@ jobs:
     with:
       release_tag: ${{ needs.tag_release.outputs.release_tag }}
       publish_latest: true
+
+  publish_ota:
+    name: Publish released Expo OTA update
+    needs: [tag_release, build_release_image]
+    uses: ./.github/workflows/expo-ota-update.yml
+    with:
+      source_ref: ${{ inputs.release_commit }}
+      native_build_ref: ${{ needs.tag_release.outputs.native_release_tag }}
+      message: Release ${{ needs.tag_release.outputs.release_tag }}
+    secrets: inherit
