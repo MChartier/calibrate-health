@@ -30,6 +30,9 @@ jobs:
         with:
           filters: |
             database:
+              - '.github/workflows/database-upgrade.yml'
+              - 'package.json'
+              - 'backend/package.json'
               - 'backend/package-lock.json'
               - 'backend/prisma.config.ts'
               - 'backend/prisma/**'
@@ -42,6 +45,7 @@ jobs:
               - 'backend/tsconfig.json'
               - 'deploy/backup/**'
               - 'scripts/postgres-*.mjs'
+              - 'scripts/release-acceptance.mjs'
               - 'shared/weightTrend*.ts'
 
       - name: Select database execution
@@ -110,7 +114,7 @@ jobs:
     timeout-minutes: 15
 
     env:
-      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
 
     steps:
       - name: Checkout candidate C with immutable base tag

@@ -35,9 +35,10 @@ data is invalid and falls back to the full requirement set so malformed metadata
 
 Run the repository-owned checks and require the hosted jobs selected by the release scopes to pass. Server/Web
 releases use Web, data-state, database, dependency, container, UX, and contract results. OTA releases use Web,
-data-state, dependency, UX, and contract results without native package or emulator evidence. Native releases use
-Android, Wear, package upgrade, dependency, and contract results. Every retained job still checks out C. The Windows
-Web suites continue to
+data-state, dependency, UX, and contract results without native package or emulator evidence. Expo runtime changes
+still export a production Android Metro bundle on the PR, catching native-only module resolution and transform
+failures without creating retained native-package evidence. Native releases use Android, Wear, package upgrade,
+dependency, and contract results. Every retained job still checks out C. The Windows Web suites continue to
 use the repository-pinned Playwright version and its bundled Chromium.
 
 Path-targeted PR validation can intentionally skip a retained job when its surface did not change. A skipped job is
@@ -45,7 +46,8 @@ not release evidence. Before external launch, manually dispatch the correspondin
 final push: `Builds` for missing Web or native artifacts, `Database Upgrade` for the server/Web rollback artifact,
 `Dependency Audit` for both production dependency graphs, and `Production Container Scan` for the server/Web image.
 Manual dispatches force the complete workflow and bind retained summaries to the selected ref's `github.sha`; verify
-that SHA equals C before using the artifacts.
+that SHA equals C before using the artifacts. `Builds` also requires `native_upgrade_baseline`; enter the lowercase
+full Git SHA of C's pull-request base so the package-upgrade rehearsal covers the complete candidate change.
 
 The data-state lane uses only synthetic `.invalid` fixtures. Its raw Playwright JSON remains runner-local because
 standard reports can include host paths and failure attachments; the retained artifact is the fixed sanitized summary

@@ -33,9 +33,14 @@ jobs:
         with:
           filters: |
             root:
+              - '.github/workflows/dependency-audit.yml'
+              - 'package.json'
               - 'package-lock.json'
               - 'scripts/dependency-advisory-exceptions.mjs'
+              - 'scripts/release-config.mjs'
             backend:
+              - '.github/workflows/dependency-audit.yml'
+              - 'backend/package.json'
               - 'backend/package-lock.json'
 
       - name: Select audit workspaces

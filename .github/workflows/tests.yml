@@ -2,6 +2,7 @@ name: Tests
 
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,27 +20,42 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      mobile: ${{ steps.filter.outputs.mobile }}
+      backend: ${{ steps.decision.outputs.backend }}
+      mobile: ${{ steps.decision.outputs.mobile }}
 
     steps:
       - name: Detect affected test surfaces
+        if: github.event_name == 'pull_request'
         id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
             backend:
+              - '.github/workflows/tests.yml'
               - 'backend/**'
               - 'docs/openapi/v1.yaml'
               - 'docs/weight-trend-v2-tuning-report.json'
               - 'shared/**'
             mobile:
+              - '.github/workflows/tests.yml'
+              - 'backend/package.json'
               - 'backend/package-lock.json'
               - 'docs/openapi/v1.yaml'
               - 'mobile/**'
+              - 'package.json'
               - 'package-lock.json'
               - 'packages/api-client/**'
               - 'shared/**'
+
+      - name: Select test surfaces
+        id: decision
+        shell: bash
+        env:
+          BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
+          MOBILE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.mobile == 'true' }}
+        run: |
+          echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
+          echo "mobile=${MOBILE_CHANGED}" >> "${GITHUB_OUTPUT}"
 
   backend-tests:
     name: Backend Tests

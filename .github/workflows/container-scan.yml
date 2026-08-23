@@ -32,6 +32,7 @@ jobs:
         with:
           filters: |
             image:
+              - '.github/workflows/container-scan.yml'
               - '.dockerignore'
               - 'Dockerfile.app'
               - 'backend/**'

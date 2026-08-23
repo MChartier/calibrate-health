@@ -3,6 +3,11 @@ name: Builds
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      native_upgrade_baseline:
+        description: Full Git SHA to use as the native package upgrade baseline.
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -23,6 +28,7 @@ jobs:
       backend: ${{ steps.decision.outputs.backend }}
       web: ${{ steps.decision.outputs.web }}
       wear: ${{ steps.decision.outputs.wear }}
+      native_runtime: ${{ steps.decision.outputs.native_runtime }}
       native_package: ${{ steps.decision.outputs.native_package }}
 
     steps:
@@ -33,11 +39,13 @@ jobs:
         with:
           filters: |
             backend:
+              - '.github/workflows/builds.yml'
               - 'backend/**'
               - 'quality/performance-budgets.json'
               - 'scripts/performance-budgets.mjs'
               - 'shared/**'
             web:
+              - '.github/workflows/builds.yml'
               - 'e2e/expo-web/**'
               - 'mobile/app/**'
               - 'mobile/assets/**'
@@ -57,18 +65,37 @@ jobs:
               - 'playwright.expo-web.config.ts'
               - 'playwright.ux.config.ts'
               - 'quality/performance-budgets.json'
+              - 'scripts/expo-cli-environment.mjs'
               - 'scripts/expo-web-*.mjs'
               - 'scripts/performance-budgets.mjs'
               - 'scripts/release-acceptance.mjs'
               - 'scripts/ux-gates.mjs'
               - 'shared/**'
             wear:
+              - '.github/workflows/builds.yml'
               - 'wear/**'
               - 'scripts/hosted-native-evidence.mjs'
               - 'scripts/release-acceptance.mjs'
               - 'scripts/wear-emulator-smoke.mjs'
               - 'shared/release.json'
+            native_runtime:
+              - '.github/workflows/builds.yml'
+              - 'mobile/app/**'
+              - 'mobile/assets/**'
+              - 'mobile/src/**'
+              - 'mobile/app.config.js'
+              - 'mobile/app.json'
+              - 'mobile/babel.config.js'
+              - 'mobile/index.js'
+              - 'mobile/metro.config.js'
+              - 'mobile/modules/**'
+              - 'mobile/package.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'packages/api-client/**'
+              - 'shared/**'
             native_package:
+              - '.github/workflows/builds.yml'
               - 'wear/**'
               - 'mobile/app.config.js'
               - 'mobile/app.json'
@@ -93,6 +120,17 @@ jobs:
               - 'scripts/wear-emulator-smoke.mjs'
               - 'shared/release.json'
 
+      - name: Validate manual native upgrade baseline
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          NATIVE_UPGRADE_BASELINE: ${{ inputs.native_upgrade_baseline }}
+        run: |
+          if [[ ! "${NATIVE_UPGRADE_BASELINE}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "native_upgrade_baseline must be a lowercase full Git SHA." >&2
+            exit 1
+          fi
+
       - name: Select build surfaces
         id: decision
         shell: bash
@@ -100,11 +138,13 @@ jobs:
           BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
           WEB_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.web == 'true' }}
           WEAR_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.wear == 'true' }}
+          NATIVE_RUNTIME_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.native_runtime == 'true' }}
           NATIVE_PACKAGE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.native_package == 'true' }}
         run: |
           echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
           echo "web=${WEB_CHANGED}" >> "${GITHUB_OUTPUT}"
           echo "wear=${WEAR_CHANGED}" >> "${GITHUB_OUTPUT}"
+          echo "native_runtime=${NATIVE_RUNTIME_CHANGED}" >> "${GITHUB_OUTPUT}"
           echo "native_package=${NATIVE_PACKAGE_CHANGED}" >> "${GITHUB_OUTPUT}"
 
   release-config:
@@ -387,6 +427,40 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
+
+  native-metro-bundle:
+    name: Android Runtime Bundle
+    needs: changes
+    if: needs.changes.outputs.native_runtime == 'true' || needs.changes.outputs.native_package == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      CI: "1"
+      EXPO_NO_METRO_WORKSPACE_ROOT: "1"
+      NODE_ENV: production
+      NODE_PATH: ${{ github.workspace }}/mobile/node_modules
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --fund=false
+
+      - name: Export the Android Metro bundle
+        working-directory: mobile
+        run: node ../node_modules/expo/bin/cli export --platform android --output-dir "${RUNNER_TEMP}/calibrate-android-export"
+
   mobile-build:
     name: Mobile Build
     needs: changes
@@ -448,13 +522,13 @@ jobs:
         run: >-
           node scripts/hosted-native-evidence.mjs init
           --lane android
-          --source-commit "${{ github.event.pull_request.head.sha }}"
+          --source-commit "${{ github.event.pull_request.head.sha || github.sha }}"
           --output mobile/android/app/build/outputs/apk/debug/release-acceptance.json
 
       - name: Share Android debug APK with emulator E2E
         uses: actions/upload-artifact@v4
         with:
-          name: android-debug-apk-${{ github.event.pull_request.head.sha }}
+          name: android-debug-apk-${{ github.event.pull_request.head.sha || github.sha }}
           path: mobile/android/app/build/outputs/apk/debug
           if-no-files-found: error
           retention-days: 1
@@ -521,7 +595,7 @@ jobs:
       CALIBRATE_ANDROID_APK: .ci-artifacts/android-debug/app-debug.apk
       CALIBRATE_DISPOSABLE_SIGNING: "true"
       CALIBRATE_HOSTED_EVIDENCE_OUTPUT: .codex-screenshots/native-hosted/android.json
-      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       AUTO_LOGIN_TEST_USER: "true"
       CALIBRATE_E2E_API_URL: http://127.0.0.1:3000
       DATABASE_URL: postgresql://calibrate:calibrate@127.0.0.1:5432/calibrate?schema=public
@@ -622,7 +696,7 @@ jobs:
       - name: Download reviewed Android debug APK
         uses: actions/download-artifact@v4
         with:
-          name: android-debug-apk-${{ github.event.pull_request.head.sha }}
+          name: android-debug-apk-${{ github.event.pull_request.head.sha || github.sha }}
           path: .ci-artifacts/android-debug
 
       - name: Run Android online, offline, process-death, and replay E2E
@@ -684,7 +758,7 @@ jobs:
       CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: hosted-emulator-only-password
       CALIBRATE_DISPOSABLE_SIGNING: "true"
       CALIBRATE_HOSTED_EVIDENCE_OUTPUT: .codex-screenshots/native-hosted/wear.json
-      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       WEAR_ADB_SERIAL: emulator-5554
       WEAR_APK: wear/app/build/outputs/apk/release/app-release.apk
       WEAR_BUILD_TYPE: release
@@ -820,7 +894,8 @@ jobs:
     env:
       CALIBRATE_DISPOSABLE_SIGNING: "true"
       CALIBRATE_HOSTED_EVIDENCE_OUTPUT: .codex-screenshots/native-hosted/upgrade.json
-      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      NATIVE_UPGRADE_BASELINE: ${{ github.event.pull_request.base.sha || inputs.native_upgrade_baseline }}
 
     steps:
       - name: Checkout exact pull-request candidate with baseline history
@@ -887,7 +962,7 @@ jobs:
             node scripts/hosted-native-emulators.mjs start-wear
             node scripts/hosted-native-emulators.mjs wait-wear
             mkdir -p .codex-screenshots/native-emulator
-            npm run test:native:upgrade -- --baseline "${{ github.event.pull_request.base.sha }}" --candidate "${{ github.event.pull_request.head.sha || github.sha }}" --baseline-version-code 1000000 --candidate-version-code 1000001 --phone-serial emulator-5554 --wear-serial emulator-5556 --server-url https://calibratehealth.app --output .codex-screenshots/native-emulator/native-upgrade.json --execute --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
+            npm run test:native:upgrade -- --baseline "$NATIVE_UPGRADE_BASELINE" --candidate "$CALIBRATE_SOURCE_COMMIT" --baseline-version-code 1000000 --candidate-version-code 1000001 --phone-serial emulator-5554 --wear-serial emulator-5556 --server-url https://calibratehealth.app --output .codex-screenshots/native-emulator/native-upgrade.json --execute --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
             echo "Hosted package-only native upgrade passed."
 
       - name: Stop secondary Wear emulator

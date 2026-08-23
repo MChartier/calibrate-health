@@ -164,7 +164,7 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
   const workflow = readWorkflow('builds.yml');
   const changes = workflowJobBlock(workflow, 'changes');
   const webPaths = workflowPathFilterBlock(changes, 'web');
-  assertPathFilterOutputs(changes, ['backend', 'web', 'wear', 'native_package'], 'decision');
+  assertPathFilterOutputs(changes, ['backend', 'web', 'wear', 'native_runtime', 'native_package'], 'decision');
   const releaseConfig = workflowJobBlock(workflow, 'release-config');
   const webJobs = [
     workflowJobBlock(workflow, 'expo-web-build'),
@@ -178,12 +178,13 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(changes, /if: github\.event_name == 'pull_request'/);
   assert.match(changes, /github\.event_name != 'pull_request'/);
-  assert.doesNotMatch(webPaths, /\.github\/workflows/);
+  assert.match(webPaths, /- '\.github\/workflows\/builds\.yml'/);
   assert.doesNotMatch(webPaths, /- 'backend\/\*\*'/);
   assert.doesNotMatch(webPaths, /- 'mobile\/test\/\*\*'/);
   assert.match(webPaths, /- 'mobile\/src\/\*\*'/);
   assert.match(webPaths, /- 'e2e\/expo-web\/\*\*'/);
   assert.match(webPaths, /- 'quality\/performance-budgets\.json'/);
+  assert.match(webPaths, /- 'scripts\/expo-cli-environment\.mjs'/);
   assert.match(webPaths, /- 'scripts\/performance-budgets\.mjs'/);
   assert.match(webPaths, /- 'scripts\/release-acceptance\.mjs'/);
   for (const job of webJobs) {
@@ -202,7 +203,7 @@ test('pull requests run backend builds only for backend-impacting paths', () => 
     workflowJobBlock(workflow, 'performance-regression')
   ];
 
-  assert.doesNotMatch(backendPaths, /\.github\/workflows/);
+  assert.match(backendPaths, /- '\.github\/workflows\/builds\.yml'/);
   assert.match(backendPaths, /- 'backend\/\*\*'/);
   assert.match(backendPaths, /- 'shared\/\*\*'/);
   assert.match(backendPaths, /- 'quality\/performance-budgets\.json'/);
@@ -213,10 +214,11 @@ test('pull requests run backend builds only for backend-impacting paths', () => 
   }
 });
 
-test('pull requests path-gate native builds while retaining OTA-level checks', () => {
+test('pull requests bundle native runtime changes while path-gating native packages', () => {
   const workflow = readWorkflow('builds.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
   const changes = workflowJobBlock(workflow, 'changes');
+  const runtime = workflowJobBlock(workflow, 'native-metro-bundle');
   const mobileBuild = workflowJobBlock(workflow, 'mobile-build');
   const android = workflowJobBlock(workflow, 'android-emulator-e2e');
   const wearBuild = workflowJobBlock(workflow, 'wear-build');
@@ -227,10 +229,17 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   assert.match(packageConfig.scripts['test:native-release'], /hosted-android-e2e\.test\.mjs/);
   assert.match(packageConfig.scripts['test:native-release'], /native-upgrade-rehearsal\.test\.mjs/);
   assert.match(packageConfig.scripts['test:native-release'], /wear-build-task-guard\.test\.mjs/);
+  assert.match(packageConfig.scripts['test:native-release'], /xcode-uuid-compatibility\.test\.mjs/);
+  assert.equal(
+    packageConfig.scripts['test:mobile-build-tools'],
+    'node --test scripts/xcode-uuid-compatibility.test.mjs'
+  );
 
   assert.match(changes, /uses: dorny\/paths-filter@v3/);
+  assert.match(workflow, /workflow_dispatch:[\s\S]*native_upgrade_baseline:[\s\S]*required: true/);
+  assert.match(changes, /Validate manual native upgrade baseline[\s\S]*\^\[0-9a-f\]\{40\}\$/);
   const wearPaths = workflowPathFilterBlock(changes, 'wear');
-  assert.doesNotMatch(wearPaths, /\.github\/workflows/);
+  assert.match(wearPaths, /- '\.github\/workflows\/builds\.yml'/);
   for (const expectedPath of [
     'wear/**',
     'scripts/hosted-native-evidence.mjs',
@@ -239,8 +248,31 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   ]) {
     assert.ok(wearPaths.includes(`- '${expectedPath}'`), `wear filter must include ${expectedPath}`);
   }
+  const nativeRuntimePaths = workflowPathFilterBlock(changes, 'native_runtime');
+  for (const expectedPath of [
+    '.github/workflows/builds.yml',
+    'mobile/app/**',
+    'mobile/assets/**',
+    'mobile/src/**',
+    'mobile/app.config.js',
+    'mobile/app.json',
+    'mobile/babel.config.js',
+    'mobile/index.js',
+    'mobile/metro.config.js',
+    'mobile/modules/**',
+    'mobile/package.json',
+    'package.json',
+    'package-lock.json',
+    'packages/api-client/**',
+    'shared/**'
+  ]) {
+    assert.ok(
+      nativeRuntimePaths.includes(`- '${expectedPath}'`),
+      `native_runtime filter must include ${expectedPath}`
+    );
+  }
   const nativePackagePaths = workflowPathFilterBlock(changes, 'native_package');
-  assert.doesNotMatch(nativePackagePaths, /\.github\/workflows/);
+  assert.match(nativePackagePaths, /- '\.github\/workflows\/builds\.yml'/);
   for (const expectedPath of [
     'mobile/babel.config.js',
     'mobile/index.js',
@@ -266,6 +298,21 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   assert.doesNotMatch(nativePackagePaths, /mobile\/src/);
   assert.doesNotMatch(nativePackagePaths, /- 'package\.json'/);
   assert.match(nativePackagePaths, /- 'package-lock\.json'/);
+  assert.match(runtime, /needs: changes/);
+  assert.match(
+    runtime,
+    /if: needs\.changes\.outputs\.native_runtime == 'true' \|\| needs\.changes\.outputs\.native_package == 'true'/
+  );
+  assert.match(runtime, /runs-on: ubuntu-latest/);
+  assert.match(runtime, /node-version: 22\.13\.0/);
+  assert.match(runtime, /CI: "1"/);
+  assert.match(runtime, /NODE_ENV: production/);
+  assert.match(runtime, /NODE_PATH: \$\{\{ github\.workspace \}\}\/mobile\/node_modules/);
+  assert.match(runtime, /npm ci --no-audit --fund=false/);
+  assert.match(
+    runtime,
+    /node \.\.\/node_modules\/expo\/bin\/cli export --platform android --output-dir "\$\{RUNNER_TEMP\}\/calibrate-android-export"/
+  );
   for (const job of [wearBuild, wear]) {
     assert.match(job, /needs: changes/);
     assert.match(job, /if: needs\.changes\.outputs\.wear == 'true'/);
@@ -280,9 +327,12 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   assert.match(workflow, /Share Android debug APK with emulator E2E/);
   assert.match(
     mobileBuild,
-    /name: android-debug-apk-\$\{\{ github\.event\.pull_request\.head\.sha \}\}[\s\S]*overwrite: true/,
+    /name: android-debug-apk-\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}[\s\S]*overwrite: true/,
   );
-  assert.match(android, /name: android-debug-apk-\$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(
+    android,
+    /name: android-debug-apk-\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/
+  );
   assert.doesNotMatch(mobileBuild, /android-debug-apk-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.doesNotMatch(android, /android-debug-apk-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(android, /needs: \[changes, mobile-build\]/);
@@ -317,8 +367,12 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   assert.match(upgrade, /hosted-native-emulators\.mjs start-wear/);
   assert.match(upgrade, /hosted-native-emulators\.mjs wait-wear/);
   assert.match(upgrade, /hosted-native-emulators\.mjs stop-wear/);
-  assert.match(upgrade, /--baseline "\$\{\{ github\.event\.pull_request\.base\.sha \}\}"/);
-  assert.match(upgrade, /--candidate "\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}"/);
+  assert.match(
+    upgrade,
+    /NATIVE_UPGRADE_BASELINE: \$\{\{ github\.event\.pull_request\.base\.sha \|\| inputs\.native_upgrade_baseline \}\}/
+  );
+  assert.match(upgrade, /--baseline "\$NATIVE_UPGRADE_BASELINE"/);
+  assert.match(upgrade, /--candidate "\$CALIBRATE_SOURCE_COMMIT"/);
   assert.match(upgrade, /--phone-serial emulator-5554/);
   assert.match(upgrade, /--wear-serial emulator-5556/);
   assert.match(upgrade, /--execute/);
@@ -333,7 +387,10 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
     'native upgrade arguments must not contain a standalone shell-continuation backslash',
   );
   assert.match(upgrade, /cmdline-tools-version: 15859902/);
-  assert.match(upgrade, /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(
+    upgrade,
+    /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/
+  );
   assert.match(upgrade, /hosted-native-evidence\.mjs init/);
   assert.match(upgrade, /path: \.codex-screenshots\/native-hosted\/upgrade\.json/);
   assert.match(upgrade, /retention-days: 90/);
@@ -345,24 +402,75 @@ test('pull requests path-gate native builds while retaining OTA-level checks', (
   assert.throws(() => workflowJobBlock(workflow, 'android.*'), /literal safe identifier/);
 });
 
+test('native jobs bind immutable candidate and baseline SHAs for PR and manual events', () => {
+  const workflow = readWorkflow('builds.yml');
+  const mobileBuild = workflowJobBlock(workflow, 'mobile-build');
+  const android = workflowJobBlock(workflow, 'android-emulator-e2e');
+  const wear = workflowJobBlock(workflow, 'wear-release-emulator-smoke');
+  const upgrade = workflowJobBlock(workflow, 'native-package-upgrade');
+  const candidateExpression = '${{ github.event.pull_request.head.sha || github.sha }}';
+
+  assert.ok(mobileBuild.includes(`--source-commit "${candidateExpression}"`));
+  assert.ok(mobileBuild.includes(`name: android-debug-apk-${candidateExpression}`));
+  assert.ok(android.includes(`name: android-debug-apk-${candidateExpression}`));
+  for (const job of [android, wear, upgrade]) {
+    assert.ok(job.includes(`CALIBRATE_SOURCE_COMMIT: ${candidateExpression}`));
+  }
+  assert.ok(
+    upgrade.includes(
+      'NATIVE_UPGRADE_BASELINE: ${{ github.event.pull_request.base.sha || inputs.native_upgrade_baseline }}'
+    )
+  );
+
+  for (const scenario of [
+    {
+      eventName: 'pull_request',
+      pullRequestHeadSha: '1'.repeat(40),
+      pullRequestBaseSha: '2'.repeat(40),
+      githubSha: '3'.repeat(40),
+      manualBaseline: '',
+      expectedCandidate: '1'.repeat(40),
+      expectedBaseline: '2'.repeat(40)
+    },
+    {
+      eventName: 'workflow_dispatch',
+      pullRequestHeadSha: '',
+      pullRequestBaseSha: '',
+      githubSha: '4'.repeat(40),
+      manualBaseline: '5'.repeat(40),
+      expectedCandidate: '4'.repeat(40),
+      expectedBaseline: '5'.repeat(40)
+    }
+  ]) {
+    const candidate = scenario.pullRequestHeadSha || scenario.githubSha;
+    const baseline = scenario.pullRequestBaseSha || scenario.manualBaseline;
+    assert.equal(candidate, scenario.expectedCandidate, `${scenario.eventName} candidate`);
+    assert.equal(baseline, scenario.expectedBaseline, `${scenario.eventName} baseline`);
+    assert.match(candidate, /^[0-9a-f]{40}$/);
+    assert.match(baseline, /^[0-9a-f]{40}$/);
+  }
+});
+
 test('build input classification covers representative paths without cross-surface noise', () => {
   const changes = workflowJobBlock(readWorkflow('builds.yml'), 'changes');
-  const filters = ['backend', 'web', 'wear', 'native_package'];
+  const filters = ['backend', 'web', 'wear', 'native_runtime', 'native_package'];
   const cases = [
     ['docs/review-notes.md', []],
     ['.github/workflows/tests.yml', []],
+    ['.github/workflows/builds.yml', ['backend', 'web', 'wear', 'native_runtime', 'native_package']],
     ['backend/src/routes/user.ts', ['backend']],
-    ['shared/caloriePolicy.ts', ['backend', 'web']],
-    ['mobile/src/components/AppCard.tsx', ['web']],
+    ['shared/caloriePolicy.ts', ['backend', 'web', 'native_runtime']],
+    ['mobile/src/components/AppCard.tsx', ['web', 'native_runtime']],
     ['mobile/test/jest.setup.ts', []],
     ['mobile/plugins/withHealthConnect.js', ['native_package']],
-    ['mobile/babel.config.js', ['web', 'native_package']],
+    ['mobile/babel.config.js', ['web', 'native_runtime', 'native_package']],
     ['wear/app/src/main/AndroidManifest.xml', ['wear', 'native_package']],
     ['quality/performance-budgets.json', ['backend', 'web']],
+    ['scripts/expo-cli-environment.mjs', ['web']],
     ['scripts/performance-budgets.mjs', ['backend', 'web']],
     ['scripts/release-acceptance.mjs', ['web', 'wear', 'native_package']],
-    ['package.json', ['web']],
-    ['package-lock.json', ['web', 'native_package']]
+    ['package.json', ['web', 'native_runtime']],
+    ['package-lock.json', ['web', 'native_runtime', 'native_package']]
   ];
 
   for (const [candidatePath, expectedFilters] of cases) {
@@ -502,17 +610,22 @@ test('pull request test suites run only for their affected surfaces', () => {
   const backend = workflowJobBlock(workflow, 'backend-tests');
   const mobile = workflowJobBlock(workflow, 'mobile-tests');
 
-  assertPathFilterOutputs(changes, ['backend', 'mobile']);
-  assert.doesNotMatch(changes, /\.github\/workflows/);
+  assertPathFilterOutputs(changes, ['backend', 'mobile'], 'decision');
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(changes, /if: github\.event_name == 'pull_request'/);
+  assert.match(changes, /github\.event_name != 'pull_request'/);
+  assert.match(backendPaths, /- '\.github\/workflows\/tests\.yml'/);
+  assert.match(mobilePaths, /- '\.github\/workflows\/tests\.yml'/);
   assert.match(backendPaths, /- 'backend\/\*\*'/);
   assert.match(backendPaths, /- 'docs\/openapi\/v1\.yaml'/);
   assert.match(backendPaths, /- 'docs\/weight-trend-v2-tuning-report\.json'/);
   assert.match(backendPaths, /- 'shared\/\*\*'/);
   assert.match(mobilePaths, /- 'backend\/package-lock\.json'/);
+  assert.match(mobilePaths, /- 'backend\/package\.json'/);
   assert.match(mobilePaths, /- 'docs\/openapi\/v1\.yaml'/);
   assert.match(mobilePaths, /- 'mobile\/\*\*'/);
   assert.match(mobilePaths, /- 'packages\/api-client\/\*\*'/);
-  assert.doesNotMatch(mobilePaths, /- 'package\.json'/);
+  assert.match(mobilePaths, /- 'package\.json'/);
   assert.equal(
     packageConfig.scripts['api:generate'],
     'node backend/node_modules/openapi-typescript/bin/cli.js docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts'
@@ -528,12 +641,15 @@ test('pull request test suites run only for their affected surfaces', () => {
 
   const filters = ['backend', 'mobile'];
   for (const [candidatePath, expectedFilters] of [
+    ['.github/workflows/tests.yml', ['backend', 'mobile']],
     ['backend/src/routes/user.ts', ['backend']],
+    ['backend/package.json', ['backend', 'mobile']],
     ['backend/package-lock.json', ['backend', 'mobile']],
     ['shared/caloriePolicy.ts', ['backend', 'mobile']],
     ['mobile/src/components/AppCard.tsx', ['mobile']],
     ['docs/openapi/v1.yaml', ['backend', 'mobile']],
     ['docs/weight-trend-v2-tuning-report.json', ['backend']],
+    ['package.json', ['mobile']],
     ['docs/review-notes.md', []]
   ]) {
     const actualFilters = filters.filter((filterName) => pathFilterMatches(changes, filterName, candidatePath));
@@ -552,31 +668,64 @@ test('database rehearsals run only for schema, database, and concurrency inputs'
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(changes, /if: github\.event_name == 'pull_request'/);
   assert.match(changes, /github\.event_name != 'pull_request'/);
-  assert.doesNotMatch(databasePaths, /\.github\/workflows/);
   for (const expectedPath of [
+    '.github/workflows/database-upgrade.yml',
+    'package.json',
+    'backend/package.json',
     'backend/prisma/**',
     'backend/src/config/database.ts',
     'backend/src/services/materializedWeightTrend.ts',
     'deploy/backup/**',
     'scripts/postgres-*.mjs',
+    'scripts/release-acceptance.mjs',
     'shared/weightTrend*.ts'
   ]) {
     assert.ok(databasePaths.includes(`- '${expectedPath}'`), `database filter must include ${expectedPath}`);
   }
-  assert.doesNotMatch(databasePaths, /- 'package\.json'/);
-  assert.doesNotMatch(databasePaths, /- 'backend\/package\.json'/);
   assert.equal(packageConfig.scripts['prisma:generate'], 'npm --prefix backend run prisma:generate');
   assert.equal(backendPackageConfig.scripts['prisma:generate'], 'prisma generate');
   assert.equal(packageConfig.scripts['test:db:rollback:unit'], 'node --test scripts/postgres-rollback-smoke.test.mjs');
   assert.equal(packageConfig.scripts['test:db:rollback'], 'node scripts/postgres-rollback-smoke.mjs');
   assert.equal(pathFilterMatches(changes, 'database', 'mobile/src/components/AppCard.tsx'), false);
   assert.equal(pathFilterMatches(changes, 'database', 'backend/src/routes/user.ts'), false);
+  assert.equal(pathFilterMatches(changes, 'database', '.github/workflows/database-upgrade.yml'), true);
+  assert.equal(pathFilterMatches(changes, 'database', 'package.json'), true);
+  assert.equal(pathFilterMatches(changes, 'database', 'backend/package.json'), true);
   assert.equal(pathFilterMatches(changes, 'database', 'backend/prisma/schema.prisma'), true);
   assert.equal(pathFilterMatches(changes, 'database', 'scripts/postgres-rollback-smoke.mjs'), true);
   for (const jobName of ['populated-upgrade', 'release-upgrade-rollback']) {
     const job = workflowJobBlock(workflow, jobName);
     assert.match(job, /needs: changes/);
     assert.match(job, /if: needs\.changes\.outputs\.database == 'true'/);
+  }
+});
+
+test('database rollback binds a full candidate SHA for pull requests and manual dispatches', () => {
+  const rollback = workflowJobBlock(readWorkflow('database-upgrade.yml'), 'release-upgrade-rollback');
+  const candidateExpression = '${{ github.event.pull_request.head.sha || github.sha }}';
+
+  assert.ok(
+    rollback.includes(`CALIBRATE_SOURCE_COMMIT: ${candidateExpression}`),
+    'database rollback must fall back to github.sha when pull-request context is unavailable'
+  );
+
+  for (const scenario of [
+    {
+      eventName: 'pull_request',
+      pullRequestHeadSha: '1'.repeat(40),
+      githubSha: '2'.repeat(40),
+      expected: '1'.repeat(40)
+    },
+    {
+      eventName: 'workflow_dispatch',
+      pullRequestHeadSha: '',
+      githubSha: '3'.repeat(40),
+      expected: '3'.repeat(40)
+    }
+  ]) {
+    const sourceCommit = scenario.pullRequestHeadSha || scenario.githubSha;
+    assert.equal(sourceCommit, scenario.expected, scenario.eventName);
+    assert.match(sourceCommit, /^[0-9a-f]{40}$/, `${scenario.eventName} source SHA`);
   }
 });
 
@@ -593,10 +742,16 @@ test('dependency audit selects changed lockfile workspaces and preserves schedul
   assert.match(changes, /pull-requests: read/);
   assert.match(changes, /if: github\.event_name == 'pull_request'/);
   assert.match(changes, /github\.event_name != 'pull_request'/);
+  assert.match(rootPaths, /- '\.github\/workflows\/dependency-audit\.yml'/);
+  assert.match(backendPaths, /- '\.github\/workflows\/dependency-audit\.yml'/);
+  assert.match(rootPaths, /- 'package\.json'/);
   assert.match(rootPaths, /- 'package-lock\.json'/);
-  assert.doesNotMatch(rootPaths, /- 'package\.json'/);
   assert.match(rootPaths, /scripts\/dependency-advisory-exceptions\.mjs/);
+  assert.match(rootPaths, /scripts\/release-config\.mjs/);
+  assert.match(backendPaths, /- 'backend\/package\.json'/);
   assert.match(backendPaths, /- 'backend\/package-lock\.json'/);
+  assert.equal(pathFilterMatches(changes, 'root', '.github/workflows/dependency-audit.yml'), true);
+  assert.equal(pathFilterMatches(changes, 'backend', '.github/workflows/dependency-audit.yml'), true);
   assert.match(audit, /needs: changes/);
   assert.match(audit, /if: needs\.changes\.outputs\.has_audit == 'true'/);
   assert.match(audit, /matrix: \$\{\{ fromJSON\(needs\.changes\.outputs\.audit_matrix\) \}\}/);
@@ -622,17 +777,19 @@ test('container scan targets production-image inputs while preserving scheduled 
   assert.match(changes, /pull-requests: read/);
   assert.match(changes, /if: github\.event_name == 'pull_request'/);
   assert.match(changes, /github\.event_name != 'pull_request'/);
-  assert.doesNotMatch(imagePaths, /\.github\/workflows/);
   for (const expectedPath of [
+    '.github/workflows/container-scan.yml',
     '.dockerignore',
     'Dockerfile.app',
     'backend/**',
     'mobile/**',
+    'scripts/expo-cli-environment.mjs',
     'scripts/production-container-smoke.mjs',
     'scripts/release-acceptance.mjs'
   ]) {
     assert.ok(imagePaths.includes(`- '${expectedPath}'`), `image filter must include ${expectedPath}`);
   }
+  assert.equal(pathFilterMatches(changes, 'image', '.github/workflows/container-scan.yml'), true);
   assert.match(scan, /needs: changes/);
   assert.match(scan, /if: needs\.changes\.outputs\.scan == 'true'/);
   assert.match(scan, /npm run test:container:web -- http:\/\/127\.0\.0\.1:3000/);
@@ -653,7 +810,7 @@ test('prepared release candidates trigger every path-gated hosted release surfac
     'shared/release.json'
   ];
   for (const [workflowName, filterNames] of [
-    ['builds.yml', ['backend', 'web', 'wear', 'native_package']],
+    ['builds.yml', ['backend', 'web', 'wear', 'native_runtime', 'native_package']],
     ['tests.yml', ['backend', 'mobile']],
     ['database-upgrade.yml', ['database']],
     ['container-scan.yml', ['image']]
@@ -725,7 +882,10 @@ test('native hosted jobs retain strict lane evidence plus candidate-bound accept
   ]) {
     const job = workflowJobBlock(workflow, jobId);
     assert.match(job, new RegExp(`CALIBRATE_HOSTED_EVIDENCE_OUTPUT: \\.codex-screenshots/native-hosted/${output}`));
-    assert.match(job, /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+    assert.match(
+      job,
+      /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/
+    );
     assert.match(job, /CALIBRATE_DISPOSABLE_SIGNING: "true"/);
     assert.match(job, new RegExp(`hosted-native-evidence\\.mjs init[\\s\\S]*--lane ${lane}[\\s\\S]*--source-commit "\\$CALIBRATE_SOURCE_COMMIT"`));
     assert.match(job, new RegExp(`name: ${artifact}\\$\\{\\{ github\\.run_id \\}\\}-\\$\\{\\{ github\\.run_attempt \\}\\}`));
@@ -744,7 +904,10 @@ test('PR and release workflows rehearse v0.14.0 upgrade and encrypted rollback b
   const releaseFinalize = workflowJobBlock(release, 'finalize');
 
   assert.match(pullRequest, /fetch-depth: 0/);
-  assert.match(pullRequest, /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(
+    pullRequest,
+    /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/
+  );
   assert.match(pullRequest, /name: postgres-rollback-smoke-summary-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(pullRequest, /--gate hosted-database-upgrade-rollback/);
   assert.match(releaseRollback, /CALIBRATE_SOURCE_COMMIT: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
