@@ -24,9 +24,9 @@ The Builds workflow provides these focused checks:
 - Phone packaging only for native packaging inputs, and Wear build/JVM tests only for Wear inputs.
 
 Database populated-upgrade checks run for database-relevant changes. Pull requests run the encrypted rollback
-rehearsal when Prisma migrations or the rollback workflow/harness change; **Cut release** runs it only when migrations
-changed since the previous stable tag. Production dependency audits and production-image scanning remain automatic
-for affected inputs and on their scheduled maintenance runs.
+rehearsal when Prisma migrations or the rollback workflow/harness change. Production dependency audits and
+production-image scanning remain automatic for affected inputs and on their scheduled maintenance runs. **Cut
+release** does not replay those already-completed checks against its generated version-only candidate.
 
 Generated version-only `release/v*` pull requests still validate synchronized release configuration, but suppress
 unrelated web, phone, and Wear build fan-out.
@@ -48,14 +48,14 @@ review aid and does not authorize or record an external launch.
 ## Cut server/web release
 
 After the desired changes land on `master`, **Cut release** creates and validates an exact version-only server/web
-candidate. It checks synchronized release configuration and dependencies, release and Expo web contracts, deploy
-tests, and the generated API client. It then builds the production image, starts it against Postgres, verifies
-readiness and the served web application, and rejects high or critical image vulnerabilities.
+candidate. It verifies the candidate identity, parent commit, synchronized release configuration, and exact set of
+generated version mirrors. It then builds the production image, starts it against Postgres, and verifies readiness and
+the served web application.
 
-The workflow compares the candidate with the latest stable tag. It runs the encrypted database upgrade/rollback
-rehearsal only when migrations changed in that range. Successful validation opens and atomically merges the
-version-only PR before the prepared release is tagged and published. Full Playwright regression suites, visual UX
-baselines, synthetic Web Vitals, and native emulator/package tests are not part of this server/web release cut.
+Affected pull requests already own unit and integration tests, generated API and deploy contracts, dependency checks,
+database upgrade/rollback rehearsal, and vulnerability scanning. The release cut deliberately does not rerun them.
+Successful metadata and container smoke validation opens and atomically merges the version-only PR before the prepared
+release is tagged and published.
 
 ## Performance and owner judgment
 

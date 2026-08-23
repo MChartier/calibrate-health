@@ -61,13 +61,12 @@ choose the semantic component to advance:
 - `major` for breaking server, API, or deployment contracts: `X.Y.Z` to `(X+1).0.0`.
 
 The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
-`release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It checks the release configuration, dependency policy,
-generated API contract, Expo web release contract, and deploy tooling. It also builds and starts the production image,
-checks readiness and the served web application, and scans for high or critical vulnerabilities. The encrypted
-database rollback rehearsal runs only when Prisma migrations changed since the highest stable tag. Full browser and
-UX regression suites, synthetic Web Vitals, and native validation are not part of the server/web release cut. If
-`master` advances while validation runs, the candidate is not merged; rerun the action so the later change is part of
-a newly validated candidate.
+`release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It verifies the candidate parent and identity,
+synchronized release configuration, and exact eight-file mirror set. It also builds and starts the production image,
+then checks readiness and the served web application. Unit and integration tests, generated API and deploy contracts,
+dependency checks, vulnerability scanning, and database upgrade/rollback rehearsal remain targeted pull-request or
+scheduled checks and are not replayed for the version-only candidate. If `master` advances while validation runs, the
+candidate is not merged; rerun the action so the later change is part of a newly validated candidate.
 
 After validation, the action creates a version-only release PR, fetches the exact merge commit GitHub generated for
 that PR, and verifies its base parent, candidate parent, and tree. It pushes that commit to `master` without force, so
@@ -101,12 +100,12 @@ The reusable image workflow still prevents rebuilding an older tag from executin
 Validated releases publish version, source-SHA, and moving `latest` tags to GHCR; deployment to a self-host remains an
 operator-controlled Docker Compose operation. No GitHub Release object or generated changelog is created.
 
-**Cut release** owns the exact-candidate container build, startup smoke, and vulnerability scan. The local
-`release:check:container` command covers the encrypted backup/restore smoke, dependency policy, canonical version
-checks, and the static release-acceptance policy; `release:check:production` adds strict dependency policy. Neither
-command requires an external-launch evidence commit or receipt ledger. Physical Android/Wear, store-console, and
-distributed-upgrade checks remain available when the owner considers them useful for a native distribution, but do
-not block publishing an independent server/web image.
+**Cut release** owns exact-candidate metadata validation plus the production container build and startup smoke.
+Affected pull-request and scheduled workflows own the broader test, dependency, vulnerability, and migration gates.
+The local `release:check:container` command covers the encrypted backup/restore smoke, dependency policy, canonical
+version checks, and the static release-acceptance policy; `release:check:production` adds strict dependency policy.
+Physical Android/Wear, store-console, and distributed-upgrade checks remain available when the owner considers them
+useful for a native distribution, but do not block publishing an independent server/web image.
 
 Phone and Wear releases remain independent. For a native release, update `shared/release.json`, mirror phone values in
 `mobile/package.json` and `mobile/app.json`, mirror Wear values in `wear/app/build.gradle.kts`, and keep the pairing

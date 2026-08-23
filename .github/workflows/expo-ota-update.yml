@@ -1,15 +1,23 @@
 name: Publish Expo OTA Update
 
 on:
-  push:
-    branches: [master]
+  workflow_dispatch:
+    inputs:
+      native_build_ref:
+        description: Native build tag shown in Settings > About Calibrate (or its exact source commit)
+        required: true
+        type: string
+      message:
+        description: Short operator-facing description of this OTA update
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
   group: expo-ota-master
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   publish-internal:
@@ -22,17 +30,21 @@ jobs:
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
       EXPO_UPDATES_CHANNEL: internal
+      NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
       NODE_ENV: production
-      OTA_MESSAGE: ${{ github.event.head_commit.message }}
-      PREVIOUS_MASTER_REF: ${{ github.event.before }}
+      OTA_MESSAGE: ${{ inputs.message }}
 
     steps:
-      - name: Require Expo authentication
+      - name: Require master and Expo authentication
         shell: bash
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
+            echo "OTA updates must be dispatched from the master branch; received ${GITHUB_REF}." >&2
+            exit 1
+          fi
           if [[ -z "${EXPO_TOKEN}" ]]; then
             echo "Add an EXPO_TOKEN repository secret before publishing an OTA update." >&2
             exit 1
@@ -42,6 +54,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -63,10 +76,10 @@ jobs:
         working-directory: mobile
         run: eas env:pull --environment "${EAS_ENVIRONMENT}" --path "${RUNNER_TEMP}/calibrate-eas-update.env" --non-interactive
 
-      - name: Verify internal environment targeting
+      - name: Verify internal native compatibility and environment targeting
         run: >-
           node scripts/expo-ota-ci-preflight.mjs
-          --previous-ref "${PREVIOUS_MASTER_REF}"
+          --native-build-ref "${NATIVE_BUILD_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
           --environment "${EAS_ENVIRONMENT}"
           --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"
@@ -93,17 +106,21 @@ jobs:
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
       EXPO_UPDATES_CHANNEL: production
+      NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
       NODE_ENV: production
-      OTA_MESSAGE: ${{ github.event.head_commit.message }}
-      PREVIOUS_MASTER_REF: ${{ github.event.before }}
+      OTA_MESSAGE: ${{ inputs.message }}
 
     steps:
-      - name: Require Expo authentication
+      - name: Require master and Expo authentication
         shell: bash
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
+            echo "OTA updates must be dispatched from the master branch; received ${GITHUB_REF}." >&2
+            exit 1
+          fi
           if [[ -z "${EXPO_TOKEN}" ]]; then
             echo "Add an EXPO_TOKEN repository secret before publishing an OTA update." >&2
             exit 1
@@ -113,6 +130,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -134,10 +152,10 @@ jobs:
         working-directory: mobile
         run: eas env:pull --environment "${EAS_ENVIRONMENT}" --path "${RUNNER_TEMP}/calibrate-eas-update.env" --non-interactive
 
-      - name: Verify production environment targeting
+      - name: Verify production native compatibility and environment targeting
         run: >-
           node scripts/expo-ota-ci-preflight.mjs
-          --previous-ref "${PREVIOUS_MASTER_REF}"
+          --native-build-ref "${NATIVE_BUILD_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
           --environment "${EAS_ENVIRONMENT}"
           --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"
