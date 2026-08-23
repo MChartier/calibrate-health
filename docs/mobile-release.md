@@ -244,9 +244,10 @@ and a native incompatibility must be corrected with a higher-version signed APK/
 
 ### Publish OTA updates from GitHub Actions
 
-The `Publish Expo OTA Update` workflow is manual-only and independent of **Cut release**; cutting a server/web release
-never invokes it. One dispatch publishes Android phone JavaScript/assets to the `internal` channel first, then starts
-a dependent production job for the same commit. The production job targets the protected GitHub `production`
+The `Publish Expo OTA Update` workflow is reusable by **Cut release** and also retains a manual recovery dispatch.
+It is never triggered by an ordinary `master` push. After the hosted service reports the newly released server
+version, the release pipeline publishes that exact release commit's Android phone JavaScript/assets to the `internal`
+channel, then starts a dependent production job. The production job targets the protected GitHub `production`
 environment, so it remains blocked until a required reviewer verifies the internal devices and approves the
 deployment.
 
@@ -261,7 +262,7 @@ Before its first use:
    update.
 5. Keep required reviewers and protected-branch deployment rules enabled on the GitHub `production` environment.
 
-In GitHub, open **Actions > Publish Expo OTA Update > Run workflow**, select `master`, and provide:
+For standalone recovery, open **Actions > Publish Expo OTA Update > Run workflow**, select `master`, and provide:
 
 - `native_build_ref`: the native build tag shown in **Settings > About Calibrate**, or the exact source commit used to
   build the installed phone apps on the internal and production channels.

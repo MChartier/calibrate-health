@@ -290,7 +290,7 @@ jobs:
               '- production image build, readiness, and served-Web smoke',
               '- full tests, dependency scans, and migration checks already completed on affected pull requests',
               '',
-              'Cut release validated this exact candidate before creating the PR and will publish it after merge.',
+              'Cut release validated this exact candidate before creating the PR. After merge it will publish the image, wait for the hosted deployment, and start the gated OTA rollout.',
             ].join('\n');
             const { data: pull } = await github.rest.pulls.create({
               owner: context.repo.owner,
@@ -385,7 +385,7 @@ jobs:
             echo "- Source: \`${SOURCE_SHA}\`"
             echo "- Validated release commit: \`${RELEASE_SHA}\`"
             echo "- Release PR: ${PR_URL}"
-            echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`"
+            echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`, wait for hosted deployment, then start OTA"
             echo
             echo "If publishing fails, rerun Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`."
           } >> "${GITHUB_STEP_SUMMARY}"
@@ -439,3 +439,4 @@ jobs:
     with:
       release_commit: ${{ needs.prepare.outputs.release_sha }}
       release_branch: ${{ needs.prepare.outputs.release_branch }}
+    secrets: inherit

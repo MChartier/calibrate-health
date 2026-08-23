@@ -71,12 +71,13 @@
     },
     {
       "id": "prepared-release-integrity",
-      "title": "Synchronize version mirrors and publish the exact merged release",
-      "releaseScopes": ["server-web"],
+      "title": "Publish the exact merged release, wait for deployment, then publish OTA",
+      "releaseScopes": ["server-web", "ota"],
       "trigger": "release",
       "workflowPaths": [
         ".github/workflows/cut-release.yml",
-        ".github/workflows/publish-release.yml"
+        ".github/workflows/publish-release.yml",
+        ".github/workflows/expo-ota-update.yml"
       ],
       "jobIds": [
         "prepare",
@@ -84,7 +85,11 @@
         "finalize",
         "publish",
         "tag_release",
-        "build_release_image"
+        "build_release_image",
+        "wait_for_hosted_release",
+        "publish_ota",
+        "publish-internal",
+        "publish-production"
       ]
     }
   ],

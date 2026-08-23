@@ -136,6 +136,7 @@ test('manual release preparation validates exact metadata and a production smoke
   assert.match(publish, /uses: \.\/\.github\/workflows\/publish-release\.yml/);
   assert.match(publish, /release_commit: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
   assert.match(publish, /release_branch: \$\{\{ needs\.prepare\.outputs\.release_branch \}\}/);
+  assert.match(publish, /secrets: inherit/);
   assert.doesNotMatch(workflow, /createWorkflowDispatch|workflow_id:/);
   assert.doesNotMatch(workflow, /\n  ux-regression:/);
 });
@@ -144,8 +145,11 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   const workflow = readWorkflow('publish-release.yml');
   const tag = workflowJobBlock(workflow, 'tag_release');
   const image = workflowJobBlock(workflow, 'build_release_image');
+  const waitForDeploy = workflowJobBlock(workflow, 'wait_for_hosted_release');
+  const ota = workflowJobBlock(workflow, 'publish_ota');
 
   assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /EXPO_TOKEN:\s*\n\s+required: true/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /release_commit:/);
   assert.match(workflow, /release_branch:/);
@@ -154,11 +158,23 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(tag, /git merge-base --is-ancestor "\$\{RELEASE_COMMIT\}" origin\/master/);
   assert.match(tag, /EXPECTED_BRANCH="release\/\$\{TAG\}"/);
   assert.match(tag, /node scripts\/release-config\.mjs check/);
+  assert.match(tag, /android\.mobile\.native_release_tag/);
+  assert.match(tag, /native_release_tag=\$\{NATIVE_RELEASE_TAG\}/);
   assert.match(tag, /Existing tag \$\{TAG\} points to/);
   assert.match(tag, /node scripts\/release-config\.mjs tag --latest-tag/);
   assert.match(tag, /git tag -a "\$\{RELEASE_TAG\}"/);
   assert.match(image, /uses: \.\/\.github\/workflows\/container\.yml/);
   assert.match(image, /publish_latest: true/);
+  assert.match(waitForDeploy, /needs: \[tag_release, build_release_image\]/);
+  assert.match(waitForDeploy, /https:\/\/calibratehealth\.app\/api\/v1\/client-config/);
+  assert.match(waitForDeploy, /server_version/);
+  assert.match(waitForDeploy, /for attempt in \{1\.\.60\}/);
+  assert.match(ota, /needs: \[tag_release, wait_for_hosted_release\]/);
+  assert.match(ota, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
+  assert.match(ota, /source_ref: \$\{\{ inputs\.release_commit \}\}/);
+  assert.match(ota, /native_build_ref: \$\{\{ needs\.tag_release\.outputs\.native_release_tag \}\}/);
+  assert.match(ota, /message: Release \$\{\{ needs\.tag_release\.outputs\.release_tag \}\}/);
+  assert.match(ota, /secrets: inherit/);
   assert.doesNotMatch(workflow, /pull_request_target|createWorkflowDispatch/);
 });
 
@@ -561,12 +577,15 @@ test('hidden workflow evidence paths are explicitly included in artifact uploads
   }
 });
 
-test('Expo OTA updates are manually dispatched against an installed native build and gate production approval', () => {
+test('Expo OTA updates follow a deployed explicit release and retain a manual recovery dispatch', () => {
   const workflow = readWorkflow('expo-ota-update.yml');
-  const cutReleaseWorkflow = readWorkflow('cut-release.yml');
+  const publishReleaseWorkflow = readWorkflow('publish-release.yml');
   const internal = workflowJobBlock(workflow, 'publish-internal');
   const production = workflowJobBlock(workflow, 'publish-production');
+  const releaseOta = workflowJobBlock(publishReleaseWorkflow, 'publish_ota');
 
+  assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /source_ref:[\s\S]*required: true[\s\S]*type: string/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /native_build_ref:\s*\n\s+description:[^\n]+\n\s+required: true/);
   assert.match(workflow, /message:\s*\n\s+description:[^\n]+\n\s+required: true/);
@@ -579,8 +598,10 @@ test('Expo OTA updates are manually dispatched against an installed native build
   for (const job of [internal, production]) {
     assert.match(job, /NATIVE_BUILD_REF: \$\{\{ inputs\.native_build_ref \}\}/);
     assert.match(job, /OTA_MESSAGE: \$\{\{ inputs\.message \}\}/);
+    assert.match(job, /OTA_SOURCE_REF: \$\{\{ inputs\.source_ref \|\| github\.sha \}\}/);
     assert.match(job, /refs\/heads\/master/);
-    assert.match(job, /ref: \$\{\{ github\.sha \}\}/);
+    assert.match(job, /ref: \$\{\{ inputs\.source_ref \|\| github\.sha \}\}/);
+    assert.match(job, /git merge-base --is-ancestor "\$\{OTA_SOURCE_REF\}" origin\/master/);
     assert.match(job, /expo-ota-ci-preflight\.mjs/);
     assert.match(job, /--native-build-ref "\$\{NATIVE_BUILD_REF\}"/);
   }
@@ -590,7 +611,8 @@ test('Expo OTA updates are manually dispatched against an installed native build
   assert.match(workflow, /--platform android/);
   assert.match(workflow, /--non-interactive/);
   assert.doesNotMatch(workflow, /\n\s+push:|github\.event\.(before|head_commit)|--previous-ref/);
-  assert.doesNotMatch(cutReleaseWorkflow, /expo-ota-update|Publish Expo OTA Update/);
+  assert.match(releaseOta, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
+  assert.match(releaseOta, /needs: \[tag_release, wait_for_hosted_release\]/);
 });
 
 test('pull request test suites run only for their affected surfaces', () => {

@@ -11,6 +11,9 @@ on:
         description: Release branch name matching release/vMAJOR.MINOR.PATCH
         required: true
         type: string
+    secrets:
+      EXPO_TOKEN:
+        required: true
     outputs:
       release_tag:
         description: Immutable stable release tag
@@ -41,6 +44,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       release_tag: ${{ steps.release.outputs.release_tag }}
+      native_release_tag: ${{ steps.release.outputs.native_release_tag }}
 
     steps:
       - name: Checkout exact prepared release
@@ -82,9 +86,14 @@ jobs:
           fi
           node scripts/release-config.mjs check
           TAG="$(node scripts/release-config.mjs tag)"
+          NATIVE_RELEASE_TAG="$(node -p "require('./shared/release.json').android.mobile.native_release_tag")"
           EXPECTED_BRANCH="release/${TAG}"
           if [[ "${RELEASE_BRANCH}" != "${EXPECTED_BRANCH}" ]]; then
             echo "Release branch ${RELEASE_BRANCH} does not match manifest tag ${TAG}." >&2
+            exit 1
+          fi
+          if [[ ! "${NATIVE_RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Native release tag ${NATIVE_RELEASE_TAG} is invalid." >&2
             exit 1
           fi
 
@@ -105,6 +114,7 @@ jobs:
 
           {
             echo "release_tag=${TAG}"
+            echo "native_release_tag=${NATIVE_RELEASE_TAG}"
             echo "create_tag=${CREATE_TAG}"
           } >> "${GITHUB_OUTPUT}"
 
@@ -136,8 +146,9 @@ jobs:
             echo "- Source tag: \`${RELEASE_TAG}\`"
             echo "- Image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${RELEASE_TAG}\`"
             echo "- Moving image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:latest\`"
+            echo "- OTA: publish internal after the hosted server reports \`${RELEASE_TAG}\`, then await production approval"
             echo
-            echo "If the image build fails after tagging, rerun Build Release Image for \`${RELEASE_TAG}\`."
+            echo "If a post-merge stage fails, rerun Publish prepared release for \`${RELEASE_TAG}\`."
           } >> "${GITHUB_STEP_SUMMARY}"
 
   build_release_image:
@@ -147,3 +158,41 @@ jobs:
     with:
       release_tag: ${{ needs.tag_release.outputs.release_tag }}
       publish_latest: true
+
+  wait_for_hosted_release:
+    name: Wait for hosted server deployment
+    needs: [tag_release, build_release_image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Wait for the released server version
+        shell: bash
+        env:
+          DEPLOYED_CONFIG_URL: https://calibratehealth.app/api/v1/client-config
+          EXPECTED_TAG: ${{ needs.tag_release.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          EXPECTED_VERSION="${EXPECTED_TAG#v}"
+          for attempt in {1..60}; do
+            RESPONSE="$(curl --fail --silent --max-time 10 --header 'Cache-Control: no-cache' "${DEPLOYED_CONFIG_URL}" 2>/dev/null || true)"
+            OBSERVED_VERSION="$(printf '%s' "${RESPONSE}" | node -e "let data=''; process.stdin.on('data', chunk => data += chunk).on('end', () => { try { process.stdout.write(JSON.parse(data).server_version ?? '') } catch {} })")"
+            if [[ "${OBSERVED_VERSION}" == "${EXPECTED_VERSION}" ]]; then
+              echo "Hosted server ${EXPECTED_VERSION} is ready."
+              exit 0
+            fi
+            echo "Waiting for hosted server ${EXPECTED_VERSION}; observed ${OBSERVED_VERSION:-unavailable} (attempt ${attempt}/60)."
+            sleep 5
+          done
+          echo "Hosted server did not report ${EXPECTED_VERSION} within 10 minutes." >&2
+          exit 1
+
+  publish_ota:
+    name: Publish released Expo OTA update
+    needs: [tag_release, wait_for_hosted_release]
+    uses: ./.github/workflows/expo-ota-update.yml
+    with:
+      source_ref: ${{ inputs.release_commit }}
+      native_build_ref: ${{ needs.tag_release.outputs.native_release_tag }}
+      message: Release ${{ needs.tag_release.outputs.release_tag }}
+    secrets: inherit
