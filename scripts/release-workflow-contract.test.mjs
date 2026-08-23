@@ -229,7 +229,7 @@ test('pull requests bundle native runtime changes while path-gating native packa
   assert.match(packageConfig.scripts['test:native-release'], /hosted-android-e2e\.test\.mjs/);
   assert.match(packageConfig.scripts['test:native-release'], /native-upgrade-rehearsal\.test\.mjs/);
   assert.match(packageConfig.scripts['test:native-release'], /wear-build-task-guard\.test\.mjs/);
-  assert.match(packageConfig.scripts['test:native-release'], /xcode-uuid-compatibility\.test\.mjs/);
+  assert.doesNotMatch(packageConfig.scripts['test:native-release'], /xcode-uuid-compatibility\.test\.mjs/);
   assert.equal(
     packageConfig.scripts['test:mobile-build-tools'],
     'node --test scripts/xcode-uuid-compatibility.test.mjs'
@@ -264,6 +264,7 @@ test('pull requests bundle native runtime changes while path-gating native packa
     'package.json',
     'package-lock.json',
     'packages/api-client/**',
+    'scripts/xcode-uuid-compatibility.test.mjs',
     'shared/**'
   ]) {
     assert.ok(
@@ -309,6 +310,8 @@ test('pull requests bundle native runtime changes while path-gating native packa
   assert.match(runtime, /NODE_ENV: production/);
   assert.match(runtime, /NODE_PATH: \$\{\{ github\.workspace \}\}\/mobile\/node_modules/);
   assert.match(runtime, /npm ci --no-audit --fund=false/);
+  assert.match(runtime, /npm run test:mobile-build-tools/);
+  assert.doesNotMatch(mobileBuild, /npm run test:mobile-build-tools/);
   assert.match(
     runtime,
     /node \.\.\/node_modules\/expo\/bin\/cli export --platform android --output-dir "\$\{RUNNER_TEMP\}\/calibrate-android-export"/
