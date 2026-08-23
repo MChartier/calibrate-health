@@ -2,6 +2,7 @@ name: Tests
 
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,8 +12,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Test Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.decision.outputs.backend }}
+      mobile: ${{ steps.decision.outputs.mobile }}
+
+    steps:
+      - name: Detect affected test surfaces
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - '.github/workflows/tests.yml'
+              - 'backend/**'
+              - 'docs/openapi/v1.yaml'
+              - 'docs/weight-trend-v2-tuning-report.json'
+              - 'shared/**'
+            mobile:
+              - '.github/workflows/tests.yml'
+              - 'backend/package.json'
+              - 'backend/package-lock.json'
+              - 'docs/openapi/v1.yaml'
+              - 'mobile/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'packages/api-client/**'
+              - 'shared/**'
+
+      - name: Select test surfaces
+        id: decision
+        shell: bash
+        env:
+          BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
+          MOBILE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.mobile == 'true' }}
+        run: |
+          echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
+          echo "mobile=${MOBILE_CHANGED}" >> "${GITHUB_OUTPUT}"
+
   backend-tests:
     name: Backend Tests
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -61,6 +109,8 @@ jobs:
 
   mobile-tests:
     name: Mobile Tests
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -87,6 +137,9 @@ jobs:
 
       - name: Validate API contract
         run: npm run api:contract:check
+
+      - name: Run API client tests
+        run: npm run test:api-client
 
       - name: Run mobile tests
         run: npm --prefix mobile test

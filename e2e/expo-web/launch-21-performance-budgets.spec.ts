@@ -108,7 +108,10 @@ test.describe('Launch 21 route and Core Web Vitals budgets', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-chrome', 'One deterministic desktop Chromium profile owns the CWV gate.');
+    test.skip(
+      testInfo.project.name !== 'desktop-chrome',
+      'One deterministic desktop Chromium profile owns the CWV diagnostic.',
+    );
     await installVitalObservers(page);
   });
 

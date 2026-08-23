@@ -14,12 +14,10 @@ import {
   nativeReleaseEvidenceResultPath,
   parseKeytoolSignerFingerprint,
   parseNativeReleaseEvidenceArgs,
-  validateEvidenceOnlyAttestation,
   validateNativeReleaseEvidence
 } from './native-release-evidence.mjs';
 
 const SOURCE_COMMIT = 'a'.repeat(40);
-const EVIDENCE_COMMIT = 'b'.repeat(40);
 const SIGNER = 'c'.repeat(64);
 const MANIFEST = `${JSON.stringify({
   schema_version: 1,
@@ -262,34 +260,6 @@ test('rejects calendar dates that JavaScript would otherwise normalize', () => {
   assert.ok(result.errors.includes('Native release evidence executedOn must be a valid YYYY-MM-DD date.'));
 });
 
-test('evidence-only attestation is a sole-parent child and changes only the manifest plus result', () => {
-  assert.deepEqual(validateEvidenceOnlyAttestation({
-    sourceCommit: SOURCE_COMMIT,
-    evidenceCommit: EVIDENCE_COMMIT,
-    parentCommits: [SOURCE_COMMIT],
-    changedPaths: ['quality/risk-evidence.json', 'quality/physical-results/galaxy-2026-08-09.json'],
-    resultArtifacts: ['quality/physical-results/galaxy-2026-08-09.json'],
-    checkedOutCommit: EVIDENCE_COMMIT,
-    worktreeStatus: ''
-  }), []);
-
-  const errors = validateEvidenceOnlyAttestation({
-    sourceCommit: SOURCE_COMMIT,
-    evidenceCommit: EVIDENCE_COMMIT,
-    parentCommits: [SOURCE_COMMIT, 'c'.repeat(40)],
-    changedPaths: [
-      'quality/risk-evidence.json',
-      'quality/physical-results/galaxy-2026-08-09.json',
-      'mobile/app.json'
-    ],
-    resultArtifacts: ['quality/physical-results/galaxy-2026-08-09.json'],
-    checkedOutCommit: EVIDENCE_COMMIT,
-    worktreeStatus: ''
-  });
-  assert.ok(errors.some((error) => error.includes('sole parent')));
-  assert.ok(errors.some((error) => error.includes('non-evidence paths: mobile/app.json')));
-});
-
 test('AAB signer parser requires a real keytool SHA-256 fingerprint', () => {
   const fingerprint = Array.from({ length: 32 }, (_, index) => index.toString(16).padStart(2, '0')).join(':');
   assert.equal(
@@ -334,17 +304,15 @@ test('finalization copies capture facts, requires synthetic-account checkpoints,
   }, { manifestContent: MANIFEST }), /must use only a synthetic account/);
 });
 
-test('CLI keeps source candidate and evidence attestation as separate external inputs', () => {
+test('CLI verifies an optional physical result without an evidence commit', () => {
   assert.deepEqual(parseNativeReleaseEvidenceArgs([
     'verify',
     '--result', 'quality/physical-results/galaxy.json',
-    '--candidate', SOURCE_COMMIT,
-    '--evidence', EVIDENCE_COMMIT
+    '--candidate', SOURCE_COMMIT
   ]), {
     command: 'verify',
     result: 'quality/physical-results/galaxy.json',
     candidate: SOURCE_COMMIT,
-    evidence: EVIDENCE_COMMIT,
     observation: null,
     checkpoints: null,
     output: null,

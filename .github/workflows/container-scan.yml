@@ -14,8 +14,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Production Image Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      scan: ${{ steps.decision.outputs.scan }}
+
+    steps:
+      - name: Detect affected production image surfaces
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            image:
+              - '.github/workflows/container-scan.yml'
+              - '.dockerignore'
+              - 'Dockerfile.app'
+              - 'backend/**'
+              - 'mobile/**'
+              - 'package-lock.json'
+              - 'package.json'
+              - 'packages/**'
+              - 'scripts/expo-cli-environment.mjs'
+              - 'scripts/expo-web-build.mjs'
+              - 'scripts/expo-web-release.mjs'
+              - 'scripts/production-container-smoke.mjs'
+              - 'shared/**'
+
+      - name: Select scan execution
+        id: decision
+        shell: bash
+        env:
+          IMAGE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.image == 'true' }}
+        run: echo "scan=${IMAGE_CHANGED}" >> "${GITHUB_OUTPUT}"
+
   scan:
     name: High and Critical Vulnerabilities
+    needs: changes
+    if: needs.changes.outputs.scan == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -75,23 +116,3 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
-
-      - name: Record candidate-bound container-scan summary
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow container-scan
-          --gate hosted-container-scan
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ job.status }}"
-          --output .codex-screenshots/release-acceptance/container-scan.json
-
-      - name: Upload candidate-bound container-scan summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: container-scan-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/release-acceptance/container-scan.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90

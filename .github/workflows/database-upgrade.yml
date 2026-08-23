@@ -2,6 +2,7 @@ name: Database Upgrade
 
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,8 +12,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Database Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      database: ${{ steps.decision.outputs.database }}
+      migrations: ${{ steps.decision.outputs.migrations }}
+
+    steps:
+      - name: Detect affected database surfaces
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            database:
+              - '.github/workflows/database-upgrade.yml'
+              - 'backend/package.json'
+              - 'backend/package-lock.json'
+              - 'backend/prisma.config.ts'
+              - 'backend/prisma/**'
+              - 'backend/src/config/database.ts'
+              - 'backend/src/config/databaseUtils.ts'
+              - 'backend/src/observability.ts'
+              - 'backend/src/services/materializedWeightTrend.ts'
+              - 'backend/src/services/weightTrend*.ts'
+              - 'backend/src/utils/date.ts'
+              - 'backend/tsconfig.json'
+              - 'deploy/backup/**'
+              - 'scripts/postgres-*.mjs'
+              - 'shared/weightTrend*.ts'
+            migrations:
+              - '.github/workflows/database-upgrade.yml'
+              - 'backend/prisma/migrations/**'
+              - 'scripts/postgres-rollback-smoke.mjs'
+              - 'scripts/postgres-rollback-smoke.test.mjs'
+
+      - name: Select database execution
+        id: decision
+        shell: bash
+        env:
+          DATABASE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.database == 'true' }}
+          MIGRATIONS_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.migrations == 'true' }}
+        run: |
+          echo "database=${DATABASE_CHANGED}" >> "${GITHUB_OUTPUT}"
+          echo "migrations=${MIGRATIONS_CHANGED}" >> "${GITHUB_OUTPUT}"
+
   populated-upgrade:
     name: Populated Postgres Upgrade
+    needs: changes
+    if: needs.changes.outputs.database == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 7
     services:
@@ -62,11 +115,13 @@ jobs:
         run: node scripts/postgres-weight-trend-concurrency-smoke.mjs
   release-upgrade-rollback:
     name: v0.14.0 Upgrade and Encrypted Rollback
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     env:
-      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      CALIBRATE_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
 
     steps:
       - name: Checkout candidate C with immutable base tag
@@ -89,35 +144,4 @@ jobs:
         run: npm run test:db:rollback:unit
 
       - name: Upgrade from v0.14.0, restore, and re-upgrade
-        id: rollback_rehearsal
         run: npm run test:db:rollback
-
-      - name: Record candidate-bound rollback acceptance summary
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow database-upgrade
-          --gate hosted-database-upgrade-rollback
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ steps.rollback_rehearsal.outcome }}"
-          --output .codex-screenshots/release-acceptance/postgres-rollback-smoke.json
-
-      - name: Upload candidate-bound rollback acceptance summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: postgres-rollback-smoke-summary-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/release-acceptance/postgres-rollback-smoke.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload sanitized rollback evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: postgres-rollback-smoke-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/postgres-rollback-smoke/result.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 30

@@ -69,11 +69,11 @@ Normal authentication rejections, provider empty results, and expected sync conf
 6. For trend/onboarding/CWV alerts, reproduce with repository fixtures and focused gates before changing a budget. A budget change is not incident mitigation.
 7. Record the fixed alert code, release version, start/end time, aggregate counts, action, and outcome. Do not copy user data or raw errors into the incident.
 
-## Performance budget workflow
+## Performance budget diagnostics
 
-`quality/performance-budgets.json` is the reviewed source of truth. `node scripts/performance-budgets.mjs` measures exact level-9 gzip bytes for every safe hashed JavaScript file reachable from representative Expo route HTML, including named deferred chunks, and rejects growth above 5%. Expo route HTML can share one deferred graph; in that case each route value is deliberately the conservative total reachable graph, not a claim of route-specific chunk ownership. Because gzip output is runtime-dependent, both the Expo build and route gate enforce the separate bundle identity Node `24.14.0`, V8 `13.6.233.17-node.41`, zlib `1.3.1-e00f703`, `win32`, `x64`; their CI job is `windows-latest`.
+`quality/performance-budgets.json` is the reviewed diagnostic baseline. `node scripts/performance-budgets.mjs` measures exact level-9 gzip bytes for every safe hashed JavaScript file reachable from representative Expo route HTML, including named deferred chunks, and rejects growth above 5% when invoked. Expo route HTML can share one deferred graph; in that case each route value is deliberately the conservative total reachable graph, not a claim of route-specific chunk ownership. Because gzip output is runtime-dependent, use Node `24.14.0`, V8 `13.6.233.17-node.41`, zlib `1.3.1-e00f703`, `win32`, `x64` when comparing or updating this baseline.
 
-API serialization and trend recompute use fixed fixtures, warmups, and the median of repeated same-process measurements. Their normalized median ratios reject regression above 10%. The separate benchmark identity is enforced as Node `24.14.0`, V8 `13.6.233.17-node.41`, `win32`, `x64`; CI owns that gate in its dedicated `windows-latest` performance job while the ordinary backend build remains on Node 20. This controls deterministic code-path regression; it does not replace database, network, device, or production latency monitoring.
+API serialization and trend recompute use fixed fixtures, warmups, and the median of repeated same-process measurements. Their normalized median ratios reject regression above 10% when invoked. Use Node `24.14.0`, V8 `13.6.233.17-node.41`, `win32`, `x64` for comparable results. These bundle and backend measurements do not run automatically in GitHub Actions and do not gate pull requests or releases. Run them when investigating a concrete performance concern; they do not replace database, network, device, or production latency monitoring.
 
 Baseline changes require a reviewed reference, one owner role above, date, and rationale. From a Windows x64 shell where `node -p "JSON.stringify({node:process.versions.node,v8:process.versions.v8,zlib:process.versions.zlib,platform:process.platform,arch:process.arch})"` matches the manifest's pinned identities, run:
 
@@ -126,4 +126,4 @@ $env:CALIBRATE_ALERT_SINK_TOKEN='<staging-only-secret>'
 npm.cmd run smoke:alerts:staging
 ```
 
-The command refuses a non-staging environment and passes only when the receiver acknowledges the fixed privacy-safe provider-failure aggregate with a staging-tagged opaque receipt. It does not poll or mutate product data. External Launch 21 staging acceptance remains pending until an operator with the real staging URL/token records that receipt; repository tests and the fake sink are not evidence of external delivery.
+The command refuses a non-staging environment and passes only when the receiver acknowledges the fixed privacy-safe provider-failure aggregate with a staging-tagged opaque receipt. It does not poll or mutate product data. Run it when validating a real staging alert path is useful; the result is an operational diagnostic, not an external-launch receipt or automatic release gate.

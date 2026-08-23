@@ -143,7 +143,7 @@ Gradle does not recreate all four canonical outputs:
 
 Only after all four files exist, the build writes ignored `build/native-release-provenance.json`. This v1 sidecar
 binds their repository-relative paths, sizes, SHA-256 values, application ID, and versions plus the release-manifest
-hash to candidate C. Strict evidence capture rejects a missing sidecar, a different source commit, or any manifest or
+hash to the source commit. Strict diagnostic capture rejects a missing sidecar, a different source commit, or any manifest or
 artifact mismatch.
 
 The retained observation inspects every artifact independently: APK package/version metadata comes from `aapt`, AAB
@@ -152,16 +152,11 @@ package/version metadata comes from bundletool, APK signers come from `apksigner
 application IDs, version names/codes, and signer SHA-256 values, then requires one signer across all four. Do not
 infer AAB metadata or signer identity from its matching APK or retain an absolute build path.
 
-## Commit-specific retained evidence
+## Optional commit-specific device diagnostic
 
-Freeze the clean, pushed source candidate as commit C before building. The signed artifacts, canonical
-`shared/release.json`, automated gates, and physical protocol must all describe C. Do not add source, scripts,
-configuration, or documentation after physical execution and still call the old artifacts current.
-
-The retained v3 result records C only. After finalizing that sanitized JSON and updating
-`quality/risk-evidence.json`, create one evidence-only commit A whose sole parent is C and whose diff contains only
-those two evidence paths. A is supplied to verification from Git; no tracked file can truthfully contain its own
-commit SHA.
+Build from a clean, pushed source commit so the signed artifacts, canonical `shared/release.json`, and any optional
+physical-device result describe the same source. If source, scripts, configuration, or documentation changes after
+physical execution, treat the old result as historical.
 
 The repository-safe result contains no hardware or ADB serials, absolute paths, account identifiers, email, health
 values, food names, tokens, request payloads, reviewer credentials, or private Console URLs. It records only the
@@ -169,9 +164,9 @@ allowlisted build provenance, artifact, signer, version, Samsung handset/watch c
 fixed checkpoint command/capability IDs with boolean outcomes, and derived capability fields. Use only a synthetic
 account.
 
-Follow `docs/physical-galaxy-validation.md` for observation capture, checkpoint review, finalization, and the exact
-C-to-A verification command. The ordinary hosted emulator jobs use disposable signing and prove package/runtime
-behavior only; they never satisfy permanent-signing or physical-device checkpoints.
+Follow `docs/physical-galaxy-validation.md` when physical validation is useful. Finalized results are optional owner
+diagnostics, not CI or release authorization. The hosted emulator jobs use disposable signing and prove only the
+package/runtime behavior they exercise.
 
 ## One-command physical device workflow
 
@@ -349,16 +344,15 @@ retained JSON is labeled as package/install evidence and proves only version inc
 The script refuses physical devices, implicit ADB targets, active `CALIBRATE_ANDROID_SIGNING_*` values, a signer
 mismatch, a non-increasing candidate version, or recursive cleanup outside its unique marked short build root.
 
-## Internal release checklist
+## Owner-discretion distribution checklist
 
-Execute the paired phone/watch runtime path in `docs/physical-galaxy-validation.md`; use the broader Play worksheet
-for store policy and declaration evidence.
+Use the checks below when they are relevant to an actual native distribution. The physical phone/watch protocol and
+broader Play worksheet are optional confidence aids; repository automation does not require every box for pre-release
+development.
 
 - [ ] `npm.cmd run release:check`, `npm.cmd run test:release`, and `npm.cmd run test:native-release` pass.
-- [ ] Run the Android phone emulator, Wear emulator, native package-upgrade, OTA, and risk-evidence gates named in
-  `docs/physical-galaxy-validation.md`; do not substitute their unit-only CI contracts for operator/device results.
-- [ ] Source candidate C is clean and pushed before signing; evidence-only child A changes only the risk manifest
-  and retained physical result.
+- [ ] Run only the optional emulator, upgrade, OTA, or physical checks that are useful for this distribution.
+- [ ] The source commit is clean and pushed before signing.
 - [ ] `version` is correct and `versionCode` is greater than every distributed Android build.
 - [ ] Application ID is still `app.calibratehealth.mobile`.
 - [ ] Public Expo config includes camera/notification permissions but does not request microphone access.
@@ -379,5 +373,4 @@ for store policy and declaration evidence.
 - [ ] Before an OTA publish, run `release:native:ota -- --dry-run` and confirm no native fingerprint mismatch.
 - [ ] Generate and retain the deterministic release metadata described in `docs/release-compatibility.md`.
 - [ ] Keep the prior artifact and encrypted keystore backup, but distribute only the new higher-version build.
-- [ ] `npm.cmd run test:risk-evidence:release` remains blocked until the physical result is finalized, A is committed,
-  and the C/A refs verify.
+- [ ] If a physical result is retained, verify it locally against the source commit; no evidence-only child is needed.

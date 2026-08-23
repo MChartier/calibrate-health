@@ -1,6 +1,6 @@
 # Database rollback rehearsal
 
-The hosted rollback gate proves that the current database candidate can upgrade the last immutable distributed
+The rollback rehearsal proves that the current database candidate can upgrade the last immutable distributed
 server schema, and that the encrypted pre-upgrade backup can restore that exact predecessor into a new empty
 database. It never connects to a caller-provided database.
 
@@ -30,7 +30,7 @@ and a clean candidate checkout before contacting Docker. `v0.13.3` is not the ro
 4. Runs the repository's production `backup-postgres.sh` with a one-run age identity. It verifies that the backup
    volume contains exactly one completed age-encrypted custom dump plus `.last-success`, contains no plaintext or
    partial dump, and removed an owned expired encrypted-backup sentinel.
-5. Applies candidate migrations through `0038`, verifies the exact candidate ledger and retained data, and checks
+5. Applies candidate migrations through `0039`, verifies the exact candidate ledger and retained data, and checks
    the intended recommendation-staleness transform and the new safety, onboarding, session, reminder, and index
    schema.
 6. Proves the restore database has zero user tables, then runs the production guarded `restore-postgres.sh` against
@@ -43,7 +43,7 @@ and a clean candidate checkout before contacting Docker. `v0.13.3` is not the ro
 The script captures subprocess output and emits only sanitized stage messages. Database passwords, connection URLs,
 absolute repository/temporary paths, and Docker resource identifiers are absent from retained success evidence.
 
-## Commands and retained evidence
+## Commands and diagnostic output
 
 The dependency-free contract suite does not contact Docker or Postgres:
 
@@ -60,7 +60,7 @@ node scripts/postgres-rollback-smoke.mjs
 
 No Postgres workflow service, `DATABASE_URL`, age key, database password, or operator secret is accepted. Hosted
 workflows set `CALIBRATE_SOURCE_COMMIT` to the selected lowercase full release-source SHA; when present, it must
-exactly match the clean checkout's `HEAD`. Local runs may omit it. The result is always written to
+exactly match the clean checkout's `HEAD`. Local runs may omit it. The result is written to
 `.codex-screenshots/postgres-rollback-smoke/result.json` with schema version 1 and scope
 `postgres-rollback-smoke`. Success evidence records only:
 
@@ -70,11 +70,13 @@ exactly match the clean checkout's `HEAD`. Local runs may omit it. The result is
 - base seed, candidate upgrade, empty-target restore, exact predecessor restore, and candidate re-upgrade booleans;
 - total duration.
 
-On failure, the same path receives a sanitized `status: failed` result when the evidence directory is writable.
+On failure, the same path receives a sanitized `status: failed` result when the directory is writable. CI does not
+retain this file as release evidence. Pull requests run the rehearsal when migrations or its workflow/harness change;
+**Cut release** runs it only when migrations changed since the previous stable tag.
 
 ## Operator follow-up
 
-This disposable gate does not claim that an operator fetched an off-host production backup, supplied a production
+This disposable rehearsal does not claim that an operator fetched an off-host production backup, supplied a production
 age identity, stopped traffic, launched the matching prior production image, or completed post-restore sign-in,
-food/weight writes, export, native refresh, and reopening checks. Those environment-specific actions remain a
-separate staging/production launch protocol and do not block this automated implementation.
+food/weight writes, export, native refresh, and reopening checks. Those environment-specific actions remain optional
+owner checks.

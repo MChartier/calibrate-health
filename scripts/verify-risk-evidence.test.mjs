@@ -23,14 +23,11 @@ function repositoryFixture() {
     ...loaded,
     manifest: structuredClone(loaded.manifest),
     now: new Date('2026-07-13T12:00:00.000Z'),
-    candidateCommit: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
   };
 }
 
 function attachPhysicalEvidence(fixture, options = {}) {
   const sourceCommit = options.sourceCommit ?? 'a'.repeat(40);
-  const candidateCommit = options.candidateCommit ?? sourceCommit;
-  const evidenceCommit = options.evidenceCommit ?? 'b'.repeat(40);
   const resultArtifact = 'quality/physical-results/test-fixture.json';
   const manifestContent = fs.readFileSync(path.join(fixture.repoRoot, 'shared', 'release.json'));
   const releaseManifest = JSON.parse(manifestContent.toString('utf8'));
@@ -142,19 +139,9 @@ function attachPhysicalEvidence(fixture, options = {}) {
     capabilities
   };
   fixture.manifest.physicalDeviceEvidence.push(physicalRecord);
-  fixture.manifest.waivers = fixture.manifest.waivers.filter(
-    (waiver) => waiver.id !== 'physical-galaxy-phone-and-watch-validation'
+  fixture.manifest.diagnosticGaps = fixture.manifest.diagnosticGaps.filter(
+    (gap) => gap.id !== 'physical-galaxy-phone-and-watch-validation'
   );
-  fixture.releaseMode = true;
-  fixture.candidateCommit = candidateCommit;
-  fixture.evidenceCommit = evidenceCommit;
-  fixture.candidateManifestContent = manifestContent;
-  fixture.evidenceAttestation = {
-    parentCommits: [candidateCommit],
-    changedPaths: ['quality/risk-evidence.json', resultArtifact],
-    checkedOutCommit: evidenceCommit,
-    worktreeStatus: ''
-  };
   fixture.statSync = (resolvedPath) => resolvedPath.endsWith('test-fixture.json')
     ? { isFile: () => true, size: 100 }
     : fs.statSync(resolvedPath);
@@ -164,39 +151,14 @@ function attachPhysicalEvidence(fixture, options = {}) {
   return { physicalRecord, resultArtifactContents };
 }
 
-test('repository manifest covers every required capability and reports the physical release blocker', () => {
+test('repository manifest covers every required capability and reports the optional physical gap', () => {
   const result = validateRiskEvidence(repositoryFixture());
 
   assert.deepEqual(result.errors, []);
   assert.equal(result.rows.length, 6);
-  assert.deepEqual(result.blockers.map((blocker) => blocker.id), [
+  assert.deepEqual(result.gaps.map((gap) => gap.id), [
     'physical-galaxy-phone-and-watch-validation'
   ]);
-});
-
-test('physical-device waivers block only releases that include the native scope', () => {
-  const server = validateRiskEvidence({
-    ...repositoryFixture(),
-    releaseMode: true,
-    releaseScopes: ['server-web']
-  });
-  const ota = validateRiskEvidence({
-    ...repositoryFixture(),
-    releaseMode: true,
-    releaseScopes: ['ota']
-  });
-  const native = validateRiskEvidence({
-    ...repositoryFixture(),
-    releaseMode: true,
-    releaseScopes: ['native']
-  });
-
-  assert.deepEqual(server.releaseBlockers, []);
-  assert.deepEqual(ota.releaseBlockers, []);
-  assert.deepEqual(
-    native.releaseBlockers.map((blocker) => blocker.id),
-    ['physical-galaxy-phone-and-watch-validation']
-  );
 });
 
 test('missing risk capability fails even when the rest of the area has evidence', () => {
@@ -211,7 +173,7 @@ test('missing risk capability fails even when the rest of the area has evidence'
   const result = validateRiskEvidence(fixture);
 
   assert.ok(result.errors.includes(
-    'Risk area authentication-and-authorization has no evidence or waiver for success.'
+    'Risk area authentication-and-authorization has no evidence or diagnostic gap for success.'
   ));
 });
 
@@ -249,19 +211,7 @@ test('workflow-backed evidence fails when its test command is removed', () => {
   assert.ok(result.errors.some((error) => error.includes('workflow no longer contains')));
 });
 
-test('expired physical evidence waivers fail the contract instead of silently extending release risk', () => {
-  const fixture = repositoryFixture();
-  fixture.now = new Date('2026-08-27T00:00:00.000Z');
-
-  const result = validateRiskEvidence(fixture);
-
-  assert.ok(result.errors.includes(
-    'Waiver physical-galaxy-phone-and-watch-validation expired on 2026-08-26.'
-  ));
-  assert.equal(result.blockers.length, 1);
-});
-
-test('every waiver requires a scoped owner, reason, issue, and known capability', () => {
+test('every diagnostic gap requires a scoped owner, reason, issue, and known capability', () => {
   const fixture = repositoryFixture();
   const area = fixture.manifest.riskAreas.find(
     (candidate) => candidate.id === 'authentication-and-authorization'
@@ -269,72 +219,32 @@ test('every waiver requires a scoped owner, reason, issue, and known capability'
   for (const evidence of area.evidence) {
     evidence.capabilities = evidence.capabilities.filter((capability) => capability !== 'success');
   }
-  fixture.manifest.waivers.push({
-    id: 'incomplete-waiver',
+  fixture.manifest.diagnosticGaps.push({
+    id: 'incomplete-gap',
     riskArea: 'authentication-and-authorization',
-    status: 'release-blocking',
-    expiresOn: '2026-08-12',
+    status: 'diagnostic',
     capabilities: ['success']
   });
 
   const result = validateRiskEvidence(fixture);
 
-  assert.ok(result.errors.includes('Waiver incomplete-waiver must name an owner.'));
-  assert.ok(result.errors.includes('Waiver incomplete-waiver must explain why evidence is outstanding.'));
+  assert.ok(result.errors.includes('Diagnostic gap incomplete-gap must name an owner.'));
+  assert.ok(result.errors.includes('Diagnostic gap incomplete-gap must explain why evidence is outstanding.'));
   assert.ok(result.errors.some((error) => error.includes('trackingIssues must contain')));
 });
 
-test('physical evidence replaces the temporary waiver through an explicit evidence-only child', () => {
+test('physical evidence replaces the temporary diagnostic gap', () => {
   const fixture = repositoryFixture();
   attachPhysicalEvidence(fixture);
 
   const result = validateRiskEvidence(fixture);
 
   assert.deepEqual(result.errors, []);
-  assert.equal(result.blockers.length, 0);
+  assert.equal(result.gaps.length, 0);
 });
-
-test('release mode rejects physical evidence recorded for a different frozen candidate', () => {
-  const fixture = repositoryFixture();
-  attachPhysicalEvidence(fixture, { candidateCommit: 'd'.repeat(40) });
-
-  const result = validateRiskEvidence(fixture);
-
-  assert.ok(result.errors.some((error) => error.includes('does not match release candidate')));
-});
-
-test('release mode rejects a non-evidence change in attestation child A', () => {
-  const fixture = repositoryFixture();
-  attachPhysicalEvidence(fixture);
-  fixture.evidenceAttestation.changedPaths.push('mobile/app.json');
-
-  const result = validateRiskEvidence(fixture);
-
-  assert.ok(result.errors.some((error) => error.includes('non-evidence paths: mobile/app.json')));
-});
-
-test('release mode rejects dirty or unrelated evidence checkouts', () => {
-  const fixture = repositoryFixture();
-  attachPhysicalEvidence(fixture);
-  fixture.evidenceAttestation.checkedOutCommit = 'e'.repeat(40);
-  fixture.evidenceAttestation.worktreeStatus = ' M package.json';
-
-  const result = validateRiskEvidence(fixture);
-
-  assert.ok(result.errors.some((error) => error.includes('checked-out HEAD')));
-  assert.ok(result.errors.some((error) => error.includes('clean worktree and index')));
-});
-
-test('risk evidence CLI keeps candidate C separate from evidence child A', () => {
-  assert.deepEqual(parseRiskEvidenceArgs([
-    '--release',
-    '--candidate', 'a'.repeat(40),
-    '--evidence', 'b'.repeat(40)
-  ], {}), {
-    releaseMode: true,
-    candidateCommit: 'a'.repeat(40),
-    evidenceCommit: 'b'.repeat(40)
-  });
+test('risk inventory CLI has no release-gate mode', () => {
+  assert.deepEqual(parseRiskEvidenceArgs([]), {});
+  assert.throws(() => parseRiskEvidenceArgs(['--release']), /Unknown risk-evidence option/);
 });
 
 test('ordinary unit evidence cannot clear a physical-device capability', () => {

@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
+  "profile": "single-user-pre-release",
   "protocolPath": "docs/release-acceptance.md",
   "releaseManifestPath": "shared/release.json",
   "releaseNotesPath": "docs/releases/0.33.5-native-0.2.6-wear-0.2.6.md",
@@ -8,280 +9,113 @@
     "ota",
     "native"
   ],
-  "candidateContract": {
-    "source": "pull-request-head",
-    "shaFormat": "lowercase-40-hex",
-    "checkoutExpression": "${{ github.event.pull_request.head.sha || github.sha }}"
+  "policy": {
+    "pullRequestChecks": "affected-only",
+    "externalReleaseApproval": "owner-discretion",
+    "retainedEvidenceRequired": false
   },
-  "evidenceCommitContract": {
-    "resultManifestPath": "quality/risk-evidence.json",
-    "resultProperty": "releaseAcceptanceEvidence",
-    "soleParentMustBeCandidate": true,
-    "checkedOutHeadMustBeEvidence": true,
-    "cleanWorktreeRequired": true,
-    "allowlistedPathPatterns": [
-      "quality/risk-evidence.json",
-      "quality/physical-results/*.json"
-    ]
-  },
-  "checkoutWorkflows": [
-    ".github/workflows/builds.yml",
-    ".github/workflows/tests.yml",
-    ".github/workflows/lint.yml",
-    ".github/workflows/database-upgrade.yml",
-    ".github/workflows/dependency-audit.yml",
-    ".github/workflows/container-scan.yml"
-  ],
-  "requirements": [
+  "automaticRequirements": [
     {
-      "id": "hosted-release-contracts",
-      "title": "Frozen candidate and release contract validation",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
+      "id": "affected-builds",
+      "title": "Compile and bundle only affected application surfaces",
+      "releaseScopes": ["server-web", "ota", "native"],
+      "trigger": "affected-pull-request",
+      "workflowPaths": [".github/workflows/builds.yml"],
+      "jobIds": [
+        "release-config",
+        "backend-build",
+        "expo-web-build",
+        "web-critical-smoke",
+        "native-metro-bundle",
+        "mobile-build",
+        "wear-build"
+      ]
+    },
+    {
+      "id": "affected-tests-and-typecheck",
+      "title": "Run unit tests and type checks for affected code",
+      "releaseScopes": ["server-web", "ota", "native"],
+      "trigger": "affected-pull-request",
+      "workflowPaths": [
+        ".github/workflows/tests.yml",
+        ".github/workflows/lint.yml"
+      ],
+      "jobIds": ["backend-tests", "mobile-tests", "typecheck"]
+    },
+    {
+      "id": "migration-safety",
+      "title": "Exercise populated upgrades and rollback only when database migrations change",
+      "releaseScopes": ["server-web"],
+      "trigger": "migration-change",
+      "workflowPaths": [
+        ".github/workflows/database-upgrade.yml",
+        ".github/workflows/cut-release.yml"
+      ],
+      "jobIds": ["populated-upgrade", "release-upgrade-rollback", "database-rollback"]
+    },
+    {
+      "id": "dependency-audit",
+      "title": "Audit affected production dependencies",
+      "releaseScopes": ["server-web", "ota", "native"],
+      "trigger": "affected-pull-request-and-schedule",
+      "workflowPaths": [".github/workflows/dependency-audit.yml"],
+      "jobIds": ["production-audit"]
+    },
+    {
+      "id": "production-container",
+      "title": "Build, start, and scan the production container",
+      "releaseScopes": ["server-web"],
+      "trigger": "affected-pull-request-and-release",
+      "workflowPaths": [
+        ".github/workflows/container-scan.yml",
+        ".github/workflows/cut-release.yml"
+      ],
+      "jobIds": ["scan", "release-validation"]
+    },
+    {
+      "id": "prepared-release-integrity",
+      "title": "Synchronize version mirrors and publish the exact merged release",
+      "releaseScopes": ["server-web"],
+      "trigger": "release",
+      "workflowPaths": [
+        ".github/workflows/cut-release.yml",
+        ".github/workflows/publish-release.yml"
+      ],
+      "jobIds": [
+        "prepare",
+        "release-validation",
+        "finalize",
+        "publish",
+        "tag_release",
+        "build_release_image"
+      ]
+    }
+  ],
+  "manualCapabilities": [
+    {
+      "id": "owner-release-confidence",
+      "title": "Optional owner-discretion release confidence check",
       "releaseScopes": ["server-web", "ota", "native"],
       "workflowPath": ".github/workflows/release-acceptance.yml",
-      "jobId": "implementation-contract",
-      "command": "npm.cmd run release:acceptance",
-      "retainedArtifact": {
-        "namePrefix": "release-acceptance-contract-",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
+      "jobIds": ["owner-confidence"]
     },
     {
-      "id": "hosted-exported-web-e2e",
-      "title": "Full exported Web and PWA end-to-end suite",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
+      "id": "exhaustive-web-regression",
+      "title": "Optional full browser, data-state, accessibility, and visual suites",
       "releaseScopes": ["server-web", "ota"],
       "workflowPath": ".github/workflows/builds.yml",
-      "jobId": "exported-web-e2e",
-      "command": "npm.cmd run test:expo-web",
-      "retainedArtifact": {
-        "namePrefix": "exported-web-e2e-",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
+      "jobIds": ["exported-web-e2e", "data-state-acceptance", "ux-regression"]
     },
     {
-      "id": "hosted-ux-regression",
-      "title": "Accessibility and visual regression matrix",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web", "ota"],
-      "workflowPath": ".github/workflows/builds.yml",
-      "jobId": "ux-regression",
-      "command": "npm.cmd run test:ux",
-      "retainedArtifact": {
-        "namePrefix": "ux-regression-summary-",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
-    },
-    {
-      "id": "hosted-data-state-matrix",
-      "title": "Six-state data-backed route acceptance matrix",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web", "ota"],
-      "workflowPath": ".github/workflows/builds.yml",
-      "jobId": "data-state-acceptance",
-      "command": "npm.cmd run test:data-states",
-      "retainedArtifact": {
-        "namePrefix": "launch-24-data-state-acceptance",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
-    },
-    {
-      "id": "hosted-android-emulator-e2e",
-      "title": "Android online, offline, process-death, and replay E2E",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
+      "id": "native-emulator-and-upgrade",
+      "title": "Optional Android, Wear, and same-signer upgrade validation",
       "releaseScopes": ["native"],
       "workflowPath": ".github/workflows/builds.yml",
-      "jobId": "android-emulator-e2e",
-      "command": "node scripts/hosted-android-e2e.mjs",
-      "retainedArtifact": {
-        "namePrefix": "android-emulator-e2e-summary-",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
-    },
-    {
-      "id": "hosted-wear-release-emulator-smoke",
-      "title": "Non-debuggable Wear release emulator acceptance",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["native"],
-      "workflowPath": ".github/workflows/builds.yml",
-      "jobId": "wear-release-emulator-smoke",
-      "command": "npm run test:wear:emulator",
-      "retainedArtifact": {
-        "namePrefix": "wear-release-emulator-smoke-summary-",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
-    },
-    {
-      "id": "hosted-native-package-upgrade",
-      "title": "Same-signer phone and Wear in-place package upgrade",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["native"],
-      "workflowPath": ".github/workflows/builds.yml",
-      "jobId": "native-package-upgrade",
-      "command": "npm run test:native:upgrade",
-      "retainedArtifact": {
-        "namePrefix": "native-package-upgrade-summary-",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
-    },
-    {
-      "id": "hosted-database-upgrade-rollback",
-      "title": "Distributed-base database upgrade and encrypted rollback rehearsal",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web"],
-      "workflowPath": ".github/workflows/database-upgrade.yml",
-      "jobId": "release-upgrade-rollback",
-      "command": "npm run test:db:rollback",
-      "retainedArtifact": {
-        "namePrefix": "postgres-rollback-smoke-summary-",
-        "retentionDays": 30,
-        "requiredResults": 1
-      }
-    },
-    {
-      "id": "hosted-dependency-audit",
-      "title": "Production dependency audit",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web", "ota", "native"],
-      "workflowPath": ".github/workflows/dependency-audit.yml",
-      "jobId": "production-audit",
-      "command": "npm run audit:production",
-      "retainedArtifact": {
-        "namePrefix": "dependency-audit-",
-        "retentionDays": 90,
-        "requiredResults": 2
-      }
-    },
-    {
-      "id": "hosted-container-scan",
-      "title": "Production container startup and vulnerability scan",
-      "execution": "hosted",
-      "blocksImplementation": true,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web"],
-      "workflowPath": ".github/workflows/container-scan.yml",
-      "jobId": "scan",
-      "command": "aquasecurity/trivy-action",
-      "retainedArtifact": {
-        "namePrefix": "container-scan-",
-        "retentionDays": 90,
-        "requiredResults": 1
-      }
-    },
-    {
-      "id": "operator-staging-alert-delivery",
-      "title": "External staging alert receipt and recovery delivery",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web"],
-      "protocolPath": "docs/performance-operations-runbook.md"
-    },
-    {
-      "id": "operator-production-configuration",
-      "title": "Production configuration and secret inventory approval",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web", "ota", "native"],
-      "protocolPath": "docs/release-acceptance.md"
-    },
-    {
-      "id": "operator-physical-galaxy-validation",
-      "title": "Physical Galaxy phone and Watch Ultra protocol",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["native"],
-      "protocolPath": "docs/physical-galaxy-validation.md"
-    },
-    {
-      "id": "operator-permanent-signing",
-      "title": "Permanent phone and Wear signing identity verification",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["native"],
-      "protocolPath": "docs/mobile-release.md"
-    },
-    {
-      "id": "operator-ota-promotion",
-      "title": "Internal OTA soak and production approval",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["ota"],
-      "protocolPath": "docs/mobile-release.md"
-    },
-    {
-      "id": "operator-play-console-review",
-      "title": "Play Console listing, declarations, testing tracks, and health review",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["native"],
-      "protocolPath": "docs/play-console-health-release-checklist.md"
-    },
-    {
-      "id": "operator-manual-accessibility",
-      "title": "Manual screen-reader and physical interaction acceptance",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web", "ota", "native"],
-      "protocolPath": "docs/release-acceptance.md"
-    },
-    {
-      "id": "operator-legal-support-signoff",
-      "title": "Legal, privacy, support, and release-note signoff",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web", "ota", "native"],
-      "protocolPath": "docs/release-acceptance.md"
-    },
-    {
-      "id": "operator-distributed-upgrade",
-      "title": "Upgrade from a genuinely distributed predecessor",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["native"],
-      "protocolPath": "docs/release-acceptance.md"
-    },
-    {
-      "id": "operator-dogfood-soak",
-      "title": "Required private dogfood soak and final owner signoff",
-      "execution": "operator",
-      "blocksImplementation": false,
-      "blocksExternalLaunch": true,
-      "releaseScopes": ["server-web", "ota", "native"],
-      "protocolPath": "docs/release-acceptance.md"
+      "jobIds": [
+        "android-emulator-e2e",
+        "wear-release-emulator-smoke",
+        "native-package-upgrade"
+      ]
     }
   ]
 }

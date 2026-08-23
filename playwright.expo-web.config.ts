@@ -5,9 +5,11 @@ const DEFAULT_BASE_URL = 'http://127.0.0.1:4174';
 const callerOwnedBaseURL = process.env.CALIBRATE_EXPO_WEB_BASE_URL?.trim();
 const baseURL = callerOwnedBaseURL || DEFAULT_BASE_URL;
 const chromeExecutablePath = process.env.PLAYWRIGHT_CHROME_PATH?.trim();
-const systemChrome = chromeExecutablePath
-  ? { launchOptions: { executablePath: chromeExecutablePath } }
-  : { channel: process.env.PLAYWRIGHT_CHROME_CHANNEL ?? 'chrome' };
+const systemChrome = (() => {
+  if (chromeExecutablePath) return { launchOptions: { executablePath: chromeExecutablePath } };
+  if (process.env.CI) return {};
+  return { channel: process.env.PLAYWRIGHT_CHROME_CHANNEL ?? 'chrome' };
+})();
 
 if (callerOwnedBaseURL) {
   const parsed = new URL(callerOwnedBaseURL);
@@ -20,6 +22,7 @@ export default defineConfig({
   testDir: './e2e/expo-web',
   testIgnore: [
     /launch-22-(?:accessibility|visual)\.spec\.ts/,
+    ...(process.env.CI ? [/launch-21-performance-budgets\.spec\.ts/] : []),
     ...(process.env.CALIBRATE_INCLUDE_DATA_STATE_MATRIX === '1'
       ? []
       : [/launch-24-data-state-matrix\.spec\.ts/]),

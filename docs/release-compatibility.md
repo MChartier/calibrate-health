@@ -61,10 +61,13 @@ choose the semantic component to advance:
 - `major` for breaking server, API, or deployment contracts: `X.Y.Z` to `(X+1).0.0`.
 
 The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
-`release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It runs the container release gates, generated API
-contract check, Expo web release tests, deploy tests, Windows UX regression gate, and encrypted rollback rehearsal.
-If `master` advances while those gates run, the candidate is not merged; rerun the action so the later change is part
-of a newly validated candidate.
+`release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It checks the release configuration, dependency policy,
+generated API contract, Expo web release contract, and deploy tooling. It also builds and starts the production image,
+checks readiness and the served web application, and scans for high or critical vulnerabilities. The encrypted
+database rollback rehearsal runs only when Prisma migrations changed since the highest stable tag. Full browser and
+UX regression suites, synthetic Web Vitals, and native validation are not part of the server/web release cut. If
+`master` advances while validation runs, the candidate is not merged; rerun the action so the later change is part of
+a newly validated candidate.
 
 After validation, the action creates a version-only release PR, fetches the exact merge commit GitHub generated for
 that PR, and verifies its base parent, candidate parent, and tree. It pushes that commit to `master` without force, so
@@ -98,11 +101,12 @@ The reusable image workflow still prevents rebuilding an older tag from executin
 Validated releases publish version, source-SHA, and moving `latest` tags to GHCR; deployment to a self-host remains an
 operator-controlled Docker Compose operation. No GitHub Release object or generated changelog is created.
 
-Container publication uses `release:check:container`, including the encrypted backup/restore drill, dependency policy,
-canonical version checks, and risk-contract validation. It does not claim physical Android/Wear readiness:
-`release:check:production` remains the stricter native distribution gate and still requires retained Galaxy
-phone/watch evidence. This allows an immutable server image to exist for production-like device testing without
-weakening the native release gate.
+**Cut release** owns the exact-candidate container build, startup smoke, and vulnerability scan. The local
+`release:check:container` command covers the encrypted backup/restore smoke, dependency policy, canonical version
+checks, and the static release-acceptance policy; `release:check:production` adds strict dependency policy. Neither
+command requires an external-launch evidence commit or receipt ledger. Physical Android/Wear, store-console, and
+distributed-upgrade checks remain available when the owner considers them useful for a native distribution, but do
+not block publishing an independent server/web image.
 
 Phone and Wear releases remain independent. For a native release, update `shared/release.json`, mirror phone values in
 `mobile/package.json` and `mobile/app.json`, mirror Wear values in `wear/app/build.gradle.kts`, and keep the pairing
@@ -132,7 +136,10 @@ The JSON records the channel, Git commit and dirty state, canonical server/clien
 file names, byte counts, and SHA-256 digests. Keep it with the artifacts and release notes; it intentionally contains
 no credentials, machine-specific absolute paths, or wall-clock timestamp.
 
-## Release gate
+## Native distribution review
+
+Use the applicable items below when distributing phone or Wear artifacts. This is an owner review checklist, not a
+standing server/web CI or release gate.
 
 - [ ] `npm run release:check` and `npm run test:release` pass on the release commit.
 - [ ] The worktree is clean and the metadata reports the expected Git commit.
