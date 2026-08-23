@@ -251,13 +251,13 @@ deployment, then starts a dependent production job. The production job targets t
 environment, so it remains blocked until a required reviewer verifies the internal devices and approves the
 deployment.
 
-Workflow concurrency serializes repository OTA publications, but it does not make client selection atomic. Expo's
-public API checks and fetches the latest channel update in separate requests, and `fetchUpdateAsync()` cannot be
-pinned to the manifest returned by `checkForUpdateAsync()`. Client guards must revalidate the fetched manifest,
-refuse an immediate restart when its server release line is incompatible, and repeat the compatibility check at every
-startup. An already-fetched mismatched update can still remain eligible on a later cold start. A future atomic design
-would need server-release-specific EAS channels or aliases selected on-device, or a custom update server; polling a
-private self-hosted server from GitHub Actions would not fix this race.
+Expo's native automatic check/download lifecycle remains enabled. The client does not inspect candidate update
+metadata or veto downloads. Once a bundle is running, it compares its required server major/minor release line with
+the selected server's `/api/v1/client-config` response and shows a dedicated incompatibility gate when they differ.
+An incompatible downloaded bundle can therefore launch and then be gated. Keep the production channel compatible by
+promoting only updates intended for the deployed server release line. If multiple server lines must be supported
+concurrently, use release-specific EAS channels or aliases, or a custom update server. Polling a private self-hosted
+server from GitHub Actions is not a substitute.
 
 Before its first use:
 
