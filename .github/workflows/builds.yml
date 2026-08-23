@@ -2,6 +2,7 @@ name: Builds
 
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,28 +20,29 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      web: ${{ steps.filter.outputs.web }}
-      wear: ${{ steps.filter.outputs.wear }}
-      native_package: ${{ steps.filter.outputs.native_package }}
+      backend: ${{ steps.decision.outputs.backend }}
+      web: ${{ steps.decision.outputs.web }}
+      wear: ${{ steps.decision.outputs.wear }}
+      native_package: ${{ steps.decision.outputs.native_package }}
 
     steps:
       - name: Detect affected build surfaces
+        if: github.event_name == 'pull_request'
         id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
             backend:
               - 'backend/**'
+              - 'quality/performance-budgets.json'
+              - 'scripts/performance-budgets.mjs'
               - 'shared/**'
             web:
-              - 'backend/**'
               - 'e2e/expo-web/**'
               - 'mobile/app/**'
               - 'mobile/assets/**'
               - 'mobile/public/**'
               - 'mobile/src/**'
-              - 'mobile/test/**'
               - 'mobile/app.config.js'
               - 'mobile/app.json'
               - 'mobile/babel.config.js'
@@ -54,7 +56,10 @@ jobs:
               - 'packages/api-client/**'
               - 'playwright.expo-web.config.ts'
               - 'playwright.ux.config.ts'
+              - 'quality/performance-budgets.json'
               - 'scripts/expo-web-*.mjs'
+              - 'scripts/performance-budgets.mjs'
+              - 'scripts/release-acceptance.mjs'
               - 'scripts/ux-gates.mjs'
               - 'shared/**'
             wear:
@@ -67,14 +72,16 @@ jobs:
               - 'wear/**'
               - 'mobile/app.config.js'
               - 'mobile/app.json'
+              - 'mobile/babel.config.js'
               - 'mobile/eas.json'
+              - 'mobile/index.js'
+              - 'mobile/metro.config.js'
               - 'mobile/assets/adaptive-icon.png'
               - 'mobile/assets/icon.png'
               - 'mobile/assets/notification-icon.png'
               - 'mobile/modules/**'
               - 'mobile/package.json'
               - 'mobile/plugins/**'
-              - 'package.json'
               - 'package-lock.json'
               - 'scripts/android-e2e.mjs'
               - 'scripts/hosted-android-e2e.mjs'
@@ -85,6 +92,20 @@ jobs:
               - 'scripts/release-acceptance.mjs'
               - 'scripts/wear-emulator-smoke.mjs'
               - 'shared/release.json'
+
+      - name: Select build surfaces
+        id: decision
+        shell: bash
+        env:
+          BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
+          WEB_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.web == 'true' }}
+          WEAR_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.wear == 'true' }}
+          NATIVE_PACKAGE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.native_package == 'true' }}
+        run: |
+          echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
+          echo "web=${WEB_CHANGED}" >> "${GITHUB_OUTPUT}"
+          echo "wear=${WEAR_CHANGED}" >> "${GITHUB_OUTPUT}"
+          echo "native_package=${NATIVE_PACKAGE_CHANGED}" >> "${GITHUB_OUTPUT}"
 
   release-config:
     name: Release Configuration

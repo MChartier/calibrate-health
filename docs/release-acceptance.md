@@ -40,6 +40,13 @@ Android, Wear, package upgrade, dependency, and contract results. Every retained
 Web suites continue to
 use the repository-pinned Playwright version and its bundled Chromium.
 
+Path-targeted PR validation can intentionally skip a retained job when its surface did not change. A skipped job is
+not release evidence. Before external launch, manually dispatch the corresponding workflow from C's branch after its
+final push: `Builds` for missing Web or native artifacts, `Database Upgrade` for the server/Web rollback artifact,
+`Dependency Audit` for both production dependency graphs, and `Production Container Scan` for the server/Web image.
+Manual dispatches force the complete workflow and bind retained summaries to the selected ref's `github.sha`; verify
+that SHA equals C before using the artifacts.
+
 The data-state lane uses only synthetic `.invalid` fixtures. Its raw Playwright JSON remains runner-local because
 standard reports can include host paths and failure attachments; the retained artifact is the fixed sanitized summary
 that binds the blocking job outcome to C. Native retained artifacts likewise contain only their strict allowlisted JSON.

@@ -14,24 +14,67 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Dependency Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      audit_matrix: ${{ steps.matrix.outputs.audit_matrix }}
+      has_audit: ${{ steps.matrix.outputs.has_audit }}
+
+    steps:
+      - name: Detect affected dependency surfaces
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            root:
+              - 'package-lock.json'
+              - 'scripts/dependency-advisory-exceptions.mjs'
+            backend:
+              - 'backend/package-lock.json'
+
+      - name: Select audit workspaces
+        id: matrix
+        shell: bash
+        env:
+          ROOT_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.root == 'true' }}
+          BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
+        run: |
+          case "${ROOT_CHANGED}:${BACKEND_CHANGED}" in
+            true:true)
+              matrix='{"include":[{"workspace":"Root and Mobile","directory":".","evidence":"root","lockfile":"package-lock.json","node":"22.13.0"},{"workspace":"Backend","directory":"backend","evidence":"backend","lockfile":"backend/package-lock.json","node":"20"}]}'
+              ;;
+            true:false)
+              matrix='{"include":[{"workspace":"Root and Mobile","directory":".","evidence":"root","lockfile":"package-lock.json","node":"22.13.0"}]}'
+              ;;
+            false:true)
+              matrix='{"include":[{"workspace":"Backend","directory":"backend","evidence":"backend","lockfile":"backend/package-lock.json","node":"20"}]}'
+              ;;
+            *)
+              matrix='{"include":[]}'
+              ;;
+          esac
+          echo "audit_matrix=${matrix}" >> "${GITHUB_OUTPUT}"
+          if [ "${matrix}" = '{"include":[]}' ]; then
+            echo "has_audit=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has_audit=true" >> "${GITHUB_OUTPUT}"
+          fi
+
   production-audit:
     name: ${{ matrix.workspace }} Production Audit
+    needs: changes
+    if: needs.changes.outputs.has_audit == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - workspace: Root and Mobile
-            directory: .
-            evidence: root
-            lockfile: package-lock.json
-            node: 22.13.0
-          - workspace: Backend
-            directory: backend
-            evidence: backend
-            lockfile: backend/package-lock.json
-            node: 20
+      matrix: ${{ fromJSON(needs.changes.outputs.audit_matrix) }}
 
     steps:
       - name: Checkout

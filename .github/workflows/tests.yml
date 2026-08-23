@@ -11,8 +11,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Test Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+
+    steps:
+      - name: Detect affected test surfaces
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'docs/openapi/v1.yaml'
+              - 'docs/weight-trend-v2-tuning-report.json'
+              - 'shared/**'
+            mobile:
+              - 'backend/package-lock.json'
+              - 'docs/openapi/v1.yaml'
+              - 'mobile/**'
+              - 'package-lock.json'
+              - 'packages/api-client/**'
+              - 'shared/**'
+
   backend-tests:
     name: Backend Tests
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -61,6 +93,8 @@ jobs:
 
   mobile-tests:
     name: Mobile Tests
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

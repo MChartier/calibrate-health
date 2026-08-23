@@ -2,6 +2,7 @@ name: Database Upgrade
 
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,8 +12,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Database Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      database: ${{ steps.decision.outputs.database }}
+
+    steps:
+      - name: Detect affected database surfaces
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            database:
+              - 'backend/package-lock.json'
+              - 'backend/prisma.config.ts'
+              - 'backend/prisma/**'
+              - 'backend/src/config/database.ts'
+              - 'backend/src/config/databaseUtils.ts'
+              - 'backend/src/observability.ts'
+              - 'backend/src/services/materializedWeightTrend.ts'
+              - 'backend/src/services/weightTrend*.ts'
+              - 'backend/src/utils/date.ts'
+              - 'backend/tsconfig.json'
+              - 'deploy/backup/**'
+              - 'scripts/postgres-*.mjs'
+              - 'shared/weightTrend*.ts'
+
+      - name: Select database execution
+        id: decision
+        shell: bash
+        env:
+          DATABASE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.database == 'true' }}
+        run: echo "database=${DATABASE_CHANGED}" >> "${GITHUB_OUTPUT}"
+
   populated-upgrade:
     name: Populated Postgres Upgrade
+    needs: changes
+    if: needs.changes.outputs.database == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 7
     services:
@@ -62,6 +104,8 @@ jobs:
         run: node scripts/postgres-weight-trend-concurrency-smoke.mjs
   release-upgrade-rollback:
     name: v0.14.0 Upgrade and Encrypted Rollback
+    needs: changes
+    if: needs.changes.outputs.database == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

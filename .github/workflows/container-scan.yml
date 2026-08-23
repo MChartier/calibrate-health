@@ -14,8 +14,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Classify Production Image Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      scan: ${{ steps.decision.outputs.scan }}
+
+    steps:
+      - name: Detect affected production image surfaces
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            image:
+              - '.dockerignore'
+              - 'Dockerfile.app'
+              - 'backend/**'
+              - 'mobile/**'
+              - 'package-lock.json'
+              - 'package.json'
+              - 'packages/**'
+              - 'scripts/expo-cli-environment.mjs'
+              - 'scripts/expo-web-build.mjs'
+              - 'scripts/expo-web-release.mjs'
+              - 'scripts/production-container-smoke.mjs'
+              - 'scripts/release-acceptance.mjs'
+              - 'shared/**'
+
+      - name: Select scan execution
+        id: decision
+        shell: bash
+        env:
+          IMAGE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.image == 'true' }}
+        run: echo "scan=${IMAGE_CHANGED}" >> "${GITHUB_OUTPUT}"
+
   scan:
     name: High and Critical Vulnerabilities
+    needs: changes
+    if: needs.changes.outputs.scan == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
