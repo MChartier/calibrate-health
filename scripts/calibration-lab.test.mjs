@@ -113,8 +113,8 @@ test('calibration lab ignores apply and undo actions for a different recommendat
 
 test('calibration lab uses the same React presentation as Progress', async () => {
   const labMain = await readFile(new URL('../tools/calibration-lab/main.tsx', import.meta.url), 'utf8');
-  assert.match(labMain, /import \{ CalibrationInsightCardView \}/);
-  assert.match(labMain, /<CalibrationInsightCardView/);
+  assert.match(labMain, /import \{ PlanCheckCardView \}/);
+  assert.match(labMain, /<PlanCheckCardView/);
   assert.match(labMain, /onApplyRecommendation=\{applyRecommendation\}/);
   assert.match(labMain, /onCancelScheduledChange=\{cancelScheduledChange\}/);
   assert.doesNotMatch(labMain, /Estimated budget difference/);

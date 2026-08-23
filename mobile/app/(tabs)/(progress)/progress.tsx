@@ -16,7 +16,7 @@ import { TabScreen } from '../../../src/components/TabScreen';
 import { SegmentedControl } from '../../../src/components/SegmentedControl';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
 import { WeightTrendPreviewCard } from '../../../src/components/progress/WeightTrendPreviewCard';
-import { CalibrationInsightCard } from '../../../src/components/CalibrationInsightCard';
+import { PlanCheckCard } from '../../../src/components/PlanCheckCard';
 import { calibrationStatusQueryKey } from '../../../src/calibration/queryKeys';
 import { isNeverEmpty } from '../../../src/asyncState/resolveAsyncState';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
@@ -373,13 +373,14 @@ export default function ProgressScreen() {
                     />
                 </AsyncStateBoundary>
 
+                {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <PlanCheckCard suppressStaleNotice />}
+
                 <WeightTrendPreviewCard
                     suppressStaleNotice
                     onPress={() => router.push('/weight-trend')}
                     onLogWeight={() => router.push('/weight')}
                 />
 
-                {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <CalibrationInsightCard suppressStaleNotice />}
             </TabScreen>
 
             <BottomSheetModal
