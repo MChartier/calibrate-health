@@ -4,8 +4,10 @@ import { chromium } from '@playwright/test';
 
 const CAPTURE_ENABLED = process.env.CALIBRATE_CAPTURE_SCREENSHOTS === '1';
 const LAB_URL = process.env.CALIBRATE_CALIBRATION_LAB_URL?.trim() || 'http://127.0.0.1:5173';
-const OUTPUT_DIRECTORY = path.resolve('docs/screenshots/calibration-signals');
+const OUTPUT_DIRECTORY = path.resolve('docs/screenshots/plan-check');
 const VIEWPORT = { width: 1440, height: 1100 };
+const COMPACT_VIEWPORT = { width: 390, height: 844 };
+const ACTION_SCENARIO_ID = 'target-too-high';
 
 if (!CAPTURE_ENABLED) {
   throw new Error(
@@ -44,7 +46,7 @@ try {
     scenarioUrl.searchParams.set('scenario', scenario.id);
     await page.goto(scenarioUrl.href, { waitUntil: 'networkidle' });
     await page.locator('.preview-state', { hasText: 'Live preview' }).waitFor();
-    await page.getByText('Calibration', { exact: true }).waitFor();
+    await page.getByText('Plan check', { exact: true }).waitFor();
     await page.evaluate(async () => {
       await document.fonts.ready;
     });
@@ -63,7 +65,54 @@ try {
       path: path.join(OUTPUT_DIRECTORY, filename),
     });
     process.stdout.write('Captured ' + filename + ': ' + scenario.name + '\n');
+
+    if (scenario.id === ACTION_SCENARIO_ID) {
+      await page.getByText('Review adjustment', { exact: true }).click();
+      await page.getByText('Review calorie target', { exact: true }).waitFor();
+      const reviewFilename = '20-adjustment-review.png';
+      await page.screenshot({
+        animations: 'disabled',
+        path: path.join(OUTPUT_DIRECTORY, reviewFilename),
+      });
+      process.stdout.write('Captured ' + reviewFilename + ': desktop adjustment review\n');
+    }
   }
+
+  const actionScenario = scenarios.find((scenario) => scenario?.id === ACTION_SCENARIO_ID);
+  if (!actionScenario) {
+    throw new Error('Calibration lab is missing the action scenario used for responsive evidence.');
+  }
+  await page.setViewportSize(COMPACT_VIEWPORT);
+  const compactUrl = new URL('/', LAB_URL);
+  compactUrl.searchParams.set('scenario', actionScenario.id);
+  await page.goto(compactUrl.href, { waitUntil: 'networkidle' });
+  await page.locator('.preview-state', { hasText: 'Live preview' }).waitFor();
+  await page.getByText('Plan check', { exact: true }).waitFor();
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+  await page.addStyleTag({
+    content: [
+      'header, .preview-heading, .workspace { display: none !important; }',
+      'main, .preview-panel, .product-preview { padding: 0 !important; margin: 0 !important; }',
+      '* { caret-color: transparent !important; }',
+    ].join('\n'),
+  });
+  const compactFilename = '21-target-too-high-compact.png';
+  await page.locator('.product-preview').screenshot({
+    animations: 'disabled',
+    path: path.join(OUTPUT_DIRECTORY, compactFilename),
+  });
+  process.stdout.write('Captured ' + compactFilename + ': compact actionable card\n');
+
+  await page.getByText('Review adjustment', { exact: true }).click();
+  await page.getByText('Review calorie target', { exact: true }).waitFor();
+  const compactReviewFilename = '22-adjustment-review-compact.png';
+  await page.screenshot({
+    animations: 'disabled',
+    path: path.join(OUTPUT_DIRECTORY, compactReviewFilename),
+  });
+  process.stdout.write('Captured ' + compactReviewFilename + ': compact adjustment review\n');
 
   await context.close();
 } finally {
@@ -71,5 +120,6 @@ try {
 }
 
 process.stdout.write(
-  'Captured ' + scenarios.length + ' Calibration scenarios in ' + OUTPUT_DIRECTORY + '.\n',
+  'Captured ' + scenarios.length + ' Plan check scenarios plus desktop and compact review evidence in ' +
+    OUTPUT_DIRECTORY + '.\n',
 );

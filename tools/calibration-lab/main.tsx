@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { CalibrationInput, CalibrationResult } from '@calibrate/shared/calibration';
 import type { CalibrationStatusResponse } from '@calibrate/api-client';
-import { CalibrationInsightCardView } from '../../mobile/src/components/CalibrationInsightCard';
+import { PlanCheckCardView } from '../../mobile/src/components/PlanCheckCard';
 import {
     applyPreviewRecommendation,
     buildPreviewStatus,
@@ -133,13 +133,13 @@ function LabApp() {
                     <div>
                         <span className="eyebrow">Shared product component</span>
                         <h2 id="preview-title">End-user preview</h2>
-                        <p>This is the same calibration card and detail sheet rendered on Progress. Apply and undo are simulated locally.</p>
+                        <p>This is the same Plan check card and review sheet rendered on Progress. Apply and undo are simulated locally.</p>
                     </div>
                     <span className="preview-state">{isEvaluating ? 'Evaluating...' : 'Live preview'}</span>
                 </div>
                 <div className="product-preview">
                     <SafeAreaProvider>
-                        <CalibrationInsightCardView
+                        <PlanCheckCardView
                             status={status}
                             isLoading={isEvaluating && !status}
                             error={error}

@@ -1,88 +1,125 @@
-# Calibration progress signals
+# Plan check
 
-Calibration compares measured weight change with the change implied by logged calories and the configured goal rate. The Progress card presents those measurements directly. Legacy evaluator prose remains in the response for compatibility, but the product card does not render "headline", "summary", "nextStep", or "missingCriteria".
+Plan check is the user-facing Calibration experience on Progress. It answers two questions:
 
-## Product contract
+1. Does the user's recent weight trend match the configured goal rate?
+2. Does the evidence support changing the daily calorie target?
 
-GET /api/v1/calibration/status returns "evaluation.signals" as additive signal contract version 1. Recommendation model version 4 and all recommendation thresholds remain unchanged.
+It is a decision aid, not a second progress dashboard. Goal progress and the detailed weight chart remain the source of broader progress information.
 
-Each signal response includes:
+## Product states
 
-- "recent": the seven completed user-local calendar days ending on "asOfDate".
-- "longTerm": the uninterrupted active-goal measurement period.
-- Structured weekly-signal and target-review readiness.
-- The canonical minimum daily calorie target used by the BMR-based safety check.
+### Waiting
 
-Every signal window carries its scope, dates, calendar-day count, food and weight evidence counts, average logged intake interval, estimated daily calorie deficit or surplus interval, expected weight-change interval, observed weight-change interval, planned change, goal-relative status, and logs-versus-weight agreement status. Intervals are 95% intervals.
+Waiting is shown until a decision-grade weight trend is available. The card sets expectations and names one structured blocker. It does not show provisional trend values, calorie balance, readiness meters, or countdowns.
 
-The recent scope is always labeled "Past 7 days" when unlocked. Long-term scope is one of:
+A reliable assessment requires:
 
-- "Since goal start" for continuous goal history.
-- "Since tracking resumed" after a food-tracking pause.
-- "Current tracking period" after the weight trend starts a new segment.
+- A continuous current tracking period
+- At least 14 elapsed days of weight history
+- At least three weigh-ins
+- A weigh-in no more than seven days old
+- A sufficiently narrow weight-trend interval
 
-History before a pause or trend reset is never bridged into the displayed long-term comparison.
+A tracking pause or weight-trend segment reset restarts the assessment.
 
-## Measurement rules
+### On track
 
-The current incomplete local day is excluded. If the current day is complete, it becomes "asOfDate"; otherwise the prior local day is used.
+On track is shown when the retrospective weight-trend interval is sufficiently narrow and centered in the configured goal-rate band.
 
-Logged calorie balance is:
+The card shows:
 
-    profile-estimated TDEE - modeled logged intake
+- The completed evidence period
+- Recent weight trend midpoint
+- The likely 95% range for that past trend
+- The configured goal rate
+- A no-change decision
 
-A positive value is a deficit and predicts loss. A negative value is a surplus and predicts gain. Expected weight change is:
+The card explicitly says that the trend describes the period shown and is not a forecast.
 
-    -daily calorie balance * calendar days / 7,700 kcal per kg
+### Off track
 
-The client converts weight intervals to pounds when requested. Calories out remains the profile-estimated TDEE; Calibration never exposes a weight-inferred replacement TDEE.
+Off track is shown only when the full trend interval supports a faster, slower, above-maintenance, or below-maintenance conclusion.
 
-Missing, incomplete, and suspicious days receive conservative intake ranges. They widen the interval instead of becoming zero intake or disappearing. Four hundred deterministic bootstrap samples produce the food, balance, and expected-change intervals.
+The target decision remains separate:
 
-For an uninterrupted goal, long-term observed change uses the stored goal-start weight as its exact starting observation and the latest smoothed trend estimate as its endpoint. After a pause or trend reset, it compares the first and latest smoothed estimates in the current period and conservatively propagates uncertainty from both endpoints.
+- change_available: a materialized recommendation can be reviewed
+- no_change_recommended: the current target should be kept for now
+- waiting: food evidence is not ready for a target decision
+- safety_limited: the safety floor blocks a lower target
+- policy_unavailable: automatic adjustments are unavailable for this goal
 
-Goal pace uses a shared 75 kcal/day-equivalent tolerance. Faster or slower is reported only when the complete observed interval is beyond the tolerated goal-rate band. Aligned requires a sufficiently narrow interval centered in the band; otherwise the status remains uncertain. Maintenance uses explicit above- and below-maintenance statuses.
+An off-track result does not imply that the calorie target is wrong.
 
-## Readiness
+## Measurement
 
-Before the weekly comparison unlocks, the card shows one progress bar based on the least-complete required input:
+Recent weight trend is retrospective. It is the robust average slope through scale readings in the selected uninterrupted 14-42 day window.
 
-- 7 plausible completed food-log days.
-- Weigh-ins spanning 7 days.
-- At least 2 weigh-ins.
+The shared weight-trend model:
 
-Once food evidence can support a calorie-balance interval, the card shows that value in an "Available now" tile even if weight comparison is still locked.
+- Fits weight against calendar time
+- Downweights isolated scale spikes
+- Estimates uncertainty from residual scale variation, evidence spacing, and sample size
+- Returns a midpoint and approximate 95% interval in kilograms per week
 
-After weekly signals unlock, eligible loss goals show a compact milestone toward the 14-day target review. Once calendar thresholds are met, remaining issues are structured blocker codes, including current weigh-in, food uncertainty, weight uncertainty, adult eligibility, and the safety floor. The client maps codes to labels and never parses server-authored sentences.
+Food logs do not determine this trend or widen its interval. They are used with profile-estimated TDEE to decide whether a calorie-target correction is supported.
 
-Maintenance and gain goals receive the same descriptive signals. Target-review readiness is "not_eligible", and no calorie-target action is materialized.
+The goal rate is a planning target:
 
-## Recommendations and scheduling
+```text
+daily deficit x 7 / 7,700 kcal per kilogram
+```
 
-Recommendations remain limited to adults with an active weight-loss goal and retain model version 4 behavior:
+Positive deficits produce a negative weight-change goal. Surpluses produce a positive goal. Maintenance produces zero.
 
-- 14-42 day action windows and the existing 90-day intake reference.
-- At least 3 weights spanning 14 days in the uninterrupted segment.
-- A sufficiently narrow correction interval.
-- A maximum 150 kcal accepted step, rounded to 25 kcal.
-- A minimum target of ceil(max(BMR, 1000 kcal/day)).
+The goal rate is not a prediction. The calorie target is the intervention intended to achieve it. An approved Calibration adjustment changes the calorie target while preserving the configured goal rate and profile-estimated TDEE.
 
-The card shows current and proposed daily targets, the bounded change, selected evidence window, direct Apply action, and Review adjustment action. The compact review shows measured rows, modeled correction range, conservative first step, numeric BMR-based safety limit, and Apply/Close controls.
+## Assessment contract
 
-A scheduled revision appears in a slim banner. Its descriptive signal panels remain visible, and Undo remains available until the effective local date. Apply revalidates the current evidence and fingerprint before creating the goal-scoped revision.
+`CalibrationResult.assessment` is versioned separately from recommendation model version 4.
 
-Recommendation fingerprints contain only action evidence: model and calorie-policy versions, goal and plan boundary, profile calorie inputs, the bounded 90-day food history, the 14-42 day weight/action history, and pause state. Older descriptive history can update long-term signals without staling an otherwise unchanged recommendation.
+It contains:
 
-## Development lab
+- state and typed pace status
+- exact evidence dates and elapsed span
+- retrospective weekly trend interval
+- configured goal rate
+- structured assessment blocker
+- structured target decision and target-decision blocker
+- the applicable daily calorie safety floor
 
-Run:
+The client does not parse server-authored prose. Legacy headline, summary, nextStep, historyProgress, and missingCriteria remain available for compatibility but are not rendered by Plan check.
 
-    npm run dev:calibration-lab
+## Recommendation behavior
 
-The lab renders the exported CalibrationInsightCardView used by Progress. Its 19 shared presets cover early, mature, uncertain, recommendation, scheduled, paused, maintenance, gain, pounds, BMR-limited, and maximum-window states. The "scheduled" preset starts with its recommendation applied locally so the banner and Undo behavior can be reviewed directly.
+Recommendation thresholds, 14-42 day action windows, fingerprints, materialization, effective dates, apply, cancel, offline invalidation, and haptics remain unchanged.
 
-Presets are deep-linkable:
+Automatic target recommendations are enforced inside the shared evaluator for adult loss goals only. Maintenance and gain goals still receive Plan check assessments but never receive automatic calorie-target changes.
 
-    http://127.0.0.1:5173/?scenario=scheduled
+The card exposes one Review adjustment action. Apply is available only inside the review sheet and only when the response contains both an evaluator recommendation and top-level materialized recommendation metadata.
 
-See [Calibration signal QA](calibration-insight-qa.md) for the automated and visual review matrix.
+Scheduled changes appear as a slim transactional banner. They do not replace the underlying assessment.
+
+## Data retrieval
+
+Backend evidence remains bounded:
+
+- Food history uses the existing 90-day personal reference horizon
+- Weight history uses the maximum 42-day action window plus one boundary day
+- Goal-to-date descriptive reads are not required
+
+Descriptive history therefore cannot change an otherwise identical recommendation fingerprint.
+
+## Accessibility
+
+Status is communicated through text and an icon; color is supplementary.
+
+The comparison exposes one accessible summary naming:
+
+- the completed period
+- trend midpoint and likely range
+- goal rate
+- conclusion
+- the fact that the result is retrospective, not predictive
+
+Decorative chart internals are hidden from assistive technology. Metric and action rows stack at compact widths and large font scales.

@@ -1517,68 +1517,38 @@ export interface components {
             weightPoints: number;
             weightSpanDays: number;
         };
-        CalibrationReadinessRequirement: {
-            /** @enum {string} */
-            code: "complete_food_days" | "weight_span_days" | "weight_points" | "current_weigh_in" | "food_uncertainty" | "weight_uncertainty" | "adult_only" | "safety_floor";
-            current: number | null;
-            required: number | null;
-            /** @enum {string} */
-            status: "complete" | "remaining" | "blocked";
-        };
-        CalibrationSignalWindow: {
-            /** @enum {string} */
-            availability: "partial" | "available" | "unavailable";
-            /** @enum {string} */
-            scope: "recent_7_days" | "since_goal_start" | "since_tracking_resumed" | "current_tracking_period";
-            /** Format: date */
-            startDate: string;
-            /** Format: date */
-            endDate: string;
-            calendarDays: number;
-            /** @enum {number} */
-            confidenceLevel: 0.95;
-            dataQuality: components["schemas"]["CalibrationDataQuality"];
-            averageIntakeKcal: components["schemas"]["CalibrationInterval"] | null;
-            estimatedDailyDeficitKcal: components["schemas"]["CalibrationInterval"] | null;
-            expectedWeightChangeKg: components["schemas"]["CalibrationInterval"] | null;
-            observedWeightChangeKg: components["schemas"]["CalibrationInterval"] | null;
-            plannedWeightChangeKg: number;
-            /** @enum {string} */
-            goalPaceStatus: "faster" | "aligned" | "slower" | "above_maintenance" | "below_maintenance" | "uncertain";
-            /** @enum {string} */
-            logsAgreementStatus: "consistent" | "divergent" | "uncertain";
-        };
-        CalibrationSignals: {
-            /** @enum {integer} */
-            version: 1;
-            minimumDailyCalorieTargetKcal: number | null;
-            recent: components["schemas"]["CalibrationSignalWindow"];
-            longTerm: components["schemas"]["CalibrationSignalWindow"];
-            readiness: {
-                weeklySignals: {
-                    /** @enum {string} */
-                    status: "building" | "available";
-                    progressDays: number;
-                    /** @enum {integer} */
-                    requiredDays: 7;
-                    requirements: components["schemas"]["CalibrationReadinessRequirement"][];
-                };
-                targetReview: {
-                    /** @enum {string} */
-                    status: "not_eligible" | "building" | "available" | "limited";
-                    progressDays: number;
-                    /** @enum {integer} */
-                    requiredDays: 14;
-                    requirements: components["schemas"]["CalibrationReadinessRequirement"][];
-                };
-            };
-        };
         CalibrationRecommendation: {
             currentTargetKcal: number;
             recommendedTargetKcal: number;
             adjustmentStepKcal: number;
             currentTargetAdjustmentKcal: number;
             recommendedTargetAdjustmentKcal: number;
+        };
+        CalibrationAssessment: {
+            /** @enum {integer} */
+            version: 1;
+            /** @enum {string} */
+            state: "waiting" | "on_track" | "off_track";
+            /** @enum {string|null} */
+            paceStatus: "faster" | "aligned" | "slower" | "above_maintenance" | "below_maintenance" | null;
+            window: {
+                /** Format: date */
+                startDate: string;
+                /** Format: date */
+                endDate: string;
+                spanDays: number;
+                /** @enum {number} */
+                confidenceLevel: 0.95;
+            } | null;
+            recentWeightTrendKgPerWeek: components["schemas"]["CalibrationInterval"] | null;
+            goalRateKgPerWeek: number;
+            /** @enum {string|null} */
+            blocker: "tracking_paused" | "plan_unavailable" | "trend_unavailable" | "weight_history" | "current_weigh_in" | "food_history" | "food_uncertainty" | "weight_uncertainty" | null;
+            /** @enum {string} */
+            targetDecision: "waiting" | "no_change_recommended" | "change_available" | "safety_limited" | "policy_unavailable";
+            /** @enum {string|null} */
+            targetDecisionBlocker: "tracking_paused" | "plan_unavailable" | "trend_unavailable" | "weight_history" | "current_weigh_in" | "food_history" | "food_uncertainty" | "weight_uncertainty" | null;
+            minimumDailyCalorieTargetKcal: number;
         };
         CalibrationEvaluation: {
             modelVersion: number;
@@ -1620,7 +1590,7 @@ export interface components {
                 averageSteps: number | null;
                 averageActiveCaloriesKcal: number | null;
             } | null;
-            signals: components["schemas"]["CalibrationSignals"];
+            assessment: components["schemas"]["CalibrationAssessment"];
         };
         ScheduledCalibrationChange: {
             recommendationId: number | null;
