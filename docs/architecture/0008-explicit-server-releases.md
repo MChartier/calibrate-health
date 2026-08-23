@@ -17,24 +17,29 @@ need an explicit preparation step that can own the synchronized version commit w
 Ordinary feature and fix PRs leave the stable server version unchanged. After changes land on `master`, an operator
 runs **Cut release** and chooses a strict `patch`, `minor`, or `major` increment. The workflow requires the manifest to
 match the highest stable tag, prepares all server/web mirrors on `release/vMAJOR.MINOR.PATCH`, and validates that exact
-commit. Validation covers synchronized release configuration, dependency and API/deploy contracts, Expo web release
-checks, production-image startup, and high/critical vulnerability scanning. An encrypted database rollback rehearsal
-runs only when migrations changed since the previous stable tag. Full Playwright/UX regression suites, performance
-diagnostics, and native validation remain outside this explicit server/web release cut.
+commit. Validation covers candidate identity, synchronized release configuration, the exact generated mirror set, and
+a production-image startup and served-Web smoke. Affected pull-request and scheduled workflows own the broader unit,
+integration, API/deploy, dependency, vulnerability, and database checks; the version-only release candidate does not
+replay them.
 
 The candidate is merged through an action-created version-only PR only when `master` still points to the source commit
 selected at dispatch. The workflow verifies and pushes the exact GitHub-generated PR merge commit without force; the
 server-side fast-forward check atomically rejects a concurrent `master` update. Publishing tags the validated candidate
 commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate
 manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone, Wear,
-Expo OTA, and self-host deployment remain independent.
+Expo OTA, and self-host deployment remain independent. Expo OTA publishing has its own operator-dispatched workflow;
+it requires an installed native-build reference, publishes internal first, and waits for protected production approval.
+**Cut release** does not invoke it.
 
 ## Consequences
 
 - Parallel feature work no longer reserves or guesses release versions.
 - A forgotten version bump cannot block a deployment because feature PRs do not own release identity.
-- Release validation runs only for an explicit cut and is bound to one immutable candidate.
-- Database rollback rehearsal adds release wall time only when a migration actually changed.
+- Release validation is bound to one immutable candidate and stays limited to metadata integrity and a cross-cutting
+  production smoke.
+- Targeted pull-request and scheduled checks remain the source of truth for broader validation.
 - `master` drift, including a change racing the final merge, aborts before the protected branch is updated.
 - A manifest ahead of the latest tag represents one pending prepared release and blocks another bump until recovered.
 - The release PR and tag add explicit provenance without creating a GitHub Release object or generated changelog.
+- OTA updates require a separate operator decision tied to the installed native build and never publish merely because
+  `master` advanced or a server/web release was cut.

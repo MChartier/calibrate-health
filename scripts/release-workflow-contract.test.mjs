@@ -62,12 +62,11 @@ function assertPathFilterOutputs(job, outputNames, stepId = 'filter') {
   }
 }
 
-test('manual release preparation validates the exact candidate container before merging its release PR', () => {
+test('manual release preparation validates exact metadata and a production smoke before merging its release PR', () => {
   const workflow = readWorkflow('cut-release.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
   const prepare = workflowJobBlock(workflow, 'prepare');
   const validation = workflowJobBlock(workflow, 'release-validation');
-  const rollback = workflowJobBlock(workflow, 'database-rollback');
   const finalize = workflowJobBlock(workflow, 'finalize');
   const cleanup = workflowJobBlock(workflow, 'cleanup-candidate');
   const publish = workflowJobBlock(workflow, 'publish');
@@ -86,41 +85,35 @@ test('manual release preparation validates the exact candidate container before 
   assert.match(prepare, /MANIFEST_TAG.*LATEST_TAG/);
   assert.match(prepare, /release:prepare -- --bump/);
   assert.doesNotMatch(prepare, /release:prepare.*--latest-tag/);
-  assert.match(prepare, /git diff --quiet "\$\{LATEST_TAG\}" "\$\{SOURCE_SHA\}" -- backend\/prisma\/migrations/);
-  assert.match(prepare, /database_migrations_changed=\$\{DATABASE_MIGRATIONS_CHANGED\}/);
+  assert.doesNotMatch(prepare, /database_migrations_changed|backend\/prisma\/migrations/);
   assert.match(prepare, /BRANCH="release\/\$\{TAG\}"/);
   assert.match(prepare, /git commit -m "Prepare release \$\{TAG\}"/);
   assert.match(prepare, /git push --set-upstream origin/);
 
   assert.match(validation, /ref: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
-  assert.match(validation, /test "\$\(git rev-parse HEAD\)" = "\$\{\{ needs\.prepare\.outputs\.release_sha \}\}"/);
+  assert.match(validation, /test "\$\(git rev-parse HEAD\)" = "\$\{RELEASE_SHA\}"/);
+  assert.match(validation, /test "\$\(git rev-parse HEAD\^\)" = "\$\{SOURCE_SHA\}"/);
+  assert.match(validation, /tag --latest-tag "v\$\{PREVIOUS_VERSION\}"/);
+  assert.match(validation, /shared\/release\.json.*server\.version/);
   assert.match(validation, /node scripts\/release-config\.mjs check/);
-  assert.match(validation, /npm run test:release/);
-  assert.match(validation, /npm run test:expo-web:release/);
-  assert.match(validation, /npm run test:deploy/);
-  assert.match(validation, /npm run api:contract:check/);
-  assert.match(validation, /git diff --exit-code/);
+  assert.match(validation, /EXPECTED_FILES/);
+  assert.match(validation, /git diff --name-only "\$\{SOURCE_SHA\}" "\$\{RELEASE_SHA\}"/);
+  assert.match(validation, /git diff --check "\$\{SOURCE_SHA\}" "\$\{RELEASE_SHA\}"/);
   assert.match(validation, /docker build --file Dockerfile\.app --tag calibrate:release-candidate \./);
   assert.match(validation, /docker run --detach --name calibrate-release-smoke --network host/);
   assert.match(validation, /http:\/\/127\.0\.0\.1:3000\/api\/v1\/readyz/);
   assert.match(validation, /npm run test:container:web -- http:\/\/127\.0\.0\.1:3000/);
-  assert.match(validation, /uses: aquasecurity\/trivy-action@[0-9a-f]{40}/);
-  assert.match(validation, /severity: HIGH,CRITICAL/);
-  assert.match(validation, /exit-code: '1'/);
-  assert.doesNotMatch(validation, /test:ux|test:performance:web|hosted-result/);
+  assert.doesNotMatch(
+    validation,
+    /Install release dependencies|npm ci|dependency-advisory-exceptions|test:release|test:expo-web:release|test:deploy|api:contract:check|trivy-action|severity: HIGH,CRITICAL/
+  );
+  assert.doesNotMatch(workflow, /\n  database-rollback:|database_migrations_changed|test:db:rollback/);
   assert.doesNotMatch(workflow, /npm run release:check:production/);
   assert.doesNotMatch(packageConfig.scripts['release:check:container'], /--strict/);
   assert.match(packageConfig.scripts['release:check:production'], /--strict/);
 
-  assert.match(rollback, /if: needs\.prepare\.outputs\.database_migrations_changed == 'true'/);
-  assert.match(rollback, /ref: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
-  assert.match(rollback, /npm run test:db:rollback:unit/);
-  assert.match(rollback, /npm run test:db:rollback/);
-  assert.doesNotMatch(rollback, /upload-artifact|hosted-result/);
-
-  assert.match(finalize, /needs: \[prepare, release-validation, database-rollback\]/);
-  assert.match(finalize, /needs\.release-validation\.result == 'success'/);
-  assert.match(finalize, /needs\.database-rollback\.result == 'success'.*needs\.database-rollback\.result == 'skipped'/s);
+  assert.match(finalize, /needs: \[prepare, release-validation\]/);
+  assert.doesNotMatch(finalize, /database-rollback|needs\.release-validation\.result/);
   assert.match(finalize, /Refuse master drift/);
   assert.match(finalize, /origin\/master.*SOURCE_SHA/);
   assert.match(finalize, /github\.rest\.pulls\.create/);
@@ -568,27 +561,36 @@ test('hidden workflow evidence paths are explicitly included in artifact uploads
   }
 });
 
-test('Expo OTA updates publish internal automatically and gate production approval', () => {
+test('Expo OTA updates are manually dispatched against an installed native build and gate production approval', () => {
   const workflow = readWorkflow('expo-ota-update.yml');
+  const cutReleaseWorkflow = readWorkflow('cut-release.yml');
+  const internal = workflowJobBlock(workflow, 'publish-internal');
+  const production = workflowJobBlock(workflow, 'publish-production');
 
-  assert.match(workflow, /push:\s*\n\s+branches: \[master\]/);
-  assert.match(workflow, /publish-internal:/);
-  assert.match(workflow, /environment: preview/);
-  assert.match(workflow, /EXPO_UPDATES_CHANNEL: internal/);
-  assert.match(workflow, /publish-production:/);
-  assert.match(workflow, /needs: publish-internal/);
-  assert.match(workflow, /environment: production/);
-  assert.match(workflow, /EXPO_UPDATES_CHANNEL: production/);
-  assert.match(workflow, /PREVIOUS_MASTER_REF: \$\{\{ github\.event\.before \}\}/);
-  assert.match(workflow, /--previous-ref "\$\{PREVIOUS_MASTER_REF\}"/);
-  assert.match(workflow, /cancel-in-progress: true/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /native_build_ref:\s*\n\s+description:[^\n]+\n\s+required: true/);
+  assert.match(workflow, /message:\s*\n\s+description:[^\n]+\n\s+required: true/);
+  assert.match(workflow, /cancel-in-progress: false/);
+  assert.match(internal, /environment: preview/);
+  assert.match(internal, /EXPO_UPDATES_CHANNEL: internal/);
+  assert.match(production, /needs: publish-internal/);
+  assert.match(production, /environment: production/);
+  assert.match(production, /EXPO_UPDATES_CHANNEL: production/);
+  for (const job of [internal, production]) {
+    assert.match(job, /NATIVE_BUILD_REF: \$\{\{ inputs\.native_build_ref \}\}/);
+    assert.match(job, /OTA_MESSAGE: \$\{\{ inputs\.message \}\}/);
+    assert.match(job, /refs\/heads\/master/);
+    assert.match(job, /ref: \$\{\{ github\.sha \}\}/);
+    assert.match(job, /expo-ota-ci-preflight\.mjs/);
+    assert.match(job, /--native-build-ref "\$\{NATIVE_BUILD_REF\}"/);
+  }
   assert.match(workflow, /secrets\.EXPO_TOKEN/);
   assert.match(workflow, /eas env:pull/);
-  assert.match(workflow, /expo-ota-ci-preflight\.mjs/);
   assert.match(workflow, /eas update/);
   assert.match(workflow, /--platform android/);
   assert.match(workflow, /--non-interactive/);
-  assert.doesNotMatch(workflow, /workflow_dispatch:|native_build_ref|native-ota-ci-preflight/);
+  assert.doesNotMatch(workflow, /\n\s+push:|github\.event\.(before|head_commit)|--previous-ref/);
+  assert.doesNotMatch(cutReleaseWorkflow, /expo-ota-update|Publish Expo OTA Update/);
 });
 
 test('pull request test suites run only for their affected surfaces', () => {
@@ -951,12 +953,10 @@ test('manual native rehearsals retain only short-lived diagnostic artifacts', ()
   }
 });
 
-test('PR rollback covers rehearsal inputs while Cut release follows migration diffs', () => {
+test('PR rollback owns migration safety without a redundant Cut release replay', () => {
   const pullRequestWorkflow = readWorkflow('database-upgrade.yml');
   const pullRequest = workflowJobBlock(pullRequestWorkflow, 'release-upgrade-rollback');
   const release = readWorkflow('cut-release.yml');
-  const releasePrepare = workflowJobBlock(release, 'prepare');
-  const releaseRollback = workflowJobBlock(release, 'database-rollback');
   const releaseFinalize = workflowJobBlock(release, 'finalize');
 
   assert.match(pullRequest, /if: needs\.changes\.outputs\.migrations == 'true'/);
@@ -965,19 +965,11 @@ test('PR rollback covers rehearsal inputs while Cut release follows migration di
     pullRequest,
     /CALIBRATE_SOURCE_COMMIT: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/
   );
-  assert.match(releasePrepare, /database_migrations_changed=\$\{DATABASE_MIGRATIONS_CHANGED\}/);
-  assert.match(releaseRollback, /if: needs\.prepare\.outputs\.database_migrations_changed == 'true'/);
-  assert.match(releaseRollback, /CALIBRATE_SOURCE_COMMIT: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
-  for (const job of [pullRequest, releaseRollback]) {
-    assert.match(job, /npm run test:db:rollback:unit/);
-    assert.match(job, /npm run test:db:rollback/);
-    assert.doesNotMatch(job, /upload-artifact|hosted-result|retention-days:/);
-  }
-  assert.match(releaseFinalize, /needs: \[prepare, release-validation, database-rollback\]/);
-  assert.match(
-    releaseFinalize,
-    /needs\.database-rollback\.result == 'success'.*needs\.database-rollback\.result == 'skipped'/s
-  );
+  assert.match(pullRequest, /npm run test:db:rollback:unit/);
+  assert.match(pullRequest, /npm run test:db:rollback/);
+  assert.doesNotMatch(pullRequest, /upload-artifact|hosted-result|retention-days:/);
+  assert.doesNotMatch(release, /\n  database-rollback:|database_migrations_changed|test:db:rollback/);
+  assert.match(releaseFinalize, /needs: \[prepare, release-validation\]/);
   assert.doesNotMatch(releaseFinalize, /ux-regression/);
 });
 

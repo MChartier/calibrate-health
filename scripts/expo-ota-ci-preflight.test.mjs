@@ -4,17 +4,17 @@ import test from 'node:test';
 import {
   parseExpoOtaCiArgs,
   validateEasCiEnvironment,
-  validateNativeRuntimeChange
+  validateNativeOtaCompatibility
 } from './expo-ota-ci-preflight.mjs';
 
-test('OTA CI CLI requires explicit channel and environment inputs', () => {
+test('OTA CI CLI requires explicit native-build targeting inputs', () => {
   assert.deepEqual(parseExpoOtaCiArgs([
-    '--previous-ref', 'abc123',
+    '--native-build-ref', 'v0.12.2',
     '--channel', 'production',
     '--environment', 'production',
     '--environment-file', 'eas.env'
   ]), {
-    previousRef: 'abc123',
+    nativeBuildRef: 'v0.12.2',
     channel: 'production',
     environment: 'production',
     environmentFile: 'eas.env',
@@ -23,16 +23,16 @@ test('OTA CI CLI requires explicit channel and environment inputs', () => {
   assert.throws(() => parseExpoOtaCiArgs(['--unknown']), /Unknown Expo OTA CI option/);
 });
 
-test('OTA CI requires an app version change when native runtime inputs change', () => {
-  const previous = { appVersion: '0.2.2', nativeFingerprint: 'abc' };
-  assert.deepEqual(validateNativeRuntimeChange(previous, { ...previous }), { changed: false });
-  assert.deepEqual(validateNativeRuntimeChange(previous, {
-    appVersion: '0.2.3',
-    nativeFingerprint: 'def'
-  }), { changed: true });
+test('OTA CI accepts only the exact compatible native runtime', () => {
+  const installed = { appVersion: '0.2.2', nativeFingerprint: 'abc' };
+  validateNativeOtaCompatibility(installed, { ...installed });
   assert.throws(
-    () => validateNativeRuntimeChange(previous, { ...previous, nativeFingerprint: 'def' }),
-    /without an app version change/
+    () => validateNativeOtaCompatibility(installed, { ...installed, appVersion: '0.2.3' }),
+    /Native app version changed/
+  );
+  assert.throws(
+    () => validateNativeOtaCompatibility(installed, { ...installed, nativeFingerprint: 'def' }),
+    /Native runtime inputs changed/
   );
 });
 

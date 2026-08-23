@@ -47,11 +47,8 @@
       "title": "Exercise populated upgrades and rollback only when database migrations change",
       "releaseScopes": ["server-web"],
       "trigger": "migration-change",
-      "workflowPaths": [
-        ".github/workflows/database-upgrade.yml",
-        ".github/workflows/cut-release.yml"
-      ],
-      "jobIds": ["populated-upgrade", "release-upgrade-rollback", "database-rollback"]
+      "workflowPaths": [".github/workflows/database-upgrade.yml"],
+      "jobIds": ["populated-upgrade", "release-upgrade-rollback"]
     },
     {
       "id": "dependency-audit",
@@ -63,7 +60,7 @@
     },
     {
       "id": "production-container",
-      "title": "Build, start, and scan the production container",
+      "title": "Validate production containers for affected pull requests and releases",
       "releaseScopes": ["server-web"],
       "trigger": "affected-pull-request-and-release",
       "workflowPaths": [

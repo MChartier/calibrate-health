@@ -23,7 +23,7 @@ function requiredValue(argv, index, option) {
 
 export function parseExpoOtaCiArgs(argv) {
   const values = {
-    previousRef: null,
+    nativeBuildRef: null,
     channel: null,
     environment: null,
     environmentFile: null,
@@ -32,7 +32,7 @@ export function parseExpoOtaCiArgs(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const option = argv[index];
     if (option === '--help' || option === '-h') values.help = true;
-    else if (option === '--previous-ref') values.previousRef = requiredValue(argv, index++, option);
+    else if (option === '--native-build-ref') values.nativeBuildRef = requiredValue(argv, index++, option);
     else if (option === '--channel') values.channel = requiredValue(argv, index++, option);
     else if (option === '--environment') values.environment = requiredValue(argv, index++, option);
     else if (option === '--environment-file') values.environmentFile = requiredValue(argv, index++, option);
@@ -81,15 +81,18 @@ export function validateEasCiEnvironment(values, expected) {
   return { projectId, channel, serverUrl };
 }
 
-export function validateNativeRuntimeChange(previous, current) {
-  const changed = previous.nativeFingerprint !== current.nativeFingerprint;
-  if (changed && previous.appVersion === current.appVersion) {
+export function validateNativeOtaCompatibility(baseline, current) {
+  if (baseline.appVersion !== current.appVersion) {
     throw new Error(
-      `Native runtime inputs changed without an app version change (${current.appVersion}). ` +
-      'Increment the mobile app version and create a new signed native build before publishing OTA.'
+      `Native app version changed from ${baseline.appVersion} to ${current.appVersion}. ` +
+      'Create and install a new signed phone build instead of publishing OTA.'
     );
   }
-  return { changed };
+  if (baseline.nativeFingerprint !== current.nativeFingerprint) {
+    throw new Error(
+      'Native runtime inputs changed after the installed build. Create and install a new signed phone/Watch build instead of publishing OTA.'
+    );
+  }
 }
 
 function runCommand(command, args, cwd, allowFailure = false) {
@@ -120,18 +123,18 @@ function readExpoProject(root, packageMetadataRoot = root) {
   };
 }
 
-function readPreviousExpoProject(root, previousRef) {
-  if (previousRef.startsWith('-') || /^0+$/.test(previousRef)) {
-    throw new Error('Previous master ref is invalid.');
+function readNativeBuildProject(root, nativeBuildRef) {
+  if (nativeBuildRef.startsWith('-')) {
+    throw new Error('Native build ref must not start with a dash.');
   }
-  const commit = runCommand('git', ['rev-parse', '--verify', `${previousRef}^{commit}`], root).stdout.trim();
+  const commit = runCommand('git', ['rev-parse', '--verify', `${nativeBuildRef}^{commit}`], root).stdout.trim();
   const ancestry = runCommand('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], root, true);
   if (ancestry.status !== 0) {
-    throw new Error('The current update does not descend from the previous master ref.');
+    throw new Error('The selected update does not descend from the installed native build ref.');
   }
 
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-expo-ota-ci-'));
-  const checkout = path.join(temporaryDirectory, 'previous-master');
+  const checkout = path.join(temporaryDirectory, 'native-build');
   try {
     runCommand('git', ['worktree', 'add', '--detach', checkout, commit], root);
     return { commit, project: readExpoProject(checkout, root) };
@@ -144,10 +147,10 @@ function readPreviousExpoProject(root, previousRef) {
 function printHelp() {
   process.stdout.write(`Usage: node scripts/expo-ota-ci-preflight.mjs [options]
 
-Validate native runtime changes and the EAS environment used by a GitHub-hosted Android update.
+Validate that a GitHub-hosted EAS Update is compatible with an installed Android phone build.
 
 Options:
-  --previous-ref <ref>        Previous master commit supplied by the push event
+  --native-build-ref <ref>    Exact commit or tag used to create the installed native build
   --channel <name>            EAS Update channel embedded in the installed build
   --environment <name>        EAS environment selected for the update
   --environment-file <path>   File produced by eas env:pull
@@ -162,14 +165,14 @@ function runExpoOtaCiPreflight(options = {}) {
     printHelp();
     return { help: true };
   }
-  if (!config.previousRef || !config.channel || !config.environment || !config.environmentFile) {
-    throw new Error('Previous ref, channel, environment, and environment file are required.');
+  if (!config.nativeBuildRef || !config.channel || !config.environment || !config.environmentFile) {
+    throw new Error('Native build ref, channel, environment, and environment file are required.');
   }
   if (!EXPO_UPDATE_CHANNEL_PATTERN.test(config.channel)) throw new Error('Invalid EAS Update channel.');
 
   const project = readExpoProject(root);
-  const previous = readPreviousExpoProject(root, config.previousRef);
-  const nativeRuntime = validateNativeRuntimeChange(previous.project, project);
+  const nativeBuild = readNativeBuildProject(root, config.nativeBuildRef);
+  validateNativeOtaCompatibility(nativeBuild.project, project);
   if (!EXPO_PROJECT_ID_PATTERN.test(project.projectId ?? '')) {
     throw new Error('mobile/app.json does not contain a valid EAS project ID.');
   }
@@ -183,12 +186,13 @@ function runExpoOtaCiPreflight(options = {}) {
   });
 
   process.stdout.write(
-    `Previous master: ${previous.commit.slice(0, 12)} | Native inputs: ${nativeRuntime.changed ? 'changed with a new app version' : 'unchanged'}\n` +
+    `Native build ref: ${config.nativeBuildRef} (${nativeBuild.commit.slice(0, 12)})\n` +
     `Runtime policy: appVersion (${project.appVersion}) | Channel: ${eas.channel} | Environment: ${config.environment}\n` +
     `Server: ${eas.serverUrl}\n` +
-    'Expo OTA environment preflight passed. Expo will match the update runtime to compatible clients on this channel.\n'
+    `Native fingerprint: ${project.nativeFingerprint}\n` +
+    'Expo OTA compatibility preflight passed.\n'
   );
-  return { previous, project, nativeRuntime, eas };
+  return { nativeBuild, project, eas };
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {

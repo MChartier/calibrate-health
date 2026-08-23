@@ -263,9 +263,12 @@ UI code style:
   diagnostic, OpenAPI, and generated-client mirrors.
 - After the desired changes land on `master`, run **Cut release** in GitHub Actions and choose `patch`, `minor`, or
   `major`. The action owns the synchronized release commit, version-only PR, tag, and GHCR publication.
+- **Cut release** revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
+  workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
-- Android phone, Wear, and Expo OTA versions remain independent of the server/web release selector.
+- Android phone and Wear versions remain independent of the server/web release selector. Expo OTA publishing is a
+  separate operator dispatch against an installed native-build reference and is never triggered by **Cut release**.
 - Use **Publish prepared release** with the recorded release commit and branch to recover a post-merge tag failure;
   use **Build Release Image** to rebuild an existing immutable tag.
 

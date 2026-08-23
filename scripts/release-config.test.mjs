@@ -196,17 +196,16 @@ test('automatic release planning publishes advances, skips an existing version, 
   assert.throws(() => getReleasePlan(validManifest, 'v1.2.4'), /cannot be older/);
 });
 
-for (const [bump, expectedVersion] of [
-  ['patch', '0.33.12'],
-  ['minor', '0.34.0'],
-  ['major', '1.0.0']
-]) {
+for (const bump of ['patch', 'minor', 'major']) {
   test(`release preparation synchronizes every server/web mirror for a ${bump} bump`, async (t) => {
     const root = await createReleaseFixture(t);
-    const nativeBefore = (await readFixtureJson(root, 'shared/release.json')).android;
+    const manifestBefore = await readFixtureJson(root, 'shared/release.json');
+    const currentVersion = manifestBefore.server.version;
+    const expectedVersion = nextReleaseVersion(currentVersion, bump);
+    const nativeBefore = manifestBefore.android;
 
     assert.equal(
-      await prepareServerRelease({ root, bump, latestTag: 'v0.33.11' }),
+      await prepareServerRelease({ root, bump, latestTag: `v${currentVersion}` }),
       expectedVersion
     );
 
@@ -227,10 +226,10 @@ for (const [bump, expectedVersion] of [
     assert.equal(backendPackage.version, expectedVersion);
     assert.equal(backendLock.version, expectedVersion);
     assert.equal(backendLock.packages[''].version, expectedVersion);
-    assert.equal(diagnostics.previous_web_release, '0.33.11');
-    assert.deepEqual(diagnostics.supported_versions.web, [expectedVersion, '0.33.11']);
-    assert.ok(openApi.includes(`version: { enum: [${expectedVersion}, 0.33.11]`));
-    assert.ok(generatedApi.includes(`version?: "${expectedVersion}" | "0.33.11";`));
+    assert.equal(diagnostics.previous_web_release, currentVersion);
+    assert.deepEqual(diagnostics.supported_versions.web, [expectedVersion, currentVersion]);
+    assert.ok(openApi.includes(`version: { enum: [${expectedVersion}, ${currentVersion}]`));
+    assert.ok(generatedApi.includes(`version?: "${expectedVersion}" | "${currentVersion}";`));
     assert.deepEqual((await checkRepository(root)).errors, []);
   });
 }
@@ -239,9 +238,10 @@ test('release preparation rejects a pending manifest release without changing fi
   const root = await createReleaseFixture(t);
   const manifestPath = path.join(root, 'shared/release.json');
   const before = await readFile(manifestPath, 'utf8');
+  const diagnostics = await readFixtureJson(root, 'shared/client-diagnostic-versions.json');
 
   await assert.rejects(
-    prepareServerRelease({ root, bump: 'patch', latestTag: 'v0.33.10' }),
+    prepareServerRelease({ root, bump: 'patch', latestTag: `v${diagnostics.previous_web_release}` }),
     /already ahead.*Publish the pending release/
   );
   assert.equal(await readFile(manifestPath, 'utf8'), before);
@@ -254,11 +254,12 @@ test('release preparation rejects stale mirrors before making any writes', async
   lock.packages[''].version = '0.14.0';
   await writeFile(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
   const manifestPath = path.join(root, 'shared/release.json');
+  const currentVersion = (await readFixtureJson(root, 'shared/release.json')).server.version;
   const before = await readFile(manifestPath, 'utf8');
 
   await assert.rejects(
-    prepareServerRelease({ root, bump: 'patch', latestTag: 'v0.33.11' }),
-    /root package version.*expected "0.33.11"/
+    prepareServerRelease({ root, bump: 'patch', latestTag: `v${currentVersion}` }),
+    new RegExp(`root package version.*expected "${currentVersion.replaceAll('.', '\\.')}"`)
   );
   assert.equal(await readFile(manifestPath, 'utf8'), before);
 });
