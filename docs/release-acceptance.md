@@ -1,123 +1,77 @@
-# Integrated release acceptance
+# Release acceptance
 
-This protocol separates implementation completion from external-launch authorization. Acceptance is scoped to the
-surface being released: `server-web`, `ota`, or `native`. A mixed release declares multiple scopes and takes the union
-of their requirements. Automated pull-request gates still bind their retained results to one frozen candidate C, but a
-server/Web or OTA release does not inherit unrelated native packaging, Wear, physical-device, signing, Play Console,
-or distributed-upgrade requirements. Operator work is deliberately deferred; every operator requirement has
-`blocksImplementation: false` and `blocksExternalLaunch: true` for its declared scopes in
-`quality/release-acceptance-plan.json`.
+Calibrate uses a lean **single-user pre-release** policy. Pull-request checks protect the application surfaces a
+change can affect, while the owner decides whether an external release needs additional confidence work. The policy
+does not try to reproduce the operating bar of a public, multi-user service.
 
-## Candidate freeze
+`quality/release-acceptance-plan.json` is the machine-checked summary of this policy. Run
+`npm.cmd run release:acceptance` to verify that its automatic and manual job references still match the workflows.
+The plan records capabilities, not release outcomes. It does not require retained results, an evidence-only child
+commit, a receipt ledger, or a second external-launch approval step.
 
-Candidate C is the exact lowercase 40-character pull-request head SHA. Pull-request workflows check out
-`${{ github.event.pull_request.head.sha || github.sha }}` explicitly, and every retained acceptance artifact contains
-a sanitized result that names C. A branch name, merge ref, tag, run SHA from a different event, or abbreviated SHA is
-not a candidate identity.
+## Automatic pull-request checks
 
-The plan committed in C contains requirements only. It must not contain C, the future evidence commit A, dates,
-outcomes, run IDs, receipts, or hashes of evidence that does not yet exist.
+Automatic checks are path-targeted. A change runs only the builds, tests, type checks, dependency checks, database
+checks, and container checks that can catch a regression on an affected surface.
 
-## Release scopes
+The Builds workflow provides these focused checks:
 
-Evidence child A declares one or more scopes in `releaseAcceptanceEvidence.releaseScopes` using canonical order:
+- Release configuration validation when workflow, release, deploy, generated-contract, or related configuration
+  files change.
+- Backend compilation for backend or shared-server changes.
+- Expo web export plus a compact critical-route browser smoke for web changes.
+- Android Metro export for native runtime changes.
+- Phone packaging only for native packaging inputs, and Wear build/JVM tests only for Wear inputs.
 
-- `server-web` covers the API, database, production container, exported Web/PWA, browser data states, and Web UX.
-- `ota` covers an Expo JavaScript/assets update, shared Web/UX behavior, and OTA promotion.
-- `native` covers phone and Wear packages, emulator behavior, signing, package upgrade, Play Console, and physical
-  devices.
+Database populated-upgrade checks run for database-relevant changes. Pull requests run the encrypted rollback
+rehearsal when Prisma migrations or the rollback workflow/harness change; **Cut release** runs it only when migrations
+changed since the previous stable tag. Production dependency audits and production-image scanning remain automatic
+for affected inputs and on their scheduled maintenance runs.
 
-Mixed releases list every applicable scope and require the union without duplicate evidence. Requirements that do not
-name a selected scope must be omitted from the result. Missing, empty, duplicated, unknown, or non-canonical scope
-data is invalid and falls back to the full requirement set so malformed metadata cannot weaken acceptance.
+Generated version-only `release/v*` pull requests still validate synchronized release configuration, but suppress
+unrelated web, phone, and Wear build fan-out.
 
-## Implementation completion
+## Explicit extended validation
 
-Run the repository-owned checks and require the hosted jobs selected by the release scopes to pass. Server/Web
-releases use Web, data-state, database, dependency, container, UX, and contract results. OTA releases use Web,
-data-state, dependency, UX, and contract results without native package or emulator evidence. Expo runtime changes
-still export a production Android Metro bundle on the PR, catching native-only module resolution and transform
-failures without creating retained native-package evidence. Native releases use Android, Wear, package upgrade,
-dependency, and contract results. Every retained job still checks out C. The Windows Web suites continue to
-use the repository-pinned Playwright version and its bundled Chromium. Deterministic bundle-size budgets remain
-blocking. GitHub Actions does not run synthetic LCP, CLS, or INP checks because shared-runner contention is not
-representative release evidence. The explicit local `npm run test:performance:web` diagnostic remains available for
-investigation, while production field aggregates remain the operational signal.
+The full browser, data-state, accessibility, visual-regression, Android emulator, Wear emulator, and same-signer
+upgrade suites are available through a manual **Builds** dispatch. Choose `web`, `native`, `web-and-native`, or
+`configuration-only`. Select the native upgrade rehearsal only when it is useful; that option requires the full
+lowercase Git SHA of the package baseline.
 
-Path-targeted PR validation can intentionally skip a retained job when its surface did not change. A skipped job is
-not release evidence. Before external launch, manually dispatch the corresponding workflow from C's branch after its
-final push: `Builds` for missing Web or native artifacts, `Database Upgrade` for the server/Web rollback artifact,
-`Dependency Audit` for both production dependency graphs, and `Production Container Scan` for the server/Web image.
-Manual dispatches force the complete workflow and bind retained summaries to the selected ref's `github.sha`; verify
-that SHA equals C before using the artifacts. `Builds` also requires `native_upgrade_baseline`; enter the lowercase
-full Git SHA of C's pull-request base so the package-upgrade rehearsal covers the complete candidate change.
+These suites are diagnostics, not standing PR or release gates. Manual UX and native emulator runs keep short-lived
+diagnostic artifacts for seven days to help investigate a failure; those artifacts are not release receipts.
 
-The data-state lane uses only synthetic `.invalid` fixtures. Its raw Playwright JSON remains runner-local because
-standard reports can include host paths and failure attachments; the retained artifact is the fixed sanitized summary
-that binds the blocking job outcome to C. Native retained artifacts likewise contain only their strict allowlisted JSON.
+The manual **Optional Release Confidence** workflow checks an exact candidate commit's release mirrors, strict
+production dependency policy, deploy contracts, generated API contract, and clean worktree. It is an owner-discretion
+review aid and does not authorize or record an external launch.
 
-Use this local contract check while the PR is in progress:
+## Cut server/web release
+
+After the desired changes land on `master`, **Cut release** creates and validates an exact version-only server/web
+candidate. It checks synchronized release configuration and dependencies, release and Expo web contracts, deploy
+tests, and the generated API client. It then builds the production image, starts it against Postgres, verifies
+readiness and the served web application, and rejects high or critical image vulnerabilities.
+
+The workflow compares the candidate with the latest stable tag. It runs the encrypted database upgrade/rollback
+rehearsal only when migrations changed in that range. Successful validation opens and atomically merges the
+version-only PR before the prepared release is tagged and published. Full Playwright regression suites, visual UX
+baselines, synthetic Web Vitals, and native emulator/package tests are not part of this server/web release cut.
+
+## Performance and owner judgment
+
+Synthetic LCP, CLS, and INP measurements do not run in GitHub Actions because shared-runner timing is not a useful
+release signal for this deployment. Bundle and backend microbenchmarks also remain local diagnostics rather than
+automatic gates. Use `npm.cmd run test:performance:web`, `npm.cmd run performance:bundle`, or
+`npm.cmd --prefix backend run performance:regression` when investigating a concrete performance concern; production
+field aggregates remain the operational signal.
+
+Physical-device, store-console, staging-alert, dogfood, legal, and final rollout checks are likewise selected by the
+owner when the release context warrants them. No repository engine converts those decisions into an evidence commit
+or blocks a release on a receipt ledger.
+
+Useful policy checks while changing the release machinery are:
 
 ```powershell
 npm.cmd run release:acceptance
 npm.cmd run test:release
 ```
-
-Pending operator rows are expected output and do not fail this implementation check.
-
-## Deferred operator ledger
-
-After the implementation stack is frozen, collect only the receipts selected by the release scopes:
-
-- `server-web`: confirm staging alert and recovery delivery.
-- All scopes: review the applicable production configuration and secret ownership.
-- `native`: execute the physical Galaxy phone and Watch protocol with permanent signing.
-- `ota`: soak the internal OTA channel and obtain production-environment approval.
-- `native`: complete Play Console listing, declarations, testing-track, vitals, and release health review.
-- All scopes: complete the applicable manual accessibility and interaction checks.
-- All scopes: approve applicable privacy, legal, support, incident-owner, and release-note content.
-- `native`: prove an in-place upgrade from a genuinely distributed predecessor.
-- All scopes: complete the required private dogfood soak and final owner signoff.
-
-Receipts must be privacy-safe and content-addressed. Hosted evidence uses
-`run:<run-id>/artifact:<artifact-name>` references; the verifier downloads the exact GitHub Actions artifact, requires
-one JSON file, recomputes its SHA-256, and checks the reviewed gate ID, candidate C, and successful outcome. The
-production dependency audit requires distinct root/mobile and backend results. Operator evidence uses
-`path:quality/physical-results/<file>.json`; the verifier reads those exact bytes from A, recomputes their SHA-256, and
-checks candidate C plus a passed outcome. Store only these bounded references and hashes in the result. Never store
-credentials, device serials, account data, raw logs, screenshots with personal data, or signing material.
-
-## Evidence-only child
-
-Once every selected hosted and operator requirement passes, create one evidence-only commit A directly on C. A must
-have C as its sole parent. Its diff may contain only `quality/risk-evidence.json` and any selected native evidence JSON
-under `quality/physical-results/`. Add `releaseAcceptanceEvidence` to the risk manifest with:
-
-- schema version 2;
-- the non-empty, canonical `releaseScopes` array;
-- `sourceCommit` equal to C;
-- the completion date;
-- SHA-256 records for the plan and `shared/release.json` as they existed in C; and
-- the exact reviewed number of passed results for every selected requirement, each with resolved, content-addressed
-  GitHub Actions or operator evidence.
-
-Do not include result records for requirements outside the selected scopes.
-
-Do not record A inside A. Verify from a clean checkout whose HEAD is A:
-
-```powershell
-node scripts/dependency-advisory-exceptions.mjs --strict
-npm.cmd run release:acceptance:external -- --candidate <C> --evidence <A>
-npm.cmd run test:risk-evidence:release -- --candidate <C> --evidence <A>
-```
-
-The strict dependency check fails while any reviewed advisory exception remains active, even before its ordinary
-expiry. The external-launch verifier also fails until all selected deferred receipts exist. These failures are
-intentional and do not block finishing or reviewing the implementation PR stack.
-
-## Rollback boundary
-
-For a `server-web` release, the actual distributed database base is tag `v0.14.0`, which includes migrations through
-`0031`. Hosted rollback rehearsal must start from that immutable tag, upgrade to C, validate representative state,
-then restore the protected pre-upgrade data and revalidate it. Do not substitute `v0.13.3` or a synthetic partial
-migration baseline. OTA-only and native-only releases do not require this database rehearsal.

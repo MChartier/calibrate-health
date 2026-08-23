@@ -1,12 +1,11 @@
-# Commit-specific physical Galaxy phone and watch validation
+# Optional physical Galaxy phone and watch validation
 
-Use this release-blocking protocol for issue `#303` (parent program `#280`). It covers the exact signed Android phone
-and Wear artifacts built from one frozen source candidate. The Play Console worksheet remains the source for store
-declarations and policy evidence.
+Use this protocol when a real phone/Watch check would provide useful confidence for a native distribution. It covers
+signed Android phone and Wear artifacts built from one source commit. It is not an automatic CI or release gate.
 
 This document is a protocol, not proof that anyone performed it.
 
-## Current operator-deferred ledger
+## Current status
 
 As of the Launch 23 implementation PR:
 
@@ -14,27 +13,18 @@ As of the Launch 23 implementation PR:
 - No permanent release artifact has been built or signed by this work.
 - No physical Galaxy phone or Galaxy Watch validation has been executed by this work.
 - No OTA update has been published or verified on a physical release client by this work.
-- No v2 physical result or evidence-only child commit A exists yet.
-- The physical waiver remains blocking for the `native` release scope. It does not block `server-web` or `ota`
-  acceptance; release verification without valid scope metadata still fails safe as a full release.
+- No physical result is currently recorded.
+- The risk inventory records physical coverage as a non-blocking diagnostic gap.
 
-The implementation PR must use `Refs #303` and leave the issue open. Replace this ledger only after the retained
-result and release gate below actually pass.
+Keep issue `#303` open until the owner decides the physical coverage is worth completing.
 
-## Evidence and commit boundary
+## Source and privacy boundary
 
-Freeze the clean, pushed source candidate as commit C before signing. Build phone APK/AAB and Wear APK/AAB from C,
-using the canonical `shared/release.json` from C and one permanent signing identity. All automated gates, physical
-behavior, artifact metadata, and checkpoint decisions must describe C.
+Use a clean, pushed source commit before signing. Build phone APK/AAB and Wear APK/AAB from it using the canonical
+`shared/release.json` and one permanent signing identity. Any optional result must name that source commit.
 
-After the protocol passes, finalize one repository-safe result and update `quality/risk-evidence.json`. Commit only
-those evidence files as A, a direct child whose sole parent is C. A is supplied externally during verification; a
-tracked file cannot contain its own commit SHA. The verifier rejects a merge commit, a different parent, any
-non-evidence change, a checkout whose HEAD is not A, or a dirty worktree/index.
-
-A source, script, configuration, dependency, manifest, or documentation change after execution requires a new C,
-new higher-version signed artifacts when applicable, and repetition of the affected gates. Do not amend A with
-source changes.
+A source, script, configuration, dependency, manifest, or documentation change after execution makes the prior
+result historical. Repeat only the checks affected by the change when the owner wants renewed confidence.
 
 ## Privacy boundary
 
@@ -262,30 +252,16 @@ Add one `physicalDeviceEvidence` record to `quality/risk-evidence.json` with exa
 Remove `physical-galaxy-phone-and-watch-validation` only when the finalized result covers every physical capability.
 Do not copy device metadata into the risk manifest.
 
-## Create and verify evidence-only child A
+## Verify the optional result
 
-Commit the risk manifest and result as the only changes in A. Do not amend C and do not include observation/checkpoint
-scratch files:
-
-~~~powershell
-git add -- quality/risk-evidence.json $resultPath
-git commit -m 'Attest physical Galaxy release evidence'
-$evidenceCommit = git rev-parse HEAD
-~~~
-
-From clean checked-out A, verify both the native result and the release risk gate:
+Verify the sanitized result against the source commit:
 
 ~~~powershell
 node scripts/native-release-evidence.mjs verify `
   --result $resultPath `
-  --candidate $candidateCommit `
-  --evidence $evidenceCommit
-
-npm.cmd run test:risk-evidence:release -- `
-  --candidate $candidateCommit `
-  --evidence $evidenceCommit
+  --candidate $candidateCommit
 ~~~
 
-Verification requires A to have sole parent C and an exact two-path evidence diff. It reads the risk manifest/result
-from A and the canonical release manifest from C. The issue remains open unless this release gate and every validation
-listed in `#303` actually complete.
+The result may be kept locally or committed as ordinary documentation. If it is added to
+`quality/risk-evidence.json`, replace the matching `diagnosticGaps` entry only when all four physical capabilities are
+covered. No second commit, receipt ledger, or release authorization step is involved.

@@ -138,5 +138,8 @@ jobs:
       - name: Validate API contract
         run: npm run api:contract:check
 
+      - name: Run API client tests
+        run: npm run test:api-client
+
       - name: Run mobile tests
         run: npm --prefix mobile test

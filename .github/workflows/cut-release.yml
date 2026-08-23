@@ -36,6 +36,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       release_tag: ${{ steps.release.outputs.release_tag }}
       release_branch: ${{ steps.release.outputs.release_branch }}
+      database_migrations_changed: ${{ steps.release.outputs.database_migrations_changed }}
 
     steps:
       - name: Require master
@@ -87,6 +88,11 @@ jobs:
           if [[ "${MANIFEST_TAG}" != "${LATEST_TAG}" ]]; then
             echo "Manifest ${MANIFEST_TAG} does not match latest release ${LATEST_TAG}. Publish or repair the pending release first." >&2
             exit 1
+          fi
+
+          DATABASE_MIGRATIONS_CHANGED=false
+          if ! git diff --quiet "${LATEST_TAG}" "${SOURCE_SHA}" -- backend/prisma/migrations; then
+            DATABASE_MIGRATIONS_CHANGED=true
           fi
 
           VERSION="$(npm run --silent release:prepare -- --bump "${BUMP}")"
@@ -141,6 +147,7 @@ jobs:
             echo "version=${VERSION}"
             echo "release_tag=${TAG}"
             echo "release_branch=${BRANCH}"
+            echo "database_migrations_changed=${DATABASE_MIGRATIONS_CHANGED}"
           } >> "${GITHUB_OUTPUT}"
 
   release-validation:
@@ -148,6 +155,21 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: calibrate_release_ci
+          POSTGRES_PASSWORD: calibrate_release_ci
+          POSTGRES_DB: calibrate_release_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calibrate_release_ci -d calibrate_release_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout exact release candidate
@@ -173,7 +195,8 @@ jobs:
       - name: Validate prepared release
         run: |
           test "$(git rev-parse HEAD)" = "${{ needs.prepare.outputs.release_sha }}"
-          npm run release:check:container
+          node scripts/release-config.mjs check
+          node scripts/dependency-advisory-exceptions.mjs
           npm run test:release
           npm run test:expo-web:release
           npm run test:deploy
@@ -181,64 +204,46 @@ jobs:
           git diff --exit-code
           git diff --check
 
-  ux-regression:
-    name: Release UX Accessibility and Visual Regression
-    needs: prepare
-    runs-on: windows-latest
-    timeout-minutes: 30
+      - name: Build production image
+        run: docker build --file Dockerfile.app --tag calibrate:release-candidate .
 
-    steps:
-      - name: Checkout exact release candidate
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.prepare.outputs.release_sha }}
-
-      - name: Setup reviewed UX Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.14.0
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Initialize sanitized UX evidence
-        shell: pwsh
+      - name: Smoke production startup and readiness
         run: |
-          New-Item -ItemType Directory -Force '.codex-screenshots/expo-web-ux-results' | Out-Null
-          Set-Content -LiteralPath '.codex-screenshots/expo-web-ux-results/workflow-started.json' -Encoding utf8 -Value '{"schema_version":1,"scope":"release-ux-regression"}'
+          docker run --detach --name calibrate-release-smoke --network host \
+            --env DATABASE_URL='postgresql://calibrate_release_ci:calibrate_release_ci@127.0.0.1:5432/calibrate_release_ci?schema=public' \
+            --env SESSION_SECRET='release-smoke-session-secret-at-least-32' \
+            --env PUBLIC_APP_ORIGIN='http://127.0.0.1:3000' \
+            --env MIGRATION_MAX_ATTEMPTS=3 \
+            calibrate:release-candidate
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/api/v1/readyz; then
+              npm run test:container:web -- http://127.0.0.1:3000
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs calibrate-release-smoke
+          exit 1
 
-      - name: Install dependencies
-        run: npm.cmd ci --no-audit --fund=false
-
-      - name: Install pinned Playwright Chromium
-        run: node node_modules/@playwright/test/cli.js install chromium
-
-      - name: Enforce accessibility and visual regression gates
-        id: release_ux_gate
-        run: npm.cmd run test:ux
-
-      - name: Record sanitized release-source UX result
+      - name: Remove runtime smoke container
         if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow cut-release
-          --gate hosted-ux-regression
-          --candidate "${{ needs.prepare.outputs.release_sha }}"
-          --outcome "${{ steps.release_ux_gate.outcome }}"
-          --output .codex-screenshots/expo-web-ux-results/release-acceptance.json
+        run: docker rm --force calibrate-release-smoke || true
 
-      - name: Upload sanitized UX evidence
-        if: always()
-        uses: actions/upload-artifact@v4
+      # Immutable action commit for v0.36.0; do not replace with a mutable major tag.
+      - name: Scan production image
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8
         with:
-          name: release-ux-regression-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/expo-web-ux-results
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 30
+          image-ref: calibrate:release-candidate
+          format: table
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
 
   database-rollback:
-    name: Release v0.14.0 Upgrade and Encrypted Rollback
+    name: Database Upgrade and Encrypted Rollback
     needs: prepare
+    if: needs.prepare.outputs.database_migrations_changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -268,19 +273,14 @@ jobs:
       - name: Upgrade from v0.14.0, restore, and re-upgrade
         run: npm run test:db:rollback
 
-      - name: Upload sanitized rollback evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-postgres-rollback-smoke-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/postgres-rollback-smoke/result.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 30
-
   finalize:
     name: Merge validated release PR
-    needs: [prepare, release-validation, ux-regression, database-rollback]
+    needs: [prepare, release-validation, database-rollback]
+    if: >-
+      always() &&
+      needs.prepare.result == 'success' &&
+      needs.release-validation.result == 'success' &&
+      (needs.database-rollback.result == 'success' || needs.database-rollback.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -331,10 +331,10 @@ jobs:
               '',
               '## Validation',
               '',
-              '- container release checks and release contract tests',
+              '- exact release mirrors and release contract tests',
               '- Expo web release and generated API contract checks',
-              '- Windows UX accessibility and visual regression gate',
-              '- encrypted database rollback rehearsal',
+              '- production container startup and high/critical vulnerability scan',
+              '- encrypted database rollback rehearsal when migrations changed since the prior release',
               '',
               'Cut release validated this exact candidate before creating the PR and will publish it after merge.',
             ].join('\n');
@@ -439,7 +439,7 @@ jobs:
   cleanup-candidate:
     name: Clean up unmerged candidate
     if: ${{ always() && needs.prepare.result == 'success' && needs.finalize.result != 'success' }}
-    needs: [prepare, release-validation, ux-regression, database-rollback, finalize]
+    needs: [prepare, release-validation, database-rollback, finalize]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

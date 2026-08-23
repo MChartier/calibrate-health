@@ -16,22 +16,17 @@ manifest. That could publish a tag whose version disagreed with the server and c
 
 Treat `shared/release.json` as the canonical release identity and compatibility policy. Native and package metadata
 remain mirrors because their build tools need values before app code runs. `npm run release:check` validates those
-mirrors and the structural risk-evidence contract. On every merge to `master`, the release workflow reads the stable
-server version from the manifest. It is a no-op when that version already has the latest stable tag, creates the tag
-when the version advances, and refuses a regression or prerelease version. It then calls the current reusable
-GHCR-only image workflow as a dependent job with the immutable release tag as an explicit input, so an older tag
-cannot reintroduce its historical deployment steps.
+mirrors and the lean acceptance policy. ADR 0008 now owns explicit release preparation, exact-candidate validation,
+version-only release PR creation, tagging, and GHCR publication.
 
 Semantic-version comparison follows prerelease precedence. Build metadata does not affect ordering. Raising a
 minimum supported client version remains an explicit compatibility decision documented in release notes.
 
 ## Consequences
 
-- Version bumps happen in the feature PR that should publish the release; no follow-up release PR or manual bump is
-  required.
+- Ordinary feature PRs do not change the server version; **Cut release** creates the synchronized version-only PR.
 - A tag cannot silently select a different release identity.
-- Merges without a version change perform a fast consistency check and do not build or publish an image.
-- Container publication runs every automated release and data-portability gate, but physical phone/watch evidence
-  remains a separate prerequisite for distributing native production artifacts.
+- Merges without a version change do not publish an image.
+- Physical phone/watch validation is an optional owner diagnostic, not a repository release prerequisite.
 - Internal prereleases can be represented but cannot be promoted through the production tag workflow.
 - Version-code monotonicity and signing-certificate equality still require artifact/store evidence.

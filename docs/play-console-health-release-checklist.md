@@ -330,7 +330,7 @@ private Console URLs. Keep access-controlled Play records separately:
 
 ```text
 Source candidate commit C:
-Evidence-only child commit A:
+Optional physical result path:
 Canonical release-manifest path/SHA-256:
 Phone APK version/version code/size/SHA-256/signer SHA-256:
 Phone AAB version/version code/size/SHA-256/signer SHA-256:

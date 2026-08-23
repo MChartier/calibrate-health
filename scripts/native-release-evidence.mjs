@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const NATIVE_RELEASE_EVIDENCE_SCHEMA_VERSION = 3;
@@ -275,7 +275,7 @@ function validateCheckpoints(checkpoints, errors) {
     }
   }
   for (const gate of NATIVE_RELEASE_GATE_CHECKPOINTS) {
-    if (checkpoints[gate]?.outcome !== true) errors.push(`Native release gate checkpoint ${gate} must pass.`);
+    if (checkpoints[gate]?.outcome !== true) errors.push(`Native release supporting checkpoint ${gate} must pass.`);
   }
   return deriveNativeReleaseCapabilities(checkpoints);
 }
@@ -547,7 +547,7 @@ export function validateNativeReleaseEvidence(result, options = {}) {
     errors.push('Native release evidence capabilities must equal the capabilities derived from checkpoints.');
   }
   if (derivedCapabilities.length !== Object.keys(NATIVE_RELEASE_CHECKPOINT_GROUPS).length) {
-    errors.push('Every physical phone/watch checkpoint group must pass before evidence can clear the release gate.');
+    errors.push('Every physical phone/watch checkpoint group must pass before the result can claim complete coverage.');
   }
 
   return { errors, capabilities: derivedCapabilities, signerSha256: artifactResult.signerSha256 };
@@ -611,106 +611,6 @@ export function finalizeNativeReleaseEvidence(observation, details, options = {}
   return result;
 }
 
-/** A is supplied externally because a commit cannot truthfully contain its own SHA. */
-export function validateEvidenceOnlyAttestation({
-  sourceCommit,
-  evidenceCommit,
-  parentCommits,
-  changedPaths,
-  resultArtifacts,
-  checkedOutCommit,
-  worktreeStatus
-}) {
-  const errors = [];
-  if (!COMMIT_PATTERN.test(sourceCommit ?? '')) errors.push('Evidence source commit must be a lowercase 40-character Git SHA.');
-  if (!COMMIT_PATTERN.test(evidenceCommit ?? '')) errors.push('Evidence commit must be a lowercase 40-character Git SHA.');
-  if (sourceCommit === evidenceCommit) errors.push('Evidence commit must be a child of the frozen source candidate, not the candidate itself.');
-  if (!Array.isArray(parentCommits) || parentCommits.length !== 1 || parentCommits[0] !== sourceCommit) {
-    errors.push('Evidence commit must have the frozen source candidate as its sole parent.');
-  }
-  if (checkedOutCommit !== evidenceCommit) {
-    errors.push('Evidence verification requires checked-out HEAD to equal evidence commit A.');
-  }
-  if (typeof worktreeStatus !== 'string' || worktreeStatus.trim()) {
-    errors.push('Evidence verification requires a clean worktree and index.');
-  }
-
-  const artifactPaths = Array.isArray(resultArtifacts) ? resultArtifacts : [];
-  const approved = ['quality/risk-evidence.json', ...artifactPaths]
-    .map(normalizedRepositoryPath);
-  if (approved.some((value) => value === null) || artifactPaths.length === 0) {
-    errors.push('Attestation result artifacts must be non-empty repository-relative paths.');
-  }
-  if (new Set(approved).size !== approved.length) errors.push('Attestation approved evidence paths must be unique.');
-  const normalizedChanges = Array.isArray(changedPaths)
-    ? changedPaths.map(normalizedRepositoryPath)
-    : [];
-  if (normalizedChanges.some((value) => value === null)) {
-    errors.push('Evidence commit contains an invalid changed path.');
-  }
-  const unexpected = normalizedChanges.filter((value) => value && !approved.includes(value));
-  if (unexpected.length) errors.push(`Evidence commit changes non-evidence paths: ${unexpected.join(', ')}.`);
-  const missing = approved.filter((value) => value && !normalizedChanges.includes(value));
-  if (missing.length) errors.push(`Evidence commit must change every approved evidence path: ${missing.join(', ')}.`);
-  if (new Set(normalizedChanges).size !== normalizedChanges.length) {
-    errors.push('Evidence commit changed-path list contains duplicates.');
-  }
-  return errors;
-}
-
-function runGit(root, args) {
-  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`git ${args[0]} failed: ${(result.stderr || result.stdout).trim()}`);
-  }
-  return result.stdout;
-}
-
-export function readEvidenceGitContext({
-  root = repositoryRoot,
-  sourceCommit,
-  evidenceCommit,
-  resultArtifacts
-}) {
-  if (!COMMIT_PATTERN.test(sourceCommit ?? '') || !COMMIT_PATTERN.test(evidenceCommit ?? '')) {
-    throw new Error('Both --candidate and --evidence must be lowercase 40-character Git SHAs.');
-  }
-  const parentRow = runGit(root, ['rev-list', '--parents', '-n', '1', evidenceCommit]).trim().split(/\s+/);
-  const checkedOutCommit = runGit(root, ['rev-parse', 'HEAD']).trim();
-  const worktreeStatus = runGit(root, ['status', '--porcelain=v1', '--untracked-files=all']);
-  const changedPaths = runGit(root, ['diff', '--name-only', sourceCommit, evidenceCommit, '--'])
-    .split(/\r?\n/)
-    .filter(Boolean);
-  const manifestContent = runGit(root, ['show', `${sourceCommit}:shared/release.json`]);
-  const riskManifestContent = runGit(root, ['show', `${evidenceCommit}:quality/risk-evidence.json`]);
-  const resultContents = Object.fromEntries(
-    resultArtifacts.map((resultArtifact) => [
-      resultArtifact,
-      runGit(root, ['show', `${evidenceCommit}:${resultArtifact}`])
-    ])
-  );
-  const errors = validateEvidenceOnlyAttestation({
-    sourceCommit,
-    evidenceCommit,
-    parentCommits: parentRow.slice(1),
-    changedPaths,
-    resultArtifacts,
-    checkedOutCommit,
-    worktreeStatus
-  });
-  return {
-    parentCommits: parentRow.slice(1),
-    changedPaths,
-    checkedOutCommit,
-    worktreeStatus,
-    manifestContent,
-    riskManifestContent,
-    resultContents,
-    errors
-  };
-}
-
 export function nativeReleaseEvidenceResultPath(value) {
   const normalized = normalizedRepositoryPath(value);
   if (!normalized || !/^quality\/physical-results\/[a-z0-9][a-z0-9._-]*\.json$/.test(normalized)) {
@@ -730,7 +630,6 @@ export function parseNativeReleaseEvidenceArgs(argv) {
     command: argv[0] ?? null,
     result: null,
     candidate: null,
-    evidence: null,
     observation: null,
     checkpoints: null,
     output: null,
@@ -747,7 +646,6 @@ export function parseNativeReleaseEvidenceArgs(argv) {
     else if (option === '--synthetic-account') result.syntheticAccount = true;
     else if (option === '--result') result.result = requiredOption(argv, index++, option);
     else if (option === '--candidate') result.candidate = requiredOption(argv, index++, option);
-    else if (option === '--evidence') result.evidence = requiredOption(argv, index++, option);
     else if (option === '--observation') result.observation = requiredOption(argv, index++, option);
     else if (option === '--checkpoints') result.checkpoints = requiredOption(argv, index++, option);
     else if (option === '--output') result.output = requiredOption(argv, index++, option);
@@ -761,9 +659,9 @@ export function parseNativeReleaseEvidenceArgs(argv) {
 function printHelp() {
   process.stdout.write(`Usage:
   node scripts/native-release-evidence.mjs finalize --observation <json> --checkpoints <json> --output <quality/physical-results/result.json> --owner <owner> --executed-on <YYYY-MM-DD> --synthetic-account
-  node scripts/native-release-evidence.mjs verify --result <quality/physical-results/result.json> --candidate <C> --evidence <A>
+  node scripts/native-release-evidence.mjs verify --result <quality/physical-results/result.json> --candidate <commit>
 
-The retained result names frozen source candidate C only. Verification supplies evidence-only child A externally.
+Physical-device results are optional owner diagnostics. Verification does not create or require an evidence commit.
 `);
 }
 
@@ -809,25 +707,28 @@ export function runNativeReleaseEvidenceCli(argv = process.argv.slice(2), option
     return { output: outputPath, evidence };
   }
   if (args.command === 'verify') {
-    if (!args.result || !args.candidate || !args.evidence) {
-      throw new Error('verify requires --result, --candidate C, and --evidence A.');
+    if (!args.result || !args.candidate) {
+      throw new Error('verify requires --result and --candidate.');
     }
     const resultPath = nativeReleaseEvidenceResultPath(args.result);
-    const context = readEvidenceGitContext({
-      root,
-      sourceCommit: args.candidate,
-      evidenceCommit: args.evidence,
-      resultArtifacts: [resultPath]
-    });
-    const retained = JSON.parse(context.resultContents[resultPath]);
+    if (!COMMIT_PATTERN.test(args.candidate)) {
+      throw new Error('--candidate must be a lowercase 40-character Git SHA.');
+    }
+    const retained = readJson(path.resolve(root, resultPath));
+    const manifestContent = execFileSync(
+      'git',
+      ['show', `${args.candidate}:shared/release.json`],
+      { cwd: root, encoding: 'utf8', windowsHide: true }
+    );
     const validation = validateNativeReleaseEvidence(retained, {
       candidateCommit: args.candidate,
-      manifestContent: context.manifestContent
+      manifestContent
     });
-    const errors = [...context.errors, ...validation.errors];
-    if (errors.length) throw new Error(`Native release evidence is invalid:\n- ${errors.join('\n- ')}`);
-    process.stdout.write(`Native release evidence is valid for candidate ${args.candidate} via ${args.evidence}.\n`);
-    return { candidate: args.candidate, evidence: args.evidence, result: resultPath };
+    if (validation.errors.length) {
+      throw new Error(`Native release evidence is invalid:\n- ${validation.errors.join('\n- ')}`);
+    }
+    process.stdout.write(`Optional native release result is valid for candidate ${args.candidate}.\n`);
+    return { candidate: args.candidate, result: resultPath };
   }
   throw new Error(`Unknown native release evidence command: ${args.command}`);
 }

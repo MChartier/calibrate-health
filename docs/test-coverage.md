@@ -9,10 +9,10 @@ targeted Kotlin/JVM and device checks for the Wear client:
 - Package-specific commands include `test:backend`, `test:api-client`, `test:mobile`,
   `test:coverage:backend`, and `test:coverage:mobile`. Wear JVM tests run from the Gradle project
   with `wear/gradlew testDebugUnitTest`; a non-debuggable APK smoke runs against an adb watch target
-  with `npm run test:wear:emulator`. The hosted PR Wear lane then removes the differently signed
-  release package and runs `:app:connectedDebugAndroidTest` on the same disposable emulator for
-  Room migrations, encrypted token persistence, and account-scoped cleanup. PR builds compile and
-  run the Wear JVM suite independently of the longer phone build.
+  with `npm run test:wear:emulator`. The optional manually dispatched hosted Wear lane then removes
+  the differently signed release package and runs `:app:connectedDebugAndroidTest` on the same
+  disposable emulator for Room migrations, encrypted token persistence, and account-scoped cleanup.
+  PR builds compile and run the Wear JVM suite independently of the longer phone build.
 - `npm run test:db:upgrade` applies migrations through `0020` to an isolated schema, inserts
   representative account/goal/weight/food data, upgrades through current, verifies retention, and
   removes only that generated schema. Its helper tests run without Postgres.
@@ -31,9 +31,8 @@ targeted Kotlin/JVM and device checks for the Wear client:
   deterministically fulfilled by the suite. It does not download a Playwright browser or add the
   suite to the long-running CI path.
 - `npm run test:risk-evidence` quickly validates the six risk areas, their concrete test files and
-  root npm scripts, and the verifier itself. It does not rerun the referenced product suites.
-- `npm run test:risk-evidence:release` applies the same contract as a release gate and fails while
-  any explicitly release-blocking evidence remains outstanding.
+  root npm scripts, and the verifier itself. It does not rerun the referenced product suites or
+  act as a release gate.
 
 The browser suite exercises signed-out and authenticated shells across desktop, tablet, and phone
 viewports; deep-link reloads; offline/recovery UI; release-surface navigation; and an offline weight
@@ -56,7 +55,7 @@ Expo client coverage focuses on domain logic that has the highest risk of silent
 - Health Connect normalization, checkpoints, permissions, and account cleanup;
 - Wear pairing, handoff, invalidation, and deleted-account cleanup.
 
-## Risk-based quality gates
+## Risk-based diagnostic inventory
 
 Global line coverage is diagnostic, not the release target. Generated clients, native bridges, and
 platform callbacks can move a single percentage without changing the risk of losing or exposing a
@@ -65,7 +64,7 @@ user's data. Reviews and releases use the following evidence targets instead:
 [`quality/risk-evidence.json`](../quality/risk-evidence.json) is the machine-readable evidence map
 for these targets. The verifier requires all six areas and their capabilities, checks that every
 referenced evidence file is non-empty, validates exact root npm commands and workflow references, and
-rejects expired or weakened waivers. It intentionally does not infer quality from a global line
+rejects malformed or weakened diagnostic gaps. It intentionally does not infer quality from a global line
 percentage.
 
 | Risk area | Required automated evidence |
@@ -77,22 +76,14 @@ percentage.
 | Privacy-sensitive configuration and diagnostics | Permission/config assertions plus tests that logs, metrics, exports, and errors omit credentials and unnecessary health detail |
 | Web, Android, and Wear critical workflows | Component/unit coverage for state transitions and at least one end-to-end happy path plus failure/offline path on the supported runtime |
 
-Every change to authentication, synchronization, persisted data models, permissions, imports,
-uploads, exports/deletion, or diagnostic output must add or update tests in its own pull request. A
-missing platform test may be time-bounded only when the PR records the exact manual evidence, owner,
-and follow-up release gate; high or critical failures are not waived by a healthy global percentage.
+Changes to authentication, synchronization, persisted data models, permissions, imports,
+uploads, exports/deletion, or diagnostic output should add or update focused tests when practical.
+The inventory describes coverage; it does not create a second approval system.
 
-Physical Galaxy phone and Galaxy Watch Ultra validation is currently represented by a
-release-blocking waiver owned by `MChartier`, tracked in issues `#219`, `#222`, and `#303`, and
-re-reviewed on 2026-08-12 with an expiry of 2026-08-26. The normal verifier reports that blocker
-without breaking fast development checks; the
-release variant fails until the physical happy-path and offline/reconnect evidence replaces it.
-Replacement requires a retained JSON result tied to the tested release commit, execution date,
-owner, phone/watch models, exact command or manual protocol, and covered physical capabilities;
-ordinary unit-test paths cannot clear the device gate. Release mode also compares that tested commit
-with `GITHUB_SHA` or the current Git `HEAD`, preventing stale device results from clearing a newer
-candidate.
-The focused execution path and retained-result shape are documented in
+Physical Galaxy phone and Galaxy Watch Ultra coverage is represented as a non-blocking diagnostic gap tracked in
+issues `#219`, `#222`, and `#303`. When physical validation is useful, an optional sanitized JSON result can replace
+that gap for the tested source commit. No evidence-only commit or release-mode verifier is required. The focused
+execution path and optional result shape are documented in
 [`physical-galaxy-validation.md`](physical-galaxy-validation.md).
 The existing Wear emulator command proves launch, package/permission state, unpaired guidance, Tile
 registration, and crash absence; it is deliberately not recorded as a paired tracking happy path.

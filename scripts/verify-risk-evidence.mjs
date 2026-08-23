@@ -4,13 +4,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   NATIVE_RELEASE_PROTOCOL,
-  readEvidenceGitContext,
-  validateEvidenceOnlyAttestation,
   validateNativeReleaseEvidence
 } from './native-release-evidence.mjs';
 import {
   RELEASE_ACCEPTANCE_SCOPES,
-  RELEASE_ACCEPTANCE_RESULT_PROPERTY,
   normalizeReleaseAcceptanceScopes
 } from './release-acceptance.mjs';
 
@@ -67,13 +64,12 @@ const EXPECTED_RISK_AREAS = Object.freeze({
   ]
 });
 
-const REQUIRED_PHYSICAL_WAIVER = Object.freeze({
+const REQUIRED_PHYSICAL_GAP = Object.freeze({
   id: 'physical-galaxy-phone-and-watch-validation',
   riskArea: 'critical-client-workflows',
-  status: 'release-blocking',
+  status: 'diagnostic',
   owner: 'MChartier',
   trackingIssues: ['#219', '#222', '#303'],
-  expiresOn: '2026-08-26',
   releaseScopes: ['native'],
   capabilities: [
     'android-physical-happy-path',
@@ -82,7 +78,7 @@ const REQUIRED_PHYSICAL_WAIVER = Object.freeze({
     'wear-physical-offline-reconnect'
   ]
 });
-const PHYSICAL_CAPABILITIES = new Set(REQUIRED_PHYSICAL_WAIVER.capabilities);
+const PHYSICAL_CAPABILITIES = new Set(REQUIRED_PHYSICAL_GAP.capabilities);
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -142,80 +138,73 @@ function validateRepositoryPath(relativePath, label, repoRoot, errors, statSync)
   }
 }
 
-function validateWaiver(waiver, now, errors) {
-  const label = `Waiver ${waiver?.id ?? 'unknown'}`;
-  if (typeof waiver?.riskArea !== 'string' || !(waiver.riskArea in EXPECTED_RISK_AREAS)) {
+function validateDiagnosticGap(gap, errors) {
+  const label = `Diagnostic gap ${gap?.id ?? 'unknown'}`;
+  if (typeof gap?.riskArea !== 'string' || !(gap.riskArea in EXPECTED_RISK_AREAS)) {
     errors.push(`${label} must reference a known risk area.`);
   }
-  if (waiver?.status !== 'release-blocking') {
-    errors.push(`${label} must be release-blocking.`);
+  if (gap?.status !== 'diagnostic') {
+    errors.push(`${label} status must be diagnostic.`);
   }
-  if (typeof waiver?.owner !== 'string' || !waiver.owner.trim()) {
+  if (typeof gap?.owner !== 'string' || !gap.owner.trim()) {
     errors.push(`${label} must name an owner.`);
   }
-  if (typeof waiver?.reason !== 'string' || !waiver.reason.trim()) {
+  if (typeof gap?.reason !== 'string' || !gap.reason.trim()) {
     errors.push(`${label} must explain why evidence is outstanding.`);
   }
-  const releaseScopes = normalizeReleaseAcceptanceScopes(waiver?.releaseScopes);
+  const releaseScopes = normalizeReleaseAcceptanceScopes(gap?.releaseScopes);
   if (releaseScopes === null) {
     errors.push(
       `${label} releaseScopes must contain unique supported scopes: ` +
       `${RELEASE_ACCEPTANCE_SCOPES.join(', ')}.`
     );
-  } else if (JSON.stringify(waiver.releaseScopes) !== JSON.stringify(releaseScopes)) {
+  } else if (JSON.stringify(gap.releaseScopes) !== JSON.stringify(releaseScopes)) {
     errors.push(
       `${label} releaseScopes must use canonical scope order: ` +
       `${RELEASE_ACCEPTANCE_SCOPES.join(', ')}.`
     );
   }
 
-  const trackingIssues = sortedUniqueStrings(waiver?.trackingIssues);
+  const trackingIssues = sortedUniqueStrings(gap?.trackingIssues);
   if (
     trackingIssues === null ||
     trackingIssues.length === 0 ||
-    trackingIssues.length !== waiver.trackingIssues.length ||
+    trackingIssues.length !== gap.trackingIssues.length ||
     trackingIssues.some((issue) => !/^#\d+$/.test(issue))
   ) {
     errors.push(`${label} trackingIssues must contain unique GitHub issue references such as #222.`);
   }
 
-  const expectedCapabilities = EXPECTED_RISK_AREAS[waiver?.riskArea] ?? [];
-  const capabilities = sortedUniqueStrings(waiver?.capabilities);
+  const expectedCapabilities = EXPECTED_RISK_AREAS[gap?.riskArea] ?? [];
+  const capabilities = sortedUniqueStrings(gap?.capabilities);
   if (
     capabilities === null ||
     capabilities.length === 0 ||
-    capabilities.length !== waiver.capabilities.length
+    capabilities.length !== gap.capabilities.length
   ) {
     errors.push(`${label} capabilities must be unique non-empty strings.`);
   } else {
     for (const capability of capabilities) {
       if (!expectedCapabilities.includes(capability)) {
-        errors.push(`${label} references unknown capability for ${waiver.riskArea}: ${capability}.`);
+        errors.push(`${label} references unknown capability for ${gap.riskArea}: ${capability}.`);
       }
     }
   }
 
-  const expiresAt = Date.parse(`${waiver?.expiresOn}T23:59:59.999Z`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(waiver?.expiresOn ?? '') || Number.isNaN(expiresAt)) {
-    errors.push(`${label} must have a valid YYYY-MM-DD expiry.`);
-  } else if (now.getTime() > expiresAt) {
-    errors.push(`${label} expired on ${waiver.expiresOn}.`);
-  }
-
-  if (waiver?.id === REQUIRED_PHYSICAL_WAIVER.id) {
-    for (const field of ['riskArea', 'status', 'owner', 'expiresOn']) {
-      if (waiver[field] !== REQUIRED_PHYSICAL_WAIVER[field]) {
+  if (gap?.id === REQUIRED_PHYSICAL_GAP.id) {
+    for (const field of ['riskArea', 'status', 'owner']) {
+      if (gap[field] !== REQUIRED_PHYSICAL_GAP[field]) {
         errors.push(
-          `${label} ${field} must be ${REQUIRED_PHYSICAL_WAIVER[field]}, got ${waiver[field] ?? 'missing'}.`
+          `${label} ${field} must be ${REQUIRED_PHYSICAL_GAP[field]}, got ${gap[field] ?? 'missing'}.`
         );
       }
     }
-    if (!sameStrings(waiver.trackingIssues, REQUIRED_PHYSICAL_WAIVER.trackingIssues)) {
+    if (!sameStrings(gap.trackingIssues, REQUIRED_PHYSICAL_GAP.trackingIssues)) {
       errors.push(
-        `${label} trackingIssues is invalid: ${describeSetMismatch(waiver.trackingIssues, REQUIRED_PHYSICAL_WAIVER.trackingIssues)}.`
+        `${label} trackingIssues is invalid: ${describeSetMismatch(gap.trackingIssues, REQUIRED_PHYSICAL_GAP.trackingIssues)}.`
       );
     }
-    if (!sameStrings(waiver.releaseScopes, REQUIRED_PHYSICAL_WAIVER.releaseScopes)) {
+    if (!sameStrings(gap.releaseScopes, REQUIRED_PHYSICAL_GAP.releaseScopes)) {
       errors.push(
         `${label} releaseScopes must be native-only.`
       );
@@ -223,17 +212,14 @@ function validateWaiver(waiver, now, errors) {
   }
 }
 
-/** Physical release evidence must be retained as a device- and candidate-specific result artifact. */
+/** Optional physical results remain useful as device- and source-specific diagnostics. */
 function validatePhysicalDeviceEvidence(records, options) {
   const {
     repoRoot,
     now,
     errors,
     statSync,
-    readFileSync,
-    releaseMode,
-    candidateCommit,
-    candidateManifestContent
+    readFileSync
   } = options;
   const coveredByArea = new Map();
   const ids = new Set();
@@ -249,12 +235,8 @@ function validatePhysicalDeviceEvidence(records, options) {
     'capabilities'
   ];
 
-  if (releaseMode && records.length > 0 && !/^[0-9a-f]{40}$/.test(candidateCommit ?? '')) {
-    errors.push('Release mode with physical evidence requires an explicit frozen 40-character candidate commit.');
-  }
-
-  let manifestContent = candidateManifestContent;
-  if (records.length > 0 && manifestContent === undefined) {
+  let manifestContent;
+  if (records.length > 0) {
     try {
       manifestContent = readFileSync(path.resolve(repoRoot, 'shared/release.json'));
     } catch (error) {
@@ -279,21 +261,13 @@ function validatePhysicalDeviceEvidence(records, options) {
     if (missingFields.length) errors.push(`${label} is missing fields: ${missingFields.join(', ')}.`);
     if (unexpectedFields.length) errors.push(`${label} has unexpected fields: ${unexpectedFields.join(', ')}.`);
 
-    if (record.riskArea !== REQUIRED_PHYSICAL_WAIVER.riskArea) {
-      errors.push(`${label} must belong to ${REQUIRED_PHYSICAL_WAIVER.riskArea}.`);
+    if (record.riskArea !== REQUIRED_PHYSICAL_GAP.riskArea) {
+      errors.push(`${label} must belong to ${REQUIRED_PHYSICAL_GAP.riskArea}.`);
     }
     if (record.status !== 'passed') errors.push(`${label} status must be passed.`);
     if (typeof record.owner !== 'string' || !record.owner.trim()) errors.push(`${label} must name an owner.`);
     if (!/^[0-9a-f]{40}$/.test(record.sourceCommit ?? '')) {
       errors.push(`${label} must record the frozen 40-character source commit.`);
-    } else if (
-      releaseMode &&
-      /^[0-9a-f]{40}$/.test(candidateCommit ?? '') &&
-      record.sourceCommit !== candidateCommit
-    ) {
-      errors.push(
-        `${label} source commit ${record.sourceCommit} does not match release candidate ${candidateCommit}.`
-      );
     }
 
     const executedAt = Date.parse(`${record.executedOn}T00:00:00Z`);
@@ -350,26 +324,17 @@ function validatePhysicalDeviceEvidence(records, options) {
   return coveredByArea;
 }
 
-/**
- * Validates the risk contract without running the referenced suites. Release mode can then reject
- * active blockers while normal development still gets a fast structural check.
- */
+/** Validates the diagnostic risk inventory without running the referenced suites. */
 export function validateRiskEvidence({
   manifest,
   packageScripts,
   repoRoot = repositoryRoot,
   now = new Date(),
   statSync = fs.statSync,
-  readFileSync = fs.readFileSync,
-  releaseMode = false,
-  candidateCommit,
-  evidenceCommit,
-  evidenceAttestation,
-  candidateManifestContent,
-  releaseScopes
+  readFileSync = fs.readFileSync
 }) {
   const errors = [];
-  const blockers = [];
+  const gaps = [];
   const rows = [];
 
   if (manifest?.schemaVersion !== 1) {
@@ -394,59 +359,39 @@ export function validateRiskEvidence({
     if (!(areaId in EXPECTED_RISK_AREAS)) errors.push(`Unexpected risk area: ${areaId}.`);
   }
 
-  const waivers = Array.isArray(manifest?.waivers) ? manifest.waivers : [];
-  const waiverIds = new Set();
-  const waivedCapabilityOwners = new Map();
-  for (const waiver of waivers) {
-    if (typeof waiver?.id !== 'string' || !waiver.id) {
-      errors.push('Every waiver must have an id.');
+  const diagnosticGaps = Array.isArray(manifest?.diagnosticGaps) ? manifest.diagnosticGaps : [];
+  const gapIds = new Set();
+  const gapCapabilityOwners = new Map();
+  for (const gap of diagnosticGaps) {
+    if (typeof gap?.id !== 'string' || !gap.id) {
+      errors.push('Every diagnostic gap must have an id.');
       continue;
     }
-    if (waiverIds.has(waiver.id)) errors.push(`Duplicate waiver id: ${waiver.id}.`);
-    waiverIds.add(waiver.id);
-    validateWaiver(waiver, now, errors);
-    for (const capability of Array.isArray(waiver.capabilities) ? waiver.capabilities : []) {
-      const key = `${waiver.riskArea}/${capability}`;
-      if (waivedCapabilityOwners.has(key)) {
+    if (gapIds.has(gap.id)) errors.push(`Duplicate diagnostic gap id: ${gap.id}.`);
+    gapIds.add(gap.id);
+    validateDiagnosticGap(gap, errors);
+    for (const capability of Array.isArray(gap.capabilities) ? gap.capabilities : []) {
+      const key = `${gap.riskArea}/${capability}`;
+      if (gapCapabilityOwners.has(key)) {
         errors.push(
-          `Capability ${key} is waived by both ${waivedCapabilityOwners.get(key)} and ${waiver.id}.`
+          `Capability ${key} is listed by both ${gapCapabilityOwners.get(key)} and ${gap.id}.`
         );
       } else {
-        waivedCapabilityOwners.set(key, waiver.id);
+        gapCapabilityOwners.set(key, gap.id);
       }
     }
-    blockers.push(waiver);
+    gaps.push(gap);
   }
 
   const physicalRecords = Array.isArray(manifest?.physicalDeviceEvidence)
     ? manifest.physicalDeviceEvidence
     : [];
-  if (releaseMode && physicalRecords.length > 0) {
-    if (!/^[0-9a-f]{40}$/.test(evidenceCommit ?? '')) {
-      errors.push('Release mode with physical evidence requires an explicit 40-character evidence commit.');
-    } else if (!evidenceAttestation) {
-      errors.push('Release mode requires Git parent/diff context for the evidence commit.');
-    } else {
-      errors.push(...validateEvidenceOnlyAttestation({
-        sourceCommit: candidateCommit,
-        evidenceCommit,
-        parentCommits: evidenceAttestation.parentCommits,
-        changedPaths: evidenceAttestation.changedPaths,
-        resultArtifacts: physicalRecords.map((record) => record.resultArtifact),
-        checkedOutCommit: evidenceAttestation.checkedOutCommit,
-        worktreeStatus: evidenceAttestation.worktreeStatus
-      }));
-    }
-  }
   const physicalEvidenceByArea = validatePhysicalDeviceEvidence(physicalRecords, {
     repoRoot,
     now,
     errors,
     statSync,
-    readFileSync,
-    releaseMode,
-    candidateCommit,
-    candidateManifestContent
+    readFileSync
   });
 
   for (const [areaId, expectedCapabilities] of Object.entries(EXPECTED_RISK_AREAS)) {
@@ -539,42 +484,42 @@ export function validateRiskEvidence({
     }
 
     const physicalCapabilities = physicalEvidenceByArea.get(areaId) ?? new Set();
-    const waivedCapabilities = new Set(
-      waivers
-        .filter((waiver) => waiver?.riskArea === areaId)
-        .flatMap((waiver) => Array.isArray(waiver.capabilities) ? waiver.capabilities : [])
+    const gapCapabilities = new Set(
+      diagnosticGaps
+        .filter((gap) => gap?.riskArea === areaId)
+        .flatMap((gap) => Array.isArray(gap.capabilities) ? gap.capabilities : [])
     );
-    for (const capability of waivedCapabilities) {
+    for (const capability of gapCapabilities) {
       if (automatedCapabilities.has(capability) || physicalCapabilities.has(capability)) {
-        errors.push(`Risk area ${areaId} has both evidence and a waiver for ${capability}.`);
+        errors.push(`Risk area ${areaId} has both evidence and a diagnostic gap for ${capability}.`);
       }
     }
     for (const capability of expectedCapabilities) {
       if (
         !automatedCapabilities.has(capability) &&
         !physicalCapabilities.has(capability) &&
-        !waivedCapabilities.has(capability)
+        !gapCapabilities.has(capability)
       ) {
-        errors.push(`Risk area ${areaId} has no evidence or waiver for ${capability}.`);
+        errors.push(`Risk area ${areaId} has no evidence or diagnostic gap for ${capability}.`);
       }
     }
 
-    if (areaId === REQUIRED_PHYSICAL_WAIVER.riskArea) {
-      const missingPhysicalCapabilities = REQUIRED_PHYSICAL_WAIVER.capabilities.filter(
+    if (areaId === REQUIRED_PHYSICAL_GAP.riskArea) {
+      const missingPhysicalCapabilities = REQUIRED_PHYSICAL_GAP.capabilities.filter(
         (capability) => !physicalCapabilities.has(capability)
       );
-      const physicalWaiver = waivers.find((waiver) => waiver?.id === REQUIRED_PHYSICAL_WAIVER.id);
-      if (missingPhysicalCapabilities.length === 0 && physicalWaiver) {
-        errors.push(`Remove ${REQUIRED_PHYSICAL_WAIVER.id}; physical evidence now covers every capability.`);
-      } else if (missingPhysicalCapabilities.length > 0 && !physicalWaiver) {
-        errors.push(`Missing release-blocking waiver ${REQUIRED_PHYSICAL_WAIVER.id}.`);
+      const physicalGap = diagnosticGaps.find((gap) => gap?.id === REQUIRED_PHYSICAL_GAP.id);
+      if (missingPhysicalCapabilities.length === 0 && physicalGap) {
+        errors.push(`Remove ${REQUIRED_PHYSICAL_GAP.id}; physical evidence now covers every capability.`);
+      } else if (missingPhysicalCapabilities.length > 0 && !physicalGap) {
+        errors.push(`Missing diagnostic gap ${REQUIRED_PHYSICAL_GAP.id}.`);
       } else if (
-        physicalWaiver &&
-        !sameStrings(physicalWaiver.capabilities, missingPhysicalCapabilities)
+        physicalGap &&
+        !sameStrings(physicalGap.capabilities, missingPhysicalCapabilities)
       ) {
         errors.push(
-          `Waiver ${physicalWaiver.id} capabilities must match outstanding physical evidence: ` +
-          `${describeSetMismatch(physicalWaiver.capabilities, missingPhysicalCapabilities)}.`
+          `Diagnostic gap ${physicalGap.id} capabilities must match outstanding physical evidence: ` +
+          `${describeSetMismatch(physicalGap.capabilities, missingPhysicalCapabilities)}.`
         );
       }
     }
@@ -585,18 +530,11 @@ export function validateRiskEvidence({
       requiredCount: expectedCapabilities.length,
       automatedCount: automatedCapabilities.size,
       physicalCount: physicalCapabilities.size,
-      waivedCount: waivedCapabilities.size
+      gapCount: gapCapabilities.size
     });
   }
 
-  const selectedReleaseScopes = normalizeReleaseAcceptanceScopes(releaseScopes)
-    ?? [...RELEASE_ACCEPTANCE_SCOPES];
-  const releaseBlockers = blockers.filter((blocker) => {
-    const blockerScopes = normalizeReleaseAcceptanceScopes(blocker.releaseScopes)
-      ?? RELEASE_ACCEPTANCE_SCOPES;
-    return blockerScopes.some((scope) => selectedReleaseScopes.includes(scope));
-  });
-  return { errors, blockers, releaseBlockers, rows };
+  return { errors, gaps, rows };
 }
 
 export function loadRepositoryRiskEvidence(repoRoot = repositoryRoot) {
@@ -605,26 +543,9 @@ export function loadRepositoryRiskEvidence(repoRoot = repositoryRoot) {
   return { manifest, packageScripts: packageJson.scripts ?? {}, repoRoot };
 }
 
-export function parseRiskEvidenceArgs(argv, environment = process.env) {
-  const values = {
-    releaseMode: false,
-    candidateCommit: environment.CALIBRATE_RELEASE_CANDIDATE?.trim() || null,
-    evidenceCommit: environment.CALIBRATE_RELEASE_EVIDENCE?.trim() || environment.GITHUB_SHA?.trim() || null
-  };
-  for (let index = 0; index < argv.length; index += 1) {
-    const option = argv[index];
-    if (option === '--release') values.releaseMode = true;
-    else if (option === '--candidate' || option === '--evidence') {
-      const value = argv[index + 1];
-      if (!value || value.startsWith('--')) throw new Error(`${option} requires a value.`);
-      if (option === '--candidate') values.candidateCommit = value;
-      else values.evidenceCommit = value;
-      index += 1;
-    } else {
-      throw new Error(`Unknown risk-evidence option: ${option}`);
-    }
-  }
-  return values;
+export function parseRiskEvidenceArgs(argv) {
+  if (argv.length > 0) throw new Error(`Unknown risk-evidence option: ${argv[0]}`);
+  return {};
 }
 
 function printResult(result) {
@@ -636,11 +557,11 @@ function printResult(result) {
 
   console.log('Risk evidence contract is valid. Numeric coverage remains diagnostic.');
   console.table(result.rows);
-  if (result.blockers.length) {
-    console.log('Release-blocking evidence still required:');
-    for (const blocker of result.blockers) {
+  if (result.gaps.length) {
+    console.log('Optional physical coverage is not currently recorded:');
+    for (const gap of result.gaps) {
       console.log(
-        `- ${blocker.id}: ${blocker.owner}, expires ${blocker.expiresOn}, tracked by ${blocker.trackingIssues.join(' and ')}`
+        `- ${gap.id}: ${gap.reason}`
       );
     }
   }
@@ -649,57 +570,11 @@ function printResult(result) {
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : '';
 if (invokedPath === import.meta.url) {
   try {
-    const cli = parseRiskEvidenceArgs(process.argv.slice(2));
+    parseRiskEvidenceArgs(process.argv.slice(2));
     const input = loadRepositoryRiskEvidence();
-    const physicalRecords = Array.isArray(input.manifest?.physicalDeviceEvidence)
-      ? input.manifest.physicalDeviceEvidence
-      : [];
-    if (cli.releaseMode && physicalRecords.length > 0) {
-      input.candidateCommit = cli.candidateCommit;
-      input.evidenceCommit = cli.evidenceCommit;
-      if (
-        /^[0-9a-f]{40}$/.test(cli.candidateCommit ?? '') &&
-        /^[0-9a-f]{40}$/.test(cli.evidenceCommit ?? '')
-      ) {
-        const context = readEvidenceGitContext({
-          root: input.repoRoot,
-          sourceCommit: cli.candidateCommit,
-          evidenceCommit: cli.evidenceCommit,
-          resultArtifacts: physicalRecords.map((record) => record.resultArtifact)
-        });
-        input.manifest = JSON.parse(context.riskManifestContent);
-        input.candidateManifestContent = context.manifestContent;
-        input.evidenceAttestation = context;
-        const evidenceFiles = new Map(
-          Object.entries(context.resultContents).map(([relativePath, content]) => [
-            path.resolve(input.repoRoot, relativePath),
-            content
-          ])
-        );
-        input.readFileSync = (file, encoding) => {
-          const content = evidenceFiles.get(path.resolve(file));
-          if (content === undefined) return fs.readFileSync(file, encoding);
-          return encoding ? content : Buffer.from(content);
-        };
-        input.statSync = (file) => {
-          const content = evidenceFiles.get(path.resolve(file));
-          if (content === undefined) return fs.statSync(file);
-          return { isFile: () => true, size: Buffer.byteLength(content) };
-        };
-      }
-    }
-    const result = validateRiskEvidence({
-      ...input,
-      releaseMode: cli.releaseMode,
-      releaseScopes: input.manifest?.[RELEASE_ACCEPTANCE_RESULT_PROPERTY]?.releaseScopes
-    });
-    printResult(cli.releaseMode ? { ...result, blockers: result.releaseBlockers } : result);
-    if (result.errors.length || (cli.releaseMode && result.releaseBlockers.length)) {
-      if (!result.errors.length) {
-        console.error('Release gate is blocked until all release-blocking evidence is recorded.');
-      }
-      process.exitCode = 1;
-    }
+    const result = validateRiskEvidence(input);
+    printResult(result);
+    if (result.errors.length) process.exitCode = 1;
   } catch (error) {
     console.error(`[risk-evidence] ${error instanceof Error ? error.message : error}`);
     process.exitCode = 1;

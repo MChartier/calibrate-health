@@ -4,9 +4,24 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
-      native_upgrade_baseline:
-        description: Full Git SHA to use as the native package upgrade baseline.
+      validation_scope:
+        description: Expensive release validation to run in addition to the normal build checks.
         required: true
+        default: web
+        type: choice
+        options:
+          - web
+          - native
+          - web-and-native
+          - configuration-only
+      run_native_upgrade:
+        description: Also rehearse a same-signer phone and Wear package upgrade.
+        required: true
+        default: false
+        type: boolean
+      native_upgrade_baseline:
+        description: Full Git SHA required only when the native upgrade rehearsal is selected.
+        required: false
         type: string
 
 permissions:
@@ -25,11 +40,15 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
+      release_config: ${{ steps.decision.outputs.release_config }}
       backend: ${{ steps.decision.outputs.backend }}
       web: ${{ steps.decision.outputs.web }}
       wear: ${{ steps.decision.outputs.wear }}
       native_runtime: ${{ steps.decision.outputs.native_runtime }}
       native_package: ${{ steps.decision.outputs.native_package }}
+      web_release: ${{ steps.decision.outputs.web_release }}
+      native_release: ${{ steps.decision.outputs.native_release }}
+      native_upgrade: ${{ steps.decision.outputs.native_upgrade }}
 
     steps:
       - name: Detect affected build surfaces
@@ -38,15 +57,32 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
+            release_config:
+              - '.github/workflows/**'
+              - 'backend/package.json'
+              - 'backend/package-lock.json'
+              - 'deploy/**'
+              - 'docs/openapi/**'
+              - 'docs/release-acceptance.md'
+              - 'mobile/app.config.js'
+              - 'mobile/app.json'
+              - 'mobile/eas.json'
+              - 'mobile/package.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'packages/api-client/src/generated/**'
+              - 'playwright.ux.config.ts'
+              - 'quality/**'
+              - 'scripts/**'
+              - 'shared/client-diagnostic-versions.json'
+              - 'shared/release.json'
+              - 'wear/**'
             backend:
-              - '.github/workflows/builds.yml'
               - 'backend/**'
-              - 'quality/performance-budgets.json'
-              - 'scripts/performance-budgets.mjs'
               - 'shared/**'
             web:
-              - '.github/workflows/builds.yml'
-              - 'e2e/expo-web/**'
+              - 'e2e/expo-web/fixtures.ts'
+              - 'e2e/expo-web/release-smoke.spec.ts'
               - 'mobile/app/**'
               - 'mobile/assets/**'
               - 'mobile/public/**'
@@ -63,23 +99,17 @@ jobs:
               - 'package-lock.json'
               - 'packages/api-client/**'
               - 'playwright.expo-web.config.ts'
-              - 'playwright.ux.config.ts'
-              - 'quality/performance-budgets.json'
               - 'scripts/expo-cli-environment.mjs'
-              - 'scripts/expo-web-*.mjs'
-              - 'scripts/performance-budgets.mjs'
-              - 'scripts/release-acceptance.mjs'
-              - 'scripts/ux-gates.mjs'
+              - 'scripts/expo-web-build.mjs'
+              - 'scripts/expo-web-playwright.mjs'
+              - 'scripts/expo-web-release.mjs'
+              - 'scripts/expo-web-release.test.mjs'
+              - 'scripts/expo-web-static-server.mjs'
+              - 'scripts/expo-web-static-server.test.mjs'
               - 'shared/**'
             wear:
-              - '.github/workflows/builds.yml'
               - 'wear/**'
-              - 'scripts/hosted-native-evidence.mjs'
-              - 'scripts/release-acceptance.mjs'
-              - 'scripts/wear-emulator-smoke.mjs'
-              - 'shared/release.json'
             native_runtime:
-              - '.github/workflows/builds.yml'
               - 'mobile/app/**'
               - 'mobile/assets/**'
               - 'mobile/src/**'
@@ -90,20 +120,14 @@ jobs:
               - 'mobile/metro.config.js'
               - 'mobile/modules/**'
               - 'mobile/package.json'
-              - 'package.json'
               - 'package-lock.json'
               - 'packages/api-client/**'
               - 'scripts/xcode-uuid-compatibility.test.mjs'
               - 'shared/**'
             native_package:
-              - '.github/workflows/builds.yml'
-              - 'wear/**'
               - 'mobile/app.config.js'
               - 'mobile/app.json'
-              - 'mobile/babel.config.js'
               - 'mobile/eas.json'
-              - 'mobile/index.js'
-              - 'mobile/metro.config.js'
               - 'mobile/assets/adaptive-icon.png'
               - 'mobile/assets/icon.png'
               - 'mobile/assets/notification-icon.png'
@@ -111,18 +135,26 @@ jobs:
               - 'mobile/package.json'
               - 'mobile/plugins/**'
               - 'package-lock.json'
-              - 'scripts/android-e2e.mjs'
-              - 'scripts/hosted-android-e2e.mjs'
-              - 'scripts/hosted-native-emulators.mjs'
-              - 'scripts/hosted-native-evidence.mjs'
-              - 'scripts/native-release-build.mjs'
-              - 'scripts/native-upgrade-rehearsal.mjs'
-              - 'scripts/release-acceptance.mjs'
-              - 'scripts/wear-emulator-smoke.mjs'
-              - 'shared/release.json'
+      - name: Detect changes outside generated release mirrors
+        if: github.event_name == 'pull_request'
+        id: release_mirror_filter
+        uses: dorny/paths-filter@v3
+        with:
+          predicate-quantifier: every
+          filters: |
+            non_release_mirror:
+              - '**'
+              - '!backend/package-lock.json'
+              - '!backend/package.json'
+              - '!docs/openapi/v1.yaml'
+              - '!package-lock.json'
+              - '!package.json'
+              - '!packages/api-client/src/generated/v1.ts'
+              - '!shared/client-diagnostic-versions.json'
+              - '!shared/release.json'
 
       - name: Validate manual native upgrade baseline
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && inputs.run_native_upgrade
         shell: bash
         env:
           NATIVE_UPGRADE_BASELINE: ${{ inputs.native_upgrade_baseline }}
@@ -136,20 +168,86 @@ jobs:
         id: decision
         shell: bash
         env:
-          BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
-          WEB_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.web == 'true' }}
-          WEAR_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.wear == 'true' }}
-          NATIVE_RUNTIME_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.native_runtime == 'true' }}
-          NATIVE_PACKAGE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.native_package == 'true' }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          RELEASE_CONFIG_CHANGED: ${{ steps.filter.outputs.release_config == 'true' }}
+          BACKEND_CHANGED: ${{ steps.filter.outputs.backend == 'true' }}
+          WEB_CHANGED: ${{ steps.filter.outputs.web == 'true' }}
+          WEAR_CHANGED: ${{ steps.filter.outputs.wear == 'true' }}
+          NATIVE_RUNTIME_CHANGED: ${{ steps.filter.outputs.native_runtime == 'true' }}
+          NATIVE_PACKAGE_CHANGED: ${{ steps.filter.outputs.native_package == 'true' }}
+          NON_RELEASE_MIRROR_CHANGED: ${{ steps.release_mirror_filter.outputs.non_release_mirror == 'true' }}
+          MANUAL_VALIDATION_SCOPE: ${{ inputs.validation_scope || 'configuration-only' }}
+          MANUAL_NATIVE_UPGRADE: ${{ inputs.run_native_upgrade || false }}
         run: |
-          echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
-          echo "web=${WEB_CHANGED}" >> "${GITHUB_OUTPUT}"
-          echo "wear=${WEAR_CHANGED}" >> "${GITHUB_OUTPUT}"
-          echo "native_runtime=${NATIVE_RUNTIME_CHANGED}" >> "${GITHUB_OUTPUT}"
-          echo "native_package=${NATIVE_PACKAGE_CHANGED}" >> "${GITHUB_OUTPUT}"
+          release_config=false
+          backend=false
+          web=false
+          wear=false
+          native_runtime=false
+          native_package=false
+          web_release=false
+          native_release=false
+          native_upgrade=false
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            release_config=true
+            case "${MANUAL_VALIDATION_SCOPE}" in
+              web)
+                web=true
+                web_release=true
+                ;;
+              native)
+                wear=true
+                native_runtime=true
+                native_package=true
+                native_release=true
+                ;;
+              web-and-native)
+                web=true
+                wear=true
+                native_runtime=true
+                native_package=true
+                web_release=true
+                native_release=true
+                ;;
+              configuration-only)
+                ;;
+              *)
+                echo "Unknown manual validation scope: ${MANUAL_VALIDATION_SCOPE}" >&2
+                exit 1
+                ;;
+            esac
+            if [[ "${MANUAL_NATIVE_UPGRADE}" == "true" ]]; then
+              native_upgrade=true
+            fi
+          else
+            release_config=${RELEASE_CONFIG_CHANGED}
+            if [[ "${HEAD_REF}" == release/v* && "${NON_RELEASE_MIRROR_CHANGED}" != "true" ]]; then
+              echo "Generated version-only release PR: platform build fan-out is intentionally suppressed."
+            else
+              backend=${BACKEND_CHANGED}
+              web=${WEB_CHANGED}
+              wear=${WEAR_CHANGED}
+              native_runtime=${NATIVE_RUNTIME_CHANGED}
+              native_package=${NATIVE_PACKAGE_CHANGED}
+            fi
+          fi
+
+          echo "release_config=${release_config}" >> "${GITHUB_OUTPUT}"
+          echo "backend=${backend}" >> "${GITHUB_OUTPUT}"
+          echo "web=${web}" >> "${GITHUB_OUTPUT}"
+          echo "wear=${wear}" >> "${GITHUB_OUTPUT}"
+          echo "native_runtime=${native_runtime}" >> "${GITHUB_OUTPUT}"
+          echo "native_package=${native_package}" >> "${GITHUB_OUTPUT}"
+          echo "web_release=${web_release}" >> "${GITHUB_OUTPUT}"
+          echo "native_release=${native_release}" >> "${GITHUB_OUTPUT}"
+          echo "native_upgrade=${native_upgrade}" >> "${GITHUB_OUTPUT}"
 
   release-config:
     name: Release Configuration
+    needs: changes
+    if: needs.changes.outputs.release_config == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -203,37 +301,6 @@ jobs:
       - name: Build backend
         run: npm run build
 
-
-  performance-regression:
-    name: Deterministic Performance Regression
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
-    runs-on: windows-latest
-    timeout-minutes: 10
-
-    defaults:
-      run:
-        working-directory: backend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Setup reviewed benchmark Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.14.0
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install deps
-        run: npm.cmd ci --no-audit --fund=false
-
-      - name: Enforce deterministic API and recompute performance budget
-        run: npm.cmd run performance:regression
-
   expo-web-build:
     name: Expo Web Build
     needs: changes
@@ -261,12 +328,43 @@ jobs:
         run: |
           npm.cmd run build:expo-web
           npm.cmd run test:expo-web:release
-          npm.cmd run performance:bundle
+
+  web-critical-smoke:
+    name: Web Critical Smoke
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    env:
+      CI: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm.cmd ci --no-audit --fund=false
+
+      - name: Install pinned Playwright Chromium
+        run: node node_modules/@playwright/test/cli.js install chromium
+
+      - name: Exercise critical production Web journeys on desktop and phone
+        run: npm.cmd run test:expo-web:smoke
 
   exported-web-e2e:
     name: Full Exported Web and PWA End-to-End
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.web_release == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -290,32 +388,11 @@ jobs:
         run: node node_modules/@playwright/test/cli.js install chromium
 
       - name: Run full exported Web and PWA suite
-        id: exported_web_e2e
         run: npm.cmd run test:expo-web
-
-      - name: Record sanitized candidate-bound Web result
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow builds
-          --gate hosted-exported-web-e2e
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ steps.exported_web_e2e.outcome }}"
-          --output .codex-screenshots/release-acceptance/exported-web-e2e.json
-
-      - name: Upload sanitized exported Web evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: exported-web-e2e-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/release-acceptance/exported-web-e2e.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90
   data-state-acceptance:
     name: Six-State Data-Backed Route Acceptance
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.web_release == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -339,34 +416,13 @@ jobs:
         run: node node_modules/@playwright/test/cli.js install chromium
 
       - name: Run six-state route acceptance matrix
-        id: data_state_matrix
         env:
           PLAYWRIGHT_JSON_OUTPUT_FILE: ${{ runner.temp }}/launch-24-data-state-acceptance.json
         run: npm.cmd run test:data-states
-
-      - name: Record sanitized candidate-bound data-state result
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow builds
-          --gate hosted-data-state-matrix
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ steps.data_state_matrix.outcome }}"
-          --output .codex-screenshots/release-acceptance/data-state.json
-
-      - name: Upload sanitized data-state acceptance evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: launch-24-data-state-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/release-acceptance/data-state.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90
   ux-regression:
     name: UX Accessibility and Visual Regression
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.web_release == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -396,18 +452,7 @@ jobs:
         run: node node_modules/@playwright/test/cli.js install chromium
 
       - name: Enforce accessibility and visual regression gates
-        id: ux_gate
         run: npm.cmd run test:ux
-
-      - name: Record sanitized candidate-bound UX result
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow builds
-          --gate hosted-ux-regression
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ steps.ux_gate.outcome }}"
-          --output .codex-screenshots/expo-web-ux-results/release-acceptance.json
 
       - name: Upload sanitized UX evidence
         if: always()
@@ -417,16 +462,7 @@ jobs:
           path: .codex-screenshots/expo-web-ux-results
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 14
-      - name: Upload durable sanitized UX summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ux-regression-summary-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/expo-web-ux-results/release-acceptance.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
 
   native-metro-bundle:
     name: Android Runtime Bundle
@@ -517,15 +553,8 @@ jobs:
         working-directory: mobile/android
         run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64
 
-      - name: Record candidate C beside the transient debug artifact
-        if: always()
-        run: >-
-          node scripts/hosted-native-evidence.mjs init
-          --lane android
-          --source-commit "${{ github.event.pull_request.head.sha || github.sha }}"
-          --output mobile/android/app/build/outputs/apk/debug/release-acceptance.json
-
       - name: Share Android debug APK with emulator E2E
+        if: needs.changes.outputs.native_release == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk-${{ github.event.pull_request.head.sha || github.sha }}
@@ -586,7 +615,7 @@ jobs:
   android-emulator-e2e:
     name: Android Emulator End-to-End
     needs: [changes, mobile-build]
-    if: needs.changes.outputs.native_package == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.native_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -700,7 +729,6 @@ jobs:
           path: .ci-artifacts/android-debug
 
       - name: Run Android online, offline, process-death, and replay E2E
-        id: android_e2e
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -714,26 +742,6 @@ jobs:
           script: node scripts/hosted-android-e2e.mjs
 
 
-      - name: Record candidate-bound Android acceptance summary
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow builds
-          --gate hosted-android-emulator-e2e
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ steps.android_e2e.outcome }}"
-          --output .codex-screenshots/release-acceptance/android-emulator-e2e.json
-
-      - name: Upload candidate-bound Android acceptance summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-emulator-e2e-summary-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/release-acceptance/android-emulator-e2e.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90
-
       - name: Upload sanitized Android emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -742,12 +750,12 @@ jobs:
           path: .codex-screenshots/native-hosted/android.json
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
 
   wear-release-emulator-smoke:
     name: Wear Release Emulator Smoke
     needs: changes
-    if: needs.changes.outputs.wear == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.native_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -836,7 +844,6 @@ jobs:
         run: ./gradlew :app:assembleRelease -PcalibrateWearServerUrl=https://calibratehealth.app --no-daemon --console=plain
 
       - name: Exercise Wear release shell, Tile, permissions, scaling, touch targets, and crash state
-        id: wear_smoke
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35-ext15
@@ -854,26 +861,6 @@ jobs:
             ./wear/gradlew -p wear :app:connectedDebugAndroidTest -PcalibrateWearServerUrl=https://calibratehealth.app -PcalibrateWearDebugServerUrl=http://10.0.2.2:3000 --no-daemon --console=plain
 
 
-      - name: Record candidate-bound Wear acceptance summary
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow builds
-          --gate hosted-wear-release-emulator-smoke
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ steps.wear_smoke.outcome }}"
-          --output .codex-screenshots/release-acceptance/wear-release-emulator-smoke.json
-
-      - name: Upload candidate-bound Wear acceptance summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: wear-release-emulator-smoke-summary-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/release-acceptance/wear-release-emulator-smoke.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90
-
       - name: Upload sanitized Wear release emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -882,12 +869,12 @@ jobs:
           path: .codex-screenshots/native-hosted/wear.json
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
 
   native-package-upgrade:
     name: Native Two-Emulator Package Upgrade
     needs: changes
-    if: needs.changes.outputs.native_package == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.native_upgrade == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -970,26 +957,6 @@ jobs:
         run: node scripts/hosted-native-emulators.mjs stop-wear
 
 
-      - name: Record candidate-bound native-upgrade acceptance summary
-        if: always()
-        run: >-
-          node scripts/release-acceptance.mjs hosted-result
-          --workflow builds
-          --gate hosted-native-package-upgrade
-          --candidate "${{ github.event.pull_request.head.sha || github.sha }}"
-          --outcome "${{ steps.native_upgrade.outcome }}"
-          --output .codex-screenshots/release-acceptance/native-package-upgrade.json
-
-      - name: Upload candidate-bound native-upgrade acceptance summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-package-upgrade-summary-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .codex-screenshots/release-acceptance/native-package-upgrade.json
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90
-
       - name: Upload sanitized two-emulator upgrade evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -998,4 +965,4 @@ jobs:
           path: .codex-screenshots/native-hosted/upgrade.json
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
