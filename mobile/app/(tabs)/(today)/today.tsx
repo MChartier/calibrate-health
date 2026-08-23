@@ -10,7 +10,6 @@ import { AppText } from '../../../src/components/AppText';
 import { AsyncStateBoundary, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
 import { CalorieBalanceCard } from '../../../src/components/CalorieBalanceCard';
 import { CardHeader } from '../../../src/components/CardHeader';
-import { DateNavigation } from '../../../src/components/DateNavigation';
 import { FoodLogSummaryCard } from '../../../src/components/FoodLogSummaryCard';
 import { DayStatusCard, useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
 import { LogContentSkeleton } from '../../../src/components/LogContentSkeleton';
@@ -137,7 +136,6 @@ export default function TodayScreen() {
 
     return (
         <TabScreen style={styles.screenContent}>
-            <DateNavigation navigation={dateNavigation} compact />
             <AsyncStateBoundary
                 state={dashboardState}
                 resourceLabel="today's log"
@@ -241,7 +239,7 @@ const styles = StyleSheet.create({
     screenContent: {
         flexGrow: 1,
         gap: spacing.md,
-        paddingTop: spacing.md
+        paddingTop: 0
     },
     summaryCards: {
         width: '100%',
