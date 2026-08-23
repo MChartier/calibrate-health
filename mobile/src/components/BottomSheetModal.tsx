@@ -52,7 +52,11 @@ export type BottomSheetModalProps = {
 export const ADAPTIVE_DIALOG_BREAKPOINT = 840;
 export const STANDARD_DIALOG_WIDTH = 640;
 const WIDE_DIALOG_WIDTH = 800;
-const SHEET_TRANSLATE_Y = 32; // Subtle sheet-only movement; the backdrop fades independently.
+const DIALOG_TRANSLATE_Y = 32; // Keeps centered dialogs from traveling like edge-anchored sheets.
+const BACKDROP_OPEN_DURATION_MS = 160; // Lets the sheet lead slightly as the modal context appears.
+const BACKDROP_CLOSE_DURATION_MS = 140; // Clears the scrim promptly after dismissal begins.
+const SHEET_OPEN_DURATION_MS = 280; // Gives full-height bottom travel a smooth deceleration.
+const SHEET_CLOSE_DURATION_MS = 200; // Keeps dismissal responsive while returning below the viewport.
 const WEB_FIXED_POSITION = 'fixed' as ViewStyle['position']; // Keeps portal sheets anchored while the underlying web page is scrolled.
 const SHEET_CLOSE_ROW_MAX_WIDTH = 800; // Aligns an optional close action with wide detail-sheet content.
 let activeWebBottomSheets = 0;
@@ -154,6 +158,11 @@ export function resolveAdaptiveDialogWidth(
     return Math.min(preferredWidth, Math.max(0, viewportWidth - (horizontalInset * 2)));
 }
 
+/** Mobile sheets begin below the viewport; centered dialogs use a shorter transition. */
+export function resolveSheetEntranceOffset(viewportHeight: number, isDialog: boolean): number {
+    return isDialog ? DIALOG_TRANSLATE_Y : Math.max(0, viewportHeight);
+}
+
 /**
  * Presents as a mobile bottom sheet or a bounded dialog on larger viewports.
  */
@@ -187,6 +196,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     const visualViewportHeight = useVisualViewportHeight();
     const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
     const [shouldRender, setShouldRender] = useState(visible);
+    const [presentationReady, setPresentationReady] = useState(false);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetProgress = useRef(new Animated.Value(1)).current;
     const sheetRef = useRef<View>(null);
@@ -196,6 +206,23 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     const isDialog = viewportWidth >= ADAPTIVE_DIALOG_BREAKPOINT;
     const dialogWidth = resolveAdaptiveDialogWidth(viewportWidth, size, theme.spacing.lg);
     const modalAccessibilityLabel = title ?? accessibilityLabel;
+
+    const animateIn = useCallback(() => {
+        Animated.parallel([
+            Animated.timing(backdropOpacity, {
+                toValue: 1,
+                duration: reduceMotion ? 0 : BACKDROP_OPEN_DURATION_MS,
+                easing: Easing.out(Easing.ease),
+                useNativeDriver: true
+            }),
+            Animated.timing(sheetProgress, {
+                toValue: 0,
+                duration: reduceMotion ? 0 : SHEET_OPEN_DURATION_MS,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true
+            })
+        ]).start();
+    }, [backdropOpacity, reduceMotion, sheetProgress]);
 
     const requestDismiss = useCallback(async () => {
         if (dismissDisabled || dismissRequestPendingRef.current) return;
@@ -224,23 +251,16 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 
     useEffect(() => {
         if (visible) {
-            setShouldRender(true);
-            backdropOpacity.setValue(0);
-            sheetProgress.setValue(1);
-            Animated.parallel([
-                Animated.timing(backdropOpacity, {
-                    toValue: 1,
-                    duration: reduceMotion ? 0 : 160,
-                    easing: Easing.out(Easing.ease),
-                    useNativeDriver: true
-                }),
-                Animated.timing(sheetProgress, {
-                    toValue: 0,
-                    duration: reduceMotion ? 0 : 220,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true
-                })
-            ]).start();
+            if (!shouldRender) {
+                backdropOpacity.setValue(0);
+                sheetProgress.setValue(1);
+                setPresentationReady(false);
+                setShouldRender(true);
+                return;
+            }
+            // Native Modal content must finish mounting at its hidden position before
+            // the native-driver animation starts, or Android can paint one resting frame.
+            if (presentationReady) animateIn();
             return;
         }
 
@@ -249,28 +269,29 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
         Animated.parallel([
             Animated.timing(backdropOpacity, {
                 toValue: 0,
-                duration: reduceMotion ? 0 : 140,
+                duration: reduceMotion ? 0 : BACKDROP_CLOSE_DURATION_MS,
                 easing: Easing.in(Easing.ease),
                 useNativeDriver: true
             }),
             Animated.timing(sheetProgress, {
                 toValue: 1,
-                duration: reduceMotion ? 0 : 160,
+                duration: reduceMotion ? 0 : SHEET_CLOSE_DURATION_MS,
                 easing: Easing.in(Easing.cubic),
                 useNativeDriver: true
             })
         ]).start(({ finished }) => {
             if (finished) {
+                setPresentationReady(false);
                 setShouldRender(false);
             }
         });
-    }, [backdropOpacity, reduceMotion, sheetProgress, shouldRender, visible]);
+    }, [animateIn, backdropOpacity, presentationReady, reduceMotion, sheetProgress, shouldRender, visible]);
 
     if (!shouldRender) return null;
 
     const translateY = sheetProgress.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, SHEET_TRANSLATE_Y]
+        outputRange: [0, resolveSheetEntranceOffset(viewportHeight, isDialog)]
     });
     let sheetTopControl: React.ReactNode = null;
     if (showCloseButton) {
@@ -326,10 +347,13 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
             transparent
             animationType="none"
             presentationStyle="overFullScreen"
+            hardwareAccelerated={Platform.OS === 'android'}
             onRequestClose={() => {
                 void requestDismiss();
             }}
             onShow={() => {
+                if (!visible) return;
+                setPresentationReady(true);
                 focusInitial();
                 onShow?.();
             }}
@@ -377,6 +401,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                             width: dialogWidth ?? '100%',
                             maxHeight: panelMaxHeight,
                             height: panelHeight,
+                            opacity: presentationReady ? 1 : 0,
                             transform: [{ translateY }]
                         }
                     ]}
