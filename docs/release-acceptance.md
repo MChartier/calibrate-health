@@ -39,7 +39,9 @@ data-state, dependency, UX, and contract results without native package or emula
 still export a production Android Metro bundle on the PR, catching native-only module resolution and transform
 failures without creating retained native-package evidence. Native releases use Android, Wear, package upgrade,
 dependency, and contract results. Every retained job still checks out C. The Windows Web suites continue to
-use the repository-pinned Playwright version and its bundled Chromium.
+use the repository-pinned Playwright version and its bundled Chromium. Deterministic bundle-size budgets remain
+blocking. GitHub-hosted LCP, CLS, and INP measurements run once as a non-blocking diagnostic because shared-runner
+contention is not representative release evidence; production field aggregates remain the operational signal.
 
 Path-targeted PR validation can intentionally skip a retained job when its surface did not change. A skipped job is
 not release evidence. Before external launch, manually dispatch the corresponding workflow from C's branch after its

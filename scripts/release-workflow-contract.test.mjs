@@ -164,11 +164,17 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
   const workflow = readWorkflow('builds.yml');
   const changes = workflowJobBlock(workflow, 'changes');
   const webPaths = workflowPathFilterBlock(changes, 'web');
+  const expoWebBuild = workflowJobBlock(workflow, 'expo-web-build');
+  const exportedWeb = workflowJobBlock(workflow, 'exported-web-e2e');
+  const webVitalsSpec = readFileSync(
+    path.join(repositoryRoot, 'e2e', 'expo-web', 'launch-21-performance-budgets.spec.ts'),
+    'utf8'
+  );
   assertPathFilterOutputs(changes, ['backend', 'web', 'wear', 'native_runtime', 'native_package'], 'decision');
   const releaseConfig = workflowJobBlock(workflow, 'release-config');
   const webJobs = [
-    workflowJobBlock(workflow, 'expo-web-build'),
-    workflowJobBlock(workflow, 'exported-web-e2e'),
+    expoWebBuild,
+    exportedWeb,
     workflowJobBlock(workflow, 'data-state-acceptance'),
     workflowJobBlock(workflow, 'ux-regression')
   ];
@@ -187,6 +193,13 @@ test('pull requests run Web gates only for Web-impacting paths', () => {
   assert.match(webPaths, /- 'scripts\/expo-cli-environment\.mjs'/);
   assert.match(webPaths, /- 'scripts\/performance-budgets\.mjs'/);
   assert.match(webPaths, /- 'scripts\/release-acceptance\.mjs'/);
+  assert.match(expoWebBuild, /name: Measure hosted Web Vitals \(diagnostic\)/);
+  assert.match(expoWebBuild, /continue-on-error: true/);
+  assert.match(expoWebBuild, /CALIBRATE_RUN_HOSTED_WEB_VITALS: "1"/);
+  assert.equal((expoWebBuild.match(/npm\.cmd run test:performance:web/g) ?? []).length, 1);
+  assert.match(exportedWeb, /npm\.cmd run test:expo-web/);
+  assert.match(webVitalsSpec, /Boolean\(process\.env\.CI\) && !RUN_HOSTED_WEB_VITALS/);
+  assert.match(webVitalsSpec, /diagnostic-only/);
   for (const job of webJobs) {
     assert.match(job, /needs: changes/);
     assert.match(job, /if: needs\.changes\.outputs\.web == 'true'/);
