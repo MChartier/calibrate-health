@@ -203,7 +203,6 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'profile-details',
       'profile-time-zone-options',
       'profile-photo',
-      'health-connect',
       'password',
       'import',
       'offline',

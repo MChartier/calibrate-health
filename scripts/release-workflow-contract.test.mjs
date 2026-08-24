@@ -999,6 +999,7 @@ test('pull requests run targeted native compilation while emulator and upgrade r
   assert.match(mobileBuild, /Build Android debug/);
   assert.match(iosBuild, /if: needs\.changes\.outputs\.native_package == 'true'/);
   assert.match(iosBuild, /runs-on: macos-latest/);
+  assert.match(iosBuild, /npm ci --include=dev --no-audit --fund=false/);
   assert.match(iosBuild, /npm --prefix mobile run prebuild:ios/);
   assert.match(iosBuild, /pod install/);
   assert.match(iosBuild, /xcodebuild[\s\S]*generic\/platform=iOS Simulator[\s\S]*CODE_SIGNING_ALLOWED=NO/);

@@ -40,5 +40,3 @@ const withOptionalCameraHardware = (config) => withAndroidManifest(config, (mani
 });
 
 module.exports = withOptionalCameraHardware;
-module.exports.OPTIONAL_CAMERA_FEATURES = OPTIONAL_CAMERA_FEATURES;
-module.exports.applyOptionalCameraHardware = applyOptionalCameraHardware;

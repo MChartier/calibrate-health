@@ -1,8 +1,6 @@
 import { MOBILE_DEVICE_PLATFORMS, NATIVE_PUSH_PLATFORMS } from '@calibrate/shared';
 import { Platform } from 'react-native';
 
-export type SupportedNativePlatform = 'android' | 'ios';
-
 /** Map the React Native runtime to the server's phone/tablet session identity. */
 export function getMobileDevicePlatform(platform: string = Platform.OS) {
     return platform === 'ios'

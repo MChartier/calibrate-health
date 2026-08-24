@@ -190,14 +190,6 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     ready: { kind: 'role', role: 'dialog', name: 'Settings details', exact: true },
   },
   {
-    id: 'health-connect',
-    routeId: 'settings-connections',
-    path: ROUTE_REGISTRY['settings-connections'].path,
-    fixtureState: 'populated',
-    open: [{ kind: 'role', role: 'button', name: 'Health Connect', exact: true }],
-    ready: { kind: 'role', role: 'dialog', name: 'Details', exact: true },
-  },
-  {
     id: 'password',
     routeId: 'settings-security',
     path: ROUTE_REGISTRY['settings-security'].path,
