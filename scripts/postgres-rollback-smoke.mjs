@@ -34,9 +34,9 @@ export const ROLLBACK_BASE = Object.freeze({
 });
 
 export const ROLLBACK_CANDIDATE = Object.freeze({
-  migrationCount: 43,
-  lastMigration: '0039_mcp_oauth',
-  ledgerSha256: '20bad428af0aa6c434e95999d409f7066c2a5bd611a7cceaf3caad99871e801b',
+  migrationCount: 44,
+  lastMigration: '0040_ios_native_support',
+  ledgerSha256: 'e5bba71403b8013f98965e23a66a1ce08b690524847133c98877a86d8b963e13',
 });
 
 export const ROLLBACK_RESULT_PATH = path.join(

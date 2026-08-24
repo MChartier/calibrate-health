@@ -1,7 +1,18 @@
-const optionalCameraPlugin = require('./withOptionalCameraHardware') as {
-    OPTIONAL_CAMERA_FEATURES: string[];
-    applyOptionalCameraHardware: (manifest: any) => any;
-};
+jest.mock('@expo/config-plugins', () => ({
+    withAndroidManifest: (config: any, action: (config: any) => any) => action(config)
+}));
+
+const withOptionalCameraHardware = require('./withOptionalCameraHardware') as (config: any) => any;
+const OPTIONAL_CAMERA_FEATURES = [
+    'android.hardware.camera.any',
+    'android.hardware.camera',
+    'android.hardware.camera.autofocus',
+    'android.hardware.camera.flash'
+];
+
+function applyOptionalCameraHardware(manifest: any) {
+    return withOptionalCameraHardware({ modResults: manifest }).modResults;
+}
 
 describe('withOptionalCameraHardware config plugin', () => {
     it('marks all camera capabilities optional without duplicating generated features', () => {
@@ -18,15 +29,15 @@ describe('withOptionalCameraHardware config plugin', () => {
             }
         };
 
-        optionalCameraPlugin.applyOptionalCameraHardware(manifest);
-        optionalCameraPlugin.applyOptionalCameraHardware(manifest);
+        applyOptionalCameraHardware(manifest);
+        applyOptionalCameraHardware(manifest);
 
         const cameraFeatures = manifest.manifest['uses-feature'].filter((entry: any) =>
-            optionalCameraPlugin.OPTIONAL_CAMERA_FEATURES.includes(entry.$['android:name'])
+            OPTIONAL_CAMERA_FEATURES.includes(entry.$['android:name'])
         );
-        expect(cameraFeatures).toHaveLength(optionalCameraPlugin.OPTIONAL_CAMERA_FEATURES.length);
+        expect(cameraFeatures).toHaveLength(OPTIONAL_CAMERA_FEATURES.length);
         expect(cameraFeatures.map((entry: any) => entry.$['android:name']).sort())
-            .toEqual([...optionalCameraPlugin.OPTIONAL_CAMERA_FEATURES].sort());
+            .toEqual([...OPTIONAL_CAMERA_FEATURES].sort());
         expect(cameraFeatures.every((entry: any) => entry.$['android:required'] === 'false')).toBe(true);
     });
 
@@ -42,7 +53,7 @@ describe('withOptionalCameraHardware config plugin', () => {
             }
         };
 
-        optionalCameraPlugin.applyOptionalCameraHardware(manifest);
+        applyOptionalCameraHardware(manifest);
 
         expect(manifest.manifest['uses-feature']).toContainEqual({
             $: {
