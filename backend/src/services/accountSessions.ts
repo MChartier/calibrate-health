@@ -4,6 +4,7 @@ import prisma from '../config/database';
 export const ACCOUNT_SESSION_KINDS = {
   BROWSER: 'browser',
   ANDROID_PHONE: 'android_phone',
+  IOS: 'ios',
   WEAR_OS: 'wear_os'
 } as const;
 
@@ -55,10 +56,16 @@ const normalizeDeviceLabel = (value: string | null): string | null => {
   return normalized ? normalized.slice(0, MAX_DEVICE_LABEL_LENGTH) : null;
 };
 
-const mobileKind = (platform: MobileDevicePlatform): AccountSessionKind =>
-  platform === MobileDevicePlatform.WEAR_OS
-    ? ACCOUNT_SESSION_KINDS.WEAR_OS
-    : ACCOUNT_SESSION_KINDS.ANDROID_PHONE;
+const mobileKind = (platform: MobileDevicePlatform): AccountSessionKind => {
+  switch (platform) {
+    case MobileDevicePlatform.IOS:
+      return ACCOUNT_SESSION_KINDS.IOS;
+    case MobileDevicePlatform.WEAR_OS:
+      return ACCOUNT_SESSION_KINDS.WEAR_OS;
+    default:
+      return ACCOUNT_SESSION_KINDS.ANDROID_PHONE;
+  }
+};
 
 const activityTimestamp = (session: AccountSessionSummary): number =>
   Date.parse(session.last_activity_at ?? session.created_at);

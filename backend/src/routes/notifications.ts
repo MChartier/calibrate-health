@@ -17,7 +17,7 @@ import {
   subscribeToNotificationRealtimeUpdates
 } from '../services/notificationRealtime';
 import { parsePositiveInteger } from '../utils/requestParsing';
-import { NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '../../../shared/domain';
+import { MOBILE_DEVICE_PLATFORMS, NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '../../../shared/domain';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 
 /**
@@ -148,6 +148,9 @@ const parseNativePushPlatform = (value: unknown): NativePushPlatform | null => {
   if (value === undefined || value === null || value === NATIVE_PUSH_PLATFORMS.ANDROID) {
     return NativePushPlatform.ANDROID;
   }
+  if (value === NATIVE_PUSH_PLATFORMS.IOS) {
+    return NativePushPlatform.IOS;
+  }
   return null;
 };
 
@@ -174,6 +177,12 @@ router.post('/native-subscription', async (req, res) => {
   const deviceId = res.locals.mobileDeviceId as string | undefined;
   const platform = parseNativePushPlatform(req.body?.platform);
   const provider = parseNativePushProvider(req.body?.provider);
+  const authenticatedDevicePlatform = res.locals.mobileDevicePlatform as string | undefined;
+  const expectedPushPlatform = authenticatedDevicePlatform === MOBILE_DEVICE_PLATFORMS.IOS
+    ? NativePushPlatform.IOS
+    : authenticatedDevicePlatform === MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE
+      ? NativePushPlatform.ANDROID
+      : null;
 
   if (!mobileAuthSessionId || !deviceId) {
     return res.status(401).json({ message: 'Mobile authentication required.' });
@@ -186,6 +195,9 @@ router.post('/native-subscription', async (req, res) => {
   }
   if (!provider) {
     return res.status(400).json({ message: 'Invalid or unsupported native push provider.' });
+  }
+  if (!expectedPushPlatform || platform !== expectedPushPlatform) {
+    return res.status(400).json({ message: 'Native push platform does not match the authenticated device.' });
   }
   if (provider === NativePushProvider.EXPO && !isExpoPushToken(token)) {
     return res.status(400).json({ message: 'Invalid Expo push token.' });

@@ -36,6 +36,9 @@ const parseMobileDevicePlatform = (value: unknown): MobileDevicePlatform | null 
   if (value === undefined || value === null || value === MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE) {
     return MobileDevicePlatform.ANDROID_PHONE;
   }
+  if (value === MOBILE_DEVICE_PLATFORMS.IOS) {
+    return MobileDevicePlatform.IOS;
+  }
   if (value === MOBILE_DEVICE_PLATFORMS.WEAR_OS) {
     return MobileDevicePlatform.WEAR_OS;
   }
@@ -44,10 +47,16 @@ const parseMobileDevicePlatform = (value: unknown): MobileDevicePlatform | null 
 
 export const serializeMobileDevicePlatform = (
   value: MobileDevicePlatform
-): MobileDevicePlatformWire =>
-  value === MobileDevicePlatform.WEAR_OS
-    ? MOBILE_DEVICE_PLATFORMS.WEAR_OS
-    : MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE;
+): MobileDevicePlatformWire => {
+  switch (value) {
+    case MobileDevicePlatform.IOS:
+      return MOBILE_DEVICE_PLATFORMS.IOS;
+    case MobileDevicePlatform.WEAR_OS:
+      return MOBILE_DEVICE_PLATFORMS.WEAR_OS;
+    default:
+      return MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE;
+  }
+};
 
 /** Validate native device metadata sent with login/register. */
 export const parseMobileDevicePayload = (body: unknown): ParseMobileDeviceResult => {

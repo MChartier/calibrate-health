@@ -47,6 +47,13 @@ describe('NotificationsDrawer', () => {
         const panelStyle = StyleSheet.flatten(screen.getByTestId('notifications-drawer-panel').props.style);
 
         expect(modal.props.animationType).toBe('none');
+        expect(modal.props.supportedOrientations).toEqual([
+            'portrait',
+            'portrait-upside-down',
+            'landscape',
+            'landscape-left',
+            'landscape-right'
+        ]);
         expect(panelStyle.transform).toHaveLength(1);
         expect(panelStyle.transform[0].translateX).toBeDefined();
     });

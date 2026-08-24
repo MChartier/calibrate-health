@@ -12,8 +12,9 @@ import {
     type ClientDiagnosticResponse
 } from '@calibrate/shared';
 import release from '../../../shared/release.json';
+import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 
-type SupportedClientDiagnosticPlatform = Extract<ClientDiagnosticPlatform, 'web' | 'android_phone'>;
+type SupportedClientDiagnosticPlatform = Extract<ClientDiagnosticPlatform, 'web' | 'android_phone' | 'ios'>;
 
 export type ClientDiagnosticSignal = Omit<ClientDiagnosticInput, 'platform' | 'version'>;
 export type ClientDiagnosticWireInput = ClientDiagnosticInput;
@@ -64,8 +65,11 @@ function getClientDiagnosticIdentity(): {
     if (Platform.OS === 'web') {
         return { platform: 'web', version: release.server.version };
     }
-    if (Platform.OS === 'android') {
-        return { platform: 'android_phone', version: release.android.mobile.version_name };
+    if (Platform.OS === 'android' || Platform.OS === 'ios') {
+        return {
+            platform: Platform.OS === 'ios' ? 'ios' : 'android_phone',
+            version: MOBILE_CLIENT_IDENTITY.version
+        };
     }
     return null;
 }

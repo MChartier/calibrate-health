@@ -160,7 +160,7 @@ export function ReminderSettingsPanel({
                     <View style={styles.timeRow}>
                         {!isWeb && (
                             <AppButton
-                                title="Open Android settings"
+                                title="Open device settings"
                                 variant="secondary"
                                 onPress={onOpenPermissionSettings}
                                 style={styles.timeField}

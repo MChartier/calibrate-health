@@ -37,7 +37,7 @@ export const TimeZonePickerField: React.FC<TimeZonePickerFieldProps> = ({ value,
     if (usesDeviceTimeZone) {
         deviceStatus = 'Using the time zone configured on this device.';
     } else if (deviceTimeZone) {
-        deviceStatus = `Detected from Android settings: ${deviceTimeZone}`;
+        deviceStatus = `Detected from device settings: ${deviceTimeZone}`;
     }
 
     return (

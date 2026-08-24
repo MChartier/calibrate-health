@@ -26,7 +26,7 @@ export const CLIENT_DIAGNOSTIC_ROUTES = [
     'progress'
 ] as const;
 
-export const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'wear_os'] as const;
+export const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'ios', 'wear_os'] as const;
 
 export const CLIENT_DIAGNOSTIC_REQUEST_ID_PATTERN = /^(?:[a-fA-F0-9]{16,64}|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})$/;
 

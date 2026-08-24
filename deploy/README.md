@@ -51,10 +51,10 @@ Only the official `calibratehealth.app` deployment sets `CALIBRATE_HOSTED_SERVIC
 Registration then fails closed until complete provider-neutral SMTP configuration and delivery are
 available. See `../docs/account-access-and-recovery.md` for the endpoint and access-state contract.
 
-The official hosted web tier must also publish `/.well-known/assetlinks.json` as a static,
-unauthenticated, non-redirecting JSON response. The package and signing-certificate contract is
-recorded in `../docs/android-app-links.md`; self-hosted domains are not automatically associated
-with the official Android app.
+The official hosted web tier must publish both `/.well-known/assetlinks.json` and
+`/.well-known/apple-app-site-association` as static, unauthenticated, non-redirecting JSON responses. The Android
+package/certificate and iOS application/team contracts are recorded in `../docs/android-app-links.md`;
+self-hosted domains are not automatically associated with the official mobile apps.
 
 ### Connected assistants (MCP)
 

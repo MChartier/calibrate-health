@@ -1,6 +1,10 @@
 import React from 'react';
 import { Platform, StyleSheet, View, type ViewProps, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+    TABLET_LAYOUT_BREAKPOINT,
+    resolveSafeHorizontalPadding
+} from '../layout/adaptiveLayout';
 import { type AppTheme, useAppTheme } from '../theme';
 import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
@@ -9,8 +13,8 @@ type ScreenProps = ViewProps & {
     safeTop?: boolean;
 };
 
-export const SCREEN_CONTENT_MAX_WIDTH = 1040; // Keeps forms and metrics readable on wide browser windows.
-export const SCREEN_WIDE_LAYOUT_BREAKPOINT = 840; // Switches browser content from compact to wide horizontal gutters.
+export const SCREEN_CONTENT_MAX_WIDTH = 1040; // Keeps forms and metrics readable on wide browser and tablet viewports.
+export const SCREEN_WIDE_LAYOUT_BREAKPOINT = TABLET_LAYOUT_BREAKPOINT;
 // Native ScrollViews need a flex floor; web uses its measured percentage viewport.
 const SCROLL_CONTENT_VIEWPORT_FLOOR = Platform.OS === 'web'
     ? { minHeight: '100%' as const }
@@ -31,9 +35,15 @@ export const Screen: React.FC<ScreenProps> = ({
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const resolvedRole: ViewProps['role'] = role ?? (accessibilityRole ? undefined : 'main');
-    const horizontalPadding = Platform.OS === 'web' && width >= SCREEN_WIDE_LAYOUT_BREAKPOINT
+    const horizontalPadding = width >= SCREEN_WIDE_LAYOUT_BREAKPOINT
         ? theme.spacing.xl
         : theme.spacing.lg;
+    const safeHorizontalPadding = resolveSafeHorizontalPadding(
+        horizontalPadding,
+        insets.left,
+        insets.right,
+        theme.spacing.sm
+    );
     const bottomPadding = insets.bottom + theme.spacing.xl;
     const topPadding = safeTop ? insets.top + theme.spacing.lg : theme.spacing.lg;
     const contentStyle = [
@@ -41,7 +51,7 @@ export const Screen: React.FC<ScreenProps> = ({
         {
             paddingTop: topPadding,
             paddingBottom: bottomPadding,
-            paddingHorizontal: horizontalPadding
+            ...safeHorizontalPadding
         },
         style
     ];
@@ -59,7 +69,7 @@ export const Screen: React.FC<ScreenProps> = ({
                     {
                         paddingTop: topPadding,
                         paddingBottom: bottomPadding,
-                        paddingHorizontal: horizontalPadding
+                        ...safeHorizontalPadding
                     },
                     style
                 ]}

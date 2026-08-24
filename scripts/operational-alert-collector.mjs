@@ -25,7 +25,7 @@ const TUPLE_VALUES = Object.freeze({
     'cumulative_layout_shift',
   ]),
   route: new Set(['app_shell', 'onboarding', 'today', 'saved_foods', 'notifications', 'progress']),
-  platform: new Set(['web', 'android_phone', 'wear_os']),
+  platform: new Set(['web', 'android_phone', 'ios', 'wear_os']),
   outcome: new Set(['failure', 'good', 'needs_improvement', 'poor']),
   duration_bucket: new Set([
     'not_applicable',

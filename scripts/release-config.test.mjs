@@ -220,6 +220,7 @@ const validDiagnosticVersions = {
   supported_versions: {
     web: ['1.2.3', '1.2.2'],
     android_phone: ['2.0.0', '1.5.0'],
+    ios: ['2.0.0', '1.5.0'],
     wear_os: ['2.0.0', '1.0.0']
   }
 };
@@ -227,6 +228,7 @@ const validDiagnosticVersions = {
 const validDiagnosticOpenApi = `
 - properties: { platform: { const: web }, version: { enum: [1.2.3, 1.2.2] } }
 - properties: { platform: { const: android_phone }, version: { enum: [2.0.0, 1.5.0] } }
+- properties: { platform: { const: ios }, version: { enum: [2.0.0, 1.5.0] } }
 - properties: { platform: { const: wear_os }, version: { enum: [2.0.0, 1.0.0] } }
 `;
 

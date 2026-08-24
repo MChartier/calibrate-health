@@ -46,7 +46,8 @@ export default function AboutScreen() {
                     your trend over time.
                 </AppText>
                 <AppText variant="caption">
-                    Available in English on the web as an installable PWA and on Android, with a Wear OS companion.
+                    Available in English on the web as an installable PWA and on Android and iOS, with a Wear OS
+                    companion for Android.
                 </AppText>
             </AppCard>
 

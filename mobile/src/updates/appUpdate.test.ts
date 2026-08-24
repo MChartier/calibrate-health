@@ -8,10 +8,12 @@ jest.mock('expo-updates', () => ({
     reloadAsync: jest.fn()
 }));
 
+import appConfig from '../../app.json';
 import {
     canManageOtaUpdates,
     checkForAppUpdate,
     createAppVersionInfo,
+    getConfiguredNativeBuild,
     downloadAppUpdate,
     shortenUpdateId
 } from './appUpdate';
@@ -95,6 +97,11 @@ describe('app update presentation and actions', () => {
         expect(canManageOtaUpdates('android', true, true)).toBe(false);
         expect(canManageOtaUpdates('android', false, false)).toBe(false);
         expect(canManageOtaUpdates('android', false, true)).toBe(true);
+    });
+
+    it('uses platform-specific native build fallbacks', () => {
+        expect(getConfiguredNativeBuild('android')).toBe(String(appConfig.expo.android.versionCode));
+        expect(getConfiguredNativeBuild('ios')).toBe(appConfig.expo.ios.buildNumber);
     });
 
     it('distinguishes current, available, and rollback checks', async () => {

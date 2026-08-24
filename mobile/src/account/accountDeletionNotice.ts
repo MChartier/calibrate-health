@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const STORAGE_KEY = '@calibrate/account-deletion-cleanup-notice/v1';
 
@@ -40,13 +41,18 @@ export async function clearAccountDeletionCleanupNotice(): Promise<void> {
     await AsyncStorage.removeItem(STORAGE_KEY);
 }
 
-export function accountDeletionCleanupGuidance(notice: AccountDeletionCleanupNotice): string {
-    const guidance = ['Your account was deleted and this phone was signed out.'];
+export function accountDeletionCleanupGuidance(
+    notice: AccountDeletionCleanupNotice,
+    platform: string = Platform.OS
+): string {
+    const guidance = ['Your account was deleted and this device was signed out.'];
     if (notice.watchCleanupRequired) {
         guidance.push('Open Calibrate on the watch and choose Disconnect this watch.');
     }
     if (notice.appDataCleanupRequired || notice.credentialCleanupRequired) {
-        guidance.push('Before signing in again, open Android Settings and clear Calibrate app data.');
+        guidance.push(platform === 'ios'
+            ? 'Before signing in again, delete (do not offload) and reinstall Calibrate to clear its local app data.'
+            : 'Before signing in again, open Android Settings and clear Calibrate app data.');
     }
     return guidance.join(' ');
 }

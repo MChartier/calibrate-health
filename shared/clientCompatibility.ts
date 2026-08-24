@@ -38,7 +38,7 @@ export function compareClientVersions(left: string, right: string): number | nul
 }
 
 export function isMobileDevicePlatform(value: unknown): value is MobileDevicePlatform {
-    return value === 'android_phone' || value === 'wear_os';
+    return value === 'android_phone' || value === 'ios' || value === 'wear_os';
 }
 
 export function isClientUpgradeRequirement(value: unknown): value is ClientUpgradeRequirement {

@@ -51,7 +51,7 @@ Public request endpoints use generic HTTP 202 responses and independent rate lim
 cannot determine whether an account exists. Tokens, email addresses, request bodies, and SMTP
 provider details are excluded from logs and diagnostics.
 
-A successful password reset revokes every browser, Android, and Wear session. New registrations
+A successful password reset revokes every browser, Android, iOS, and Wear session. New registrations
 record explicit acceptance of the exact current Terms and Privacy versions. Existing users are
 marked email verified during migration but receive no synthetic legal acceptance. Sessions needing
 verification or current legal acceptance retain only the narrow account-access flows documented in
@@ -66,7 +66,7 @@ abuse monitoring.
 
 Mobile access tokens are short lived and refresh tokens rotate through a database compare-and-swap,
 so one presented refresh token can create at most one successor. Device sessions and their native
-push endpoints can be reviewed and revoked from Android settings. Password changes preserve the
+push endpoints can be reviewed and revoked from the app's device settings. Password changes preserve the
 initiating mobile session and revoke other native sessions.
 
 Browser sessions are persisted in Postgres and linked to the authenticated account after login.

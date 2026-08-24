@@ -17,6 +17,7 @@ type AccountSessionsPanelProps = {
 const SESSION_KIND_LABELS: Record<AccountSessionSummary['kind'], string> = {
     browser: 'Browser session',
     android_phone: 'Android phone',
+    ios: 'iPhone or iPad',
     wear_os: 'Wear OS watch'
 };
 

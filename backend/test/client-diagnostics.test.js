@@ -81,6 +81,12 @@ test('strict parser accepts only canonical coherent registry tuples', () => {
       platform: 'android_phone', version, outcome: 'failure', duration_bucket: 'not_applicable'
     }).ok, true, `android_phone ${version}`);
   }
+  for (const version of diagnosticVersions.supported_versions.ios) {
+    assert.equal(parseClientDiagnosticInput({
+      event: 'operation_failure', operation: 'saved_foods_load', route: 'saved_foods',
+      platform: 'ios', version, outcome: 'failure', duration_bucket: 'not_applicable'
+    }).ok, true, `ios ${version}`);
+  }
   for (const version of diagnosticVersions.supported_versions.wear_os) {
     assert.equal(parseClientDiagnosticInput({
       event: 'degraded_result', operation: 'weight_trend_load', route: 'progress',

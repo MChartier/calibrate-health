@@ -6,27 +6,51 @@ import { fileURLToPath } from "node:url";
 import { createExpoCliEnvironment } from "./expo-cli-environment.mjs";
 import { readDotenv, resolveDevConfig } from "./dev-config.mjs";
 
+const NATIVE_PLATFORMS = new Set(["android", "ios"]);
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 
+export function parseExpoNativeDevArgs(argv) {
+  let platform = "android";
+  for (let index = 0; index < argv.length; index += 1) {
+    const option = argv[index];
+    if (option !== "--platform" && option !== "-p") {
+      throw new Error(`Unknown native Expo option: ${option}`);
+    }
+    const value = argv[index + 1]?.trim().toLowerCase();
+    if (!value || !NATIVE_PLATFORMS.has(value)) {
+      throw new Error("--platform must be android or ios.");
+    }
+    platform = value;
+    index += 1;
+  }
+  return { platform };
+}
+
 /**
- * Resolve the Android emulator's URL for the backend exposed by this worktree.
+ * Resolve the selected simulator's URL for the backend exposed by this worktree.
  * @param {{
  *   repoRoot: string,
  *   backendPort: number,
+ *   platform?: "android" | "ios",
  *   environment?: NodeJS.ProcessEnv,
  * }} options
  */
 export function resolveExpoNativeBackendUrl({
   repoRoot,
   backendPort,
+  platform = "android",
   environment = process.env,
 }) {
+  if (!NATIVE_PLATFORMS.has(platform)) {
+    throw new Error("Native Expo platform must be android or ios.");
+  }
   const repoEnvironment = readDotenv(path.join(repoRoot, ".env"));
+  const simulatorHost = platform === "ios" ? "127.0.0.1" : "10.0.2.2";
   return (
     environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL?.trim() ||
     repoEnvironment.EXPO_PUBLIC_CALIBRATE_SERVER_URL?.trim() ||
-    `http://10.0.2.2:${backendPort}`
+    `http://${simulatorHost}:${backendPort}`
   );
 }
 
@@ -51,16 +75,18 @@ function resolveNpmCommand() {
 }
 
 export async function main() {
+  const { platform } = parseExpoNativeDevArgs(process.argv.slice(2));
   const repoRoot = path.resolve(process.env.CODEX_WORKTREE_PATH || defaultRepoRoot);
   const config = await resolveDevConfig({ workspacePath: repoRoot });
   const backendUrl = resolveExpoNativeBackendUrl({
     repoRoot,
     backendPort: config.backendPort,
+    platform,
   });
   const npm = resolveNpmCommand();
 
-  console.log(`[expo-native] API: ${backendUrl}`);
-  console.log("[expo-native] Start `npm run dev` separately if the Compose stack is not running.");
+  console.log(`[expo-native:${platform}] API: ${backendUrl}`);
+  console.log(`[expo-native:${platform}] Start \`npm run dev\` separately if the Compose stack is not running.`);
 
   const result = spawnSync(
     npm.command,
@@ -79,7 +105,7 @@ export async function main() {
     throw result.error;
   }
   if (result.status !== 0) {
-    throw new Error(`Expo exited with status ${result.status ?? 1}.`);
+    throw new Error(`Expo ${platform} session exited with status ${result.status ?? 1}.`);
   }
 }
 

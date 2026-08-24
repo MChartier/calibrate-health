@@ -33,7 +33,11 @@ function loadNotificationsRouter({ prismaStub }) {
   return loaded.default ?? loaded;
 }
 
-function createRes(locals = { mobileAuthSessionId: 41, mobileDeviceId: 'session-device' }) {
+function createRes(locals = {
+  mobileAuthSessionId: 41,
+  mobileDeviceId: 'session-device',
+  mobileDevicePlatform: 'android_phone'
+}) {
   return {
     statusCode: 200,
     body: undefined,
@@ -201,6 +205,8 @@ test('notifications route: transfers an Expo token to the authenticated mobile s
   assert.equal(upsertArgs.update.user_id, 5);
   assert.equal(upsertArgs.update.mobile_auth_session_id, 41);
   assert.equal(upsertArgs.update.device_id, 'session-device');
+  assert.equal(upsertArgs.update.platform, 'ANDROID');
+  assert.equal(upsertArgs.create.platform, 'ANDROID');
   assert.equal(upsertArgs.update.last_sent_local_date, null);
   assert.equal(upsertArgs.create.device_id, 'session-device');
   assert.deepEqual(retireArgs.where, {
@@ -213,6 +219,61 @@ test('notifications route: transfers an Expo token to the authenticated mobile s
   assert.ok(retireArgs.data.revoked_at instanceof Date);
 });
 
+test('notifications route: stores an iOS Expo token for an authenticated iOS session', async () => {
+  const previousMode = process.env.NATIVE_PUSH_MODE;
+  process.env.NATIVE_PUSH_MODE = 'expo';
+  let upsertArgs = null;
+  const router = loadNotificationsRouter({
+    prismaStub: {
+      nativePushSubscription: {
+        upsert: async (args) => {
+          upsertArgs = args;
+          return { id: 1 };
+        },
+        updateMany: async () => ({ count: 0 })
+      }
+    }
+  });
+  const [handler] = getRouteHandlers(router, 'post', '/native-subscription');
+  const res = createRes({
+    mobileAuthSessionId: 42,
+    mobileDeviceId: 'ios-device',
+    mobileDevicePlatform: 'ios'
+  });
+
+  await handler({
+    user: { id: 5 },
+    body: { token: 'ExpoPushToken[ios-test]', platform: 'ios', provider: 'expo' }
+  }, res);
+
+  if (previousMode === undefined) delete process.env.NATIVE_PUSH_MODE;
+  else process.env.NATIVE_PUSH_MODE = previousMode;
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, { ok: true });
+  assert.equal(upsertArgs.update.platform, 'IOS');
+  assert.equal(upsertArgs.create.platform, 'IOS');
+});
+
+test('notifications route: rejects a push platform that does not match the native session', async () => {
+  const router = loadNotificationsRouter({ prismaStub: { nativePushSubscription: {} } });
+  const [handler] = getRouteHandlers(router, 'post', '/native-subscription');
+  const res = createRes({
+    mobileAuthSessionId: 42,
+    mobileDeviceId: 'ios-device',
+    mobileDevicePlatform: 'ios'
+  });
+
+  await handler({
+    user: { id: 5 },
+    body: { token: 'ExpoPushToken[test]', platform: 'android', provider: 'expo' }
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, {
+    message: 'Native push platform does not match the authenticated device.'
+  });
+});
 test('notifications route: rejects registration when native push is not explicitly enabled', async () => {
   const previousMode = process.env.NATIVE_PUSH_MODE;
   delete process.env.NATIVE_PUSH_MODE;

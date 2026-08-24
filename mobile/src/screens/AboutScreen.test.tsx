@@ -33,7 +33,7 @@ describe('AboutScreen', () => {
 
         expect(view.getByText('About Calibrate')).toBeTruthy();
         expect(view.getByText(/compare calories with a personalized target/)).toBeTruthy();
-        expect(view.getByText(/Available in English on the web as an installable PWA and on Android/)).toBeTruthy();
+        expect(view.getByText(/Available in English on the web as an installable PWA and on Android and iOS/)).toBeTruthy();
         expect(view.queryByText('Service address')).toBeNull();
         expect(view.queryByLabelText('Show advanced details')).toBeNull();
         expect(view.queryByText('Software updates')).toBeNull();

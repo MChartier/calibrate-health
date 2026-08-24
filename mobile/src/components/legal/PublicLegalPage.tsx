@@ -1,4 +1,4 @@
-import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Link, router, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../auth/AuthContext';
@@ -7,9 +7,12 @@ import { AppText } from '../AppText';
 import { CalibrateLogo } from '../CalibrateLogo';
 import { Screen } from '../Screen';
 import type { PublicLegalSection } from '../../legal/publicLegalContent';
+import {
+    NAVIGATION_RAIL_BREAKPOINT,
+    resolveSafeHorizontalPadding
+} from '../../layout/adaptiveLayout';
 import { radius, spacing, useAppTheme } from '../../theme';
 
-const DESKTOP_HEADER_BREAKPOINT = 1024; // Matches the app shell's navigation-rail breakpoint.
 const DESKTOP_HEADER_MAX_WIDTH = 1040; // Aligns legal-page app-bar content with the authenticated shell.
 
 type PublicLegalLink = {
@@ -33,7 +36,13 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links, ac
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const inApp = Boolean(user);
-    const desktop = Platform.OS === 'web' && width >= DESKTOP_HEADER_BREAKPOINT;
+    const desktop = width >= NAVIGATION_RAIL_BREAKPOINT;
+    const headerHorizontalPadding = resolveSafeHorizontalPadding(
+        desktop ? spacing.xl : spacing.lg,
+        insets.left,
+        insets.right,
+        spacing.sm
+    );
 
     return (
         <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -46,7 +55,8 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links, ac
                         { borderBottomColor: colors.border, backgroundColor: colors.surface, paddingTop: insets.top }
                     ]}
                 >
-                    <View style={[styles.appHeaderRow, desktop && styles.appHeaderRowDesktop]}>
+                    <View
+                        style={[styles.appHeaderRow, desktop && styles.appHeaderRowDesktop, headerHorizontalPadding]}>
                         <View style={styles.appHeaderLeading}>
                             <AppIconButton
                                 accessibilityLabel="Back to Settings"

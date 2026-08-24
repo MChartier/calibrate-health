@@ -29,7 +29,8 @@ import { OUTBOX_MUTATION_STATES } from '../../../src/offline/queuedMutation';
 import { useOfflineOutbox } from '../../../src/offline/provider';
 import { hasPendingWeightMutation } from '../../../src/offline/pendingWeight';
 import { useNativePushRegistration } from '../../../src/hooks/useNativePushRegistration';
-import { getPushStatusPresentation } from '../../../src/notifications/workflow';
+import { getPushStatusPresentation, getPushStatusTarget } from '../../../src/notifications/workflow';
+import { supportsAndroidIntegrations } from '../../../src/platform/nativePlatform';
 import { millimetersToCentimeters, millimetersToFeetInches } from '../../../src/utils/bodyMeasurements';
 import { formatGoalSummary } from '../../../src/utils/goals';
 import { HEIGHT_UNIT_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../../src/utils/profileOptions';
@@ -115,7 +116,8 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
     const healthConnect = useHealthConnect();
     const nativePush = useNativePushRegistration();
     const isWeb = Platform.OS === 'web';
-    const pushStatus = getPushStatusPresentation(nativePush.state, isWeb ? 'web' : 'android');
+    const showAndroidIntegrations = supportsAndroidIntegrations();
+    const pushStatus = getPushStatusPresentation(nativePush.state, getPushStatusTarget(Platform.OS));
     const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
     const [dateOfBirth, setDateOfBirth] = useState(user?.date_of_birth?.slice(0, 10) ?? '');
     const [sex, setSex] = useState<Sex | null>(user?.sex ?? null);
@@ -658,20 +660,24 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
                 </View>
             </SettingsDetailSheet>
 
-            <BottomSheetModal
-                visible={activeSheet === 'health-connect'}
-                maxHeight="92%"
-                onRequestClose={() => setActiveSheet(null)}
-            >
-                <HealthConnectCard />
-            </BottomSheetModal>
-            <BottomSheetModal
-                visible={activeSheet === 'watch'}
-                maxHeight="92%"
-                onRequestClose={() => setActiveSheet(null)}
-            >
-                <WearPairingCard />
-            </BottomSheetModal>
+            {showAndroidIntegrations ? (
+                <>
+                    <BottomSheetModal
+                        visible={activeSheet === 'health-connect'}
+                        maxHeight="92%"
+                        onRequestClose={() => setActiveSheet(null)}
+                    >
+                        <HealthConnectCard />
+                    </BottomSheetModal>
+                    <BottomSheetModal
+                        visible={activeSheet === 'watch'}
+                        maxHeight="92%"
+                        onRequestClose={() => setActiveSheet(null)}
+                    >
+                        <WearPairingCard />
+                    </BottomSheetModal>
+                </>
+            ) : null}
 
             <SettingsDetailSheet
                 visible={activeSheet === 'import'}
@@ -800,7 +806,7 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
                 visible={activeSheet === 'devices'}
                 maxHeight="92%"
                 title="Signed-in devices"
-                description="Review every browser, Android phone, and Wear OS session for this account."
+                description="Review every browser, Android, iOS, and Wear OS session for this account."
                 onClose={() => setActiveSheet(null)}
             >
                 <View testID="settings-sessions" style={styles.sheetContent}>
