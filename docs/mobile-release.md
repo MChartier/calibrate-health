@@ -251,13 +251,15 @@ deployment, then starts a dependent production job. The production job targets t
 environment, so it remains blocked until a required reviewer verifies the internal devices and approves the
 deployment.
 
-Workflow concurrency serializes repository OTA publications, but it does not make client selection atomic. Expo's
-public API checks and fetches the latest channel update in separate requests, and `fetchUpdateAsync()` cannot be
-pinned to the manifest returned by `checkForUpdateAsync()`. Client guards must revalidate the fetched manifest,
-refuse an immediate restart when its server release line is incompatible, and repeat the compatibility check at every
-startup. An already-fetched mismatched update can still remain eligible on a later cold start. A future atomic design
-would need server-release-specific EAS channels or aliases selected on-device, or a custom update server; polling a
-private self-hosted server from GitHub Actions would not fix this race.
+Expo's automatic check and download lifecycle remains unchanged. `/api/v1/client-config` responds with
+`Cache-Control: no-store`; server selection, startup before restoring a session or synchronizing, and manual
+compatibility recheck also request it with Fetch `cache: 'no-store'`. When a downloaded bundle runs, the phone compares
+its bundled expected server contract version with that response. Different majors block in either direction. Within a
+major, an older client minor remains compatible with a newer server minor, but a newer client minor blocks against an
+older server minor; patch drift remains compatible. The runtime block does not prevent the update from downloading or
+starting. The protected production approval remains the operator control for public promotion. A future automated
+promotion rule can require an explicit deployment-readiness signal for the release owner's declared server rollout;
+independently managed self-hosts still rely on the runtime guard, and GitHub Actions must not poll private servers.
 
 Before its first use:
 

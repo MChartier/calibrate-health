@@ -77,6 +77,12 @@
       "react-native": "./product.ts",
       "default": "./dist/cjs/product.js"
     },
+    "./releaseCompatibility": {
+      "types": "./releaseCompatibility.ts",
+      "browser": "./releaseCompatibility.ts",
+      "react-native": "./releaseCompatibility.ts",
+      "default": "./dist/cjs/releaseCompatibility.js"
+    },
     "./designTokens": {
       "types": "./designTokens.ts",
       "browser": "./designTokens.ts",

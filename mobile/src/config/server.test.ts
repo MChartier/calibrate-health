@@ -112,7 +112,8 @@ describe('testCalibrateServerConnection', () => {
 
         const result = await testCalibrateServerConnection('https://calibrate.example', {
             fetchImpl: fetchImpl as typeof fetch,
-            mobileVersion: '0.2.0'
+            mobileVersion: '0.2.0',
+            clientServerVersion: '1.2.99'
         });
 
         expect(result).toEqual(expect.objectContaining({
@@ -122,7 +123,7 @@ describe('testCalibrateServerConnection', () => {
         }));
         expect(fetchImpl).toHaveBeenCalledWith(
             'https://calibrate.example/api/v1/client-config',
-            expect.objectContaining({ method: 'GET' })
+            expect.objectContaining({ method: 'GET', cache: 'no-store' })
         );
     });
 
@@ -183,5 +184,50 @@ describe('testCalibrateServerConnection', () => {
             mobileVersion: 'development'
         });
         expect(malformedLocalVersion).toEqual(expect.objectContaining({ ok: false, code: 'incompatible' }));
+    });
+
+    it('allows older client minors and patch drift but blocks newer client minors and major mismatches', async () => {
+        const fetchImpl = jest.fn(async () => new Response(JSON.stringify(compatibleConfig), { status: 200 }));
+        await expect(testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.1.99'
+        })).resolves.toEqual(expect.objectContaining({ ok: true }));
+        await expect(testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.2.99'
+        })).resolves.toEqual(expect.objectContaining({ ok: true }));
+
+        const serverBehindMinor = await testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.3.0'
+        });
+        expect(serverBehindMinor).toEqual(expect.objectContaining({
+            ok: false,
+            code: 'incompatible',
+            message: 'This Calibrate update requires server 1.3.x or a newer 1.x release, but this server is 1.2.3. Update the server first.',
+            mismatch: expect.objectContaining({ status: 'server_behind' })
+        }));
+
+        const serverBehindMajor = await testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '2.0.0'
+        });
+        expect(serverBehindMajor).toEqual(expect.objectContaining({
+            ok: false,
+            code: 'incompatible',
+            message: 'This Calibrate update requires server major version 2.x, but this server is 1.2.3. Update the server first.',
+            mismatch: expect.objectContaining({ status: 'server_behind' })
+        }));
+
+        const clientBehind = await testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '0.99.9'
+        });
+        expect(clientBehind).toEqual(expect.objectContaining({
+            ok: false,
+            code: 'incompatible',
+            message: 'This server requires a Calibrate client for major version 1.x, but this client targets 0.x. Update Calibrate first.',
+            mismatch: expect.objectContaining({ status: 'client_behind' })
+        }));
     });
 });

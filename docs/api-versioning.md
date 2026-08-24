@@ -10,11 +10,19 @@ or new enum values when clients already have an unknown-value fallback. Removing
 field, changing its meaning/type, making an optional field required, or changing idempotency and
 conflict semantics requires a new API version.
 
-`GET /api/v1/client-config` advertises the current and supported API versions, the legacy alias,
-server version, minimum supported mobile version, and capabilities. A server that must reject an
-obsolete native client should raise the matching `min_supported_mobile_version` or `min_supported_wear_version`;
-clients should compare it
-before starting normal synchronization and present an actionable upgrade message.
+`GET /api/v1/client-config` responds with `Cache-Control: no-store` and advertises the current and supported API
+versions, the legacy alias, canonical server version, minimum supported mobile version, and capabilities. A server
+that must reject an obsolete native client should raise the matching `min_supported_mobile_version` or
+`min_supported_wear_version`; clients should compare it before starting normal synchronization and present an
+actionable upgrade message.
+
+The native JavaScript bundle independently records the `shared/release.json` server version it expects. During server
+selection, startup before restoring a saved session, and manual compatibility recheck, the phone requests client
+configuration with Fetch `cache: 'no-store'` and compares `client-config.server_version` with that bundled value. Major
+versions must match. Within the same major, an older client minor remains compatible with a newer server minor because
+the server remains backward compatible; a newer client minor is incompatible with an older server minor because
+required additions may be missing. Patch differences remain compatible. This directional server-version rule does not
+replace API-version negotiation or the minimum native Android/Wear version floor.
 
 The OpenAPI source is executable project state. Run `npm run api:generate` after contract edits and
 commit the generated types. `npm run api:contract:check` fails when generated types drift from the

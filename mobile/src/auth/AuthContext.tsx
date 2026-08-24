@@ -6,6 +6,10 @@ import {
     type UserClientPayload
 } from '@calibrate/api-client';
 import { MOBILE_DEVICE_PLATFORMS, type ClientUpgradeRequirement } from '@calibrate/shared';
+import {
+    getClientServerCompatibilityMismatch,
+    type ClientServerCompatibilityMismatch
+} from '@calibrate/shared/releaseCompatibility';
 import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '@calibrate/shared/legalVersions';
 import * as Application from 'expo-application';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,7 +23,7 @@ import {
 } from '../config/server';
 import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
 import { getSessionRestoreErrorMessage, isExpectedDevAutoLoginMiss } from './authErrors';
-import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
+import { MOBILE_CLIENT_IDENTITY, MOBILE_SERVER_RELEASE_VERSION } from '../config/nativeClient';
 import {
     clearStoredTokens,
     getOrCreateDeviceId,
@@ -48,6 +52,7 @@ type AuthContextValue = {
     isLoading: boolean;
     authError: string | null;
     clientUpgradeRequired: ClientUpgradeRequirement | null;
+    clientServerIncompatibility: ClientServerCompatibilityMismatch | null;
     accountDeletionCleanupNotice: AccountDeletionCleanupNotice | null;
     serverConnection: ServerConnectionState;
     updateCurrentUser: (user: UserClientPayload) => void;
@@ -74,6 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
     const [clientUpgradeRequired, setClientUpgradeRequired] = useState<ClientUpgradeRequirement | null>(null);
+    const [clientServerIncompatibility, setClientServerIncompatibility] =
+        useState<ClientServerCompatibilityMismatch | null>(null);
     const [accountDeletionCleanupNotice, setAccountDeletionCleanupNotice] =
         useState<AccountDeletionCleanupNotice | null>(null);
     const [serverConnection, setServerConnection] = useState<ServerConnectionState>(INITIAL_SERVER_CONNECTION_STATE);
@@ -88,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accessTokenRef.current = null;
         refreshTokenRef.current = null;
         setClientUpgradeRequired(null);
+        setClientServerIncompatibility(null);
         await clearStoredTokens();
         queryClient.clear();
     }, [queryClient]);
@@ -106,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAccessToken(payload.access_token);
         setRefreshToken(payload.refresh_token);
         setClientUpgradeRequired(null);
+        setClientServerIncompatibility(null);
         accessTokenRef.current = payload.access_token;
         refreshTokenRef.current = payload.refresh_token;
         await writeStoredTokens({
@@ -208,14 +217,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 accessTokenRef.current = tokens.accessToken;
                 refreshTokenRef.current = tokens.refreshToken;
 
+                const compatibilityClient = new CalibrateApiClient({
+                    baseUrl: storedServerUrl,
+                    clientIdentity: MOBILE_CLIENT_IDENTITY,
+                    onClientUpgradeRequired: handleClientUpgradeRequired
+                });
+                const config = await compatibilityClient.getClientConfig({ cache: 'no-store' });
+                if (!isMounted) return;
+                const compatibilityMismatch = getClientServerCompatibilityMismatch(
+                    MOBILE_SERVER_RELEASE_VERSION,
+                    config.server_version
+                );
+                if (compatibilityMismatch) {
+                    setClientServerIncompatibility(compatibilityMismatch);
+                    return;
+                }
+
                 if (tokens.refreshToken) {
-                    const bootstrapClient = new CalibrateApiClient({
-                        baseUrl: storedServerUrl,
-                        clientIdentity: MOBILE_CLIENT_IDENTITY,
-                        onClientUpgradeRequired: handleClientUpgradeRequired
-                    });
                     try {
-                        const refreshed = await bootstrapClient.refreshMobile<MobileAuthResponse>(tokens.refreshToken);
+                        const refreshed = await compatibilityClient.refreshMobile<MobileAuthResponse>(tokens.refreshToken);
                         if (isMounted) {
                             await persistAuthPayload(refreshed);
                         }
@@ -258,14 +278,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const recheckClientCompatibility = useCallback(async (): Promise<boolean> => {
         try {
-            await api.getClientConfig();
+            const config = await api.getClientConfig({ cache: 'no-store' });
+            const compatibilityMismatch = getClientServerCompatibilityMismatch(
+                MOBILE_SERVER_RELEASE_VERSION,
+                config.server_version
+            );
+            if (compatibilityMismatch) {
+                setClientServerIncompatibility(compatibilityMismatch);
+                return false;
+            }
+            if (!user && refreshTokenRef.current) {
+                const restored = await refreshAccessToken();
+                if (!restored) await clearSession();
+            } else {
+                setClientServerIncompatibility(null);
+            }
             setClientUpgradeRequired(null);
             return true;
         } catch (error) {
             if (error instanceof ApiError && error.status === 426) return false;
             throw error;
         }
-    }, [api]);
+    }, [api, clearSession, refreshAccessToken, user]);
 
     const probeServerUrl = useCallback(async (value: string): Promise<ServerConnectionResult> => {
         const requestId = serverTestRequestRef.current + 1;
@@ -279,7 +313,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         const result = await testCalibrateServerConnection(value, {
-            mobileVersion: Application.nativeApplicationVersion
+            mobileVersion: Application.nativeApplicationVersion,
+            clientServerVersion: MOBILE_SERVER_RELEASE_VERSION
         });
         if (serverTestRequestRef.current === requestId) {
             setServerConnection({
@@ -431,6 +466,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isLoading,
             authError,
             clientUpgradeRequired,
+            clientServerIncompatibility,
             accountDeletionCleanupNotice,
             serverConnection,
             updateCurrentUser,
@@ -444,7 +480,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             persistAccountDeletionCleanupNotice,
             acknowledgeAccountDeletionCleanupNotice
         }),
-        [accessToken, accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice, api, authError, clearSession, clientUpgradeRequired, deviceId, isLoading, login, logout, persistAccountDeletionCleanupNotice, recheckClientCompatibility, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
+        [accessToken, accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice, api, authError, clearSession, clientServerIncompatibility, clientUpgradeRequired, deviceId, isLoading, login, logout, persistAccountDeletionCleanupNotice, recheckClientCompatibility, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

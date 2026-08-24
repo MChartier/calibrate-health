@@ -426,8 +426,8 @@ export class CalibrateApiClient {
         });
     }
 
-    getClientConfig(): Promise<ClientConfigResponse> {
-        return this.request<ClientConfigResponse>('/api/client-config', { auth: false });
+    getClientConfig(options: Pick<RequestInit, 'cache'> = {}): Promise<ClientConfigResponse> {
+        return this.request<ClientConfigResponse>('/api/client-config', { ...options, auth: false });
     }
 
     reportClientDiagnostic(input: ClientDiagnosticInput): Promise<ClientDiagnosticResponse> {

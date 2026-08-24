@@ -1,6 +1,13 @@
 import { Platform } from 'react-native';
 import type { ClientConfigResponse } from '@calibrate/api-client';
 import { compareClientVersions } from '@calibrate/shared/clientCompatibility';
+import {
+    CLIENT_SERVER_COMPATIBILITY_STATUSES,
+    formatMajorVersion,
+    formatMinorVersion,
+    getClientServerCompatibilityMismatch,
+    type ClientServerCompatibilityMismatch
+} from '@calibrate/shared/releaseCompatibility';
 import { CALIBRATE_HOSTED_ORIGIN } from '@calibrate/shared/product';
 import release from '../../../shared/release.json';
 
@@ -27,6 +34,7 @@ export type ServerConnectionResult =
           url: string | null;
           code: 'invalid_url' | 'unreachable' | 'not_calibrate' | 'incompatible';
           message: string;
+          mismatch?: ClientServerCompatibilityMismatch;
       };
 
 export type ServerConnectionState = {
@@ -183,6 +191,7 @@ export async function testCalibrateServerConnection(
     options: {
         fetchImpl?: typeof fetch;
         mobileVersion?: string | null;
+        clientServerVersion?: string | null;
         timeoutMs?: number;
     } = {}
 ): Promise<ServerConnectionResult> {
@@ -199,6 +208,7 @@ export async function testCalibrateServerConnection(
     try {
         response = await fetchImpl(`${parsed.url}/api/v1/client-config`, {
             method: 'GET',
+            cache: 'no-store',
             headers: { accept: 'application/json' },
             signal: controller.signal
         });
@@ -239,6 +249,33 @@ export async function testCalibrateServerConnection(
             url: parsed.url,
             code: 'incompatible',
             message: 'This server does not support the Calibrate v1 mobile API.'
+        };
+    }
+
+    const clientServerVersion = options.clientServerVersion;
+    const mismatch = clientServerVersion
+        ? getClientServerCompatibilityMismatch(clientServerVersion, body.server_version)
+        : null;
+    if (mismatch) {
+        const clientMajorVersion = formatMajorVersion(mismatch.clientVersion) ?? mismatch.clientVersion;
+        const serverMajorVersion = formatMajorVersion(mismatch.serverVersion) ?? mismatch.serverVersion;
+        const clientMinorVersion = formatMinorVersion(mismatch.clientVersion) ?? mismatch.clientVersion;
+        let message = `Calibrate client ${mismatch.clientVersion} is incompatible with server ${mismatch.serverVersion}.`;
+        if (mismatch.status === CLIENT_SERVER_COMPATIBILITY_STATUSES.SERVER_BEHIND) {
+            if (clientMajorVersion === serverMajorVersion) {
+                message = `This Calibrate update requires server ${clientMinorVersion} or a newer ${clientMajorVersion} release, but this server is ${mismatch.serverVersion}. Update the server first.`;
+            } else {
+                message = `This Calibrate update requires server major version ${clientMajorVersion}, but this server is ${mismatch.serverVersion}. Update the server first.`;
+            }
+        } else if (mismatch.status === CLIENT_SERVER_COMPATIBILITY_STATUSES.CLIENT_BEHIND) {
+            message = `This server requires a Calibrate client for major version ${serverMajorVersion}, but this client targets ${clientMajorVersion}. Update Calibrate first.`;
+        }
+        return {
+            ok: false,
+            url: parsed.url,
+            code: 'incompatible',
+            message,
+            mismatch
         };
     }
 

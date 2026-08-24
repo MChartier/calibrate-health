@@ -15,6 +15,7 @@ import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvali
 import { useAppTheme } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { ClientUpgradeRequiredScreen } from '../src/components/ClientUpgradeRequiredScreen';
+import { ClientServerIncompatibleScreen } from '../src/components/ClientServerIncompatibleScreen';
 import { HealthConnectProvider } from '../src/healthConnect/provider';
 import { useWearHandoffRouting } from '../src/wear/useWearHandoffRouting';
 import { useWearSyncInvalidation } from '../src/wear/useWearSyncInvalidation';
@@ -43,6 +44,7 @@ const NativeRuntimeHooks: React.FC = () => {
 const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const {
         clientUpgradeRequired,
+        clientServerIncompatibility,
         serverUrl,
         recheckClientCompatibility,
         clearLocalSession
@@ -51,6 +53,16 @@ const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ chil
         return (
             <ClientUpgradeRequiredScreen
                 requirement={clientUpgradeRequired}
+                serverUrl={serverUrl}
+                onRecheck={recheckClientCompatibility}
+                onChooseServer={clearLocalSession}
+            />
+        );
+    }
+    if (clientServerIncompatibility) {
+        return (
+            <ClientServerIncompatibleScreen
+                mismatch={clientServerIncompatibility}
                 serverUrl={serverUrl}
                 onRecheck={recheckClientCompatibility}
                 onChooseServer={clearLocalSession}
