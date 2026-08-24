@@ -289,7 +289,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List privacy-safe active browser, Android phone, and Wear OS sessions owned by the authenticated account. */
+        /** @description List privacy-safe active browser, Android, iOS, and Wear OS sessions owned by the authenticated account. */
         get: operations["getAccountSessions"];
         put?: never;
         post?: never;
@@ -1828,7 +1828,7 @@ export interface components {
             /** @enum {string} */
             route: "app_shell" | "onboarding" | "today" | "saved_foods" | "notifications" | "progress";
             /** @enum {string} */
-            platform: "web" | "android_phone" | "wear_os";
+            platform: "web" | "android_phone" | "ios" | "wear_os";
             version: string;
             /** @enum {string} */
             outcome: "failure" | "degraded" | "good" | "needs_improvement" | "poor";
@@ -1845,6 +1845,11 @@ export interface components {
             platform?: "android_phone";
             /** @enum {unknown} */
             version?: "0.2.6" | "0.2.5" | "0.2.4" | "0.2.3" | "0.2.2" | "0.2.1" | "0.1.0";
+        } | {
+            /** @constant */
+            platform?: "ios";
+            /** @enum {unknown} */
+            version?: "0.2.6";
         } | {
             /** @constant */
             platform?: "wear_os";
@@ -2043,7 +2048,7 @@ export interface components {
             password: string;
             device_id: string;
             /** @enum {string} */
-            device_platform?: "android_phone";
+            device_platform?: "android_phone" | "ios";
             device_name?: string;
         };
         MobileRegistrationRequest: {
@@ -2052,7 +2057,7 @@ export interface components {
             password: string;
             device_id: string;
             /** @enum {string} */
-            device_platform?: "android_phone";
+            device_platform?: "android_phone" | "ios";
             device_name?: string;
             terms_version?: string;
             privacy_version?: string;
@@ -2112,7 +2117,7 @@ export interface components {
         };
         MobileRefreshResponse: components["schemas"]["MobileAuthResponse"] | components["schemas"]["WearMobileAuthResponse"];
         /** @enum {string} */
-        AccountSessionKind: "browser" | "android_phone" | "wear_os";
+        AccountSessionKind: "browser" | "android_phone" | "ios" | "wear_os";
         AccountSessionSummary: {
             id: string;
             kind: components["schemas"]["AccountSessionKind"];
@@ -2391,7 +2396,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        MobileDevicePlatform: "android_phone" | "wear_os";
+        MobileDevicePlatform: "android_phone" | "ios" | "wear_os";
         SyncChange: {
             cursor: string;
             entity_type: string;
@@ -2953,7 +2958,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Password changed and all browser, Android, and Wear sessions revoked. */
+            /** @description Password changed and all browser, Android, iOS, and Wear sessions revoked. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3066,7 +3071,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Registered Android phone session. */
+            /** @description Registered native mobile session. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3075,7 +3080,7 @@ export interface operations {
                     "application/json": components["schemas"]["MobileAuthResponse"];
                 };
             };
-            /** @description Invalid registration or Android phone device metadata. */
+            /** @description Invalid registration or native mobile device metadata. */
             400: {
                 headers: {
                     [name: string]: unknown;

@@ -29,6 +29,20 @@ describe('ClientUpgradeRequiredScreen', () => {
         expect(view.getByLabelText('Sign out and choose another server')).toBeTruthy();
     });
 
+    it('renders the iOS version floor without Android-only copy', () => {
+        const view = render(
+            <ClientUpgradeRequiredScreen
+                requirement={{ ...requirement, platform: 'ios', message: 'Update Calibrate for iOS.' }}
+                serverUrl="https://health.example.com"
+                onRecheck={jest.fn(async () => false)}
+                onChooseServer={jest.fn(async () => undefined)}
+            />
+        );
+
+        expect(view.getByText(/iOS version 0.2.0 or newer/)).toBeTruthy();
+        expect(view.queryByText(/Android version/)).toBeNull();
+    });
+
     it('rechecks without clearing local state and reports a still-incompatible server', async () => {
         const onRecheck = jest.fn(async () => false);
         const onChooseServer = jest.fn(async () => undefined);

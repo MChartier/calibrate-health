@@ -1,4 +1,6 @@
-# Hosted Android App Links
+# Hosted mobile app links
+
+## Android App Links
 
 The production Android application declares verified HTTPS links for `calibratehealth.app`. The
 hosted web deployment must publish this static document without authentication:
@@ -39,3 +41,17 @@ in the Android release evidence.
 Verification and reset URLs must use paths registered by the client route registry and the same
 `PUBLIC_APP_ORIGIN`. Validate both a browser fallback and an Android App Link against the deployed
 candidate before launch.
+
+## iOS Universal Links
+
+The production iOS configuration declares `applinks:calibratehealth.app`. The hosted web deployment must also
+publish the Apple association document without authentication, a redirect, or a filename extension:
+
+`GET https://calibratehealth.app/.well-known/apple-app-site-association`
+
+Return HTTP 200 with `Content-Type: application/json` over public HTTPS. The AASA `appIDs` entry must be
+`<APPLE_TEAM_ID>.app.calibratehealth.mobile`; derive the Team ID from the production signing team rather than
+committing a placeholder. Associate only client route-registry paths that have a browser fallback, and validate
+both the fallback and an installed iPhone/iPad Universal Link before launch.
+
+Self-hosted domains are not associated with the official mobile apps automatically.

@@ -3,6 +3,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
+import { AppButton } from './AppButton';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { dateOnlyToLocalDate, formatDateOnlyForDisplay, localDateToDateOnly } from '../utils/dates';
 import type { DatePickerFieldProps } from './DatePickerField.types';
@@ -34,11 +35,21 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
     function handleDatePicked(event: DateTimePickerEvent, date?: Date) {
         if (Platform.OS === 'android') {
             setPickerDate(null);
+            if (event.type === 'set' && date) {
+                onChangeDate(localDateToDateOnly(date));
+            }
+            return;
         }
 
         if (event.type === 'set' && date) {
-            onChangeDate(localDateToDateOnly(date));
+            setPickerDate(date);
         }
+    }
+
+    function confirmPicker() {
+        if (!pickerDate) return;
+        onChangeDate(localDateToDateOnly(pickerDate));
+        setPickerDate(null);
     }
 
     return (
@@ -61,14 +72,22 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
             </Pressable>
             {helperText && <AppText variant="caption">{helperText}</AppText>}
             {pickerDate && (
-                <DateTimePicker
-                    value={pickerDate}
-                    mode="date"
-                    display={Platform.OS === 'android' ? 'calendar' : 'inline'}
-                    minimumDate={minimumDate ? dateOnlyToLocalDate(minimumDate) : undefined}
-                    maximumDate={maximumDate ? dateOnlyToLocalDate(maximumDate) : undefined}
-                    onChange={handleDatePicked}
-                />
+                <View style={styles.pickerContainer}>
+                    <DateTimePicker
+                        value={pickerDate}
+                        mode="date"
+                        display={Platform.OS === 'android' ? 'calendar' : 'inline'}
+                        minimumDate={minimumDate ? dateOnlyToLocalDate(minimumDate) : undefined}
+                        maximumDate={maximumDate ? dateOnlyToLocalDate(maximumDate) : undefined}
+                        onChange={handleDatePicked}
+                    />
+                    {Platform.OS === 'ios' && (
+                        <View style={styles.pickerActions}>
+                            <AppButton title="Cancel" variant="ghost" onPress={() => setPickerDate(null)} style={styles.pickerAction} />
+                            <AppButton title="Done" onPress={confirmPicker} style={styles.pickerAction} />
+                        </View>
+                    )}
+                </View>
             )}
         </View>
     );
@@ -92,6 +111,16 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     placeholder: {
         color: theme.colors.onSurfaceVariant
+    },
+    pickerContainer: {
+        alignItems: 'stretch'
+    },
+    pickerActions: {
+        flexDirection: 'row',
+        gap: spacing.sm
+    },
+    pickerAction: {
+        flex: 1
     },
     pressed: {
         borderColor: theme.colors.primary,

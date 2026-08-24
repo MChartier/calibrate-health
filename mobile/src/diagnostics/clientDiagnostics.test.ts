@@ -1,6 +1,11 @@
+jest.mock('expo-application', () => ({
+    nativeApplicationVersion: '0.2.6'
+}));
+
 import { Platform } from 'react-native';
 import { ApiError } from '@calibrate/api-client';
 import release from '../../../shared/release.json';
+import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import {
     getClientDiagnosticRequestId,
     registerClientDiagnosticReporter,
@@ -91,6 +96,21 @@ describe('client diagnostics reporter', () => {
             ...ROOT_SIGNAL,
             platform: 'web',
             version: release.server.version
+        });
+
+        unregister();
+    });
+
+    it('adds the canonical iOS identity to native signals', async () => {
+        jest.replaceProperty(Platform, 'OS', 'ios');
+        const reporter = jest.fn(async (input) => ({ ok: true as const, request_id: input.request_id! }));
+        const unregister = registerClientDiagnosticReporter(reporter);
+
+        await expect(reportClientDiagnostic(ROOT_SIGNAL)).resolves.toBe(ROOT_SIGNAL.request_id);
+        expect(reporter).toHaveBeenCalledWith({
+            ...ROOT_SIGNAL,
+            platform: 'ios',
+            version: MOBILE_CLIENT_IDENTITY.version
         });
 
         unregister();
@@ -216,7 +236,7 @@ describe('client diagnostics reporter', () => {
     });
 
     it('does not emit on an unsupported platform or without a registered transport', async () => {
-        jest.replaceProperty(Platform, 'OS', 'ios');
+        jest.replaceProperty(Platform, 'OS', 'windows');
         const reporter = jest.fn(async () => ({ ok: true as const, request_id: 'unused' }));
         const unregister = registerClientDiagnosticReporter(reporter);
 

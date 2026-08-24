@@ -13,6 +13,7 @@ import { useAuth } from '../../../src/auth/AuthContext';
 import { HOSTED_SERVER_URL, normalizeServerUrl } from '../../../src/config/server';
 import { radius, spacing, useAppTheme } from '../../../src/theme';
 import { useAppUpdateController } from '../../../src/updates/useAppUpdateController';
+import { getNativePlatformLabel } from '../../../src/platform/nativePlatform';
 
 const DIAGNOSTIC_ROW_MIN_HEIGHT = 52; // Keeps support values readable without inflating every row into a full control.
 const UPDATE_STATUS_MIN_HEIGHT = 64; // Reserves stable space while update status swaps between text and progress.
@@ -60,7 +61,8 @@ export default function AdvancedSettingsScreen() {
     const serviceLabel = normalizeServerUrl(serverUrl) === HOSTED_SERVER_URL
         ? 'Calibrate hosted service'
         : 'Self-hosted service';
-    const platformLabel = Platform.OS === 'web' ? 'Web/PWA' : 'Android';
+    const platformLabel = Platform.OS === 'web' ? 'Web/PWA' : getNativePlatformLabel();
+    const nativeBuildTargets = Platform.OS === 'android' ? 'Android or Wear OS' : 'iOS';
 
     /** Confirm and persist the tested server selection. */
     async function handleSaveServer() {
@@ -189,7 +191,7 @@ export default function AdvancedSettingsScreen() {
                 <AppText variant="caption">
                     {Platform.OS === 'web'
                         ? 'Web and PWA updates are delivered through the browser and installed-site lifecycle.'
-                        : 'OTA updates can change Android JavaScript and assets. Native Android or Watch changes require a newly signed build.'}
+                        : `OTA updates can change ${platformLabel} JavaScript and assets. Native ${nativeBuildTargets} changes require a newly signed build.`}
                 </AppText>
             </AppCard>
         </TabScreen>

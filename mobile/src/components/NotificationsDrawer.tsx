@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SUPPORTED_MODAL_ORIENTATIONS } from '../layout/adaptiveLayout';
 import { AppCard } from './AppCard';
 import { AppButton } from './AppButton';
 import { AppIconButton } from './AppIconButton';
@@ -58,6 +59,8 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     const insets = useSafeAreaInsets();
     const { width: windowWidth } = useWindowDimensions();
     const reduceMotion = useReducedMotionPreference();
+    const availableWidth = Math.max(0, windowWidth - insets.left - insets.right);
+    const drawerWidth = notificationDrawerWidth(availableWidth);
     const [shouldRender, setShouldRender] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const drawerProgress = useRef(new Animated.Value(1)).current;
@@ -110,7 +113,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
 
     const translateX = drawerProgress.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, notificationDrawerWidth(windowWidth)]
+        outputRange: [0, drawerWidth + insets.right]
     });
 
     return (
@@ -121,6 +124,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
             presentationStyle="overFullScreen"
             statusBarTranslucent
             onRequestClose={onClose}
+            supportedOrientations={SUPPORTED_MODAL_ORIENTATIONS}
         >
             <View style={styles.root}>
                 <Pressable
@@ -146,6 +150,8 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                         styles.panel,
                         {
                             paddingTop: Math.max(insets.top, spacing.md),
+                            width: drawerWidth,
+                            marginRight: insets.right,
                             paddingBottom: Math.max(insets.bottom, spacing.md),
                             transform: [{ translateX }]
                         }
@@ -245,8 +251,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     panel: {
         ...theme.shadows.raised,
-        width: '90%',
-        maxWidth: 440,
         height: '100%',
         backgroundColor: theme.colors.surfaceContainerLow,
         borderLeftColor: theme.colors.outlineVariant,

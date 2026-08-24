@@ -29,9 +29,8 @@ import { getMetricDate } from '../../../src/utils/metrics';
 import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
 import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../src/today/dashboardState';
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
+import { usesTabletLayout } from '../../../src/layout/adaptiveLayout';
 import { spacing } from '../../../src/theme';
-
-const TODAY_SUMMARY_GRID_BREAKPOINT = 840; // Mirrors the app shell's wide layout without compressing scaled text.
 
 export default function TodayScreen() {
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
@@ -52,7 +51,7 @@ export default function TodayScreen() {
     const isOnline = useOnlineStatus();
     const hasPendingWeightChange = usePendingWeightMutation();
     const { fontScale, width } = useWindowDimensions();
-    const useSummaryGrid = width >= TODAY_SUMMARY_GRID_BREAKPOINT && fontScale < 1.6;
+    const useSummaryGrid = usesTabletLayout(width, fontScale);
 
     const dashboardQueries = [profileQuery, foodQuery, foodDayQuery, metricsQuery] as const;
     const failedDashboardQueries = dashboardQueries.filter((query) => query.isError);

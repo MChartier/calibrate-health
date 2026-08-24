@@ -100,7 +100,9 @@ test('duplicate watch routes collapse to the stable mDNS serial', () => {
   assert.equal(classifyReleaseDevice('nosdcard,watch'), 'watch');
   assert.equal(classifyReleaseDevice('phone,nosdcard'), 'phone');
   assert.equal(classifyReleaseDevice('default'), 'phone');
-  for (const characteristics of ['tablet', 'tv', 'automotive', 'embedded', 'nosdcard', 'phone,tablet']) {
+  assert.equal(classifyReleaseDevice('tablet'), 'phone');
+  assert.equal(classifyReleaseDevice('phone,tablet'), 'phone');
+  for (const characteristics of ['tv', 'automotive', 'embedded', 'nosdcard']) {
     assert.equal(classifyReleaseDevice(characteristics), 'unsupported');
   }
 });
@@ -112,6 +114,14 @@ test('physical devices are preferred over emulators for release installation', (
     { role: 'phone', serial: 'R5Cphone', isEmulator: false }
   ]);
   assert.deepEqual(candidates.map(({ serial }) => serial), ['R5Cphone']);
+});
+
+test('Android tablets are valid mobile release installation targets', () => {
+  const candidates = releaseDeviceCandidates('phone', [
+    { role: classifyReleaseDevice('tablet'), serial: 'tablet-1', isEmulator: false },
+    { role: 'watch', serial: 'watch-1', isEmulator: false }
+  ]);
+  assert.deepEqual(candidates.map(({ serial }) => serial), ['tablet-1']);
 });
 
 test('APK parsers retain release identity and normalize certificate fingerprints', () => {

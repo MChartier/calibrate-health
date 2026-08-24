@@ -13,6 +13,7 @@ import release from '../../../shared/release.json';
 
 export const HOSTED_SERVER_URL = CALIBRATE_HOSTED_ORIGIN;
 const ANDROID_EMULATOR_SERVER_URL = 'http://10.0.2.2:3000';
+const IOS_SIMULATOR_SERVER_URL = 'http://127.0.0.1:3000';
 const LOCAL_WEB_BACKEND_PORT = '3000';
 const MOBILE_API_VERSION = release.server.api.current;
 
@@ -152,7 +153,20 @@ export function resolveBrowserServerUrl(
     return configuredServerUrl ?? HOSTED_SERVER_URL;
 }
 
-/** Default to an explicit env value, hosted production, or Android emulator loopback in development. */
+/** Resolve simulator loopback per native platform; physical devices can use an explicit LAN URL. */
+export function resolveDefaultNativeServerUrl(
+    platform: string,
+    configuredServerUrl: string | null,
+    isDevelopment: boolean
+): string {
+    if (configuredServerUrl) return configuredServerUrl;
+    if (!isDevelopment) return HOSTED_SERVER_URL;
+    if (platform === 'android') return ANDROID_EMULATOR_SERVER_URL;
+    if (platform === 'ios') return IOS_SIMULATOR_SERVER_URL;
+    return HOSTED_SERVER_URL;
+}
+
+/** Default to an explicit env value, hosted production, or platform-specific simulator loopback. */
 export function getDefaultServerUrl(): string {
     const configuredServerUrl = getConfiguredServerUrl();
     // Production web exports use their serving origin for HttpOnly cookie sessions.
@@ -161,9 +175,7 @@ export function getDefaultServerUrl(): string {
         const location = typeof window !== 'undefined' && window.location.origin ? window.location : null;
         return resolveBrowserServerUrl(location, configuredServerUrl, __DEV__);
     }
-    if (configuredServerUrl) return configuredServerUrl;
-    if (__DEV__ && Platform.OS === 'android') return ANDROID_EMULATOR_SERVER_URL;
-    return HOSTED_SERVER_URL;
+    return resolveDefaultNativeServerUrl(Platform.OS, configuredServerUrl, __DEV__);
 }
 
 /** Normalize self-hosted server input so API calls can safely append versioned paths. */

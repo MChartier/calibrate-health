@@ -463,7 +463,7 @@ storage, or change the application ID/signing key when testing an upgrade.
 
 ## Expo OTA updates between native builds
 
-Expo OTA updates apply only to the Android phone app's JavaScript, styling, and bundled assets. Wear OS, native
+Expo OTA updates apply to the Android and iOS mobile apps' JavaScript, styling, and bundled assets. Wear OS, native
 modules, permissions, config plugins, app identity/version, dependencies with native code, and native icons require a
 new signed phone/Watch build. The currently installed pre-OTA build must be replaced once after `expo-updates` is
 introduced; later compatible updates can use the faster path below.
@@ -593,17 +593,17 @@ jobs.
 
 ## Preserve on-device data during upgrades
 
-Expo SecureStore tokens and the SQLite offline outbox live in the Android application sandbox. Android preserves
-them when all of the following remain true:
+Expo SecureStore tokens and the SQLite offline outbox live in each native application's sandbox. Preserve them
+through an in-place Android or iOS upgrade by keeping all of the following true:
 
-1. The application ID remains `app.calibratehealth.mobile`.
-2. The new APK/AAB is signed by the same certificate.
-3. `versionCode` increases.
+1. The Android application ID and iOS bundle identifier remain `app.calibratehealth.mobile`.
+2. The new Android artifact retains its signing certificate and the iOS artifact retains its signing identity.
+3. Android `versionCode` or iOS `buildNumber` increases for that platform.
 4. The app is upgraded in place instead of uninstalled or data-cleared.
 
-Before shipping a SQLite or authentication-storage change, test an upgrade from the last distributed signed APK with
+Before shipping a SQLite or authentication-storage change, test an upgrade from each last distributed native build with
 both an active session and pending/failed offline mutations. Export account data first when testing migrations against
-important real data. Database migrations must be forward-compatible; Android cannot safely roll back to a build that
+important real data. Database migrations must be forward-compatible; neither platform can safely roll back to a build that
 does not understand a newer on-device schema.
 
 If a release is bad, prepare a new patch native release and publish its higher odd/even version-code pair. Never move

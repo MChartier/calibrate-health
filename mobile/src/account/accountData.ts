@@ -101,7 +101,7 @@ export async function deleteAccountAndClearLocalData(
             appDataCleanupRequired: true,
             credentialCleanupRequired: true
         })).catch(() => undefined);
-        throw new Error('Account deleted, but local sign-in credentials could not be cleared. Clear Calibrate app data now.');
+        throw new Error('Account deleted, but local sign-in credentials could not be cleared. Follow the device cleanup guidance before signing in again.');
     }
 }
 

@@ -351,7 +351,7 @@ export type MobileAuthRequest = {
     email: string;
     password: string;
     device_id: string;
-    device_platform?: 'android_phone';
+    device_platform?: 'android_phone' | 'ios';
     device_name?: string;
 };
 
@@ -425,7 +425,7 @@ export type MobileSessionSummary = {
 
 export type AccountSessionSummary = {
     id: string;
-    kind: 'browser' | 'android_phone' | 'wear_os';
+    kind: 'browser' | 'android_phone' | 'ios' | 'wear_os';
     device_label: string | null;
     created_at: string;
     last_activity_at: string | null;

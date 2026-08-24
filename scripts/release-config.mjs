@@ -223,7 +223,7 @@ export function nextReleaseVersion(version, bump) {
   return `${major}.${minor}.${patch}`;
 }
 
-const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'wear_os'];
+const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'ios', 'wear_os'];
 const MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM = 16;
 
 /** Keep the reviewed rollout window synchronized with current releases and the generated API source. */
@@ -243,15 +243,17 @@ export function validateClientDiagnosticVersionContract(manifest, diagnosticVers
 
   const keys = Object.keys(supported).sort();
   if (JSON.stringify(keys) !== JSON.stringify([...CLIENT_DIAGNOSTIC_PLATFORMS].sort())) {
-    errors.push('client-diagnostic-versions.json must define exactly web, android_phone, and wear_os.');
+    errors.push('client-diagnostic-versions.json must define exactly web, android_phone, ios, and wear_os.');
   }
   const currentVersions = {
     web: manifest?.server?.version,
     android_phone: manifest?.android?.mobile?.version_name,
+    ios: manifest?.android?.mobile?.version_name,
     wear_os: manifest?.android?.wear?.version_name
   };
   const minimumVersions = {
     android_phone: manifest?.android?.mobile?.minimum_supported_version,
+    ios: manifest?.android?.mobile?.minimum_supported_version,
     wear_os: manifest?.android?.wear?.minimum_supported_version
   };
 

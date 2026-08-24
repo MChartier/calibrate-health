@@ -28,6 +28,7 @@
         "web-critical-smoke",
         "native-metro-bundle",
         "mobile-build",
+        "ios-build",
         "wear-build"
       ]
     },

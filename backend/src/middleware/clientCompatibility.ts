@@ -19,7 +19,14 @@ function minimumVersion(platform: MobileDevicePlatform): string {
 }
 
 function platformLabel(platform: MobileDevicePlatform): string {
-  return platform === MOBILE_DEVICE_PLATFORMS.WEAR_OS ? 'Calibrate for Wear OS' : 'Calibrate for Android';
+  switch (platform) {
+    case MOBILE_DEVICE_PLATFORMS.IOS:
+      return 'Calibrate for iOS';
+    case MOBILE_DEVICE_PLATFORMS.WEAR_OS:
+      return 'Calibrate for Wear OS';
+    default:
+      return 'Calibrate for Android';
+  }
 }
 
 /**

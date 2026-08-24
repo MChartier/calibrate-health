@@ -310,7 +310,7 @@ paths:
             schema: { $ref: '#/components/schemas/PasswordResetConfirmRequest' }
       responses:
         '200':
-          description: Password changed and all browser, Android, and Wear sessions revoked.
+          description: Password changed and all browser, Android, iOS, and Wear sessions revoked.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/MessageResponse' }
@@ -382,13 +382,13 @@ paths:
               $ref: '#/components/schemas/MobileRegistrationRequest'
       responses:
         '200':
-          description: Registered Android phone session.
+          description: Registered native mobile session.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MobileAuthResponse'
         '400':
-          description: Invalid registration or Android phone device metadata.
+          description: Invalid registration or native mobile device metadata.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
@@ -423,7 +423,7 @@ paths:
   /auth/sessions:
     get:
       operationId: getAccountSessions
-      description: List privacy-safe active browser, Android phone, and Wear OS sessions owned by the authenticated account.
+      description: List privacy-safe active browser, Android, iOS, and Wear OS sessions owned by the authenticated account.
       responses:
         '200':
           description: Active account sessions with the calling session identified.
@@ -2674,7 +2674,7 @@ components:
           enum: [app_shell, onboarding, today, saved_foods, notifications, progress]
         platform:
           type: string
-          enum: [web, android_phone, wear_os]
+          enum: [web, android_phone, ios, wear_os]
         version:
           type: string
         outcome:
@@ -2690,6 +2690,7 @@ components:
         - oneOf:
             - properties: { platform: { const: web }, version: { enum: [0.35.0, 0.34.1] } }
             - properties: { platform: { const: android_phone }, version: { enum: [0.2.6, 0.2.5, 0.2.4, 0.2.3, 0.2.2, 0.2.1, 0.1.0] } }
+            - properties: { platform: { const: ios }, version: { enum: [0.2.6] } }
             - properties: { platform: { const: wear_os }, version: { enum: [0.2.6, 0.2.5, 0.2.3, 0.2.2, 0.2.1, 0.2.0] } }
         - oneOf:
             - properties:
@@ -2887,7 +2888,7 @@ components:
           maxLength: 128
         device_platform:
           type: string
-          enum: [android_phone]
+          enum: [android_phone, ios]
         device_name:
           type: string
           maxLength: 120
@@ -2899,7 +2900,7 @@ components:
         email: { type: string, format: email }
         password: { type: string, minLength: 8, maxLength: 72 }
         device_id: { type: string, maxLength: 128 }
-        device_platform: { type: string, enum: [android_phone] }
+        device_platform: { type: string, enum: [android_phone, ios] }
         device_name: { type: string, maxLength: 120 }
         terms_version: { type: string, minLength: 1, maxLength: 64 }
         privacy_version: { type: string, minLength: 1, maxLength: 64 }
@@ -2997,7 +2998,7 @@ components:
         - $ref: '#/components/schemas/WearMobileAuthResponse'
     AccountSessionKind:
       type: string
-      enum: [browser, android_phone, wear_os]
+      enum: [browser, android_phone, ios, wear_os]
     AccountSessionSummary:
       type: object
       additionalProperties: false
@@ -3403,7 +3404,7 @@ components:
                 revision: { type: string }
     MobileDevicePlatform:
       type: string
-      enum: [android_phone, wear_os]
+      enum: [android_phone, ios, wear_os]
     SyncChange:
       type: object
       required: [cursor, entity_type, entity_id, action, operation_id, payload, created_at]

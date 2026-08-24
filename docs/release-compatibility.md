@@ -1,9 +1,10 @@
 # Release compatibility and artifact provenance
 
-`shared/release.json` is the canonical release manifest for the server, Android phone app, and Wear OS app. The
-backend and phone connection preflight consume its API and minimum-version policy directly. Android build files must
-mirror the manifest because Expo and Gradle need native values before application code runs; `npm run release:check`
-fails quickly when any mirror drifts.
+`shared/release.json` is the canonical release manifest for the server, the shared Expo mobile compatibility line,
+the Android app, and the Wear OS app. Android and iOS Expo clients share its semantic mobile version and minimum-version
+policy; Expo config and client-diagnostic allowlists mirror those values. Android build files also mirror the manifest
+because Expo and Gradle need native values before application code runs; `npm run release:check` fails quickly when any
+mirror drifts.
 
 ## Compatibility policy
 

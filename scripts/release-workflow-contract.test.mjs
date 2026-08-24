@@ -921,6 +921,7 @@ test('pull requests run targeted native compilation while emulator and upgrade r
   const changes = workflowJobBlock(workflow, 'changes');
   const runtime = workflowJobBlock(workflow, 'native-metro-bundle');
   const mobileBuild = workflowJobBlock(workflow, 'mobile-build');
+  const iosBuild = workflowJobBlock(workflow, 'ios-build');
   const wearBuild = workflowJobBlock(workflow, 'wear-build');
   const android = workflowJobBlock(workflow, 'android-emulator-e2e');
   const wear = workflowJobBlock(workflow, 'wear-release-emulator-smoke');
@@ -974,9 +975,7 @@ test('pull requests run targeted native compilation while emulator and upgrade r
     'mobile/app.config.js',
     'mobile/app.json',
     'mobile/eas.json',
-    'mobile/assets/adaptive-icon.png',
-    'mobile/assets/icon.png',
-    'mobile/assets/notification-icon.png',
+    'mobile/assets/**',
     'mobile/modules/**',
     'mobile/package.json',
     'mobile/plugins/**',
@@ -991,12 +990,18 @@ test('pull requests run targeted native compilation while emulator and upgrade r
     /if: needs\.changes\.outputs\.native_runtime == 'true' \|\| needs\.changes\.outputs\.native_package == 'true'/
   );
   assert.match(runtime, /npm run test:mobile-build-tools/);
+  assert.match(runtime, /platform: \[android, ios\]/);
   assert.match(
     runtime,
-    /node \.\.\/node_modules\/expo\/bin\/cli export --platform android --output-dir "\$\{RUNNER_TEMP\}\/calibrate-android-export"/
+    /node \.\.\/node_modules\/expo\/bin\/cli export --platform "\$\{\{ matrix\.platform \}\}" --output-dir "\$\{RUNNER_TEMP\}\/calibrate-\$\{\{ matrix\.platform \}\}-export"/
   );
   assert.match(mobileBuild, /if: needs\.changes\.outputs\.native_package == 'true'/);
   assert.match(mobileBuild, /Build Android debug/);
+  assert.match(iosBuild, /if: needs\.changes\.outputs\.native_package == 'true'/);
+  assert.match(iosBuild, /runs-on: macos-latest/);
+  assert.match(iosBuild, /npm --prefix mobile run prebuild:ios/);
+  assert.match(iosBuild, /pod install/);
+  assert.match(iosBuild, /xcodebuild[\s\S]*generic\/platform=iOS Simulator[\s\S]*CODE_SIGNING_ALLOWED=NO/);
   assert.match(wearBuild, /if: needs\.changes\.outputs\.wear == 'true'/);
   assert.match(wearBuild, /assembleDebug testDebugUnitTest/);
 
@@ -1093,6 +1098,7 @@ test('build input classification covers representative paths without cross-surfa
     ['mobile/src/components/AppCard.tsx', ['web', 'native_runtime']],
     ['mobile/test/jest.setup.ts', []],
     ['mobile/plugins/withHealthConnect.js', ['native_package']],
+    ['mobile/assets/icon-ios.png', ['web', 'native_runtime', 'native_package']],
     ['mobile/babel.config.js', ['web', 'native_runtime']],
     ['wear/app/src/main/AndroidManifest.xml', ['release_config', 'wear']],
     ['quality/performance-budgets.json', ['release_config']],
@@ -2632,6 +2638,7 @@ test('version-only release PRs validate mirrors without platform build fan-out',
     'web-critical-smoke',
     'native-metro-bundle',
     'mobile-build',
+    'ios-build',
     'wear-build'
   ]) {
     const job = workflowJobBlock(workflow, jobId);
@@ -2646,6 +2653,7 @@ test('version-only release PRs validate mirrors without platform build fan-out',
   );
   assert.ok(affectedBuilds);
   assert.ok(affectedBuilds.jobIds.includes('web-critical-smoke'));
+  assert.ok(affectedBuilds.jobIds.includes('ios-build'));
   assert.equal(plan.policy.pullRequestChecks, 'affected-only');
 });
 

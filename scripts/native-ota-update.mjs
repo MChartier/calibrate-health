@@ -117,7 +117,7 @@ export function nativeOtaPublishCommand(config, baseline, options = {}) {
     '--channel', channel,
     '--message', config.message,
     '--environment', environment,
-    '--platform', 'android'
+    '--platform', 'all'
   ];
   if (config.nonInteractive) args.push('--non-interactive');
   return {
@@ -203,7 +203,7 @@ function defaultMessage(runner, root) {
 function printHelp() {
   process.stdout.write(`Usage: npm run release:native:ota -- [options]
 
-Publish an Android phone JavaScript/assets update to the channel embedded in the last local release build.
+Publish an Android and iOS JavaScript/assets update to the channel embedded in the last local release build.
 
 Options:
   --message <text>             Update message (default: current Git commit subject)
@@ -214,7 +214,7 @@ Options:
   --dry-run                    Validate the baseline and EAS environment without uploading
   --help                       Show this help
 
-Wear OS and native module/configuration changes cannot be delivered by Expo OTA.
+Native module/configuration and Wear OS changes cannot be delivered by Expo OTA.
 `);
 }
 
@@ -321,7 +321,7 @@ export function runNativeOtaUpdate(options = {}) {
     label: 'publish Expo OTA update',
     inherit: true
   });
-  process.stdout.write('Android phone OTA update published. Wear OS was not changed.\n');
+  process.stdout.write('Android and iOS OTA update published. Wear OS was not changed.\n');
   return { baseline, publish, dryRun: false };
 }
 

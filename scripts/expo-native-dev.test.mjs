@@ -3,9 +3,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { resolveExpoNativeBackendUrl } from "./expo-native-dev.mjs";
+import {
+  parseExpoNativeDevArgs,
+  resolveExpoNativeBackendUrl,
+} from "./expo-native-dev.mjs";
 
-test("native Expo targets the current worktree backend from the Android emulator", () => {
+test("native Expo defaults to the current worktree backend from the Android emulator", () => {
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "calibrate-expo-native-"));
   try {
     assert.equal(
@@ -19,6 +22,32 @@ test("native Expo targets the current worktree backend from the Android emulator
   } finally {
     fs.rmSync(repoRoot, { recursive: true, force: true });
   }
+});
+
+test("native Expo targets the current worktree backend from the iOS simulator", () => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "calibrate-expo-native-"));
+  try {
+    assert.equal(
+      resolveExpoNativeBackendUrl({
+        repoRoot,
+        backendPort: 25_536,
+        platform: "ios",
+        environment: {},
+      }),
+      "http://127.0.0.1:25536"
+    );
+  } finally {
+    fs.rmSync(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("native Expo parses Android and iOS platform options", () => {
+  assert.deepEqual(parseExpoNativeDevArgs([]), { platform: "android" });
+  assert.deepEqual(parseExpoNativeDevArgs(["--platform", "ios"]), { platform: "ios" });
+  assert.deepEqual(parseExpoNativeDevArgs(["-p", "ANDROID"]), { platform: "android" });
+  assert.throws(() => parseExpoNativeDevArgs(["--platform"]), /android or ios/);
+  assert.throws(() => parseExpoNativeDevArgs(["--platform", "web"]), /android or ios/);
+  assert.throws(() => parseExpoNativeDevArgs(["--bad"]), /Unknown native Expo option/);
 });
 
 test("native Expo preserves an explicit physical-device server URL", () => {

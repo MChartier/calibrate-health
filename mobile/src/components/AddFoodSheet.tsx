@@ -8,7 +8,8 @@ import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@ca
 import { AppButton } from './AppButton';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { AppText } from './AppText';
-import { ADAPTIVE_DIALOG_BREAKPOINT, BottomSheetModal } from './BottomSheetModal';
+import { BottomSheetModal } from './BottomSheetModal';
+import { TABLET_LAYOUT_BREAKPOINT } from '../layout/adaptiveLayout';
 import { FoodSelectionEditor, type FoodSelectionSubmitRequest } from './FoodSelectionEditor';
 import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 import { OverlaySelect } from './OverlaySelect';
@@ -81,6 +82,10 @@ const MINIMUM_SEARCH_LENGTH = 2;
 const DEFAULT_RECENT_LIMIT = 8;
 const DEFAULT_PINNED_LIMIT = 8;
 const ADD_FOOD_SHEET_HEIGHT = '92%';
+
+export function usesCompactAddFoodLayout(viewportWidth: number): boolean {
+    return viewportWidth < TABLET_LAYOUT_BREAKPOINT;
+}
 
 function describeSearchedFood(item: SearchedFoodItem): string {
     const preferredIndex = getPreferredFoodMeasureIndex(item);
@@ -155,7 +160,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const [isSearchFieldFocused, setIsSearchFieldFocused] = useState(false);
     const searchBlurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const normalizedQuery = query.trim();
-    const isMobileSearchWorkspace = (Platform.OS !== 'web' || viewportWidth < ADAPTIVE_DIALOG_BREAKPOINT)
+    const isMobileSearchWorkspace = usesCompactAddFoodLayout(viewportWidth)
         && mode === 'search'
         && isSearchFieldFocused
         && selection === null;

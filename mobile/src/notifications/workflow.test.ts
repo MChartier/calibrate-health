@@ -3,6 +3,7 @@ import {
     getNotificationPermissionState,
     getNotificationResponseActionUrl,
     getPushStatusPresentation,
+    getPushStatusTarget,
     isNativePushEnvironmentSupported,
     NATIVE_PUSH_STATES
 } from './workflow';
@@ -16,10 +17,20 @@ describe('native notification workflow', () => {
         expect(getPushStatusPresentation(NATIVE_PUSH_STATES.BLOCKED).action).toBe('settings');
     });
 
-    it('marks Expo Go and non-Android environments unsupported', () => {
+    it('supports Android and iOS native builds but not Expo Go or web', () => {
         expect(isNativePushEnvironmentSupported('expo', 'android')).toBe(false);
-        expect(isNativePushEnvironmentSupported('standalone', 'ios')).toBe(false);
+        expect(isNativePushEnvironmentSupported('expo', 'ios')).toBe(false);
         expect(isNativePushEnvironmentSupported('standalone', 'android')).toBe(true);
+        expect(isNativePushEnvironmentSupported('standalone', 'ios')).toBe(true);
+        expect(isNativePushEnvironmentSupported('standalone', 'web')).toBe(false);
+        expect(getPushStatusTarget('android')).toBe('android');
+        expect(getPushStatusTarget('ios')).toBe('ios');
+        expect(getPushStatusTarget('web')).toBe('web');
+    });
+
+    it('uses iOS-specific native push recovery copy', () => {
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.BLOCKED, 'ios').message).toContain('iOS settings');
+        expect(getPushStatusPresentation(NATIVE_PUSH_STATES.UNSUPPORTED, 'ios').message).toContain('native iOS');
     });
 
     it('explains when the selected self-host disables third-party native push', () => {

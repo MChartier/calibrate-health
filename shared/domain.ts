@@ -57,6 +57,7 @@ export type MealPeriod = (typeof MEAL_PERIODS)[keyof typeof MEAL_PERIODS];
 
 export const MOBILE_DEVICE_PLATFORMS = {
     ANDROID_PHONE: 'android_phone',
+    IOS: 'ios',
     WEAR_OS: 'wear_os'
 } as const;
 
@@ -64,7 +65,8 @@ export type MobileDevicePlatform =
     (typeof MOBILE_DEVICE_PLATFORMS)[keyof typeof MOBILE_DEVICE_PLATFORMS];
 
 export const NATIVE_PUSH_PLATFORMS = {
-    ANDROID: 'android'
+    ANDROID: 'android',
+    IOS: 'ios'
 } as const;
 
 export type NativePushPlatform =
