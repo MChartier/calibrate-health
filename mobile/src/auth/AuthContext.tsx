@@ -222,7 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     clientIdentity: MOBILE_CLIENT_IDENTITY,
                     onClientUpgradeRequired: handleClientUpgradeRequired
                 });
-                const config = await compatibilityClient.getClientConfig();
+                const config = await compatibilityClient.getClientConfig({ cache: 'no-store' });
                 if (!isMounted) return;
                 const compatibilityMismatch = getClientServerCompatibilityMismatch(
                     MOBILE_SERVER_RELEASE_VERSION,
@@ -278,7 +278,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const recheckClientCompatibility = useCallback(async (): Promise<boolean> => {
         try {
-            const config = await api.getClientConfig();
+            const config = await api.getClientConfig({ cache: 'no-store' });
             const compatibilityMismatch = getClientServerCompatibilityMismatch(
                 MOBILE_SERVER_RELEASE_VERSION,
                 config.server_version

@@ -32,14 +32,15 @@ Expo OTA workflow for the exact release commit without waiting for or triggering
 native-build reference comes from the canonical manifest. OTA publishes internal first and waits for protected
 production approval; it is never triggered by an ordinary `master` push.
 
-Expo's automatic check and download lifecycle remains unchanged. Once a bundle runs, the phone compares its bundled
-expected server contract version with uncached client configuration before restoring a saved session or synchronizing.
-Different majors block in either direction. Within a major, a client minor may trail the server minor but may not lead
-it; patch drift remains compatible. This runtime check does not claim to prevent the update from downloading or
-starting. Protected production approval is the current public-channel promotion control. A future automated promotion
-rule may require an explicit readiness signal for the release owner's declared server rollout, but it cannot attest
-every independent self-host. Live private-server polling is not part of the release workflow, so those installations
-retain the runtime guard.
+Expo's automatic check and download lifecycle remains unchanged. Client configuration responds with
+`Cache-Control: no-store`; server selection, startup before restoring a saved session or synchronizing, and manual
+compatibility recheck also request it with Fetch `cache: 'no-store'`. Once a bundle runs, the phone compares its bundled
+expected server contract version with that response. Different majors block in either direction. Within a major, a
+client minor may trail the server minor but may not lead it; patch drift remains compatible. This runtime check does
+not claim to prevent the update from downloading or starting. Protected production approval is the current
+public-channel promotion control. A future automated promotion rule may require an explicit readiness signal for the
+release owner's declared server rollout, but it cannot attest every independent self-host. Live private-server polling
+is not part of the release workflow, so those installations retain the runtime guard.
 
 ## Consequences
 

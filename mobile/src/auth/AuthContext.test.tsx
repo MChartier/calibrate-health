@@ -95,6 +95,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
             status: 'server_behind',
             serverVersion: '1.1.9'
         }));
+        expect(mockGetClientConfig).toHaveBeenNthCalledWith(1, { cache: 'no-store' });
         expect(result.current.user).toBeNull();
         expect(mockRefreshMobile).not.toHaveBeenCalled();
 
@@ -104,6 +105,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
         });
 
         expect(compatible).toBe(true);
+        expect(mockGetClientConfig).toHaveBeenNthCalledWith(2, { cache: 'no-store' });
         expect(mockRefreshMobile).toHaveBeenCalledWith('stored-refresh');
         expect(result.current.clientServerIncompatibility).toBeNull();
         expect(result.current.user).toEqual(expect.objectContaining({ id: 7 }));

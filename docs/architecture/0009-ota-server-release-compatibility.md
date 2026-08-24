@@ -20,12 +20,13 @@ with a newer server minor because the server remains backward compatible. A newe
 an older server minor because the client may require additions that server does not have. Patch, prerelease, and
 build-metadata differences do not affect this decision.
 
-The server reports the canonical manifest version from uncached `GET /api/v1/client-config`. Native startup checks
-that value before refreshing a saved session or starting synchronization. Server selection runs the same check before
-sending credentials. A mismatch blocks normal authenticated runtime behind a dedicated screen while retaining
-credentials and queued offline changes. Rechecking after the server and client converge restores the retained session.
-This directional contract-version check is separate from the existing minimum-native-version policy and its
-`CLIENT_UPGRADE_REQUIRED` response.
+The server reports the canonical manifest version from `GET /api/v1/client-config` and responds with
+`Cache-Control: no-store`. Native server selection, startup, and manual compatibility recheck also set Fetch
+`cache: 'no-store'`. Startup checks the returned value before refreshing a saved session or starting synchronization;
+server selection checks it before sending credentials. A mismatch blocks normal authenticated runtime behind a
+dedicated screen while retaining credentials and queued offline changes. Rechecking after the server and client
+converge restores the retained session. This directional contract-version check is separate from the existing
+minimum-native-version policy and its `CLIENT_UPGRADE_REQUIRED` response.
 
 Expo's automatic and manual update behavior remains unchanged. The client does not inspect or veto an OTA candidate
 based on the selected server, so this decision requires no native Expo configuration change or replacement signed

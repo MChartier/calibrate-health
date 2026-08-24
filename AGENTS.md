@@ -275,6 +275,8 @@ UI code style:
   expected server contract version with client configuration at startup and server selection. Major versions must
   match; within a major, the server minor must be at least the client minor, while patch drift remains compatible. Do
   not add candidate-manifest inspection or a download/restart veto.
+- Startup, server-selection, and manual-recheck compatibility requests must use `cache: 'no-store'`; response headers
+  alone cannot invalidate a response cached before the server began sending the no-store policy.
 - Protected production approval is the current public-channel promotion gate. A future explicit readiness signal may
   cover the release owner's declared server rollout, but independent self-hosts still require the runtime guard. Do
   not poll private servers from CI.

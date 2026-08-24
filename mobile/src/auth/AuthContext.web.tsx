@@ -176,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [api, clearSession]);
 
     const recheckClientCompatibility = useCallback(async () => {
-        await api.getClientConfig();
+        await api.getClientConfig({ cache: 'no-store' });
         return true;
     }, [api]);
 

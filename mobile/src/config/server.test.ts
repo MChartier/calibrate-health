@@ -123,7 +123,7 @@ describe('testCalibrateServerConnection', () => {
         }));
         expect(fetchImpl).toHaveBeenCalledWith(
             'https://calibrate.example/api/v1/client-config',
-            expect.objectContaining({ method: 'GET' })
+            expect.objectContaining({ method: 'GET', cache: 'no-store' })
         );
     });
 

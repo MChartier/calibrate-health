@@ -19,8 +19,9 @@ compatible. A newer client minor is incompatible with an older server minor beca
 missing. Patch drift remains compatible. This directional boundary protects a self-host whose deployment can lag OTA
 publication, even when the v1 wire changes are additive.
 
-The phone fetches uncached `/api/v1/client-config` before saving a server or refreshing a saved session. It refuses an
-unsupported API, an incompatible server contract version, or a native release older than
+The server returns `/api/v1/client-config` with `Cache-Control: no-store`. Before saving a server, refreshing a saved
+session, or manually rechecking compatibility, the phone also requests it with Fetch `cache: 'no-store'`. It refuses
+an unsupported API, an incompatible server contract version, or a native release older than
 `min_supported_mobile_version` with actionable guidance. Native phone and Wear HTTP
 requests also send `X-Calibrate-Client-Platform` plus `X-Calibrate-Client-Version`. The server compares the trusted
 bearer-session platform with those headers on every authenticated request and requires Wear identity during the
@@ -97,12 +98,12 @@ production approval. It does not wait for or trigger self-host deployment. The c
 read from `shared/release.json`.
 
 Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
-running: native startup compares its bundled expected server contract version with uncached client configuration
-before restoring the saved session or synchronizing. An incompatible update can therefore download and start before
-the runtime gate blocks normal authenticated use. Protected production approval is the current public-channel
-promotion control. A future automated gate may require an explicit deployment-readiness signal for the release
-owner's declared server rollout, but independent self-hosts still require the runtime guard. CI must not poll private
-servers.
+running: native startup uses the Fetch `cache: 'no-store'` request described above to compare its bundled expected
+server contract version before restoring the saved session or synchronizing. An incompatible update can therefore
+download and start before the runtime gate blocks normal authenticated use. Protected production approval is the
+current public-channel promotion control. A future automated gate may require an explicit deployment-readiness signal
+for the release owner's declared server rollout, but independent self-hosts still require the runtime guard. CI must
+not poll private servers.
 
 The preparation command is also available for isolated release tooling tests:
 

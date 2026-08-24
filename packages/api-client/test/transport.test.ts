@@ -49,6 +49,21 @@ test('default browser transport preserves the global fetch receiver', async (t) 
     assert.equal(observedReceiver, globalThis);
 });
 
+test('client configuration forwards an explicit cache policy', async () => {
+    let capturedInit: RequestInit | undefined;
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://calibrate.example',
+        fetchImpl: (async (_input, init) => {
+            capturedInit = init;
+            return new Response('{"api_version":1}', { status: 200 });
+        }) as typeof fetch
+    });
+
+    await client.getClientConfig({ cache: 'no-store' });
+
+    assert.equal(capturedInit?.cache, 'no-store');
+});
+
 test('request timeout reports a connection timeout rather than a caller abort', async () => {
     const client = new CalibrateApiClient({
         baseUrl: 'https://calibrate.example',
