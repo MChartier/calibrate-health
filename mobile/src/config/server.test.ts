@@ -186,18 +186,33 @@ describe('testCalibrateServerConnection', () => {
         expect(malformedLocalVersion).toEqual(expect.objectContaining({ ok: false, code: 'incompatible' }));
     });
 
-    it('allows minor and patch drift but rejects either major-version mismatch direction', async () => {
+    it('allows older client minors and patch drift but blocks newer client minors and major mismatches', async () => {
         const fetchImpl = jest.fn(async () => new Response(JSON.stringify(compatibleConfig), { status: 200 }));
         await expect(testCalibrateServerConnection('https://calibrate.example', {
             fetchImpl: fetchImpl as typeof fetch,
-            clientServerVersion: '1.99.99'
+            clientServerVersion: '1.1.99'
+        })).resolves.toEqual(expect.objectContaining({ ok: true }));
+        await expect(testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.2.99'
         })).resolves.toEqual(expect.objectContaining({ ok: true }));
 
-        const serverBehind = await testCalibrateServerConnection('https://calibrate.example', {
+        const serverBehindMinor = await testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch,
+            clientServerVersion: '1.3.0'
+        });
+        expect(serverBehindMinor).toEqual(expect.objectContaining({
+            ok: false,
+            code: 'incompatible',
+            message: 'This Calibrate update requires server 1.3.x or a newer 1.x release, but this server is 1.2.3. Update the server first.',
+            mismatch: expect.objectContaining({ status: 'server_behind' })
+        }));
+
+        const serverBehindMajor = await testCalibrateServerConnection('https://calibrate.example', {
             fetchImpl: fetchImpl as typeof fetch,
             clientServerVersion: '2.0.0'
         });
-        expect(serverBehind).toEqual(expect.objectContaining({
+        expect(serverBehindMajor).toEqual(expect.objectContaining({
             ok: false,
             code: 'incompatible',
             message: 'This Calibrate update requires server major version 2.x, but this server is 1.2.3. Update the server first.',

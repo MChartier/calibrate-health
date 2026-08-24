@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import {
-    CLIENT_SERVER_MAJOR_VERSION_STATUSES,
+    CLIENT_SERVER_COMPATIBILITY_STATUSES,
     formatMajorVersion,
-    type ClientServerMajorVersionMismatch
+    formatMinorVersion,
+    type ClientServerCompatibilityMismatch
 } from '@calibrate/shared/releaseCompatibility';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
@@ -11,7 +12,7 @@ import { CalibrateLogo } from './CalibrateLogo';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 
 type ClientServerIncompatibleScreenProps = {
-    mismatch: ClientServerMajorVersionMismatch;
+    mismatch: ClientServerCompatibilityMismatch;
     serverUrl: string;
     onRecheck: () => Promise<boolean>;
     onChooseServer: () => Promise<void>;
@@ -28,9 +29,10 @@ export const ClientServerIncompatibleScreen: React.FC<ClientServerIncompatibleSc
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [checking, setChecking] = useState(false);
     const [retryError, setRetryError] = useState<string | null>(null);
-    const serverBehind = mismatch.status === CLIENT_SERVER_MAJOR_VERSION_STATUSES.SERVER_BEHIND;
+    const serverBehind = mismatch.status === CLIENT_SERVER_COMPATIBILITY_STATUSES.SERVER_BEHIND;
     const clientMajorVersion = formatMajorVersion(mismatch.clientVersion) ?? mismatch.clientVersion;
     const serverMajorVersion = formatMajorVersion(mismatch.serverVersion) ?? mismatch.serverVersion;
+    const clientMinorVersion = formatMinorVersion(mismatch.clientVersion) ?? mismatch.clientVersion;
 
     const recheck = async () => {
         if (checking) return;
@@ -38,7 +40,7 @@ export const ClientServerIncompatibleScreen: React.FC<ClientServerIncompatibleSc
         setRetryError(null);
         try {
             const compatible = await onRecheck();
-            if (!compatible) setRetryError('The client and server still use incompatible major versions.');
+            if (!compatible) setRetryError('The client and server are still incompatible.');
         } catch {
             setRetryError('Could not reach this Calibrate server. Try again when the connection is available.');
         } finally {
@@ -47,11 +49,15 @@ export const ClientServerIncompatibleScreen: React.FC<ClientServerIncompatibleSc
     };
 
     let title = 'Client and server are incompatible';
-    let explanation = `The client and server must use the same major version. The client targets ${clientMajorVersion}, while the server reports ${serverMajorVersion}.`;
+    let explanation = `The client targets ${mismatch.clientVersion}, while the server reports ${mismatch.serverVersion}.`;
     if (serverBehind) {
         title = 'Server update required';
-        explanation = `This Calibrate update requires server major version ${clientMajorVersion}, but the selected server is ${mismatch.serverVersion}. Ask the server operator to update it before continuing.`;
-    } else if (mismatch.status === CLIENT_SERVER_MAJOR_VERSION_STATUSES.CLIENT_BEHIND) {
+        if (clientMajorVersion === serverMajorVersion) {
+            explanation = `This Calibrate update requires server ${clientMinorVersion} or a newer ${clientMajorVersion} release, but the selected server is ${mismatch.serverVersion}. Ask the server operator to update it before continuing.`;
+        } else {
+            explanation = `This Calibrate update requires server major version ${clientMajorVersion}, but the selected server is ${mismatch.serverVersion}. Ask the server operator to update it before continuing.`;
+        }
+    } else if (mismatch.status === CLIENT_SERVER_COMPATIBILITY_STATUSES.CLIENT_BEHIND) {
         title = 'Calibrate update required';
         explanation = `This client targets server major version ${clientMajorVersion}, but the selected server is ${mismatch.serverVersion}. Install a Calibrate update for major version ${serverMajorVersion} before continuing.`;
     }

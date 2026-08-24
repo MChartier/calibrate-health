@@ -13,12 +13,14 @@ Android `version_code` values for upgrades. A self-hosted server should support 
 correctly; routine feature additions should remain backward compatible.
 
 The Android native version remains independent from the server/web version. Each JavaScript bundle separately carries
-the `shared/release.json` server version whose contract it expects. Bundle and server versions must have equal major
-components; minor and patch differences remain compatible. This major-version boundary protects a
-self-host whose deployment can lag OTA publication, even when the v1 wire changes are additive.
+the `shared/release.json` server version whose contract it expects. Bundle and server major versions must match.
+Within a major, an older client minor remains compatible with a newer server minor because the server remains backward
+compatible. A newer client minor is incompatible with an older server minor because required additions may be
+missing. Patch drift remains compatible. This directional boundary protects a self-host whose deployment can lag OTA
+publication, even when the v1 wire changes are additive.
 
 The phone fetches uncached `/api/v1/client-config` before saving a server or refreshing a saved session. It refuses an
-unsupported API, a mismatched server major version, or a native release older than
+unsupported API, an incompatible server contract version, or a native release older than
 `min_supported_mobile_version` with actionable guidance. Native phone and Wear HTTP
 requests also send `X-Calibrate-Client-Platform` plus `X-Calibrate-Client-Version`. The server compares the trusted
 bearer-session platform with those headers on every authenticated request and requires Wear identity during the
@@ -27,9 +29,10 @@ one-time pairing exchange. Browser cookie sessions omit these headers and are un
 Expo retains its normal update lifecycle; the client does not veto an update download based on the selected server.
 If an incompatible bundle starts, the runtime preflight blocks normal authenticated use before session refresh and
 synchronization. Longer term, production/public channel promotion should require an explicit deployment-readiness
-signal for the matching server major version. Internal publication remains available for validation, and CI does not
-poll private self-hosted servers. That signal can attest readiness only for the release owner's declared server
-rollout; independently managed self-hosts still rely on the runtime mismatch guard.
+signal that the declared server rollout is compatible with the candidate bundle. Internal publication remains
+available for validation, and CI does not poll private self-hosted servers. That signal can attest readiness only for
+the release owner's declared server rollout; independently managed self-hosts still rely on the runtime mismatch
+guard.
 
 An incompatible native request receives HTTP 426 with `CLIENT_UPGRADE_REQUIRED`, the applicable minimum version, and
 a non-retryable user message. Phone keeps its credentials and offline outbox behind an update-required screen. Wear
@@ -94,11 +97,12 @@ production approval. It does not wait for or trigger self-host deployment. The c
 read from `shared/release.json`.
 
 Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
-running: native startup compares its bundled server major version with uncached client configuration before restoring
-the saved session or synchronizing. An incompatible update can therefore download and start before the runtime gate
-blocks normal authenticated use. Protected production approval is the current public-channel promotion control. A
-future automated gate may require an explicit deployment-readiness signal for the release owner's declared server
-rollout, but independent self-hosts still require the runtime guard. CI must not poll private servers.
+running: native startup compares its bundled expected server contract version with uncached client configuration
+before restoring the saved session or synchronizing. An incompatible update can therefore download and start before
+the runtime gate blocks normal authenticated use. Protected production approval is the current public-channel
+promotion control. A future automated gate may require an explicit deployment-readiness signal for the release
+owner's declared server rollout, but independent self-hosts still require the runtime guard. CI must not poll private
+servers.
 
 The preparation command is also available for isolated release tooling tests:
 

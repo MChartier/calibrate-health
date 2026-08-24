@@ -252,11 +252,13 @@ environment, so it remains blocked until a required reviewer verifies the intern
 deployment.
 
 Expo's automatic check and download lifecycle remains unchanged. When a downloaded bundle runs, the phone compares
-its bundled server major version with uncached `/api/v1/client-config` before restoring a session or synchronizing. A
-mismatch blocks normal authenticated use, but it does not prevent the update from downloading or starting. The
-protected production approval remains the operator control for public promotion. A future automated promotion rule
-can require an explicit deployment-readiness signal for the release owner's declared server rollout; independently
-managed self-hosts still rely on the runtime guard, and GitHub Actions must not poll private servers.
+its bundled expected server contract version with uncached `/api/v1/client-config` before restoring a session or
+synchronizing. Different majors block in either direction. Within a major, an older client minor remains compatible
+with a newer server minor, but a newer client minor blocks against an older server minor; patch drift remains
+compatible. The runtime block does not prevent the update from downloading or starting. The protected production
+approval remains the operator control for public promotion. A future automated promotion rule can require an explicit
+deployment-readiness signal for the release owner's declared server rollout; independently managed self-hosts still
+rely on the runtime guard, and GitHub Actions must not poll private servers.
 
 Before its first use:
 

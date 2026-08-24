@@ -33,12 +33,13 @@ native-build reference comes from the canonical manifest. OTA publishes internal
 production approval; it is never triggered by an ordinary `master` push.
 
 Expo's automatic check and download lifecycle remains unchanged. Once a bundle runs, the phone compares its bundled
-server major version with uncached client configuration before restoring a saved session or synchronizing. A mismatch
-blocks normal authenticated use without claiming to prevent the update from downloading or starting. Protected
-production approval is the current public-channel promotion control. A future automated promotion rule may require
-an explicit readiness signal for the release owner's declared server rollout, but it cannot attest every independent
-self-host. Live private-server polling is not part of the release workflow, so those installations retain the runtime
-guard.
+expected server contract version with uncached client configuration before restoring a saved session or synchronizing.
+Different majors block in either direction. Within a major, a client minor may trail the server minor but may not lead
+it; patch drift remains compatible. This runtime check does not claim to prevent the update from downloading or
+starting. Protected production approval is the current public-channel promotion control. A future automated promotion
+rule may require an explicit readiness signal for the release owner's declared server rollout, but it cannot attest
+every independent self-host. Live private-server polling is not part of the release workflow, so those installations
+retain the runtime guard.
 
 ## Consequences
 
@@ -53,4 +54,4 @@ guard.
 - OTA updates follow explicit release image publication, remain tied to the installed native build, and never publish
   merely because `master` advanced.
 - Protected production approval controls public promotion, while independently managed self-hosts remain protected
-  by the runtime major-version guard.
+  by the runtime directional contract-version guard.

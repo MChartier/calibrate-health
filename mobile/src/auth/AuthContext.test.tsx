@@ -73,7 +73,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
 
     it('retains tokens during a startup mismatch and resumes the saved session after recheck', async () => {
         mockGetClientConfig
-            .mockResolvedValueOnce({ server_version: '0.99.9' })
+            .mockResolvedValueOnce({ server_version: '1.1.9' })
             .mockResolvedValueOnce({ server_version: '1.99.9' });
         mockRefreshMobile.mockResolvedValue({
             access_token: 'next-access',
@@ -93,7 +93,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
         await waitFor(() => expect(result.current.isLoading).toBe(false));
         expect(result.current.clientServerIncompatibility).toEqual(expect.objectContaining({
             status: 'server_behind',
-            serverVersion: '0.99.9'
+            serverVersion: '1.1.9'
         }));
         expect(result.current.user).toBeNull();
         expect(mockRefreshMobile).not.toHaveBeenCalled();
