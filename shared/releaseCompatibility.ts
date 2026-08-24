@@ -1,28 +1,26 @@
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
-export const CLIENT_SERVER_RELEASE_STATUSES = {
+export const CLIENT_SERVER_MAJOR_VERSION_STATUSES = {
     COMPATIBLE: 'compatible',
     CLIENT_BEHIND: 'client_behind',
     SERVER_BEHIND: 'server_behind',
     INVALID: 'invalid'
 } as const;
 
-export type ClientServerReleaseStatus =
-    (typeof CLIENT_SERVER_RELEASE_STATUSES)[keyof typeof CLIENT_SERVER_RELEASE_STATUSES];
+export type ClientServerMajorVersionStatus =
+    (typeof CLIENT_SERVER_MAJOR_VERSION_STATUSES)[keyof typeof CLIENT_SERVER_MAJOR_VERSION_STATUSES];
 
-export type ClientServerReleaseMismatch = {
+export type ClientServerMajorVersionMismatch = {
     clientVersion: string;
     serverVersion: string;
-    status: Exclude<ClientServerReleaseStatus, 'compatible'>;
+    status: Exclude<ClientServerMajorVersionStatus, 'compatible'>;
 };
 
-type ReleaseLine = readonly [major: string, minor: string];
-
-function parseReleaseLine(version: unknown): ReleaseLine | null {
+function parseMajorVersion(version: unknown): string | null {
     if (typeof version !== 'string') return null;
     const match = version.match(SEMVER_PATTERN);
     if (!match) return null;
-    return [match[1], match[2]];
+    return match[1];
 }
 
 function compareNumericIdentifier(left: string, right: string): number {
@@ -33,35 +31,30 @@ function compareNumericIdentifier(left: string, right: string): number {
 
 function versionLabel(version: unknown): string {
     if (typeof version !== 'string') return 'unknown';
-    if (!parseReleaseLine(version) || version.length > 64) return 'invalid';
+    if (!parseMajorVersion(version) || version.length > 64) return 'invalid';
     return version;
 }
 
-/** Compare the server contract bundled into a client with the deployed server release line. */
-export function compareClientServerReleaseLines(
+/** Compare the client and server major versions that define their compatibility contract. */
+export function compareClientServerMajorVersions(
     clientVersion: unknown,
     serverVersion: unknown
-): ClientServerReleaseStatus {
-    const client = parseReleaseLine(clientVersion);
-    const server = parseReleaseLine(serverVersion);
-    if (!client || !server) return CLIENT_SERVER_RELEASE_STATUSES.INVALID;
-    if (client[0] === server[0] && client[1] === server[1]) {
-        return CLIENT_SERVER_RELEASE_STATUSES.COMPATIBLE;
-    }
-    const majorComparison = compareNumericIdentifier(client[0], server[0]);
-    const minorComparison = compareNumericIdentifier(client[1], server[1]);
-    if (majorComparison < 0 || (majorComparison === 0 && minorComparison < 0)) {
-        return CLIENT_SERVER_RELEASE_STATUSES.CLIENT_BEHIND;
-    }
-    return CLIENT_SERVER_RELEASE_STATUSES.SERVER_BEHIND;
+): ClientServerMajorVersionStatus {
+    const clientMajor = parseMajorVersion(clientVersion);
+    const serverMajor = parseMajorVersion(serverVersion);
+    if (!clientMajor || !serverMajor) return CLIENT_SERVER_MAJOR_VERSION_STATUSES.INVALID;
+    const majorComparison = compareNumericIdentifier(clientMajor, serverMajor);
+    if (majorComparison === 0) return CLIENT_SERVER_MAJOR_VERSION_STATUSES.COMPATIBLE;
+    if (majorComparison < 0) return CLIENT_SERVER_MAJOR_VERSION_STATUSES.CLIENT_BEHIND;
+    return CLIENT_SERVER_MAJOR_VERSION_STATUSES.SERVER_BEHIND;
 }
 
-export function getClientServerReleaseMismatch(
+export function getClientServerMajorVersionMismatch(
     clientVersion: unknown,
     serverVersion: unknown
-): ClientServerReleaseMismatch | null {
-    const status = compareClientServerReleaseLines(clientVersion, serverVersion);
-    if (status === CLIENT_SERVER_RELEASE_STATUSES.COMPATIBLE) return null;
+): ClientServerMajorVersionMismatch | null {
+    const status = compareClientServerMajorVersions(clientVersion, serverVersion);
+    if (status === CLIENT_SERVER_MAJOR_VERSION_STATUSES.COMPATIBLE) return null;
     return {
         clientVersion: versionLabel(clientVersion),
         serverVersion: versionLabel(serverVersion),
@@ -69,7 +62,7 @@ export function getClientServerReleaseMismatch(
     };
 }
 
-export function formatReleaseLine(version: unknown): string | null {
-    const releaseLine = parseReleaseLine(version);
-    return releaseLine ? `${releaseLine[0]}.${releaseLine[1]}.x` : null;
+export function formatMajorVersion(version: unknown): string | null {
+    const majorVersion = parseMajorVersion(version);
+    return majorVersion ? `${majorVersion}.x` : null;
 }

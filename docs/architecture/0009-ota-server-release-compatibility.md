@@ -1,4 +1,4 @@
-# ADR 0009: Block incompatible client/server release lines at runtime
+# ADR 0009: Block incompatible client/server major versions at runtime
 
 - Status: Accepted
 - Date: 2026-08-23
@@ -15,14 +15,14 @@ compatibility and cannot describe which server contract an OTA JavaScript bundle
 ## Decision
 
 The server version in `shared/release.json` is also the server contract version of the JavaScript bundle produced from
-that release. Client and server are compatible only when their semantic-version major and minor components match;
-patch, prerelease, and build-metadata differences within that release line are allowed.
+that release. Client and server are compatible when their semantic-version major components match; minor, patch,
+prerelease, and build-metadata differences within that major version are allowed.
 
 The server reports the canonical manifest version from uncached `GET /api/v1/client-config`. Native startup checks
 that value before refreshing a saved session or starting synchronization. Server selection runs the same check before
 sending credentials. A mismatch blocks normal authenticated runtime behind a dedicated screen while retaining
 credentials and queued offline changes. Rechecking after the server and client converge restores the retained session.
-This release-line check is separate from the existing minimum-native-version policy and its
+This major-version check is separate from the existing minimum-native-version policy and its
 `CLIENT_UPGRADE_REQUIRED` response.
 
 Expo's automatic and manual update behavior remains unchanged. The client does not inspect or veto an OTA candidate
@@ -30,7 +30,7 @@ based on the selected server, so this decision requires no native Expo configura
 build.
 
 Longer term, an incompatible update should be kept out of production/public channels. Promotion should require an
-explicit deployment-readiness signal for the matching server release line while internal publication remains
+explicit deployment-readiness signal for the matching server major version while internal publication remains
 available for validation. That signal covers the release owner's declared server rollout, not every independently
 managed self-host. CI must not infer readiness by polling a private or manually deployed self-host, so the runtime
 guard remains necessary.

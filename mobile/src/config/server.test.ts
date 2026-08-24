@@ -186,31 +186,32 @@ describe('testCalibrateServerConnection', () => {
         expect(malformedLocalVersion).toEqual(expect.objectContaining({ ok: false, code: 'incompatible' }));
     });
 
-    it('allows patch drift but rejects either major/minor mismatch direction', async () => {
+    it('allows minor and patch drift but rejects either major-version mismatch direction', async () => {
         const fetchImpl = jest.fn(async () => new Response(JSON.stringify(compatibleConfig), { status: 200 }));
         await expect(testCalibrateServerConnection('https://calibrate.example', {
             fetchImpl: fetchImpl as typeof fetch,
-            clientServerVersion: '1.2.99'
+            clientServerVersion: '1.99.99'
         })).resolves.toEqual(expect.objectContaining({ ok: true }));
 
         const serverBehind = await testCalibrateServerConnection('https://calibrate.example', {
             fetchImpl: fetchImpl as typeof fetch,
-            clientServerVersion: '1.3.0'
+            clientServerVersion: '2.0.0'
         });
         expect(serverBehind).toEqual(expect.objectContaining({
             ok: false,
             code: 'incompatible',
-            message: 'This Calibrate update requires server 1.3.x, but this server is 1.2.3. Update the server first.',
+            message: 'This Calibrate update requires server major version 2.x, but this server is 1.2.3. Update the server first.',
             mismatch: expect.objectContaining({ status: 'server_behind' })
         }));
 
         const clientBehind = await testCalibrateServerConnection('https://calibrate.example', {
             fetchImpl: fetchImpl as typeof fetch,
-            clientServerVersion: '1.1.9'
+            clientServerVersion: '0.99.9'
         });
         expect(clientBehind).toEqual(expect.objectContaining({
             ok: false,
             code: 'incompatible',
+            message: 'This server requires a Calibrate client for major version 1.x, but this client targets 0.x. Update Calibrate first.',
             mismatch: expect.objectContaining({ status: 'client_behind' })
         }));
     });

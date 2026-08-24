@@ -18,8 +18,8 @@ before starting normal synchronization and present an actionable upgrade message
 
 The native JavaScript bundle independently records the `shared/release.json` server version it expects. Before
 restoring a saved session or selecting a server, the phone compares that value with
-`client-config.server_version`. Matching major/minor components are required; patch differences remain compatible.
-This release-line rule does not replace API-version negotiation or the minimum native Android/Wear version floor.
+`client-config.server_version`. Matching major versions are required; minor and patch differences remain compatible.
+This major-version rule does not replace API-version negotiation or the minimum native Android/Wear version floor.
 
 The OpenAPI source is executable project state. Run `npm run api:generate` after contract edits and
 commit the generated types. `npm run api:contract:check` fails when generated types drift from the

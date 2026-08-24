@@ -14,11 +14,11 @@ correctly; routine feature additions should remain backward compatible.
 
 The Android native version remains independent from the server/web version. Each JavaScript bundle separately carries
 the `shared/release.json` server version whose contract it expects. Bundle and server versions must have equal major
-and minor components; patch differences remain compatible. This conservative release-line boundary protects a
+components; minor and patch differences remain compatible. This major-version boundary protects a
 self-host whose deployment can lag OTA publication, even when the v1 wire changes are additive.
 
 The phone fetches uncached `/api/v1/client-config` before saving a server or refreshing a saved session. It refuses an
-unsupported API, a mismatched server release line, or a native release older than
+unsupported API, a mismatched server major version, or a native release older than
 `min_supported_mobile_version` with actionable guidance. Native phone and Wear HTTP
 requests also send `X-Calibrate-Client-Platform` plus `X-Calibrate-Client-Version`. The server compares the trusted
 bearer-session platform with those headers on every authenticated request and requires Wear identity during the
@@ -27,7 +27,7 @@ one-time pairing exchange. Browser cookie sessions omit these headers and are un
 Expo retains its normal update lifecycle; the client does not veto an update download based on the selected server.
 If an incompatible bundle starts, the runtime preflight blocks normal authenticated use before session refresh and
 synchronization. Longer term, production/public channel promotion should require an explicit deployment-readiness
-signal for the matching server release line. Internal publication remains available for validation, and CI does not
+signal for the matching server major version. Internal publication remains available for validation, and CI does not
 poll private self-hosted servers. That signal can attest readiness only for the release owner's declared server
 rollout; independently managed self-hosts still rely on the runtime mismatch guard.
 
@@ -94,7 +94,7 @@ production approval. It does not wait for or trigger self-host deployment. The c
 read from `shared/release.json`.
 
 Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
-running: native startup compares its bundled server release line with uncached client configuration before restoring
+running: native startup compares its bundled server major version with uncached client configuration before restoring
 the saved session or synchronizing. An incompatible update can therefore download and start before the runtime gate
 blocks normal authenticated use. Protected production approval is the current public-channel promotion control. A
 future automated gate may require an explicit deployment-readiness signal for the release owner's declared server

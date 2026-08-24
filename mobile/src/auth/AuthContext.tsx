@@ -7,8 +7,8 @@ import {
 } from '@calibrate/api-client';
 import { MOBILE_DEVICE_PLATFORMS, type ClientUpgradeRequirement } from '@calibrate/shared';
 import {
-    getClientServerReleaseMismatch,
-    type ClientServerReleaseMismatch
+    getClientServerMajorVersionMismatch,
+    type ClientServerMajorVersionMismatch
 } from '@calibrate/shared/releaseCompatibility';
 import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '@calibrate/shared/legalVersions';
 import * as Application from 'expo-application';
@@ -52,7 +52,7 @@ type AuthContextValue = {
     isLoading: boolean;
     authError: string | null;
     clientUpgradeRequired: ClientUpgradeRequirement | null;
-    clientServerIncompatibility: ClientServerReleaseMismatch | null;
+    clientServerIncompatibility: ClientServerMajorVersionMismatch | null;
     accountDeletionCleanupNotice: AccountDeletionCleanupNotice | null;
     serverConnection: ServerConnectionState;
     updateCurrentUser: (user: UserClientPayload) => void;
@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [authError, setAuthError] = useState<string | null>(null);
     const [clientUpgradeRequired, setClientUpgradeRequired] = useState<ClientUpgradeRequirement | null>(null);
     const [clientServerIncompatibility, setClientServerIncompatibility] =
-        useState<ClientServerReleaseMismatch | null>(null);
+        useState<ClientServerMajorVersionMismatch | null>(null);
     const [accountDeletionCleanupNotice, setAccountDeletionCleanupNotice] =
         useState<AccountDeletionCleanupNotice | null>(null);
     const [serverConnection, setServerConnection] = useState<ServerConnectionState>(INITIAL_SERVER_CONNECTION_STATE);
@@ -224,12 +224,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
                 const config = await compatibilityClient.getClientConfig();
                 if (!isMounted) return;
-                const releaseMismatch = getClientServerReleaseMismatch(
+                const majorVersionMismatch = getClientServerMajorVersionMismatch(
                     MOBILE_SERVER_RELEASE_VERSION,
                     config.server_version
                 );
-                if (releaseMismatch) {
-                    setClientServerIncompatibility(releaseMismatch);
+                if (majorVersionMismatch) {
+                    setClientServerIncompatibility(majorVersionMismatch);
                     return;
                 }
 
@@ -279,12 +279,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const recheckClientCompatibility = useCallback(async (): Promise<boolean> => {
         try {
             const config = await api.getClientConfig();
-            const releaseMismatch = getClientServerReleaseMismatch(
+            const majorVersionMismatch = getClientServerMajorVersionMismatch(
                 MOBILE_SERVER_RELEASE_VERSION,
                 config.server_version
             );
-            if (releaseMismatch) {
-                setClientServerIncompatibility(releaseMismatch);
+            if (majorVersionMismatch) {
+                setClientServerIncompatibility(majorVersionMismatch);
                 return false;
             }
             if (!user && refreshTokenRef.current) {

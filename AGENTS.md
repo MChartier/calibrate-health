@@ -272,7 +272,7 @@ UI code style:
   production approval. It does not wait for or trigger self-host deployment. The native-build reference comes from
   `shared/release.json`.
 - Expo's automatic check and download lifecycle remains native-owned. Client code compares only the running bundle's
-  server release line with client configuration at startup and server selection; do not add candidate-manifest
+  server major version with client configuration at startup and server selection; do not add candidate-manifest
   inspection or a download/restart veto.
 - Protected production approval is the current public-channel promotion gate. A future explicit readiness signal may
   cover the release owner's declared server rollout, but independent self-hosts still require the runtime guard. Do

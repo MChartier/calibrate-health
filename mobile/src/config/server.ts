@@ -2,10 +2,10 @@ import { Platform } from 'react-native';
 import type { ClientConfigResponse } from '@calibrate/api-client';
 import { compareClientVersions } from '@calibrate/shared/clientCompatibility';
 import {
-    CLIENT_SERVER_RELEASE_STATUSES,
-    formatReleaseLine,
-    getClientServerReleaseMismatch,
-    type ClientServerReleaseMismatch
+    CLIENT_SERVER_MAJOR_VERSION_STATUSES,
+    formatMajorVersion,
+    getClientServerMajorVersionMismatch,
+    type ClientServerMajorVersionMismatch
 } from '@calibrate/shared/releaseCompatibility';
 import { CALIBRATE_HOSTED_ORIGIN } from '@calibrate/shared/product';
 import release from '../../../shared/release.json';
@@ -33,7 +33,7 @@ export type ServerConnectionResult =
           url: string | null;
           code: 'invalid_url' | 'unreachable' | 'not_calibrate' | 'incompatible';
           message: string;
-          mismatch?: ClientServerReleaseMismatch;
+          mismatch?: ClientServerMajorVersionMismatch;
       };
 
 export type ServerConnectionState = {
@@ -253,16 +253,16 @@ export async function testCalibrateServerConnection(
 
     const clientServerVersion = options.clientServerVersion;
     const mismatch = clientServerVersion
-        ? getClientServerReleaseMismatch(clientServerVersion, body.server_version)
+        ? getClientServerMajorVersionMismatch(clientServerVersion, body.server_version)
         : null;
     if (mismatch) {
-        const clientLine = formatReleaseLine(mismatch.clientVersion) ?? mismatch.clientVersion;
-        const serverLine = formatReleaseLine(mismatch.serverVersion) ?? mismatch.serverVersion;
+        const clientMajorVersion = formatMajorVersion(mismatch.clientVersion) ?? mismatch.clientVersion;
+        const serverMajorVersion = formatMajorVersion(mismatch.serverVersion) ?? mismatch.serverVersion;
         let message = `Calibrate client ${mismatch.clientVersion} is incompatible with server ${mismatch.serverVersion}.`;
-        if (mismatch.status === CLIENT_SERVER_RELEASE_STATUSES.SERVER_BEHIND) {
-            message = `This Calibrate update requires server ${clientLine}, but this server is ${mismatch.serverVersion}. Update the server first.`;
-        } else if (mismatch.status === CLIENT_SERVER_RELEASE_STATUSES.CLIENT_BEHIND) {
-            message = `This server requires a Calibrate client from release line ${serverLine}, but this client targets ${clientLine}. Update Calibrate first.`;
+        if (mismatch.status === CLIENT_SERVER_MAJOR_VERSION_STATUSES.SERVER_BEHIND) {
+            message = `This Calibrate update requires server major version ${clientMajorVersion}, but this server is ${mismatch.serverVersion}. Update the server first.`;
+        } else if (mismatch.status === CLIENT_SERVER_MAJOR_VERSION_STATUSES.CLIENT_BEHIND) {
+            message = `This server requires a Calibrate client for major version ${serverMajorVersion}, but this client targets ${clientMajorVersion}. Update Calibrate first.`;
         }
         return {
             ok: false,
