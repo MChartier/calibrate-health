@@ -15,7 +15,6 @@ import { DayStatusCard, useFoodDayStatus } from '../../../src/components/FoodTra
 import { LogContentSkeleton } from '../../../src/components/LogContentSkeleton';
 import { TabScreen } from '../../../src/components/TabScreen';
 import { TodayWeightCard } from '../../../src/components/TodayWeightCard';
-import { WeightEntrySheet } from '../../../src/components/WeightEntrySheet';
 import { useAuth } from '../../../src/auth/AuthContext';
 import { useSharedLogDateNavigation } from '../../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
@@ -41,7 +40,6 @@ export default function TodayScreen() {
     const { request: addFoodRequest, consumeRequest: consumeAddFoodRequest } = useAddFoodRequest();
     const selectedDate = dateNavigation.selectedDate;
     const [addFoodMeal, setAddFoodMeal] = useState<MealPeriod | null | undefined>(undefined);
-    const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
 
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
@@ -99,13 +97,17 @@ export default function TodayScreen() {
     const planIsAvailable = planStatus === 'available' && !hasPendingWeightChange;
     const target = planIsAvailable ? calorieSummary?.dailyCalorieTarget ?? null : null;
     const planPresentation = getCaloriePlanPresentation(calorieSummary?.planReasonCode, planStatus);
+    function openWeightEntry() {
+        router.push({ pathname: '/weight', params: { date: selectedDate } });
+    }
+
     function handlePlanAction() {
         if (planPresentation.actionKind === 'weight') {
-            setIsWeightSheetOpen(true);
+            openWeightEntry();
             return;
         }
         if (planPresentation.actionKind === 'profile') {
-            router.push(canonicalPathForRoute('settings-profile') as Href);
+            router.push(canonicalPathForRoute('profile-details') as Href);
             return;
         }
         router.push({
@@ -204,7 +206,7 @@ export default function TodayScreen() {
                                 metric={selectedDateMetric}
                                 weightUnit={user?.weight_unit}
                                 isToday={isToday}
-                                onPress={() => setIsWeightSheetOpen(true)}
+                                onPress={openWeightEntry}
                                 compact
                             />
                         </View>
@@ -225,11 +227,6 @@ export default function TodayScreen() {
                 initialMeal={addFoodMeal}
                 returnTo="today"
                 onClose={() => setAddFoodMeal(undefined)}
-            />
-            <WeightEntrySheet
-                visible={isWeightSheetOpen}
-                date={selectedDate}
-                onClose={() => setIsWeightSheetOpen(false)}
             />
         </TabScreen>
     );

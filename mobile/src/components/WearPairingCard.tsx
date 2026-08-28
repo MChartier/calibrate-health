@@ -127,7 +127,7 @@ export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {
                 title="Galaxy Watch"
                 description="Pair the signed Wear OS companion without copying your phone session or password."
             />}
-            <View style={styles.statusPanel}>
+            <View accessibilityLiveRegion="polite" style={styles.statusPanel}>
                 <AppText style={styles.status}>{status}</AppText>
                 {!embedded && <AppText variant="caption">
                     Selected server: {serverUrl}. Changing the phone server never retargets an already-paired watch.

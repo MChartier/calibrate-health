@@ -84,4 +84,35 @@ describe('AccountSessionsPanel', () => {
         });
         expect(onRevokeOthers).toHaveBeenCalledTimes(1);
     });
+
+    it('keeps a revoke failure reachable inside the open confirmation', async () => {
+        const onRevoke = jest.fn().mockRejectedValue(new Error('offline'));
+        const onRevokeOthers = jest.fn().mockResolvedValue(undefined);
+        const screen = render(
+            <AccountSessionsPanel
+                sessions={sessions}
+                revokingOthers={false}
+                onRevoke={onRevoke}
+                onRevokeOthers={onRevokeOthers}
+            />
+        );
+
+        fireEvent.press(screen.getByTestId('settings-session-revoke-mobile_remote'));
+        await act(async () => {
+            fireEvent.press(screen.getByTestId('settings-session-confirm'));
+        });
+        screen.rerender(
+            <AccountSessionsPanel
+                sessions={sessions}
+                revokingOthers={false}
+                errorMessage="Unable to revoke that signed-in session."
+                onRevoke={onRevoke}
+                onRevokeOthers={onRevokeOthers}
+            />
+        );
+
+        expect(screen.getByText('Unable to revoke that signed-in session.').props.accessibilityRole)
+            .toBe('alert');
+        expect(screen.getByTestId('settings-session-confirmation')).toBeTruthy();
+    });
 });
