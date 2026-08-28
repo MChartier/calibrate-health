@@ -19,6 +19,10 @@ const GAUGE_STROKE = 9;
 // Today gives the actionable percentage more prominence while keeping the card compact.
 const COMPACT_GAUGE_SIZE = 88;
 const COMPACT_GAUGE_STROKE = 9;
+// Keep the supported 320px phone layout horizontal; narrower or large-text layouts stack safely.
+const HERO_STACK_BREAKPOINT = 320;
+// Reflow before accessibility-sized copy competes with the fixed gauge width.
+const LARGE_TEXT_STACK_FONT_SCALE = 1.6;
 
 function getBalanceTone(remaining: number | null): 'primary' | 'danger' {
     if (remaining === null) return 'primary';
@@ -51,7 +55,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     const balanceValue = remaining === null ? '-' : formatNumber(Math.abs(remaining), 0);
     const balanceLabel = remaining === null ? unavailableLabel : isOver ? 'kcal over target' : 'kcal remaining';
     const balanceSummary = remaining === null ? balanceLabel : `${balanceValue} ${balanceLabel}`;
-    const stackHero = width < 360 || fontScale >= 1.6;
+    const stackHero = width < HERO_STACK_BREAKPOINT || fontScale >= LARGE_TEXT_STACK_FONT_SCALE;
 
     return (
         <AppCard
@@ -63,7 +67,10 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
                 : `Daily balance. ${balanceSummary}. ${formatNumber(totalCalories, 0)} calories logged.`}
             style={style}
         >
-            <View style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}>
+            <View
+                testID="calorie-balance-hero"
+                style={[styles.hero, compact && styles.heroCompact, stackHero && styles.heroStacked]}
+            >
                 {progressValue !== null && (
                     <CalorieGauge value={progressValue} tone={tone} compact={compact} colors={colors} styles={styles} />
                 )}
@@ -157,7 +164,7 @@ function createStyles(colors: AppThemeColors) {
     },
     heroCompact: {
         alignItems: 'flex-start',
-        gap: spacing.lg
+        gap: spacing.md
     },
     heroStacked: {
         flexDirection: 'column',

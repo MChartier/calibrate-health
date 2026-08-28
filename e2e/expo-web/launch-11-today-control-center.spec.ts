@@ -258,6 +258,34 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
   if (testInfo.project.name === 'compact-phone-chrome') {
     await page.setViewportSize({ width: 320, height: 568 });
     await expectUnderTargetDashboard(page);
+
+    const balanceCard = page.getByLabel(/^Daily balance\./);
+    const balanceGauge = balanceCard.locator('svg').first();
+    const balanceHeading = balanceCard.getByRole('heading', { name: 'Daily balance', exact: true });
+    const balanceValue = page.getByTestId('calorie-balance-value');
+    const [gaugeBox, headingBox, valueBox] = await Promise.all([
+      balanceGauge.boundingBox(),
+      balanceHeading.boundingBox(),
+      balanceValue.boundingBox(),
+    ]);
+    if (!gaugeBox || !headingBox || !valueBox) {
+      throw new Error('Daily balance hero geometry was not measurable at 320px.');
+    }
+    const gaugeRight = gaugeBox.x + gaugeBox.width;
+    const gaugeBottom = gaugeBox.y + gaugeBox.height;
+    const copyTop = Math.min(headingBox.y, valueBox.y);
+    const copyBottom = Math.max(headingBox.y + headingBox.height, valueBox.y + valueBox.height);
+    expect(Math.min(gaugeBottom, copyBottom) - Math.max(gaugeBox.y, copyTop)).toBeGreaterThan(0);
+    expect(Math.min(headingBox.x, valueBox.x)).toBeGreaterThanOrEqual(gaugeRight);
+
+    const valueLineTops = await balanceValue.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return [...new Set(Array.from(range.getClientRects())
+        .filter((rect) => rect.width > 0 && rect.height > 0)
+        .map((rect) => Math.round(rect.top)))];
+    });
+    expect(valueLineTops).toHaveLength(1);
     await expectNoHorizontalOverflow(page);
     await captureEvidence(page, testInfo);
 
