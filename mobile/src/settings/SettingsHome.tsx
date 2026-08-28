@@ -6,7 +6,7 @@ import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
 
-export const SETTINGS_CATEGORY_IDS = [
+const SETTINGS_CATEGORY_IDS = [
     'profile',
     'security',
     'connections',
@@ -60,7 +60,7 @@ export function shouldShowSettingsResourceStatus(state: AsyncResourceState, isWe
     return state.kind !== ASYNC_RESOURCE_STATES.CONTENT && state.kind !== ASYNC_RESOURCE_STATES.EMPTY;
 }
 
-export function SettingsAccountSummary({
+function SettingsAccountSummary({
     email,
     profileImageUrl,
     goalSummary
