@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, View, useWindowDimensions, type ViewProps } from
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
-import { AppCard } from './AppCard';
 import { AppText } from './AppText';
 import { type AppTheme, useAppTheme } from '../theme';
 import { formatCalories, formatMealPeriod } from '../utils/format';
@@ -78,7 +77,7 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
     }
 
     return (
-        <AppCard {...props} style={style}>
+        <View {...props} style={[styles.content, style]}>
             <View style={styles.headerRow}>
                 <View style={styles.headerText}>
                     <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>
@@ -119,7 +118,7 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
                     />
                 ))}
             </View>
-        </AppCard>
+        </View>
     );
 };
 
@@ -281,10 +280,14 @@ const FoodEntryRow: React.FC<FoodEntryRowProps> = ({ entry, disabled, onEditEntr
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
+        content: {
+            width: '100%',
+            gap: theme.spacing.md
+        },
+        headerRow: {
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
         gap: theme.spacing.md
     },
     headerText: {

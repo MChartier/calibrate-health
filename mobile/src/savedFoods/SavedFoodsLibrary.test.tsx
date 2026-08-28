@@ -1,10 +1,12 @@
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
 import {
     getSavedFoodsLibraryQueryKey,
     SavedFoodsLibrary
 } from './SavedFoodsLibrary';
+import { spacing } from '../theme';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -69,8 +71,17 @@ describe('SavedFoodsLibrary', () => {
     it('distinguishes initial loading from a verified empty library and exposes explicit create actions', async () => {
         const screen = renderLibrary();
 
-        expect(screen.getByTestId('saved-foods-loading')).toBeTruthy();
-        await waitFor(() => expect(screen.getByTestId('saved-foods-empty')).toBeTruthy());
+        const loadingStyle = StyleSheet.flatten(screen.getByTestId('saved-foods-loading').props.style);
+        expect(loadingStyle).toEqual(expect.objectContaining({ width: '100%', gap: spacing.md }));
+        expect(loadingStyle).not.toHaveProperty('padding');
+        expect(loadingStyle).not.toHaveProperty('borderRadius');
+
+        await waitFor(() => {
+            const emptyStyle = StyleSheet.flatten(screen.getByTestId('saved-foods-empty').props.style);
+            expect(emptyStyle).toEqual(expect.objectContaining({ width: '100%', gap: spacing.md }));
+            expect(emptyStyle).not.toHaveProperty('padding');
+            expect(emptyStyle).not.toHaveProperty('borderRadius');
+        });
         expect(screen.getByText('No saved foods yet. Create a food or recipe to reuse it when logging.')).toBeTruthy();
 
         fireEvent.press(screen.getByRole('button', { name: 'Create food' }));

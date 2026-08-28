@@ -1,11 +1,11 @@
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { AppButton } from '../src/components/AppButton';
-import { AppCard } from '../src/components/AppCard';
 import { AppText } from '../src/components/AppText';
 import { PageHeader } from '../src/components/PageHeader';
 import { Screen } from '../src/components/Screen';
 import { useAuth } from '../src/auth/AuthContext';
+import { spacing } from '../src/theme';
 
 export default function HealthConnectPrivacyScreen() {
     const { serverUrl } = useAuth();
@@ -27,7 +27,7 @@ export default function HealthConnectPrivacyScreen() {
                 description="Clear, read-only access that stays under your control."
                 onBack={() => router.back()}
             />
-            <AppCard>
+            <View style={styles.content}>
                 <AppText variant="subtitle">What Calibrate requests</AppText>
                 <AppText>
                     Calibrate can read steps, active calories, total calories, and exercise sessions. Weight is separate and off by default until you explicitly enable it.
@@ -53,7 +53,14 @@ export default function HealthConnectPrivacyScreen() {
                     accessibilityHint="Opens the complete privacy policy hosted by your selected Calibrate server."
                     onPress={() => void openCompletePrivacyPolicy()}
                 />
-            </AppCard>
+            </View>
         </Screen>
     );
 }
+
+const styles = StyleSheet.create({
+    content: {
+        width: '100%',
+        gap: spacing.md
+    }
+});

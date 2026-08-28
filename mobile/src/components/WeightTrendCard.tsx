@@ -12,7 +12,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Circle, Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
 import type { SvgProps } from 'react-native-svg';
 import { useQuery } from '@tanstack/react-query';
-import { AppCard } from './AppCard';
 import { AppChip } from './AppChip';
 import { AppText } from './AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
@@ -251,7 +250,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     }
 
     return (
-        <AppCard {...props} style={[styles.card, style]}>
+        <View {...props} style={[styles.content, style]}>
             {(title || description) && <SectionHeader title={title ?? ''} description={description} />}
             <View style={styles.rangeRow}>
                 {RANGE_OPTIONS.map((option) => (
@@ -512,7 +511,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             )}
             </AsyncStateBoundary>
             {footer}
-        </AppCard>
+        </View>
     );
 };
 
@@ -651,7 +650,7 @@ const TrendChartLegend: React.FC = () => {
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-    card: { width: '100%' },
+    content: { width: '100%', gap: spacing.md },
     rangeRow: { flexDirection: 'row', gap: spacing.sm },
     rangeChip: { flex: 1, paddingHorizontal: spacing.xs },
     chartShell: {

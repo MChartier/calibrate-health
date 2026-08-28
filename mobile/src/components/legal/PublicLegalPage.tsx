@@ -2,7 +2,6 @@ import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Link, router, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../auth/AuthContext';
-import { AppCard } from '../AppCard';
 import { AppIconButton } from '../AppIconButton';
 import { AppText } from '../AppText';
 import { CalibrateLogo } from '../CalibrateLogo';
@@ -107,61 +106,59 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links, ac
                     </View>
                 ) : null}
 
-                <AppCard testID="legal-page">
-                    <View style={styles.content}>
-                        <View style={styles.section}>
-                            {!inApp ? (
-                                <AppText
-                                    nativeID="route-focus-title"
-                                    accessibilityRole="header"
-                                    aria-level={1}
-                                    variant="title"
-                                >
-                                    {title}
-                                </AppText>
-                            ) : null}
-                            {lastUpdated && <AppText variant="label">Last updated: {lastUpdated}</AppText>}
-                            {intro.map((paragraph) => (
+                <View testID="legal-page" style={styles.content}>
+                    <View style={styles.section}>
+                        {!inApp ? (
+                            <AppText
+                                nativeID="route-focus-title"
+                                accessibilityRole="header"
+                                aria-level={1}
+                                variant="title"
+                            >
+                                {title}
+                            </AppText>
+                        ) : null}
+                        {lastUpdated && <AppText variant="label">Last updated: {lastUpdated}</AppText>}
+                        {intro.map((paragraph) => (
+                            <AppText key={paragraph}>{paragraph}</AppText>
+                        ))}
+                    </View>
+
+                    {actions}
+
+                    {sections.map((section) => (
+                        <View
+                            key={section.title}
+                            style={[styles.section, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}
+                        >
+                            <AppText accessibilityRole="header" aria-level={2} variant="subtitle">{section.title}</AppText>
+                            {section.paragraphs?.map((paragraph) => (
                                 <AppText key={paragraph}>{paragraph}</AppText>
                             ))}
-                        </View>
-
-                        {actions}
-
-                        {sections.map((section) => (
-                            <View
-                                key={section.title}
-                                style={[styles.section, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}
-                            >
-                                <AppText accessibilityRole="header" aria-level={2} variant="subtitle">{section.title}</AppText>
-                                {section.paragraphs?.map((paragraph) => (
-                                    <AppText key={paragraph}>{paragraph}</AppText>
-                                ))}
-                                {section.bullets?.map((bullet) => (
-                                    <View key={bullet} style={styles.bulletRow}>
-                                        <AppText accessibilityElementsHidden importantForAccessibility="no">-</AppText>
-                                        <AppText style={styles.bulletCopy}>{bullet}</AppText>
-                                    </View>
-                                ))}
-                            </View>
-                        ))}
-
-                        <View style={[styles.links, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}>
-                            {links.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href as Href}
-                                    style={StyleSheet.flatten([
-                                        styles.link,
-                                        { borderColor: colors.outline, color: colors.primary }
-                                    ])}
-                                >
-                                    {link.label}
-                                </Link>
+                            {section.bullets?.map((bullet) => (
+                                <View key={bullet} style={styles.bulletRow}>
+                                    <AppText accessibilityElementsHidden importantForAccessibility="no">-</AppText>
+                                    <AppText style={styles.bulletCopy}>{bullet}</AppText>
+                                </View>
                             ))}
                         </View>
+                    ))}
+
+                    <View style={[styles.links, styles.dividedSection, { borderTopColor: colors.outlineVariant }]}>
+                        {links.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href as Href}
+                                style={StyleSheet.flatten([
+                                    styles.link,
+                                    { borderColor: colors.outline, color: colors.primary }
+                                ])}
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
                     </View>
-                </AppCard>
+                </View>
             </Screen>
         </View>
     );

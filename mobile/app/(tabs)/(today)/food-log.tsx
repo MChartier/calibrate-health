@@ -9,7 +9,6 @@ import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../../src/components/AddFoodSheet';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
 import { AppButton } from '../../../src/components/AppButton';
-import { AppCard } from '../../../src/components/AppCard';
 import { AppText } from '../../../src/components/AppText';
 import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
 import {
@@ -39,7 +38,7 @@ import { useOfflineOutbox } from '../../../src/offline/provider';
 import { triggerHapticFeedback } from '../../../src/utils/haptics';
 import { formatDateOnlyForDisplay } from '../../../src/utils/dates';
 import { MEAL_SELECT_OPTIONS } from '../../../src/utils/meals';
-import { type AppTheme, useAppTheme } from '../../../src/theme';
+import { spacing, type AppTheme, useAppTheme } from '../../../src/theme';
 import { getFoodQuantityStep, MINIMUM_FOOD_QUANTITY } from '../../../src/food/quantityInput';
 import { parseDecimalInput } from '../../../src/utils/numericInput';
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
@@ -470,7 +469,7 @@ export default function FoodLogScreen() {
 }
 
 const FoodLogSkeleton: React.FC = () => (
-    <AppCard testID="food-log-loading">
+    <View testID="food-log-loading" style={skeletonStyles.content}>
         <SkeletonBlock width="28%" height={30} />
         {[0, 1, 2, 3, 4, 5].map((row) => (
             <View key={row} style={skeletonStyles.row}>
@@ -478,10 +477,14 @@ const FoodLogSkeleton: React.FC = () => (
                 <SkeletonBlock width={72} height={20} />
             </View>
         ))}
-    </AppCard>
+    </View>
 );
 
 const skeletonStyles = StyleSheet.create({
+    content: {
+        width: '100%',
+        gap: spacing.md
+    },
     row: {
         minHeight: 48,
         flexDirection: 'row',

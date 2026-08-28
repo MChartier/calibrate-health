@@ -1,6 +1,8 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import { FoodLogTimelineCard } from './FoodLogTimelineCard';
+import { spacing } from '../theme';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 
@@ -26,6 +28,23 @@ const LEGACY_GRAMS_ENTRY: FoodLogEntry = {
 };
 
 describe('FoodLogTimelineCard', () => {
+    it('uses the detailed page pane directly instead of adding a second card surface', () => {
+        const screen = render(
+            <FoodLogTimelineCard
+                testID="food-log-content"
+                entries={[]}
+                onEditEntry={jest.fn()}
+                onDeleteEntry={jest.fn()}
+            />
+        );
+        const style = StyleSheet.flatten(screen.getByTestId('food-log-content').props.style);
+
+        expect(style).toEqual(expect.objectContaining({ width: '100%', gap: spacing.md }));
+        expect(style).not.toHaveProperty('padding');
+        expect(style).not.toHaveProperty('borderRadius');
+        expect(style).not.toHaveProperty('backgroundColor');
+    });
+
     it('omits unlogged meals and leaves the detailed page add-food entry point to its FAB', () => {
         const { queryByLabelText, queryByText, getByLabelText, getByText } = render(
             <FoodLogTimelineCard
