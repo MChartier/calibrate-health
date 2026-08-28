@@ -221,6 +221,54 @@ test('dashboard cards share one heading rhythm and separate primary and secondar
   await expectInside(page.getByRole('main'), page.getByRole('heading', { name: 'Daily balance', exact: true }));
 });
 
+test('Progress card headings share the compact top inset with wrapped trend metadata', async ({ page, ux }, testInfo) => {
+  test.skip(
+    !['compact-phone-chrome', 'desktop-chrome'].includes(testInfo.project.name),
+    'Progress heading geometry is covered at the compact phone and desktop cross-cuts.',
+  );
+  if (testInfo.project.name === 'desktop-chrome') {
+    await page.setViewportSize({ width: 1_024, height: 1_000 });
+  }
+  await ux.install('populated');
+  await page.goto('/progress');
+
+  const snapshotCard = page.getByTestId('progress-snapshot-card');
+  const trendCard = page.getByTestId('weight-trend-preview-card');
+  const snapshotHeading = page.getByRole('heading', { name: 'Snapshot', exact: true });
+  const trendHeading = page.getByRole('heading', { name: 'Trend', exact: true });
+  await expect(snapshotHeading).toBeVisible();
+  await expect(trendHeading).toBeVisible();
+
+  const [snapshotCardBox, trendCardBox, snapshotHeadingBox, trendHeadingBox] = await Promise.all([
+    snapshotCard.boundingBox(),
+    trendCard.boundingBox(),
+    snapshotHeading.boundingBox(),
+    trendHeading.boundingBox(),
+  ]);
+  expect(snapshotCardBox).not.toBeNull();
+  expect(trendCardBox).not.toBeNull();
+  expect(snapshotHeadingBox).not.toBeNull();
+  expect(trendHeadingBox).not.toBeNull();
+
+  const snapshotTopInset = snapshotHeadingBox!.y - snapshotCardBox!.y;
+  const trendTopInset = trendHeadingBox!.y - trendCardBox!.y;
+  const compactInset = calibrateDesignTokens.spacing.medium;
+  expect(Math.abs(snapshotTopInset - trendTopInset)).toBeLessThanOrEqual(1);
+  for (const topInset of [snapshotTopInset, trendTopInset]) {
+    expect(topInset).toBeGreaterThanOrEqual(compactInset);
+    expect(topInset).toBeLessThanOrEqual(compactInset + 2);
+  }
+
+  if (testInfo.project.name === 'compact-phone-chrome') {
+    const trendMetadata = page.getByText(/^Current underlying trend: .* \| As of /);
+    const metadataGeometry = await trendMetadata.evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+    }));
+    expect(metadataGeometry.height).toBeGreaterThan(metadataGeometry.lineHeight + 1);
+  }
+});
+
 test('informational projection and selected trend point remain distinct from caution in light and dark', async ({ page, ux }, testInfo) => {
   if (testInfo.project.name === 'desktop-chrome') {
     await page.setViewportSize({ width: 1_024, height: 1_000 });

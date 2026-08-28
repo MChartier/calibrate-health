@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react-native';
+import { StyleSheet, View } from 'react-native';
 import { AppButton } from './AppButton';
 import { CardHeader } from './CardHeader';
 import { themes } from '../theme';
@@ -11,7 +12,11 @@ describe('CardHeader', () => {
                 title="Trend"
                 metadata="Current trend: 79.2 kg"
                 headingTestID="heading-line"
-                action={<AppButton title="Details" variant="ghost" />}
+                action={(
+                    <View testID="card-header-action-content">
+                        <AppButton title="Details" variant="ghost" />
+                    </View>
+                )}
             />
         );
 
@@ -33,8 +38,14 @@ describe('CardHeader', () => {
             alignItems: 'baseline',
             flexWrap: 'wrap'
         });
-        expect(screen.getByTestId('card-header')).toHaveStyle({ minHeight: 22 });
-        expect(screen.getByRole('button', { name: 'Details' })).toHaveStyle({ minHeight: 48 });
+        expect(screen.getByTestId('card-header')).toHaveStyle({
+            minHeight: 22,
+            alignItems: 'flex-start'
+        });
+        const detailsButton = screen.getByRole('button', { name: 'Details' });
+        expect(detailsButton).toHaveStyle({ minHeight: 48 });
+        const actionContent = screen.getByTestId('card-header-action-content');
+        expect(StyleSheet.flatten(actionContent.parent?.props.style)?.minHeight).toBeUndefined();
     });
 
     it('supports comfortable density and explicit heading levels', () => {
@@ -42,7 +53,10 @@ describe('CardHeader', () => {
             <CardHeader density="comfortable" headingLevel={3} testID="card-header" title="Security" />
         );
 
-        expect(screen.getByTestId('card-header')).toHaveStyle({ minHeight: 48 });
+        expect(screen.getByTestId('card-header')).toHaveStyle({
+            minHeight: 48,
+            alignItems: 'center'
+        });
         expect(screen.getByRole('header', { name: 'Security' }).props['aria-level']).toBe(3);
     });
 });

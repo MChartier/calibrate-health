@@ -4,10 +4,10 @@ import { spacing, type AppTheme, useAppTheme } from '../theme';
 
 export type CardDensity = 'compact' | 'comfortable';
 
-// Shared dashboard insets keep header alignment stable across static and navigable cards.
+// Uniform compact insets keep static and navigable card content aligned without wasting edge space.
 export const compactCardContentStyle = {
     padding: spacing.md,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     gap: spacing.sm
 } satisfies ViewStyle;
 
