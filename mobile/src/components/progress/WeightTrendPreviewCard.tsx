@@ -130,13 +130,14 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                 state={trendState}
                 resourceLabel="weight trend"
                 loading={(
-                    <AppCard density="compact">
+                    <AppCard density="compact" testID="weight-trend-preview-card">
                         <SkeletonBlock width="34%" height={26} />
                         <SkeletonBlock height={PREVIEW_HEIGHT} />
                     </AppCard>
                 )}
                 empty={(
                     <NavigableCard
+                        testID="weight-trend-preview-card"
                         accessibilityRole="button"
                         accessibilityLabel="Open full weight trend"
                         accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
@@ -170,6 +171,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                 suppressStaleNotice={suppressStaleNotice}
             >
                 <NavigableCard
+                    testID="weight-trend-preview-card"
                     accessibilityRole="button"
                     accessibilityLabel="Open full weight trend"
                     accessibilityHint="Shows the interactive chart, confidence details, and time range controls"
@@ -312,7 +314,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     flexSlot: { width: '100%', minHeight: PREVIEW_CARD_MIN_HEIGHT },
     pressable: { width: '100%' },
-    detailsAction: { minHeight: theme.interaction.minimumTouchTarget, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    detailsAction: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     detailsText: { color: theme.colors.primary },
     preview: {
         height: PREVIEW_HEIGHT,

@@ -48,13 +48,14 @@ function createStyles(theme: AppTheme) {
         root: {
             minHeight: theme.typography.styles.card.lineHeight,
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: theme.spacing.sm
         },
         comfortable: {
-            minHeight: theme.interaction.minimumTouchTarget
+            minHeight: theme.interaction.minimumTouchTarget,
+            alignItems: 'center'
         },
         heading: {
             flex: 1,
@@ -75,7 +76,6 @@ function createStyles(theme: AppTheme) {
             ...theme.typography.styles.caption
         },
         action: {
-            minHeight: theme.interaction.minimumTouchTarget,
             flexShrink: 0,
             alignItems: 'center',
             justifyContent: 'center'

@@ -359,6 +359,7 @@ export default function ProgressScreen() {
                     suppressStaleNotice
                 >
                     <GoalProgressCard
+                        testID="progress-snapshot-card"
                         latestMetric={latestMetric}
                         metrics={metricsQuery.data}
                         goal={goalQuery.data}
