@@ -56,20 +56,20 @@ test('Trend keeps the app shell and browser Back returns through real Progress h
   await expectFocusedRouteTitle(page, 'Progress', 'Progress - Calibrate');
 });
 
-test('Activity direct entry falls back to its registered Settings parent', async ({ page, ux }) => {
+test('Activity direct entry falls back to its registered Connections parent', async ({ page, ux }) => {
   await page.setViewportSize({ width: 1_024, height: 1_000 });
   await ux.install('populated');
   await page.goto('/activity');
 
   await expectDirectEntryTitle(page, 'Activity', 'Activity - Calibrate');
-  await expect(page.getByRole('button', { name: 'Back to Settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back to Connections', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open notifications' })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await capture(page, 'activity-desktop-1024x1000.png');
 
-  await page.getByRole('button', { name: 'Back to Settings', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/settings');
-  await expectFocusedRouteTitle(page, 'Settings', 'Settings - Calibrate');
+  await page.getByRole('button', { name: 'Back to Connections', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/connections');
+  await expectFocusedRouteTitle(page, 'Connections', 'Connections - Calibrate');
 });
 
 test('Food Log uses real Today history on a compact phone viewport', async ({ page, ux }) => {
@@ -92,6 +92,8 @@ test('Saved Foods is discoverable from Settings and returns through real history
   await page.setViewportSize({ width: 320, height: 568 });
   await ux.install('populated');
   await page.goto('/settings');
+  await page.getByTestId('settings-open-data').click();
+  await expect(page).toHaveURL((url) => url.pathname === '/data');
   await page.getByRole('button', { name: 'Saved foods', exact: true }).click();
 
   await expect(page).toHaveURL((url) => url.pathname === '/my-foods');
@@ -100,6 +102,8 @@ test('Saved Foods is discoverable from Settings and returns through real history
   await expectNoHorizontalOverflow(page);
   await capture(page, 'saved-foods-phone-320x568.png');
 
+  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/data');
   await page.getByRole('button', { name: 'Go back', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/settings');
 });

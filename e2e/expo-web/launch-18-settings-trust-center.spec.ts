@@ -265,6 +265,38 @@ async function captureEvidence(
   }
 }
 
+async function captureNavigationEvidence(
+  page: Page,
+  testInfo: TestInfo,
+  screen: 'home' | 'profile',
+) {
+  const viewport = page.viewportSize();
+  const viewportName = testInfo.project.name === 'desktop-chrome'
+    ? 'desktop-1024x1000'
+    : 'phone-320x568';
+  const expectedViewport = testInfo.project.name === 'desktop-chrome'
+    ? { width: 1_024, height: 1_000 }
+    : { width: 320, height: 568 };
+  expect(viewport).toEqual(expectedViewport);
+
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  });
+  await hideTransientPwaNotices(page);
+  await page.locator('main').evaluateAll((routes) => {
+    for (const route of routes) route.scrollTop = 0;
+  });
+  await expectNoHorizontalOverflow(page);
+  await mkdir(EVIDENCE_DIR, { recursive: true });
+  await page.screenshot({
+    path: path.join(EVIDENCE_DIR, `settings-${screen}-${viewportName}.png`),
+    fullPage: false,
+  });
+}
+
 test('settings trust center preserves hierarchy, session control, reminder truth, and safe navigation', async (
   { page, ux },
   testInfo,
@@ -282,41 +314,73 @@ test('settings trust center preserves hierarchy, session control, reminder truth
 
   if (project === 'desktop-chrome') {
     await page.goto('/settings');
-    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Settings', exact: true }).first()).toBeVisible();
     await expect(page.getByTestId('settings-home')).toBeVisible();
     const sectionIds = await page.locator('[data-testid^="settings-section-"]').evaluateAll((sections) =>
       sections.map((section) => section.getAttribute('data-testid')),
     );
     expect(sectionIds).toEqual([
       'settings-section-account',
-      'settings-section-personal',
-      'settings-section-connections',
-      'settings-section-security',
-      'settings-section-data',
-      'settings-section-help',
-      'settings-section-app',
+      'settings-section-categories',
     ]);
-    for (const label of [
-      'Profile details',
-      'Preferences',
-      'Activity',
-      'Signed-in devices',
-      'Password',
-      'Saved foods',
-      'Export account data',
-      'Delete account',
-      'Support and feedback',
-      'Privacy policy',
-      'Terms of service',
-      'Open-source licenses',
-      'About Calibrate',
-    ]) {
-      await expect(page.getByText(label, { exact: true }).first()).toBeAttached();
+    const categories = [
+      {
+        opener: 'settings-open-profile',
+        path: '/profile',
+        page: 'settings-category-profile',
+        labels: ['Profile photo', 'Profile details', 'Preferences'],
+      },
+      {
+        opener: 'settings-open-security',
+        path: '/security',
+        page: 'settings-category-security',
+        labels: ['Password', 'Signed-in devices', 'Log out'],
+      },
+      {
+        opener: 'settings-open-connections',
+        path: '/connections',
+        page: 'settings-category-connections',
+        labels: ['Activity', 'Health Connect', 'Connected assistants'],
+      },
+      {
+        opener: 'settings-open-data',
+        path: '/data',
+        page: 'settings-category-data',
+        labels: ['Saved foods', 'Import from Lose It', 'Offline changes', 'Export account data', 'Delete account'],
+      },
+      {
+        opener: 'settings-open-help',
+        path: '/help',
+        page: 'settings-category-help',
+        labels: [
+          'Support and feedback',
+          'Privacy policy',
+          'Terms of service',
+          'Open-source licenses',
+          'About Calibrate',
+          'Advanced settings',
+        ],
+      },
+    ] as const;
+    for (const category of categories) {
+      await expect(page.getByTestId(category.opener)).toBeVisible();
+      await page.getByTestId(category.opener).click();
+      await expect(page).toHaveURL((url) => url.pathname === category.path);
+      const categoryPage = page.getByTestId(category.page);
+      await expect(categoryPage).toBeVisible();
+      for (const label of category.labels) {
+        await expect(categoryPage.getByText(label, { exact: true }).first()).toBeAttached();
+      }
+      await page.getByRole('button', { name: 'Go back', exact: true }).click();
+      await expect(page).toHaveURL((url) => url.pathname === '/settings');
+      await expect(page.getByTestId('settings-home')).toBeVisible();
     }
     await expect(page.getByText('Email verification', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Galaxy Watch', exact: true })).toHaveCount(0);
 
-    await page.getByTestId('settings-section-security').scrollIntoViewIfNeeded();
+    await page.getByTestId('settings-open-connections').click();
+    await expect(page.getByRole('button', { name: 'Galaxy Watch', exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Go back', exact: true }).click();
+    await page.getByTestId('settings-open-security').click();
     await page.getByTestId('settings-open-sessions').click();
     const sessions = page.getByTestId('settings-sessions');
     await expect(page.getByRole('dialog', { name: 'Signed-in devices' })).toBeVisible();
@@ -346,6 +410,8 @@ test('settings trust center preserves hierarchy, session control, reminder truth
 
   if (project === 'tablet-chrome') {
     await page.goto('/settings');
+    await page.getByTestId('settings-open-security').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/security');
     await page.getByTestId('settings-open-sessions').click();
     const sessions = page.getByTestId('settings-sessions');
     await confirmSessionAction(
@@ -358,6 +424,10 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     await page.keyboard.press('Escape');
     await expect(sessions).toHaveCount(0);
 
+    await page.getByRole('button', { name: 'Go back', exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await page.getByTestId('settings-open-profile').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/profile');
     await page.getByTestId('settings-open-preferences').click();
     const preferences = page.getByTestId('settings-preferences-sheet');
     const reminderIntent = preferences.getByTestId('settings-reminder-intent');
@@ -397,16 +467,32 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     await page.goto('/today');
     await page.getByRole('button', { name: 'Account & settings' }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await page.getByTestId('settings-open-connections').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/connections');
     await page.getByText('Activity', { exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/activity');
     await page.getByRole('button', { name: 'Go back' }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/connections');
+    await page.getByRole('button', { name: 'Go back' }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await page.getByTestId('settings-open-data').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/data');
     await page.getByText('Saved foods', { exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/my-foods');
     await page.getByRole('button', { name: 'Go back' }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/data');
+    await page.getByRole('button', { name: 'Go back' }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await page.getByTestId('settings-open-help').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/help');
     await page.getByText('About Calibrate', { exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/about');
     await page.getByRole('button', { name: 'Go back' }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/help');
+    await page.getByRole('button', { name: 'Go back' }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await page.getByTestId('settings-open-data').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/data');
     await page.getByTestId('settings-export').click();
     await expect(page.getByTestId('settings-export-sheet')).toBeVisible();
     await expect(page.getByRole('dialog', { name: 'Export your data' })).toBeVisible();
@@ -417,6 +503,8 @@ test('settings trust center preserves hierarchy, session control, reminder truth
   }
 
   await page.goto('/settings');
+  await page.getByTestId('settings-open-data').click();
+  await expect(page).toHaveURL((url) => url.pathname === '/data');
   await page.getByTestId('settings-delete-account').click();
   const deleteSheet = page.getByTestId('settings-delete-account-sheet');
   const dialog = page.getByRole('dialog', { name: 'Delete account permanently' });
@@ -453,4 +541,29 @@ test('settings trust center preserves hierarchy, session control, reminder truth
   await expect(deleteSheet.getByRole('alert')).toContainText('Unable to delete this account.');
   expect(fixture.deletionPassword).toBe('wrong-password');
   await expectNoHorizontalOverflow(page);
+});
+
+test('settings screenshot evidence', async ({ page, ux }, testInfo) => {
+  test.skip(process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1', 'Screenshot evidence is opt-in.');
+  test.skip(
+    !['desktop-chrome', 'compact-phone-chrome'].includes(testInfo.project.name),
+    'Screenshot evidence covers desktop and compact-phone viewports.',
+  );
+
+  const isDesktop = testInfo.project.name === 'desktop-chrome';
+  await page.setViewportSize(isDesktop
+    ? { width: 1_024, height: 1_000 }
+    : { width: 320, height: 568 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await ux.install('populated');
+  await installSettingsApi(page);
+
+  await page.goto('/settings');
+  await expect(page.getByTestId('settings-home')).toBeVisible();
+  await captureNavigationEvidence(page, testInfo, 'home');
+
+  await page.getByTestId('settings-open-profile').click();
+  await expect(page).toHaveURL((url) => url.pathname === '/profile');
+  await expect(page.getByTestId('settings-category-profile')).toBeVisible();
+  await captureNavigationEvidence(page, testInfo, 'profile');
 });

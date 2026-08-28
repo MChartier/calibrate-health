@@ -36,13 +36,16 @@ import { HEIGHT_UNIT_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../../src/utils/pro
 import { radius, spacing, useAppTheme } from '../../../src/theme';
 import { useHealthConnect } from '../../../src/healthConnect/provider';
 import { clearWearAccountData } from '../../../src/wear/accountCleanup';
+import { canonicalPathForRoute, type RouteId } from '../../../src/navigation/routeRegistry';
 import {
     DeleteAccountSheet,
     ProfileEditorSheet
 } from '../../../src/settings/AccountSettingsSheets';
+import { SettingsCategoryPage } from '../../../src/settings/SettingsCategoryPage';
 import {
     SettingsHome,
     shouldShowSettingsResourceStatus,
+    type SettingsCategoryId,
     type SettingsSheetId
 } from '../../../src/settings/SettingsHome';
 import { AccountSessionsPanel } from '../../../src/settings/AccountSessionsPanel';
@@ -69,6 +72,14 @@ import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/present
 import { getHeightPolicyError, isHeightWithinPolicy } from '../../../src/caloriePlanning/heightInput';
 
 const MIN_PASSWORD_LENGTH = 8;
+const SETTINGS_CATEGORY_ROUTES = {
+    profile: 'settings-profile',
+    security: 'settings-security',
+    connections: 'settings-connections',
+    data: 'settings-data',
+    help: 'settings-help'
+} as const satisfies Record<SettingsCategoryId, RouteId>;
+
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
 }
@@ -80,7 +91,11 @@ function hasResolvedResourceData(state: AsyncResourceState): boolean {
         || state.kind === ASYNC_RESOURCE_STATES.DEGRADED;
 }
 
-export default function SettingsScreen() {
+type SettingsScreenProps = {
+    category?: SettingsCategoryId;
+};
+
+export function SettingsScreen({ category }: SettingsScreenProps) {
     const router = useRouter();
     const {
         api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
@@ -487,6 +502,7 @@ export default function SettingsScreen() {
         profileQuery.data?.calorieSummary.planReasonCode,
         profileQuery.data?.calorieSummary.planStatus
     );
+    const showProfilePlanningStatus = category === undefined || category === 'profile';
     function handlePlanAction() {
         if (planPresentation.actionKind === 'profile') {
             setIsProfileEditorOpen(true);
@@ -504,7 +520,7 @@ export default function SettingsScreen() {
 
     return (
         <TabScreen>
-            {hasPendingWeightChange && (
+            {showProfilePlanningStatus && hasPendingWeightChange && (
                 <AppCard>
                     <AppText variant="subtitle">Weight change syncing</AppText>
                     <AppText variant="muted">
@@ -512,7 +528,7 @@ export default function SettingsScreen() {
                     </AppText>
                 </AppCard>
             )}
-            {planRequiresReview && (
+            {showProfilePlanningStatus && planRequiresReview && (
                 <AppCard>
                     <AppText variant="subtitle">{planPresentation.title}</AppText>
                     <AppText variant="muted">{planPresentation.message}</AppText>
@@ -523,7 +539,7 @@ export default function SettingsScreen() {
                     />
                 </AppCard>
             )}
-            {shouldShowSettingsResourceStatus(profileState, isWeb) && (
+            {showProfilePlanningStatus && shouldShowSettingsResourceStatus(profileState, isWeb) && (
                 <AsyncStateBoundary
                     state={profileState}
                     resourceLabel="profile settings"
@@ -534,7 +550,7 @@ export default function SettingsScreen() {
                     {null}
                 </AsyncStateBoundary>
             )}
-            {shouldShowSettingsResourceStatus(goalState, isWeb) && (
+            {showProfilePlanningStatus && shouldShowSettingsResourceStatus(goalState, isWeb) && (
                 <AsyncStateBoundary
                     state={goalState}
                     resourceLabel="your current goal"
@@ -545,28 +561,43 @@ export default function SettingsScreen() {
                     {null}
                 </AsyncStateBoundary>
             )}
-            <SettingsHome
-                email={user?.email}
-                profileImageUrl={user?.profile_image_url}
-                goalSummary={goalSummary}
-                weightUnit={weightUnit}
-                heightUnit={heightUnit}
-                sessionCount={sessionCount}
-                connectedAppCount={connectedAppCount}
-                isOutboxReady={isOutboxReady}
-                failedMutationCount={failedMutations.length}
-                pendingMutationCount={pendingMutationCount}
-                isWeb={isWeb}
-                onEditProfile={() => setIsProfileEditorOpen(true)}
-                onOpenSheet={setActiveSheet}
-                onOpenActivity={() => router.push('/activity')}
-                onOpenSavedFoods={() => router.push('/my-foods')}
-                onOpenAbout={() => router.push('/about')}
-                onOpenAdvanced={() => router.push('/advanced')}
-                onOpenProductLink={(link) => router.push(CALIBRATE_PRODUCT_LINKS[link] as Href)}
-                onDeleteAccount={() => setIsDeleteAccountOpen(true)}
-                onLogout={() => void logout()}
-            />
+            {category ? (
+                <SettingsCategoryPage
+                    category={category}
+                    sessionCount={sessionCount}
+                    connectedAppCount={connectedAppCount}
+                    isOutboxReady={isOutboxReady}
+                    failedMutationCount={failedMutations.length}
+                    pendingMutationCount={pendingMutationCount}
+                    isWeb={isWeb}
+                    onEditProfile={() => setIsProfileEditorOpen(true)}
+                    onOpenSheet={setActiveSheet}
+                    onOpenActivity={() => router.push(canonicalPathForRoute('activity') as Href)}
+                    onOpenSavedFoods={() => router.push(canonicalPathForRoute('my-foods') as Href)}
+                    onOpenAbout={() => router.push(canonicalPathForRoute('about') as Href)}
+                    onOpenAdvanced={() => router.push(canonicalPathForRoute('advanced') as Href)}
+                    onOpenProductLink={(link) => router.push(CALIBRATE_PRODUCT_LINKS[link] as Href)}
+                    onDeleteAccount={() => setIsDeleteAccountOpen(true)}
+                    onLogout={() => void logout()}
+                />
+            ) : (
+                <SettingsHome
+                    email={user?.email}
+                    profileImageUrl={user?.profile_image_url}
+                    goalSummary={goalSummary}
+                    weightUnit={weightUnit}
+                    heightUnit={heightUnit}
+                    sessionCount={sessionCount}
+                    connectedAppCount={connectedAppCount}
+                    isOutboxReady={isOutboxReady}
+                    failedMutationCount={failedMutations.length}
+                    pendingMutationCount={pendingMutationCount}
+                    isWeb={isWeb}
+                    onOpenCategory={(nextCategory) => {
+                        router.push(canonicalPathForRoute(SETTINGS_CATEGORY_ROUTES[nextCategory]) as Href);
+                    }}
+                />
+            )}
 
             <SettingsDetailSheet
                 visible={activeSheet === 'preferences'}
@@ -963,6 +994,10 @@ export default function SettingsScreen() {
             />
         </TabScreen>
     );
+}
+
+export default function SettingsRoute() {
+    return <SettingsScreen />;
 }
 
 const SettingsResourceSkeleton: React.FC<{ label: string }> = ({ label }) => (

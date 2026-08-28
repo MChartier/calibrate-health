@@ -93,7 +93,7 @@ describe('NotificationHistory', () => {
         await waitFor(() => expect(mockApi.markAllInAppNotificationsRead).toHaveBeenCalledTimes(1));
         await waitFor(() => expect(mockApi.getInAppNotifications.mock.calls.length).toBeGreaterThanOrEqual(4));
         fireEvent.press(screen.getByTestId('notification-preferences-cta'));
-        expect(mockRouterPush).toHaveBeenCalledWith('/settings');
+        expect(mockRouterPush).toHaveBeenCalledWith('/profile');
     });
 
     it('offers a meaningful preference action when history is empty', async () => {
@@ -102,7 +102,7 @@ describe('NotificationHistory', () => {
 
         expect(await screen.findByTestId('notification-history-empty')).toBeTruthy();
         fireEvent.press(screen.getByRole('button', { name: 'Review notification preferences' }));
-        expect(mockRouterPush).toHaveBeenCalledWith('/settings');
+        expect(mockRouterPush).toHaveBeenCalledWith('/profile');
     });
 
     it('makes permission-required delivery state actionable without rendering subscription details', async () => {

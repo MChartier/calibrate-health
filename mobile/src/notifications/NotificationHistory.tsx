@@ -108,7 +108,7 @@ export function NotificationHistory() {
         && pushRegistration.state !== NATIVE_PUSH_STATES.SIGNED_OUT;
     const actionError = openNotification.error ?? dismissNotification.error ?? markAllRead.error;
     const isMutating = openNotification.isPending || dismissNotification.isPending || markAllRead.isPending;
-    const openPreferences = () => router.push(canonicalPathForRoute('settings') as Href);
+    const openPreferences = () => router.push(canonicalPathForRoute('settings-profile') as Href);
 
     return (
         <TabScreen testID="notification-history">

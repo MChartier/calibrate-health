@@ -17,7 +17,11 @@ describe('route presentation', () => {
 
     it('describes real history generically and a direct-entry fallback by parent', () => {
         expect(getRouteBackLabel('/activity', true)).toBe('Go back');
-        expect(getRouteBackLabel('/activity', false)).toBe('Back to Settings');
+        expect(getRouteBackLabel('/activity', false)).toBe('Back to Connections');
+        expect(getRouteBackLabel('/profile', false)).toBe('Back to Settings');
+        expect(getRouteBackLabel('/my-foods', false)).toBe('Back to Data & privacy');
+        expect(getRouteBackLabel('/about', false)).toBe('Back to Help & app');
+        expect(getRouteBackLabel('/advanced', false)).toBe('Back to Help & app');
         expect(getRouteBackLabel('/today', true)).toBeNull();
     });
 

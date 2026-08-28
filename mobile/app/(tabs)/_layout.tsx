@@ -508,7 +508,7 @@ const HeaderActions: React.FC<{
                 accessibilityLabel={`${offlineChangeCount} offline changes ${hasFailedOfflineChanges ? 'need attention' : 'pending'}`}
                 focusStyle={styles.navigationFocus}
                 hoverStyle={styles.navigationHover}
-                onPress={() => router.push(canonicalPathForRoute('settings') as Href)}
+                onPress={() => router.push(canonicalPathForRoute('settings-data') as Href)}
                 style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
             >
                 <Ionicons

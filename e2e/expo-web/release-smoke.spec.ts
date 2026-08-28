@@ -525,9 +525,11 @@ test('authenticated shell renders real dashboard data and navigates release surf
 
   await page.getByRole('button', { name: 'Account & settings', exact: true }).press('Enter');
   await expect(page).toHaveURL(/\/settings$/);
-  await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Personal details', exact: true })).toBeVisible();
-  await expect(page.getByText('Connections', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('settings-account-summary')).toBeVisible();
+  await expect(page.getByTestId('settings-open-profile')).toBeVisible();
+  await page.getByTestId('settings-open-connections').click();
+  await expect(page).toHaveURL(/\/connections$/);
+  await expect(page.getByTestId('settings-category-connections')).toBeVisible();
   await page.getByRole('button', { name: /Health Connect/ }).click();
   await expect(page.getByRole('button', { name: 'View activity history', exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);

@@ -51,12 +51,17 @@ describe('route registry', () => {
 
   it('keeps the launch hierarchy and parent fallbacks explicit', () => {
     const expectedParents = {
+      'settings-profile': 'settings',
+      'settings-security': 'settings',
+      'settings-connections': 'settings',
+      'settings-data': 'settings',
+      'settings-help': 'settings',
       'food-log': 'today',
       'weight-trend': 'progress',
-      activity: 'settings',
-      'my-foods': 'settings',
-      about: 'settings',
-      advanced: 'settings',
+      activity: 'settings-connections',
+      'my-foods': 'settings-data',
+      about: 'settings-help',
+      advanced: 'settings-help',
       notifications: 'today',
       weight: 'progress',
       barcode: 'today',
@@ -72,6 +77,33 @@ describe('route registry', () => {
   it('uses the same Saved foods label as its Settings navigation action', () => {
     expect(ROUTE_REGISTRY['my-foods'].title).toBe('Saved foods');
     expect(ROUTE_REGISTRY['my-foods'].documentTitle).toBe('Saved foods - Calibrate');
+  });
+  it('registers focused Settings category paths and presentation metadata', () => {
+    expect(ROUTE_REGISTRY['settings-profile']).toMatchObject({
+      path: '/profile',
+      title: 'Profile & preferences',
+      backLabel: 'Back to Settings',
+    });
+    expect(ROUTE_REGISTRY['settings-security']).toMatchObject({
+      path: '/security',
+      title: 'Security & access',
+      backLabel: 'Back to Settings',
+    });
+    expect(ROUTE_REGISTRY['settings-connections']).toMatchObject({
+      path: '/connections',
+      title: 'Connections',
+      backLabel: 'Back to Settings',
+    });
+    expect(ROUTE_REGISTRY['settings-data']).toMatchObject({
+      path: '/data',
+      title: 'Data & privacy',
+      backLabel: 'Back to Settings',
+    });
+    expect(ROUTE_REGISTRY['settings-help']).toMatchObject({
+      path: '/help',
+      title: 'Help & app',
+      backLabel: 'Back to Settings',
+    });
   });
   it('lets authenticated users reach onboarding so runtime completion state decides the redirect', () => {
     expect(ROUTE_REGISTRY.onboarding.authenticatedRedirect).toBeNull();
