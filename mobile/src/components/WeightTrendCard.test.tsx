@@ -1,11 +1,12 @@
 import { fireEvent, render, within } from '@testing-library/react-native';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from '@calibrate/api-client';
 import {
     getWeightTrendChartHeightBounds,
     WeightTrendCard
 } from './WeightTrendCard';
+import { spacing } from '../theme';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('@tanstack/react-query', () => ({
@@ -88,6 +89,16 @@ function response(metrics = METRICS, summary: WeightTrendSummary | null = create
 describe('WeightTrendCard', () => {
     beforeEach(() => {
         (useQuery as jest.Mock).mockReturnValue({ data: response(), error: null, isLoading: false, status: 'success' });
+    });
+
+    it('uses the screen pane directly instead of adding a second card surface', () => {
+        const screen = render(<WeightTrendCard testID="weight-trend-content" />);
+        const style = StyleSheet.flatten(screen.getByTestId('weight-trend-content').props.style);
+
+        expect(style).toEqual(expect.objectContaining({ width: '100%', gap: spacing.md }));
+        expect(style).not.toHaveProperty('padding');
+        expect(style).not.toHaveProperty('borderRadius');
+        expect(style).not.toHaveProperty('backgroundColor');
     });
 
     it('defaults the consolidated summary to the latest point and selects from web offset coordinates', () => {

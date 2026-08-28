@@ -2,7 +2,9 @@
  * Exercises public legal page behavior and regression boundaries.
  */
 import { fireEvent, render, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { PublicLegalPage } from './PublicLegalPage';
+import { spacing } from '../../theme';
 
 let mockUser: { id: number } | null = null;
 const mockPush = jest.fn();
@@ -58,7 +60,11 @@ describe('PublicLegalPage', () => {
     it('uses a public trust shell while keeping signed-in recovery inside Settings', () => {
         const screen = render(<PublicLegalPage {...props} />);
         expect(screen.getByTestId('legal-public-shell')).toBeTruthy();
-        expect(screen.getByTestId('legal-page')).toBeTruthy();
+        const pageStyle = StyleSheet.flatten(screen.getByTestId('legal-page').props.style);
+        expect(pageStyle).toEqual(expect.objectContaining({ gap: spacing.lg }));
+        expect(pageStyle).not.toHaveProperty('padding');
+        expect(pageStyle).not.toHaveProperty('borderRadius');
+        expect(pageStyle).not.toHaveProperty('backgroundColor');
         expect(screen.getByRole('header', { name: 'Privacy policy' })).toBeTruthy();
         expect(screen.getByText('Calibrate home')).toBeTruthy();
         expect(screen.getByText('Calibrate home')).toHaveStyle({

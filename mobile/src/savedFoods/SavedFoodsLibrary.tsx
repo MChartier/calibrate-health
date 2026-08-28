@@ -5,7 +5,6 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import type { MyFoodSummary } from '@calibrate/api-client';
 import { useAuth } from '../auth/AuthContext';
 import { AppButton } from '../components/AppButton';
-import { AppCard } from '../components/AppCard';
 import { AppChip } from '../components/AppChip';
 import { AppIconButton } from '../components/AppIconButton';
 import { AppText } from '../components/AppText';
@@ -97,7 +96,6 @@ export function SavedFoodsLibrary({
     const header = (
         <View style={[styles.header, isNarrow && styles.headerNarrow]}>
             <View style={styles.headerCopy}>
-                <AppText accessibilityRole="header" aria-level={1} variant="title">Saved foods</AppText>
                 <AppText variant="muted">Keep reusable foods and recipes easy to find.</AppText>
             </View>
             <View style={[styles.createActions, isNarrow && styles.createActionsNarrow]}>
@@ -121,11 +119,11 @@ export function SavedFoodsLibrary({
     function renderEmpty() {
         if (isWaitingForSearch) {
             return (
-                <AppCard testID="saved-foods-searching">
+                <View testID="saved-foods-searching" style={styles.content}>
                     {header}
                     {renderBrowseControls()}
                     <AppText variant="muted">Searching saved foods...</AppText>
-                </AppCard>
+                </View>
             );
         }
         let message = 'No saved foods yet. Create a food or recipe to reuse it when logging.';
@@ -133,11 +131,11 @@ export function SavedFoodsLibrary({
         else if (filter === 'FOOD') message = 'No saved foods in this filter yet.';
         else if (filter === 'RECIPE') message = 'No saved recipes in this filter yet.';
         return (
-            <AppCard testID="saved-foods-empty">
+            <View testID="saved-foods-empty" style={styles.content}>
                 {header}
                 {renderBrowseControls()}
                 <AppText variant="muted">{message}</AppText>
-            </AppCard>
+            </View>
         );
     }
 
@@ -174,17 +172,17 @@ export function SavedFoodsLibrary({
             state={libraryState}
             resourceLabel="saved foods"
             loading={(
-                <AppCard testID="saved-foods-loading">
+                <View testID="saved-foods-loading" style={styles.content}>
                     {header}
                     <SkeletonBlock height={48} />
                     {[0, 1, 2].map((row) => <SkeletonBlock key={row} height={64} />)}
-                </AppCard>
+                </View>
             )}
             empty={renderEmpty()}
             onRetry={isOnline ? () => libraryQuery.refetch() : undefined}
             retrying={libraryQuery.isFetching}
         >
-            <AppCard testID="saved-foods-list">
+            <View testID="saved-foods-list" style={styles.content}>
                 {header}
                 {renderBrowseControls()}
                 <AppText variant="caption">
@@ -237,13 +235,17 @@ export function SavedFoodsLibrary({
                         onPress={() => void libraryQuery.fetchNextPage()}
                     />
                 )}
-            </AppCard>
+            </View>
         </AsyncStateBoundary>
     );
 }
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
+        content: {
+            width: '100%',
+            gap: spacing.md
+        },
         header: {
             flexDirection: 'row',
             alignItems: 'flex-start',
