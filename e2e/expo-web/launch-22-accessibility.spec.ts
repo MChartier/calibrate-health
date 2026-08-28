@@ -126,6 +126,20 @@ async function installAccessibilityApiExtensions(
   ];
   await page.route('**/auth/sessions', (route) => fulfillJson(route, { sessions }));
   await page.route('**/auth/mobile/sessions', (route) => fulfillJson(route, { sessions }));
+  if (surfaceId === 'connected-app-revoke-confirmation') {
+    await page.route('**/api/v1/user/connected-apps', (route) => fulfillJson(route, {
+      connections: [{
+        id: 'c13e23d9-b130-42bd-bb70-901fd65fbfe9',
+        client_id: 'codex-client',
+        client_name: 'Codex',
+        scopes: ['calibrate:food:read', 'calibrate:weight:read'],
+        resource: 'https://calibratehealth.app/mcp',
+        created_at: '2026-08-19T12:00:00.000Z',
+        last_used_at: null,
+        expires_at: '2026-09-18T12:00:00.000Z',
+      }],
+    }));
+  }
   await page.route('**/api/v1/my-foods/library**', (route) => fulfillJson(route, {
     items: [],
     next_cursor: null,
@@ -199,8 +213,6 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'goal-daily-calorie-options',
       'calibration-suggestion-details',
       'notifications-drawer',
-      'preferences',
-      'profile-details',
       'profile-time-zone-options',
       'profile-photo',
       'password',
@@ -215,8 +227,9 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'food-log-save-recipe',
       'pause-tracking',
       'resume-tracking-prompt',
-      'signed-in-devices',
       'session-revoke-confirmation',
+      'session-revoke-others-confirmation',
+      'connected-app-revoke-confirmation',
       'account-export',
       'delete-account',
     ]));

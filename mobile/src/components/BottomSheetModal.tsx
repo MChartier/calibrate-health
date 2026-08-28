@@ -169,6 +169,8 @@ export function resolveSheetEntranceOffset(viewportHeight: number, isDialog: boo
 
 /**
  * Presents as a mobile bottom sheet or a bounded dialog on larger viewports.
+ * Keep it to a short contextual task, picker, preview, or confirmation; use a
+ * registered route for browsable, multi-section, or independently managed work.
  */
 export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     visible,

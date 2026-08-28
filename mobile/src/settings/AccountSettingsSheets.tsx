@@ -18,8 +18,7 @@ import { getSafeActionErrorMessage } from '../errors/presentation';
 import { getMinimumDateOfBirth } from '../caloriePlanning/dateBounds';
 import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
 
-type ProfileEditorSheetProps = {
-    visible: boolean;
+export type ProfileEditorContentProps = {
     timezone: string;
     onTimezoneChange: (value: string) => void;
     dateOfBirth: string;
@@ -39,13 +38,12 @@ type ProfileEditorSheetProps = {
     validationError?: string | null;
     saveError: Error | null;
     isSaving: boolean;
-    isDirty: boolean;
-    onClose: () => void;
+    onCancel: () => void;
     onSave: () => void;
 };
 
-export function ProfileEditorSheet({
-    visible,
+/** Shared profile form kept separate from the routed screen's data and navigation state. */
+export function ProfileEditorContent({
     timezone,
     onTimezoneChange,
     dateOfBirth,
@@ -65,30 +63,13 @@ export function ProfileEditorSheet({
     validationError,
     saveError,
     isSaving,
-    isDirty,
-    onClose,
+    onCancel,
     onSave
-}: ProfileEditorSheetProps) {
+}: ProfileEditorContentProps) {
     const { colors } = useAppTheme();
 
-    async function handleCancel() {
-        if (!isDirty || await confirmDiscardChanges()) onClose();
-    }
-
     return (
-        <BottomSheetModal
-            visible={visible}
-            accessibilityLabel="Profile details"
-            title="Profile details"
-            description="Time zone and body details used for calorie targets."
-            maxHeight="92%"
-            size="wide"
-            showCloseButton
-            dismissDisabled={isSaving}
-            isDirty={isDirty}
-            confirmDismiss={confirmDiscardChanges}
-            onRequestClose={onClose}
-        >
+        <>
             <TimeZonePickerField value={timezone} onChange={onTimezoneChange} />
             <ProfileIdentityFields
                 dateOfBirth={dateOfBirth}
@@ -127,7 +108,7 @@ export function ProfileEditorSheet({
                     variant="secondary"
                     leftIcon={<Ionicons name="close" size={18} color={colors.onSurface} />}
                     disabled={isSaving}
-                    onPress={() => { void handleCancel(); }}
+                    onPress={onCancel}
                     style={styles.rowButton}
                 />
                 <AppButton
@@ -138,7 +119,7 @@ export function ProfileEditorSheet({
                     style={styles.rowButton}
                 />
             </View>
-        </BottomSheetModal>
+        </>
     );
 }
 

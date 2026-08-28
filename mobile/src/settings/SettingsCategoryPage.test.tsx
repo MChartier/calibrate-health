@@ -9,12 +9,8 @@ jest.mock('../config/nativeClient', () => ({
 
 function createCallbacks() {
     return {
-        onEditProfile: jest.fn(),
+        onOpenPage: jest.fn(),
         onOpenSheet: jest.fn(),
-        onOpenActivity: jest.fn(),
-        onOpenSavedFoods: jest.fn(),
-        onOpenAbout: jest.fn(),
-        onOpenAdvanced: jest.fn(),
         onOpenProductLink: jest.fn(),
         onDeleteAccount: jest.fn(),
         onLogout: jest.fn()
@@ -55,10 +51,9 @@ describe('SettingsCategoryPage', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Preferences' }));
 
         expect(callbacks.onOpenSheet.mock.calls).toEqual([
-            ['profile-photo'],
-            ['preferences']
+            ['profile-photo']
         ]);
-        expect(callbacks.onEditProfile).toHaveBeenCalledTimes(1);
+        expect(callbacks.onOpenPage.mock.calls).toEqual([['profile-details'], ['preferences']]);
     });
 
     it('keeps password, session, and logout destinations in Security & access', () => {
@@ -84,9 +79,9 @@ describe('SettingsCategoryPage', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Log out' }));
 
         expect(callbacks.onOpenSheet.mock.calls).toEqual([
-            ['password'],
-            ['devices']
+            ['password']
         ]);
+        expect(callbacks.onOpenPage).toHaveBeenCalledWith('devices');
         expect(callbacks.onLogout).toHaveBeenCalledTimes(1);
     });
 
@@ -112,13 +107,14 @@ describe('SettingsCategoryPage', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Activity' }));
         fireEvent.press(screen.getByRole('button', { name: 'Connected assistants, 2' }));
 
-        expect(callbacks.onOpenActivity).toHaveBeenCalledTimes(1);
-        expect(callbacks.onOpenSheet.mock.calls).toEqual([
+        expect(callbacks.onOpenSheet).not.toHaveBeenCalled();
+        expect(callbacks.onOpenPage.mock.calls).toEqual([
+            ['activity'],
             ['connected-apps']
         ]);
     });
 
-    it('shows Android connection destinations and opens their sheets', () => {
+    it('shows Android connection destinations and opens their pages', () => {
         const callbacks = createCallbacks();
         const screen = render(
             <SettingsCategoryPage
@@ -137,9 +133,10 @@ describe('SettingsCategoryPage', () => {
             'Connected assistants, 2'
         ]);
         fireEvent.press(screen.getByRole('button', { name: 'Health Connect' }));
-        expect(callbacks.onOpenSheet).toHaveBeenCalledWith('health-connect');
+        expect(callbacks.onOpenPage).toHaveBeenCalledWith('health-connect');
         fireEvent.press(screen.getByRole('button', { name: 'Galaxy Watch' }));
-        expect(callbacks.onOpenSheet).toHaveBeenCalledWith('watch');
+        expect(callbacks.onOpenPage).toHaveBeenCalledWith('watch');
+        expect(callbacks.onOpenSheet).not.toHaveBeenCalled();
     });
 
     it('keeps saved content, import, sync, export, and deletion in Data & privacy', () => {
@@ -168,11 +165,11 @@ describe('SettingsCategoryPage', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Export account data' }));
         fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
 
-        expect(callbacks.onOpenSavedFoods).toHaveBeenCalledTimes(1);
+        expect(callbacks.onOpenPage).toHaveBeenCalledWith('my-foods');
         expect(callbacks.onOpenSheet.mock.calls).toEqual([
             ['import'],
             ['offline'],
-            ['data']
+            ['export']
         ]);
         expect(callbacks.onDeleteAccount).toHaveBeenCalledTimes(1);
     });
@@ -207,7 +204,6 @@ describe('SettingsCategoryPage', () => {
             ['terms'],
             ['licenses']
         ]);
-        expect(callbacks.onOpenAbout).toHaveBeenCalledTimes(1);
-        expect(callbacks.onOpenAdvanced).toHaveBeenCalledTimes(1);
+        expect(callbacks.onOpenPage.mock.calls).toEqual([['about'], ['advanced']]);
     });
 });

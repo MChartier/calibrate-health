@@ -1,25 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Image, Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ACTIVITY_LEVELS, HEIGHT_UNITS, WEIGHT_UNITS, type ActivityLevel, type HeightUnit, type Sex, type WeightUnit } from '@calibrate/shared';
+import { HEIGHT_UNITS, WEIGHT_UNITS } from '@calibrate/shared';
 import { AppButton } from '../../../src/components/AppButton';
 import { AppCard } from '../../../src/components/AppCard';
 import { AppText } from '../../../src/components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
-import { HealthConnectCard } from '../../../src/components/HealthConnectCard';
-import { WearPairingCard } from '../../../src/components/WearPairingCard';
-import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
 import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
 import { TabScreen } from '../../../src/components/TabScreen';
-import { SectionHeader } from '../../../src/components/SectionHeader';
-import { SegmentedControl } from '../../../src/components/SegmentedControl';
 import { TextField } from '../../../src/components/TextField';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
 import { useAuth } from '../../../src/auth/AuthContext';
-import { invalidateProfilePlanningQueries } from '../../../src/caloriePlanning/queryInvalidation';
 import {
     canSubmitAccountDeletion,
     deleteAccountAndClearLocalData,
@@ -28,37 +22,20 @@ import {
 import { OUTBOX_MUTATION_STATES } from '../../../src/offline/queuedMutation';
 import { useOfflineOutbox } from '../../../src/offline/provider';
 import { hasPendingWeightMutation } from '../../../src/offline/pendingWeight';
-import { useNativePushRegistration } from '../../../src/hooks/useNativePushRegistration';
-import { getPushStatusPresentation, getPushStatusTarget } from '../../../src/notifications/workflow';
 import { supportsAndroidIntegrations } from '../../../src/platform/nativePlatform';
-import { millimetersToCentimeters, millimetersToFeetInches } from '../../../src/utils/bodyMeasurements';
 import { formatGoalSummary } from '../../../src/utils/goals';
-import { HEIGHT_UNIT_OPTIONS, WEIGHT_UNIT_OPTIONS } from '../../../src/utils/profileOptions';
 import { radius, spacing, useAppTheme } from '../../../src/theme';
 import { useHealthConnect } from '../../../src/healthConnect/provider';
 import { clearWearAccountData } from '../../../src/wear/accountCleanup';
-import { canonicalPathForRoute, type RouteId } from '../../../src/navigation/routeRegistry';
-import {
-    DeleteAccountSheet,
-    ProfileEditorSheet
-} from '../../../src/settings/AccountSettingsSheets';
-import { SettingsCategoryPage } from '../../../src/settings/SettingsCategoryPage';
+import { DeleteAccountSheet } from '../../../src/settings/AccountSettingsSheets';
 import {
     SettingsHome,
     shouldShowSettingsResourceStatus,
+    type SettingsPageId,
     type SettingsCategoryId,
     type SettingsSheetId
 } from '../../../src/settings/SettingsHome';
-import { AccountSessionsPanel } from '../../../src/settings/AccountSessionsPanel';
-import { ConnectedAppsPanel } from '../../../src/settings/ConnectedAppsPanel';
-import { ReminderSettingsPanel } from '../../../src/settings/ReminderSettingsPanel';
 import {
-    getReminderScheduleErrors,
-    hasReminderScheduleErrors,
-    toReminderSchedulePayload
-} from '../../../src/settings/reminderWallClock';
-import {
-    PreferenceSwitch,
     SettingsDetailSheet,
     SummaryRow
 } from '../../../src/settings/SettingsPrimitives';
@@ -70,17 +47,11 @@ import {
 } from '../../../src/asyncState/resolveAsyncState';
 import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
-import { getHeightPolicyError, isHeightWithinPolicy } from '../../../src/caloriePlanning/heightInput';
+import { canonicalPathForRoute } from '../../../src/navigation/routeRegistry';
+
+import { SettingsCategoryPage } from '../../../src/settings/SettingsCategoryPage';
 
 const MIN_PASSWORD_LENGTH = 8;
-const SETTINGS_CATEGORY_ROUTES = {
-    profile: 'settings-profile',
-    security: 'settings-security',
-    connections: 'settings-connections',
-    data: 'settings-data',
-    help: 'settings-help'
-} as const satisfies Record<SettingsCategoryId, RouteId>;
-
 function getAvatarLabel(email?: string | null): string {
     return email?.trim().charAt(0).toUpperCase() || 'C';
 }
@@ -92,11 +63,15 @@ function hasResolvedResourceData(state: AsyncResourceState): boolean {
         || state.kind === ASYNC_RESOURCE_STATES.DEGRADED;
 }
 
-type SettingsScreenProps = {
-    category?: SettingsCategoryId;
-};
+const SETTINGS_CATEGORY_ROUTES = {
+    profile: 'settings-profile',
+    security: 'settings-security',
+    connections: 'settings-connections',
+    data: 'settings-data',
+    help: 'settings-help'
+} as const;
 
-export function SettingsScreen({ category }: SettingsScreenProps) {
+export function SettingsScreen({ category }: { category?: SettingsCategoryId }) {
     const router = useRouter();
     const {
         api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
@@ -114,66 +89,19 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
     const { colors: themeColors } = useAppTheme();
     const isOnline = useOnlineStatus();
     const healthConnect = useHealthConnect();
-    const nativePush = useNativePushRegistration();
     const isWeb = Platform.OS === 'web';
     const showAndroidIntegrations = supportsAndroidIntegrations();
-    const pushStatus = getPushStatusPresentation(nativePush.state, getPushStatusTarget(Platform.OS));
-    const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
-    const [dateOfBirth, setDateOfBirth] = useState(user?.date_of_birth?.slice(0, 10) ?? '');
-    const [sex, setSex] = useState<Sex | null>(user?.sex ?? null);
-    const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(user?.activity_level ?? ACTIVITY_LEVELS.LIGHT);
-    const [heightCm, setHeightCm] = useState(() => millimetersToCentimeters(user?.height_mm));
-    const initialImperialHeight = millimetersToFeetInches(user?.height_mm);
-    const [heightFeet, setHeightFeet] = useState(initialImperialHeight.feet);
-    const [heightInches, setHeightInches] = useState(initialImperialHeight.inches);
-    const [profileValidationError, setProfileValidationError] = useState<string | null>(null);
-    const [weightUnit, setWeightUnit] = useState<WeightUnit>(user?.weight_unit ?? WEIGHT_UNITS.KG);
-    const [heightUnit, setHeightUnit] = useState<HeightUnit>(user?.height_unit ?? HEIGHT_UNITS.CM);
-    const [logFoodReminders, setLogFoodReminders] = useState(user?.reminder_log_food_enabled ?? true);
-    const [logWeightReminders, setLogWeightReminders] = useState(user?.reminder_log_weight_enabled ?? true);
-    const [logFoodReminderTime, setLogFoodReminderTime] = useState(user?.reminder_log_food_time ?? '09:00');
-    const [logWeightReminderTime, setLogWeightReminderTime] = useState(user?.reminder_log_weight_time ?? '09:00');
-    const [quietHoursStart, setQuietHoursStart] = useState(user?.reminder_quiet_hours_start ?? '');
-    const [quietHoursEnd, setQuietHoursEnd] = useState(user?.reminder_quiet_hours_end ?? '');
-    const [hapticsEnabled, setHapticsEnabled] = useState(user?.haptics_enabled ?? true);
+    const weightUnit = user?.weight_unit ?? WEIGHT_UNITS.KG;
+    const heightUnit = user?.height_unit ?? HEIGHT_UNITS.CM;
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
     const [activeSheet, setActiveSheet] = useState<SettingsSheetId | null>(null);
     const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
     const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
     const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
-    const reminderSchedule = {
-        foodTime: logFoodReminderTime,
-        weightTime: logWeightReminderTime,
-        quietStart: quietHoursStart,
-        quietEnd: quietHoursEnd
-    };
-    const reminderScheduleErrors = getReminderScheduleErrors(reminderSchedule);
-    const reminderScheduleIsInvalid = hasReminderScheduleErrors(reminderScheduleErrors);
-    const profileIsDirty = Boolean(user && (
-        timezone !== user.timezone
-        || dateOfBirth !== (user.date_of_birth?.slice(0, 10) ?? '')
-        || sex !== user.sex
-        || activityLevel !== (user.activity_level ?? ACTIVITY_LEVELS.LIGHT)
-        || heightCm !== millimetersToCentimeters(user.height_mm)
-        || heightFeet !== millimetersToFeetInches(user.height_mm).feet
-        || heightInches !== millimetersToFeetInches(user.height_mm).inches
-    ));
-    const preferencesAreDirty = Boolean(user && (
-        weightUnit !== user.weight_unit
-        || heightUnit !== user.height_unit
-        || logFoodReminders !== user.reminder_log_food_enabled
-        || logWeightReminders !== user.reminder_log_weight_enabled
-        || logFoodReminderTime !== (user.reminder_log_food_time ?? '09:00')
-        || logWeightReminderTime !== (user.reminder_log_weight_time ?? '09:00')
-        || quietHoursStart !== (user.reminder_quiet_hours_start ?? '')
-        || quietHoursEnd !== (user.reminder_quiet_hours_end ?? '')
-        || hapticsEnabled !== user.haptics_enabled
-    ));
     const passwordIsDirty = Boolean(currentPassword || newPassword || confirmPassword);
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
     const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
@@ -236,57 +164,6 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
         }
     });
 
-    useEffect(() => {
-        if (!user) return;
-        setTimezone(user.timezone);
-        setDateOfBirth(user.date_of_birth?.slice(0, 10) ?? '');
-        setSex(user.sex);
-        setActivityLevel(user.activity_level ?? ACTIVITY_LEVELS.LIGHT);
-        setHeightCm(millimetersToCentimeters(user.height_mm));
-        const nextImperialHeight = millimetersToFeetInches(user.height_mm);
-        setHeightFeet(nextImperialHeight.feet);
-        setHeightInches(nextImperialHeight.inches);
-        setWeightUnit(user.weight_unit);
-        setHeightUnit(user.height_unit);
-        setLogFoodReminders(user.reminder_log_food_enabled);
-        setLogWeightReminders(user.reminder_log_weight_enabled);
-        setLogFoodReminderTime(user.reminder_log_food_time ?? '09:00');
-        setLogWeightReminderTime(user.reminder_log_weight_time ?? '09:00');
-        setQuietHoursStart(user.reminder_quiet_hours_start ?? '');
-        setQuietHoursEnd(user.reminder_quiet_hours_end ?? '');
-        setHapticsEnabled(user.haptics_enabled);
-    }, [user]);
-
-    function closeProfileEditor() {
-        if (user) {
-            setTimezone(user.timezone);
-            setDateOfBirth(user.date_of_birth?.slice(0, 10) ?? '');
-            setSex(user.sex);
-            setActivityLevel(user.activity_level ?? ACTIVITY_LEVELS.LIGHT);
-            setHeightCm(millimetersToCentimeters(user.height_mm));
-            const nextImperialHeight = millimetersToFeetInches(user.height_mm);
-            setHeightFeet(nextImperialHeight.feet);
-            setHeightInches(nextImperialHeight.inches);
-        }
-        setProfileValidationError(null);
-        setIsProfileEditorOpen(false);
-    }
-
-    function closePreferences() {
-        if (user) {
-            setWeightUnit(user.weight_unit);
-            setHeightUnit(user.height_unit);
-            setLogFoodReminders(user.reminder_log_food_enabled);
-            setLogWeightReminders(user.reminder_log_weight_enabled);
-            setLogFoodReminderTime(user.reminder_log_food_time ?? '09:00');
-            setLogWeightReminderTime(user.reminder_log_weight_time ?? '09:00');
-            setQuietHoursStart(user.reminder_quiet_hours_start ?? '');
-            setQuietHoursEnd(user.reminder_quiet_hours_end ?? '');
-            setHapticsEnabled(user.haptics_enabled);
-        }
-        setActiveSheet(null);
-    }
-
     function closePasswordEditor() {
         setCurrentPassword('');
         setNewPassword('');
@@ -294,61 +171,6 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
         setPasswordError(null);
         setPasswordStatus(null);
         setActiveSheet(null);
-    }
-
-    const saveProfile = useMutation({
-        mutationFn: () =>
-            api.updateProfile({
-                timezone,
-                date_of_birth: dateOfBirth || null,
-                sex,
-                activity_level: activityLevel,
-                ...(heightUnit === HEIGHT_UNITS.CM
-                    ? { height_cm: heightCm || null }
-                    : { height_feet: heightFeet || null, height_inches: heightInches || '0' })
-            }),
-        onSuccess: async (response) => {
-            updateCurrentUser(response.user);
-            await invalidateProfilePlanningQueries(queryClient);
-            setIsProfileEditorOpen(false);
-        }
-    });
-
-    const savePreferences = useMutation({
-        mutationFn: () =>
-            api.updatePreferences({
-                weight_unit: weightUnit,
-                height_unit: heightUnit,
-                reminder_log_food_enabled: logFoodReminders,
-                reminder_log_weight_enabled: logWeightReminders,
-                ...toReminderSchedulePayload(reminderSchedule),
-                haptics_enabled: hapticsEnabled
-            }),
-        onSuccess: async (response) => {
-            updateCurrentUser(response.user);
-            await invalidateProfilePlanningQueries(queryClient);
-            setActiveSheet(null);
-        }
-    });
-
-    function handleSavePreferences() {
-        if (reminderScheduleIsInvalid) return;
-        savePreferences.mutate();
-    }
-
-    function handleSaveProfile() {
-        const heightIsValid = isHeightWithinPolicy({
-            unit: heightUnit,
-            centimeters: Number(heightCm),
-            feet: Number(heightFeet),
-            inches: Number(heightInches || '0')
-        });
-        if (!heightIsValid) {
-            setProfileValidationError(getHeightPolicyError(heightUnit));
-            return;
-        }
-        setProfileValidationError(null);
-        saveProfile.mutate();
     }
 
     const updateProfileImage = useMutation({
@@ -404,27 +226,6 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
         onError: (error) => {
             setPasswordStatus(null);
             setPasswordError(getSafeActionErrorMessage(error, 'Unable to update password.'));
-        }
-    });
-
-    const revokeSession = useMutation({
-        mutationFn: (sessionId: string) => api.revokeAccountSession(sessionId),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['account-sessions'] });
-        }
-    });
-
-    const revokeOtherSessions = useMutation({
-        mutationFn: () => api.revokeOtherAccountSessions(),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['account-sessions'] });
-        }
-    });
-
-    const revokeConnectedApp = useMutation({
-        mutationFn: (connectionId: string) => api.revokeConnectedApp(connectionId),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['connected-apps'] });
         }
     });
 
@@ -495,19 +296,18 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
     const connectedAppCount = hasResolvedResourceData(connectedAppsState)
         ? connectedAppsQuery.data?.connections.length
         : undefined;
-    const calorieTarget = !hasPendingWeightChange && hasResolvedResourceData(profileState)
-        && profileQuery.data?.calorieSummary.planStatus === 'available'
-        ? profileQuery.data.calorieSummary.dailyCalorieTarget
-        : undefined;
     const planRequiresReview = !hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'requires_review';
     const planPresentation = getCaloriePlanPresentation(
         profileQuery.data?.calorieSummary.planReasonCode,
         profileQuery.data?.calorieSummary.planStatus
     );
-    const showProfilePlanningStatus = category === undefined || category === 'profile';
+    function openSettingsPage(page: SettingsPageId) {
+        router.push(canonicalPathForRoute(page) as Href);
+    }
+
     function handlePlanAction() {
         if (planPresentation.actionKind === 'profile') {
-            setIsProfileEditorOpen(true);
+            openSettingsPage('profile-details');
             return;
         }
         if (planPresentation.actionKind === 'weight') {
@@ -519,6 +319,8 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
             params: { openPlanReview: 'true' }
         });
     }
+
+    const showProfilePlanningStatus = category === undefined || category === 'profile';
 
     return (
         <TabScreen>
@@ -573,12 +375,8 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
                     failedMutationCount={failedMutations.length}
                     pendingMutationCount={pendingMutationCount}
                     isWeb={isWeb}
-                    onEditProfile={() => setIsProfileEditorOpen(true)}
+                    onOpenPage={openSettingsPage}
                     onOpenSheet={setActiveSheet}
-                    onOpenActivity={() => router.push(canonicalPathForRoute('activity') as Href)}
-                    onOpenSavedFoods={() => router.push(canonicalPathForRoute('my-foods') as Href)}
-                    onOpenAbout={() => router.push(canonicalPathForRoute('about') as Href)}
-                    onOpenAdvanced={() => router.push(canonicalPathForRoute('advanced') as Href)}
                     onOpenProductLink={(link) => router.push(CALIBRATE_PRODUCT_LINKS[link] as Href)}
                     onDeleteAccount={() => setIsDeleteAccountOpen(true)}
                     onLogout={() => void logout()}
@@ -603,88 +401,11 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
             )}
 
             <SettingsDetailSheet
-                visible={activeSheet === 'preferences'}
-                maxHeight="92%"
-                title="Preferences"
-                description="Units, reminder intent, delivery permission, quiet hours, and interaction feedback."
-                dismissDisabled={savePreferences.isPending}
-                isDirty={preferencesAreDirty}
-                confirmDismiss={confirmDiscardChanges}
-                onClose={closePreferences}
-            >
-                <View testID="settings-preferences-sheet" style={styles.sheetContent}>
-                    <AppText variant="label">Weight unit</AppText>
-                    <SegmentedControl accessibilityLabel="Weight unit" options={WEIGHT_UNIT_OPTIONS} value={weightUnit} onChange={setWeightUnit} />
-                    <AppText variant="label">Height unit</AppText>
-                    <SegmentedControl accessibilityLabel="Height unit" options={HEIGHT_UNIT_OPTIONS} value={heightUnit} onChange={setHeightUnit} />
-                    <ReminderSettingsPanel
-                        timezone={timezone}
-                        logFoodEnabled={logFoodReminders}
-                        logWeightEnabled={logWeightReminders}
-                        foodTime={logFoodReminderTime}
-                        weightTime={logWeightReminderTime}
-                        quietStart={quietHoursStart}
-                        quietEnd={quietHoursEnd}
-                        errors={reminderScheduleErrors}
-                        deliveryStatus={pushStatus}
-                        isWeb={isWeb}
-                        onLogFoodEnabledChange={setLogFoodReminders}
-                        onLogWeightEnabledChange={setLogWeightReminders}
-                        onFoodTimeChange={setLogFoodReminderTime}
-                        onWeightTimeChange={setLogWeightReminderTime}
-                        onQuietStartChange={setQuietHoursStart}
-                        onQuietEndChange={setQuietHoursEnd}
-                        onRequestPermission={() => void nativePush.requestPermission()}
-                        onOpenPermissionSettings={() => void nativePush.openSettings()}
-                        onRefreshPermission={() => void nativePush.refreshPermission()}
-                        onRetryRegistration={() => void nativePush.retryRegistration()}
-                        onDisableRegistration={nativePush.disableRegistration
-                            ? () => void nativePush.disableRegistration?.()
-                            : undefined}
-                    />
-                    <PreferenceSwitch
-                        label="Haptics"
-                        value={hapticsEnabled}
-                        onValueChange={setHapticsEnabled}
-                    />
-                    {savePreferences.error && (
-                        <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
-                            {getSafeActionErrorMessage(savePreferences.error, 'Unable to save preferences.')}
-                        </AppText>
-                    )}
-                    <AppButton
-                        title={savePreferences.isPending ? 'Saving...' : 'Save preferences'}
-                        disabled={savePreferences.isPending || reminderScheduleIsInvalid}
-                        leftIcon={<Ionicons name="options-outline" size={18} color={themeColors.onPrimary} />}
-                        onPress={handleSavePreferences}
-                    />
-                </View>
-            </SettingsDetailSheet>
-
-            {showAndroidIntegrations ? (
-                <>
-                    <BottomSheetModal
-                        visible={activeSheet === 'health-connect'}
-                        maxHeight="92%"
-                        onRequestClose={() => setActiveSheet(null)}
-                    >
-                        <HealthConnectCard />
-                    </BottomSheetModal>
-                    <BottomSheetModal
-                        visible={activeSheet === 'watch'}
-                        maxHeight="92%"
-                        onRequestClose={() => setActiveSheet(null)}
-                    >
-                        <WearPairingCard />
-                    </BottomSheetModal>
-                </>
-            ) : null}
-
-            <SettingsDetailSheet
                 visible={activeSheet === 'import'}
+                title="Import from Lose It"
+                description="Import a Lose It ZIP export into food logs and weigh-ins."
                 onClose={() => setActiveSheet(null)}
             >
-                <SectionHeader title="Import" description="Import a Lose It ZIP export into food logs and weigh-ins." />
                 {importMutation.data && (
                     <>
                         <AppText variant="muted">
@@ -710,12 +431,10 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
 
             <SettingsDetailSheet
                 visible={activeSheet === 'profile-photo'}
+                title="Profile photo"
+                description={user?.email ? `Signed in as ${user.email}.` : 'Used for your avatar across the app.'}
                 onClose={() => setActiveSheet(null)}
             >
-                <SectionHeader
-                    title="Profile photo"
-                    description={user?.email ? `Signed in as ${user.email}.` : 'Used for your avatar across the app.'}
-                />
                 <View style={styles.avatarRow}>
                     <View style={[
                         styles.avatar,
@@ -804,97 +523,13 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
             </SettingsDetailSheet>
 
             <SettingsDetailSheet
-                visible={activeSheet === 'devices'}
-                maxHeight="92%"
-                title="Signed-in devices"
-                description="Review every browser, Android, iOS, and Wear OS session for this account."
-                onClose={() => setActiveSheet(null)}
-            >
-                <View testID="settings-sessions" style={styles.sheetContent}>
-                    <AsyncStateBoundary
-                        state={sessionsState}
-                        resourceLabel="signed-in sessions"
-                        loading={<DeviceListSkeleton />}
-                        empty={(
-                            <AppCard>
-                                <AppText variant="subtitle">No signed-in sessions found</AppText>
-                                <AppText variant="muted">Refresh to check this account again.</AppText>
-                            </AppCard>
-                        )}
-                        onRetry={isOnline ? () => sessionsQuery.refetch() : undefined}
-                        retrying={sessionsQuery.isFetching}
-                    >
-                        <AccountSessionsPanel
-                            sessions={sessionsQuery.data?.sessions ?? []}
-                            pendingSessionId={revokeSession.isPending ? revokeSession.variables : undefined}
-                            revokingOthers={revokeOtherSessions.isPending}
-                            onRevoke={async (sessionId) => { await revokeSession.mutateAsync(sessionId); }}
-                            onRevokeOthers={async () => { await revokeOtherSessions.mutateAsync(); }}
-                        />
-                    </AsyncStateBoundary>
-                    {(revokeSession.error || revokeOtherSessions.error) && (
-                        <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
-                            {getSafeActionErrorMessage(
-                                revokeSession.error ?? revokeOtherSessions.error,
-                                'Unable to revoke that signed-in session.'
-                            )}
-                        </AppText>
-                    )}
-                </View>
-            </SettingsDetailSheet>
-
-            <SettingsDetailSheet
-                visible={activeSheet === 'connected-apps'}
-                maxHeight="92%"
-                title="Connected assistants"
-                description="Assistants use revocable, read-only OAuth access. They never receive your Calibrate password."
-                onClose={() => setActiveSheet(null)}
-            >
-                <View testID="settings-connected-apps" style={styles.sheetContent}>
-                    <AsyncStateBoundary
-                        state={connectedAppsState}
-                        resourceLabel="connected assistants"
-                        loading={<DeviceListSkeleton />}
-                        empty={(
-                            <AppCard>
-                                <AppText variant="subtitle">No connected assistants</AppText>
-                                <AppText variant="muted">Connections you approve will appear here.</AppText>
-                            </AppCard>
-                        )}
-                        onRetry={isOnline ? () => connectedAppsQuery.refetch() : undefined}
-                        retrying={connectedAppsQuery.isFetching}
-                    >
-                        <ConnectedAppsPanel
-                            connections={connectedAppsQuery.data?.connections ?? []}
-                            pendingConnectionId={revokeConnectedApp.isPending
-                                ? revokeConnectedApp.variables
-                                : undefined}
-                            onRevoke={async (connectionId) => {
-                                await revokeConnectedApp.mutateAsync(connectionId);
-                            }}
-                        />
-                    </AsyncStateBoundary>
-                    {revokeConnectedApp.error && (
-                        <AppText accessibilityRole="alert" style={[styles.error, { color: themeColors.danger }]}>
-                            {getSafeActionErrorMessage(
-                                revokeConnectedApp.error,
-                                'Unable to revoke that connected assistant.'
-                            )}
-                        </AppText>
-                    )}
-                </View>
-            </SettingsDetailSheet>
-
-            <SettingsDetailSheet
                 visible={activeSheet === 'offline'}
+                title={isOutboxReady ? 'Offline changes' : 'Online-only browser changes'}
+                description={isOutboxReady
+                    ? 'Writes saved on this device replay in order when the server is reachable.'
+                    : 'The browser does not save pending writes yet. Stay online when adding or editing data.'}
                 onClose={() => setActiveSheet(null)}
             >
-                <SectionHeader
-                    title={isOutboxReady ? 'Offline changes' : 'Online-only browser changes'}
-                    description={isOutboxReady
-                        ? 'Writes saved on this device replay in order when the server is reachable.'
-                        : 'The browser does not save pending writes yet. Stay online when adding or editing data.'}
-                />
                 {isOutboxReady ? (
                     <>
                         <View style={[styles.summaryRows, { backgroundColor: themeColors.surfaceContainer }]}>
@@ -940,7 +575,7 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
             </SettingsDetailSheet>
 
             <SettingsDetailSheet
-                visible={activeSheet === 'data'}
+                visible={activeSheet === 'export'}
                 title="Export your data"
                 description="Download a portable JSON copy of your Calibrate account."
                 onClose={() => setActiveSheet(null)}
@@ -961,32 +596,6 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
                 </View>
             </SettingsDetailSheet>
 
-            <ProfileEditorSheet
-                visible={isProfileEditorOpen}
-                timezone={timezone}
-                onTimezoneChange={setTimezone}
-                dateOfBirth={dateOfBirth}
-                onDateOfBirthChange={setDateOfBirth}
-                sex={sex}
-                onSexChange={setSex}
-                activityLevel={activityLevel}
-                onActivityLevelChange={setActivityLevel}
-                heightUnit={heightUnit}
-                heightCm={heightCm}
-                onHeightCmChange={setHeightCm}
-                heightFeet={heightFeet}
-                onHeightFeetChange={setHeightFeet}
-                heightInches={heightInches}
-                onHeightInchesChange={setHeightInches}
-                calorieTarget={calorieTarget}
-                validationError={profileValidationError}
-                saveError={saveProfile.error}
-                isSaving={saveProfile.isPending}
-                isDirty={profileIsDirty}
-                onClose={closeProfileEditor}
-                onSave={handleSaveProfile}
-            />
-
             <DeleteAccountSheet
                 visible={isDeleteAccountOpen}
                 isOutboxReady={isOutboxReady}
@@ -1003,28 +612,12 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
     );
 }
 
-export default function SettingsRoute() {
-    return <SettingsScreen />;
-}
+export default SettingsScreen;
 
 const SettingsResourceSkeleton: React.FC<{ label: string }> = ({ label }) => (
     <AppCard accessibilityLabel={label}>
         <AppText variant="muted">{label}</AppText>
         <SkeletonBlock width="72%" height={18} />
-    </AppCard>
-);
-
-const DeviceListSkeleton: React.FC = () => (
-    <AppCard accessibilityLabel="Loading active devices">
-        {[0, 1].map((row) => (
-            <View key={row} style={styles.deviceSkeletonRow}>
-                <View style={styles.deviceSkeletonCopy}>
-                    <SkeletonBlock width="58%" height={18} />
-                    <SkeletonBlock width="76%" height={14} />
-                </View>
-                <SkeletonBlock width={72} height={36} />
-            </View>
-        ))}
     </AppCard>
 );
 
@@ -1065,22 +658,6 @@ const styles = StyleSheet.create({
     },
     avatarActions: {
         flex: 1,
-        gap: spacing.sm
-    },
-
-    deviceSkeletonRow: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        gap: spacing.md,
-        minHeight: 52
-    },
-    deviceSkeletonCopy: {
-        flex: 1,
-        gap: spacing.sm
-    },
-    chips: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
         gap: spacing.sm
     },
 

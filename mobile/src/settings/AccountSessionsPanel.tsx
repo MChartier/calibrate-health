@@ -10,6 +10,7 @@ type AccountSessionsPanelProps = {
     sessions: AccountSessionSummary[];
     pendingSessionId?: string;
     revokingOthers: boolean;
+    errorMessage?: string;
     onRevoke: (sessionId: string) => void | Promise<void>;
     onRevokeOthers: () => void | Promise<void>;
 };
@@ -39,6 +40,7 @@ export function AccountSessionsPanel({
     sessions,
     pendingSessionId,
     revokingOthers,
+    errorMessage,
     onRevoke,
     onRevokeOthers
 }: AccountSessionsPanelProps) {
@@ -90,7 +92,7 @@ export function AccountSessionsPanel({
                             Signed in: {formatAccountSessionTimestamp(session.created_at)}
                         </AppText>
                         {session.current && (
-                            <AppText variant="caption">Use Log out in Account to end this session.</AppText>
+                            <AppText variant="caption">Use Log out in Security & access to end this session.</AppText>
                         )}
                     </View>
                     {!session.current && (
@@ -118,6 +120,11 @@ export function AccountSessionsPanel({
                     onPress={() => setConfirmation({ kind: 'others' })}
                 />
             )}
+            {errorMessage && !confirmation && (
+                <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                    {errorMessage}
+                </AppText>
+            )}
             <BottomSheetModal
                 visible={Boolean(confirmation)}
                 accessibilityLabel={confirmationTitle}
@@ -127,23 +134,30 @@ export function AccountSessionsPanel({
                 dismissDisabled={Boolean(pendingSessionId) || revokingOthers}
                 onRequestClose={() => setConfirmation(null)}
             >
-                <View testID="settings-session-confirmation" style={styles.confirmationActions}>
-                    <AppButton
-                        title="Cancel"
-                        variant="secondary"
-                        disabled={Boolean(pendingSessionId) || revokingOthers}
-                        onPress={() => setConfirmation(null)}
-                        style={styles.confirmationButton}
-                    />
-                    <AppButton
-                        testID="settings-session-confirm"
-                        title={confirmation?.kind === 'others' ? 'Revoke others' : 'Revoke'}
-                        variant="danger"
-                        busy={Boolean(pendingSessionId) || revokingOthers}
-                        busyLabel="Revoking..."
-                        onPress={() => void handleConfirm()}
-                        style={styles.confirmationButton}
-                    />
+                <View testID="settings-session-confirmation" style={styles.confirmationContent}>
+                    {errorMessage && (
+                        <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                            {errorMessage}
+                        </AppText>
+                    )}
+                    <View style={styles.confirmationActions}>
+                        <AppButton
+                            title="Cancel"
+                            variant="secondary"
+                            disabled={Boolean(pendingSessionId) || revokingOthers}
+                            onPress={() => setConfirmation(null)}
+                            style={styles.confirmationButton}
+                        />
+                        <AppButton
+                            testID="settings-session-confirm"
+                            title={confirmation?.kind === 'others' ? 'Revoke others' : 'Revoke'}
+                            variant="danger"
+                            busy={Boolean(pendingSessionId) || revokingOthers}
+                            busyLabel="Revoking..."
+                            onPress={() => void handleConfirm()}
+                            style={styles.confirmationButton}
+                        />
+                    </View>
                 </View>
             </BottomSheetModal>
         </View>
@@ -179,6 +193,9 @@ const styles = StyleSheet.create({
     },
     revokeButton: {
         flexShrink: 0
+    },
+    confirmationContent: {
+        gap: spacing.md
     },
     confirmationActions: {
         flexDirection: 'row',
