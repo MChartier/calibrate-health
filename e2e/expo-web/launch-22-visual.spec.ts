@@ -188,7 +188,7 @@ test('Settings remains understandable with forced colors', async ({ page, ux }, 
   }));
   await page.goto('/settings');
 
-  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true }).first()).toBeVisible();
   await expectViewportScreenshot(page, 'settings-forced-colors.png');
 });
 
@@ -243,7 +243,9 @@ test('Settings export exposes a stable busy and disabled submission state', asyn
   });
 
   await page.goto('/settings');
-  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true }).first()).toBeVisible();
+  await page.getByTestId('settings-open-data').click();
+  await expect(page).toHaveURL((url) => url.pathname === '/data');
   await page.getByTestId('settings-export').click();
   const exportSheet = page.getByTestId('settings-export-sheet');
   await expect(exportSheet).toBeVisible();
@@ -255,8 +257,8 @@ test('Settings export exposes a stable busy and disabled submission state', asyn
     await expect(busyButton).toBeDisabled();
     // The dialog is fixed-position; pin the inert page behind it so Windows font metrics
     // cannot leave a one-pixel scroll offset in the reviewed full-viewport baseline.
-    await page.locator('main').evaluate((main) => {
-      main.scrollTop = 0;
+    await page.locator('main').evaluateAll((routes) => {
+      for (const route of routes) route.scrollTop = 0;
     });
     await expectViewportScreenshot(page, 'settings-export-busy-dark.png');
   } finally {

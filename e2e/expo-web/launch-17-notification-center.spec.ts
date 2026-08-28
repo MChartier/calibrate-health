@@ -353,7 +353,8 @@ test('notification drawer and history preserve state, pagination, delivery, and 
     await expect(delivery).toContainText('Notifications are blocked for this site.');
     await expect(page.getByTestId('notification-delivery-action')).toContainText('Check notification access');
     await page.getByTestId('notification-preferences-cta').click();
-    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await expect(page).toHaveURL((url) => url.pathname === '/profile');
+    await expect(page.getByTestId('settings-open-preferences')).toBeVisible();
     await expectNoHorizontalOverflow(page);
     return;
   }

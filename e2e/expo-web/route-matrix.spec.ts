@@ -176,8 +176,12 @@ test('authenticated history and registered parent fallbacks return to the declar
   await ux.install('populated');
 
   await page.goto('/settings');
+  await page.getByTestId('settings-open-connections').click();
+  await expect(page).toHaveURL((url) => url.pathname === '/connections');
   await page.getByRole('button', { name: 'Activity', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/activity');
+  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/connections');
   await page.getByRole('button', { name: 'Go back', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/settings');
 
@@ -195,7 +199,14 @@ test('authenticated history and registered parent fallbacks return to the declar
   await expect(foodLogPage).toHaveURL((url) => url.pathname === '/today');
   await foodLogPage.close();
 
-  expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/activity')?.historyFallback).toBe('/settings');
+  expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/activity')?.historyFallback).toBe('/connections');
+  expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/my-foods')?.historyFallback).toBe('/data');
+  expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/about')?.historyFallback).toBe('/help');
+  expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/advanced')?.historyFallback).toBe('/help');
+  for (const categoryPath of ['/profile', '/security', '/connections', '/data', '/help']) {
+    expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === categoryPath)?.historyFallback)
+      .toBe('/settings');
+  }
   expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/weight-trend')?.historyFallback).toBe('/progress');
   expect(ROUTE_MATRIX.find(({ path: routePath }) => routePath === '/food-log')?.historyFallback).toBe('/today');
 });

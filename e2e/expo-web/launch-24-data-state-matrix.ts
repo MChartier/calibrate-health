@@ -25,6 +25,7 @@ export type Launch24DataRouteCase = {
   setup?: 'restricted-legal' | 'health-connect-ready';
   loading: SurfaceExpectation;
   content: SurfaceExpectation;
+  contentVisibleWhileLoading?: boolean;
   empty: SurfaceExpectation;
   errorText: string;
   errorActionText?: string;
@@ -189,6 +190,25 @@ function routeCase(
   };
 }
 
+function settingsCategoryRouteCase(
+  id: Launch24DataRouteCase['id'],
+  testId: string,
+): Launch24DataRouteCase {
+  return routeCase(id, {
+    resource: {
+      pathname: '/api/v1/goals',
+      content: GOAL,
+      empty: null,
+    },
+    loading: { kind: 'text', value: 'Loading your current goal...' },
+    content: { kind: 'testId', value: testId },
+    contentVisibleWhileLoading: true,
+    empty: { kind: 'testId', value: testId },
+    errorText: "Can't load your current goal",
+    staleText: "Couldn't refresh your current goal",
+  });
+}
+
 /** One reviewed primary resource and truthful surface contract for every data-backed route. */
 export const LAUNCH_24_DATA_ROUTE_CASES = [
   routeCase('legal-update', {
@@ -244,6 +264,7 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
     staleText: "Couldn't refresh your current goal",
     terminalEmptyText: 'No active goal set',
   }),
+  settingsCategoryRouteCase('settings-profile', 'settings-category-profile'),
   routeCase('food-log', {
     resource: {
       pathname: '/api/v1/food',
@@ -359,6 +380,10 @@ export const LAUNCH_24_STATIC_ROUTE_IDS = [
   'privacy',
   'account-deletion',
   'health-connect-privacy',
+  'settings-security',
+  'settings-connections',
+  'settings-data',
+  'settings-help',
   'about',
   'advanced',
 ] as const satisfies readonly RouteId[];

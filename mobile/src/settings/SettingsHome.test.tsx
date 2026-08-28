@@ -19,99 +19,96 @@ describe('SettingsHome', () => {
         expect(shouldShowSettingsResourceStatus(error, true)).toBe(true);
     });
 
-    it('exposes the registered Settings child destinations', () => {
-        const onOpenActivity = jest.fn();
-        const onOpenSavedFoods = jest.fn();
-        const onOpenAbout = jest.fn();
-        const onOpenAdvanced = jest.fn();
-        const onOpenProductLink = jest.fn();
-        const onDeleteAccount = jest.fn();
-        const onOpenSheet = jest.fn();
+    it('shows the two-section web landing page and opens each category in order', () => {
+        const onOpenCategory = jest.fn();
         const screen = render(
             <SettingsHome
                 email="person@example.invalid"
                 goalSummary="Maintain weight"
                 weightUnit={WEIGHT_UNITS.KG}
                 heightUnit={HEIGHT_UNITS.CM}
+                sessionCount={3}
+                connectedAppCount={1}
                 isOutboxReady
-                failedMutationCount={0}
-                pendingMutationCount={0}
+                failedMutationCount={2}
+                pendingMutationCount={4}
                 isWeb
-                onEditProfile={jest.fn()}
-                onOpenSheet={onOpenSheet}
-                onOpenActivity={onOpenActivity}
-                onOpenSavedFoods={onOpenSavedFoods}
-                onOpenAbout={onOpenAbout}
-                onOpenAdvanced={onOpenAdvanced}
-                onOpenProductLink={onOpenProductLink}
-                onDeleteAccount={onDeleteAccount}
-                onLogout={jest.fn()}
+                onOpenCategory={onOpenCategory}
             />
         );
 
-        fireEvent.press(screen.getByRole('button', { name: 'Activity' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Saved foods' }));
-        fireEvent.press(screen.getByRole('button', { name: 'About Calibrate' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Support and feedback' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Privacy policy' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Terms of service' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Open-source licenses' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Delete account' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
-
-        expect(onOpenActivity).toHaveBeenCalledTimes(1);
-        expect(onOpenSavedFoods).toHaveBeenCalledTimes(1);
-        expect(onOpenAbout).toHaveBeenCalledTimes(1);
-        expect(onOpenProductLink.mock.calls).toEqual([
-            ['support'],
-            ['privacy'],
-            ['terms'],
-            ['licenses']
+        expect(screen.getAllByTestId(/^settings-section-/).map((section) => section.props.testID)).toEqual([
+            'settings-section-account',
+            'settings-section-categories'
         ]);
-        expect(onDeleteAccount).toHaveBeenCalledTimes(1);
-        expect(screen.queryByText('Email verification')).toBeNull();
-        expect(screen.getByRole('button', { name: 'Health Connect' })).toBeTruthy();
-        expect(screen.queryByRole('button', { name: 'Galaxy Watch' })).toBeNull();
-        expect(screen.getAllByText('person@example.invalid')).toHaveLength(1);
-        expect(screen.getByTestId('settings-section-account')).toBeTruthy();
-        expect(screen.getByTestId('settings-section-personal')).toBeTruthy();
-        expect(screen.getByTestId('settings-section-connections')).toBeTruthy();
-        expect(screen.getByTestId('settings-section-security')).toBeTruthy();
-        expect(screen.getByTestId('settings-section-data')).toBeTruthy();
-        expect(screen.getByTestId('settings-section-help')).toBeTruthy();
-        expect(screen.getByTestId('settings-section-app')).toBeTruthy();
-        expect(onOpenAdvanced).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('person@example.invalid')).toBeTruthy();
+        expect(screen.getByText('Maintain weight')).toBeTruthy();
+
+        const categoryButtons = screen.getAllByRole('button');
+        expect(categoryButtons.map((button) => button.props.accessibilityLabel)).toEqual([
+            'Profile & preferences, kg | cm',
+            'Security & access, 3 sessions',
+            'Connections, 1 assistant',
+            'Data & privacy, 2 failed',
+            'Help & app'
+        ]);
+        expect(screen.getByText('Personal details, photo, units, reminders, and haptics')).toBeTruthy();
+        expect(screen.getByText('Password, signed-in devices, and sign-out')).toBeTruthy();
+        expect(screen.getByText('Activity, health data, companion devices, and assistants')).toBeTruthy();
+        expect(screen.getByText('Saved foods, imports, offline changes, export, and deletion')).toBeTruthy();
+        expect(screen.getByText(
+            'Support, legal documents, product information, and advanced controls'
+        )).toBeTruthy();
+
+        categoryButtons.forEach((button) => fireEvent.press(button));
+        expect(onOpenCategory.mock.calls).toEqual([
+            ['profile'],
+            ['security'],
+            ['connections'],
+            ['data'],
+            ['help']
+        ]);
     });
 
-    it('routes native self-hosting controls through the Advanced settings page', () => {
-        const onOpenAdvanced = jest.fn();
-        const onOpenSheet = jest.fn();
+    it('shows native summaries and opens each category in order', () => {
+        const onOpenCategory = jest.fn();
         const screen = render(
             <SettingsHome
-                email="person@example.invalid"
-                goalSummary="Maintain weight"
-                weightUnit={WEIGHT_UNITS.KG}
-                heightUnit={HEIGHT_UNITS.CM}
+                email="native@example.invalid"
+                goalSummary="Lose 1 lb per week"
+                weightUnit={WEIGHT_UNITS.LB}
+                heightUnit={HEIGHT_UNITS.FT_IN}
+                sessionCount={1}
+                connectedAppCount={2}
                 isOutboxReady
                 failedMutationCount={0}
-                pendingMutationCount={0}
+                pendingMutationCount={4}
                 isWeb={false}
-                onEditProfile={jest.fn()}
-                onOpenSheet={onOpenSheet}
-                onOpenActivity={jest.fn()}
-                onOpenSavedFoods={jest.fn()}
-                onOpenAbout={jest.fn()}
-                onOpenAdvanced={onOpenAdvanced}
-                onOpenProductLink={jest.fn()}
-                onDeleteAccount={jest.fn()}
-                onLogout={jest.fn()}
+                onOpenCategory={onOpenCategory}
             />
         );
 
-        expect(screen.queryByText('Calibrate server')).toBeNull();
-        fireEvent.press(screen.getByRole('button', { name: 'Galaxy Watch' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
-        expect(onOpenSheet).toHaveBeenCalledWith('watch');
-        expect(onOpenAdvanced).toHaveBeenCalledTimes(1);
+        expect(screen.getAllByTestId(/^settings-section-/).map((section) => section.props.testID)).toEqual([
+            'settings-section-account',
+            'settings-section-categories'
+        ]);
+
+        const categoryButtons = screen.getAllByRole('button');
+        expect(categoryButtons.map((button) => button.props.accessibilityLabel)).toEqual([
+            'Profile & preferences, lb | ft/in',
+            'Security & access, 1 session',
+            'Connections, 2 assistants',
+            'Data & privacy, 4 pending',
+            'Help & app, v0.0.0-test'
+        ]);
+
+        categoryButtons.forEach((button) => fireEvent.press(button));
+        expect(onOpenCategory.mock.calls).toEqual([
+            ['profile'],
+            ['security'],
+            ['connections'],
+            ['data'],
+            ['help']
+        ]);
     });
 });

@@ -304,8 +304,8 @@ test('Activity keeps connection, sync, source, and calorie-target truth across r
   await page.getByRole('button', { name: 'View activity for Jul 20, 2026', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Jul 20, 2026', exact: true })).toBeVisible();
   await expect(page.getByTestId('activity-summary')).toContainText('7,105');
-  await page.getByRole('button', { name: 'Back to Settings', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/settings');
-  await expect(page.locator('#route-focus-title')).toHaveText('Settings');
+  await page.getByRole('button', { name: 'Back to Connections', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/connections');
+  await expect(page.locator('#route-focus-title')).toHaveText('Connections');
   await expectNoHorizontalOverflow(page);
 });

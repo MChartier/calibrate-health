@@ -281,8 +281,12 @@ test('production caution, danger, and focus roles remain visually distinct', asy
   await captureLocatorEvidence(cautionMessage, testInfo, 'production-caution-light.png');
 
   await page.goto('/settings');
+  await page.getByTestId('settings-open-data').click();
+  await expect(page).toHaveURL((url) => url.pathname === '/data');
+  await expect(page.locator('#route-focus-title')).toBeFocused();
   const deleteAccount = page.getByRole('button', { name: 'Delete account', exact: true });
   await deleteAccount.scrollIntoViewIfNeeded();
+  await page.keyboard.press('Tab');
   await deleteAccount.focus();
   await expect(deleteAccount).toHaveCSS('outline-color', cssRgb(scheme.focusRing));
   await expect(deleteAccount.getByText('Delete account', { exact: true })).toHaveCSS('color', cssRgb(scheme.danger));

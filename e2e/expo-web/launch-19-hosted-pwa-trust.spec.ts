@@ -376,6 +376,8 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
       body: JSON.stringify({ message: 'Signed out' }),
     }));
     await page.goto('/settings');
+    await page.getByTestId('settings-open-security').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/security');
     await page.evaluate(async () => {
       if ('serviceWorker' in navigator) await navigator.serviceWorker.ready;
     });
@@ -408,6 +410,8 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
   expect(await page.evaluate(() => matchMedia('(display-mode: standalone)').matches)).toBe(true);
   await expect(page.getByRole('main')).toBeVisible();
   await expectAxeStyleAccessibilityBaseline(page);
+  await page.getByTestId('settings-open-help').click();
+  await expect(page).toHaveURL((url) => url.pathname === '/help');
   await page.getByTestId('settings-advanced').click();
   await expect(page).toHaveURL((url) => url.pathname === '/advanced');
   const advanced = page.getByTestId('advanced-settings-page');

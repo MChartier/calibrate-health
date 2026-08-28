@@ -6,6 +6,16 @@ import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
 
+export const SETTINGS_CATEGORY_IDS = [
+    'profile',
+    'security',
+    'connections',
+    'data',
+    'help'
+] as const;
+
+export type SettingsCategoryId = (typeof SETTINGS_CATEGORY_IDS)[number];
+
 export type SettingsSheetId =
     | 'preferences'
     | 'health-connect'
@@ -18,7 +28,7 @@ export type SettingsSheetId =
     | 'offline'
     | 'data';
 
-type ProductLink = 'support' | 'privacy' | 'terms' | 'licenses';
+export type ProductLink = 'support' | 'privacy' | 'terms' | 'licenses';
 
 type SettingsHomeProps = {
     email?: string | null;
@@ -32,15 +42,13 @@ type SettingsHomeProps = {
     failedMutationCount: number;
     pendingMutationCount: number;
     isWeb: boolean;
-    onEditProfile: () => void;
-    onOpenSheet: (sheet: SettingsSheetId) => void;
-    onOpenActivity: () => void;
-    onOpenSavedFoods: () => void;
-    onOpenAbout: () => void;
-    onOpenAdvanced: () => void;
-    onOpenProductLink: (link: ProductLink) => void;
-    onDeleteAccount: () => void;
-    onLogout: () => void;
+    onOpenCategory: (category: SettingsCategoryId) => void;
+};
+
+type SettingsAccountSummaryProps = {
+    email?: string | null;
+    profileImageUrl?: string | null;
+    goalSummary: string;
 };
 
 function getAvatarLabel(email?: string | null): string {
@@ -50,6 +58,40 @@ function getAvatarLabel(email?: string | null): string {
 export function shouldShowSettingsResourceStatus(state: AsyncResourceState, isWeb: boolean): boolean {
     if (isWeb && state.kind === ASYNC_RESOURCE_STATES.STALE) return false;
     return state.kind !== ASYNC_RESOURCE_STATES.CONTENT && state.kind !== ASYNC_RESOURCE_STATES.EMPTY;
+}
+
+export function SettingsAccountSummary({
+    email,
+    profileImageUrl,
+    goalSummary
+}: SettingsAccountSummaryProps) {
+    const { colors } = useAppTheme();
+
+    return (
+        <View testID="settings-account-summary" style={styles.accountSummary}>
+            <View style={[styles.summaryAvatar, { backgroundColor: colors.primaryContainer }]}>
+                {profileImageUrl ? (
+                    <Image source={{ uri: profileImageUrl }} style={styles.avatarImage} />
+                ) : (
+                    <AppText variant="subtitle" style={{ color: colors.onPrimaryContainer }}>
+                        {getAvatarLabel(email)}
+                    </AppText>
+                )}
+            </View>
+            <View style={styles.summaryText}>
+                <AppText
+                    accessibilityRole="header"
+                    aria-level={3}
+                    ellipsizeMode="middle"
+                    numberOfLines={1}
+                    style={styles.summaryEmail}
+                >
+                    {email ?? 'Calibrate account'}
+                </AppText>
+                <AppText variant="caption" numberOfLines={2}>{goalSummary}</AppText>
+            </View>
+        </View>
+    );
 }
 
 export function SettingsHome({
@@ -64,244 +106,85 @@ export function SettingsHome({
     failedMutationCount,
     pendingMutationCount,
     isWeb,
-    onEditProfile,
-    onOpenSheet,
-    onOpenActivity,
-    onOpenSavedFoods,
-    onOpenAbout,
-    onOpenAdvanced,
-    onOpenProductLink,
-    onDeleteAccount,
-    onLogout
+    onOpenCategory
 }: SettingsHomeProps) {
-    const { colors } = useAppTheme();
     const unitSummary = `${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${
         heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'
     }`;
-    const offlineSummary = failedMutationCount > 0
-        ? `${failedMutationCount} failed`
-        : `${pendingMutationCount} pending`;
+    const securitySummary = sessionCount === undefined
+        ? undefined
+        : `${sessionCount} ${sessionCount === 1 ? 'session' : 'sessions'}`;
+    const connectionSummary = connectedAppCount === undefined || connectedAppCount === 0
+        ? undefined
+        : `${connectedAppCount} ${connectedAppCount === 1 ? 'assistant' : 'assistants'}`;
+    let dataSummary: string | undefined;
+    if (!isOutboxReady) {
+        dataSummary = 'Online only';
+    } else if (failedMutationCount > 0) {
+        dataSummary = `${failedMutationCount} failed`;
+    } else if (pendingMutationCount > 0) {
+        dataSummary = `${pendingMutationCount} pending`;
+    }
 
     return (
         <View testID="settings-home" style={styles.home}>
             <SettingsSection
                 testID="settings-section-account"
-                title="Account"
-                description="Identity and access to this Calibrate account."
+                title="Your account"
+                description="The account and goal currently active on this device."
             >
-                <View
-                    testID="settings-account-summary"
-                    style={[styles.accountSummary, { borderBottomColor: colors.outlineVariant }]}
-                >
-                    <View style={[styles.summaryAvatar, { backgroundColor: colors.primaryContainer }]}>
-                        {profileImageUrl ? (
-                            <Image source={{ uri: profileImageUrl }} style={styles.avatarImage} />
-                        ) : (
-                            <AppText variant="subtitle" style={{ color: colors.onPrimaryContainer }}>
-                                {getAvatarLabel(email)}
-                            </AppText>
-                        )}
-                    </View>
-                    <View style={styles.summaryText}>
-                        <AppText
-                            accessibilityRole="header"
-                            aria-level={3}
-                            ellipsizeMode="middle"
-                            numberOfLines={1}
-                            style={styles.summaryEmail}
-                        >
-                            {email ?? 'Calibrate account'}
-                        </AppText>
-                        <AppText variant="caption" numberOfLines={2}>{goalSummary}</AppText>
-                    </View>
-                </View>
-                <SettingsRow
-                    icon="image-outline"
-                    label="Profile photo"
-                    supportingText="Your avatar across Calibrate"
-                    onPress={() => onOpenSheet('profile-photo')}
-                />
-                <SettingsRow
-                    icon="log-out-outline"
-                    label="Log out"
-                    showDivider={false}
-                    onPress={onLogout}
+                <SettingsAccountSummary
+                    email={email}
+                    profileImageUrl={profileImageUrl}
+                    goalSummary={goalSummary}
                 />
             </SettingsSection>
 
             <SettingsSection
-                testID="settings-section-personal"
-                title="Personal details"
-                description="Profile, units, reminders, and app behavior."
+                testID="settings-section-categories"
+                title="Browse settings"
+                description="Choose an area to see related controls."
             >
                 <SettingsRow
+                    testID="settings-open-profile"
                     icon="person-outline"
-                    label="Profile details"
-                    supportingText="Body details, activity level, and time zone"
-                    onPress={onEditProfile}
-                />
-                <SettingsRow
-                    testID="settings-open-preferences"
-                    icon="options-outline"
-                    label="Preferences"
-                    supportingText="Units, reminder intent, quiet hours, permissions, and haptics"
+                    label="Profile & preferences"
+                    supportingText="Personal details, photo, units, reminders, and haptics"
                     value={unitSummary}
-                    showDivider={false}
-                    onPress={() => onOpenSheet('preferences')}
-                />
-            </SettingsSection>
-
-            <SettingsSection
-                testID="settings-section-connections"
-                title="Connections"
-                description="Imported activity, companion devices, and assistants."
-            >
-                <SettingsRow
-                    icon="walk-outline"
-                    label="Activity"
-                    supportingText="Steps, active calories, and exercise history"
-                    onPress={onOpenActivity}
+                    onPress={() => onOpenCategory('profile')}
                 />
                 <SettingsRow
-                    icon="fitness-outline"
-                    label="Health Connect"
-                    supportingText="Read activity and weight from Android"
-                    onPress={() => onOpenSheet('health-connect')}
-                />
-                {!isWeb ? (
-                    <SettingsRow
-                        icon="watch-outline"
-                        label="Galaxy Watch"
-                        supportingText="Pair, sync, and manage the Wear OS companion"
-                        onPress={() => onOpenSheet('watch')}
-                    />
-                ) : null}
-                <SettingsRow
-                    testID="settings-open-connected-apps"
-                    icon="link-outline"
-                    label="Connected assistants"
-                    supportingText="Review and revoke read-only Calibrate access"
-                    value={connectedAppCount === undefined ? undefined : String(connectedAppCount)}
-                    showDivider={false}
-                    onPress={() => onOpenSheet('connected-apps')}
-                />
-            </SettingsSection>
-
-            <SettingsSection
-                testID="settings-section-security"
-                title="Security"
-                description="Password and every signed-in browser, phone, or watch."
-            >
-                <SettingsRow
-                    icon="key-outline"
-                    label="Password"
-                    supportingText="Change your password with current-password confirmation"
-                    onPress={() => onOpenSheet('password')}
-                />
-                <SettingsRow
-                    testID="settings-open-sessions"
-                    icon="phone-portrait-outline"
-                    label="Signed-in devices"
-                    supportingText="Review and revoke browser, phone, and watch sessions"
-                    value={sessionCount === undefined ? undefined : String(sessionCount)}
-                    showDivider={false}
-                    onPress={() => onOpenSheet('devices')}
-                />
-            </SettingsSection>
-
-            <SettingsSection
-                testID="settings-section-data"
-                title="Data"
-                description="Saved content, imports, offline changes, export, and deletion."
-            >
-                <SettingsRow
-                    icon="restaurant-outline"
-                    label="Saved foods"
-                    supportingText="Foods and recipes you can quickly log"
-                    onPress={onOpenSavedFoods}
-                />
-                <SettingsRow
-                    icon="cloud-upload-outline"
-                    label="Import from Lose It"
-                    supportingText="Bring in a ZIP export"
-                    onPress={() => onOpenSheet('import')}
-                />
-                <SettingsRow
-                    icon="sync-outline"
-                    label="Offline changes"
-                    supportingText={isOutboxReady
-                        ? 'Review work waiting to sync'
-                        : 'Browser changes require an active connection'}
-                    value={isOutboxReady ? offlineSummary : 'Online only'}
-                    onPress={() => onOpenSheet('offline')}
-                />
-                <SettingsRow
-                    testID="settings-export"
-                    icon="share-outline"
-                    label="Export account data"
-                    supportingText="Download a portable JSON copy"
-                    onPress={() => onOpenSheet('data')}
-                />
-                <SettingsRow
-                    testID="settings-delete-account"
-                    icon="trash-outline"
-                    label="Delete account"
-                    supportingText="Permanently delete this account after reauthentication"
-                    danger
-                    showDivider={false}
-                    onPress={onDeleteAccount}
-                />
-            </SettingsSection>
-
-            <SettingsSection
-                testID="settings-section-help"
-                title="Help"
-                description="Support and documents about your rights and the software."
-            >
-                <SettingsRow
-                    icon="help-circle-outline"
-                    label="Support and feedback"
-                    supportingText="Get help or tell us what could be better"
-                    onPress={() => onOpenProductLink('support')}
-                />
-                <SettingsRow
+                    testID="settings-open-security"
                     icon="shield-checkmark-outline"
-                    label="Privacy policy"
-                    onPress={() => onOpenProductLink('privacy')}
+                    label="Security & access"
+                    supportingText="Password, signed-in devices, and sign-out"
+                    value={securitySummary}
+                    onPress={() => onOpenCategory('security')}
                 />
                 <SettingsRow
-                    icon="document-text-outline"
-                    label="Terms of service"
-                    onPress={() => onOpenProductLink('terms')}
+                    testID="settings-open-connections"
+                    icon="link-outline"
+                    label="Connections"
+                    supportingText="Activity, health data, companion devices, and assistants"
+                    value={connectionSummary}
+                    onPress={() => onOpenCategory('connections')}
                 />
                 <SettingsRow
-                    icon="code-slash-outline"
-                    label="Open-source licenses"
-                    showDivider={false}
-                    onPress={() => onOpenProductLink('licenses')}
+                    testID="settings-open-data"
+                    icon="folder-open-outline"
+                    label="Data & privacy"
+                    supportingText="Saved foods, imports, offline changes, export, and deletion"
+                    value={dataSummary}
+                    onPress={() => onOpenCategory('data')}
                 />
-            </SettingsSection>
-
-            <SettingsSection
-                testID="settings-section-app"
-                title="App & Advanced"
-                description="Version, product information, and optional connection controls."
-            >
                 <SettingsRow
-                    icon="information-circle-outline"
-                    label="About Calibrate"
-                    supportingText="Purpose, trust, and product links"
+                    testID="settings-open-help"
+                    icon="help-circle-outline"
+                    label="Help & app"
+                    supportingText="Support, legal documents, product information, and advanced controls"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
-                    showDivider
-                    onPress={onOpenAbout}
-                />
-                <SettingsRow
-                    testID="settings-advanced"
-                    icon="options-outline"
-                    label="Advanced settings"
-                    supportingText="Connection, diagnostics, and software updates"
                     showDivider={false}
-                    onPress={onOpenAdvanced}
+                    onPress={() => onOpenCategory('help')}
                 />
             </SettingsSection>
         </View>
@@ -318,8 +201,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
         paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth
+        paddingVertical: spacing.md
     },
     summaryAvatar: {
         width: 54,

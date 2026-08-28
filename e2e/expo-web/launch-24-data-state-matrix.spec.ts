@@ -137,7 +137,11 @@ test.describe('Launch 24 exported-web data-state coverage', () => {
 
         if (state === 'loading') {
           await expectSurface(page, routeCase.loading);
-          await expect(surfaceLocator(page, routeCase.content)).toHaveCount(0);
+          if (routeCase.contentVisibleWhileLoading) {
+            await expectSurface(page, routeCase.content);
+          } else {
+            await expect(surfaceLocator(page, routeCase.content)).toHaveCount(0);
+          }
           controller.releaseLoading();
           await expectSurface(page, routeCase.content);
           return;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { router, useLocalSearchParams, usePathname } from 'expo-router';
+import { router, useLocalSearchParams, usePathname, type Href } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../../src/components/AddFoodSheet';
@@ -23,6 +23,7 @@ import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPrevio
 import { shouldEmphasizePausedStatus, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
 import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
+import { canonicalPathForRoute } from '../../../src/navigation/routeRegistry';
 import { getTodayDate } from '../../../src/utils/dates';
 import { getMetricDate } from '../../../src/utils/metrics';
 import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
@@ -105,7 +106,7 @@ export default function TodayScreen() {
             return;
         }
         if (planPresentation.actionKind === 'profile') {
-            router.push('/settings');
+            router.push(canonicalPathForRoute('settings-profile') as Href);
             return;
         }
         router.push({

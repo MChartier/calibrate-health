@@ -260,6 +260,8 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
   }));
   await page.goto('/settings');
   await expectDirectEntryKeepsSkipLinkFirst(page, 'Settings');
+  await activateWithKeyboard(page, page.getByTestId('settings-open-profile'));
+  await expect(page).toHaveURL((url) => url.pathname === '/profile');
   const preferences = page.getByTestId('settings-open-preferences');
   await activateWithKeyboard(page, preferences);
   const preferencesDialog = page.getByRole('dialog', { name: 'Preferences', exact: true });
