@@ -36,6 +36,7 @@ const ANDROID_PUBLISHER_UPLOAD_ROOT = 'https://androidpublisher.googleapis.com/u
 const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 export const NATIVE_PLAY_APPLICATION_ID = NATIVE_RELEASE_APPLICATION_ID;
+// Google Play's Publisher API names its built-in internal-test track `qa`; form-factor tracks prefix that alias.
 export const NATIVE_PLAY_TRACKS = Object.freeze({
   internal: Object.freeze({ phone: 'qa', watch: 'wear:qa' }),
   closed: Object.freeze({ phone: 'closed', watch: 'wear:closed' }),
