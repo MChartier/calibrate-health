@@ -1,0 +1,556 @@
+name: Native Android Store Release
+
+run-name: Native ${{ inputs.operation }} from ${{ inputs.source_commit }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact 40-character commit on master whose signed phone and Wear release is being published
+        required: true
+        type: string
+      operation:
+        description: Upload one paired build, promote it to closed testing, or promote the closed pair to production
+        required: true
+        default: upload-internal
+        type: choice
+        options:
+          - upload-internal
+          - promote-closed
+          - promote-production
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_BUILD_TOOLS_VERSION: '36.0.0'
+  BUNDLETOOL_VERSION: '1.18.3'
+  BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+
+concurrency:
+  group: native-android-store-release
+  cancel-in-progress: false
+
+jobs:
+  validate-source:
+    name: Validate exact native release source
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      native_tag: ${{ steps.source.outputs.native_tag }}
+
+    steps:
+      - name: Require master and an exact source commit
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
+            echo "Run Native Android Store Release from master; current ref is ${GITHUB_REF}." >&2
+            exit 1
+          fi
+          if [[ ! "${SOURCE_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "source_commit must be an exact lowercase 40-character Git SHA." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_commit }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+
+      - name: Bind source and native tag
+        id: source
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${SOURCE_COMMIT}"
+          git fetch origin master --tags
+          if ! git merge-base --is-ancestor "${SOURCE_COMMIT}" origin/master; then
+            echo "Native release source ${SOURCE_COMMIT} is not on master." >&2
+            exit 1
+          fi
+
+          PHONE_VERSION="$(node -p "require('./shared/release.json').android.mobile.version_name")"
+          WEAR_VERSION="$(node -p "require('./shared/release.json').android.wear.version_name")"
+          NATIVE_TAG="$(node -p "require('./shared/release.json').android.mobile.native_release_tag")"
+          EXPECTED_TAG="native-v${PHONE_VERSION}"
+          if [[ "${PHONE_VERSION}" != "${WEAR_VERSION}" ]]; then
+            echo "Paired Play releases require matching phone and Wear version names." >&2
+            exit 1
+          fi
+          if [[ "${NATIVE_TAG}" != "${EXPECTED_TAG}" ]]; then
+            echo "Native release tag ${NATIVE_TAG} must be ${EXPECTED_TAG}." >&2
+            exit 1
+          fi
+          if git show-ref --tags --verify --quiet "refs/tags/${NATIVE_TAG}" && \
+             [[ "$(git rev-parse "${NATIVE_TAG}^{commit}")" != "${SOURCE_COMMIT}" ]]; then
+            echo "Native release tag ${NATIVE_TAG} already points at another commit." >&2
+            exit 1
+          fi
+          echo "native_tag=${NATIVE_TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Validate synchronized release configuration
+        run: npm run release:check
+
+      - name: Validate Play release plan
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: node scripts/native-play-release.mjs plan --source-commit "${SOURCE_COMMIT}"
+
+  build-internal:
+    name: Build paired production-channel artifacts
+    needs: validate-source
+    if: inputs.operation == 'upload-internal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: play-internal
+    permissions:
+      contents: read
+    env:
+      EXPO_NO_METRO_WORKSPACE_ROOT: '1'
+      EXPO_PUBLIC_CALIBRATE_SERVER_URL: https://calibratehealth.app
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: production
+      NODE_ENV: production
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_commit }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 15859902
+
+      - name: Activate reviewed Android command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
+
+      - name: Provision pinned artifact inspection tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" platform-tools >/dev/null
+          BUNDLETOOL_JAR="${RUNNER_TEMP}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          curl --fail --location --retry 3 \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
+            --output "${BUNDLETOOL_JAR}"
+          echo "${BUNDLETOOL_SHA256}  ${BUNDLETOOL_JAR}" | sha256sum --check
+          echo "BUNDLETOOL_JAR=${BUNDLETOOL_JAR}" >> "${GITHUB_ENV}"
+
+      - name: Require native release configuration
+        shell: bash
+        env:
+          GOOGLE_PLAY_ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_ACCESS_TOKEN }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+          KEY_ALIAS: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD }}
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [[ -n "${UPLOAD_KEYSTORE_BASE64}" ]] || missing+=(CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64)
+          [[ -n "${STORE_PASSWORD}" ]] || missing+=(CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD)
+          [[ -n "${KEY_ALIAS}" ]] || missing+=(CALIBRATE_ANDROID_SIGNING_KEY_ALIAS)
+          [[ -n "${KEY_PASSWORD}" ]] || missing+=(CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD)
+          if [[ -z "${GOOGLE_PLAY_ACCESS_TOKEN}" && -z "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            missing+=(GOOGLE_PLAY_ACCESS_TOKEN-or-GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64)
+          fi
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Configure these play-internal environment secrets before building: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Install native release dependencies
+        run: npm ci --no-audit --fund=false
+
+      - name: Materialize shared Android upload signing
+        shell: bash
+        env:
+          KEY_ALIAS: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD }}
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          STORE_FILE="${RUNNER_TEMP}/calibrate-android-upload.keystore"
+          printf '%s' "${UPLOAD_KEYSTORE_BASE64}" | base64 --decode > "${STORE_FILE}"
+          chmod 600 "${STORE_FILE}"
+          test -s "${STORE_FILE}"
+          {
+            echo "CALIBRATE_ANDROID_SIGNING_STORE_FILE=${STORE_FILE}"
+            echo "CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD=${STORE_PASSWORD}"
+            echo "CALIBRATE_ANDROID_SIGNING_KEY_ALIAS=${KEY_ALIAS}"
+            echo "CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD=${KEY_PASSWORD}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Build signed phone and Wear APKs and AABs once
+        run: npm run build:native:release
+
+      - name: Verify exact paired artifacts and signing identity
+        run: node scripts/native-play-release.mjs verify-artifacts --source-commit "${SOURCE_COMMIT}"
+
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${CALIBRATE_ANDROID_SIGNING_STORE_FILE:-}"
+          {
+            echo 'CALIBRATE_ANDROID_SIGNING_STORE_FILE='
+            echo 'CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD='
+            echo 'CALIBRATE_ANDROID_SIGNING_KEY_ALIAS='
+            echo 'CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD='
+          } >> "${GITHUB_ENV}"
+
+      - name: Upload short-lived paired native release
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-play-release-${{ inputs.source_commit }}
+          path: |
+            mobile/android/app/build/outputs/apk/release/app-release.apk
+            mobile/android/app/build/outputs/bundle/release/app-release.aab
+            wear/app/build/outputs/apk/release/app-release.apk
+            wear/app/build/outputs/bundle/release/app-release.aab
+            build/native-release-provenance.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 3
+
+  publish-internal:
+    name: Upload paired build to Play internal
+    needs: [validate-source, build-internal]
+    if: inputs.operation == 'upload-internal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: play-internal
+    permissions:
+      contents: read
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+
+      - name: Setup Java for artifact inspection
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK for artifact inspection
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 15859902
+
+      - name: Provision pinned artifact inspection tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
+          "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager" \
+            "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" platform-tools >/dev/null
+          BUNDLETOOL_JAR="${RUNNER_TEMP}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          curl --fail --location --retry 3 \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
+            --output "${BUNDLETOOL_JAR}"
+          echo "${BUNDLETOOL_SHA256}  ${BUNDLETOOL_JAR}" | sha256sum --check
+          echo "BUNDLETOOL_JAR=${BUNDLETOOL_JAR}" >> "${GITHUB_ENV}"
+
+      - name: Download exact paired native release
+        uses: actions/download-artifact@v4
+        with:
+          name: native-play-release-${{ inputs.source_commit }}
+          path: .
+
+      - name: Require Google Play authentication
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_ACCESS_TOKEN }}
+          SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${ACCESS_TOKEN}" ]]; then
+            echo "GOOGLE_PLAY_ACCESS_TOKEN=${ACCESS_TOKEN}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          if [[ -z "${SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            echo "Configure GOOGLE_PLAY_ACCESS_TOKEN or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 in play-internal." >&2
+            exit 1
+          fi
+          SERVICE_ACCOUNT_FILE="${RUNNER_TEMP}/google-play-service-account.json"
+          printf '%s' "${SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${SERVICE_ACCOUNT_FILE}"
+          chmod 600 "${SERVICE_ACCOUNT_FILE}"
+          test -s "${SERVICE_ACCOUNT_FILE}"
+          echo "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}" >> "${GITHUB_ENV}"
+
+      - name: Reverify downloaded paired artifacts
+        run: node scripts/native-play-release.mjs verify-artifacts --source-commit "${SOURCE_COMMIT}"
+
+      - name: Upload phone and Wear bundles to their Play internal tracks
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_args=()
+          if [[ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" ]]; then
+            auth_args+=(--service-account-file "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE}")
+          fi
+          node scripts/native-play-release.mjs upload-internal \
+            --source-commit "${SOURCE_COMMIT}" \
+            "${auth_args[@]}"
+
+      - name: Remove Google Play credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}"
+          {
+            echo 'GOOGLE_PLAY_ACCESS_TOKEN='
+            echo 'GOOGLE_PLAY_SERVICE_ACCOUNT_FILE='
+          } >> "${GITHUB_ENV}"
+
+  tag-native-release:
+    name: Tag exact Play-accepted native source
+    needs: [validate-source, publish-internal]
+    if: inputs.operation == 'upload-internal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Checkout exact Play-accepted source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_commit }}
+
+      - name: Create immutable native release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin master --tags
+          test "$(git rev-parse HEAD)" = "${SOURCE_COMMIT}"
+
+          if git show-ref --tags --verify --quiet "refs/tags/${NATIVE_TAG}"; then
+            test "$(git rev-parse "${NATIVE_TAG}^{commit}")" = "${SOURCE_COMMIT}"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "${NATIVE_TAG}" "${SOURCE_COMMIT}" \
+            --message "Calibrate Android native release ${NATIVE_TAG}"
+          if git push origin "refs/tags/${NATIVE_TAG}"; then
+            exit 0
+          fi
+
+          # A concurrent retry may have won the race; accept only the exact same immutable tag.
+          git tag --delete "${NATIVE_TAG}"
+          git fetch origin "refs/tags/${NATIVE_TAG}:refs/tags/${NATIVE_TAG}"
+          test "$(git rev-parse "${NATIVE_TAG}^{commit}")" = "${SOURCE_COMMIT}"
+
+  promote-closed:
+    name: Promote exact internal build to Play closed testing
+    needs: validate-source
+    if: inputs.operation == 'promote-closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: play-internal
+    permissions:
+      contents: read
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_commit }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+
+      - name: Require exact published native tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin --tags
+          if ! git show-ref --tags --verify --quiet "refs/tags/${NATIVE_TAG}"; then
+            echo "Upload ${NATIVE_TAG} to Play internal before closed-track promotion." >&2
+            exit 1
+          fi
+          test "$(git rev-parse "${NATIVE_TAG}^{commit}")" = "${SOURCE_COMMIT}"
+
+      - name: Require Google Play authentication
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_ACCESS_TOKEN }}
+          SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${ACCESS_TOKEN}" ]]; then
+            echo "GOOGLE_PLAY_ACCESS_TOKEN=${ACCESS_TOKEN}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          if [[ -z "${SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            echo "Configure GOOGLE_PLAY_ACCESS_TOKEN or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 in play-internal." >&2
+            exit 1
+          fi
+          SERVICE_ACCOUNT_FILE="${RUNNER_TEMP}/google-play-service-account.json"
+          printf '%s' "${SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${SERVICE_ACCOUNT_FILE}"
+          chmod 600 "${SERVICE_ACCOUNT_FILE}"
+          test -s "${SERVICE_ACCOUNT_FILE}"
+          echo "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}" >> "${GITHUB_ENV}"
+
+      - name: Promote the exact internal phone and Wear versions without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_args=()
+          if [[ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" ]]; then
+            auth_args+=(--service-account-file "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE}")
+          fi
+          node scripts/native-play-release.mjs promote-closed \
+            --source-commit "${SOURCE_COMMIT}" \
+            "${auth_args[@]}"
+
+      - name: Remove Google Play credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}"
+          {
+            echo 'GOOGLE_PLAY_ACCESS_TOKEN='
+            echo 'GOOGLE_PLAY_SERVICE_ACCOUNT_FILE='
+          } >> "${GITHUB_ENV}"
+
+  promote-production:
+    name: Approve and promote exact closed build to Play production
+    needs: validate-source
+    if: inputs.operation == 'promote-production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Required reviewers on this environment are the public-channel approval gate.
+    environment: play-production
+    permissions:
+      contents: read
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_commit }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+
+      - name: Require exact published native tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin --tags
+          if ! git show-ref --tags --verify --quiet "refs/tags/${NATIVE_TAG}"; then
+            echo "Upload ${NATIVE_TAG} to Play internal before production promotion." >&2
+            exit 1
+          fi
+          test "$(git rev-parse "${NATIVE_TAG}^{commit}")" = "${SOURCE_COMMIT}"
+
+      - name: Require Google Play authentication
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_ACCESS_TOKEN }}
+          SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${ACCESS_TOKEN}" ]]; then
+            echo "GOOGLE_PLAY_ACCESS_TOKEN=${ACCESS_TOKEN}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          if [[ -z "${SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            echo "Configure GOOGLE_PLAY_ACCESS_TOKEN or GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 in play-production." >&2
+            exit 1
+          fi
+          SERVICE_ACCOUNT_FILE="${RUNNER_TEMP}/google-play-service-account.json"
+          printf '%s' "${SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${SERVICE_ACCOUNT_FILE}"
+          chmod 600 "${SERVICE_ACCOUNT_FILE}"
+          test -s "${SERVICE_ACCOUNT_FILE}"
+          echo "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}" >> "${GITHUB_ENV}"
+
+      - name: Promote the exact closed phone and Wear versions without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_args=()
+          if [[ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" ]]; then
+            auth_args+=(--service-account-file "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE}")
+          fi
+          node scripts/native-play-release.mjs promote-production \
+            --source-commit "${SOURCE_COMMIT}" \
+            "${auth_args[@]}"
+
+      - name: Remove Google Play credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}"
+          {
+            echo 'GOOGLE_PLAY_ACCESS_TOKEN='
+            echo 'GOOGLE_PLAY_SERVICE_ACCOUNT_FILE='
+          } >> "${GITHUB_ENV}"

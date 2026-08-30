@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = path.resolve(SCRIPT_DIR, '..');
 export const RELEASE_MANIFEST_PATH = path.join(REPOSITORY_ROOT, 'shared', 'release.json');
+export const GOOGLE_PLAY_MAX_VERSION_CODE = 2_100_000_000;
 
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const STABLE_SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -28,6 +29,16 @@ const replaceExactlyOnce = (source, current, replacement, label) => {
     throw new Error(`${label} contains the expected current release value more than once.`);
   }
   return `${source.slice(0, firstIndex)}${replacement}${source.slice(firstIndex + current.length)}`;
+};
+
+const replacePatternExactlyOnce = (source, pattern, replacement, label) => {
+  const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
+  const globalPattern = new RegExp(pattern.source, flags);
+  const matches = [...source.matchAll(globalPattern)];
+  if (matches.length !== 1) {
+    throw new Error(`${label} must contain exactly one matching release value; found ${matches.length}.`);
+  }
+  return source.replace(globalPattern, replacement);
 };
 
 const readOptionalFile = async (filePath) => {
@@ -83,7 +94,7 @@ export const compareSemver = (left, right) => {
   return 0;
 };
 
-/** Calculate the next strict stable server release without losing precision. */
+/** Calculate the next strict stable release without losing precision. */
 export function nextReleaseVersion(version, bump) {
   if (!STABLE_SEMVER_PATTERN.test(version)) throw new Error(`Invalid stable release version: ${version}`);
   if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
@@ -233,6 +244,12 @@ export function validateManifest(manifest) {
     const versionCode = getPath(manifest, `android.${client}.version_code`);
     if (!Number.isSafeInteger(versionCode) || versionCode < 1) {
       errors.push(`android.${client}.version_code must be a positive integer.`);
+    } else if (versionCode > GOOGLE_PLAY_MAX_VERSION_CODE) {
+      errors.push(`android.${client}.version_code cannot exceed Google Play's ${GOOGLE_PLAY_MAX_VERSION_CODE} limit.`);
+    } else if (client === 'mobile' && versionCode % 2 !== 1) {
+      errors.push('android.mobile.version_code must be odd so phone and Wear releases remain globally unique in Play.');
+    } else if (client === 'wear' && versionCode % 2 !== 0) {
+      errors.push('android.wear.version_code must be even so phone and Wear releases remain globally unique in Play.');
     }
     const current = getPath(manifest, `android.${client}.version_name`);
     const minimum = getPath(manifest, `android.${client}.minimum_supported_version`);
@@ -241,9 +258,21 @@ export function validateManifest(manifest) {
     }
   }
 
+  const mobileVersionCode = manifest?.android?.mobile?.version_code;
+  const wearVersionCode = manifest?.android?.wear?.version_code;
+  if (Number.isSafeInteger(mobileVersionCode) && mobileVersionCode === wearVersionCode) {
+    errors.push('android mobile and Wear version_code values must be globally unique in Play.');
+  }
+
   const nativeReleaseTag = manifest?.android?.mobile?.native_release_tag;
-  if (typeof nativeReleaseTag !== 'string' || !/^v\d+\.\d+\.\d+$/.test(nativeReleaseTag)) {
-    errors.push('android.mobile.native_release_tag must be a stable vMAJOR.MINOR.PATCH tag.');
+  const mobileVersionName = manifest?.android?.mobile?.version_name;
+  if (typeof nativeReleaseTag !== 'string' || !/^native-v\d+\.\d+\.\d+$/.test(nativeReleaseTag)) {
+    errors.push('android.mobile.native_release_tag must be a stable native-vMAJOR.MINOR.PATCH tag.');
+  } else if (
+    STABLE_SEMVER_PATTERN.test(mobileVersionName ?? '') &&
+    nativeReleaseTag !== `native-v${mobileVersionName}`
+  ) {
+    errors.push('android.mobile.native_release_tag must match android.mobile.version_name.');
   }
 
   const applicationId = manifest?.android?.application_id;
@@ -287,6 +316,7 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     backendPackage,
     backendPackageLock,
     mobilePackage,
+    pairingPackage,
     expoConfig,
     easConfig,
     mobileGradle,
@@ -301,6 +331,7 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     readJson(path.join(root, 'backend', 'package.json')),
     readJson(path.join(root, 'backend', 'package-lock.json')),
     readJson(path.join(root, 'mobile', 'package.json')),
+    readJson(path.join(root, 'mobile', 'modules', 'wear-pairing', 'package.json')),
     readJson(path.join(root, 'mobile', 'app.json')),
     readJson(path.join(root, 'mobile', 'eas.json')),
     readOptionalFile(path.join(root, 'mobile', 'android', 'app', 'build.gradle')),
@@ -324,6 +355,24 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     manifest.server.version
   );
   assertMatch(errors, 'mobile/package.json version', mobilePackage.version, manifest.android.mobile.version_name);
+  assertMatch(
+    errors,
+    'package-lock.json mobile workspace version',
+    rootPackageLock.packages?.mobile?.version,
+    manifest.android.mobile.version_name
+  );
+  assertMatch(
+    errors,
+    'Wear pairing package version',
+    pairingPackage.version,
+    manifest.android.mobile.version_name
+  );
+  assertMatch(
+    errors,
+    'package-lock.json Wear pairing workspace version',
+    rootPackageLock.packages?.['mobile/modules/wear-pairing']?.version,
+    manifest.android.mobile.version_name
+  );
   assertMatch(errors, 'mobile/app.json expo.version', expoConfig.expo?.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.android.versionCode', expoConfig.expo?.android?.versionCode, manifest.android.mobile.version_code);
   assertMatch(errors, 'mobile/app.json expo.android.package', expoConfig.expo?.android?.package, manifest.android.application_id);
@@ -370,11 +419,21 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     }
   }
 
-  const diagnosticWebVersions = diagnosticVersions?.supported_versions?.web;
-  if (Array.isArray(diagnosticWebVersions)) {
-    const expectedGeneratedWebVersions = `version?: "${diagnosticWebVersions.join('" | "')}";`;
-    if (!generatedApiClientSource.includes(expectedGeneratedWebVersions)) {
-      errors.push('Generated API client web diagnostic versions do not match client-diagnostic-versions.json.');
+  for (const diagnosticPlatform of CLIENT_DIAGNOSTIC_PLATFORMS) {
+    const versions = diagnosticVersions?.supported_versions?.[diagnosticPlatform];
+    if (Array.isArray(versions)) {
+      const marker = `platform?: "${diagnosticPlatform}";`;
+      const markerIndex = generatedApiClientSource.indexOf(marker);
+      const nextMarkerIndex = generatedApiClientSource.indexOf('platform?: "', markerIndex + marker.length);
+      const block = markerIndex < 0
+        ? ''
+        : generatedApiClientSource.slice(markerIndex, nextMarkerIndex < 0 ? undefined : nextMarkerIndex);
+      const expectedVersions = `version?: "${versions.join('" | "')}";`;
+      if (!block.includes(expectedVersions)) {
+        errors.push(
+          `Generated API client ${diagnosticPlatform} diagnostic versions do not match client-diagnostic-versions.json.`
+        );
+      }
     }
   }
 
@@ -392,6 +451,26 @@ const gitValue = (root, args, fallback = null) => {
 export function getLatestStableTag(root = REPOSITORY_ROOT) {
   const tags = gitValue(root, ['tag', '--list', '--sort=-v:refname'], '');
   return tags.split(/\r?\n/).find((tag) => /^v\d+\.\d+\.\d+$/.test(tag)) || null;
+}
+
+export function getLatestNativeReleaseTag(root = REPOSITORY_ROOT) {
+  const tags = gitValue(root, ['tag', '--list', 'native-v*', '--sort=-v:refname'], '');
+  return tags.split(/\r?\n/).find((tag) => /^native-v\d+\.\d+\.\d+$/.test(tag)) || null;
+}
+
+export function getNextNativeVersionCodes(manifest) {
+  const currentCodes = [manifest?.android?.mobile?.version_code, manifest?.android?.wear?.version_code];
+  if (currentCodes.some((code) => !Number.isSafeInteger(code) || code < 1)) {
+    throw new Error('Native version codes must be positive safe integers before allocation.');
+  }
+  const currentMaximum = Math.max(...currentCodes);
+  let mobileVersionCode = currentMaximum + 1;
+  if (mobileVersionCode % 2 === 0) mobileVersionCode += 1;
+  const wearVersionCode = mobileVersionCode + 1;
+  if (wearVersionCode > GOOGLE_PLAY_MAX_VERSION_CODE) {
+    throw new Error(`Native version codes cannot exceed Google Play's ${GOOGLE_PLAY_MAX_VERSION_CODE} limit.`);
+  }
+  return { mobileVersionCode, wearVersionCode };
 }
 
 /** Prepare every checked-in server/web release mirror and roll back the batch on validation failure. */
@@ -480,6 +559,199 @@ export async function prepareServerRelease({ root = REPOSITORY_ROOT, bump, lates
   return nextVersion;
 }
 
+/** Prepare a paired phone/Wear release and roll back every mirror if validation fails. */
+export async function prepareNativeRelease({
+  root = REPOSITORY_ROOT,
+  bump,
+  latestTag = getLatestNativeReleaseTag(root)
+}) {
+  if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
+
+  const beforeCheck = await checkRepository(root);
+  if (beforeCheck.errors.length > 0) {
+    throw new Error(`Release configuration is inconsistent before native preparation:\n- ${beforeCheck.errors.join('\n- ')}`);
+  }
+
+  const currentVersion = beforeCheck.manifest.android.mobile.version_name;
+  const currentWearVersion = beforeCheck.manifest.android.wear.version_name;
+  if (!STABLE_SEMVER_PATTERN.test(currentVersion) || currentWearVersion !== currentVersion) {
+    throw new Error('Paired native preparation requires matching stable phone and Wear version names.');
+  }
+  const currentNativeTag = `native-v${currentVersion}`;
+  if (latestTag === null) {
+    throw new Error(`Cannot prepare another native release until ${currentNativeTag} has been tagged.`);
+  }
+  if (!/^native-v\d+\.\d+\.\d+$/.test(latestTag)) {
+    throw new Error(`Invalid latest native release tag: ${latestTag}`);
+  }
+  if (latestTag !== currentNativeTag) {
+    throw new Error(
+      `Manifest native release ${currentNativeTag} must match the latest native tag ${latestTag} before preparation.`
+    );
+  }
+
+  const nextVersion = nextReleaseVersion(currentVersion, bump);
+  const nextNativeTag = `native-v${nextVersion}`;
+  const { mobileVersionCode, wearVersionCode } = getNextNativeVersionCodes(beforeCheck.manifest);
+  const optionalMobileGradlePath = path.join(root, 'mobile', 'android', 'app', 'build.gradle');
+  const optionalMobileGradle = await readOptionalFile(optionalMobileGradlePath);
+  const files = {
+    manifest: path.join(root, 'shared', 'release.json'),
+    diagnostics: path.join(root, 'shared', 'client-diagnostic-versions.json'),
+    rootLock: path.join(root, 'package-lock.json'),
+    mobilePackage: path.join(root, 'mobile', 'package.json'),
+    mobileApp: path.join(root, 'mobile', 'app.json'),
+    pairingPackage: path.join(root, 'mobile', 'modules', 'wear-pairing', 'package.json'),
+    pairingGradle: path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'),
+    wearGradle: path.join(root, 'wear', 'app', 'build.gradle.kts'),
+    openApi: path.join(root, 'docs', 'openapi', 'v1.yaml'),
+    generatedApi: path.join(root, 'packages', 'api-client', 'src', 'generated', 'v1.ts')
+  };
+  if (optionalMobileGradle !== null) files.mobileGradle = optionalMobileGradlePath;
+
+  const originals = Object.fromEntries(
+    await Promise.all(Object.entries(files).map(async ([key, filePath]) => [key, await readFile(filePath, 'utf8')]))
+  );
+  const manifest = JSON.parse(originals.manifest);
+  const diagnostics = JSON.parse(originals.diagnostics);
+  const rootLock = JSON.parse(originals.rootLock);
+  const mobilePackage = JSON.parse(originals.mobilePackage);
+  const mobileApp = JSON.parse(originals.mobileApp);
+  const pairingPackage = JSON.parse(originals.pairingPackage);
+  const currentPhoneDiagnosticVersions = [...diagnostics.supported_versions.android_phone];
+  const currentWearDiagnosticVersions = [...diagnostics.supported_versions.wear_os];
+  const advanceDiagnosticVersions = (versions) =>
+    [nextVersion, ...versions.filter((version) => version !== nextVersion)]
+      .slice(0, MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM);
+
+  manifest.android.mobile.version_name = nextVersion;
+  manifest.android.mobile.version_code = mobileVersionCode;
+  manifest.android.mobile.native_release_tag = nextNativeTag;
+  manifest.android.wear.version_name = nextVersion;
+  manifest.android.wear.version_code = wearVersionCode;
+  diagnostics.supported_versions.android_phone = advanceDiagnosticVersions(currentPhoneDiagnosticVersions);
+  diagnostics.supported_versions.wear_os = advanceDiagnosticVersions(currentWearDiagnosticVersions);
+  rootLock.packages.mobile.version = nextVersion;
+  rootLock.packages['mobile/modules/wear-pairing'].version = nextVersion;
+  mobilePackage.version = nextVersion;
+  mobileApp.expo.version = nextVersion;
+  mobileApp.expo.android.versionCode = mobileVersionCode;
+  mobileApp.expo.extra.calibrate.nativeReleaseTag = nextNativeTag;
+  pairingPackage.version = nextVersion;
+
+  let pairingGradle = replacePatternExactlyOnce(
+    originals.pairingGradle,
+    /^version\s*=\s*["'][^"']+["']/gm,
+    `version = '${nextVersion}'`,
+    'Wear pairing module version'
+  );
+  pairingGradle = replacePatternExactlyOnce(
+    pairingGradle,
+    /versionCode\s+\d+/g,
+    `versionCode ${mobileVersionCode}`,
+    'Wear pairing module versionCode'
+  );
+  pairingGradle = replacePatternExactlyOnce(
+    pairingGradle,
+    /versionName\s+["'][^"']+["']/g,
+    `versionName '${nextVersion}'`,
+    'Wear pairing module versionName'
+  );
+  let wearGradle = replacePatternExactlyOnce(
+    originals.wearGradle,
+    /versionCode\s*=\s*\d+/g,
+    `versionCode = ${wearVersionCode}`,
+    'Wear versionCode'
+  );
+  wearGradle = replacePatternExactlyOnce(
+    wearGradle,
+    /versionName\s*=\s*"[^"]+"/g,
+    `versionName = "${nextVersion}"`,
+    'Wear versionName'
+  );
+
+  const nextPhoneDiagnosticVersions = diagnostics.supported_versions.android_phone;
+  const nextWearDiagnosticVersions = diagnostics.supported_versions.wear_os;
+  const openApiLine = (platform, versions) =>
+    `- properties: { platform: { const: ${platform} }, version: { enum: [${versions.join(', ')}] } }`;
+  const generatedNewline = originals.generatedApi.includes('\r\n') ? '\r\n' : '\n';
+  const generatedBlock = (platform, versions) => [
+    `platform?: "${platform}";`,
+    '            /** @enum {unknown} */',
+    `            version?: "${versions.join('" | "')}";`
+  ].join(generatedNewline);
+
+  const replacements = {
+    manifest: formatJson(manifest, originals.manifest),
+    diagnostics: formatJson(diagnostics, originals.diagnostics),
+    rootLock: formatJson(rootLock, originals.rootLock),
+    mobilePackage: formatJson(mobilePackage, originals.mobilePackage),
+    mobileApp: formatJson(mobileApp, originals.mobileApp),
+    pairingPackage: formatJson(pairingPackage, originals.pairingPackage),
+    pairingGradle,
+    wearGradle,
+    openApi: replaceExactlyOnce(
+      replaceExactlyOnce(
+        originals.openApi,
+        openApiLine('android_phone', currentPhoneDiagnosticVersions),
+        openApiLine('android_phone', nextPhoneDiagnosticVersions),
+        'docs/openapi/v1.yaml android_phone versions'
+      ),
+      openApiLine('wear_os', currentWearDiagnosticVersions),
+      openApiLine('wear_os', nextWearDiagnosticVersions),
+      'docs/openapi/v1.yaml wear_os versions'
+    ),
+    generatedApi: replaceExactlyOnce(
+      replaceExactlyOnce(
+        originals.generatedApi,
+        generatedBlock('android_phone', currentPhoneDiagnosticVersions),
+        generatedBlock('android_phone', nextPhoneDiagnosticVersions),
+        'generated API android_phone versions'
+      ),
+      generatedBlock('wear_os', currentWearDiagnosticVersions),
+      generatedBlock('wear_os', nextWearDiagnosticVersions),
+      'generated API wear_os versions'
+    )
+  };
+  if (files.mobileGradle) {
+    let mobileGradle = replacePatternExactlyOnce(
+      originals.mobileGradle,
+      /versionCode\s+\d+/g,
+      `versionCode ${mobileVersionCode}`,
+      'generated mobile versionCode'
+    );
+    mobileGradle = replacePatternExactlyOnce(
+      mobileGradle,
+      /versionName\s+["'][^"']+["']/g,
+      `versionName "${nextVersion}"`,
+      'generated mobile versionName'
+    );
+    replacements.mobileGradle = mobileGradle;
+  }
+
+  const writtenKeys = [];
+  try {
+    for (const [key, filePath] of Object.entries(files)) {
+      writtenKeys.push(key);
+      await writeFile(filePath, replacements[key]);
+    }
+    const afterCheck = await checkRepository(root);
+    if (afterCheck.errors.length > 0) {
+      throw new Error(`Prepared native release configuration is inconsistent:\n- ${afterCheck.errors.join('\n- ')}`);
+    }
+  } catch (error) {
+    await Promise.all(writtenKeys.map((key) => writeFile(files[key], originals[key])));
+    throw error;
+  }
+
+  return {
+    version_name: nextVersion,
+    mobile_version_code: mobileVersionCode,
+    wear_version_code: wearVersionCode,
+    native_release_tag: nextNativeTag
+  };
+}
+
 const artifactMetadata = async (root, artifact) => {
   const [label, rawPath] = artifact.includes('=') ? artifact.split(/=(.*)/s, 2) : [path.basename(artifact), artifact];
   const absolutePath = path.resolve(root, rawPath);
@@ -540,6 +812,14 @@ async function main() {
     if (!options.bump) throw new Error('prepare requires --bump major, minor, or patch.');
     if (options.latestTag !== null) throw new Error('prepare reads the latest stable tag from Git; do not pass --latest-tag.');
     console.log(await prepareServerRelease({ bump: options.bump }));
+    return;
+  }
+  if (options.command === 'prepare-native') {
+    if (!options.bump) throw new Error('prepare-native requires --bump major, minor, or patch.');
+    if (options.latestTag !== null) {
+      throw new Error('prepare-native reads the latest native tag from Git; do not pass --latest-tag.');
+    }
+    console.log(`${JSON.stringify(await prepareNativeRelease({ bump: options.bump }), null, 2)}\n`);
     return;
   }
   const { manifest, errors } = await checkRepository();

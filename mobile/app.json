@@ -18,7 +18,7 @@
     ],
     "android": {
       "package": "app.calibratehealth.mobile",
-      "versionCode": 8,
+      "versionCode": 9,
       "allowBackup": false,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
@@ -93,7 +93,7 @@
     ],
     "extra": {
       "calibrate": {
-        "nativeReleaseTag": "v0.13.2"
+        "nativeReleaseTag": "native-v0.2.6"
       },
       "router": {
         "origin": false

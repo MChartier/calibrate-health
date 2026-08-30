@@ -158,13 +158,18 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(tag, /EXPECTED_BRANCH="release\/\$\{TAG\}"/);
   assert.match(tag, /node scripts\/release-config\.mjs check/);
   assert.match(tag, /android\.mobile\.native_release_tag/);
+  assert.match(tag, /legacy vMAJOR\.MINOR\.PATCH format for a prepared historical release/);
   assert.match(tag, /native_release_tag=\$\{NATIVE_RELEASE_TAG\}/);
+  assert.match(tag, /native_release_ready=\$\{NATIVE_RELEASE_READY\}/);
+  assert.match(tag, /refs\/tags\/\$\{NATIVE_RELEASE_TAG\}/);
+  assert.match(tag, /git merge-base --is-ancestor "\$\{NATIVE_RELEASE_COMMIT\}" "\$\{RELEASE_COMMIT\}"/);
   assert.match(tag, /Existing tag \$\{TAG\} points to/);
   assert.match(tag, /node scripts\/release-config\.mjs tag --latest-tag/);
   assert.match(tag, /git tag -a "\$\{RELEASE_TAG\}"/);
   assert.match(image, /uses: \.\/\.github\/workflows\/container\.yml/);
   assert.match(image, /publish_latest: true/);
   assert.match(ota, /needs: \[tag_release, build_release_image\]/);
+  assert.match(ota, /if: needs\.tag_release\.outputs\.native_release_ready == 'true'/);
   assert.match(ota, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
   assert.match(ota, /source_ref: \$\{\{ inputs\.release_commit \}\}/);
   assert.match(ota, /native_build_ref: \$\{\{ needs\.tag_release\.outputs\.native_release_tag \}\}/);
@@ -609,6 +614,142 @@ test('Expo OTA updates follow explicit image publication and retain a manual rec
   assert.doesNotMatch(workflow, /\n\s+push:|github\.event\.(before|head_commit)|--previous-ref/);
   assert.match(releaseOta, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
   assert.match(releaseOta, /needs: \[tag_release, build_release_image\]/);
+});
+
+test('native Android store releases build one paired candidate and promote it without rebuilding', () => {
+  const workflow = readWorkflow('native-release.yml');
+  const validate = workflowJobBlock(workflow, 'validate-source');
+  const build = workflowJobBlock(workflow, 'build-internal');
+  const internal = workflowJobBlock(workflow, 'publish-internal');
+  const tag = workflowJobBlock(workflow, 'tag-native-release');
+  const closed = workflowJobBlock(workflow, 'promote-closed');
+  const production = workflowJobBlock(workflow, 'promote-production');
+
+  assert.match(workflow, /^name: Native Android Store Release/m);
+  assert.match(workflow, /workflow_dispatch:[\s\S]*source_commit:[\s\S]*required: true[\s\S]*type: string/);
+  assert.match(
+    workflow,
+    /operation:[\s\S]*type: choice[\s\S]*options:\s*\n\s+- upload-internal\s*\n\s+- promote-closed\s*\n\s+- promote-production/
+  );
+  assert.doesNotMatch(workflow, /\n\s+pull_request:|\n\s+push:|\n\s+schedule:/);
+  assert.match(workflow, /permissions:\s*\n\s+contents: read/);
+  assert.match(workflow, /ANDROID_BUILD_TOOLS_VERSION: '36\.0\.0'/);
+  assert.match(workflow, /BUNDLETOOL_VERSION: '1\.18\.3'/);
+  assert.match(workflow, /BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29/);
+  assert.match(workflow, /group: native-android-store-release/);
+  assert.match(workflow, /cancel-in-progress: false/);
+
+  assert.match(validate, /refs\/heads\/master/);
+  assert.match(validate, /\^\[0-9a-f\]\{40\}\$/);
+  assert.match(validate, /ref: \$\{\{ inputs\.source_commit \}\}/);
+  assert.match(validate, /test "\$\(git rev-parse HEAD\)" = "\$\{SOURCE_COMMIT\}"/);
+  assert.match(validate, /git merge-base --is-ancestor "\$\{SOURCE_COMMIT\}" origin\/master/);
+  assert.match(validate, /EXPECTED_TAG="native-v\$\{PHONE_VERSION\}"/);
+  assert.match(validate, /already points at another commit/);
+  assert.match(validate, /npm run release:check/);
+  assert.match(validate, /native-play-release\.mjs plan --source-commit/);
+
+  assert.match(build, /needs: validate-source/);
+  assert.match(build, /if: inputs\.operation == 'upload-internal'/);
+  assert.match(build, /environment: play-internal/);
+  assert.match(build, /contents: read/);
+  assert.match(build, /ref: \$\{\{ inputs\.source_commit \}\}/);
+  assert.match(build, /CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64/);
+  assert.match(build, /CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD/);
+  assert.match(build, /CALIBRATE_ANDROID_SIGNING_KEY_ALIAS/);
+  assert.match(build, /CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD/);
+  assert.match(build, /GOOGLE_PLAY_ACCESS_TOKEN-or-GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64/);
+  assert.match(build, /EXPO_UPDATES_CHANNEL: production/);
+  assert.match(build, /sdkmanager "build-tools;\$\{ANDROID_BUILD_TOOLS_VERSION\}" platform-tools/);
+  assert.match(build, /google\/bundletool\/releases\/download\/\$\{BUNDLETOOL_VERSION\}/);
+  assert.match(build, /sha256sum --check/);
+  assert.match(build, /BUNDLETOOL_JAR=\$\{BUNDLETOOL_JAR\}/);
+  assert.match(build, /npm ci --no-audit --fund=false/);
+  assert.match(build, /npm run build:native:release/);
+  assert.match(build, /native-play-release\.mjs verify-artifacts --source-commit/);
+  assert.ok(
+    build.indexOf('Require native release configuration') < build.indexOf('npm ci --no-audit'),
+    'missing signing or Play configuration must fail before the expensive native build starts'
+  );
+  assert.match(build, /uses: actions\/upload-artifact@v4/);
+  assert.match(build, /name: native-play-release-\$\{\{ inputs\.source_commit \}\}/);
+  assert.match(build, /overwrite: true/);
+  assert.doesNotMatch(workflow, /github\.run_attempt/);
+  for (const artifactPath of [
+    'mobile/android/app/build/outputs/apk/release/app-release.apk',
+    'mobile/android/app/build/outputs/bundle/release/app-release.aab',
+    'wear/app/build/outputs/apk/release/app-release.apk',
+    'wear/app/build/outputs/bundle/release/app-release.aab',
+    'build/native-release-provenance.json'
+  ]) {
+    assert.ok(build.includes(artifactPath), `paired native artifact must retain ${artifactPath}`);
+  }
+  assert.match(build, /retention-days: 3/);
+  assert.equal(
+    (workflow.match(/npm run build:native:release/g) ?? []).length,
+    1,
+    'the signed paired candidate must be built exactly once'
+  );
+
+  assert.match(internal, /needs: \[validate-source, build-internal\]/);
+  assert.match(internal, /if: inputs\.operation == 'upload-internal'/);
+  assert.match(internal, /environment: play-internal/);
+  assert.match(internal, /contents: read/);
+  assert.match(internal, /persist-credentials: false/);
+  assert.match(internal, /uses: actions\/download-artifact@v4/);
+  assert.match(internal, /name: native-play-release-\$\{\{ inputs\.source_commit \}\}/);
+  assert.match(internal, /Setup Java for artifact inspection[\s\S]*java-version: 17/);
+  assert.match(internal, /Setup Android SDK for artifact inspection/);
+  assert.match(internal, /sdkmanager[\s\S]*build-tools;\$\{ANDROID_BUILD_TOOLS_VERSION\}/);
+  assert.match(internal, /google\/bundletool\/releases\/download\/\$\{BUNDLETOOL_VERSION\}/);
+  assert.match(internal, /sha256sum --check/);
+  assert.match(internal, /BUNDLETOOL_JAR=\$\{BUNDLETOOL_JAR\}/);
+  assert.match(internal, /GOOGLE_PLAY_ACCESS_TOKEN/);
+  assert.match(internal, /GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64/);
+  assert.match(internal, /native-play-release\.mjs upload-internal/);
+  assert.match(internal, /Remove Google Play credentials/);
+  assert.doesNotMatch(internal, /contents: write|git tag|git push/);
+
+  assert.match(tag, /needs: \[validate-source, publish-internal\]/);
+  assert.match(tag, /if: inputs\.operation == 'upload-internal'/);
+  assert.match(tag, /contents: write/);
+  assert.doesNotMatch(tag, /environment: play-|GOOGLE_PLAY_|CALIBRATE_ANDROID_SIGNING|native-play-release\.mjs/);
+  assert.match(tag, /ref: \$\{\{ inputs\.source_commit \}\}/);
+  assert.match(tag, /test "\$\(git rev-parse HEAD\)" = "\$\{SOURCE_COMMIT\}"/);
+  assert.match(tag, /git tag --annotate "\$\{NATIVE_TAG\}" "\$\{SOURCE_COMMIT\}"/);
+  assert.match(tag, /git push origin "refs\/tags\/\$\{NATIVE_TAG\}"/);
+  assert.ok(
+    workflow.indexOf('native-play-release.mjs upload-internal') < workflow.indexOf('tag-native-release:'),
+    'the isolated tag job must run only after Play accepted the internal upload'
+  );
+
+  assert.match(closed, /needs: validate-source/);
+  assert.match(closed, /if: inputs\.operation == 'promote-closed'/);
+  assert.match(closed, /environment: play-internal/);
+  assert.match(closed, /contents: read/);
+  assert.match(closed, /refs\/tags\/\$\{NATIVE_TAG\}/);
+  assert.match(closed, /GOOGLE_PLAY_ACCESS_TOKEN/);
+  assert.match(closed, /GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64/);
+  assert.match(closed, /native-play-release\.mjs promote-closed/);
+  assert.match(closed, /Remove Google Play credentials/);
+  assert.doesNotMatch(
+    closed,
+    /build:native:release|verify-artifacts|upload-internal|upload-artifact|download-artifact|CALIBRATE_ANDROID_SIGNING/
+  );
+
+  assert.match(production, /needs: validate-source/);
+  assert.match(production, /if: inputs\.operation == 'promote-production'/);
+  assert.match(production, /environment: play-production/);
+  assert.match(production, /contents: read/);
+  assert.match(production, /refs\/tags\/\$\{NATIVE_TAG\}/);
+  assert.match(production, /GOOGLE_PLAY_ACCESS_TOKEN/);
+  assert.match(production, /GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64/);
+  assert.match(production, /native-play-release\.mjs promote-production/);
+  assert.match(production, /Remove Google Play credentials/);
+  assert.doesNotMatch(
+    production,
+    /build:native:release|verify-artifacts|upload-internal|upload-artifact|download-artifact|CALIBRATE_ANDROID_SIGNING/
+  );
 });
 
 test('pull request test suites run only for their affected surfaces', () => {

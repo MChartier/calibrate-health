@@ -9,7 +9,7 @@ version = '0.2.6'
 android {
   namespace 'app.calibratehealth.wearpairing'
   defaultConfig {
-    versionCode 8
+    versionCode 9
     versionName '0.2.6'
   }
 }

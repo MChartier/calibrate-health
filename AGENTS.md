@@ -267,10 +267,16 @@ UI code style:
   workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
-- Android phone and Wear versions remain independent of the server/web release selector. After the GHCR image is
-  published, **Cut release** publishes the exact release commit to Expo internal and then waits for the protected
-  production approval. It does not wait for or trigger self-host deployment. The native-build reference comes from
-  `shared/release.json`.
+- Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are
+  globally unique: phone uses the odd lane and Wear uses the even lane. Use `release:native:prepare` for a paired
+  store version, merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
+  uploads phone/Wear to Play internal tracks, and promotes those exact codes through closed testing before the
+  protected production operation.
+- After the GHCR image is published, **Cut release** publishes the exact release commit to Expo internal and then waits
+  for the protected production approval only when the native tag from `shared/release.json` already exists. A reserved
+  but unpublished native tag skips OTA without failing the independent server/image release; rerun the prepared
+  release or use the manual OTA workflow after the signed native baseline is published. It never waits for or triggers
+  self-host deployment.
 - Expo's automatic check and download lifecycle remains native-owned. Client code compares only the running bundle's
   expected server contract version with client configuration at startup and server selection. Major versions must
   match; within a major, the server minor must be at least the client minor, while patch drift remains compatible. Do

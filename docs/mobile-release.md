@@ -96,12 +96,28 @@ policy and artifact metadata format. The native phone values mirror it in `mobil
 - `expo.version` is the user-visible semantic version.
 - `expo.android.versionCode` is the monotonically increasing Android build number.
 
-Before every distributed build, increment `versionCode`; increment `version` when the user-visible release changes.
-Commit both before building so an artifact can be traced to one Git commit. Google Play and Android reject an upgrade
-whose version code is not greater than the installed build.
+Every Play-distributed candidate, including a recovery build, gets a new stable semantic `version` and a higher
+`versionCode`. Use at least a patch bump even when the fix has no user-visible feature. Commit both before building
+so the immutable `native-vMAJOR.MINOR.PATCH` tag identifies exactly one candidate commit. Google Play and Android
+reject an upgrade whose version code is not greater than the installed build.
+
+Phone and Wear are two artifacts in one Play application, so their version codes must also be globally unique. The
+repository permanently assigns odd codes to phone and even codes to Wear. Prepare a paired store candidate with:
+
+```powershell
+npm.cmd run release:native:prepare -- --bump patch
+```
+
+Use `minor` or `major` when the user-visible native version warrants it; use `patch` for every other candidate. The
+command leaves the server/web version alone, allocates the next odd/even code pair above both current codes, reserves
+`native-vMAJOR.MINOR.PATCH`, and
+updates the checked-in phone, Wear, pairing, diagnostic, OpenAPI, generated-client, package, and lockfile mirrors as
+one validated batch. Review and merge those metadata changes with the native code being released; do not prepare the
+next native version until the current native tag has been published.
 
 Run `npm.cmd run release:check` after every version change. It also verifies the backend package, generated Android
-project, Wear app, pairing module, application ID, and EAS profile names without invoking a native build.
+project when present, Wear app, pairing module, application ID, global version-code lanes, and EAS profile names
+without invoking a native build.
 
 ## Validate from a clean checkout
 
@@ -151,6 +167,75 @@ package/version metadata comes from bundletool, APK signers come from `apksigner
 `keytool -printcert -jarfile`. It records canonical repository-relative paths, byte counts, SHA-256 digests,
 application IDs, version names/codes, and signer SHA-256 values, then requires one signer across all four. Do not
 infer AAB metadata or signer identity from its matching APK or retain an absolute build path.
+
+## Publish and install through Google Play
+
+The manual **Native Android Store Release** workflow is the canonical no-cable distribution path. It is separate from
+the server/web release and Expo OTA workflows and has three explicit operations:
+
+1. `upload-internal` checks out one exact full commit already on `master`, builds the phone and Wear release artifacts
+   once with the shared upload certificate and the Expo `production` channel, verifies the provenance and common
+   signer, and uploads both AABs in one Google Play edit. Phone goes to `qa`; Wear goes to `wear:qa`. Only after Play
+   accepts both does the workflow create the immutable `native-vMAJOR.MINOR.PATCH` source tag.
+2. `promote-closed` requires that same source commit and tag, verifies both exact version codes on their internal
+   tracks, and moves them to the custom closed tracks `closed` and `wear:closed` in one edit. It never rebuilds or
+   downloads a workflow artifact.
+3. `promote-production` requires that same source commit and tag, verifies that both exact version codes are completed
+   on their closed tracks, and moves them to `production` and `wear:production` in one edit. It never rebuilds or
+   downloads a workflow artifact. The `play-production` GitHub environment is the public release approval gate.
+
+This makes Play internal testing the installation path for owned phone/watch devices and promotes the tested store
+bundles unchanged. The three-day GitHub artifact is diagnostic/retry material only; it is not the installation
+channel. Because the promotable phone bundle embeds Expo channel `production`, a Play internal tester receives
+production-channel OTA updates after their protected approval. Expo channel `internal` remains for separately built
+internal-channel clients and is not selected by this Play bundle.
+
+After the native version PR is merged:
+
+1. Copy its full merge commit SHA.
+2. Open **Actions > Native Android Store Release > Run workflow** on `master`, choose `upload-internal`, and enter that
+   SHA.
+3. Join the Play internal test, then install or update Calibrate normally from Google Play on the phone and watch.
+4. After the internal pair behaves correctly, run the workflow again with the same SHA and `promote-closed`.
+5. Add the device account to the closed tester list or Google Group. Per [Google Play's testing eligibility rules](https://support.google.com/googleplay/android-developer/answer/9845334),
+   that account must opt out of the internal test and then opt in through the closed track's shareable link;
+   internal-test opt-ins are not eligible for closed releases. Confirm Play shows the same phone/Wear version codes
+   before counting the closed test.
+6. Complete the account-required closed test with the unchanged pair. Then run the workflow with the same SHA and
+   `promote-production`; approve the waiting `play-production` deployment.
+
+The offline planner needs no credentials or artifacts and catches source/tag/version-lane mistakes before dispatch:
+
+```powershell
+$nativeSource = git rev-parse HEAD
+npm.cmd run release:native:play -- plan --source-commit $nativeSource
+```
+
+### Deferred Play and GitHub setup
+
+The workflow is intentionally safe to merge before account setup. It fails closed with the missing configuration and
+cannot publish anonymously. Complete these one-time tasks when the Play account and permanent keys are ready:
+
+- Create or adopt the Play application `app.calibratehealth.mobile`, finish its required listing/policy setup, enable
+  the Wear OS form factor, enroll it in Play App Signing, and create custom closed-testing tracks with API aliases
+  `closed` for phone and `wear:closed` for Wear. Configure their tester list or Google Group and retain the closed
+  opt-in link. Any Console-required first upload or testing enrollment remains an onboarding task; automation does
+  not create the app listing, tracks, or tester groups.
+- Grant an Android Publisher service account access to this application and its testing/production releases.
+- Create GitHub environments `play-internal` and `play-production`. Protect `play-production` with required reviewers
+  and appropriate branch/deployment rules.
+- Store `CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64`,
+  `CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD`, `CALIBRATE_ANDROID_SIGNING_KEY_ALIAS`, and
+  `CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD` as `play-internal` environment secrets. The decoded file exists only in
+  the runner temporary directory.
+- Store `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64` in both environments. A short-lived
+  `GOOGLE_PLAY_ACCESS_TOKEN` is supported for recovery, but the service-account credential is the durable workflow
+  path. Never commit either representation.
+- Confirm Play App Signing serves both phone and Wear artifacts with the expected application signing certificate.
+  The repository verifies their shared upload signer before submission; Play owns the final store signer.
+
+Play account creation, policy answers, store listing assets, tester enrollment, app-signing enrollment, service-account
+authorization, environment protection, and secret entry are deliberately not automated by this repository change.
 
 ## Optional commit-specific device diagnostic
 
@@ -249,7 +334,9 @@ It is never triggered by an ordinary `master` push. After the release image is p
 exact release commit's Android phone JavaScript/assets to the `internal` channel without waiting for self-host
 deployment, then starts a dependent production job. The production job targets the protected GitHub `production`
 environment, so it remains blocked until a required reviewer verifies the internal devices and approves the
-deployment.
+deployment. If the manifest reserves a native tag that has not yet been created by a successful Play internal upload,
+the independent server/image release succeeds and reports OTA as skipped. Rerun **Publish prepared release** or use
+this workflow's manual dispatch after the native tag exists.
 
 Expo's automatic check and download lifecycle remains unchanged. `/api/v1/client-config` responds with
 `Cache-Control: no-store`; server selection, startup before restoring a session or synchronizing, and manual
@@ -305,7 +392,8 @@ both an active session and pending/failed offline mutations. Export account data
 important real data. Database migrations must be forward-compatible; Android cannot safely roll back to a build that
 does not understand a newer on-device schema.
 
-If a release is bad, publish a fixed build with a higher version code. A lower-version APK is not a safe rollback for
+If a release is bad, prepare a new patch native release and publish its higher odd/even version-code pair. Never move
+an existing `native-vMAJOR.MINOR.PATCH` tag to a fixed commit. A lower-version APK is not a safe rollback for
 SecureStore or SQLite changes.
 
 ## Disposable emulator upgrade rehearsal
@@ -368,7 +456,9 @@ development.
 - [ ] `npm.cmd run release:check`, `npm.cmd run test:release`, and `npm.cmd run test:native-release` pass.
 - [ ] Run only the optional emulator, upgrade, OTA, or physical checks that are useful for this distribution.
 - [ ] The source commit is clean and pushed before signing.
-- [ ] `version` is correct and `versionCode` is greater than every distributed Android build.
+- [ ] `version` is correct; phone has the next odd `versionCode`, Wear has the next even code, and both exceed every
+  code already allocated to either form factor.
+- [ ] This semantic version and immutable native tag have not been used for an earlier store candidate.
 - [ ] Application ID is still `app.calibratehealth.mobile`.
 - [ ] Public Expo config includes camera/notification permissions but does not request microphone access.
 - [ ] OTA-enabled phone config has the expected EAS project ID, app-version runtime, and update channel.

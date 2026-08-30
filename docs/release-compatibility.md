@@ -67,6 +67,12 @@ validated signing environment to the phone and Wear release builds. Any future E
 with a Wear artifact signed by that same certificate. Never place signing material in `shared/release.json` or
 generated metadata.
 
+Store delivery uses one paired production-channel build. **Native Android Store Release** uploads its phone AAB to
+Play track `qa` and Wear AAB to `wear:qa` in one edit. Separate operations promote those exact version codes first
+to the custom `closed` and `wear:closed` tracks, then to `production` and `wear:production`, without rebuilding.
+Because both artifacts
+share one Play application, the repository reserves globally unique odd phone and even Wear version codes.
+
 ## Explicit server/web releases
 
 Ordinary feature and fix PRs must not change `server.version` or its package, diagnostic, OpenAPI, generated-client,
@@ -94,8 +100,10 @@ than relying on
 token-generated push or PR events, whose workflow behavior is restricted by
 [GitHub's `GITHUB_TOKEN` rules](https://docs.github.com/en/actions/concepts/security/github_token).
 After image publication, the workflow publishes the exact release commit to Expo internal and waits for the protected
-production approval. It does not wait for or trigger self-host deployment. The compatible native-build baseline is
-read from `shared/release.json`.
+production approval when the compatible native-build tag from `shared/release.json` exists. A reserved but not-yet-
+published native tag skips OTA without failing the independent server/image release. After the signed native baseline
+is uploaded and tagged, rerun **Publish prepared release** or use the manual OTA workflow. Neither path waits for or
+triggers self-host deployment.
 
 Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
 running: native startup uses the Fetch `cache: 'no-store'` request described above to compare its bundled expected
@@ -136,15 +144,19 @@ version checks, and the static release-acceptance policy; `release:check:product
 Physical Android/Wear, store-console, and distributed-upgrade checks remain available when the owner considers them
 useful for a native distribution, but do not block publishing an independent server/web image.
 
-Phone and Wear releases remain independent. For a native release, update `shared/release.json`, mirror phone values in
-`mobile/package.json` and `mobile/app.json`, mirror Wear values in `wear/app/build.gradle.kts`, and keep the pairing
-module aligned with the phone release. Expo prebuild continues to generate ignored native files. Run the fast checks
-before building:
+Phone and Wear can still evolve independently in code, but a Play store release is prepared and published as one
+paired version so the shared signing and Data Layer contract are tested together. Prepare every checked-in mirror,
+the globally unique code pair, and the native source tag atomically:
 
 ```powershell
+npm.cmd run release:native:prepare -- --bump patch
 npm.cmd run release:check
 npm.cmd run test:release
 ```
+
+Merge the reviewed native metadata with the implementation, then dispatch **Native Android Store Release** with the
+exact full merge commit. Expo prebuild continues to generate ignored native files. Play/GitHub account setup and
+signing secrets are described in `docs/mobile-release.md`.
 
 ## Reproducible artifact metadata
 
