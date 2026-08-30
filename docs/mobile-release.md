@@ -175,8 +175,9 @@ the server/web release and Expo OTA workflows and has three explicit operations:
 
 1. `upload-internal` checks out one exact full commit already on `master`, builds the phone and Wear release artifacts
    once with the shared upload certificate and the Expo `production` channel, verifies the provenance and common
-   signer, and uploads both AABs in one Google Play edit. Phone goes to `qa`; Wear goes to `wear:qa`. Only after Play
-   accepts both does the workflow create the immutable `native-vMAJOR.MINOR.PATCH` source tag.
+   signer, and uploads both AABs in one Google Play edit. Phone goes to `qa`; Wear goes to `wear:qa`, the
+   [Publisher API identifiers for internal testing](https://developers.google.com/android-publisher/tracks). Only after
+   Play accepts both does the workflow create the immutable `native-vMAJOR.MINOR.PATCH` source tag.
 2. `promote-closed` requires that same source commit and tag, verifies both exact version codes on their internal
    tracks, and moves them to the custom closed tracks `closed` and `wear:closed` in one edit. It never rebuilds or
    downloads a workflow artifact.
