@@ -487,7 +487,7 @@ export function createGooglePlayPublisher(options) {
         throw new Error('Google Play bundle upload source is missing.');
       }
       return request(
-        `${editRoot(applicationId, true)}/${encodeURIComponent(editId)}/bundles`,
+        `${editRoot(applicationId, true)}/${encodeURIComponent(editId)}/bundles?uploadType=media`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/octet-stream' },

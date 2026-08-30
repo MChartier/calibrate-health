@@ -395,7 +395,7 @@ test('publisher uses one edit, media upload, form-factor tracks, and safe commit
   assert.match(requests[2].url, /edits\/edit-123\/bundles$/);
   assert.equal(requests[2].init.method, 'GET');
   assert.match(requests[3].url,
-    /^https:\/\/androidpublisher\.googleapis\.com\/upload\/androidpublisher\/v3\/.*\/bundles$/);
+    /^https:\/\/androidpublisher\.googleapis\.com\/upload\/androidpublisher\/v3\/.*\/bundles\?uploadType=media$/);
   assert.equal(requests[3].init.headers['Content-Type'], 'application/octet-stream');
   assert.deepEqual(JSON.parse(requests[4].init.body), {
     track: 'wear:qa',
