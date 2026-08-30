@@ -101,12 +101,15 @@ These findings must not be silently converted into affirmative Play Console answ
 testing track before any public release. A longer Play-distributed dogfood should remain on the closed track. Do not call an internal testing release a "private app" in policy
 answers. Google uses "private app" for managed enterprise distribution, which has different declaration
 exemptions. Complete the Health Apps and Data Safety drafts before entering closed testing even if an
-internal-only listing does not display a Data Safety section.
+internal-only listing does not display a Data Safety section. The repository automates the paired internal upload,
+exact promotion to the custom `closed` and `wear:closed` tracks, and protected production promotion. Any account-required closed-testing
+enrollment and duration remain Play Console onboarding work.
 
 ## Artifact gate
 
-- [ ] Update `shared/release.json` first and mirror the phone and Wear versions.
-- [ ] Increase both phone and Wear version codes above every uploaded artifact.
+- [ ] Run `npm.cmd run release:native:prepare -- --bump patch` (or the intended semantic bump) and review every mirror.
+- [ ] Confirm the phone code is the next global odd code, the Wear code is the next global even code, and neither was
+  previously uploaded under the shared application ID.
 - [ ] Run `npm.cmd run release:check` and `npm.cmd run test:release` on a clean release commit.
 - [ ] Run mobile typecheck/tests and a clean Expo Android prebuild.
 - [ ] Build the exact phone production AAB and Wear release AAB intended for Play.
@@ -136,6 +139,12 @@ internal-only listing does not display a Data Safety section.
 ## Play Console setup
 
 - [ ] Create or select the listing for `app.calibratehealth.mobile` and enable Play App Signing.
+- [ ] Enable the Wear OS form factor, create custom closed-testing tracks with API aliases `closed` and `wear:closed`,
+  and complete any Console-required first upload or closed-testing gate.
+- [ ] Configure the closed tester email list or Google Group and retain its shareable opt-in link. Internal testers
+  must opt out of the internal test before opting in to the closed test; verify the served phone/Wear version codes.
+- [ ] Grant the Android Publisher service account release access, then configure the `play-internal` and protected
+  `play-production` GitHub environments described in `docs/mobile-release.md`.
 - [ ] Use the **Health & Fitness** app category.
 - [ ] Mark **contains ads: no** only after final SDK/bundle inspection confirms no ad code.
 - [ ] Complete content rating, target audience, and country/region availability with the actual intended audience.

@@ -6,12 +6,15 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  GOOGLE_PLAY_MAX_VERSION_CODE,
   checkRepository,
   compareSemver,
   createReleaseMetadata,
+  getNextNativeVersionCodes,
   getReleasePlan,
   getReleaseTag,
   nextReleaseVersion,
+  prepareNativeRelease,
   prepareServerRelease,
   validateClientDiagnosticVersionContract,
   validateManifest
@@ -26,6 +29,7 @@ const releaseFixturePaths = [
   'mobile/package.json',
   'mobile/app.json',
   'mobile/eas.json',
+  'mobile/modules/wear-pairing/package.json',
   'mobile/modules/wear-pairing/android/build.gradle',
   'wear/app/build.gradle.kts',
   'shared/release.json',
@@ -54,8 +58,8 @@ const validManifest = {
     application_id: 'app.calibratehealth.mobile',
     mobile: {
       version_name: '2.0.0',
-      version_code: 20,
-      native_release_tag: 'v1.2.3',
+      version_code: 21,
+      native_release_tag: 'native-v2.0.0',
       minimum_supported_version: '1.5.0'
     },
     wear: { version_name: '2.0.0', version_code: 10, minimum_supported_version: '1.0.0' },
@@ -147,7 +151,32 @@ test('manifest rejects a minimum client version newer than the release', () => {
 test('manifest requires a stable native build tag', () => {
   const manifest = structuredClone(validManifest);
   manifest.android.mobile.native_release_tag = 'master';
-  assert.match(validateManifest(manifest).join('\n'), /native_release_tag must be a stable/);
+  assert.match(validateManifest(manifest).join('\n'), /native_release_tag must be a stable native-vMAJOR/);
+});
+
+test('manifest requires the native build tag to identify the phone runtime version', () => {
+  const manifest = structuredClone(validManifest);
+  manifest.android.mobile.native_release_tag = 'native-v1.2.3';
+  assert.match(validateManifest(manifest).join('\n'), /native_release_tag must match android\.mobile\.version_name/);
+});
+
+test('manifest assigns globally unique phone and Wear version-code lanes', () => {
+  const duplicate = structuredClone(validManifest);
+  duplicate.android.mobile.version_code = 10;
+  assert.match(validateManifest(duplicate).join('\n'), /mobile and Wear version_code values must be globally unique/);
+
+  const wrongLanes = structuredClone(validManifest);
+  wrongLanes.android.mobile.version_code = 22;
+  wrongLanes.android.wear.version_code = 11;
+  const errors = validateManifest(wrongLanes).join('\n');
+  assert.match(errors, /mobile\.version_code must be odd/);
+  assert.match(errors, /wear\.version_code must be even/);
+});
+
+test('manifest rejects version codes above Google Play\'s limit', () => {
+  const manifest = structuredClone(validManifest);
+  manifest.android.wear.version_code = GOOGLE_PLAY_MAX_VERSION_CODE + 2;
+  assert.match(validateManifest(manifest).join('\n'), /cannot exceed Google Play's 2100000000 limit/);
 });
 
 test('release metadata is deterministic when source date epoch is supplied', async () => {
@@ -233,6 +262,130 @@ for (const bump of ['patch', 'minor', 'major']) {
     assert.deepEqual((await checkRepository(root)).errors, []);
   });
 }
+
+test('native version-code allocation advances into permanent odd phone and even Wear lanes', () => {
+  assert.deepEqual(getNextNativeVersionCodes(validManifest), {
+    mobileVersionCode: 23,
+    wearVersionCode: 24
+  });
+  const exhausted = structuredClone(validManifest);
+  exhausted.android.mobile.version_code = GOOGLE_PLAY_MAX_VERSION_CODE - 1;
+  exhausted.android.wear.version_code = GOOGLE_PLAY_MAX_VERSION_CODE;
+  assert.throws(() => getNextNativeVersionCodes(exhausted), /cannot exceed Google Play's 2100000000 limit/);
+});
+
+test('native release preparation synchronizes paired identities and every checked mirror', async (t) => {
+  const root = await createReleaseFixture(t);
+  const manifestBefore = await readFixtureJson(root, 'shared/release.json');
+  const currentVersion = manifestBefore.android.mobile.version_name;
+  const expectedVersion = nextReleaseVersion(currentVersion, 'patch');
+  const expectedCodes = getNextNativeVersionCodes(manifestBefore);
+  const generatedGradlePath = path.join(root, 'mobile', 'android', 'app', 'build.gradle');
+  await mkdir(path.dirname(generatedGradlePath), { recursive: true });
+  await writeFile(generatedGradlePath, [
+    'android {',
+    '  defaultConfig {',
+    `    applicationId "${manifestBefore.android.application_id}"`,
+    `    versionCode ${manifestBefore.android.mobile.version_code}`,
+    `    versionName "${currentVersion}"`,
+    '  }',
+    '}',
+    ''
+  ].join('\n'));
+
+  assert.deepEqual(
+    await prepareNativeRelease({
+      root,
+      bump: 'patch',
+      latestTag: manifestBefore.android.mobile.native_release_tag
+    }),
+    {
+      version_name: expectedVersion,
+      mobile_version_code: expectedCodes.mobileVersionCode,
+      wear_version_code: expectedCodes.wearVersionCode,
+      native_release_tag: `native-v${expectedVersion}`
+    }
+  );
+
+  const manifest = await readFixtureJson(root, 'shared/release.json');
+  const diagnostics = await readFixtureJson(root, 'shared/client-diagnostic-versions.json');
+  const rootLock = await readFixtureJson(root, 'package-lock.json');
+  const mobilePackage = await readFixtureJson(root, 'mobile/package.json');
+  const mobileApp = await readFixtureJson(root, 'mobile/app.json');
+  const pairingPackage = await readFixtureJson(root, 'mobile/modules/wear-pairing/package.json');
+  const pairingGradle = await readFile(
+    path.join(root, 'mobile/modules/wear-pairing/android/build.gradle'),
+    'utf8'
+  );
+  const wearGradle = await readFile(path.join(root, 'wear/app/build.gradle.kts'), 'utf8');
+  const generatedGradle = await readFile(generatedGradlePath, 'utf8');
+  const openApi = await readFile(path.join(root, 'docs/openapi/v1.yaml'), 'utf8');
+  const generatedApi = await readFile(path.join(root, 'packages/api-client/src/generated/v1.ts'), 'utf8');
+
+  assert.equal(manifest.android.mobile.version_name, expectedVersion);
+  assert.equal(manifest.android.mobile.version_code, expectedCodes.mobileVersionCode);
+  assert.equal(manifest.android.mobile.native_release_tag, `native-v${expectedVersion}`);
+  assert.equal(manifest.android.wear.version_name, expectedVersion);
+  assert.equal(manifest.android.wear.version_code, expectedCodes.wearVersionCode);
+  assert.equal(mobilePackage.version, expectedVersion);
+  assert.equal(mobileApp.expo.version, expectedVersion);
+  assert.equal(mobileApp.expo.android.versionCode, expectedCodes.mobileVersionCode);
+  assert.equal(mobileApp.expo.extra.calibrate.nativeReleaseTag, `native-v${expectedVersion}`);
+  assert.equal(pairingPackage.version, expectedVersion);
+  assert.equal(rootLock.packages.mobile.version, expectedVersion);
+  assert.equal(rootLock.packages['mobile/modules/wear-pairing'].version, expectedVersion);
+  assert.deepEqual(diagnostics.supported_versions.android_phone.slice(0, 2), [expectedVersion, currentVersion]);
+  assert.deepEqual(diagnostics.supported_versions.wear_os.slice(0, 2), [expectedVersion, currentVersion]);
+  assert.match(pairingGradle, new RegExp(`versionCode ${expectedCodes.mobileVersionCode}`));
+  assert.match(pairingGradle, new RegExp(`versionName '${expectedVersion.replaceAll('.', '\\.')}'`));
+  assert.match(wearGradle, new RegExp(`versionCode = ${expectedCodes.wearVersionCode}`));
+  assert.match(wearGradle, new RegExp(`versionName = "${expectedVersion.replaceAll('.', '\\.')}"`));
+  assert.match(generatedGradle, new RegExp(`versionCode ${expectedCodes.mobileVersionCode}`));
+  assert.match(generatedGradle, new RegExp(`versionName "${expectedVersion.replaceAll('.', '\\.')}"`));
+  assert.ok(openApi.includes(`platform: { const: android_phone }, version: { enum: [${expectedVersion},`));
+  assert.ok(openApi.includes(`platform: { const: wear_os }, version: { enum: [${expectedVersion},`));
+  assert.ok(generatedApi.includes(`platform?: "android_phone";`));
+  assert.ok(generatedApi.includes(`version?: "${expectedVersion}" | "${currentVersion}"`));
+  assert.deepEqual((await checkRepository(root)).errors, []);
+});
+
+test('native release preparation refuses an untagged current release without changing files', async (t) => {
+  const root = await createReleaseFixture(t);
+  const manifestPath = path.join(root, 'shared/release.json');
+  const before = await readFile(manifestPath, 'utf8');
+
+  await assert.rejects(
+    prepareNativeRelease({ root, bump: 'patch', latestTag: null }),
+    /Cannot prepare another native release until native-v/
+  );
+  assert.equal(await readFile(manifestPath, 'utf8'), before);
+});
+
+test('native release preparation rejects ambiguous generated Gradle values before writing mirrors', async (t) => {
+  const root = await createReleaseFixture(t);
+  const manifest = await readFixtureJson(root, 'shared/release.json');
+  const manifestPath = path.join(root, 'shared/release.json');
+  const before = await readFile(manifestPath, 'utf8');
+  const generatedGradlePath = path.join(root, 'mobile', 'android', 'app', 'build.gradle');
+  await mkdir(path.dirname(generatedGradlePath), { recursive: true });
+  await writeFile(generatedGradlePath, [
+    `applicationId "${manifest.android.application_id}"`,
+    `versionCode ${manifest.android.mobile.version_code}`,
+    `versionCode ${manifest.android.mobile.version_code}`,
+    `versionName "${manifest.android.mobile.version_name}"`,
+    ''
+  ].join('\n'));
+
+  await assert.rejects(
+    prepareNativeRelease({
+      root,
+      bump: 'patch',
+      latestTag: manifest.android.mobile.native_release_tag
+    }),
+    /generated mobile versionCode must contain exactly one/
+  );
+  assert.equal(await readFile(manifestPath, 'utf8'), before);
+});
 
 test('release preparation rejects a pending manifest release without changing files', async (t) => {
   const root = await createReleaseFixture(t);
