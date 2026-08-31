@@ -259,6 +259,8 @@ test('historical signer authorization enforces source, fresh master, ancestry, m
     () => authorizeNativePlayReceiptWorkflow({ ...base, trustSet: `revoke ${SOURCE}\n`, git: fakeGit() }),
     /explicitly revoked/
   );
+  assert.ok(NATIVE_PLAY_RECEIPT_CRITICAL_PATHS.includes('mobile/plugins/nativeReleaseGradleWrapper.js'));
+  assert.ok(NATIVE_PLAY_RECEIPT_CRITICAL_PATHS.includes('mobile/plugins/withPinnedGradleWrapper.js'));
   for (const criticalPath of NATIVE_PLAY_RECEIPT_CRITICAL_PATHS) {
     assert.throws(
       () => authorizeNativePlayReceiptWorkflow({ ...base, git: fakeGit({ driftPath: criticalPath }) }),

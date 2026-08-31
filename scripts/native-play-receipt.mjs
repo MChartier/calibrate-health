@@ -27,7 +27,8 @@ export const NATIVE_PLAY_RECEIPT_CRITICAL_PATHS = Object.freeze([
   'scripts/native-ota-contract.mjs',
   'scripts/native-tag-attestation.mjs',
   'scripts/release-config.mjs',
-  'mobile/plugins/nativeReleaseGradleWrapper.js'
+  'mobile/plugins/nativeReleaseGradleWrapper.js',
+  'mobile/plugins/withPinnedGradleWrapper.js'
 ]);
 
 function requireText(value, pattern, label) {

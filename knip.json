@@ -29,7 +29,11 @@
       "prisma": { "config": [] }
     },
     "mobile": {
-      "entry": ["plugins/withHealthConnect.js", "plugins/withSharedAndroidSigning.js"],
+      "entry": [
+        "plugins/withHealthConnect.js",
+        "plugins/withPinnedGradleWrapper.js",
+        "plugins/withSharedAndroidSigning.js"
+      ],
       "project": [
         "app/**/*.{ts,tsx}!",
         "src/**/*.{ts,tsx}!",
