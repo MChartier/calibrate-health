@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "platforms": {
+    "phone": {
+      "files": [
+        {
+          "path": "buildscript-gradle.lockfile",
+          "sha256": "587bf3e5648f6f34c41a2f0c60e85fce04760295519f87f26a2c092c68e1afc5"
+        },
+        {
+          "path": "gradle/dependency-locks/app.lockfile",
+          "sha256": "9adc3df7cbf1cc0def42f0705b3f79395bbb3280ceb0c43e0516c96aa7bf401f"
+        },
+        {
+          "path": "gradle/dependency-locks/calibrate-wear-pairing.lockfile",
+          "sha256": "852fe6a11ac04dc285e4bde041e22d94b258fe8da8109d0e3b74424292e4dead"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-constants.lockfile",
+          "sha256": "c688dab2aa52fa699a964d29d678afd1114c124e3298cf7e175dc9398f318a1a"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-eas-client.lockfile",
+          "sha256": "d362658137e5e8ab2eac1295c0f917ef51b5f647c59344da52922b05b290ed0e"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-json-utils.lockfile",
+          "sha256": "273224390f188b5b397c522a88970ba3ef41545c5287120ee58243e5b76a7215"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-log-box.lockfile",
+          "sha256": "7688df5282520ef16d36dfe062f11d5e2a18546e0f0f35b12e779feb10939620"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-manifests.lockfile",
+          "sha256": "460f91024d5431bb1e9729cfd2c952e4dcc577701662c86e96351582770a410c"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-modules-core.lockfile",
+          "sha256": "f216ce61d6c2a87334407462ffc3af4ce01f7c9352729c73bfb4347bc077792d"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-structured-headers.lockfile",
+          "sha256": "afbbd44075d54b389bf76c2da3b48e69cec4ff04e435f5a53be6df80604424ce"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-updates-interface.lockfile",
+          "sha256": "c688dab2aa52fa699a964d29d678afd1114c124e3298cf7e175dc9398f318a1a"
+        },
+        {
+          "path": "gradle/dependency-locks/expo-updates.lockfile",
+          "sha256": "d10975eac32ac41adee48b1b9bf520a02ae11187d345e1055670264d64c2c5e1"
+        },
+        {
+          "path": "gradle/dependency-locks/expo.lockfile",
+          "sha256": "69b33ddf17c23820398759d651770989f2b49728bf9a21903675054a90d1614a"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-async-storage_async-storage.lockfile",
+          "sha256": "3e850f5e64476ce755e8799e057ab2d0e8ad83b9af252f7c8341d24bf232868f"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-community_datetimepicker.lockfile",
+          "sha256": "5130335394acb10f01b8b0df7fdc6b700bc1240c6d81b4baf98e2e7df5a6205f"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-community_netinfo.lockfile",
+          "sha256": "34bb9cb5253f84c6a83c023e79158a6c59b631b623308ee9708c3246ccc3369b"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-gesture-handler.lockfile",
+          "sha256": "de697fc7922cf8e79044eb0e773382640c91a239cb71197694372267dffb2c9d"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-health-connect.lockfile",
+          "sha256": "bbd34cc1bca310303fcdc471aa1600c7362039cc776bf3b46f6fd0b1c91be3b0"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-masked-view_masked-view.lockfile",
+          "sha256": "34bb9cb5253f84c6a83c023e79158a6c59b631b623308ee9708c3246ccc3369b"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-reanimated.lockfile",
+          "sha256": "f30fd45737b58e245f96aac1d670e5a145d7fd0f83fc2ebf9a02b232100fa96b"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-safe-area-context.lockfile",
+          "sha256": "ea42d8e0a5960ccacaf958b5c478c4b5dc58a7e34750bff283412204da04d903"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-screens.lockfile",
+          "sha256": "117bf638bb136f673ad60d38a0f75261019d745f0edd8632d44de91df84203a1"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-svg.lockfile",
+          "sha256": "34bb9cb5253f84c6a83c023e79158a6c59b631b623308ee9708c3246ccc3369b"
+        },
+        {
+          "path": "gradle/dependency-locks/react-native-worklets.lockfile",
+          "sha256": "26af2e40b2b13d3ed7a9e37872b11baaa7bd1aa69da8f48575fac73e627532c0"
+        },
+        {
+          "path": "gradle/verification-metadata.xml",
+          "sha256": "9094d183ec05b84bb9ac4850d1ad139920dd3051dacd9085115399a198a4c221"
+        },
+        {
+          "path": "settings-gradle.lockfile",
+          "sha256": "6656e3aed66762d2f39666de089080c66a3224078aabdf27764b041da508df84"
+        }
+      ]
+    },
+    "wear": {
+      "files": [
+        {
+          "path": "app/gradle.lockfile",
+          "sha256": "97f5472976322193a03ad855e0712af221249d90dcaea74e98747d5246702a3d"
+        },
+        {
+          "path": "gradle/verification-metadata.xml",
+          "sha256": "5883f7c14c05de61bf48e661ca9aea8fb3f9a970434d1b8fc6c47a77eb13e0ef"
+        },
+        {
+          "path": "settings-gradle.lockfile",
+          "sha256": "6656e3aed66762d2f39666de089080c66a3224078aabdf27764b041da508df84"
+        }
+      ]
+    }
+  }
+}

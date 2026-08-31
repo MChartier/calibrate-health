@@ -14,20 +14,29 @@ import {
   assertNativePlaySourceCheckout,
   createGooglePlayPublisher,
   createGoogleServiceAccountAssertion,
+  createNativePlayArtifactReceipt,
   createNativePlayReleasePlan,
   GOOGLE_PLAY_MAX_VERSION_CODE,
   inspectNativePlayArtifact,
   NATIVE_PLAY_TRACKS,
   promoteNativePlayClosed,
   promoteNativePlayProduction,
+  recoverNativePlayInternal,
   resolveGooglePlayAccessToken,
   runNativePlayReleaseCli,
   uploadNativePlayInternal,
-  verifyNativePlayArtifacts
+  verifyNativePlayArtifacts,
+  writeNativePlayArtifactReceipt
 } from './native-play-release.mjs';
+import {
+  createNativePlayReceiptFromPlan,
+  serializeNativePlayReceipt,
+  verifyNativePlayReceiptBytes
+} from './native-play-receipt.mjs';
 
 const SOURCE_COMMIT = 'a'.repeat(40);
 const SHARED_SIGNER = 'f'.repeat(64);
+const REPOSITORY = 'calibratehealth/calibrate';
 
 function jsonResponse(payload, status = 200) {
   return new Response(payload === null ? '' : JSON.stringify(payload), {
@@ -101,8 +110,8 @@ test('Play plan binds one package to distinct phone and Wear tracks and code lan
   assert.equal(plan.candidates.watch.productionTrack, 'wear:production');
   assert.match(plan.candidates.phone.artifactPath, /phone|mobile/);
   assert.match(plan.candidates.watch.artifactPath, /wear/);
-  assert.match(plan.candidates.phone.releaseName, /@aaaaaaaaaaaa$/);
-  assert.match(plan.candidates.watch.releaseName, /@aaaaaaaaaaaa$/);
+  assert.equal(plan.candidates.phone.releaseName, `cal-p@${SOURCE_COMMIT}`);
+  assert.equal(plan.candidates.watch.releaseName, `cal-w@${SOURCE_COMMIT}`);
 });
 
 test('Play plan rejects colliding, crossed-lane, or unpaired native versions', (t) => {
@@ -163,6 +172,59 @@ test('source checkout must resolve the exact requested commit', () => {
       (_command, args) => args[0] === 'status' ? ' M shared/release.json' : `${SOURCE_COMMIT}\n`
     ),
     /tracked files to match/
+  );
+
+  const previousToken = process.env.GOOGLE_PLAY_ACCESS_TOKEN;
+  const previousCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  process.env.GOOGLE_PLAY_ACCESS_TOKEN = 'must-not-reach-git';
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = 'must-not-reach-git';
+  try {
+    const calls = [];
+    assertNativePlaySourceCheckout('C:/repo', SOURCE_COMMIT, (_command, args, options) => {
+      calls.push(args[0]);
+      assert.equal(Object.keys(options.env).some((name) => name.startsWith('GOOGLE_PLAY_')), false);
+      assert.equal(Object.hasOwn(options.env, 'GOOGLE_APPLICATION_CREDENTIALS'), false);
+      return args[0] === 'status' ? '' : `${SOURCE_COMMIT}\n`;
+    });
+    assert.deepEqual(calls, ['rev-parse', 'status']);
+  } finally {
+    if (previousToken === undefined) delete process.env.GOOGLE_PLAY_ACCESS_TOKEN;
+    else process.env.GOOGLE_PLAY_ACCESS_TOKEN = previousToken;
+    if (previousCredentials === undefined) delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    else process.env.GOOGLE_APPLICATION_CREDENTIALS = previousCredentials;
+  }
+});
+
+test('credentialed CLI commands require one explicit repository root and reject unknown options', async () => {
+  await assert.rejects(
+    () => runNativePlayReleaseCli([
+      'upload-internal',
+      '--source-commit',
+      SOURCE_COMMIT
+    ]),
+    /upload-internal requires --repository-root ROOT/
+  );
+  await assert.rejects(
+    () => runNativePlayReleaseCli([
+      'recover-internal',
+      '--source-commit',
+      SOURCE_COMMIT,
+      '--repository-root',
+      'C:/source',
+      '--repository-root',
+      'C:/other'
+    ]),
+    /Duplicate native Play release option: --repository-root/
+  );
+  await assert.rejects(
+    () => runNativePlayReleaseCli([
+      'promote-production',
+      '--source-commit',
+      SOURCE_COMMIT,
+      '--source-root',
+      'C:/source'
+    ]),
+    /Unknown or incomplete native Play release option: --source-root/
   );
 });
 
@@ -235,6 +297,52 @@ test('artifact inspection dispatches APKs through aapt and apksigner and AABs th
     }),
     /BUNDLETOOL_JAR/
   );
+});
+
+test('artifact inspection subprocesses cannot inherit Google Play credentials', () => {
+  const tooling = {
+    aapt: 'aapt',
+    apksignerJar: 'apksigner.jar',
+    java: 'java',
+    keytool: 'keytool',
+    bundletoolJar: 'bundletool.jar'
+  };
+  const environments = [];
+  const execute = (command, args, options) => {
+    environments.push(options.env);
+    if (command === tooling.keytool) return `SHA256: ${SHARED_SIGNER}\n`;
+    if (args[1] === tooling.bundletoolJar) {
+      return '<manifest package="app.calibratehealth.mobile" ' +
+        'android:versionCode="9" android:versionName="1.2.3">\n';
+    }
+    assert.fail(`Unexpected inspection command: ${command} ${args.join(' ')}`);
+  };
+  const aab = NATIVE_RELEASE_ARTIFACT_CONTRACTS.find(({ id }) => id === 'phone-aab');
+
+  inspectNativePlayArtifact('candidate.aab', aab, {
+    execute,
+    tooling,
+    environment: {
+      PATH: 'safe-path',
+      UNRELATED_VALUE: 'kept',
+      GOOGLE_PLAY_ACCESS_TOKEN: 'publisher-token',
+      GOOGLE_PLAY_SERVICE_ACCOUNT_FILE: 'publisher.json',
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64: 'encoded-publisher-key',
+      google_play_recovery_token: 'case-insensitive-secret',
+      GOOGLE_APPLICATION_CREDENTIALS: 'ambient-google-credential.json'
+    }
+  });
+
+  assert.equal(environments.length, 2);
+  for (const environment of environments) {
+    assert.equal(environment.PATH, 'safe-path');
+    assert.equal(environment.UNRELATED_VALUE, 'kept');
+    assert.equal(
+      Object.keys(environment).some((name) => name.toUpperCase().startsWith('GOOGLE_PLAY_')),
+      false
+    );
+    assert.equal(environment.GOOGLE_APPLICATION_CREDENTIALS, undefined);
+  }
 });
 
 test('artifact verification binds provenance, current bytes, and one shared signer', (t) => {
@@ -349,6 +457,21 @@ test('service-account credentials create a signed scoped JWT and exchange it wit
   assert.equal(payload.aud, 'https://oauth2.googleapis.com/token');
   assert.equal(payload.exp - payload.iat, 3600);
 
+  exchange = null;
+  const serviceAccountPreferred = await resolveGooglePlayAccessToken({
+    environment: {
+      GOOGLE_PLAY_ACCESS_TOKEN: 'stale-recovery-token',
+      GOOGLE_PLAY_SERVICE_ACCOUNT_FILE: serviceAccountFile
+    },
+    now: () => 1_700_000_000_000,
+    fetchImpl: async (url, init) => {
+      exchange = { url, init };
+      return jsonResponse({ access_token: 'fresh-service-account-token', expires_in: 3600 });
+    }
+  });
+  assert.equal(serviceAccountPreferred, 'fresh-service-account-token');
+  assert.equal(exchange.url, 'https://oauth2.googleapis.com/token');
+
   const direct = await resolveGooglePlayAccessToken({
     environment: { GOOGLE_PLAY_ACCESS_TOKEN: ' direct-token ' },
     fetchImpl: () => assert.fail('direct token must not perform an OAuth exchange')
@@ -444,6 +567,18 @@ function existingBundleEntries(verification) {
     .map(({ versionCode, sha256 }) => ({ versionCode, sha256 }));
 }
 
+function uploadWithReceipt(options) {
+  return uploadNativePlayInternal({
+    ...options,
+    repository: REPOSITORY,
+    receipt: createNativePlayArtifactReceipt({
+      repository: REPOSITORY,
+      plan: options.plan,
+      verification: options.verification
+    })
+  });
+}
+
 test('internal upload commits paired bundles and tracks as one edit', async (t) => {
   const { root } = createReleaseRoot(t);
   addReleaseArtifacts(root);
@@ -451,7 +586,7 @@ test('internal upload commits paired bundles and tracks as one edit', async (t) 
   const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: createArtifactInspector(root) });
   const publisher = fakePublisher();
 
-  const result = await uploadNativePlayInternal({ root, plan, verification, publisher });
+  const result = await uploadWithReceipt({ root, plan, verification, publisher });
 
   assert.equal(result.alreadyComplete, false);
   assert.deepEqual(publisher.calls.map(([operation]) => operation), [
@@ -480,6 +615,277 @@ test('internal upload commits paired bundles and tracks as one edit', async (t) 
   );
 });
 
+test('upload-internal CLI verifies artifacts before materializing Play authentication', async (t) => {
+  const { root } = createReleaseRoot(t);
+  addReleaseArtifacts(root);
+  const { privateKey } = crypto.generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' }
+  });
+  const serviceAccountFile = path.join(root, 'service-account.json');
+  fs.writeFileSync(serviceAccountFile, JSON.stringify({
+    client_email: 'publisher@example.iam.gserviceaccount.com',
+    private_key: privateKey,
+    token_uri: 'https://oauth2.googleapis.com/token'
+  }));
+  const events = [];
+  const inspect = createArtifactInspector(root);
+  const publisher = fakePublisher();
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: inspect });
+  const receiptFile = path.join(root, 'build', 'native-play-receipt.json');
+  writeNativePlayArtifactReceipt({ root, receiptFile, repository: REPOSITORY, plan, verification });
+
+  await runNativePlayReleaseCli([
+    'upload-internal',
+    '--source-commit',
+    SOURCE_COMMIT,
+    '--repository-root',
+    root,
+    '--repository',
+    REPOSITORY,
+    '--receipt-file',
+    receiptFile,
+    '--service-account-file',
+    serviceAccountFile
+  ], {
+    root,
+    execute: (_command, args) => args[0] === 'status' ? '' : `${SOURCE_COMMIT}\n`,
+    artifactInspector: (file, contract) => {
+      events.push(`verify:${contract.id}`);
+      return inspect(file, contract);
+    },
+    fetchImpl: async () => {
+      events.push('authenticate');
+      return jsonResponse({ access_token: 'service-account-token' });
+    },
+    publisher
+  });
+
+  assert.deepEqual(events, [
+    'verify:phone-apk',
+    'verify:phone-aab',
+    'verify:watch-apk',
+    'verify:watch-aab',
+    'authenticate'
+  ]);
+});
+
+test('upload-internal rejects a swapped canonical receipt before OAuth or Publisher calls', async (t) => {
+  const { root } = createReleaseRoot(t);
+  addReleaseArtifacts(root);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const inspect = createArtifactInspector(root);
+  const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: inspect });
+  const receiptFile = path.join(root, 'build', 'native-play-receipt.json');
+  writeNativePlayArtifactReceipt({ root, receiptFile, repository: REPOSITORY, plan, verification });
+  const swapped = JSON.parse(fs.readFileSync(receiptFile, 'utf8'));
+  [swapped.releases.phone.aab_sha256, swapped.releases.watch.aab_sha256] =
+    [swapped.releases.watch.aab_sha256, swapped.releases.phone.aab_sha256];
+  fs.writeFileSync(receiptFile, `${JSON.stringify(swapped, null, 2)}\n`);
+  let oauthCalls = 0;
+  const publisher = fakePublisher();
+
+  await assert.rejects(
+    () => runNativePlayReleaseCli([
+      'upload-internal',
+      '--source-commit', SOURCE_COMMIT,
+      '--repository-root', root,
+      '--repository', REPOSITORY,
+      '--receipt-file', receiptFile,
+      '--service-account-file', path.join(root, 'credentials-must-not-be-read.json')
+    ], {
+      root,
+      execute: (_command, args) => args[0] === 'status' ? '' : `${SOURCE_COMMIT}\n`,
+      artifactInspector: inspect,
+      fetchImpl: async () => {
+        oauthCalls += 1;
+        return jsonResponse({ access_token: 'must-not-be-used' });
+      },
+      publisher
+    }),
+    /receipt bytes do not match the exact expected source and Play artifacts/
+  );
+  assert.equal(oauthCalls, 0);
+  assert.deepEqual(publisher.calls, []);
+});
+
+test('internal recovery returns an exact Play receipt without local artifacts or a commit', async (t) => {
+  const { root } = createReleaseRoot(t);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const publisher = fakePublisher({
+    qa: {
+      track: 'qa',
+      releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
+    },
+    'wear:qa': {
+      track: 'wear:qa',
+      releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
+    }
+  }, {
+    bundles: [
+      { versionCode: 9, sha256: 'A'.repeat(64) },
+      { versionCode: 10, sha256: 'b'.repeat(64) }
+    ]
+  });
+
+  const receipt = await recoverNativePlayInternal({ plan, publisher, repository: REPOSITORY });
+
+  assert.deepEqual(receipt, {
+    schema_version: 1,
+    attestation_epoch: 1,
+    repository: REPOSITORY,
+    application_id: 'app.calibratehealth.mobile',
+    source_commit: SOURCE_COMMIT,
+    native_release_tag: 'native-v1.2.3',
+    version_name: '1.2.3',
+    releases: {
+      phone: { track: 'qa', version_code: 9, aab_sha256: 'a'.repeat(64) },
+      watch: { track: 'wear:qa', version_code: 10, aab_sha256: 'b'.repeat(64) }
+    }
+  });
+  assert.deepEqual(publisher.calls.map(([operation]) => operation), [
+    'create', 'get', 'get', 'list-bundles', 'delete'
+  ]);
+});
+
+test('Play name-only source relabeling reconstructs new bytes that cannot reuse the original receipt', async (t) => {
+  const { root } = createReleaseRoot(t);
+  const sourceB = 'b'.repeat(40);
+  const planA = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const planB = createNativePlayReleasePlan({ root, sourceCommit: sourceB });
+  const releases = {
+    phone: { sha256: 'c'.repeat(64) },
+    watch: { sha256: 'd'.repeat(64) }
+  };
+  const publisher = fakePublisher({
+    qa: {
+      track: 'qa',
+      releases: [{ name: planB.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
+    },
+    'wear:qa': {
+      track: 'wear:qa',
+      releases: [{ name: planB.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
+    }
+  }, {
+    bundles: [
+      { versionCode: 9, sha256: releases.phone.sha256 },
+      { versionCode: 10, sha256: releases.watch.sha256 }
+    ]
+  });
+
+  const recoveredB = await recoverNativePlayInternal({ plan: planB, publisher, repository: REPOSITORY });
+  const originalA = createNativePlayReceiptFromPlan({ repository: REPOSITORY, plan: planA, releases });
+  assert.equal(recoveredB.source_commit, sourceB);
+  assert.notEqual(serializeNativePlayReceipt(recoveredB), serializeNativePlayReceipt(originalA));
+  assert.throws(
+    () => verifyNativePlayReceiptBytes(serializeNativePlayReceipt(recoveredB), originalA),
+    /do not match the exact expected source and Play artifacts/
+  );
+});
+
+test('internal recovery rejects a conflicting source marker and abandons the read-only edit', async (t) => {
+  const { root } = createReleaseRoot(t);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const publisher = fakePublisher({
+    qa: {
+      track: 'qa',
+      releases: [{ name: `cal-p@${'b'.repeat(40)}`, status: 'completed', versionCodes: ['9'] }]
+    }
+  });
+
+  await assert.rejects(
+    () => recoverNativePlayInternal({ plan, publisher, repository: REPOSITORY }),
+    /Phone internal track must contain exactly one completed release.*cal-p@a{40}/
+  );
+  assert.equal(publisher.calls.some(([operation]) => operation === 'commit'), false);
+  assert.equal(publisher.calls.at(-1)[0], 'delete');
+});
+
+test('internal recovery rejects ambiguous or invalid stored bundle digests', async (t) => {
+  const { root } = createReleaseRoot(t);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const tracks = {
+    qa: {
+      track: 'qa',
+      releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
+    },
+    'wear:qa': {
+      track: 'wear:qa',
+      releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
+    }
+  };
+  const ambiguous = fakePublisher(tracks, {
+    bundles: [
+      { versionCode: 9, sha256: 'a'.repeat(64) },
+      { versionCode: 9, sha256: 'b'.repeat(64) },
+      { versionCode: 10, sha256: 'c'.repeat(64) }
+    ]
+  });
+  await assert.rejects(
+    () => recoverNativePlayInternal({ plan, publisher: ambiguous, repository: REPOSITORY }),
+    /exactly one existing phone bundle.*found 2/
+  );
+  assert.equal(ambiguous.calls.at(-1)[0], 'delete');
+
+  const malformed = fakePublisher(tracks, {
+    bundles: [
+      { versionCode: 9, sha256: 123 },
+      { versionCode: 10, sha256: 'c'.repeat(64) }
+    ]
+  });
+  await assert.rejects(
+    () => recoverNativePlayInternal({ plan, publisher: malformed, repository: REPOSITORY }),
+    /phone bundle for version code 9 must report a valid SHA-256/
+  );
+  assert.equal(malformed.calls.at(-1)[0], 'delete');
+});
+
+test('recover-internal CLI reads Play state without requiring local release artifacts', async (t) => {
+  const { root } = createReleaseRoot(t);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const publisher = fakePublisher({
+    qa: {
+      track: 'qa',
+      releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
+    },
+    'wear:qa': {
+      track: 'wear:qa',
+      releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
+    }
+  }, {
+    bundles: [
+      { versionCode: 9, sha256: 'c'.repeat(64) },
+      { versionCode: 10, sha256: 'd'.repeat(64) }
+    ]
+  });
+
+  const receiptFile = path.join(root, 'build', 'recovered-native-play-receipt.json');
+  const result = await runNativePlayReleaseCli([
+    'recover-internal',
+    '--source-commit',
+    SOURCE_COMMIT,
+    '--repository-root',
+    root,
+    '--repository',
+    REPOSITORY,
+    '--receipt-file',
+    receiptFile
+  ], {
+    root,
+    execute: (_command, args) => args[0] === 'status' ? '' : `${SOURCE_COMMIT}\n`,
+    environment: { GOOGLE_PLAY_ACCESS_TOKEN: 'test-access-token' },
+    publisher
+  });
+
+  assert.equal(result.receipt.releases.phone.aab_sha256, 'c'.repeat(64));
+  assert.equal(result.receipt.releases.watch.aab_sha256, 'd'.repeat(64));
+  assert.equal(fs.readFileSync(receiptFile, 'utf8').endsWith('\n'), true);
+  assert.equal(publisher.calls.some(([operation]) => operation === 'upload'), false);
+  assert.equal(publisher.calls.some(([operation]) => operation === 'commit'), false);
+});
+
 test('internal upload rejects a Play bundle hash that differs from the verified AAB', async (t) => {
   const { root } = createReleaseRoot(t);
   addReleaseArtifacts(root);
@@ -488,7 +894,7 @@ test('internal upload rejects a Play bundle hash that differs from the verified 
   const publisher = fakePublisher({}, { uploadSha256: '0'.repeat(64) });
 
   await assert.rejects(
-    () => uploadNativePlayInternal({ root, plan, verification, publisher }),
+    () => uploadWithReceipt({ root, plan, verification, publisher }),
     /Google Play reported phone bundle SHA-256 0+; expected [0-9a-f]{64}/
   );
   assert.equal(publisher.calls.some(([operation]) => operation === 'update'), false);
@@ -513,7 +919,7 @@ test('internal retry requires version codes to belong to the same source commit'
   }, { bundles: existingBundleEntries(verification) });
 
   await assert.rejects(
-    () => uploadNativePlayInternal({ root, plan, verification, publisher }),
+    () => uploadWithReceipt({ root, plan, verification, publisher }),
     /Phone internal track version code 9 belongs to a different source release/
   );
   assert.equal(publisher.calls.some(([operation]) => operation === 'upload'), false);
@@ -537,13 +943,50 @@ test('internal retry is complete only when both code and source marker match', a
     }
   }, { bundles: existingBundleEntries(verification) });
 
-  const result = await uploadNativePlayInternal({ root, plan, verification, publisher });
+  const result = await uploadWithReceipt({ root, plan, verification, publisher });
 
   assert.equal(result.alreadyComplete, true);
   assert.equal(publisher.calls.some(([operation]) => operation === 'list-bundles'), true);
   assert.equal(publisher.calls.some(([operation]) => operation === 'upload'), false);
   assert.equal(publisher.calls.some(([operation]) => operation === 'commit'), false);
   assert.equal(publisher.calls.at(-1)[0], 'delete');
+});
+
+test('internal retry rejects duplicate releases and releases with extra version codes', async (t) => {
+  const { root } = createReleaseRoot(t);
+  addReleaseArtifacts(root);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: createArtifactInspector(root) });
+  const exactPhone = {
+    name: plan.candidates.phone.releaseName,
+    status: 'completed',
+    versionCodes: ['9']
+  };
+  const exactWatch = {
+    name: plan.candidates.watch.releaseName,
+    status: 'completed',
+    versionCodes: ['10']
+  };
+  const invalidPhoneReleases = [
+    [exactPhone, { ...exactPhone }],
+    [{ ...exactPhone, versionCodes: ['9', '11'] }]
+  ];
+
+  for (const releases of invalidPhoneReleases) {
+    const publisher = fakePublisher({
+      qa: { track: 'qa', releases },
+      'wear:qa': { track: 'wear:qa', releases: [exactWatch] }
+    }, { bundles: existingBundleEntries(verification) });
+
+    await assert.rejects(
+      () => uploadWithReceipt({ root, plan, verification, publisher }),
+      /Phone internal track must contain exactly one completed release for version code 9/
+    );
+    assert.equal(publisher.calls.some(([operation]) => operation === 'list-bundles'), false);
+    assert.equal(publisher.calls.some(([operation]) => operation === 'upload'), false);
+    assert.equal(publisher.calls.some(([operation]) => operation === 'commit'), false);
+    assert.equal(publisher.calls.at(-1)[0], 'delete');
+  }
 });
 
 test('internal retry rejects a stored Play bundle hash that differs from the verified AAB', async (t) => {
@@ -565,7 +1008,7 @@ test('internal retry rejects a stored Play bundle hash that differs from the ver
   }, { bundles });
 
   await assert.rejects(
-    () => uploadNativePlayInternal({ root, plan, verification, publisher }),
+    () => uploadWithReceipt({ root, plan, verification, publisher }),
     /Google Play existing phone bundle SHA-256 0+; expected [0-9a-f]{64}/
   );
   assert.equal(publisher.calls.some(([operation]) => operation === 'upload'), false);
@@ -592,7 +1035,7 @@ test('internal no-op retry succeeds when empty-edit deletion fails transiently',
     deleteError: true
   });
 
-  const result = await uploadNativePlayInternal({ root, plan, verification, publisher });
+  const result = await uploadWithReceipt({ root, plan, verification, publisher });
 
   assert.equal(result.alreadyComplete, true);
   assert.equal(publisher.calls.some(([operation]) => operation === 'upload'), false);
@@ -627,8 +1070,54 @@ test('closed promotion moves the exact internal pair to custom closed form-facto
   assert.equal(publisher.calls.at(-1)[0], 'commit');
 });
 
+test('promotion requires exact singleton releases on source and idempotent destination tracks', async (t) => {
+  const { root } = createReleaseRoot(t);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  const phone = {
+    name: plan.candidates.phone.releaseName,
+    status: 'completed',
+    versionCodes: ['9']
+  };
+  const watch = {
+    name: plan.candidates.watch.releaseName,
+    status: 'completed',
+    versionCodes: ['10']
+  };
+  const ambiguousSource = fakePublisher({
+    qa: { track: 'qa', releases: [{ ...phone, versionCodes: ['9', '11'] }] },
+    'wear:qa': { track: 'wear:qa', releases: [watch] }
+  });
+
+  await assert.rejects(
+    () => promoteNativePlayClosed({ plan, publisher: ambiguousSource }),
+    /Phone internal track must contain exactly one completed release for version code 9/
+  );
+  assert.equal(ambiguousSource.calls.some(([operation]) => operation === 'update'), false);
+  assert.equal(ambiguousSource.calls.some(([operation]) => operation === 'commit'), false);
+
+  const ambiguousDestination = fakePublisher({
+    qa: { track: 'qa', releases: [phone] },
+    'wear:qa': { track: 'wear:qa', releases: [watch] },
+    closed: { track: 'closed', releases: [phone, { ...phone }] },
+    'wear:closed': { track: 'wear:closed', releases: [watch] }
+  });
+
+  await assert.rejects(
+    () => promoteNativePlayClosed({ plan, publisher: ambiguousDestination }),
+    /Phone closed track must contain exactly one completed release for version code 9/
+  );
+  assert.equal(ambiguousDestination.calls.some(([operation]) => operation === 'update'), false);
+  assert.equal(ambiguousDestination.calls.some(([operation]) => operation === 'commit'), false);
+});
+
 test('promote-closed CLI routes the exact checkout through the closed stage', async (t) => {
   const { root } = createReleaseRoot(t);
+  const decoy = createReleaseRoot(t, {
+    phoneVersionName: '9.9.9',
+    watchVersionName: '9.9.9',
+    phoneVersionCode: 11,
+    watchVersionCode: 12
+  });
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const publisher = fakePublisher({
     qa: {
@@ -646,10 +1135,15 @@ test('promote-closed CLI routes the exact checkout through the closed stage', as
   const result = await runNativePlayReleaseCli([
     'promote-closed',
     '--source-commit',
-    SOURCE_COMMIT
+    SOURCE_COMMIT,
+    '--repository-root',
+    root
   ], {
-    root,
-    execute: (_command, args) => args[0] === 'status' ? '' : `${SOURCE_COMMIT}\n`,
+    root: decoy.root,
+    execute: (_command, args, options) => {
+      assert.equal(options.cwd, path.resolve(root));
+      return args[0] === 'status' ? '' : `${SOURCE_COMMIT}\n`;
+    },
     environment: { GOOGLE_PLAY_ACCESS_TOKEN: 'test-access-token' },
     publisher
   });
@@ -727,7 +1221,7 @@ test('production promotion refuses closed codes published from another source co
 
   await assert.rejects(
     () => promoteNativePlayProduction({ plan, publisher }),
-    /Phone closed track candidate version code 9 is not completed for source release.*@aaaaaaaaaaaa/
+    /Phone closed track must contain exactly one completed release.*cal-p@a{40}/
   );
   assert.equal(publisher.calls.some(([operation]) => operation === 'update'), false);
   assert.equal(publisher.calls.some(([operation]) => operation === 'commit'), false);

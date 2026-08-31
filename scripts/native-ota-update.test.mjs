@@ -10,7 +10,7 @@ import {
   parseEasEnvironmentFile,
   parseDirtyPaths,
   parseNativeOtaArgs,
-  resolveNativeOtaInvocation,
+  resolveLockedEasCliInvocation,
   runNativeOtaUpdate,
   validateEasUpdateEnvironment
 } from './native-ota-update.mjs';
@@ -29,6 +29,7 @@ function createOtaFixture() {
     'shared/release.json': '{}',
     'mobile/modules/example/android/build.gradle': 'module',
     'mobile/plugins/example.js': 'plugin',
+    'tools/eas-cli/node_modules/eas-cli/bin/run': 'locked EAS CLI entry point',
     'wear/app/build.gradle.kts': 'wear'
   };
   for (const [file, contents] of Object.entries(files)) {
@@ -65,8 +66,15 @@ test('OTA publish command targets Android and the build channel', () => {
     environment: null,
     message: 'Fix food logging',
     nonInteractive: true
-  }, { channel: 'internal' }, 'win32');
-  assert.equal(command.command, 'npx.cmd');
+  }, { channel: 'internal' }, {
+    root: 'C:\\repo',
+    nodeExecutable: 'C:\\Node\\node.exe',
+    fileExists: () => true
+  });
+  assert.equal(command.command, 'C:\\Node\\node.exe');
+  assert.match(command.entryPoint, /tools[\\/]eas-cli[\\/]node_modules[\\/]eas-cli[\\/]bin[\\/]run$/);
+  assert.equal(command.args[0], command.entryPoint);
+  assert.equal(command.args[1], 'update');
   assert.equal(command.channel, 'internal');
   assert.equal(command.environment, 'preview');
   assert.deepEqual(command.args.slice(-3), ['--platform', 'android', '--non-interactive']);
@@ -76,32 +84,21 @@ test('OTA publish command targets Android and the build channel', () => {
   );
 });
 
-test('Windows OTA commands invoke npx through Node instead of spawning a batch file', () => {
-  const npmExecPath = 'C:\\Node\\node_modules\\npm\\bin\\npm-cli.js';
-  const invocation = resolveNativeOtaInvocation({
-    command: 'npx.cmd',
-    args: ['--yes', 'eas-cli@latest', 'env:pull'],
-    env: { npm_execpath: npmExecPath }
-  }, {
-    platform: 'win32',
+test('OTA commands invoke the checked-in locked EAS CLI through Node on every platform', () => {
+  const root = path.resolve('C:\\repo');
+  const expectedEntryPoint = path.join(root, 'tools', 'eas-cli', 'node_modules', 'eas-cli', 'bin', 'run');
+  const invocation = resolveLockedEasCliInvocation(root, ['env:pull'], {
     nodeExecutable: 'C:\\Node\\node.exe',
-    fileExists: (candidate) => candidate === 'C:\\Node\\node_modules\\npm\\bin\\npx-cli.js'
+    fileExists: (candidate) => candidate === expectedEntryPoint
   });
   assert.deepEqual(invocation, {
     command: 'C:\\Node\\node.exe',
-    args: [
-      'C:\\Node\\node_modules\\npm\\bin\\npx-cli.js',
-      '--yes',
-      'eas-cli@latest',
-      'env:pull'
-    ]
+    args: [expectedEntryPoint, 'env:pull'],
+    entryPoint: expectedEntryPoint
   });
-  assert.deepEqual(
-    resolveNativeOtaInvocation(
-      { command: 'npx', args: ['--version'] },
-      { platform: 'linux' }
-    ),
-    { command: 'npx', args: ['--version'] }
+  assert.throws(
+    () => resolveLockedEasCliInvocation(root, ['update'], { fileExists: () => false }),
+    /npm ci --prefix tools\/eas-cli --include=dev/
   );
 });
 
@@ -180,8 +177,9 @@ test('OTA dry run validates and reuses the exact installed build contract', () =
           assert.equal(request.args[0], 'status');
           return { status: 0, stdout: '', stderr: '' };
         }
-        assert.equal(request.command, 'npx.cmd');
-        assert.equal(request.args[2], 'env:pull');
+        assert.equal(request.command, process.execPath);
+        assert.match(request.args[0], /tools[\\/]eas-cli[\\/]node_modules[\\/]eas-cli[\\/]bin[\\/]run$/);
+        assert.equal(request.args[1], 'env:pull');
         const environmentFile = request.args[request.args.indexOf('--path') + 1];
         fs.writeFileSync(environmentFile, [
           'EXPO_PUBLIC_CALIBRATE_SERVER_URL=https://health.example',

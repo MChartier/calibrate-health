@@ -263,20 +263,69 @@ UI code style:
   diagnostic, OpenAPI, and generated-client mirrors.
 - After the desired changes land on `master`, run **Cut release** in GitHub Actions and choose `patch`, `minor`, or
   `major`. The action owns the synchronized release commit, version-only PR, tag, and GHCR publication.
+- The visible server release Actions are read-only request workflows. Protected-default-branch `workflow_run` handlers
+  call reusable workers, while every ordinary `GITHUB_TOKEN` remains read-only. Git/master/stable-tag writes use only
+  the restricted Server Release GitHub App in the master-only, reviewer-protected `server-release-publication`
+  environment. GHCR uses a separate package-only robot credential in that environment on a fresh publisher runner;
+  the source repository must have no inherited or Actions write access to the package. Missing environment/App/PAT or
+  ruleset/package onboarding intentionally leaves publication unavailable. The sole GitHub-native write exception is
+  the source-free image-receipt signer, which receives only OIDC plus `attestations: write` and runs the full-SHA-pinned
+  attestation action before package authentication. An existing `v*`/`sha-*` image is authoritative only when its
+  exact linux/amd64 config digest reconstructs the release receipt and that receipt verifies against the exact signer
+  workflow/source identity. An earlier protected-master signer remains valid automatically only while its critical
+  image workflow/verifier blobs are byte-identical, or when it is the exact post-hardening parent of the canonical Cut
+  release commit. Current protected master owns exceptional retention and revocation through exact `allow SHA` and
+  `revoke SHA` directives in `.github/release-image-attestation-trusted-workflow-shas`; `revoke SHA` overrides every
+  automatic rule. Keep changed signers allowed for the full supported recovery window. Never adopt legacy or
+  prepositioned aliases without that evidence, and inventory/quarantine/delete pre-attestation aliases before enabling
+  the package robot. GitHub's attestation service is an integrity authority, not an availability guarantee: the
+  verifier raises its bounded lookup limit, but missing/deleted/flooded legitimate evidence still fails closed and
+  requires an audited alias quarantine/delete plus fresh publication.
+- GitHub environment approval is per job. A normal **Cut release** requires four sequential
+  `server-release-publication` approvals: candidate publication, validated merge, stable tag creation, and GHCR
+  publication. A pre-finalize validation failure takes candidate plus cleanup approvals; a finalize failure after its
+  approval takes candidate, finalize, then cleanup, and cleanup is eligible only after read-only exact-ref inspection.
+  **Publish prepared release** requires tag and image approvals, and **Build Release Image** requires one image
+  approval. The first three normal Cut checkpoints use
+  the same restricted Server Release App capability; the image checkpoint uses the distinct package-only robot.
 - **Cut release** revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
   workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
 - Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are
   globally unique: phone uses the odd lane and Wear uses the even lane. Use `release:native:prepare` for a paired
-  store version, merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
+  store version only after its current manifest tag is verified as a signed annotated tag against the reviewed public
+  keys in `.github/native-release-tag-allowed-signers`, the exact tag name and target SHA, the exact published `origin`
+  tag, and `origin/master` ancestry; local-only, lightweight, unsigned, wrong-key, or wrong-target tags are not release
+  evidence. Merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
   uploads phone/Wear to Play internal tracks, and promotes those exact codes through closed testing before the
   protected production operation.
-- After the GHCR image is published, **Cut release** publishes the exact release commit to Expo internal and then waits
-  for the protected production approval only when the native tag from `shared/release.json` already exists. A reserved
+- Before Play upload, a separate source-free job with the workflow's only native Play OIDC/attestation-write scope
+  attests canonical repository/app/source/tag/version and phone/watch track/code/AAB-hash receipt bytes. The Play
+  publisher must independently reconstruct and verify that exact receipt before authentication. Recovery must derive
+  identical bytes solely from singleton Play observations, scrub Play authentication, then verify the original exact
+  workflow/source certificate under the fresh-master allow/revoke policy. A mutable Play name is not provenance;
+  missing/legacy/revoked evidence requires a fresh higher odd/even pair, never adoption or tag creation.
+- After the GHCR image is published, **Cut release** publishes the exact release commit to Expo only when the native
+  tag from `shared/release.json` is a verified signed release attestation. Expo publication uses four separately
+  approved, source-free credential jobs: resolve internal environment, publish internal, resolve production
+  environment, and publish production. The single Expo token has project-wide update authority; the later approvals
+  enforce reviewed workflow sequencing but are not a channel-scoped capability boundary. The pinned public key,
+  exact annotated-tag name, and exact peeled target verification must be
+  used consistently by prepared-release OTA readiness, Play promotion, and origin-authoritative native preparation;
+  a commit signature is insufficient. A reserved
   but unpublished native tag skips OTA without failing the independent server/image release; rerun the prepared
   release or use the manual OTA workflow after the signed native baseline is published. It never waits for or triggers
   self-host deployment.
+- Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
+  `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
+  every run and rerun obtains and logs the allowed-signers trust set from the exact current protected `master` commit
+  so revocation cannot be undone by rerunning an old workflow. The reviewed allowed-signers file is the trust root; its
+  comment-only placeholder intentionally fails closed until onboarding. Tag rulesets are defense-in-depth, not the sole
+  attestation boundary, because the read-only Rulesets API hides bypass actors. Rotate with overlapping old/new public
+  keys, then switch the workflow secret, verify a new-key tag, and remove the old key only after dependent baselines
+  retire; suspected compromise requires an immediate pause, private-key removal, public-key revocation, tag/Play audit,
+  and a higher native version rather than moving an existing tag.
 - Expo's automatic check and download lifecycle remains native-owned. Client code compares only the running bundle's
   expected server contract version with client configuration at startup and server selection. Major versions must
   match; within a major, the server minor must be at least the client minor, while patch drift remains compatible. Do
@@ -286,8 +335,10 @@ UI code style:
 - Protected production approval is the current public-channel promotion gate. A future explicit readiness signal may
   cover the release owner's declared server rollout, but independent self-hosts still require the runtime guard. Do
   not poll private servers from CI.
-- Use **Publish prepared release** with the recorded release commit and branch to recover any post-merge tag, image, or
-  OTA failure. **Build Release Image** remains an image-only recovery tool.
+- Use **Publish prepared release** with the recorded release commit and branch to recover post-merge tag/image
+  failures and OTA failures whose prepared manifest already records a compatible protected native tag. Historical releases
+  with an incompatible recorded native baseline require **Publish Expo OTA Update** from an exact compatible source
+  that descends from the installed build. **Build Release Image** remains an image-only recovery tool.
 
 ## Git And PR Workflow
 

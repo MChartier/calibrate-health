@@ -143,8 +143,24 @@ enrollment and duration remain Play Console onboarding work.
   and complete any Console-required first upload or closed-testing gate.
 - [ ] Configure the closed tester email list or Google Group and retain its shareable opt-in link. Internal testers
   must opt out of the internal test before opting in to the closed test; verify the served phone/Wear version codes.
-- [ ] Grant the Android Publisher service account release access, then configure the `play-internal` and protected
-  `play-production` GitHub environments described in `docs/mobile-release.md`.
+- [ ] Configure the Android upload keystore only in protected `native-release-signing`, plus separate Android
+  Publisher identities and keys: a testing-only identity in `play-internal`, and a distinct production-capable
+  identity only in protected `play-production`, as described in `docs/mobile-release.md`.
+- [ ] Replace the comment-only `.github/native-release-tag-allowed-signers` placeholder with a reviewed SSH public key
+  and put only its private key in `native-release-attestation`. Confirm releases fail closed before this is configured.
+- [ ] Configure the separate native-tag GitHub App and `native-release-tags` push environment. Confirm it contains no
+  Play, Android-signing, or tag-signing credential, and that `native-release-attestation` contains no App or Play key.
+- [ ] Configure the active creation plus no-bypass immutability rulesets for `refs/tags/native-v*`, and verify their
+  bypass lists directly in repository Settings. Treat the rules as defense-in-depth because the read-only API hides
+  bypass actors; the signed annotated tag object's pinned-key, exact-name, and exact-target checks are authoritative.
+- [ ] Record the signing-key rotation owner and procedure: overlap old/new public keys, merge the workflow trust-set
+  change, switch the environment private key, verify a new-key tag, then remove the old public key only after its
+  supported baselines retire. Confirm workflow runs log and use the exact current protected-`master` trust-set commit
+  even when rerunning an older workflow. Record the pause/revoke/audit/higher-version response for suspected compromise.
+- [ ] Before every Publisher workflow dispatch, confirm Publishing overview has no unrelated changes ready to send
+  and pause all Console edits and other Publisher writers until the run finishes.
+- [ ] Choose the first Play signing migration: enroll the existing permanent app-signing key, or plan one explicit
+  uninstall/reinstall with local sandbox loss. Do not expect an upload-key APK to update a Play-signed install.
 - [ ] Use the **Health & Fitness** app category.
 - [ ] Mark **contains ads: no** only after final SDK/bundle inspection confirms no ad code.
 - [ ] Complete content rating, target audience, and country/region availability with the actual intended audience.
@@ -339,6 +355,7 @@ private Console URLs. Keep access-controlled Play records separately:
 
 ```text
 Source candidate commit C:
+Native tag name/object SHA/peeled target/signing-key fingerprint:
 Optional physical result path:
 Canonical release-manifest path/SHA-256:
 Phone APK version/version code/size/SHA-256/signer SHA-256:

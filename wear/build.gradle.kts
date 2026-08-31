@@ -4,3 +4,10 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.kapt) apply false
 }
+
+allprojects {
+    dependencyLocking {
+        lockAllConfigurations()
+        lockMode.set(org.gradle.api.artifacts.dsl.LockMode.STRICT)
+    }
+}

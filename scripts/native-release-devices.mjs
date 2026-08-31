@@ -84,13 +84,24 @@ export function resolveNativeReleaseDeviceTooling(environment = process.env, opt
   if (!javaHome) throw new Error('JAVA_HOME is required.');
 
   const buildToolsRoot = path.join(sdkRoot, 'build-tools');
-  const versions = [...(options.buildToolVersions ?? (fileExists(buildToolsRoot)
-    ? fs.readdirSync(buildToolsRoot, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-    : []))].sort((left, right) => right.localeCompare(left, undefined, { numeric: true }));
-  if (versions.length === 0) throw new Error(`Android build-tools are missing under ${buildToolsRoot}.`);
-  const buildTools = path.join(buildToolsRoot, versions[0]);
+  const configuredBuildToolsVersion = environment.ANDROID_BUILD_TOOLS_VERSION?.trim();
+  let buildTools;
+  if (configuredBuildToolsVersion) {
+    buildTools = path.join(buildToolsRoot, configuredBuildToolsVersion);
+    if (!fileExists(buildTools)) {
+      throw new Error(
+        `Configured Android build-tools ${configuredBuildToolsVersion} are missing: ${buildTools}.`
+      );
+    }
+  } else {
+    const versions = [...(options.buildToolVersions ?? (fileExists(buildToolsRoot)
+      ? fs.readdirSync(buildToolsRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+      : []))].sort((left, right) => right.localeCompare(left, undefined, { numeric: true }));
+    if (versions.length === 0) throw new Error(`Android build-tools are missing under ${buildToolsRoot}.`);
+    buildTools = path.join(buildToolsRoot, versions[0]);
+  }
   const configuredBundletool = environment.BUNDLETOOL_JAR?.trim();
   const tooling = {
     sdkRoot,

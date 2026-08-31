@@ -29,7 +29,7 @@ jobs:
       - name: Detect affected dependency surfaces
         if: github.event_name == 'pull_request'
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           filters: |
             root:
@@ -38,6 +38,8 @@ jobs:
               - 'package-lock.json'
               - 'scripts/dependency-advisory-exceptions.mjs'
               - 'scripts/release-config.mjs'
+              - 'tools/eas-cli/package.json'
+              - 'tools/eas-cli/package-lock.json'
             backend:
               - '.github/workflows/dependency-audit.yml'
               - 'backend/package.json'
@@ -52,10 +54,10 @@ jobs:
         run: |
           case "${ROOT_CHANGED}:${BACKEND_CHANGED}" in
             true:true)
-              matrix='{"include":[{"workspace":"Root and Mobile","directory":".","evidence":"root","lockfile":"package-lock.json","node":"22.13.0"},{"workspace":"Backend","directory":"backend","evidence":"backend","lockfile":"backend/package-lock.json","node":"20"}]}'
+              matrix='{"include":[{"workspace":"Root and Mobile","directory":".","evidence":"root","lockfile":"package-lock.json","node":"22.13.0"},{"workspace":"Backend","directory":"backend","evidence":"backend","lockfile":"backend/package-lock.json","node":"20"},{"workspace":"Locked EAS CLI","directory":"tools/eas-cli","evidence":"eas-cli","lockfile":"tools/eas-cli/package-lock.json","node":"22.14.0"}]}'
               ;;
             true:false)
-              matrix='{"include":[{"workspace":"Root and Mobile","directory":".","evidence":"root","lockfile":"package-lock.json","node":"22.13.0"}]}'
+              matrix='{"include":[{"workspace":"Root and Mobile","directory":".","evidence":"root","lockfile":"package-lock.json","node":"22.13.0"},{"workspace":"Locked EAS CLI","directory":"tools/eas-cli","evidence":"eas-cli","lockfile":"tools/eas-cli/package-lock.json","node":"22.14.0"}]}'
               ;;
             false:true)
               matrix='{"include":[{"workspace":"Backend","directory":"backend","evidence":"backend","lockfile":"backend/package-lock.json","node":"20"}]}'
@@ -83,30 +85,37 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: ${{ matrix.lockfile }}
 
       - name: Install production dependency graph
+        if: matrix.evidence != 'eas-cli'
         run: npm ci --omit=dev --no-audit --fund=false
         working-directory: ${{ matrix.directory }}
 
       - name: Audit backend high and critical production findings
-        if: matrix.directory != '.'
+        if: matrix.evidence == 'backend'
         run: npm audit --omit=dev --audit-level=high
         working-directory: ${{ matrix.directory }}
 
       - name: Audit root and mobile high and critical production findings
-        if: matrix.directory == '.'
+        if: matrix.evidence == 'root'
         run: npm run audit:production
 
+      - name: Audit locked EAS CLI high and critical findings
+        if: matrix.evidence == 'eas-cli'
+        run: npm audit --package-lock-only --audit-level=high
+        working-directory: ${{ matrix.directory }}
+
       - name: Validate time-bounded dependency exceptions
-        if: matrix.directory == '.'
+        if: matrix.evidence == 'root'
         run: npm run audit:exceptions:check

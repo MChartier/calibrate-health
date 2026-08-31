@@ -8,20 +8,21 @@ on:
         required: true
         type: string
       native_build_ref:
-        description: Native build tag installed on the target channels
+        description: Exact signed published native-vMAJOR.MINOR.PATCH tag installed on the target channels
         required: true
         type: string
       message:
         description: Short operator-facing description of this OTA update
         required: true
         type: string
-    secrets:
-      EXPO_TOKEN:
-        required: true
   workflow_dispatch:
     inputs:
+      source_ref:
+        description: Exact full master commit to publish
+        required: true
+        type: string
       native_build_ref:
-        description: Native build tag shown in Settings > About Calibrate (or its exact source commit)
+        description: Exact signed published native-vMAJOR.MINOR.PATCH tag installed on the target channels
         required: true
         type: string
       message:
@@ -34,179 +35,962 @@ permissions:
 
 concurrency:
   group: expo-ota-master
+  queue: max
   cancel-in-progress: false
 
 jobs:
-  publish-internal:
-    name: Publish Android OTA to internal
+  preflight-release-target:
+    name: Verify OTA source and signed native baseline before Expo credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      source_commit: ${{ steps.release-target.outputs.source_commit }}
+      native_build_ref: ${{ steps.release-target.outputs.native_build_ref }}
+
+    steps:
+      - name: Require exact master source and native release tag inputs
+        shell: bash
+        env:
+          NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
+          OTA_SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
+            echo "OTA updates must be dispatched from the master branch; received ${GITHUB_REF}." >&2
+            exit 1
+          fi
+          if [[ ! "${OTA_SOURCE_REF}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "source_ref must be a full lowercase Git commit SHA." >&2
+            exit 1
+          fi
+          if [[ ! "${NATIVE_BUILD_REF}" =~ ^native-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "native_build_ref must be exactly native-vMAJOR.MINOR.PATCH." >&2
+            exit 1
+          fi
+
+      # Checkout may use the ephemeral contents-read token, but never persists it for source-owned commands.
+      - name: Checkout exact OTA source with ephemeral read-only auth
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_ref }}
+
+      - name: Checkout reviewed signed-target verifier only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+          path: .release-tooling
+          persist-credentials: false
+          ref: ${{ job.workflow_sha }}
+          sparse-checkout: |
+            /scripts/expo-ota-ci-preflight.mjs
+            /scripts/native-ota-contract.mjs
+            /scripts/native-ota-update.mjs
+            /scripts/native-tag-attestation.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Verify exact origin source and signed native target
+        id: release-target
+        shell: bash
+        env:
+          NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
+          OTA_SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          test "$(git --no-replace-objects rev-parse --verify 'HEAD^{commit}')" = "${OTA_SOURCE_REF}"
+          git --no-replace-objects fetch --no-tags --force origin \
+            '+refs/heads/master:refs/remotes/origin/master'
+          TRUST_SET_COMMIT="$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')"
+          if [[ ! "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Current protected master did not resolve to a full Git commit SHA." >&2
+            exit 1
+          fi
+          if ! git --no-replace-objects merge-base --is-ancestor \
+            "${OTA_SOURCE_REF}" "${TRUST_SET_COMMIT}"; then
+            echo "OTA source ${OTA_SOURCE_REF} is not on current protected master." >&2
+            exit 1
+          fi
+
+          ALLOWED_SIGNERS="${RUNNER_TEMP}/calibrate-native-release-tag-allowed-signers"
+          git --no-replace-objects show \
+            "${TRUST_SET_COMMIT}:.github/native-release-tag-allowed-signers" > "${ALLOWED_SIGNERS}"
+          chmod 600 "${ALLOWED_SIGNERS}"
+
+          READINESS_OUTPUT="${RUNNER_TEMP}/calibrate-ota-release-target.env"
+          rm -f "${READINESS_OUTPUT}"
+          node .release-tooling/scripts/expo-ota-ci-preflight.mjs \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --native-build-ref "${NATIVE_BUILD_REF}" \
+            --allowed-signers-file "${ALLOWED_SIGNERS}" \
+            --readiness-output "${READINESS_OUTPUT}"
+          source "${READINESS_OUTPUT}"
+          test "${source_commit}" = "${OTA_SOURCE_REF}"
+          test "${native_build_ref}" = "${NATIVE_BUILD_REF}"
+          [[ "${native_build_commit}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${native_tag_object}" =~ ^[0-9a-f]{40}$ ]]
+
+          echo "source_commit=${source_commit}" >> "${GITHUB_OUTPUT}"
+          echo "native_build_ref=${native_build_ref}" >> "${GITHUB_OUTPUT}"
+          echo "OTA preflight bound source ${source_commit} to ${native_build_ref} (${native_build_commit}); tag object ${native_tag_object}; trust set ${TRUST_SET_COMMIT}."
+
+  resolve-internal-environment:
+    name: Resolve internal public EAS environment
+    needs: preflight-release-target
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Expo tokens are account/project scoped rather than channel scoped, so even internal publication requires approval.
+    environment: expo-publication
+    env:
+      EAS_ENVIRONMENT: preview
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: internal
+      OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
+
+    steps:
+      - name: Require current protected workflow authority before Expo authentication
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          if [[ "${GITHUB_REF}" != "refs/heads/master" || ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "OTA publication requires an exact protected-master workflow commit." >&2
+            exit 1
+          fi
+
+          VERIFY_ROOT="${RUNNER_TEMP}/calibrate-ota-workflow-authority"
+          TOOL_ROOT="${RUNNER_TEMP}/calibrate-ota-authority-tooling"
+          if [[ -e "${VERIFY_ROOT}" || -e "${TOOL_ROOT}" ]]; then
+            echo "OTA workflow authority directories must not preexist." >&2
+            exit 1
+          fi
+          git init --quiet --template='' "${VERIFY_ROOT}"
+          git -C "${VERIFY_ROOT}" remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -C "${VERIFY_ROOT}" --no-replace-objects fetch --force --no-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master'
+          mkdir -p "${TOOL_ROOT}/scripts"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/release-config.mjs" > "${TOOL_ROOT}/scripts/release-config.mjs"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/native-tag-attestation.mjs" > "${TOOL_ROOT}/scripts/native-tag-attestation.mjs"
+          node "${TOOL_ROOT}/scripts/release-config.mjs" verify-current-release-workflow \
+            --repository-root "${VERIFY_ROOT}" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Checkout reviewed OTA publisher tooling only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+          path: .release-tooling
+          persist-credentials: false
+          ref: ${{ job.workflow_sha }}
+          sparse-checkout: |
+            /scripts/expo-ota-artifact.mjs
+            /scripts/native-tag-attestation.mjs
+            /scripts/release-config.mjs
+            /tools/eas-cli/
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: .release-tooling/tools/eas-cli/package-lock.json
+
+      - name: Install locked EAS CLI before Expo authentication
+        run: npm ci --prefix .release-tooling/tools/eas-cli --include=dev --no-audit --fund=false
+
+      - name: Prepare fixed source-free environment project
+        shell: bash
+        run: >-
+          node .release-tooling/scripts/expo-ota-artifact.mjs prepare-environment-project
+          --output-dir "${RUNNER_TEMP}/calibrate-eas-environment-project"
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+
+      - name: Recheck current protected workflow authority immediately before Expo token
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          node .release-tooling/scripts/release-config.mjs verify-current-release-workflow \
+            --repository-root "${RUNNER_TEMP}/calibrate-ota-workflow-authority" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Read internal EAS environment
+        working-directory: ${{ runner.temp }}/calibrate-eas-environment-project
+        shell: bash
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${EXPO_TOKEN}" ]]; then
+            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            exit 1
+          fi
+          "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" env:pull \
+            --environment "${EAS_ENVIRONMENT}" \
+            --path "${RUNNER_TEMP}/calibrate-eas-environment.raw" \
+            --non-interactive
+
+      - name: Sanitize source-bound public environment artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/calibrate-eas-environment-artifact"
+          node .release-tooling/scripts/expo-ota-artifact.mjs sanitize-environment \
+            --input "${RUNNER_TEMP}/calibrate-eas-environment.raw" \
+            --output "${RUNNER_TEMP}/calibrate-eas-environment-artifact/environment.json" \
+            --source-commit "${OTA_SOURCE_REF}" \
+            --channel "${EXPO_UPDATES_CHANNEL}" \
+            --environment "${EAS_ENVIRONMENT}" \
+            --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+          rm -f "${RUNNER_TEMP}/calibrate-eas-environment.raw"
+
+      - name: Upload internal public environment artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: expo-ota-env-internal-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-eas-environment-artifact/environment.json
+          if-no-files-found: error
+          retention-days: 3
+
+  build-internal-update:
+    name: Build internal Android OTA without publisher credentials
+    needs: [preflight-release-target, resolve-internal-environment]
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: preview
     env:
       EAS_ENVIRONMENT: preview
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
       EXPO_UPDATES_CHANNEL: internal
-      NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
+      NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
       NODE_ENV: production
-      OTA_MESSAGE: ${{ inputs.message }}
-      OTA_SOURCE_REF: ${{ inputs.source_ref || github.sha }}
+      OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
 
     steps:
-      - name: Require master and Expo authentication
+      - name: Require master dispatch
         shell: bash
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
           if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
             echo "OTA updates must be dispatched from the master branch; received ${GITHUB_REF}." >&2
             exit 1
           fi
-          if [[ -z "${EXPO_TOKEN}" ]]; then
-            echo "Add an EXPO_TOKEN repository secret before publishing an OTA update." >&2
-            exit 1
-          fi
 
-      - name: Checkout reviewed source
-        uses: actions/checkout@v4
+      - name: Checkout exact source without persisted credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
+          ref: ${{ needs.preflight-release-target.outputs.source_commit }}
 
       - name: Require released source
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${OTA_SOURCE_REF}"
-          git fetch origin master
-          if ! git merge-base --is-ancestor "${OTA_SOURCE_REF}" origin/master; then
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          if [[ ! "${OTA_SOURCE_REF}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "source_ref must be a full lowercase Git commit SHA." >&2
+            exit 1
+          fi
+          test "$(git --no-replace-objects rev-parse HEAD)" = "${OTA_SOURCE_REF}"
+          git --no-replace-objects fetch --no-tags --force origin '+refs/heads/master:refs/remotes/origin/master'
+          if ! git --no-replace-objects merge-base --is-ancestor "${OTA_SOURCE_REF}" origin/master; then
             echo "OTA source ${OTA_SOURCE_REF} is not on master." >&2
             exit 1
           fi
 
+      - name: Checkout reviewed compatibility and artifact tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+          path: .release-tooling
+          persist-credentials: false
+          ref: ${{ job.workflow_sha }}
+          sparse-checkout: |
+            /scripts/expo-ota-artifact.mjs
+            /scripts/expo-ota-ci-preflight.mjs
+            /scripts/native-ota-contract.mjs
+            /scripts/native-ota-update.mjs
+            /scripts/native-tag-attestation.mjs
+          sparse-checkout-cone-mode: false
+
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22.14.0
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
+      - name: Install source dependencies without publisher credentials
+        run: npm ci --include=dev --no-audit --fund=false
+
+      - name: Download internal public environment artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          name: expo-ota-env-internal-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-eas-environment-artifact
 
-      - name: Install mobile dependencies
-        run: npm ci --no-audit --fund=false
-
-      - name: Read selected EAS environment
-        working-directory: mobile
-        run: eas env:pull --environment "${EAS_ENVIRONMENT}" --path "${RUNNER_TEMP}/calibrate-eas-update.env" --non-interactive
-
-      - name: Verify internal native compatibility and environment targeting
+      - name: Verify and apply internal public environment
+        shell: bash
         run: >-
-          node scripts/expo-ota-ci-preflight.mjs
+          node .release-tooling/scripts/expo-ota-artifact.mjs verify-environment
+          --environment-artifact "${RUNNER_TEMP}/calibrate-eas-environment-artifact/environment.json"
+          --github-env "${GITHUB_ENV}"
+          --source-commit "${OTA_SOURCE_REF}"
+          --channel "${EXPO_UPDATES_CHANNEL}"
+          --environment "${EAS_ENVIRONMENT}"
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+
+      - name: Materialize current native tag trust set
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          git --no-replace-objects fetch --no-tags --force origin '+refs/heads/master:refs/remotes/origin/master'
+          TRUST_SET_COMMIT="$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')"
+          if [[ ! "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Current native tag trust-set commit did not resolve to a full Git SHA." >&2
+            exit 1
+          fi
+          git --no-replace-objects show "${TRUST_SET_COMMIT}:.github/native-release-tag-allowed-signers" > "${RUNNER_TEMP}/calibrate-native-release-tag-allowed-signers"
+          chmod 600 "${RUNNER_TEMP}/calibrate-native-release-tag-allowed-signers"
+          echo "Native tag trust set resolved from origin/master at ${TRUST_SET_COMMIT}."
+
+      - name: Verify internal native compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMPATIBILITY_OUTPUT="${RUNNER_TEMP}/calibrate-ota-compatibility.env"
+          rm -f "${COMPATIBILITY_OUTPUT}"
+          node .release-tooling/scripts/expo-ota-ci-preflight.mjs \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --native-build-ref "${NATIVE_BUILD_REF}" \
+            --allowed-signers-file "${RUNNER_TEMP}/calibrate-native-release-tag-allowed-signers" \
+            --compatibility-output "${COMPATIBILITY_OUTPUT}"
+          source "${COMPATIBILITY_OUTPUT}"
+          if [[ "${native_release_compatible}" != "true" ]]; then
+            echo "The selected signed native release is not compatible with this OTA source." >&2
+            exit 1
+          fi
+
+      - name: Export Android update with source-locked Expo CLI
+        working-directory: mobile
+        shell: bash
+        env:
+          CI: '1'
+        run: |
+          set -euo pipefail
+          "${GITHUB_WORKSPACE}/node_modules/.bin/expo" config --type public --json > "${RUNNER_TEMP}/calibrate-expo-public-config.json"
+          "${GITHUB_WORKSPACE}/node_modules/.bin/expo" export \
+            --platform android \
+            --output-dir "${RUNNER_TEMP}/calibrate-expo-export" \
+            --dump-sourcemap \
+            --dump-assetmap
+
+      - name: Package source-bound internal OTA artifact
+        shell: bash
+        run: >-
+          node .release-tooling/scripts/expo-ota-artifact.mjs package-update
+          --input-dir "${RUNNER_TEMP}/calibrate-expo-export"
+          --output-dir "${RUNNER_TEMP}/calibrate-expo-update-artifact"
+          --public-config "${RUNNER_TEMP}/calibrate-expo-public-config.json"
+          --package-lock "${GITHUB_WORKSPACE}/package-lock.json"
+          --environment-artifact "${RUNNER_TEMP}/calibrate-eas-environment-artifact/environment.json"
+          --source-commit "${OTA_SOURCE_REF}"
           --native-build-ref "${NATIVE_BUILD_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
           --environment "${EAS_ENVIRONMENT}"
-          --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
 
-      - name: Publish Android phone OTA update
-        working-directory: mobile
+      - name: Upload source-bound internal OTA artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: expo-ota-android-internal-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-expo-update-artifact
+          if-no-files-found: error
+          retention-days: 3
+
+  publish-internal:
+    name: Publish pre-exported Android OTA to internal
+    needs: [preflight-release-target, build-internal-update]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: expo-publication
+    env:
+      EAS_ENVIRONMENT: preview
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: internal
+      NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
+      OTA_MESSAGE: ${{ inputs.message }}
+      OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
+
+    steps:
+      - name: Require current protected workflow authority before Expo authentication
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          if [[ "${GITHUB_REF}" != "refs/heads/master" || ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "OTA publication requires an exact protected-master workflow commit." >&2
+            exit 1
+          fi
+
+          VERIFY_ROOT="${RUNNER_TEMP}/calibrate-ota-workflow-authority"
+          TOOL_ROOT="${RUNNER_TEMP}/calibrate-ota-authority-tooling"
+          if [[ -e "${VERIFY_ROOT}" || -e "${TOOL_ROOT}" ]]; then
+            echo "OTA workflow authority directories must not preexist." >&2
+            exit 1
+          fi
+          git init --quiet --template='' "${VERIFY_ROOT}"
+          git -C "${VERIFY_ROOT}" remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -C "${VERIFY_ROOT}" --no-replace-objects fetch --force --no-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master'
+          mkdir -p "${TOOL_ROOT}/scripts"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/release-config.mjs" > "${TOOL_ROOT}/scripts/release-config.mjs"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/native-tag-attestation.mjs" > "${TOOL_ROOT}/scripts/native-tag-attestation.mjs"
+          node "${TOOL_ROOT}/scripts/release-config.mjs" verify-current-release-workflow \
+            --repository-root "${VERIFY_ROOT}" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Checkout reviewed OTA publisher tooling only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+          path: .release-tooling
+          persist-credentials: false
+          ref: ${{ job.workflow_sha }}
+          sparse-checkout: |
+            /scripts/expo-ota-artifact.mjs
+            /scripts/native-tag-attestation.mjs
+            /scripts/release-config.mjs
+            /tools/eas-cli/
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: .release-tooling/tools/eas-cli/package-lock.json
+
+      - name: Install locked EAS CLI before Expo authentication
+        run: npm ci --prefix .release-tooling/tools/eas-cli --include=dev --no-audit --fund=false
+
+      - name: Download source-bound internal OTA artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: expo-ota-android-internal-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-expo-update-artifact
+
+      - name: Verify inert artifact and prepare fixed publisher project
+        shell: bash
         run: >-
-          eas update
+          node .release-tooling/scripts/expo-ota-artifact.mjs prepare-publisher
+          --artifact-root "${RUNNER_TEMP}/calibrate-expo-update-artifact"
+          --output-dir "${RUNNER_TEMP}/calibrate-expo-publisher"
+          --source-commit "${OTA_SOURCE_REF}"
+          --native-build-ref "${NATIVE_BUILD_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
-          --message "${OTA_MESSAGE}"
           --environment "${EAS_ENVIRONMENT}"
-          --platform android
-          --non-interactive
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
 
-  publish-production:
-    name: Approve and publish Android OTA to production
-    needs: publish-internal
+      - name: Recheck current protected workflow authority immediately before Expo token
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          node .release-tooling/scripts/release-config.mjs verify-current-release-workflow \
+            --repository-root "${RUNNER_TEMP}/calibrate-ota-workflow-authority" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Publish pre-exported Android update to internal
+        working-directory: ${{ runner.temp }}/calibrate-expo-publisher
+        shell: bash
+        env:
+          EAS_NO_VCS: '1'
+          EAS_SKIP_AUTO_FINGERPRINT: '1'
+          EXPO_NO_DOTENV: '1'
+          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${EXPO_TOKEN}" ]]; then
+            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            exit 1
+          fi
+          "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" update \
+            --skip-bundler \
+            --input-dir "${RUNNER_TEMP}/calibrate-expo-update-artifact/bundle" \
+            --channel "${EXPO_UPDATES_CHANNEL}" \
+            --message "${OTA_MESSAGE}" \
+            --environment "${EAS_ENVIRONMENT}" \
+            --platform android \
+            --non-interactive
+
+  resolve-production-environment:
+    name: Approve and resolve production public EAS environment
+    needs: [preflight-release-target, publish-internal]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The same required-reviewer boundary protects all update-capable Expo access.
+    environment: expo-publication
+    env:
+      EAS_ENVIRONMENT: production
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: production
+      OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
+
+    steps:
+      - name: Require current protected workflow authority before Expo authentication
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          if [[ "${GITHUB_REF}" != "refs/heads/master" || ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "OTA publication requires an exact protected-master workflow commit." >&2
+            exit 1
+          fi
+
+          VERIFY_ROOT="${RUNNER_TEMP}/calibrate-ota-workflow-authority"
+          TOOL_ROOT="${RUNNER_TEMP}/calibrate-ota-authority-tooling"
+          if [[ -e "${VERIFY_ROOT}" || -e "${TOOL_ROOT}" ]]; then
+            echo "OTA workflow authority directories must not preexist." >&2
+            exit 1
+          fi
+          git init --quiet --template='' "${VERIFY_ROOT}"
+          git -C "${VERIFY_ROOT}" remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -C "${VERIFY_ROOT}" --no-replace-objects fetch --force --no-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master'
+          mkdir -p "${TOOL_ROOT}/scripts"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/release-config.mjs" > "${TOOL_ROOT}/scripts/release-config.mjs"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/native-tag-attestation.mjs" > "${TOOL_ROOT}/scripts/native-tag-attestation.mjs"
+          node "${TOOL_ROOT}/scripts/release-config.mjs" verify-current-release-workflow \
+            --repository-root "${VERIFY_ROOT}" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Checkout reviewed OTA publisher tooling only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+          path: .release-tooling
+          persist-credentials: false
+          ref: ${{ job.workflow_sha }}
+          sparse-checkout: |
+            /scripts/expo-ota-artifact.mjs
+            /scripts/native-tag-attestation.mjs
+            /scripts/release-config.mjs
+            /tools/eas-cli/
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: .release-tooling/tools/eas-cli/package-lock.json
+
+      - name: Install locked EAS CLI before Expo authentication
+        run: npm ci --prefix .release-tooling/tools/eas-cli --include=dev --no-audit --fund=false
+
+      - name: Prepare fixed source-free environment project
+        shell: bash
+        run: >-
+          node .release-tooling/scripts/expo-ota-artifact.mjs prepare-environment-project
+          --output-dir "${RUNNER_TEMP}/calibrate-eas-environment-project"
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+
+      - name: Recheck current protected workflow authority immediately before Expo token
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          node .release-tooling/scripts/release-config.mjs verify-current-release-workflow \
+            --repository-root "${RUNNER_TEMP}/calibrate-ota-workflow-authority" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Read production EAS environment
+        working-directory: ${{ runner.temp }}/calibrate-eas-environment-project
+        shell: bash
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${EXPO_TOKEN}" ]]; then
+            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            exit 1
+          fi
+          "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" env:pull \
+            --environment "${EAS_ENVIRONMENT}" \
+            --path "${RUNNER_TEMP}/calibrate-eas-environment.raw" \
+            --non-interactive
+
+      - name: Sanitize source-bound public environment artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/calibrate-eas-environment-artifact"
+          node .release-tooling/scripts/expo-ota-artifact.mjs sanitize-environment \
+            --input "${RUNNER_TEMP}/calibrate-eas-environment.raw" \
+            --output "${RUNNER_TEMP}/calibrate-eas-environment-artifact/environment.json" \
+            --source-commit "${OTA_SOURCE_REF}" \
+            --channel "${EXPO_UPDATES_CHANNEL}" \
+            --environment "${EAS_ENVIRONMENT}" \
+            --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+          rm -f "${RUNNER_TEMP}/calibrate-eas-environment.raw"
+
+      - name: Upload production public environment artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: expo-ota-env-production-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-eas-environment-artifact/environment.json
+          if-no-files-found: error
+          retention-days: 3
+
+  build-production-update:
+    name: Build production Android OTA without publisher credentials
+    needs: [preflight-release-target, resolve-production-environment]
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Required reviewers on this GitHub environment hold the job for verification and sign-off.
-    environment: production
     env:
       EAS_ENVIRONMENT: production
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
       EXPO_UPDATES_CHANNEL: production
-      NATIVE_BUILD_REF: ${{ inputs.native_build_ref }}
+      NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
       NODE_ENV: production
-      OTA_MESSAGE: ${{ inputs.message }}
-      OTA_SOURCE_REF: ${{ inputs.source_ref || github.sha }}
+      OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
 
     steps:
-      - name: Require master and Expo authentication
+      - name: Require master dispatch
         shell: bash
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
           if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
             echo "OTA updates must be dispatched from the master branch; received ${GITHUB_REF}." >&2
             exit 1
           fi
-          if [[ -z "${EXPO_TOKEN}" ]]; then
-            echo "Add an EXPO_TOKEN repository secret before publishing an OTA update." >&2
-            exit 1
-          fi
 
-      - name: Checkout verified source
-        uses: actions/checkout@v4
+      - name: Checkout exact source without persisted credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
+          ref: ${{ needs.preflight-release-target.outputs.source_commit }}
 
       - name: Require released source
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${OTA_SOURCE_REF}"
-          git fetch origin master
-          if ! git merge-base --is-ancestor "${OTA_SOURCE_REF}" origin/master; then
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          if [[ ! "${OTA_SOURCE_REF}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "source_ref must be a full lowercase Git commit SHA." >&2
+            exit 1
+          fi
+          test "$(git --no-replace-objects rev-parse HEAD)" = "${OTA_SOURCE_REF}"
+          git --no-replace-objects fetch --no-tags --force origin '+refs/heads/master:refs/remotes/origin/master'
+          if ! git --no-replace-objects merge-base --is-ancestor "${OTA_SOURCE_REF}" origin/master; then
             echo "OTA source ${OTA_SOURCE_REF} is not on master." >&2
             exit 1
           fi
 
+      - name: Checkout reviewed compatibility and artifact tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+          path: .release-tooling
+          persist-credentials: false
+          ref: ${{ job.workflow_sha }}
+          sparse-checkout: |
+            /scripts/expo-ota-artifact.mjs
+            /scripts/expo-ota-ci-preflight.mjs
+            /scripts/native-ota-contract.mjs
+            /scripts/native-ota-update.mjs
+            /scripts/native-tag-attestation.mjs
+          sparse-checkout-cone-mode: false
+
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22.14.0
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
+      - name: Install source dependencies without publisher credentials
+        run: npm ci --include=dev --no-audit --fund=false
+
+      - name: Download production public environment artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          name: expo-ota-env-production-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-eas-environment-artifact
 
-      - name: Install mobile dependencies
-        run: npm ci --no-audit --fund=false
-
-      - name: Read production EAS environment
-        working-directory: mobile
-        run: eas env:pull --environment "${EAS_ENVIRONMENT}" --path "${RUNNER_TEMP}/calibrate-eas-update.env" --non-interactive
-
-      - name: Verify production native compatibility and environment targeting
+      - name: Verify and apply production public environment
+        shell: bash
         run: >-
-          node scripts/expo-ota-ci-preflight.mjs
+          node .release-tooling/scripts/expo-ota-artifact.mjs verify-environment
+          --environment-artifact "${RUNNER_TEMP}/calibrate-eas-environment-artifact/environment.json"
+          --github-env "${GITHUB_ENV}"
+          --source-commit "${OTA_SOURCE_REF}"
+          --channel "${EXPO_UPDATES_CHANNEL}"
+          --environment "${EAS_ENVIRONMENT}"
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+
+      - name: Materialize current native tag trust set
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          git --no-replace-objects fetch --no-tags --force origin '+refs/heads/master:refs/remotes/origin/master'
+          TRUST_SET_COMMIT="$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')"
+          if [[ ! "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Current native tag trust-set commit did not resolve to a full Git SHA." >&2
+            exit 1
+          fi
+          git --no-replace-objects show "${TRUST_SET_COMMIT}:.github/native-release-tag-allowed-signers" > "${RUNNER_TEMP}/calibrate-native-release-tag-allowed-signers"
+          chmod 600 "${RUNNER_TEMP}/calibrate-native-release-tag-allowed-signers"
+          echo "Native tag trust set resolved from origin/master at ${TRUST_SET_COMMIT}."
+
+      - name: Verify production native compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMPATIBILITY_OUTPUT="${RUNNER_TEMP}/calibrate-ota-compatibility.env"
+          rm -f "${COMPATIBILITY_OUTPUT}"
+          node .release-tooling/scripts/expo-ota-ci-preflight.mjs \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --native-build-ref "${NATIVE_BUILD_REF}" \
+            --allowed-signers-file "${RUNNER_TEMP}/calibrate-native-release-tag-allowed-signers" \
+            --compatibility-output "${COMPATIBILITY_OUTPUT}"
+          source "${COMPATIBILITY_OUTPUT}"
+          if [[ "${native_release_compatible}" != "true" ]]; then
+            echo "The selected signed native release is not compatible with this OTA source." >&2
+            exit 1
+          fi
+
+      - name: Export Android update with source-locked Expo CLI
+        working-directory: mobile
+        shell: bash
+        env:
+          CI: '1'
+        run: |
+          set -euo pipefail
+          "${GITHUB_WORKSPACE}/node_modules/.bin/expo" config --type public --json > "${RUNNER_TEMP}/calibrate-expo-public-config.json"
+          "${GITHUB_WORKSPACE}/node_modules/.bin/expo" export \
+            --platform android \
+            --output-dir "${RUNNER_TEMP}/calibrate-expo-export" \
+            --dump-sourcemap \
+            --dump-assetmap
+
+      - name: Package source-bound production OTA artifact
+        shell: bash
+        run: >-
+          node .release-tooling/scripts/expo-ota-artifact.mjs package-update
+          --input-dir "${RUNNER_TEMP}/calibrate-expo-export"
+          --output-dir "${RUNNER_TEMP}/calibrate-expo-update-artifact"
+          --public-config "${RUNNER_TEMP}/calibrate-expo-public-config.json"
+          --package-lock "${GITHUB_WORKSPACE}/package-lock.json"
+          --environment-artifact "${RUNNER_TEMP}/calibrate-eas-environment-artifact/environment.json"
+          --source-commit "${OTA_SOURCE_REF}"
           --native-build-ref "${NATIVE_BUILD_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
           --environment "${EAS_ENVIRONMENT}"
-          --environment-file "${RUNNER_TEMP}/calibrate-eas-update.env"
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
 
-      - name: Publish Android phone OTA update
-        working-directory: mobile
+      - name: Upload source-bound production OTA artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: expo-ota-android-production-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-expo-update-artifact
+          if-no-files-found: error
+          retention-days: 3
+
+  publish-production:
+    name: Publish pre-exported Android OTA to production
+    needs: [preflight-release-target, build-production-update]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The production credential is available only in this clean source-free publisher job.
+    environment: expo-publication
+    env:
+      EAS_ENVIRONMENT: production
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: production
+      NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
+      OTA_MESSAGE: ${{ inputs.message }}
+      OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
+
+    steps:
+      - name: Require current protected workflow authority before Expo authentication
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          if [[ "${GITHUB_REF}" != "refs/heads/master" || ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "OTA publication requires an exact protected-master workflow commit." >&2
+            exit 1
+          fi
+
+          VERIFY_ROOT="${RUNNER_TEMP}/calibrate-ota-workflow-authority"
+          TOOL_ROOT="${RUNNER_TEMP}/calibrate-ota-authority-tooling"
+          if [[ -e "${VERIFY_ROOT}" || -e "${TOOL_ROOT}" ]]; then
+            echo "OTA workflow authority directories must not preexist." >&2
+            exit 1
+          fi
+          git init --quiet --template='' "${VERIFY_ROOT}"
+          git -C "${VERIFY_ROOT}" remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -C "${VERIFY_ROOT}" --no-replace-objects fetch --force --no-tags origin \
+            '+refs/heads/master:refs/remotes/origin/master'
+          mkdir -p "${TOOL_ROOT}/scripts"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/release-config.mjs" > "${TOOL_ROOT}/scripts/release-config.mjs"
+          git -C "${VERIFY_ROOT}" --no-replace-objects show \
+            "${WORKFLOW_SHA}:scripts/native-tag-attestation.mjs" > "${TOOL_ROOT}/scripts/native-tag-attestation.mjs"
+          node "${TOOL_ROOT}/scripts/release-config.mjs" verify-current-release-workflow \
+            --repository-root "${VERIFY_ROOT}" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Checkout reviewed OTA publisher tooling only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+          path: .release-tooling
+          persist-credentials: false
+          ref: ${{ job.workflow_sha }}
+          sparse-checkout: |
+            /scripts/expo-ota-artifact.mjs
+            /scripts/native-tag-attestation.mjs
+            /scripts/release-config.mjs
+            /tools/eas-cli/
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: .release-tooling/tools/eas-cli/package-lock.json
+
+      - name: Install locked EAS CLI before Expo authentication
+        run: npm ci --prefix .release-tooling/tools/eas-cli --include=dev --no-audit --fund=false
+
+      - name: Download source-bound production OTA artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: expo-ota-android-production-${{ needs.preflight-release-target.outputs.source_commit }}
+          path: ${{ runner.temp }}/calibrate-expo-update-artifact
+
+      - name: Verify inert artifact and prepare fixed publisher project
+        shell: bash
         run: >-
-          eas update
+          node .release-tooling/scripts/expo-ota-artifact.mjs prepare-publisher
+          --artifact-root "${RUNNER_TEMP}/calibrate-expo-update-artifact"
+          --output-dir "${RUNNER_TEMP}/calibrate-expo-publisher"
+          --source-commit "${OTA_SOURCE_REF}"
+          --native-build-ref "${NATIVE_BUILD_REF}"
           --channel "${EXPO_UPDATES_CHANNEL}"
-          --message "${OTA_MESSAGE}"
           --environment "${EAS_ENVIRONMENT}"
-          --platform android
-          --non-interactive
+          --project-id "${EXPO_PUBLIC_EAS_PROJECT_ID}"
+
+      - name: Recheck current protected workflow authority immediately before Expo token
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight-release-target.outputs.source_commit }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          export GIT_CONFIG_GLOBAL=/dev/null
+          export GIT_CONFIG_NOSYSTEM=1
+          export GIT_NO_REPLACE_OBJECTS=1
+          node .release-tooling/scripts/release-config.mjs verify-current-release-workflow \
+            --repository-root "${RUNNER_TEMP}/calibrate-ota-workflow-authority" \
+            --workflow-sha "${WORKFLOW_SHA}" \
+            --release-commit "${RELEASE_COMMIT}"
+
+      - name: Publish pre-exported Android update to production
+        working-directory: ${{ runner.temp }}/calibrate-expo-publisher
+        shell: bash
+        env:
+          EAS_NO_VCS: '1'
+          EAS_SKIP_AUTO_FINGERPRINT: '1'
+          EXPO_NO_DOTENV: '1'
+          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${EXPO_TOKEN}" ]]; then
+            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            exit 1
+          fi
+          "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" update \
+            --skip-bundler \
+            --input-dir "${RUNNER_TEMP}/calibrate-expo-update-artifact/bundle" \
+            --channel "${EXPO_UPDATES_CHANNEL}" \
+            --message "${OTA_MESSAGE}" \
+            --environment "${EAS_ENVIRONMENT}" \
+            --platform android \
+            --non-interactive
