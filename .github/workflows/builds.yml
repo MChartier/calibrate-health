@@ -54,10 +54,14 @@ jobs:
       - name: Detect affected build surfaces
         if: github.event_name == 'pull_request'
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           filters: |
             release_config:
+              - '.github/native-release-tag-allowed-signers'
+              - '.github/native-play-attestation-trusted-workflow-shas'
+              - '.github/release-image-attestation-trusted-workflow-shas'
+              - 'tools/eas-cli/**'
               - '.github/workflows/**'
               - 'backend/package.json'
               - 'backend/package-lock.json'
@@ -138,7 +142,7 @@ jobs:
       - name: Detect changes outside generated release mirrors
         if: github.event_name == 'pull_request'
         id: release_mirror_filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           predicate-quantifier: every
           filters: |
@@ -253,12 +257,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
 

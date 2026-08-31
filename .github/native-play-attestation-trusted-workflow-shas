@@ -1,0 +1,7 @@
+# Native Play receipt workflow trust policy.
+#
+# Keep this file comment-only for normal operation. Historical workflow revisions are
+# accepted only when their critical receipt tooling is byte-identical to current master.
+# Use `allow <40-character-lowercase-SHA>` only for a reviewed historical hardening
+# revision that must remain recoverable after critical tooling changes. Use
+# `revoke <40-character-lowercase-SHA>` to reject a compromised revision immediately.

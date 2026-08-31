@@ -21,6 +21,14 @@ import {
   resolveNativeReleaseDeviceTooling
 } from './native-release-devices.mjs';
 import { GOOGLE_PLAY_MAX_VERSION_CODE } from './release-config.mjs';
+import {
+  createNativePlayReceiptFromPlan,
+  nativePlayReceiptSha256,
+  NATIVE_PLAY_RECEIPT_PATH,
+  readNativePlayReceipt,
+  serializeNativePlayReceipt,
+  verifyNativePlayReceiptFile
+} from './native-play-receipt.mjs';
 
 export { GOOGLE_PLAY_MAX_VERSION_CODE } from './release-config.mjs';
 
@@ -81,9 +89,8 @@ function readReleaseManifest(root) {
   return { content, manifest };
 }
 
-function releaseDisplayName(role, candidate, sourceCommit) {
-  const platform = role === 'phone' ? 'Android' : 'Wear OS';
-  return `calibrate ${platform} ${candidate.versionName} (${candidate.versionCode}) @${sourceCommit.slice(0, 12)}`;
+function releaseSourceMarker(role, sourceCommit) {
+  return `${role === 'phone' ? 'cal-p' : 'cal-w'}@${sourceCommit}`;
 }
 
 export function createNativePlayReleasePlan(options = {}) {
@@ -145,7 +152,7 @@ export function createNativePlayReleasePlan(options = {}) {
   }
 
   for (const candidate of Object.values(candidates)) {
-    candidate.releaseName = releaseDisplayName(candidate.role, candidate, sourceCommit);
+    candidate.releaseName = releaseSourceMarker(candidate.role, sourceCommit);
   }
 
   return {
@@ -160,12 +167,14 @@ export function assertNativePlaySourceCheckout(root, sourceCommit, execute = exe
   if (!COMMIT_PATTERN.test(sourceCommit ?? '')) {
     throw new Error('Native Play release requires a lowercase 40-character --source-commit.');
   }
+  const environment = artifactInspectionEnvironment(process.env);
   let head;
   try {
     head = execute('git', ['rev-parse', '--verify', 'HEAD^{commit}'], {
       cwd: root,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore']
+      stdio: ['ignore', 'pipe', 'ignore'],
+      env: environment
     }).toString().trim();
   } catch {
     throw new Error('Native Play release requires a Git checkout at the requested source commit.');
@@ -178,7 +187,8 @@ export function assertNativePlaySourceCheckout(root, sourceCommit, execute = exe
     trackedStatus = execute('git', ['status', '--porcelain=v1', '--untracked-files=no'], {
       cwd: root,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore']
+      stdio: ['ignore', 'pipe', 'ignore'],
+      env: environment
     }).toString().trim();
   } catch {
     throw new Error('Native Play release could not verify the tracked source checkout.');
@@ -189,12 +199,20 @@ export function assertNativePlaySourceCheckout(root, sourceCommit, execute = exe
   return head;
 }
 
-function runArtifactInspection(execute, command, args, errorMessage) {
+function artifactInspectionEnvironment(environment) {
+  return Object.fromEntries(Object.entries(environment ?? {}).filter(([name]) => {
+    const normalized = name.toUpperCase();
+    return !normalized.startsWith('GOOGLE_PLAY_') && normalized !== 'GOOGLE_APPLICATION_CREDENTIALS';
+  }));
+}
+
+function runArtifactInspection(execute, command, args, errorMessage, environment) {
   try {
     return execute(command, args, {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
-      windowsHide: true
+      windowsHide: true,
+      env: environment
     }).toString();
   } catch {
     throw new Error(errorMessage);
@@ -203,19 +221,22 @@ function runArtifactInspection(execute, command, args, errorMessage) {
 
 export function inspectNativePlayArtifact(file, contract, options = {}) {
   const execute = options.execute ?? execFileSync;
-  const tooling = options.tooling ?? resolveNativeReleaseDeviceTooling(options.environment ?? process.env);
+  const environment = artifactInspectionEnvironment(options.environment ?? process.env);
+  const tooling = options.tooling ?? resolveNativeReleaseDeviceTooling(environment);
   if (contract?.format === 'apk') {
     const badging = runArtifactInspection(
       execute,
       tooling.aapt,
       ['dump', 'badging', file],
-      `Unable to inspect ${contract.id} package metadata with aapt.`
+      `Unable to inspect ${contract.id} package metadata with aapt.`,
+      environment
     );
     const signing = runArtifactInspection(
       execute,
       tooling.java,
       ['-jar', tooling.apksignerJar, 'verify', '--print-certs', file],
-      `Unable to inspect ${contract.id} signing certificate with apksigner.`
+      `Unable to inspect ${contract.id} signing certificate with apksigner.`,
+      environment
     );
     return {
       ...parseApkBadging(badging),
@@ -232,13 +253,15 @@ export function inspectNativePlayArtifact(file, contract, options = {}) {
       execute,
       tooling.java,
       ['-jar', tooling.bundletoolJar, 'dump', 'manifest', `--bundle=${file}`],
-      `Unable to inspect ${contract.id} manifest metadata with bundletool.`
+      `Unable to inspect ${contract.id} manifest metadata with bundletool.`,
+      environment
     );
     const signing = runArtifactInspection(
       execute,
       tooling.keytool,
       ['-J-Duser.language=en', '-J-Duser.country=US', '-printcert', '-jarfile', file],
-      `Unable to inspect ${contract.id} signing certificate with keytool.`
+      `Unable to inspect ${contract.id} signing certificate with keytool.`,
+      environment
     );
     return {
       ...parseAabManifestMetadata(manifest),
@@ -255,7 +278,11 @@ export function verifyNativePlayArtifacts(options = {}) {
   let tooling = options.tooling;
   const artifactInspector = options.artifactInspector ?? ((file, contract) => {
     tooling ??= resolveNativeReleaseDeviceTooling(options.environment ?? process.env);
-    return inspectNativePlayArtifact(file, contract, { execute: options.execute, tooling });
+    return inspectNativePlayArtifact(file, contract, {
+      execute: options.execute,
+      tooling,
+      environment: options.environment ?? process.env
+    });
   });
   const inspectedArtifacts = NATIVE_RELEASE_ARTIFACT_CONTRACTS.map((contract) => {
     const file = path.resolve(root, contract.path);
@@ -387,38 +414,37 @@ async function checkedGoogleResponse(response, operation) {
 
 export async function resolveGooglePlayAccessToken(options = {}) {
   const environment = options.environment ?? process.env;
+  const serviceAccountFile = options.serviceAccountFile ?? environment.GOOGLE_PLAY_SERVICE_ACCOUNT_FILE;
+  if (isNonEmptyString(serviceAccountFile)) {
+    let credentials;
+    try {
+      credentials = JSON.parse(fs.readFileSync(path.resolve(serviceAccountFile.trim()), 'utf8'));
+    } catch {
+      throw new Error('Google Play service-account file is missing or invalid JSON.');
+    }
+    const { assertion, tokenUri } = createGoogleServiceAccountAssertion(credentials, { now: options.now });
+    const form = new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion
+    });
+    const fetchImpl = options.fetchImpl ?? globalThis.fetch;
+    const response = await fetchImpl(tokenUri, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString()
+    });
+    const payload = await checkedGoogleResponse(response, 'Google OAuth token exchange');
+    if (!isNonEmptyString(payload?.access_token)) {
+      throw new Error('Google OAuth token exchange returned no access_token.');
+    }
+    return payload.access_token;
+  }
+
   const suppliedToken = environment.GOOGLE_PLAY_ACCESS_TOKEN?.trim();
   if (suppliedToken) return suppliedToken;
-
-  const serviceAccountFile = options.serviceAccountFile ?? environment.GOOGLE_PLAY_SERVICE_ACCOUNT_FILE;
-  if (!isNonEmptyString(serviceAccountFile)) {
-    throw new Error(
-      'Google Play credentials are missing. Set GOOGLE_PLAY_ACCESS_TOKEN or pass --service-account-file FILE.'
-    );
-  }
-
-  let credentials;
-  try {
-    credentials = JSON.parse(fs.readFileSync(path.resolve(serviceAccountFile), 'utf8'));
-  } catch {
-    throw new Error('Google Play service-account file is missing or invalid JSON.');
-  }
-  const { assertion, tokenUri } = createGoogleServiceAccountAssertion(credentials, { now: options.now });
-  const form = new URLSearchParams({
-    grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-    assertion
-  });
-  const fetchImpl = options.fetchImpl ?? globalThis.fetch;
-  const response = await fetchImpl(tokenUri, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: form.toString()
-  });
-  const payload = await checkedGoogleResponse(response, 'Google OAuth token exchange');
-  if (!isNonEmptyString(payload?.access_token)) {
-    throw new Error('Google OAuth token exchange returned no access_token.');
-  }
-  return payload.access_token;
+  throw new Error(
+    'Google Play credentials are missing. Pass --service-account-file FILE or set GOOGLE_PLAY_ACCESS_TOKEN.'
+  );
 }
 
 function editRoot(applicationId, upload = false) {
@@ -534,9 +560,24 @@ function releasesWithCode(track, versionCode) {
   return trackReleases(track).filter((release) => releaseVersionCodes(release).includes(wanted));
 }
 
-function hasCompletedCandidate(track, candidate) {
-  return releasesWithCode(track, candidate.versionCode).some((release) =>
-    release.status === 'completed' && release.name === candidate.releaseName);
+function assertExactCompletedCandidate(track, candidate, label) {
+  const matches = releasesWithCode(track, candidate.versionCode);
+  const exact = matches.filter((release) =>
+    release.status === 'completed' &&
+    release.name === candidate.releaseName &&
+    releaseVersionCodes(release).length === 1);
+  if (matches.length !== 1 || exact.length !== 1) {
+    throw new Error(
+      `${label} must contain exactly one completed release for version code ${candidate.versionCode} ` +
+      `with source marker ${candidate.releaseName}.`
+    );
+  }
+}
+
+function exactCompletedCandidateExists(track, candidate, label) {
+  if (releasesWithCode(track, candidate.versionCode).length === 0) return false;
+  assertExactCompletedCandidate(track, candidate, label);
+  return true;
 }
 
 function assertNoConflictingCandidateCode(track, candidate, label) {
@@ -606,8 +647,9 @@ async function runAtomicEdit(publisher, operation) {
   }
 }
 
-function assertExistingBundleDigests(payload, plan, verifiedAabs) {
+function existingBundleReceipts(payload, plan) {
   const bundles = Array.isArray(payload?.bundles) ? payload.bundles : [];
+  const receipts = {};
   for (const role of ['phone', 'watch']) {
     const candidate = plan.candidates[role];
     const matches = bundles.filter(({ versionCode }) => Number(versionCode) === candidate.versionCode);
@@ -617,7 +659,61 @@ function assertExistingBundleDigests(payload, plan, verifiedAabs) {
         `${candidate.versionCode}; found ${matches.length}.`
       );
     }
-    const reportedSha256 = matches[0]?.sha256?.toLowerCase();
+    const reportedSha256 = typeof matches[0]?.sha256 === 'string'
+      ? matches[0].sha256.trim().toLowerCase()
+      : null;
+    if (!SHA256_PATTERN.test(reportedSha256 ?? '')) {
+      throw new Error(
+        `Google Play existing ${role} bundle for version code ${candidate.versionCode} ` +
+        'must report a valid SHA-256.'
+      );
+    }
+    receipts[role] = {
+      versionCode: candidate.versionCode,
+      track: candidate.internalTrack,
+      sha256: reportedSha256
+    };
+  }
+  return receipts;
+}
+
+function verifiedNativePlayAabs(plan, verification) {
+  return Object.fromEntries(['phone', 'watch'].map((role) => {
+    const candidate = plan.candidates[role];
+    const matches = verification?.artifacts?.filter((artifact) =>
+      artifact.id === candidate.artifactId && artifact.path === candidate.artifactPath) ?? [];
+    if (matches.length !== 1 || !SHA256_PATTERN.test(matches[0]?.sha256 ?? '')) {
+      throw new Error(`Native artifact verification is missing the exact ${role} AAB SHA-256.`);
+    }
+    return [role, matches[0]];
+  }));
+}
+
+export function createNativePlayArtifactReceipt({ repository, plan, verification }) {
+  if (verification?.sourceCommit !== plan?.sourceCommit || verification?.applicationId !== plan?.applicationId) {
+    throw new Error('Native artifact verification does not match the requested Play release.');
+  }
+  return createNativePlayReceiptFromPlan({
+    repository,
+    plan,
+    releases: verifiedNativePlayAabs(plan, verification)
+  });
+}
+
+export function writeNativePlayArtifactReceipt({ root = repositoryRoot, receiptFile, repository, plan, verification }) {
+  const receipt = createNativePlayArtifactReceipt({ repository, plan, verification });
+  const relativeOrAbsolute = receiptFile ?? NATIVE_PLAY_RECEIPT_PATH;
+  const file = path.resolve(root, relativeOrAbsolute);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const bytes = serializeNativePlayReceipt(receipt);
+  fs.writeFileSync(file, bytes, { mode: 0o600 });
+  return Object.freeze({ receipt, file, sha256: nativePlayReceiptSha256(bytes) });
+}
+
+function assertExistingBundleDigests(payload, plan, verifiedAabs) {
+  const receipts = existingBundleReceipts(payload, plan);
+  for (const role of ['phone', 'watch']) {
+    const reportedSha256 = receipts[role].sha256;
     if (reportedSha256 !== verifiedAabs[role].sha256) {
       throw new Error(
         `Google Play existing ${role} bundle SHA-256 ${reportedSha256 ?? 'unknown'}; ` +
@@ -628,20 +724,16 @@ function assertExistingBundleDigests(payload, plan, verifiedAabs) {
 }
 
 export async function uploadNativePlayInternal(options) {
-  const { plan, verification, publisher } = options;
+  const { plan, verification, publisher, repository, receipt } = options;
   const root = options.root ?? repositoryRoot;
   if (verification?.sourceCommit !== plan?.sourceCommit || verification?.applicationId !== plan?.applicationId) {
     throw new Error('Native artifact verification does not match the requested Play release.');
   }
-  const verifiedAabs = Object.fromEntries(['phone', 'watch'].map((role) => {
-    const candidate = plan.candidates[role];
-    const matches = verification.artifacts?.filter((artifact) =>
-      artifact.id === candidate.artifactId && artifact.path === candidate.artifactPath) ?? [];
-    if (matches.length !== 1 || !SHA256_PATTERN.test(matches[0]?.sha256 ?? '')) {
-      throw new Error(`Native artifact verification is missing the exact ${role} AAB SHA-256.`);
-    }
-    return [role, matches[0]];
-  }));
+  const verifiedAabs = verifiedNativePlayAabs(plan, verification);
+  const expectedReceipt = createNativePlayArtifactReceipt({ repository, plan, verification });
+  if (!receipt || serializeNativePlayReceipt(receipt) !== serializeNativePlayReceipt(expectedReceipt)) {
+    throw new Error('Native Play upload requires the exact independently attested artifact receipt.');
+  }
 
   return runAtomicEdit(publisher, async (editId) => {
     const phoneTrack = await publisher.getTrack(editId, plan.candidates.phone.internalTrack);
@@ -651,8 +743,16 @@ export async function uploadNativePlayInternal(options) {
 
     assertNoConflictingCandidateCode(phoneTrack, plan.candidates.phone, 'Phone internal track');
     assertNoConflictingCandidateCode(watchTrack, plan.candidates.watch, 'Wear internal track');
-    const phoneComplete = hasCompletedCandidate(phoneTrack, plan.candidates.phone);
-    const watchComplete = hasCompletedCandidate(watchTrack, plan.candidates.watch);
+    const phoneComplete = exactCompletedCandidateExists(
+      phoneTrack,
+      plan.candidates.phone,
+      'Phone internal track'
+    );
+    const watchComplete = exactCompletedCandidateExists(
+      watchTrack,
+      plan.candidates.watch,
+      'Wear internal track'
+    );
     if (phoneComplete && watchComplete) {
       const existingBundles = await publisher.listBundles(editId);
       assertExistingBundleDigests(existingBundles, plan, verifiedAabs);
@@ -695,19 +795,6 @@ export async function uploadNativePlayInternal(options) {
   });
 }
 
-function assertSourceCandidate(track, candidate, label) {
-  const matches = releasesWithCode(track, candidate.versionCode);
-  if (matches.length === 0) {
-    throw new Error(`${label} does not contain candidate version code ${candidate.versionCode}.`);
-  }
-  if (!matches.some(({ status, name }) => status === 'completed' && name === candidate.releaseName)) {
-    throw new Error(
-      `${label} candidate version code ${candidate.versionCode} is not completed for source release ` +
-      `${candidate.releaseName}.`
-    );
-  }
-}
-
 function candidateTrack(candidate, stage) {
   return candidate[`${stage}Track`];
 }
@@ -724,7 +811,7 @@ async function promoteNativePlayStage(options, sourceStage, destinationStage) {
     for (const role of ['phone', 'watch']) {
       const candidate = plan.candidates[role];
       sources[role] = await publisher.getTrack(editId, candidateTrack(candidate, sourceStage));
-      assertSourceCandidate(sources[role], candidate, stageTrackLabel(role, sourceStage));
+      assertExactCompletedCandidate(sources[role], candidate, stageTrackLabel(role, sourceStage));
     }
     for (const role of ['phone', 'watch']) {
       const candidate = plan.candidates[role];
@@ -734,8 +821,16 @@ async function promoteNativePlayStage(options, sourceStage, destinationStage) {
       assertNoConflictingCandidateCode(destinations[role], candidate, label);
     }
 
-    const phoneComplete = hasCompletedCandidate(destinations.phone, plan.candidates.phone);
-    const watchComplete = hasCompletedCandidate(destinations.watch, plan.candidates.watch);
+    const phoneComplete = exactCompletedCandidateExists(
+      destinations.phone,
+      plan.candidates.phone,
+      stageTrackLabel('phone', destinationStage)
+    );
+    const watchComplete = exactCompletedCandidateExists(
+      destinations.watch,
+      plan.candidates.watch,
+      stageTrackLabel('watch', destinationStage)
+    );
     if (phoneComplete && watchComplete) {
       return { alreadyComplete: true, editId: null, tracks: NATIVE_PLAY_TRACKS[destinationStage] };
     }
@@ -764,27 +859,59 @@ export function promoteNativePlayProduction(options) {
   return promoteNativePlayStage(options, 'closed', 'production');
 }
 
+export async function recoverNativePlayInternal(options) {
+  const { plan, publisher, repository } = options;
+  const editId = await publisher.createEdit();
+  try {
+    for (const role of ['phone', 'watch']) {
+      const candidate = plan.candidates[role];
+      const label = stageTrackLabel(role, 'internal');
+      const track = await publisher.getTrack(editId, candidate.internalTrack);
+      assertExactCompletedCandidate(track, candidate, label);
+    }
+    const releases = existingBundleReceipts(await publisher.listBundles(editId), plan);
+    return createNativePlayReceiptFromPlan({ repository, plan, releases });
+  } finally {
+    await abandonEdit(publisher, editId);
+  }
+}
+
 function parseArguments(argv) {
   const command = argv[0];
+  const credentialedCommands = new Set([
+    'upload-internal',
+    'recover-internal',
+    'promote-closed',
+    'promote-production'
+  ]);
   const supported = new Set([
     'plan',
     'verify-artifacts',
+    'create-receipt',
+    'verify-receipt',
     'upload-internal',
+    'recover-internal',
     'promote-closed',
     'promote-production'
   ]);
   if (!supported.has(command)) {
     throw new Error(
       'Usage: node scripts/native-play-release.mjs ' +
-      '<plan|verify-artifacts|upload-internal|promote-closed|promote-production> --source-commit SHA ' +
-      '[--service-account-file FILE]'
+      '<plan|verify-artifacts|create-receipt|verify-receipt|upload-internal|recover-internal|promote-closed|promote-production> ' +
+      '--source-commit SHA ' +
+      '[--repository-root ROOT] [--repository OWNER/REPO] [--receipt-file FILE] [--service-account-file FILE]'
     );
   }
   const values = {};
   for (let index = 1; index < argv.length; index += 2) {
     const name = argv[index];
     const value = argv[index + 1];
-    if (!['--source-commit', '--service-account-file'].includes(name) || !isNonEmptyString(value)) {
+    if (
+      ![
+        '--source-commit', '--repository-root', '--repository', '--receipt-file', '--service-account-file'
+      ].includes(name) ||
+      !isNonEmptyString(value)
+    ) {
       throw new Error(`Unknown or incomplete native Play release option: ${name ?? '(missing)'}.`);
     }
     if (values[name] !== undefined) throw new Error(`Duplicate native Play release option: ${name}.`);
@@ -793,25 +920,38 @@ function parseArguments(argv) {
   if (!isNonEmptyString(values['--source-commit'])) {
     throw new Error('Native Play release requires --source-commit SHA.');
   }
-  if (['plan', 'verify-artifacts'].includes(command) && values['--service-account-file']) {
+  if (credentialedCommands.has(command) && !isNonEmptyString(values['--repository-root'])) {
+    throw new Error(`${command} requires --repository-root ROOT.`);
+  }
+  const receiptCommands = new Set(['create-receipt', 'verify-receipt', 'upload-internal', 'recover-internal']);
+  if (receiptCommands.has(command)) {
+    if (!isNonEmptyString(values['--repository'])) throw new Error(`${command} requires --repository OWNER/REPO.`);
+    if (!isNonEmptyString(values['--receipt-file'])) throw new Error(`${command} requires --receipt-file FILE.`);
+  } else if (values['--repository'] || values['--receipt-file']) {
+    throw new Error(`${command} does not accept --repository or --receipt-file.`);
+  }
+  if (['plan', 'verify-artifacts', 'create-receipt', 'verify-receipt'].includes(command) && values['--service-account-file']) {
     throw new Error(`${command} does not accept --service-account-file.`);
   }
   return {
     command,
     sourceCommit: values['--source-commit'],
+    repositoryRoot: values['--repository-root'],
+    repository: values['--repository'],
+    receiptFile: values['--receipt-file'],
     serviceAccountFile: values['--service-account-file']
   };
 }
 
 export async function runNativePlayReleaseCli(argv, options = {}) {
-  const root = options.root ?? repositoryRoot;
   const parsed = parseArguments(argv);
+  const root = path.resolve(parsed.repositoryRoot?.trim() ?? options.root ?? repositoryRoot);
   assertNativePlaySourceCheckout(root, parsed.sourceCommit, options.execute ?? execFileSync);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: parsed.sourceCommit });
   if (parsed.command === 'plan') return plan;
 
-  if (parsed.command === 'verify-artifacts') {
-    return verifyNativePlayArtifacts({
+  if (['verify-artifacts', 'create-receipt', 'verify-receipt'].includes(parsed.command)) {
+    const verification = verifyNativePlayArtifacts({
       root,
       plan,
       artifactInspector: options.artifactInspector,
@@ -819,6 +959,44 @@ export async function runNativePlayReleaseCli(argv, options = {}) {
       tooling: options.tooling,
       environment: options.environment
     });
+    if (parsed.command === 'verify-artifacts') return verification;
+    const receiptFile = path.resolve(root, parsed.receiptFile);
+    const expectedReceipt = createNativePlayArtifactReceipt({
+      repository: parsed.repository,
+      plan,
+      verification
+    });
+    if (parsed.command === 'verify-receipt') {
+      return verifyNativePlayReceiptFile(receiptFile, expectedReceipt);
+    }
+    return writeNativePlayArtifactReceipt({
+      root,
+      receiptFile,
+      repository: parsed.repository,
+      plan,
+      verification
+    });
+  }
+
+  let verification;
+  let admittedReceipt;
+  if (parsed.command === 'upload-internal') {
+    verification = verifyNativePlayArtifacts({
+      root,
+      plan,
+      artifactInspector: options.artifactInspector,
+      execute: options.artifactExecute,
+      tooling: options.tooling,
+      environment: options.environment
+    });
+    const expectedReceipt = createNativePlayArtifactReceipt({
+      repository: parsed.repository,
+      plan,
+      verification
+    });
+    const receiptPath = path.resolve(root, parsed.receiptFile);
+    verifyNativePlayReceiptFile(receiptPath, expectedReceipt);
+    admittedReceipt = readNativePlayReceipt(receiptPath);
   }
 
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
@@ -834,15 +1012,22 @@ export async function runNativePlayReleaseCli(argv, options = {}) {
     fetchImpl
   });
   if (parsed.command === 'upload-internal') {
-    const verification = verifyNativePlayArtifacts({
+    return uploadNativePlayInternal({
       root,
       plan,
-      artifactInspector: options.artifactInspector,
-      execute: options.artifactExecute,
-      tooling: options.tooling,
-      environment: options.environment
+      verification,
+      publisher,
+      repository: parsed.repository,
+      receipt: admittedReceipt
     });
-    return uploadNativePlayInternal({ root, plan, verification, publisher });
+  }
+  if (parsed.command === 'recover-internal') {
+    const receipt = await recoverNativePlayInternal({ plan, publisher, repository: parsed.repository });
+    const file = path.resolve(root, parsed.receiptFile);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const bytes = serializeNativePlayReceipt(receipt);
+    fs.writeFileSync(file, bytes, { mode: 0o600 });
+    return Object.freeze({ receipt, file, sha256: nativePlayReceiptSha256(bytes) });
   }
   if (parsed.command === 'promote-closed') return promoteNativePlayClosed({ plan, publisher });
   return promoteNativePlayProduction({ plan, publisher });
