@@ -253,22 +253,80 @@ const gradleLockFixture = [
   ''
 ].join('\n');
 const fixtureSha256 = 'a'.repeat(64);
+const commonCleanRunArtifactCoordinates = [
+  'com.google.guava:guava-parent:33.3.1-jre:guava-parent-33.3.1-jre.pom',
+  'org.junit:junit-bom:5.10.2:junit-bom-5.10.2.module',
+  'org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.8.0:kotlinx-coroutines-bom-1.8.0.pom'
+];
+const platformCleanRunArtifactCoordinates = {
+  phone: [
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-linux.jar',
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-windows.jar',
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139.pom',
+    'com.android.tools:play-sdk-proto:31.12.0:play-sdk-proto-31.12.0.jar',
+    'com.android.tools:play-sdk-proto:31.12.0:play-sdk-proto-31.12.0.pom',
+    'com.android.tools.external.com-intellij:intellij-core:31.12.0:intellij-core-31.12.0.jar',
+    'com.android.tools.external.com-intellij:intellij-core:31.12.0:intellij-core-31.12.0.pom',
+    'com.android.tools.external.com-intellij:kotlin-compiler:31.12.0:kotlin-compiler-31.12.0.jar',
+    'com.android.tools.external.com-intellij:kotlin-compiler:31.12.0:kotlin-compiler-31.12.0.pom',
+    'com.android.tools.external.org-jetbrains:uast:31.12.0:uast-31.12.0.jar',
+    'com.android.tools.external.org-jetbrains:uast:31.12.0:uast-31.12.0.pom',
+    'com.android.tools.lint:lint:31.12.0:lint-31.12.0.jar',
+    'com.android.tools.lint:lint:31.12.0:lint-31.12.0.pom',
+    'com.android.tools.lint:lint-api:31.12.0:lint-api-31.12.0.jar',
+    'com.android.tools.lint:lint-api:31.12.0:lint-api-31.12.0.pom',
+    'com.android.tools.lint:lint-checks:31.12.0:lint-checks-31.12.0.jar',
+    'com.android.tools.lint:lint-checks:31.12.0:lint-checks-31.12.0.pom',
+    'com.android.tools.lint:lint-gradle:31.12.0:lint-gradle-31.12.0.jar',
+    'com.android.tools.lint:lint-gradle:31.12.0:lint-gradle-31.12.0.pom',
+    'com.google.devtools.ksp:symbol-processing-aa-embeddable:2.1.20-2.0.1:symbol-processing-aa-embeddable-2.1.20-2.0.1.jar',
+    'com.google.devtools.ksp:symbol-processing-aa-embeddable:2.1.20-2.0.1:symbol-processing-aa-embeddable-2.1.20-2.0.1.pom',
+    'com.google.guava:guava-parent:32.1.3-jre:guava-parent-32.1.3-jre.pom',
+    'com.google.guava:guava-parent:33.3.1-android:guava-parent-33.3.1-android.pom',
+    'com.google.guava:guava-parent:33.4.3-android:guava-parent-33.4.3-android.pom',
+    'com.google.guava:guava-parent:33.4.8-jre:guava-parent-33.4.8-jre.pom',
+    'org.apache.httpcomponents:httpclient:4.5.6:httpclient-4.5.6.jar',
+    'org.apache.httpcomponents:httpclient:4.5.6:httpclient-4.5.6.pom',
+    'org.codehaus.groovy:groovy:3.0.22:groovy-3.0.22.jar',
+    'org.codehaus.groovy:groovy:3.0.22:groovy-3.0.22.pom',
+    'org.jetbrains.kotlin:kotlin-bom:1.8.0:kotlin-bom-1.8.0.pom',
+    'org.junit:junit-bom:5.13.1:junit-bom-5.13.1.module',
+    'org.junit:junit-bom:5.13.4:junit-bom-5.13.4.module',
+    'org.junit:junit-bom:5.8.2:junit-bom-5.8.2.pom',
+    'org.junit:junit-bom:5.9.2:junit-bom-5.9.2.module',
+    'org.junit:junit-bom:5.9.3:junit-bom-5.9.3.module'
+  ],
+  wear: [
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-linux.jar',
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-windows.jar',
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657.pom'
+  ]
+};
+
+function verificationArtifactFixture(coordinate) {
+  const [group, name, version, artifactName] = coordinate.split(':');
+  return `    <component group="${group}" name="${name}" version="${version}"><artifact name="${artifactName}"><sha256 value="${fixtureSha256}" /></artifact></component>`;
+}
+
 const verificationMetadataFixture = [
   '<verification-metadata>',
   '  <configuration><verify-metadata>true</verify-metadata></configuration>',
   '  <components>',
-  '    <component group="org.jetbrains.kotlin.jvm" name="org.jetbrains.kotlin.jvm.gradle.plugin">',
+  '    <component group="org.jetbrains.kotlin.jvm" name="org.jetbrains.kotlin.jvm.gradle.plugin" version="2.1.20">',
   `      <artifact name="org.jetbrains.kotlin.jvm.gradle.plugin-2.1.20.pom"><sha256 value="${fixtureSha256}" /></artifact>`,
   '    </component>',
-  '    <component group="com.android.application" name="com.android.application.gradle.plugin">',
+  '    <component group="com.android.application" name="com.android.application.gradle.plugin" version="8.11.0">',
   `      <artifact name="com.android.application.gradle.plugin-8.11.0.pom"><sha256 value="${fixtureSha256}" /></artifact>`,
   '    </component>',
-  `    <component><artifact name="kotlin-gradle-plugin-2.1.20-gradle85.jar"><sha256 value="${fixtureSha256}" /></artifact></component>`,
-  `    <component><artifact name="dependency-1.0.module"><sha256 value="${fixtureSha256}" /></artifact></component>`,
-  `    <component><artifact name="react-android-0.86.0-release.aar"><sha256 value="${fixtureSha256}" /></artifact></component>`,
-  `    <component><artifact name="play-services-wearable-20.0.1.aar"><sha256 value="${fixtureSha256}" /></artifact></component>`,
-  `    <component><artifact name="room-runtime.aar"><sha256 value="${fixtureSha256}" /></artifact></component>`,
-  `    <component><artifact name="compose-bom-2026.06.00.pom"><sha256 value="${fixtureSha256}" /></artifact></component>`,
+  verificationArtifactFixture('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20:kotlin-gradle-plugin-2.1.20-gradle85.jar'),
+  verificationArtifactFixture('example:dependency:1.0:dependency-1.0.module'),
+  verificationArtifactFixture('com.facebook.react:react-android:0.86.0:react-android-0.86.0-release.aar'),
+  verificationArtifactFixture('com.google.android.gms:play-services-wearable:20.0.1:play-services-wearable-20.0.1.aar'),
+  verificationArtifactFixture('androidx.room:room-runtime:2.7.0:room-runtime.aar'),
+  verificationArtifactFixture('androidx.compose:compose-bom:2026.06.00:compose-bom-2026.06.00.pom'),
+  ...commonCleanRunArtifactCoordinates.map(verificationArtifactFixture),
+  ...platformCleanRunArtifactCoordinates.phone.map(verificationArtifactFixture),
+  ...platformCleanRunArtifactCoordinates.wear.map(verificationArtifactFixture),
   '  </components>',
   '</verification-metadata>',
   ''
@@ -410,6 +468,58 @@ test('verification metadata rejects trust shortcuts and incomplete artifact chec
       verificationMetadataFixture.replace(fixtureSha256, 'not-a-sha256')
     ),
     /every artifact exactly one 64-hex SHA-256/
+  );
+});
+
+test('verification metadata requires exact clean-run artifacts for each native platform', () => {
+  for (const label of ['phone', 'wear']) {
+    for (const coordinate of [
+      ...commonCleanRunArtifactCoordinates,
+      ...platformCleanRunArtifactCoordinates[label]
+    ]) {
+      const artifactRecord = verificationArtifactFixture(coordinate);
+      assert.throws(
+        () => assertNativeReleaseVerificationMetadata(
+          label,
+          verificationMetadataFixture.replace(artifactRecord, '')
+        ),
+        /omits representative plugin or clean-run release artifacts/
+      );
+    }
+  }
+
+  for (const coordinate of platformCleanRunArtifactCoordinates.phone) {
+    const artifactRecord = verificationArtifactFixture(coordinate);
+    assert.doesNotThrow(() => assertNativeReleaseVerificationMetadata(
+      'wear',
+      verificationMetadataFixture.replace(artifactRecord, '')
+    ));
+  }
+
+  const phoneAapt2Linux =
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-linux.jar';
+  const liveRecord = verificationArtifactFixture(phoneAapt2Linux);
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'phone',
+      verificationMetadataFixture.replace(liveRecord, `<!-- ${liveRecord} -->`)
+    ),
+    /must not contain XML comments/
+  );
+
+  const phoneAapt2Windows =
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-windows.jar';
+  const wrongComponent =
+    'com.android.tools.build:aapt2-proto:7.3.1-8691043:aapt2-8.12.0-13700139-windows.jar';
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'phone',
+      verificationMetadataFixture.replace(
+        verificationArtifactFixture(phoneAapt2Windows),
+        verificationArtifactFixture(wrongComponent)
+      )
+    ),
+    /omits representative plugin or clean-run release artifacts/
   );
 });
 
