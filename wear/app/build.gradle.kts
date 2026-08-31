@@ -133,7 +133,7 @@ android {
         applicationId = "app.calibratehealth.mobile"
         minSdk = 30
         targetSdk = 36
-        versionCode = 8
+        versionCode = 10
         versionName = "0.2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

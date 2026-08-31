@@ -188,6 +188,38 @@ test('tool resolution uses standard Windows Android Studio paths and newest buil
   });
 });
 
+test('tool resolution honors the exact configured Android build-tools version', () => {
+  const root = path.join('C:', 'Android');
+  const result = resolveNativeReleaseDeviceTooling({
+    ANDROID_HOME: root,
+    ANDROID_BUILD_TOOLS_VERSION: '36.0.0',
+    JAVA_HOME: path.join('C:', 'Java')
+  }, {
+    platform: 'win32',
+    buildToolVersions: ['36.0.0', '37.0.0-rc1'],
+    fileExists: () => true
+  });
+
+  assert.match(result.aapt, /36\.0\.0/);
+  assert.match(result.apksignerJar, /36\.0\.0/);
+  assert.doesNotMatch(result.aapt, /37\.0\.0-rc1/);
+});
+
+test('tool resolution rejects a missing exact Android build-tools version', () => {
+  const root = path.join('C:', 'Android');
+  const requestedDirectory = path.join(root, 'build-tools', '36.0.0');
+
+  assert.throws(() => resolveNativeReleaseDeviceTooling({
+    ANDROID_HOME: root,
+    ANDROID_BUILD_TOOLS_VERSION: '36.0.0',
+    JAVA_HOME: path.join('C:', 'Java')
+  }, {
+    platform: 'win32',
+    buildToolVersions: ['37.0.0-rc1'],
+    fileExists: (candidate) => candidate !== requestedDirectory
+  }), /Configured Android build-tools 36\.0\.0 are missing/);
+});
+
 
 test('evidence CLI requires explicit candidate and observation inputs', () => {
   const candidateCommit = 'a'.repeat(40);

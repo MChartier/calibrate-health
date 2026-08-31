@@ -14,13 +14,13 @@
     "application_id": "app.calibratehealth.mobile",
     "mobile": {
       "version_name": "0.2.6",
-      "version_code": 8,
-      "native_release_tag": "v0.13.2",
+      "version_code": 9,
+      "native_release_tag": "native-v0.2.6",
       "minimum_supported_version": "0.1.0"
     },
     "wear": {
       "version_name": "0.2.6",
-      "version_code": 8,
+      "version_code": 10,
       "minimum_supported_version": "0.2.0"
     },
     "channels": {

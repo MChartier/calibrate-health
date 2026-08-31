@@ -1,0 +1,1683 @@
+name: Native Android Store Release
+
+run-name: Native ${{ inputs.operation }} from ${{ inputs.source_commit }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact 40-character commit on master whose signed phone and Wear release is being published
+        required: true
+        type: string
+      operation:
+        description: Upload one paired build, promote it to closed testing, or promote the closed pair to production
+        required: true
+        default: upload-internal
+        type: choice
+        options:
+          - upload-internal
+          - recover-internal
+          - promote-closed
+          - promote-production
+      confirm_play_console_clean:
+        description: I verified Play has no unrelated changes ready to send and will pause Console/API edits for this run
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_BUILD_TOOLS_VERSION: '36.0.0'
+  BUNDLETOOL_VERSION: '1.18.3'
+  BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+
+concurrency:
+  group: native-android-store-release
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  validate-source:
+    name: Validate exact native release source
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      native_tag: ${{ steps.source.outputs.native_tag }}
+      native_version: ${{ steps.source.outputs.native_version }}
+      phone_version_code: ${{ steps.source.outputs.phone_version_code }}
+      watch_version_code: ${{ steps.source.outputs.watch_version_code }}
+
+    steps:
+      - name: Require master and an exact source commit
+        shell: bash
+        env:
+          CONFIRM_PLAY_CONSOLE_CLEAN: ${{ inputs.confirm_play_console_clean }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/master" ]]; then
+            echo "Run Native Android Store Release from master; current ref is ${GITHUB_REF}." >&2
+            exit 1
+          fi
+          if [[ ! "${SOURCE_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "source_commit must be an exact lowercase 40-character Git SHA." >&2
+            exit 1
+          fi
+          if [[ "${CONFIRM_PLAY_CONSOLE_CLEAN}" != "true" ]]; then
+            echo "Confirm Play Publishing overview is clear and pause Console/Publisher edits for the entire run." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Checkout reviewed release safety tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-tooling
+
+      - name: Checkout current native tag trust set
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: master
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-trust
+
+      - name: Bind current native tag trust set
+        id: native-trust
+        shell: bash
+        run: |
+          set -euo pipefail
+          TRUST_SET_COMMIT="$(git --no-replace-objects -C .release-trust rev-parse HEAD)"
+          [[ "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]
+          test -s .release-trust/.github/native-release-tag-allowed-signers
+          echo "commit=${TRUST_SET_COMMIT}" >> "${GITHUB_OUTPUT}"
+          printf 'Native tag trust set: `%s` from current `master`.\n' "${TRUST_SET_COMMIT}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Bind source and native tag
+        id: source
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${SOURCE_COMMIT}"
+          git fetch origin master --tags
+          if ! git merge-base --is-ancestor "${SOURCE_COMMIT}" origin/master; then
+            echo "Native release source ${SOURCE_COMMIT} is not on master." >&2
+            exit 1
+          fi
+
+          PHONE_VERSION="$(node -p "require('./shared/release.json').android.mobile.version_name")"
+          WEAR_VERSION="$(node -p "require('./shared/release.json').android.wear.version_name")"
+          PHONE_VERSION_CODE="$(node -p "require('./shared/release.json').android.mobile.version_code")"
+          WEAR_VERSION_CODE="$(node -p "require('./shared/release.json').android.wear.version_code")"
+          NATIVE_TAG="$(node -p "require('./shared/release.json').android.mobile.native_release_tag")"
+          EXPECTED_TAG="native-v${PHONE_VERSION}"
+          if [[ "${PHONE_VERSION}" != "${WEAR_VERSION}" ]]; then
+            echo "Paired Play releases require matching phone and Wear version names." >&2
+            exit 1
+          fi
+          if [[ "${NATIVE_TAG}" != "${EXPECTED_TAG}" ]]; then
+            echo "Native release tag ${NATIVE_TAG} must be ${EXPECTED_TAG}." >&2
+            exit 1
+          fi
+          if git show-ref --tags --verify --quiet "refs/tags/${NATIVE_TAG}" && \
+             [[ "$(git rev-parse "${NATIVE_TAG}^{commit}")" != "${SOURCE_COMMIT}" ]]; then
+            echo "Native release tag ${NATIVE_TAG} already points at another commit." >&2
+            exit 1
+          fi
+          echo "native_tag=${NATIVE_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "native_version=${PHONE_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "phone_version_code=${PHONE_VERSION_CODE}" >> "${GITHUB_OUTPUT}"
+          echo "watch_version_code=${WEAR_VERSION_CODE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Reject an existing tag without the reviewed attestation
+        shell: bash
+        env:
+          NATIVE_TAG: ${{ steps.source.outputs.native_tag }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          REMOTE_TAG="$(git ls-remote --tags --refs origin "refs/tags/${NATIVE_TAG}")"
+          if [[ -z "${REMOTE_TAG}" ]]; then
+            exit 0
+          fi
+          if [[ "${REMOTE_TAG}" == *$'\n'* ]]; then
+            echo "Origin returned more than one exact ref for ${NATIVE_TAG}." >&2
+            exit 1
+          fi
+          read -r REMOTE_OBJECT REMOTE_REF <<< "${REMOTE_TAG}"
+          if [[ ! "${REMOTE_OBJECT}" =~ ^[0-9a-f]{40}$ || "${REMOTE_REF}" != "refs/tags/${NATIVE_TAG}" ]]; then
+            echo "Origin returned a malformed exact ref for ${NATIVE_TAG}." >&2
+            exit 1
+          fi
+          git fetch --force origin "+refs/tags/${NATIVE_TAG}:refs/tags/${NATIVE_TAG}"
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+
+      - name: Verify protected native tag policy
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NATIVE_TAG: ${{ steps.source.outputs.native_tag }}
+        run: >-
+          node .release-tooling/scripts/native-tag-protection.mjs verify
+          --repository "${GITHUB_REPOSITORY}"
+          --tag "${NATIVE_TAG}"
+
+      - name: Validate upload dependency and release policy
+        if: inputs.operation == 'upload-internal'
+        run: npm run release:check
+
+      - name: Validate immutable recovery or promotion configuration
+        if: inputs.operation != 'upload-internal'
+        run: >-
+          node .release-tooling/scripts/release-config.mjs check
+          --repository-root "${GITHUB_WORKSPACE}"
+
+      - name: Validate Play release plan
+        env:
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+        run: >-
+          node .release-tooling/scripts/native-play-release.mjs plan
+          --repository-root "${GITHUB_WORKSPACE}"
+          --source-commit "${SOURCE_COMMIT}"
+
+  build-internal:
+    name: Build paired production-channel artifacts
+    needs: validate-source
+    if: inputs.operation == 'upload-internal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: native-release-signing
+    permissions:
+      contents: read
+    outputs:
+      phone_aab_sha256: ${{ steps.artifact-hashes.outputs.phone_aab_sha256 }}
+      watch_aab_sha256: ${{ steps.artifact-hashes.outputs.watch_aab_sha256 }}
+    env:
+      EXPO_NO_METRO_WORKSPACE_ROOT: '1'
+      EXPO_PUBLIC_CALIBRATE_SERVER_URL: https://calibratehealth.app
+      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_UPDATES_CHANNEL: production
+      NODE_ENV: production
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Require current protected master workflow authority
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The workflow revision must be an exact full Git SHA." >&2
+            exit 1
+          fi
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "This job's workflow revision ${WORKFLOW_SHA} is stale; current protected master is ${LIVE_MASTER_SHA}. Start a new run from current master." >&2
+            exit 1
+          fi
+          if [[ ! "${SOURCE_COMMIT}" =~ ^[0-9a-f]{40}$ || "${SOURCE_COMMIT}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "upload-internal may build only the current protected master commit ${LIVE_MASTER_SHA}; received ${SOURCE_COMMIT}." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          cmdline-tools-version: 15859902
+
+      - name: Activate reviewed Android command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
+
+      - name: Provision pinned artifact inspection tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" platform-tools >/dev/null
+          BUNDLETOOL_JAR="${RUNNER_TEMP}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          curl --fail --location --retry 3 \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
+            --output "${BUNDLETOOL_JAR}"
+          echo "${BUNDLETOOL_SHA256}  ${BUNDLETOOL_JAR}" | sha256sum --check
+          echo "BUNDLETOOL_JAR=${BUNDLETOOL_JAR}" >> "${GITHUB_ENV}"
+
+      - name: Install native release dependencies
+        run: npm ci --no-audit --fund=false
+
+      - name: Generate and verify credential-free native Gradle state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "${RUNNER_TEMP}/calibrate-android-upload.keystore"
+          node scripts/native-release-build.mjs prepare
+
+      - name: Recheck current protected master immediately before credentials
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" || "${SOURCE_COMMIT}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before Android signing credentials were admitted; start upload-internal from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Require native signing configuration
+        shell: bash
+        env:
+          KEY_ALIAS: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD }}
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [[ -n "${UPLOAD_KEYSTORE_BASE64}" ]] || missing+=(CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64)
+          [[ -n "${STORE_PASSWORD}" ]] || missing+=(CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD)
+          [[ -n "${KEY_ALIAS}" ]] || missing+=(CALIBRATE_ANDROID_SIGNING_KEY_ALIAS)
+          [[ -n "${KEY_PASSWORD}" ]] || missing+=(CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD)
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Configure these native-release-signing environment secrets before building: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Materialize shared Android upload signing
+        shell: bash
+        env:
+          KEY_ALIAS: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD }}
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          STORE_FILE="${RUNNER_TEMP}/calibrate-android-upload.keystore"
+          printf '%s' "${UPLOAD_KEYSTORE_BASE64}" | base64 --decode > "${STORE_FILE}"
+          chmod 600 "${STORE_FILE}"
+          test -s "${STORE_FILE}"
+          {
+            echo "CALIBRATE_ANDROID_SIGNING_STORE_FILE=${STORE_FILE}"
+            echo "CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD=${STORE_PASSWORD}"
+            echo "CALIBRATE_ANDROID_SIGNING_KEY_ALIAS=${KEY_ALIAS}"
+            echo "CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD=${KEY_PASSWORD}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Build signed phone and Wear APKs and AABs once
+        run: node scripts/native-release-build.mjs build-prepared
+
+      - name: Remove signing material before artifact verification
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${RUNNER_TEMP}/calibrate-android-upload.keystore"
+          {
+            echo 'CALIBRATE_ANDROID_SIGNING_STORE_FILE='
+            echo 'CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD='
+            echo 'CALIBRATE_ANDROID_SIGNING_KEY_ALIAS='
+            echo 'CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD='
+          } >> "${GITHUB_ENV}"
+
+      - name: Verify exact paired artifacts and bind AAB hashes
+        id: artifact-hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERIFICATION_FILE="${RUNNER_TEMP}/native-play-artifact-verification.json"
+          node scripts/native-play-release.mjs verify-artifacts \
+            --source-commit "${SOURCE_COMMIT}" > "${VERIFICATION_FILE}"
+          PHONE_AAB_SHA256="$(jq --exit-status --raw-output \
+            '.artifacts | map(select(.id == "phone-aab")) | select(length == 1) | .[0].sha256 | select(test("^[0-9a-f]{64}$"))' \
+            "${VERIFICATION_FILE}")"
+          WATCH_AAB_SHA256="$(jq --exit-status --raw-output \
+            '.artifacts | map(select(.id == "watch-aab")) | select(length == 1) | .[0].sha256 | select(test("^[0-9a-f]{64}$"))' \
+            "${VERIFICATION_FILE}")"
+          echo "phone_aab_sha256=${PHONE_AAB_SHA256}" >> "${GITHUB_OUTPUT}"
+          echo "watch_aab_sha256=${WATCH_AAB_SHA256}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload short-lived paired native release
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-play-release-${{ inputs.source_commit }}
+          path: |
+            mobile/android/app/build/outputs/apk/release/app-release.apk
+            mobile/android/app/build/outputs/bundle/release/app-release.aab
+            wear/app/build/outputs/apk/release/app-release.apk
+            wear/app/build/outputs/bundle/release/app-release.aab
+            build/native-release-provenance.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 3
+
+  attest-play-receipt:
+    name: Attest source-free native Play artifact receipt
+    needs: [validate-source, build-internal]
+    if: inputs.operation == 'upload-internal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      attestations: write
+      contents: read
+      id-token: write
+    outputs:
+      receipt_sha256: ${{ steps.receipt.outputs.receipt_sha256 }}
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      NATIVE_VERSION: ${{ needs.validate-source.outputs.native_version }}
+      PHONE_AAB_SHA256: ${{ needs.build-internal.outputs.phone_aab_sha256 }}
+      PHONE_VERSION_CODE: ${{ needs.validate-source.outputs.phone_version_code }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      WATCH_AAB_SHA256: ${{ needs.build-internal.outputs.watch_aab_sha256 }}
+      WATCH_VERSION_CODE: ${{ needs.validate-source.outputs.watch_version_code }}
+
+    steps:
+      - name: Require current protected workflow authority before receipt construction
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${SOURCE_COMMIT}" != "${WORKFLOW_SHA}" || "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Native Play receipt attestation requires source ${SOURCE_COMMIT}, workflow ${WORKFLOW_SHA}, and protected master ${LIVE_MASTER_SHA} to be identical." >&2
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Fetch exact reviewed receipt helper without a source checkout
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          TOOL_ROOT="${RUNNER_TEMP}/native-play-receipt-tool"
+          mkdir -p "${TOOL_ROOT}/scripts"
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'Cache-Control: no-cache' \
+            --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/contents/scripts/native-play-receipt.mjs?ref=${WORKFLOW_SHA}" |
+            jq --exit-status --raw-output \
+              'select(.type == "file" and .encoding == "base64") | .content' |
+            tr -d '\n' | base64 --decode > "${TOOL_ROOT}/scripts/native-play-receipt.mjs"
+          test -s "${TOOL_ROOT}/scripts/native-play-receipt.mjs"
+          echo "NATIVE_PLAY_RECEIPT_TOOL=${TOOL_ROOT}/scripts/native-play-receipt.mjs" >> "${GITHUB_ENV}"
+
+      - name: Download exact paired native release
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: native-play-release-${{ inputs.source_commit }}
+          path: ${{ runner.temp }}/native-play-artifacts
+
+      - name: Construct and verify canonical receipt from downloaded AABs
+        id: receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_ROOT="${RUNNER_TEMP}/native-play-artifacts"
+          PHONE_AAB="${ARTIFACT_ROOT}/mobile/android/app/build/outputs/bundle/release/app-release.aab"
+          WATCH_AAB="${ARTIFACT_ROOT}/wear/app/build/outputs/bundle/release/app-release.aab"
+          RECEIPT_FILE="${RUNNER_TEMP}/native-play-receipt.json"
+          echo "${PHONE_AAB_SHA256}  ${PHONE_AAB}" | sha256sum --check
+          echo "${WATCH_AAB_SHA256}  ${WATCH_AAB}" | sha256sum --check
+          node "${NATIVE_PLAY_RECEIPT_TOOL}" create \
+            --repository "${GITHUB_REPOSITORY}" \
+            --application-id app.calibratehealth.mobile \
+            --source-commit "${SOURCE_COMMIT}" \
+            --native-tag "${NATIVE_TAG}" \
+            --native-version "${NATIVE_VERSION}" \
+            --phone-track qa \
+            --phone-version-code "${PHONE_VERSION_CODE}" \
+            --phone-aab-sha256 "${PHONE_AAB_SHA256}" \
+            --watch-track wear:qa \
+            --watch-version-code "${WATCH_VERSION_CODE}" \
+            --watch-aab-sha256 "${WATCH_AAB_SHA256}" > "${RECEIPT_FILE}"
+          RECEIPT_SHA256="$(sha256sum "${RECEIPT_FILE}" | awk '{print $1}')"
+          [[ "${RECEIPT_SHA256}" =~ ^[0-9a-f]{64}$ ]]
+          node "${NATIVE_PLAY_RECEIPT_TOOL}" verify-files \
+            --receipt-file "${RECEIPT_FILE}" \
+            --expected-receipt-sha256 "${RECEIPT_SHA256}" \
+            --phone-aab "${PHONE_AAB}" \
+            --watch-aab "${WATCH_AAB}"
+          echo "receipt_sha256=${RECEIPT_SHA256}" >> "${GITHUB_OUTPUT}"
+
+      - name: Recheck current protected workflow authority immediately before attestation
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${SOURCE_COMMIT}" != "${WORKFLOW_SHA}" || "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before native Play receipt attestation; start a new upload from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Attest exact native Play receipt
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: ${{ runner.temp }}/native-play-receipt.json
+          push-to-registry: false
+          create-storage-record: false
+
+  publish-internal:
+    name: Upload paired build to Play internal
+    needs: [validate-source, build-internal, attest-play-receipt]
+    if: inputs.operation == 'upload-internal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: play-internal
+    permissions:
+      actions: read
+      attestations: read
+      contents: read
+    env:
+      ATTESTED_RECEIPT_SHA256: ${{ needs.attest-play-receipt.outputs.receipt_sha256 }}
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Require current protected master workflow authority
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The workflow revision must be an exact full Git SHA." >&2
+            exit 1
+          fi
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "This job's workflow revision ${WORKFLOW_SHA} is stale; current protected master is ${LIVE_MASTER_SHA}. Start a new run from current master." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Checkout reviewed Publisher tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-tooling
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Setup Java for artifact inspection
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK for artifact inspection
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          cmdline-tools-version: 15859902
+
+      - name: Provision pinned artifact inspection tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager"
+          echo "$ANDROID_HOME/cmdline-tools/15859902/bin" >> "$GITHUB_PATH"
+          "$ANDROID_HOME/cmdline-tools/15859902/bin/sdkmanager" \
+            "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" platform-tools >/dev/null
+          BUNDLETOOL_JAR="${RUNNER_TEMP}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          curl --fail --location --retry 3 \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
+            --output "${BUNDLETOOL_JAR}"
+          echo "${BUNDLETOOL_SHA256}  ${BUNDLETOOL_JAR}" | sha256sum --check
+          echo "BUNDLETOOL_JAR=${BUNDLETOOL_JAR}" >> "${GITHUB_ENV}"
+
+      - name: Download exact paired native release
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: native-play-release-${{ inputs.source_commit }}
+          path: .
+
+      - name: Reconstruct and reverify exact downloaded receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .release-tooling/scripts/native-play-release.mjs create-receipt \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --source-commit "${SOURCE_COMMIT}" \
+            --receipt-file build/native-play-receipt.json
+          RECEIPT_SHA256="$(sha256sum build/native-play-receipt.json | awk '{print $1}')"
+          if [[ ! "${ATTESTED_RECEIPT_SHA256}" =~ ^[0-9a-f]{64}$ || \
+                "${RECEIPT_SHA256}" != "${ATTESTED_RECEIPT_SHA256}" ]]; then
+            echo "Downloaded artifact receipt ${RECEIPT_SHA256} does not match independently attested receipt ${ATTESTED_RECEIPT_SHA256}." >&2
+            exit 1
+          fi
+
+      - name: Install checksum-verified GitHub CLI attestation verifier
+        id: gh_cli
+        shell: bash
+        env:
+          GH_CLI_SHA256: a2c9b8497e1f85b1ad0dfcb78b5a622e098801b8e461e459e88e1ee12f018112
+          GH_CLI_URL: https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_linux_amd64.tar.gz
+        run: |
+          set -euo pipefail
+          GH_CLI_ARCHIVE="${RUNNER_TEMP}/gh_2.97.0_linux_amd64.tar.gz"
+          GH_CLI_ROOT="${RUNNER_TEMP}/gh-cli"
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "${GH_CLI_ARCHIVE}" "${GH_CLI_URL}"
+          echo "${GH_CLI_SHA256}  ${GH_CLI_ARCHIVE}" | sha256sum --check --strict
+          mkdir -p "${GH_CLI_ROOT}"
+          tar --extract --gzip --file "${GH_CLI_ARCHIVE}" \
+            --directory "${GH_CLI_ROOT}" --strip-components=2 \
+            gh_2.97.0_linux_amd64/bin/gh
+          GH_CLI="${GH_CLI_ROOT}/gh"
+          chmod 0755 "${GH_CLI}"
+          "${GH_CLI}" version
+          echo "path=${GH_CLI}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify exact native Play receipt attestation before authentication
+        shell: bash
+        env:
+          GH_CLI: ${{ steps.gh_cli.outputs.path }}
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          RECEIPT_FILE="${GITHUB_WORKSPACE}/build/native-play-receipt.json"
+          VERIFICATION_FILE="${RUNNER_TEMP}/native-play-attestation-verification.json"
+          node .release-tooling/scripts/native-play-receipt.mjs trusted-workflows \
+            --trust-file .github/native-play-attestation-trusted-workflow-shas \
+            --current-workflow-revision "${WORKFLOW_SHA}" > /dev/null
+          "${GH_CLI}" attestation verify "${RECEIPT_FILE}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/native-release.yml" \
+            --signer-digest "${SOURCE_COMMIT}" \
+            --source-digest "${SOURCE_COMMIT}" \
+            --source-ref refs/heads/master \
+            --predicate-type https://slsa.dev/provenance/v1 \
+            --limit 100 \
+            --deny-self-hosted-runners \
+            --format json > "${VERIFICATION_FILE}"
+          node .release-tooling/scripts/native-play-receipt.mjs discover-workflows \
+            --repository "${GITHUB_REPOSITORY}" \
+            --source-commit "${SOURCE_COMMIT}" \
+            --verification-file "${VERIFICATION_FILE}" > /dev/null
+
+      - name: Recheck current protected master immediately before credentials
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${SOURCE_COMMIT}" != "${WORKFLOW_SHA}" || "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before credentials were admitted; start a new run from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Require Google Play authentication
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_TEST_ACCESS_TOKEN }}
+          SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_TEST_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            SERVICE_ACCOUNT_FILE="${RUNNER_TEMP}/google-play-service-account.json"
+            printf '%s' "${SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${SERVICE_ACCOUNT_FILE}"
+            chmod 600 "${SERVICE_ACCOUNT_FILE}"
+            test -s "${SERVICE_ACCOUNT_FILE}"
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          if [[ -n "${ACCESS_TOKEN}" ]]; then
+            echo "GOOGLE_PLAY_ACCESS_TOKEN=${ACCESS_TOKEN}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          echo "Configure GOOGLE_PLAY_TEST_SERVICE_ACCOUNT_JSON_BASE64 or GOOGLE_PLAY_TEST_ACCESS_TOKEN in play-internal." >&2
+          exit 1
+
+      - name: Upload phone and Wear bundles to their Play internal tracks
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_args=()
+          if [[ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" ]]; then
+            auth_args+=(--service-account-file "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE}")
+          fi
+          node .release-tooling/scripts/native-play-release.mjs upload-internal \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --source-commit "${SOURCE_COMMIT}" \
+            --receipt-file build/native-play-receipt.json \
+            "${auth_args[@]}"
+
+      - name: Remove Google Play credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" "${RUNNER_TEMP}/google-play-service-account.json"
+          {
+            echo 'GOOGLE_PLAY_ACCESS_TOKEN='
+            echo 'GOOGLE_PLAY_SERVICE_ACCOUNT_FILE='
+          } >> "${GITHUB_ENV}"
+
+  recover-internal:
+    name: Recover Play-accepted internal release receipt
+    needs: validate-source
+    if: inputs.operation == 'recover-internal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: play-internal
+    permissions:
+      attestations: read
+      contents: read
+    env:
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Require current protected master workflow authority
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The workflow revision must be an exact full Git SHA." >&2
+            exit 1
+          fi
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "This job's workflow revision ${WORKFLOW_SHA} is stale; current protected master is ${LIVE_MASTER_SHA}. Start a new run from current master." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Checkout reviewed Publisher tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-tooling
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Recheck current protected master immediately before credentials
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before credentials were admitted; start a new run from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Require Google Play authentication
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_TEST_ACCESS_TOKEN }}
+          SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_TEST_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            SERVICE_ACCOUNT_FILE="${RUNNER_TEMP}/google-play-service-account.json"
+            printf '%s' "${SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${SERVICE_ACCOUNT_FILE}"
+            chmod 600 "${SERVICE_ACCOUNT_FILE}"
+            test -s "${SERVICE_ACCOUNT_FILE}"
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          if [[ -n "${ACCESS_TOKEN}" ]]; then
+            echo "GOOGLE_PLAY_ACCESS_TOKEN=${ACCESS_TOKEN}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          echo "Configure GOOGLE_PLAY_TEST_SERVICE_ACCOUNT_JSON_BASE64 or GOOGLE_PLAY_TEST_ACCESS_TOKEN in play-internal." >&2
+          exit 1
+
+      - name: Reconstruct canonical receipt solely from exact Play observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_args=()
+          if [[ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" ]]; then
+            auth_args+=(--service-account-file "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE}")
+          fi
+          node .release-tooling/scripts/native-play-release.mjs recover-internal \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --source-commit "${SOURCE_COMMIT}" \
+            --receipt-file "${RUNNER_TEMP}/native-play-recovery-receipt.json" \
+            "${auth_args[@]}"
+
+      - name: Remove Google Play credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" "${RUNNER_TEMP}/google-play-service-account.json"
+          {
+            echo 'GOOGLE_PLAY_ACCESS_TOKEN='
+            echo 'GOOGLE_PLAY_SERVICE_ACCOUNT_FILE='
+          } >> "${GITHUB_ENV}"
+
+      - name: Install checksum-verified GitHub CLI after Play credential cleanup
+        id: recovery_gh_cli
+        shell: bash
+        env:
+          GH_CLI_SHA256: a2c9b8497e1f85b1ad0dfcb78b5a622e098801b8e461e459e88e1ee12f018112
+          GH_CLI_URL: https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_linux_amd64.tar.gz
+        run: |
+          set -euo pipefail
+          test -z "${GOOGLE_PLAY_ACCESS_TOKEN:-}"
+          test -z "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}"
+          test ! -e "${RUNNER_TEMP}/google-play-service-account.json"
+          GH_CLI_ARCHIVE="${RUNNER_TEMP}/gh_2.97.0_linux_amd64.tar.gz"
+          GH_CLI_ROOT="${RUNNER_TEMP}/gh-cli"
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "${GH_CLI_ARCHIVE}" "${GH_CLI_URL}"
+          echo "${GH_CLI_SHA256}  ${GH_CLI_ARCHIVE}" | sha256sum --check --strict
+          mkdir -p "${GH_CLI_ROOT}"
+          tar --extract --gzip --file "${GH_CLI_ARCHIVE}" \
+            --directory "${GH_CLI_ROOT}" --strip-components=2 \
+            gh_2.97.0_linux_amd64/bin/gh
+          GH_CLI="${GH_CLI_ROOT}/gh"
+          chmod 0755 "${GH_CLI}"
+          "${GH_CLI}" version
+          echo "path=${GH_CLI}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve fresh protected master and current receipt revocations
+        id: recovery_trust
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Protected master advanced before recovery receipt verification; dispatch a new current workflow run." >&2
+            exit 1
+          fi
+          AUTH_HEADER="$(printf 'x-access-token:%s' "${READ_ONLY_GITHUB_TOKEN}" | base64 -w0)"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${AUTH_HEADER}" \
+            fetch --force --no-tags origin '+refs/heads/master:refs/remotes/origin/master'
+          unset AUTH_HEADER
+          TRUSTED_MASTER="$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')"
+          if [[ "${TRUSTED_MASTER}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Protected master moved while resolving the native Play receipt policy; retry from the new workflow." >&2
+            exit 1
+          fi
+          TRUST_FILE="${RUNNER_TEMP}/native-play-attestation-trusted-workflow-shas"
+          git --no-replace-objects show \
+            "${TRUSTED_MASTER}:.github/native-play-attestation-trusted-workflow-shas" > "${TRUST_FILE}"
+          node .release-tooling/scripts/native-play-receipt.mjs authorize-workflow \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --trust-file "${TRUST_FILE}" \
+            --candidate-workflow-revision "${SOURCE_COMMIT}" \
+            --current-workflow-revision "${WORKFLOW_SHA}" \
+            --trusted-master-commit "${TRUSTED_MASTER}" \
+            --source-commit "${SOURCE_COMMIT}" > /dev/null
+          echo "trusted_master=${TRUSTED_MASTER}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify exact native Play receipt attestation after Play cleanup
+        shell: bash
+        env:
+          GH_CLI: ${{ steps.recovery_gh_cli.outputs.path }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -z "${GOOGLE_PLAY_ACCESS_TOKEN:-}"
+          test -z "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}"
+          RECEIPT_FILE="${RUNNER_TEMP}/native-play-recovery-receipt.json"
+          VERIFICATION_FILE="${RUNNER_TEMP}/native-play-recovery-attestation.json"
+          "${GH_CLI}" attestation verify "${RECEIPT_FILE}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/native-release.yml" \
+            --signer-digest "${SOURCE_COMMIT}" \
+            --source-digest "${SOURCE_COMMIT}" \
+            --source-ref refs/heads/master \
+            --predicate-type https://slsa.dev/provenance/v1 \
+            --limit 100 \
+            --deny-self-hosted-runners \
+            --format json > "${VERIFICATION_FILE}"
+          node .release-tooling/scripts/native-play-receipt.mjs discover-workflows \
+            --repository "${GITHUB_REPOSITORY}" \
+            --source-commit "${SOURCE_COMMIT}" \
+            --verification-file "${VERIFICATION_FILE}" > /dev/null
+
+  sign-native-release-tag:
+    name: Sign exact Play-accepted native source
+    needs: [validate-source, publish-internal, recover-internal]
+    if: >-
+      always() &&
+      needs.validate-source.result == 'success' &&
+      (
+        (inputs.operation == 'upload-internal' && needs.publish-internal.result == 'success') ||
+        (inputs.operation == 'recover-internal' && needs.recover-internal.result == 'success')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: native-release-attestation
+    permissions:
+      contents: read
+    outputs:
+      tag_object: ${{ steps.attestation.outputs.tag_object }}
+      tag_object_base64: ${{ steps.attestation.outputs.tag_object_base64 }}
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Require current protected master workflow authority
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The workflow revision must be an exact full Git SHA." >&2
+            exit 1
+          fi
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "This job's workflow revision ${WORKFLOW_SHA} is stale; current protected master is ${LIVE_MASTER_SHA}. Start a new run from current master." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact Play-accepted source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Checkout reviewed release safety tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-tooling
+
+      - name: Checkout current native tag trust set
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: master
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-trust
+
+      - name: Bind current native tag trust set
+        id: native-trust
+        shell: bash
+        run: |
+          set -euo pipefail
+          TRUST_SET_COMMIT="$(git --no-replace-objects -C .release-trust rev-parse HEAD)"
+          [[ "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]
+          test -s .release-trust/.github/native-release-tag-allowed-signers
+          echo "commit=${TRUST_SET_COMMIT}" >> "${GITHUB_OUTPUT}"
+          printf 'Native tag trust set: `%s` from current `master`.\n' "${TRUST_SET_COMMIT}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Resolve any existing signed native tag
+        id: existing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${SOURCE_COMMIT}"
+          REMOTE_TAG="$(git ls-remote --tags --refs origin "refs/tags/${NATIVE_TAG}")"
+          if [[ -z "${REMOTE_TAG}" ]]; then
+            echo "existing=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          if [[ "${REMOTE_TAG}" == *$'\n'* ]]; then
+            echo "Origin returned more than one exact ref for ${NATIVE_TAG}." >&2
+            exit 1
+          fi
+          read -r REMOTE_OBJECT REMOTE_REF <<< "${REMOTE_TAG}"
+          if [[ ! "${REMOTE_OBJECT}" =~ ^[0-9a-f]{40}$ || "${REMOTE_REF}" != "refs/tags/${NATIVE_TAG}" ]]; then
+            echo "Origin returned a malformed exact ref for ${NATIVE_TAG}." >&2
+            exit 1
+          fi
+          git fetch --force origin "+refs/tags/${NATIVE_TAG}:refs/tags/${NATIVE_TAG}"
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+          echo "existing=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Recheck current protected master immediately before credentials
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before credentials were admitted; start a new run from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Create signed annotated native tag
+        if: steps.existing.outputs.existing != 'true'
+        shell: bash
+        env:
+          SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.NATIVE_RELEASE_TAG_SIGNING_PRIVATE_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SIGNING_PRIVATE_KEY_BASE64}" ]]; then
+            echo "Configure NATIVE_RELEASE_TAG_SIGNING_PRIVATE_KEY_BASE64 in native-release-attestation." >&2
+            exit 1
+          fi
+          umask 077
+          SIGNING_KEY="${RUNNER_TEMP}/native-release-tag-signing-key"
+          cleanup_signing_key() {
+            rm -f "${SIGNING_KEY}"
+          }
+          trap cleanup_signing_key EXIT
+          printf '%s' "${SIGNING_PRIVATE_KEY_BASE64}" | base64 --decode > "${SIGNING_KEY}"
+          test -s "${SIGNING_KEY}"
+          chmod 600 "${SIGNING_KEY}"
+          git \
+            -c gpg.format=ssh \
+            -c "user.signingkey=${SIGNING_KEY}" \
+            -c user.name=calibrate-native-release \
+            -c user.email=release-attestation@calibratehealth.app \
+            tag --sign --annotate "${NATIVE_TAG}" "${SOURCE_COMMIT}" \
+            --message "Calibrate Android native release ${NATIVE_TAG}"
+          cleanup_signing_key
+          trap - EXIT
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+
+      - name: Export the verified public tag object
+        id: attestation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+          TAG_OBJECT="$(git --no-replace-objects rev-parse --verify "refs/tags/${NATIVE_TAG}^{tag}")"
+          TAG_OBJECT_BASE64="$(git --no-replace-objects cat-file tag "${TAG_OBJECT}" | base64 --wrap=0)"
+          test -n "${TAG_OBJECT_BASE64}"
+          {
+            echo "tag_object=${TAG_OBJECT}"
+            echo "tag_object_base64=${TAG_OBJECT_BASE64}"
+          } >> "${GITHUB_OUTPUT}"
+
+  tag-native-release:
+    name: Publish signed Play-accepted native tag
+    needs: [validate-source, sign-native-release-tag]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: native-release-tags
+    permissions:
+      contents: read
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SIGNED_TAG_OBJECT: ${{ needs.sign-native-release-tag.outputs.tag_object }}
+      SIGNED_TAG_OBJECT_BASE64: ${{ needs.sign-native-release-tag.outputs.tag_object_base64 }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Require current protected master workflow authority
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The workflow revision must be an exact full Git SHA." >&2
+            exit 1
+          fi
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "This job's workflow revision ${WORKFLOW_SHA} is stale; current protected master is ${LIVE_MASTER_SHA}. Start a new run from current master." >&2
+            exit 1
+          fi
+
+      - name: Recheck current protected master immediately before credentials
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before credentials were admitted; start a new run from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Mint restricted native tag token
+        id: tag-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ vars.NATIVE_RELEASE_TAG_APP_ID }}
+          private-key: ${{ secrets.NATIVE_RELEASE_TAG_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout exact Play-accepted source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ inputs.source_commit }}
+          token: ${{ steps.tag-token.outputs.token }}
+
+      - name: Checkout reviewed release safety tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-tooling
+
+      - name: Checkout current native tag trust set
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: master
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-trust
+
+      - name: Bind current native tag trust set
+        id: native-trust
+        shell: bash
+        run: |
+          set -euo pipefail
+          TRUST_SET_COMMIT="$(git --no-replace-objects -C .release-trust rev-parse HEAD)"
+          [[ "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]
+          test -s .release-trust/.github/native-release-tag-allowed-signers
+          echo "commit=${TRUST_SET_COMMIT}" >> "${GITHUB_OUTPUT}"
+          printf 'Native tag trust set: `%s` from current `master`.\n' "${TRUST_SET_COMMIT}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Reconstruct, publish, and reverify signed native tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${SOURCE_COMMIT}"
+          if [[ ! "${SIGNED_TAG_OBJECT}" =~ ^[0-9a-f]{40}$ || ! "${SIGNED_TAG_OBJECT_BASE64}" =~ ^[A-Za-z0-9+/]+={0,2}$ ]]; then
+            echo "The signing job returned malformed tag object metadata." >&2
+            exit 1
+          fi
+
+          TAG_OBJECT_FILE="${RUNNER_TEMP}/native-release-tag-object"
+          printf '%s' "${SIGNED_TAG_OBJECT_BASE64}" | base64 --decode > "${TAG_OBJECT_FILE}"
+          RECONSTRUCTED_TAG_OBJECT="$(git hash-object -t tag -w "${TAG_OBJECT_FILE}")"
+          rm -f "${TAG_OBJECT_FILE}"
+          if [[ "${RECONSTRUCTED_TAG_OBJECT}" != "${SIGNED_TAG_OBJECT}" ]]; then
+            echo "The reconstructed native tag object does not match the signing job." >&2
+            exit 1
+          fi
+          git update-ref "refs/tags/${NATIVE_TAG}" "${SIGNED_TAG_OBJECT}"
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+
+          REMOTE_TAG="$(git ls-remote --tags --refs origin "refs/tags/${NATIVE_TAG}")"
+          if [[ -z "${REMOTE_TAG}" ]]; then
+            if ! git push origin "refs/tags/${NATIVE_TAG}:refs/tags/${NATIVE_TAG}"; then
+              echo "Initial tag push lost a race; verifying the exact remote attestation." >&2
+            fi
+          elif [[ "${REMOTE_TAG}" == *$'\n'* ]]; then
+            echo "Origin returned more than one exact ref for ${NATIVE_TAG}." >&2
+            exit 1
+          fi
+
+          git fetch --force origin "+refs/tags/${NATIVE_TAG}:refs/tags/${NATIVE_TAG}"
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+
+  promote-closed:
+    name: Promote exact internal build to Play closed testing
+    needs: validate-source
+    if: inputs.operation == 'promote-closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: play-internal
+    permissions:
+      contents: read
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Require current protected master workflow authority
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The workflow revision must be an exact full Git SHA." >&2
+            exit 1
+          fi
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "This job's workflow revision ${WORKFLOW_SHA} is stale; current protected master is ${LIVE_MASTER_SHA}. Start a new run from current master." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Checkout reviewed release safety tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-tooling
+
+      - name: Checkout current native tag trust set
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: master
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-trust
+
+      - name: Bind current native tag trust set
+        id: native-trust
+        shell: bash
+        run: |
+          set -euo pipefail
+          TRUST_SET_COMMIT="$(git --no-replace-objects -C .release-trust rev-parse HEAD)"
+          [[ "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]
+          test -s .release-trust/.github/native-release-tag-allowed-signers
+          echo "commit=${TRUST_SET_COMMIT}" >> "${GITHUB_OUTPUT}"
+          printf 'Native tag trust set: `%s` from current `master`.\n' "${TRUST_SET_COMMIT}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Require exact signed published native tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE_TAG="$(git ls-remote --tags --refs origin "refs/tags/${NATIVE_TAG}")"
+          if [[ -z "${REMOTE_TAG}" ]]; then
+            echo "Upload ${NATIVE_TAG} to Play internal before closed-track promotion." >&2
+            exit 1
+          fi
+          if [[ "${REMOTE_TAG}" == *$'\n'* ]]; then
+            echo "Origin returned more than one exact ref for ${NATIVE_TAG}." >&2
+            exit 1
+          fi
+          git fetch --force origin "+refs/tags/${NATIVE_TAG}:refs/tags/${NATIVE_TAG}"
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+
+      - name: Recheck current protected master immediately before credentials
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before credentials were admitted; start a new run from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Require Google Play authentication
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_TEST_ACCESS_TOKEN }}
+          SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_TEST_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            SERVICE_ACCOUNT_FILE="${RUNNER_TEMP}/google-play-service-account.json"
+            printf '%s' "${SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${SERVICE_ACCOUNT_FILE}"
+            chmod 600 "${SERVICE_ACCOUNT_FILE}"
+            test -s "${SERVICE_ACCOUNT_FILE}"
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          if [[ -n "${ACCESS_TOKEN}" ]]; then
+            echo "GOOGLE_PLAY_ACCESS_TOKEN=${ACCESS_TOKEN}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          echo "Configure GOOGLE_PLAY_TEST_SERVICE_ACCOUNT_JSON_BASE64 or GOOGLE_PLAY_TEST_ACCESS_TOKEN in play-internal." >&2
+          exit 1
+
+      - name: Promote the exact internal phone and Wear versions without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_args=()
+          if [[ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" ]]; then
+            auth_args+=(--service-account-file "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE}")
+          fi
+          node .release-tooling/scripts/native-play-release.mjs promote-closed \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --source-commit "${SOURCE_COMMIT}" \
+            "${auth_args[@]}"
+
+      - name: Remove Google Play credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" "${RUNNER_TEMP}/google-play-service-account.json"
+          {
+            echo 'GOOGLE_PLAY_ACCESS_TOKEN='
+            echo 'GOOGLE_PLAY_SERVICE_ACCOUNT_FILE='
+          } >> "${GITHUB_ENV}"
+
+  promote-production:
+    name: Approve and promote exact closed build to Play production
+    needs: validate-source
+    if: inputs.operation == 'promote-production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Required reviewers on this environment are the public-channel approval gate.
+    environment: play-production
+    permissions:
+      contents: read
+    env:
+      NATIVE_TAG: ${{ needs.validate-source.outputs.native_tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+
+    steps:
+      - name: Require current protected master workflow authority
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The workflow revision must be an exact full Git SHA." >&2
+            exit 1
+          fi
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "This job's workflow revision ${WORKFLOW_SHA} is stale; current protected master is ${LIVE_MASTER_SHA}. Start a new run from current master." >&2
+            exit 1
+          fi
+
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.source_commit }}
+
+      - name: Checkout reviewed release safety tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-tooling
+
+      - name: Checkout current native tag trust set
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: master
+          fetch-depth: 1
+          persist-credentials: false
+          path: .release-trust
+
+      - name: Bind current native tag trust set
+        id: native-trust
+        shell: bash
+        run: |
+          set -euo pipefail
+          TRUST_SET_COMMIT="$(git --no-replace-objects -C .release-trust rev-parse HEAD)"
+          [[ "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]
+          test -s .release-trust/.github/native-release-tag-allowed-signers
+          echo "commit=${TRUST_SET_COMMIT}" >> "${GITHUB_OUTPUT}"
+          printf 'Native tag trust set: `%s` from current `master`.\n' "${TRUST_SET_COMMIT}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+
+      - name: Require exact signed published native tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          REMOTE_TAG="$(git ls-remote --tags --refs origin "refs/tags/${NATIVE_TAG}")"
+          if [[ -z "${REMOTE_TAG}" ]]; then
+            echo "Upload ${NATIVE_TAG} to Play internal before production promotion." >&2
+            exit 1
+          fi
+          if [[ "${REMOTE_TAG}" == *$'\n'* ]]; then
+            echo "Origin returned more than one exact ref for ${NATIVE_TAG}." >&2
+            exit 1
+          fi
+          git fetch --force origin "+refs/tags/${NATIVE_TAG}:refs/tags/${NATIVE_TAG}"
+          node .release-tooling/scripts/native-tag-attestation.mjs verify \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --tag "${NATIVE_TAG}" \
+            --expected-commit "${SOURCE_COMMIT}" \
+            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers
+
+      - name: Recheck current protected master immediately before credentials
+        shell: bash
+        env:
+          READ_ONLY_GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          LIVE_MASTER_SHA="$(
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'Cache-Control: no-cache' \
+              --header "Authorization: Bearer ${READ_ONLY_GITHUB_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
+              jq --exit-status --raw-output \
+                'select(.ref == "refs/heads/master") | .object.sha | select(type == "string" and test("^[0-9a-f]{40}$"))'
+          )"
+          if [[ "${WORKFLOW_SHA}" != "${LIVE_MASTER_SHA}" ]]; then
+            echo "Master advanced before credentials were admitted; start a new run from current protected master ${LIVE_MASTER_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Require Google Play authentication
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ secrets.GOOGLE_PLAY_PRODUCTION_ACCESS_TOKEN }}
+          SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.GOOGLE_PLAY_PRODUCTION_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${SERVICE_ACCOUNT_JSON_BASE64}" ]]; then
+            SERVICE_ACCOUNT_FILE="${RUNNER_TEMP}/google-play-service-account.json"
+            printf '%s' "${SERVICE_ACCOUNT_JSON_BASE64}" | base64 --decode > "${SERVICE_ACCOUNT_FILE}"
+            chmod 600 "${SERVICE_ACCOUNT_FILE}"
+            test -s "${SERVICE_ACCOUNT_FILE}"
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE=${SERVICE_ACCOUNT_FILE}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          if [[ -n "${ACCESS_TOKEN}" ]]; then
+            echo "GOOGLE_PLAY_ACCESS_TOKEN=${ACCESS_TOKEN}" >> "${GITHUB_ENV}"
+            exit 0
+          fi
+          echo "Configure GOOGLE_PLAY_PRODUCTION_SERVICE_ACCOUNT_JSON_BASE64 or GOOGLE_PLAY_PRODUCTION_ACCESS_TOKEN in play-production." >&2
+          exit 1
+
+      - name: Promote the exact closed phone and Wear versions without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_args=()
+          if [[ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" ]]; then
+            auth_args+=(--service-account-file "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE}")
+          fi
+          node .release-tooling/scripts/native-play-release.mjs promote-production \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --source-commit "${SOURCE_COMMIT}" \
+            "${auth_args[@]}"
+
+      - name: Remove Google Play credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "${GOOGLE_PLAY_SERVICE_ACCOUNT_FILE:-}" "${RUNNER_TEMP}/google-play-service-account.json"
+          {
+            echo 'GOOGLE_PLAY_ACCESS_TOKEN='
+            echo 'GOOGLE_PLAY_SERVICE_ACCOUNT_FILE='
+          } >> "${GITHUB_ENV}"

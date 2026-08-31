@@ -2,16 +2,68 @@ import { createHash } from 'node:crypto';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
+
+import {
+  parseNativeTagAllowedSigners,
+  verifyNativeTagAttestation
+} from './native-tag-attestation.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = path.resolve(SCRIPT_DIR, '..');
 export const RELEASE_MANIFEST_PATH = path.join(REPOSITORY_ROOT, 'shared', 'release.json');
+export const GOOGLE_PLAY_MAX_VERSION_CODE = 2_100_000_000;
 
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const STABLE_SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const RELEASE_TAG_PATTERN = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const NATIVE_RELEASE_TAG_PATTERN = /^native-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const HISTORICAL_NATIVE_RELEASE_TAG_PATTERN = /^(?:native-)?v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const NATIVE_TAG_ALLOWED_SIGNERS_REPOSITORY_PATH = '.github/native-release-tag-allowed-signers';
 const RELEASE_BUMPS = new Set(['major', 'minor', 'patch']);
+const RELEASE_VALIDATION_MODES = new Set(['current', 'historical-prepared']);
+export const HISTORICAL_PREPARED_RELEASE_COMMIT = '93ff7474521fd93456027df0729d8797e9c47b54';
+const SERVER_RELEASE_FILE_PATHS = Object.freeze({
+  manifest: 'shared/release.json',
+  diagnostics: 'shared/client-diagnostic-versions.json',
+  rootPackage: 'package.json',
+  rootLock: 'package-lock.json',
+  backendPackage: 'backend/package.json',
+  backendLock: 'backend/package-lock.json',
+  openApi: 'docs/openapi/v1.yaml',
+  generatedApi: 'packages/api-client/src/generated/v1.ts'
+});
+export const PREPARED_RELEASE_MIRROR_PATHS = Object.freeze(
+  Object.values(SERVER_RELEASE_FILE_PATHS).sort()
+);
+const HISTORICAL_PREPARED_RELEASE_MANIFEST = {
+  schema_version: 1,
+  server: {
+    version: '0.35.0',
+    api: { current: 'v1', supported: ['v1'], legacy_alias: '/api' }
+  },
+  android: {
+    application_id: 'app.calibratehealth.mobile',
+    mobile: {
+      version_name: '0.2.6',
+      version_code: 8,
+      native_release_tag: 'v0.13.2',
+      minimum_supported_version: '0.1.0'
+    },
+    wear: {
+      version_name: '0.2.6',
+      version_code: 8,
+      minimum_supported_version: '0.2.0'
+    },
+    channels: {
+      debug: { wear_build_type: 'debug' },
+      internal: { mobile_eas_profile: 'internal', wear_build_type: 'internal' },
+      production: { mobile_eas_profile: 'production', wear_build_type: 'release' }
+    }
+  }
+};
 
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'));
 
@@ -28,6 +80,75 @@ const replaceExactlyOnce = (source, current, replacement, label) => {
     throw new Error(`${label} contains the expected current release value more than once.`);
   }
   return `${source.slice(0, firstIndex)}${replacement}${source.slice(firstIndex + current.length)}`;
+};
+
+/** Derive every canonical server/web release mirror from the exact parent bytes. */
+export function createServerReleaseReplacements(originals, nextVersion) {
+  if (!STABLE_SEMVER_PATTERN.test(nextVersion)) {
+    throw new Error(`Invalid next stable release version: ${nextVersion}`);
+  }
+  for (const key of Object.keys(SERVER_RELEASE_FILE_PATHS)) {
+    if (typeof originals?.[key] !== 'string') {
+      throw new Error(`Missing canonical release source: ${SERVER_RELEASE_FILE_PATHS[key]}.`);
+    }
+  }
+
+  const manifest = JSON.parse(originals.manifest);
+  const diagnostics = JSON.parse(originals.diagnostics);
+  const rootPackage = JSON.parse(originals.rootPackage);
+  const rootLock = JSON.parse(originals.rootLock);
+  const backendPackage = JSON.parse(originals.backendPackage);
+  const backendLock = JSON.parse(originals.backendLock);
+  const currentVersion = manifest?.server?.version;
+  const previousVersion = diagnostics?.previous_web_release;
+  if (!STABLE_SEMVER_PATTERN.test(currentVersion)) {
+    throw new Error(`Invalid current stable release version: ${currentVersion}`);
+  }
+
+  manifest.server.version = nextVersion;
+  diagnostics.previous_web_release = currentVersion;
+  diagnostics.supported_versions.web = [nextVersion, currentVersion];
+  rootPackage.version = nextVersion;
+  rootLock.version = nextVersion;
+  rootLock.packages[''].version = nextVersion;
+  backendPackage.version = nextVersion;
+  backendLock.version = nextVersion;
+  backendLock.packages[''].version = nextVersion;
+
+  const openApiCurrent = `- properties: { platform: { const: web }, version: { enum: [${currentVersion}, ${previousVersion}] } }`;
+  const openApiNext = `- properties: { platform: { const: web }, version: { enum: [${nextVersion}, ${currentVersion}] } }`;
+  const generatedCurrent = `version?: "${currentVersion}" | "${previousVersion}";`;
+  const generatedNext = `version?: "${nextVersion}" | "${currentVersion}";`;
+  return {
+    manifest: formatJson(manifest, originals.manifest),
+    diagnostics: formatJson(diagnostics, originals.diagnostics),
+    rootPackage: formatJson(rootPackage, originals.rootPackage),
+    rootLock: formatJson(rootLock, originals.rootLock),
+    backendPackage: formatJson(backendPackage, originals.backendPackage),
+    backendLock: formatJson(backendLock, originals.backendLock),
+    openApi: replaceExactlyOnce(
+      originals.openApi,
+      openApiCurrent,
+      openApiNext,
+      SERVER_RELEASE_FILE_PATHS.openApi
+    ),
+    generatedApi: replaceExactlyOnce(
+      originals.generatedApi,
+      generatedCurrent,
+      generatedNext,
+      SERVER_RELEASE_FILE_PATHS.generatedApi
+    )
+  };
+}
+
+const replacePatternExactlyOnce = (source, pattern, replacement, label) => {
+  const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
+  const globalPattern = new RegExp(pattern.source, flags);
+  const matches = [...source.matchAll(globalPattern)];
+  if (matches.length !== 1) {
+    throw new Error(`${label} must contain exactly one matching release value; found ${matches.length}.`);
+  }
+  return source.replace(globalPattern, replacement);
 };
 
 const readOptionalFile = async (filePath) => {
@@ -83,7 +204,7 @@ export const compareSemver = (left, right) => {
   return 0;
 };
 
-/** Calculate the next strict stable server release without losing precision. */
+/** Calculate the next strict stable release without losing precision. */
 export function nextReleaseVersion(version, bump) {
   if (!STABLE_SEMVER_PATTERN.test(version)) throw new Error(`Invalid stable release version: ${version}`);
   if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
@@ -211,8 +332,25 @@ export function getReleasePlan(manifest, latestTag = null) {
   };
 }
 
-export function validateManifest(manifest) {
+export function validateManifest(manifest, { validationMode = 'current', sourceCommit = null } = {}) {
+  if (!RELEASE_VALIDATION_MODES.has(validationMode)) {
+    throw new Error(`Unknown release validation mode: ${validationMode}`);
+  }
+  const isHistoricalPreparedManifest = isDeepStrictEqual(manifest, HISTORICAL_PREPARED_RELEASE_MANIFEST);
+  const isExactHistoricalPreparedRelease = validationMode === 'historical-prepared'
+    && sourceCommit === HISTORICAL_PREPARED_RELEASE_COMMIT
+    && isHistoricalPreparedManifest;
+  const enforceCurrentNativePolicy = !isExactHistoricalPreparedRelease;
   const errors = [];
+  if (
+    validationMode === 'historical-prepared'
+    && isHistoricalPreparedManifest
+    && sourceCommit !== HISTORICAL_PREPARED_RELEASE_COMMIT
+  ) {
+    errors.push(
+      `Historical prepared release v0.35.0 requires source commit ${HISTORICAL_PREPARED_RELEASE_COMMIT}.`
+    );
+  }
   const requiredSemvers = [
     'server.version',
     'android.mobile.version_name',
@@ -233,6 +371,12 @@ export function validateManifest(manifest) {
     const versionCode = getPath(manifest, `android.${client}.version_code`);
     if (!Number.isSafeInteger(versionCode) || versionCode < 1) {
       errors.push(`android.${client}.version_code must be a positive integer.`);
+    } else if (versionCode > GOOGLE_PLAY_MAX_VERSION_CODE) {
+      errors.push(`android.${client}.version_code cannot exceed Google Play's ${GOOGLE_PLAY_MAX_VERSION_CODE} limit.`);
+    } else if (enforceCurrentNativePolicy && client === 'mobile' && versionCode % 2 !== 1) {
+      errors.push('android.mobile.version_code must be odd so phone and Wear releases remain globally unique in Play.');
+    } else if (enforceCurrentNativePolicy && client === 'wear' && versionCode % 2 !== 0) {
+      errors.push('android.wear.version_code must be even so phone and Wear releases remain globally unique in Play.');
     }
     const current = getPath(manifest, `android.${client}.version_name`);
     const minimum = getPath(manifest, `android.${client}.minimum_supported_version`);
@@ -241,9 +385,34 @@ export function validateManifest(manifest) {
     }
   }
 
+  const mobileVersionCode = manifest?.android?.mobile?.version_code;
+  const wearVersionCode = manifest?.android?.wear?.version_code;
+  if (
+    enforceCurrentNativePolicy
+    && Number.isSafeInteger(mobileVersionCode)
+    && mobileVersionCode === wearVersionCode
+  ) {
+    errors.push('android mobile and Wear version_code values must be globally unique in Play.');
+  }
+
   const nativeReleaseTag = manifest?.android?.mobile?.native_release_tag;
-  if (typeof nativeReleaseTag !== 'string' || !/^v\d+\.\d+\.\d+$/.test(nativeReleaseTag)) {
-    errors.push('android.mobile.native_release_tag must be a stable vMAJOR.MINOR.PATCH tag.');
+  const mobileVersionName = manifest?.android?.mobile?.version_name;
+  if (enforceCurrentNativePolicy) {
+    if (typeof nativeReleaseTag !== 'string' || !NATIVE_RELEASE_TAG_PATTERN.test(nativeReleaseTag)) {
+      errors.push('android.mobile.native_release_tag must be a stable native-vMAJOR.MINOR.PATCH tag.');
+    } else if (
+      STABLE_SEMVER_PATTERN.test(mobileVersionName ?? '') &&
+      nativeReleaseTag !== `native-v${mobileVersionName}`
+    ) {
+      errors.push('android.mobile.native_release_tag must match android.mobile.version_name.');
+    }
+  } else if (
+    typeof nativeReleaseTag !== 'string'
+    || !HISTORICAL_NATIVE_RELEASE_TAG_PATTERN.test(nativeReleaseTag)
+  ) {
+    errors.push(
+      'android.mobile.native_release_tag must be a stable vMAJOR.MINOR.PATCH or native-vMAJOR.MINOR.PATCH tag.'
+    );
   }
 
   const applicationId = manifest?.android?.application_id;
@@ -278,15 +447,22 @@ const capture = (source, pattern, label, errors) => {
   return match[1];
 };
 
-export async function checkRepository(root = REPOSITORY_ROOT) {
+export async function checkRepository(
+  root = REPOSITORY_ROOT,
+  { validationMode = 'current', sourceCommit = null } = {}
+) {
   const manifest = await readJson(path.join(root, 'shared', 'release.json'));
-  const errors = validateManifest(manifest);
+  const resolvedSourceCommit = validationMode === 'historical-prepared'
+    ? sourceCommit ?? tryGit(root, ['rev-parse', '--verify', 'HEAD^{commit}'])
+    : null;
+  const errors = validateManifest(manifest, { validationMode, sourceCommit: resolvedSourceCommit });
   const [
     rootPackage,
     rootPackageLock,
     backendPackage,
     backendPackageLock,
     mobilePackage,
+    pairingPackage,
     expoConfig,
     easConfig,
     mobileGradle,
@@ -301,6 +477,7 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     readJson(path.join(root, 'backend', 'package.json')),
     readJson(path.join(root, 'backend', 'package-lock.json')),
     readJson(path.join(root, 'mobile', 'package.json')),
+    readJson(path.join(root, 'mobile', 'modules', 'wear-pairing', 'package.json')),
     readJson(path.join(root, 'mobile', 'app.json')),
     readJson(path.join(root, 'mobile', 'eas.json')),
     readOptionalFile(path.join(root, 'mobile', 'android', 'app', 'build.gradle')),
@@ -324,6 +501,24 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     manifest.server.version
   );
   assertMatch(errors, 'mobile/package.json version', mobilePackage.version, manifest.android.mobile.version_name);
+  assertMatch(
+    errors,
+    'package-lock.json mobile workspace version',
+    rootPackageLock.packages?.mobile?.version,
+    manifest.android.mobile.version_name
+  );
+  assertMatch(
+    errors,
+    'Wear pairing package version',
+    pairingPackage.version,
+    manifest.android.mobile.version_name
+  );
+  assertMatch(
+    errors,
+    'package-lock.json Wear pairing workspace version',
+    rootPackageLock.packages?.['mobile/modules/wear-pairing']?.version,
+    manifest.android.mobile.version_name
+  );
   assertMatch(errors, 'mobile/app.json expo.version', expoConfig.expo?.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.android.versionCode', expoConfig.expo?.android?.versionCode, manifest.android.mobile.version_code);
   assertMatch(errors, 'mobile/app.json expo.android.package', expoConfig.expo?.android?.package, manifest.android.application_id);
@@ -370,11 +565,21 @@ export async function checkRepository(root = REPOSITORY_ROOT) {
     }
   }
 
-  const diagnosticWebVersions = diagnosticVersions?.supported_versions?.web;
-  if (Array.isArray(diagnosticWebVersions)) {
-    const expectedGeneratedWebVersions = `version?: "${diagnosticWebVersions.join('" | "')}";`;
-    if (!generatedApiClientSource.includes(expectedGeneratedWebVersions)) {
-      errors.push('Generated API client web diagnostic versions do not match client-diagnostic-versions.json.');
+  for (const diagnosticPlatform of CLIENT_DIAGNOSTIC_PLATFORMS) {
+    const versions = diagnosticVersions?.supported_versions?.[diagnosticPlatform];
+    if (Array.isArray(versions)) {
+      const marker = `platform?: "${diagnosticPlatform}";`;
+      const markerIndex = generatedApiClientSource.indexOf(marker);
+      const nextMarkerIndex = generatedApiClientSource.indexOf('platform?: "', markerIndex + marker.length);
+      const block = markerIndex < 0
+        ? ''
+        : generatedApiClientSource.slice(markerIndex, nextMarkerIndex < 0 ? undefined : nextMarkerIndex);
+      const expectedVersions = `version?: "${versions.join('" | "')}";`;
+      if (!block.includes(expectedVersions)) {
+        errors.push(
+          `Generated API client ${diagnosticPlatform} diagnostic versions do not match client-diagnostic-versions.json.`
+        );
+      }
     }
   }
 
@@ -389,9 +594,607 @@ const gitValue = (root, args, fallback = null) => {
   }
 };
 
+const runGit = (root, args) => execFileSync('git', ['--no-replace-objects', ...args], {
+  cwd: root,
+  encoding: 'utf8',
+  env: { ...process.env, GIT_NO_REPLACE_OBJECTS: '1' },
+  stdio: ['ignore', 'pipe', 'pipe']
+}).trim();
+
+const runGitRaw = (root, args) => execFileSync('git', ['--no-replace-objects', ...args], {
+  cwd: root,
+  encoding: 'utf8',
+  env: { ...process.env, GIT_NO_REPLACE_OBJECTS: '1' },
+  stdio: ['ignore', 'pipe', 'pipe']
+});
+
+const tryGit = (root, args, git = runGit) => {
+  try {
+    return git(root, args);
+  } catch {
+    return null;
+  }
+};
+
+const requireCommitId = (value, label) => {
+  if (typeof value !== 'string' || !/^[0-9a-f]{40}$/.test(value)) {
+    throw new Error(`${label} must be a full lowercase Git commit SHA.`);
+  }
+  return value;
+};
+
+const readGitJson = (root, revision, relativePath, git) => {
+  let source;
+  try {
+    source = git(root, ['show', `${revision}:${relativePath}`]);
+  } catch (error) {
+    throw new Error(`Unable to read ${relativePath} from ${revision}.`, { cause: error });
+  }
+  try {
+    return JSON.parse(source);
+  } catch (error) {
+    throw new Error(`${relativePath} from ${revision} is not valid JSON.`, { cause: error });
+  }
+};
+
+const parseAnnotatedReleaseTag = (source, expectedTag) => {
+  const headers = new Map();
+  for (const line of source.split(/\r?\n/)) {
+    if (line.length === 0) break;
+    const match = line.match(/^([^ ]+) (.+)$/);
+    if (!match) continue;
+    if (headers.has(match[1])) throw new Error(`Annotated release tag has duplicate ${match[1]} headers.`);
+    headers.set(match[1], match[2]);
+  }
+  const target = requireCommitId(headers.get('object'), 'Annotated release tag target');
+  if (headers.get('type') !== 'commit') {
+    throw new Error(`Annotated release tag ${expectedTag} must point directly to a commit.`);
+  }
+  if (headers.get('tag') !== expectedTag) {
+    throw new Error(
+      `Annotated release tag object names ${headers.get('tag') ?? 'no tag'}, not ${expectedTag}.`
+    );
+  }
+  return target;
+};
+
+const validatePreparedReleaseCandidate = async ({
+  root,
+  releaseTag,
+  expectedCommit,
+  publishLatest,
+  candidateParentCurrentMaster,
+  git,
+  gitRaw,
+  checkRepositoryFn,
+  masterAlreadyFetched
+}) => {
+  if (typeof releaseTag !== 'string' || !RELEASE_TAG_PATTERN.test(releaseTag)) {
+    throw new Error('Prepared release tag must match vMAJOR.MINOR.PATCH.');
+  }
+  if (expectedCommit === null) throw new Error('Expected release commit is required.');
+  requireCommitId(expectedCommit, 'Expected release commit');
+  if (typeof publishLatest !== 'boolean') throw new Error('publishLatest must be a boolean.');
+  if (typeof candidateParentCurrentMaster !== 'boolean') {
+    throw new Error('candidateParentCurrentMaster must be a boolean.');
+  }
+
+  if (!masterAlreadyFetched) {
+    try {
+      git(root, [
+        'fetch',
+        '--force',
+        '--no-tags',
+        'origin',
+        '+refs/heads/master:refs/remotes/origin/master'
+      ]);
+    } catch (error) {
+      throw new Error('Unable to fetch origin/master for prepared release verification.', { cause: error });
+    }
+  }
+
+  const checkoutCommit = requireCommitId(
+    git(root, ['rev-parse', '--verify', 'HEAD^{commit}']),
+    'Prepared release checkout'
+  );
+  if (checkoutCommit !== expectedCommit) {
+    throw new Error(`Prepared release checkout ${checkoutCommit} does not match expected commit ${expectedCommit}.`);
+  }
+
+  const masterCommit = requireCommitId(
+    git(root, ['rev-parse', '--verify', 'refs/remotes/origin/master^{commit}']),
+    'Fetched origin/master'
+  );
+  const parentLine = git(root, ['rev-list', '--parents', '-n', '1', checkoutCommit]);
+  const parentParts = parentLine.split(/\s+/);
+  if (parentParts.length !== 2 || parentParts[0] !== checkoutCommit) {
+    throw new Error(`Prepared release commit ${checkoutCommit} must have exactly one parent.`);
+  }
+  const parentCommit = requireCommitId(parentParts[1], 'Prepared release parent');
+  if (candidateParentCurrentMaster) {
+    if (parentCommit !== masterCommit) {
+      throw new Error(
+        `Prepared release parent ${parentCommit} does not match current origin/master ${masterCommit}.`
+      );
+    }
+  } else {
+    try {
+      git(root, ['merge-base', '--is-ancestor', checkoutCommit, masterCommit]);
+    } catch (error) {
+      throw new Error(
+        `Prepared release commit ${checkoutCommit} is not on current origin/master history.`,
+        { cause: error }
+      );
+    }
+  }
+  const diffSource = git(root, [
+    'diff-tree',
+    '--no-commit-id',
+    '--name-status',
+    '-r',
+    '--no-renames',
+    parentCommit,
+    checkoutCommit
+  ]);
+  const changedPaths = [];
+  for (const line of diffSource.split(/\r?\n/).filter((value) => value.length > 0)) {
+    const match = line.match(/^M\t(.+)$/);
+    if (!match) {
+      throw new Error('Prepared release diff must contain only modifications to canonical release mirrors.');
+    }
+    changedPaths.push(match[1]);
+  }
+  changedPaths.sort();
+  if (!isDeepStrictEqual(changedPaths, PREPARED_RELEASE_MIRROR_PATHS)) {
+    throw new Error(
+      `Prepared release diff must change exactly: ${PREPARED_RELEASE_MIRROR_PATHS.join(', ')}.`
+    );
+  }
+
+  const repositoryCheck = await checkRepositoryFn(root, { validationMode: 'historical-prepared' });
+  if (!repositoryCheck || !Array.isArray(repositoryCheck.errors) || repositoryCheck.errors.length > 0) {
+    const details = Array.isArray(repositoryCheck?.errors) ? repositoryCheck.errors.join('; ') : 'invalid result';
+    throw new Error(`Prepared release mirrors are inconsistent: ${details}`);
+  }
+  const manifestTag = getReleaseTag(repositoryCheck.manifest);
+  if (manifestTag !== releaseTag) {
+    throw new Error(`Prepared manifest resolves to ${manifestTag}, not release tag ${releaseTag}.`);
+  }
+
+  const parentManifest = readGitJson(root, parentCommit, 'shared/release.json', git);
+  const parentVersion = parentManifest?.server?.version;
+  const releaseVersion = repositoryCheck.manifest?.server?.version;
+  const permittedNextVersions = ['patch', 'minor', 'major'].map((bump) => (
+    nextReleaseVersion(parentVersion, bump)
+  ));
+  if (!permittedNextVersions.includes(releaseVersion)) {
+    throw new Error(
+      `Prepared release version ${releaseVersion} must be an exact patch, minor, or major advance from ${parentVersion}.`
+    );
+  }
+
+  const parentSources = {};
+  const candidateSources = {};
+  for (const [key, relativePath] of Object.entries(SERVER_RELEASE_FILE_PATHS)) {
+    try {
+      parentSources[key] = gitRaw(root, ['show', `${parentCommit}:${relativePath}`]);
+      candidateSources[key] = gitRaw(root, ['show', `${checkoutCommit}:${relativePath}`]);
+    } catch (error) {
+      throw new Error(`Unable to read exact prepared release bytes for ${relativePath}.`, { cause: error });
+    }
+  }
+  let expectedSources;
+  try {
+    expectedSources = createServerReleaseReplacements(parentSources, releaseVersion);
+  } catch (error) {
+    throw new Error('Unable to reconstruct the canonical prepared release from its parent.', { cause: error });
+  }
+  for (const [key, relativePath] of Object.entries(SERVER_RELEASE_FILE_PATHS)) {
+    if (candidateSources[key] !== expectedSources[key]) {
+      throw new Error(
+        `Prepared release mirror ${relativePath} does not match the canonical transformation from its parent.`
+      );
+    }
+  }
+
+  const masterManifest = readGitJson(root, masterCommit, 'shared/release.json', git);
+  const currentStableTag = getReleaseTag(masterManifest);
+  if (publishLatest && !candidateParentCurrentMaster && releaseTag !== currentStableTag) {
+    throw new Error(
+      `Refusing to publish latest for ${releaseTag}; current origin/master manifest resolves to ${currentStableTag}.`
+    );
+  }
+
+  return {
+    releaseTag,
+    sourceCommit: checkoutCommit,
+    parentCommit,
+    masterCommit,
+    currentStableTag
+  };
+};
+
+export async function verifyPreparedReleaseCandidate({
+  root = REPOSITORY_ROOT,
+  releaseTag,
+  expectedCommit = null,
+  publishLatest = false,
+  candidateParentCurrentMaster = false,
+  git = runGit,
+  gitRaw = git === runGit ? runGitRaw : git,
+  checkRepositoryFn = checkRepository
+}) {
+  return validatePreparedReleaseCandidate({
+    root,
+    releaseTag,
+    expectedCommit,
+    publishLatest,
+    candidateParentCurrentMaster,
+    git,
+    gitRaw,
+    checkRepositoryFn,
+    masterAlreadyFetched: false
+  });
+}
+
+const readCommitParents = (root, commit, label, git) => {
+  const parts = git(root, ['rev-list', '--parents', '-n', '1', commit]).trim().split(/\s+/);
+  if (parts[0] !== commit || parts.some((part) => !/^[0-9a-f]{40}$/.test(part))) {
+    throw new Error(`${label} returned malformed Git ancestry.`);
+  }
+  return parts.slice(1);
+};
+
+/**
+ * Refuse current credentials to stale workflow code. The sole exception is the exact canonical
+ * release child/merge produced by Cut release, whose tree cannot change workflow or tooling files.
+ */
+export async function verifyCurrentReleaseWorkflow({
+  root = REPOSITORY_ROOT,
+  workflowSha,
+  releaseCommit = null,
+  git = runGit,
+  gitRaw = git === runGit ? runGitRaw : git,
+  checkRepositoryFn = checkRepository
+}) {
+  requireCommitId(workflowSha, 'Workflow commit');
+  git(root, [
+    'fetch',
+    '--force',
+    '--no-tags',
+    'origin',
+    '+refs/heads/master:refs/remotes/origin/master'
+  ]);
+  const masterCommit = requireCommitId(
+    git(root, ['rev-parse', '--verify', 'refs/remotes/origin/master^{commit}']),
+    'Current protected master commit'
+  );
+  if (masterCommit === workflowSha) {
+    return { mode: 'current-master', workflowCommit: workflowSha, masterCommit };
+  }
+
+  requireCommitId(releaseCommit, 'Canonical release commit');
+  const candidateParents = readCommitParents(root, releaseCommit, 'Canonical release commit', git);
+  if (candidateParents.length !== 1 || candidateParents[0] !== workflowSha) {
+    throw new Error(
+      `Stale workflow ${workflowSha} is not the sole parent of canonical release ${releaseCommit}.`
+    );
+  }
+
+  const masterParents = readCommitParents(root, masterCommit, 'Current protected master commit', git);
+  let mode;
+  if (masterCommit === releaseCommit) {
+    if (masterParents.length !== 1 || masterParents[0] !== workflowSha) {
+      throw new Error('Current protected master is not the exact canonical release child.');
+    }
+    mode = 'canonical-release-child';
+  } else {
+    if (
+      masterParents.length !== 2
+      || masterParents[0] !== workflowSha
+      || masterParents[1] !== releaseCommit
+    ) {
+      throw new Error('Current protected master is not the exact canonical Cut release merge.');
+    }
+    const masterTree = requireCommitId(
+      git(root, ['rev-parse', '--verify', `${masterCommit}^{tree}`]),
+      'Current protected master tree'
+    );
+    const releaseTree = requireCommitId(
+      git(root, ['rev-parse', '--verify', `${releaseCommit}^{tree}`]),
+      'Canonical release tree'
+    );
+    if (masterTree !== releaseTree) {
+      throw new Error('Current protected master tree differs from the canonical release tree.');
+    }
+    mode = 'canonical-release-merge';
+  }
+
+  git(root, ['checkout', '--quiet', '--detach', releaseCommit]);
+  let manifest;
+  try {
+    manifest = JSON.parse(git(root, ['show', `${releaseCommit}:shared/release.json`]));
+  } catch (error) {
+    throw new Error('Canonical release manifest could not be read.', { cause: error });
+  }
+  const releaseTag = getReleaseTag(manifest);
+  await validatePreparedReleaseCandidate({
+    root,
+    releaseTag,
+    expectedCommit: releaseCommit,
+    publishLatest: true,
+    candidateParentCurrentMaster: false,
+    git,
+    gitRaw,
+    checkRepositoryFn,
+    masterAlreadyFetched: true
+  });
+  return { mode, workflowCommit: workflowSha, masterCommit, releaseCommit, releaseTag };
+}
+
+export async function verifyPreparedRelease({
+  root = REPOSITORY_ROOT,
+  releaseTag,
+  expectedCommit = null,
+  publishLatest = false,
+  git = runGit,
+  gitRaw = git === runGit ? runGitRaw : git,
+  checkRepositoryFn = checkRepository
+}) {
+  if (typeof releaseTag !== 'string' || !RELEASE_TAG_PATTERN.test(releaseTag)) {
+    throw new Error('Prepared release tag must match vMAJOR.MINOR.PATCH.');
+  }
+  if (expectedCommit === null) throw new Error('Expected release commit is required.');
+  requireCommitId(expectedCommit, 'Expected release commit');
+  if (typeof publishLatest !== 'boolean') throw new Error('publishLatest must be a boolean.');
+
+  const tagRef = `refs/tags/${releaseTag}`;
+  let remoteTagSource;
+  try {
+    remoteTagSource = git(root, ['ls-remote', '--tags', '--refs', 'origin', tagRef]);
+  } catch (error) {
+    throw new Error(`Unable to read exact release tag ${releaseTag} from origin.`, { cause: error });
+  }
+  const remoteLines = remoteTagSource.split(/\r?\n/).filter((line) => line.length > 0);
+  if (remoteLines.length !== 1) {
+    throw new Error(`Release tag ${releaseTag} must have exactly one published ref on origin.`);
+  }
+  const remoteMatch = remoteLines[0].match(/^([0-9a-f]{40})\s+(refs\/tags\/[^\s]+)$/);
+  if (!remoteMatch || remoteMatch[2] !== tagRef) {
+    throw new Error(`Origin returned a malformed exact ref for release tag ${releaseTag}.`);
+  }
+  const remoteTagObject = remoteMatch[1];
+
+  try {
+    git(root, [
+      'fetch',
+      '--force',
+      '--no-tags',
+      'origin',
+      '+refs/heads/master:refs/remotes/origin/master',
+      `+${tagRef}:${tagRef}`
+    ]);
+  } catch (error) {
+    throw new Error(`Unable to fetch release tag ${releaseTag} and origin/master.`, { cause: error });
+  }
+
+  const localTagObject = requireCommitId(
+    git(root, ['rev-parse', '--verify', `${tagRef}^{object}`]),
+    'Fetched release tag object'
+  );
+  if (localTagObject !== remoteTagObject) {
+    throw new Error(`Fetched release tag ${releaseTag} does not match its exact object on origin.`);
+  }
+  if (git(root, ['cat-file', '-t', tagRef]) !== 'tag') {
+    throw new Error(`Release tag ${releaseTag} must be an annotated tag.`);
+  }
+  const tagCommit = parseAnnotatedReleaseTag(git(root, ['cat-file', '-p', tagRef]), releaseTag);
+  const peeledCommit = requireCommitId(
+    git(root, ['rev-parse', '--verify', `${tagRef}^{commit}`]),
+    'Peeled release tag target'
+  );
+  if (peeledCommit !== tagCommit) {
+    throw new Error(`Release tag ${releaseTag} does not peel to its direct commit target.`);
+  }
+
+  if (tagCommit !== expectedCommit) {
+    throw new Error(`Release tag ${releaseTag} targets ${tagCommit}, not expected commit ${expectedCommit}.`);
+  }
+  const candidate = await validatePreparedReleaseCandidate({
+    root,
+    releaseTag,
+    expectedCommit,
+    publishLatest,
+    candidateParentCurrentMaster: false,
+    git,
+    gitRaw,
+    checkRepositoryFn,
+    masterAlreadyFetched: true
+  });
+  return { ...candidate, tagObject: remoteTagObject };
+}
+
+const readRemoteNativeReleaseTags = (root, { remote = 'origin', git = runGit } = {}) => {
+  let source;
+  try {
+    source = git(root, ['ls-remote', '--tags', '--refs', remote, 'refs/tags/native-v*']);
+  } catch (error) {
+    throw new Error(`Unable to read published native release tags from ${remote}.`, { cause: error });
+  }
+
+  const tags = new Map();
+  for (const line of source.split(/\r?\n/)) {
+    const match = line.match(/^([0-9a-f]+)\s+refs\/tags\/(native-v\d+\.\d+\.\d+)$/i);
+    if (!match || !NATIVE_RELEASE_TAG_PATTERN.test(match[2])) continue;
+    tags.set(match[2], match[1].toLowerCase());
+  }
+  return tags;
+};
+
+const latestNativeReleaseTagFromRefs = (tags) => [...tags.keys()].sort((left, right) => (
+  compareSemver(right.slice('native-v'.length), left.slice('native-v'.length))
+))[0] ?? null;
+
 export function getLatestStableTag(root = REPOSITORY_ROOT) {
   const tags = gitValue(root, ['tag', '--list', '--sort=-v:refname'], '');
   return tags.split(/\r?\n/).find((tag) => /^v\d+\.\d+\.\d+$/.test(tag)) || null;
+}
+
+export function getLatestNativeReleaseTag(root = REPOSITORY_ROOT, options = {}) {
+  return latestNativeReleaseTagFromRefs(readRemoteNativeReleaseTags(root, options));
+}
+
+/** Verify that a native baseline is published by origin and belongs to the published history. */
+export function verifyPublishedNativeReleaseTag({
+  root = REPOSITORY_ROOT,
+  expectedTag,
+  remote = 'origin',
+  publishedBranch = 'master',
+  git = runGit,
+  verifyTagAttestation = verifyNativeTagAttestation,
+  parseAllowedSigners = parseNativeTagAllowedSigners
+}) {
+  if (typeof expectedTag !== 'string' || !NATIVE_RELEASE_TAG_PATTERN.test(expectedTag)) {
+    throw new Error(`Invalid expected native release tag: ${expectedTag}`);
+  }
+
+  const remoteTags = readRemoteNativeReleaseTags(root, { remote, git });
+  const latestTag = latestNativeReleaseTagFromRefs(remoteTags);
+  const tagRef = `refs/tags/${expectedTag}`;
+  const remoteTagObject = remoteTags.get(expectedTag) ?? null;
+  if (remoteTagObject === null) {
+    const latestDetail = latestTag === null ? 'no native release tags are published' : `latest is ${latestTag}`;
+    throw new Error(`${expectedTag} is not published on ${remote} (${latestDetail}).`);
+  }
+  if (latestTag !== expectedTag) {
+    throw new Error(
+      `Manifest native release ${expectedTag} must match the latest published native tag ${latestTag} on ${remote}.`
+    );
+  }
+
+  let localTagObject = tryGit(root, ['rev-parse', '--verify', `${tagRef}^{object}`], git);
+  let fetched = false;
+  if (localTagObject === null) {
+    try {
+      git(root, ['fetch', '--no-tags', remote, `${tagRef}:${tagRef}`]);
+    } catch (error) {
+      throw new Error(`Unable to fetch published native release tag ${expectedTag} from ${remote}.`, { cause: error });
+    }
+    fetched = true;
+    localTagObject = tryGit(root, ['rev-parse', '--verify', `${tagRef}^{object}`], git);
+  }
+  if (localTagObject === null) {
+    throw new Error(`Fetched native release tag ${expectedTag} could not be resolved locally.`);
+  }
+  if (localTagObject.toLowerCase() !== remoteTagObject) {
+    throw new Error(
+      `Local native release tag ${expectedTag} does not match the published tag object on ${remote}.`
+    );
+  }
+
+  const tagCommit = tryGit(root, ['rev-parse', '--verify', `${tagRef}^{commit}`], git);
+  if (tagCommit === null) {
+    throw new Error(`Published native release tag ${expectedTag} does not resolve to a commit.`);
+  }
+
+  try {
+    git(root, ['fetch', '--no-tags', remote, `refs/heads/${publishedBranch}`]);
+  } catch (error) {
+    throw new Error(`Unable to fetch ${remote}/${publishedBranch} for native tag verification.`, { cause: error });
+  }
+  const publishedCommit = tryGit(root, ['rev-parse', '--verify', 'FETCH_HEAD^{commit}'], git);
+  if (publishedCommit === null) {
+    throw new Error(`Fetched ${remote}/${publishedBranch} could not be resolved to a commit.`);
+  }
+
+  let allowedSignersSource;
+  try {
+    allowedSignersSource = git(root, [
+      'show',
+      `${publishedCommit}:${NATIVE_TAG_ALLOWED_SIGNERS_REPOSITORY_PATH}`
+    ]);
+  } catch (error) {
+    throw new Error(
+      `Unable to read native release tag signers from ${remote}/${publishedBranch} commit ${publishedCommit}.`,
+      { cause: error }
+    );
+  }
+  let parsedAllowedSigners;
+  try {
+    parsedAllowedSigners = parseAllowedSigners(allowedSignersSource);
+  } catch (error) {
+    throw new Error(
+      `Native release tag signers at ${remote}/${publishedBranch} commit ${publishedCommit} are invalid.`,
+      { cause: error }
+    );
+  }
+  if (typeof parsedAllowedSigners?.normalizedContents !== 'string') {
+    throw new Error('Native release tag signer parser returned invalid normalized contents.');
+  }
+  try {
+    git(root, ['merge-base', '--is-ancestor', tagCommit, publishedCommit]);
+  } catch (error) {
+    throw new Error(
+      `Published native release tag ${expectedTag} is not on ${remote}/${publishedBranch} history.`,
+      { cause: error }
+    );
+  }
+
+  const headCommit = tryGit(root, ['rev-parse', '--verify', 'HEAD^{commit}'], git);
+  if (headCommit === null) throw new Error('The current checkout HEAD could not be resolved to a commit.');
+  try {
+    git(root, ['merge-base', '--is-ancestor', tagCommit, headCommit]);
+  } catch (error) {
+    throw new Error(
+      `Current checkout does not descend from published native release tag ${expectedTag}.`,
+      { cause: error }
+    );
+  }
+
+  let attestation;
+  try {
+    attestation = verifyTagAttestation({
+      repositoryRoot: root,
+      tag: expectedTag,
+      expectedCommit: tagCommit.toLowerCase(),
+      allowedSigners: parsedAllowedSigners.normalizedContents
+    });
+  } catch (error) {
+    throw new Error(`Published native release tag ${expectedTag} failed signed attestation verification.`, {
+      cause: error
+    });
+  }
+  if (attestation?.tagObject?.toLowerCase() !== remoteTagObject) {
+    throw new Error(
+      `Signed attestation for ${expectedTag} verified tag object ${attestation?.tagObject ?? 'unknown'}, ` +
+      `not the exact object ${remoteTagObject} published on ${remote}.`
+    );
+  }
+
+  return {
+    latestTag,
+    tagObject: remoteTagObject,
+    tagCommit,
+    publishedCommit,
+    trustSetCommit: publishedCommit,
+    fetched,
+    attestation
+  };
+}
+
+export function getNextNativeVersionCodes(manifest) {
+  const currentCodes = [manifest?.android?.mobile?.version_code, manifest?.android?.wear?.version_code];
+  if (currentCodes.some((code) => !Number.isSafeInteger(code) || code < 1)) {
+    throw new Error('Native version codes must be positive safe integers before allocation.');
+  }
+  const currentMaximum = Math.max(...currentCodes);
+  let mobileVersionCode = currentMaximum + 1;
+  if (mobileVersionCode % 2 === 0) mobileVersionCode += 1;
+  const wearVersionCode = mobileVersionCode + 1;
+  if (wearVersionCode > GOOGLE_PLAY_MAX_VERSION_CODE) {
+    throw new Error(`Native version codes cannot exceed Google Play's ${GOOGLE_PLAY_MAX_VERSION_CODE} limit.`);
+  }
+  return { mobileVersionCode, wearVersionCode };
 }
 
 /** Prepare every checked-in server/web release mirror and roll back the batch on validation failure. */
@@ -412,56 +1215,13 @@ export async function prepareServerRelease({ root = REPOSITORY_ROOT, bump, lates
     );
   }
   const nextVersion = nextReleaseVersion(currentVersion, bump);
-  const files = {
-    manifest: path.join(root, 'shared', 'release.json'),
-    diagnostics: path.join(root, 'shared', 'client-diagnostic-versions.json'),
-    rootPackage: path.join(root, 'package.json'),
-    rootLock: path.join(root, 'package-lock.json'),
-    backendPackage: path.join(root, 'backend', 'package.json'),
-    backendLock: path.join(root, 'backend', 'package-lock.json'),
-    openApi: path.join(root, 'docs', 'openapi', 'v1.yaml'),
-    generatedApi: path.join(root, 'packages', 'api-client', 'src', 'generated', 'v1.ts')
-  };
+  const files = Object.fromEntries(
+    Object.entries(SERVER_RELEASE_FILE_PATHS).map(([key, relativePath]) => [key, path.join(root, relativePath)])
+  );
   const originals = Object.fromEntries(
     await Promise.all(Object.entries(files).map(async ([key, filePath]) => [key, await readFile(filePath, 'utf8')]))
   );
-  const manifest = JSON.parse(originals.manifest);
-  const diagnostics = JSON.parse(originals.diagnostics);
-  const rootPackage = JSON.parse(originals.rootPackage);
-  const rootLock = JSON.parse(originals.rootLock);
-  const backendPackage = JSON.parse(originals.backendPackage);
-  const backendLock = JSON.parse(originals.backendLock);
-  const previousVersion = diagnostics.previous_web_release;
-
-  manifest.server.version = nextVersion;
-  diagnostics.previous_web_release = currentVersion;
-  diagnostics.supported_versions.web = [nextVersion, currentVersion];
-  rootPackage.version = nextVersion;
-  rootLock.version = nextVersion;
-  rootLock.packages[''].version = nextVersion;
-  backendPackage.version = nextVersion;
-  backendLock.version = nextVersion;
-  backendLock.packages[''].version = nextVersion;
-
-  const openApiCurrent = `- properties: { platform: { const: web }, version: { enum: [${currentVersion}, ${previousVersion}] } }`;
-  const openApiNext = `- properties: { platform: { const: web }, version: { enum: [${nextVersion}, ${currentVersion}] } }`;
-  const generatedCurrent = `version?: "${currentVersion}" | "${previousVersion}";`;
-  const generatedNext = `version?: "${nextVersion}" | "${currentVersion}";`;
-  const replacements = {
-    manifest: formatJson(manifest, originals.manifest),
-    diagnostics: formatJson(diagnostics, originals.diagnostics),
-    rootPackage: formatJson(rootPackage, originals.rootPackage),
-    rootLock: formatJson(rootLock, originals.rootLock),
-    backendPackage: formatJson(backendPackage, originals.backendPackage),
-    backendLock: formatJson(backendLock, originals.backendLock),
-    openApi: replaceExactlyOnce(originals.openApi, openApiCurrent, openApiNext, 'docs/openapi/v1.yaml'),
-    generatedApi: replaceExactlyOnce(
-      originals.generatedApi,
-      generatedCurrent,
-      generatedNext,
-      'packages/api-client/src/generated/v1.ts'
-    )
-  };
+  const replacements = createServerReleaseReplacements(originals, nextVersion);
 
   const writtenKeys = [];
   try {
@@ -478,6 +1238,201 @@ export async function prepareServerRelease({ root = REPOSITORY_ROOT, bump, lates
     throw error;
   }
   return nextVersion;
+}
+
+/** Prepare a paired phone/Wear release and roll back every mirror if validation fails. */
+export async function prepareNativeRelease({
+  root = REPOSITORY_ROOT,
+  bump,
+  verifyNativeReleaseTag = verifyPublishedNativeReleaseTag
+}) {
+  if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
+
+  const beforeCheck = await checkRepository(root);
+  if (beforeCheck.errors.length > 0) {
+    throw new Error(`Release configuration is inconsistent before native preparation:\n- ${beforeCheck.errors.join('\n- ')}`);
+  }
+
+  const currentVersion = beforeCheck.manifest.android.mobile.version_name;
+  const currentWearVersion = beforeCheck.manifest.android.wear.version_name;
+  if (!STABLE_SEMVER_PATTERN.test(currentVersion) || currentWearVersion !== currentVersion) {
+    throw new Error('Paired native preparation requires matching stable phone and Wear version names.');
+  }
+  const currentNativeTag = `native-v${currentVersion}`;
+  const verification = await verifyNativeReleaseTag({ root, expectedTag: currentNativeTag });
+  const latestTag = verification?.latestTag ?? null;
+  if (latestTag === null) {
+    throw new Error(`Cannot prepare another native release until ${currentNativeTag} has been published.`);
+  }
+  if (!NATIVE_RELEASE_TAG_PATTERN.test(latestTag)) {
+    throw new Error(`Invalid latest native release tag: ${latestTag}`);
+  }
+  if (latestTag !== currentNativeTag) {
+    throw new Error(
+      `Manifest native release ${currentNativeTag} must match the latest native tag ${latestTag} before preparation.`
+    );
+  }
+
+  const nextVersion = nextReleaseVersion(currentVersion, bump);
+  const nextNativeTag = `native-v${nextVersion}`;
+  const { mobileVersionCode, wearVersionCode } = getNextNativeVersionCodes(beforeCheck.manifest);
+  const optionalMobileGradlePath = path.join(root, 'mobile', 'android', 'app', 'build.gradle');
+  const optionalMobileGradle = await readOptionalFile(optionalMobileGradlePath);
+  const files = {
+    manifest: path.join(root, 'shared', 'release.json'),
+    diagnostics: path.join(root, 'shared', 'client-diagnostic-versions.json'),
+    rootLock: path.join(root, 'package-lock.json'),
+    mobilePackage: path.join(root, 'mobile', 'package.json'),
+    mobileApp: path.join(root, 'mobile', 'app.json'),
+    pairingPackage: path.join(root, 'mobile', 'modules', 'wear-pairing', 'package.json'),
+    pairingGradle: path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'),
+    wearGradle: path.join(root, 'wear', 'app', 'build.gradle.kts'),
+    openApi: path.join(root, 'docs', 'openapi', 'v1.yaml'),
+    generatedApi: path.join(root, 'packages', 'api-client', 'src', 'generated', 'v1.ts')
+  };
+  if (optionalMobileGradle !== null) files.mobileGradle = optionalMobileGradlePath;
+
+  const originals = Object.fromEntries(
+    await Promise.all(Object.entries(files).map(async ([key, filePath]) => [key, await readFile(filePath, 'utf8')]))
+  );
+  const manifest = JSON.parse(originals.manifest);
+  const diagnostics = JSON.parse(originals.diagnostics);
+  const rootLock = JSON.parse(originals.rootLock);
+  const mobilePackage = JSON.parse(originals.mobilePackage);
+  const mobileApp = JSON.parse(originals.mobileApp);
+  const pairingPackage = JSON.parse(originals.pairingPackage);
+  const currentPhoneDiagnosticVersions = [...diagnostics.supported_versions.android_phone];
+  const currentWearDiagnosticVersions = [...diagnostics.supported_versions.wear_os];
+  const advanceDiagnosticVersions = (versions) =>
+    [nextVersion, ...versions.filter((version) => version !== nextVersion)]
+      .slice(0, MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM);
+
+  manifest.android.mobile.version_name = nextVersion;
+  manifest.android.mobile.version_code = mobileVersionCode;
+  manifest.android.mobile.native_release_tag = nextNativeTag;
+  manifest.android.wear.version_name = nextVersion;
+  manifest.android.wear.version_code = wearVersionCode;
+  diagnostics.supported_versions.android_phone = advanceDiagnosticVersions(currentPhoneDiagnosticVersions);
+  diagnostics.supported_versions.wear_os = advanceDiagnosticVersions(currentWearDiagnosticVersions);
+  rootLock.packages.mobile.version = nextVersion;
+  rootLock.packages['mobile/modules/wear-pairing'].version = nextVersion;
+  mobilePackage.version = nextVersion;
+  mobileApp.expo.version = nextVersion;
+  mobileApp.expo.android.versionCode = mobileVersionCode;
+  mobileApp.expo.extra.calibrate.nativeReleaseTag = nextNativeTag;
+  pairingPackage.version = nextVersion;
+
+  let pairingGradle = replacePatternExactlyOnce(
+    originals.pairingGradle,
+    /^version\s*=\s*["'][^"']+["']/gm,
+    `version = '${nextVersion}'`,
+    'Wear pairing module version'
+  );
+  pairingGradle = replacePatternExactlyOnce(
+    pairingGradle,
+    /versionCode\s+\d+/g,
+    `versionCode ${mobileVersionCode}`,
+    'Wear pairing module versionCode'
+  );
+  pairingGradle = replacePatternExactlyOnce(
+    pairingGradle,
+    /versionName\s+["'][^"']+["']/g,
+    `versionName '${nextVersion}'`,
+    'Wear pairing module versionName'
+  );
+  let wearGradle = replacePatternExactlyOnce(
+    originals.wearGradle,
+    /versionCode\s*=\s*\d+/g,
+    `versionCode = ${wearVersionCode}`,
+    'Wear versionCode'
+  );
+  wearGradle = replacePatternExactlyOnce(
+    wearGradle,
+    /versionName\s*=\s*"[^"]+"/g,
+    `versionName = "${nextVersion}"`,
+    'Wear versionName'
+  );
+
+  const nextPhoneDiagnosticVersions = diagnostics.supported_versions.android_phone;
+  const nextWearDiagnosticVersions = diagnostics.supported_versions.wear_os;
+  const openApiLine = (platform, versions) =>
+    `- properties: { platform: { const: ${platform} }, version: { enum: [${versions.join(', ')}] } }`;
+  const generatedNewline = originals.generatedApi.includes('\r\n') ? '\r\n' : '\n';
+  const generatedBlock = (platform, versions) => [
+    `platform?: "${platform}";`,
+    '            /** @enum {unknown} */',
+    `            version?: "${versions.join('" | "')}";`
+  ].join(generatedNewline);
+
+  const replacements = {
+    manifest: formatJson(manifest, originals.manifest),
+    diagnostics: formatJson(diagnostics, originals.diagnostics),
+    rootLock: formatJson(rootLock, originals.rootLock),
+    mobilePackage: formatJson(mobilePackage, originals.mobilePackage),
+    mobileApp: formatJson(mobileApp, originals.mobileApp),
+    pairingPackage: formatJson(pairingPackage, originals.pairingPackage),
+    pairingGradle,
+    wearGradle,
+    openApi: replaceExactlyOnce(
+      replaceExactlyOnce(
+        originals.openApi,
+        openApiLine('android_phone', currentPhoneDiagnosticVersions),
+        openApiLine('android_phone', nextPhoneDiagnosticVersions),
+        'docs/openapi/v1.yaml android_phone versions'
+      ),
+      openApiLine('wear_os', currentWearDiagnosticVersions),
+      openApiLine('wear_os', nextWearDiagnosticVersions),
+      'docs/openapi/v1.yaml wear_os versions'
+    ),
+    generatedApi: replaceExactlyOnce(
+      replaceExactlyOnce(
+        originals.generatedApi,
+        generatedBlock('android_phone', currentPhoneDiagnosticVersions),
+        generatedBlock('android_phone', nextPhoneDiagnosticVersions),
+        'generated API android_phone versions'
+      ),
+      generatedBlock('wear_os', currentWearDiagnosticVersions),
+      generatedBlock('wear_os', nextWearDiagnosticVersions),
+      'generated API wear_os versions'
+    )
+  };
+  if (files.mobileGradle) {
+    let mobileGradle = replacePatternExactlyOnce(
+      originals.mobileGradle,
+      /versionCode\s+\d+/g,
+      `versionCode ${mobileVersionCode}`,
+      'generated mobile versionCode'
+    );
+    mobileGradle = replacePatternExactlyOnce(
+      mobileGradle,
+      /versionName\s+["'][^"']+["']/g,
+      `versionName "${nextVersion}"`,
+      'generated mobile versionName'
+    );
+    replacements.mobileGradle = mobileGradle;
+  }
+
+  const writtenKeys = [];
+  try {
+    for (const [key, filePath] of Object.entries(files)) {
+      writtenKeys.push(key);
+      await writeFile(filePath, replacements[key]);
+    }
+    const afterCheck = await checkRepository(root);
+    if (afterCheck.errors.length > 0) {
+      throw new Error(`Prepared native release configuration is inconsistent:\n- ${afterCheck.errors.join('\n- ')}`);
+    }
+  } catch (error) {
+    await Promise.all(writtenKeys.map((key) => writeFile(files[key], originals[key])));
+    throw error;
+  }
+
+  return {
+    version_name: nextVersion,
+    mobile_version_code: mobileVersionCode,
+    wear_version_code: wearVersionCode,
+    native_release_tag: nextNativeTag
+  };
 }
 
 const artifactMetadata = async (root, artifact) => {
@@ -522,14 +1477,86 @@ export async function createReleaseMetadata({ manifest, channel, artifacts = [],
   return metadata;
 }
 
+const COMMAND_OPTIONS = new Map([
+  ['check', new Set(['--repository-root', '--validation-mode'])],
+  ['metadata', new Set(['--artifact', '--channel'])],
+  ['plan', new Set(['--latest-tag'])],
+  ['prepare', new Set(['--bump'])],
+  ['prepare-native', new Set(['--bump'])],
+  ['tag', new Set(['--latest-tag', '--repository-root', '--validation-mode'])],
+  ['verify-prepared', new Set([
+    '--expected-commit',
+    '--publish-latest',
+    '--release-tag',
+    '--repository-root'
+  ])],
+  ['verify-prepared-candidate', new Set([
+    '--candidate-parent-current-master',
+    '--expected-commit',
+    '--publish-latest',
+    '--release-tag',
+    '--repository-root'
+  ])],
+  ['verify-current-release-workflow', new Set([
+    '--release-commit',
+    '--repository-root',
+    '--workflow-sha'
+  ])]
+]);
+const REPEATABLE_OPTIONS = new Set(['--artifact']);
+
 const parseArguments = (args) => {
-  const result = { command: args[0] ?? 'check', channel: null, artifacts: [], latestTag: null, bump: null };
+  const command = args[0] ?? 'check';
+  const allowedOptions = COMMAND_OPTIONS.get(command);
+  if (allowedOptions === undefined) throw new Error(`Unknown command: ${command}`);
+  const result = {
+    command,
+    channel: null,
+    artifacts: [],
+    latestTag: null,
+    bump: null,
+    repositoryRoot: null,
+    validationMode: 'current',
+    releaseTag: null,
+    expectedCommit: null,
+    publishLatest: null,
+    candidateParentCurrentMaster: null,
+    workflowSha: null,
+    releaseCommit: null
+  };
+  const seen = new Set();
   for (let index = 1; index < args.length; index += 1) {
-    if (args[index] === '--channel') result.channel = args[++index];
-    else if (args[index] === '--artifact') result.artifacts.push(args[++index]);
-    else if (args[index] === '--latest-tag') result.latestTag = args[++index];
-    else if (args[index] === '--bump') result.bump = args[++index];
-    else throw new Error(`Unknown argument: ${args[index]}`);
+    const option = args[index];
+    if (!allowedOptions.has(option)) throw new Error(`Unknown argument for ${command}: ${option}`);
+    if (!REPEATABLE_OPTIONS.has(option) && seen.has(option)) {
+      throw new Error(`Duplicate argument for ${command}: ${option}`);
+    }
+    const value = args[index + 1];
+    if (value === undefined || value.length === 0 || value.startsWith('--')) {
+      throw new Error(`${option} requires a value.`);
+    }
+    seen.add(option);
+    index += 1;
+    if (option === '--channel') result.channel = value;
+    else if (option === '--artifact') result.artifacts.push(value);
+    else if (option === '--latest-tag') result.latestTag = value;
+    else if (option === '--bump') result.bump = value;
+    else if (option === '--release-tag') result.releaseTag = value;
+    else if (option === '--expected-commit') result.expectedCommit = value;
+    else if (option === '--publish-latest') result.publishLatest = value;
+    else if (option === '--candidate-parent-current-master') result.candidateParentCurrentMaster = value;
+    else if (option === '--workflow-sha') result.workflowSha = value;
+    else if (option === '--release-commit') result.releaseCommit = value;
+    else if (option === '--validation-mode') {
+      if (!RELEASE_VALIDATION_MODES.has(value)) {
+        throw new Error(`Unknown release validation mode: ${value}`);
+      }
+      result.validationMode = value;
+    }
+    else if (option === '--repository-root') {
+      if (value.includes('\0')) throw new Error('--repository-root contains an invalid NUL byte.');
+      result.repositoryRoot = path.resolve(value);
+    }
   }
   return result;
 };
@@ -542,7 +1569,51 @@ async function main() {
     console.log(await prepareServerRelease({ bump: options.bump }));
     return;
   }
-  const { manifest, errors } = await checkRepository();
+  if (options.command === 'prepare-native') {
+    if (!options.bump) throw new Error('prepare-native requires --bump major, minor, or patch.');
+    if (options.latestTag !== null) {
+      throw new Error('prepare-native reads the latest native tag from Git; do not pass --latest-tag.');
+    }
+    console.log(`${JSON.stringify(await prepareNativeRelease({ bump: options.bump }), null, 2)}\n`);
+    return;
+  }
+  if (options.command === 'verify-prepared' || options.command === 'verify-prepared-candidate') {
+    if (!options.releaseTag) {
+      throw new Error(`${options.command} requires --release-tag vMAJOR.MINOR.PATCH.`);
+    }
+    if (!['true', 'false'].includes(options.publishLatest)) {
+      throw new Error(`${options.command} requires --publish-latest true or false.`);
+    }
+    if (
+      options.candidateParentCurrentMaster !== null
+      && !['true', 'false'].includes(options.candidateParentCurrentMaster)
+    ) {
+      throw new Error('--candidate-parent-current-master must be true or false.');
+    }
+    const verify = options.command === 'verify-prepared'
+      ? verifyPreparedRelease
+      : verifyPreparedReleaseCandidate;
+    const verification = await verify({
+      root: options.repositoryRoot ?? REPOSITORY_ROOT,
+      releaseTag: options.releaseTag,
+      expectedCommit: options.expectedCommit,
+      publishLatest: options.publishLatest === 'true',
+      candidateParentCurrentMaster: options.candidateParentCurrentMaster === 'true'
+    });
+    console.log(`${JSON.stringify(verification, null, 2)}\n`);
+    return;
+  }
+  if (options.command === 'verify-current-release-workflow') {
+    const verification = await verifyCurrentReleaseWorkflow({
+      root: options.repositoryRoot ?? REPOSITORY_ROOT,
+      workflowSha: options.workflowSha,
+      releaseCommit: options.releaseCommit
+    });
+    console.log(`${JSON.stringify(verification, null, 2)}\n`);
+    return;
+  }
+  const root = options.repositoryRoot ?? REPOSITORY_ROOT;
+  const { manifest, errors } = await checkRepository(root, { validationMode: options.validationMode });
   if (errors.length > 0) {
     for (const error of errors) console.error(`- ${error}`);
     process.exitCode = 1;
