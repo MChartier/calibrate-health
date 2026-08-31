@@ -369,24 +369,50 @@ function canonicalNativeReleaseGradleStateText(bytes) {
 }
 
 export function assertNativeReleaseVerificationMetadata(label, source) {
+  if (source.includes('<!--') || source.includes('-->')) {
+    throw new Error(`${label} Gradle verification metadata must not contain XML comments.`);
+  }
   if ((source.match(/<verify-metadata>true<\/verify-metadata>/g) ?? []).length !== 1 ||
       /<(?:trusted-artifacts|trusted-keys|ignored-artifacts|ignored-keys|key-servers?|key-server)\b/.test(source)) {
     throw new Error(
       `${label} Gradle verification metadata must verify metadata without trust or ignore shortcuts.`
     );
   }
-  const artifactOpenCount = (source.match(/<artifact\b/g) ?? []).length;
-  const artifacts = [...source.matchAll(/<artifact\b[^>]*>([\s\S]*?)<\/artifact>/g)];
-  if (artifactOpenCount === 0 || artifacts.length !== artifactOpenCount) {
-    throw new Error(`${label} Gradle verification metadata has malformed artifact records.`);
+  const componentOpenCount = (source.match(/<component\b/g) ?? []).length;
+  const components = [...source.matchAll(
+    /<component\b[^>]*\bgroup="([^"]+)"[^>]*\bname="([^"]+)"[^>]*\bversion="([^"]+)"[^>]*>([\s\S]*?)<\/component>/g
+  )];
+  if (componentOpenCount === 0 || components.length !== componentOpenCount) {
+    throw new Error(`${label} Gradle verification metadata has malformed component records.`);
   }
-  for (const [, body] of artifacts) {
-    const shaTags = [...body.matchAll(/<sha256\b[^>]*\bvalue="([^"]+)"[^>]*\/?\s*>/g)];
-    if (shaTags.length !== 1 || !SHA256_PATTERN.test(shaTags[0][1])) {
-      throw new Error(
-        `${label} Gradle verification metadata must give every artifact exactly one 64-hex SHA-256.`
-      );
+  const artifactOpenCount = (source.match(/<artifact\b/g) ?? []).length;
+  const artifactCoordinates = new Set();
+  let parsedArtifactCount = 0;
+  for (const [, group, name, version, componentBody] of components) {
+    const componentArtifactOpenCount = (componentBody.match(/<artifact\b/g) ?? []).length;
+    const artifacts = [...componentBody.matchAll(
+      /<artifact\b[^>]*\bname="([^"]+)"[^>]*>([\s\S]*?)<\/artifact>/g
+    )];
+    if (artifacts.length !== componentArtifactOpenCount) {
+      throw new Error(`${label} Gradle verification metadata has malformed artifact records.`);
     }
+    for (const [, artifactName, body] of artifacts) {
+      parsedArtifactCount += 1;
+      const coordinate = `${group}:${name}:${version}:${artifactName}`;
+      if (artifactCoordinates.has(coordinate)) {
+        throw new Error(`${label} Gradle verification metadata has duplicate artifact records.`);
+      }
+      artifactCoordinates.add(coordinate);
+      const shaTags = [...body.matchAll(/<sha256\b[^>]*\bvalue="([^"]+)"[^>]*\/?\s*>/g)];
+      if (shaTags.length !== 1 || !SHA256_PATTERN.test(shaTags[0][1])) {
+        throw new Error(
+          `${label} Gradle verification metadata must give every artifact exactly one 64-hex SHA-256.`
+        );
+      }
+    }
+  }
+  if (artifactOpenCount === 0 || parsedArtifactCount !== artifactOpenCount) {
+    throw new Error(`${label} Gradle verification metadata has malformed artifact records.`);
   }
 
   const commonArtifacts = [
@@ -405,9 +431,63 @@ export function assertNativeReleaseVerificationMetadata(label, source) {
         /<artifact name="room-runtime\.aar">/,
         /<artifact name="compose-bom-[^"]+\.pom">/
       ];
-  if (![...commonArtifacts, ...platformArtifacts].every((pattern) => pattern.test(source))) {
+  const commonCleanRunArtifacts = [
+    'com.google.guava:guava-parent:33.3.1-jre:guava-parent-33.3.1-jre.pom',
+    'org.junit:junit-bom:5.10.2:junit-bom-5.10.2.module',
+    'org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.8.0:kotlinx-coroutines-bom-1.8.0.pom'
+  ];
+  const phoneCleanRunArtifacts = [
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-linux.jar',
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-windows.jar',
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139.pom',
+    'com.android.tools:play-sdk-proto:31.12.0:play-sdk-proto-31.12.0.jar',
+    'com.android.tools:play-sdk-proto:31.12.0:play-sdk-proto-31.12.0.pom',
+    'com.android.tools.external.com-intellij:intellij-core:31.12.0:intellij-core-31.12.0.jar',
+    'com.android.tools.external.com-intellij:intellij-core:31.12.0:intellij-core-31.12.0.pom',
+    'com.android.tools.external.com-intellij:kotlin-compiler:31.12.0:kotlin-compiler-31.12.0.jar',
+    'com.android.tools.external.com-intellij:kotlin-compiler:31.12.0:kotlin-compiler-31.12.0.pom',
+    'com.android.tools.external.org-jetbrains:uast:31.12.0:uast-31.12.0.jar',
+    'com.android.tools.external.org-jetbrains:uast:31.12.0:uast-31.12.0.pom',
+    'com.android.tools.lint:lint:31.12.0:lint-31.12.0.jar',
+    'com.android.tools.lint:lint:31.12.0:lint-31.12.0.pom',
+    'com.android.tools.lint:lint-api:31.12.0:lint-api-31.12.0.jar',
+    'com.android.tools.lint:lint-api:31.12.0:lint-api-31.12.0.pom',
+    'com.android.tools.lint:lint-checks:31.12.0:lint-checks-31.12.0.jar',
+    'com.android.tools.lint:lint-checks:31.12.0:lint-checks-31.12.0.pom',
+    'com.android.tools.lint:lint-gradle:31.12.0:lint-gradle-31.12.0.jar',
+    'com.android.tools.lint:lint-gradle:31.12.0:lint-gradle-31.12.0.pom',
+    'com.google.devtools.ksp:symbol-processing-aa-embeddable:2.1.20-2.0.1:symbol-processing-aa-embeddable-2.1.20-2.0.1.jar',
+    'com.google.devtools.ksp:symbol-processing-aa-embeddable:2.1.20-2.0.1:symbol-processing-aa-embeddable-2.1.20-2.0.1.pom',
+    'com.google.guava:guava-parent:32.1.3-jre:guava-parent-32.1.3-jre.pom',
+    'com.google.guava:guava-parent:33.3.1-android:guava-parent-33.3.1-android.pom',
+    'com.google.guava:guava-parent:33.4.3-android:guava-parent-33.4.3-android.pom',
+    'com.google.guava:guava-parent:33.4.8-jre:guava-parent-33.4.8-jre.pom',
+    'org.apache.httpcomponents:httpclient:4.5.6:httpclient-4.5.6.jar',
+    'org.apache.httpcomponents:httpclient:4.5.6:httpclient-4.5.6.pom',
+    'org.codehaus.groovy:groovy:3.0.22:groovy-3.0.22.jar',
+    'org.codehaus.groovy:groovy:3.0.22:groovy-3.0.22.pom',
+    'org.jetbrains.kotlin:kotlin-bom:1.8.0:kotlin-bom-1.8.0.pom',
+    'org.junit:junit-bom:5.13.1:junit-bom-5.13.1.module',
+    'org.junit:junit-bom:5.13.4:junit-bom-5.13.4.module',
+    'org.junit:junit-bom:5.8.2:junit-bom-5.8.2.pom',
+    'org.junit:junit-bom:5.9.2:junit-bom-5.9.2.module',
+    'org.junit:junit-bom:5.9.3:junit-bom-5.9.3.module'
+  ];
+  const wearCleanRunArtifacts = [
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-linux.jar',
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-windows.jar',
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657.pom'
+  ];
+  const cleanRunArtifacts = [
+    ...commonCleanRunArtifacts,
+    ...(label === 'phone' ? phoneCleanRunArtifacts : wearCleanRunArtifacts)
+  ];
+  if (
+    ![...commonArtifacts, ...platformArtifacts].every((pattern) => pattern.test(source)) ||
+    !cleanRunArtifacts.every((artifactCoordinate) => artifactCoordinates.has(artifactCoordinate))
+  ) {
     throw new Error(
-      `${label} Gradle verification metadata omits representative plugin or release artifacts.`
+      `${label} Gradle verification metadata omits representative plugin or clean-run release artifacts.`
     );
   }
 }
