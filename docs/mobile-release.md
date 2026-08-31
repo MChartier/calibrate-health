@@ -247,7 +247,7 @@ digests must all equal the original source commit.
 Historical recovery also requires the source to remain an ancestor of freshly resolved protected `master`, contain
 the post-hardening receipt marker, and pass the policy read from current `master`. Add `revoke FULL_LOWERCASE_SHA` to
 `.github/native-play-attestation-trusted-workflow-shas` to stop a suspect signer revision immediately. Critical
-verifier drift fails closed unless the historical revision is explicitly retained. After reviewing the full diff of
+release-tooling drift fails closed unless the historical revision is explicitly retained. After reviewing the full diff of
 every critical path exported by `scripts/native-play-receipt.mjs`, add `allow FULL_LOWERCASE_SHA` only for the narrow
 historical recovery window, then remove that allow entry when the window closes. A matching `revoke` is authoritative
 and always wins.

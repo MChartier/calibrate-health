@@ -5,7 +5,13 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import nativeReleaseGradleWrapper from '../mobile/plugins/nativeReleaseGradleWrapper.js';
+import {
+  DISTRIBUTION_URL_PROPERTY as NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL_PROPERTY,
+  NATIVE_RELEASE_GRADLE_DISTRIBUTION_SHA256,
+  NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL,
+  NATIVE_RELEASE_GRADLE_VERSION,
+  NATIVE_RELEASE_GRADLE_WRAPPER_JAR_SHA256
+} from '../mobile/plugins/nativeReleaseGradleWrapper.js';
 import { resolveExpoUpdateBuildConfig, writeNativeOtaBaseline } from './native-ota-contract.mjs';
 import {
   NATIVE_RELEASE_APPLICATION_ID,
@@ -29,13 +35,13 @@ export const NATIVE_RELEASE_BUILD_PROVENANCE_PATH = 'build/native-release-proven
 export const NATIVE_RELEASE_GRADLE_INTEGRITY_MANIFEST_PATH =
   'mobile/gradle/native-release/integrity.json';
 export const NATIVE_RELEASE_KEYSTORE_FILENAME = 'calibrate-android-upload.keystore';
-export const {
-  DISTRIBUTION_URL_PROPERTY: NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL_PROPERTY,
+export {
+  NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL_PROPERTY,
   NATIVE_RELEASE_GRADLE_DISTRIBUTION_SHA256,
   NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL,
   NATIVE_RELEASE_GRADLE_VERSION,
   NATIVE_RELEASE_GRADLE_WRAPPER_JAR_SHA256
-} = nativeReleaseGradleWrapper;
+};
 
 const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
@@ -354,6 +360,14 @@ function validGradleStatePath(relativePath) {
     !relativePath.startsWith('../');
 }
 
+function canonicalNativeReleaseGradleStateText(bytes) {
+  const source = bytes.toString('utf8');
+  if (source.includes('\uFFFD') || /\r(?!\n)/.test(source)) {
+    throw new Error('reviewed Gradle dependency state must be UTF-8 text with LF or CRLF lines');
+  }
+  return source.replace(/\r\n/g, '\n');
+}
+
 export function assertNativeReleaseVerificationMetadata(label, source) {
   if ((source.match(/<verify-metadata>true<\/verify-metadata>/g) ?? []).length !== 1 ||
       /<(?:trusted-artifacts|trusted-keys|ignored-artifacts|ignored-keys|key-servers?|key-server)\b/.test(source)) {
@@ -439,7 +453,13 @@ export function assertNativeReleaseGradleDependencyState(build, options = {}) {
     } catch {
       throw new Error(`${build.label} reviewed Gradle dependency state is missing: ${record.path}.`);
     }
-    const actualSha256 = sha256(bytes);
+    let source;
+    try {
+      source = canonicalNativeReleaseGradleStateText(bytes);
+    } catch (error) {
+      throw new Error(`${build.label} ${error.message}: ${record.path}.`);
+    }
+    const actualSha256 = sha256(Buffer.from(source, 'utf8'));
     if (actualSha256 !== record.sha256) {
       throw new Error(
         `${build.label} reviewed Gradle dependency state changed: ${record.path} ` +
@@ -447,7 +467,6 @@ export function assertNativeReleaseGradleDependencyState(build, options = {}) {
       );
     }
 
-    const source = bytes.toString('utf8');
     if (record.path === 'gradle/verification-metadata.xml') {
       verificationMetadata = source;
     } else if (record.path.endsWith('.lockfile')) {

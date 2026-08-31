@@ -5,8 +5,11 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import nativeReleaseGradleWrapper from '../mobile/plugins/nativeReleaseGradleWrapper.js';
-import withPinnedGradleWrapper from '../mobile/plugins/withPinnedGradleWrapper.js';
+import {
+  injectNativeDependencyLocking,
+  pinNativeReleaseGradleWrapperProperties,
+  restorePhoneGradleDependencyState
+} from '../mobile/plugins/nativeReleaseGradleWrapper.js';
 import {
   assertNativeReleaseArtifacts,
   assertNativeReleaseGradleDependencyState,
@@ -34,11 +37,6 @@ import {
 } from './native-release-build.mjs';
 import { NATIVE_RELEASE_ARTIFACT_CONTRACTS } from './native-release-evidence.mjs';
 
-const { pinNativeReleaseGradleWrapperProperties } = nativeReleaseGradleWrapper;
-const {
-  injectNativeDependencyLocking,
-  restorePhoneGradleDependencyState
-} = withPinnedGradleWrapper;
 const officialGradleWrapperJar = fs.readFileSync(
   new URL('../wear/gradle/wrapper/gradle-wrapper.jar', import.meta.url)
 );
@@ -276,6 +274,12 @@ const verificationMetadataFixture = [
   ''
 ].join('\n');
 
+function gradleStateSha256(bytes) {
+  return crypto.createHash('sha256')
+    .update(Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8'))
+    .digest('hex');
+}
+
 function writeGradleDependencyStateFixture(root, label) {
   const files = label === 'phone'
     ? [
@@ -307,9 +311,7 @@ function writeGradleDependencyStateFixture(root, label) {
   );
   const records = files.map((relativePath) => ({
     path: relativePath,
-    sha256: crypto.createHash('sha256')
-      .update(fs.readFileSync(path.join(root, ...relativePath.split('/'))))
-      .digest('hex')
+    sha256: gradleStateSha256(fs.readFileSync(path.join(root, ...relativePath.split('/'))))
   }));
   return {
     schemaVersion: 1,
@@ -336,9 +338,7 @@ test('tracked phone and Wear dependency state is complete and hash-reviewed', ()
       assert.equal(paths.has(record.path), false);
       paths.add(record.path);
       assert.equal(
-        crypto.createHash('sha256')
-          .update(fs.readFileSync(path.join(reviewedRoot, ...record.path.split('/'))))
-          .digest('hex'),
+        gradleStateSha256(fs.readFileSync(path.join(reviewedRoot, ...record.path.split('/')))),
         record.sha256,
         `${label} ${record.path}`
       );
@@ -351,6 +351,26 @@ test('tracked phone and Wear dependency state is complete and hash-reviewed', ()
     assert.ok(paths.has('gradle/verification-metadata.xml'));
     assert.ok([...paths].some((entry) => entry.endsWith('.lockfile')));
   }
+});
+
+test('Gradle integrity hashes canonical Git blobs across LF and CRLF checkouts', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-gradle-line-endings-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const manifest = writeGradleDependencyStateFixture(root, 'wear');
+  const build = { label: 'wear', cwd: root };
+
+  for (const record of manifest.platforms.wear.files) {
+    const file = path.join(root, ...record.path.split('/'));
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
+  }
+  assert.doesNotThrow(() => assertNativeReleaseGradleDependencyState(build, { manifest }));
+
+  const metadata = path.join(root, 'gradle', 'verification-metadata.xml');
+  fs.appendFileSync(metadata, '<!-- content mutation -->\r\n');
+  assert.throws(
+    () => assertNativeReleaseGradleDependencyState(build, { manifest }),
+    /reviewed Gradle dependency state changed: gradle\/verification-metadata\.xml/
+  );
 });
 
 test('verification metadata rejects trust shortcuts and incomplete artifact checksums', () => {

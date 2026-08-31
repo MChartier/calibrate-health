@@ -1,3 +1,6 @@
+const fs = require('node:fs');
+const path = require('node:path');
+
 const NATIVE_RELEASE_GRADLE_VERSION = '8.14.3';
 const NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL =
   `https://services.gradle.org/distributions/gradle-${NATIVE_RELEASE_GRADLE_VERSION}-bin.zip`;
@@ -10,6 +13,26 @@ const NATIVE_RELEASE_GRADLE_WRAPPER_JAR_SHA256 =
   '7d3a4ac4de1c32b59bc6a4eb8ecb8e612ccd0cf1ae1e99f66902da64df296172';
 
 const DISTRIBUTION_URL_PROPERTY = NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL.replace(':', '\\:');
+const DEPENDENCY_LOCKING_MARKER = '// calibrate: strict native dependency locking';
+const PHONE_DEPENDENCY_STATE_DIRECTORY = path.join('gradle', 'native-release', 'phone');
+const DEPENDENCY_LOCKING_BLOCK = `${DEPENDENCY_LOCKING_MARKER}
+allprojects {
+  def calibrateDependencyLockName = project.path == ':'
+    ? 'root'
+    : project.path.substring(1).replace(':', '--')
+  dependencyLocking {
+    lockAllConfigurations()
+    lockMode = org.gradle.api.artifacts.dsl.LockMode.STRICT
+    lockFile = rootProject.file("gradle/dependency-locks/\${calibrateDependencyLockName}.lockfile")
+  }
+}
+
+buildscript {
+  configurations.classpath {
+    resolutionStrategy.activateDependencyLocking()
+  }
+}
+`;
 
 function propertyIndexes(lines, name) {
   const pattern = new RegExp(`^\\s*${name}\\s*=`);
@@ -47,11 +70,44 @@ function pinNativeReleaseGradleWrapperProperties(source) {
   return `${lines.join(newline)}${hasTrailingNewline ? newline : ''}`;
 }
 
+function injectNativeDependencyLocking(source) {
+  if (source.includes(DEPENDENCY_LOCKING_MARKER)) return source;
+  return `${source.trimEnd()}\n\n${DEPENDENCY_LOCKING_BLOCK}`;
+}
+
+function restorePhoneGradleDependencyState(projectRoot, platformProjectRoot) {
+  const dependencyStateTemplate = path.join(projectRoot, PHONE_DEPENDENCY_STATE_DIRECTORY);
+  let templateStat;
+  try {
+    templateStat = fs.statSync(dependencyStateTemplate);
+  } catch {
+    throw new Error('Reviewed phone Gradle dependency state is missing.');
+  }
+  if (!templateStat.isDirectory()) {
+    throw new Error('Reviewed phone Gradle dependency state is missing.');
+  }
+  fs.copyFileSync(
+    path.join(dependencyStateTemplate, 'buildscript-gradle.lockfile'),
+    path.join(platformProjectRoot, 'buildscript-gradle.lockfile')
+  );
+  fs.copyFileSync(
+    path.join(dependencyStateTemplate, 'settings-gradle.lockfile'),
+    path.join(platformProjectRoot, 'settings-gradle.lockfile')
+  );
+  fs.cpSync(
+    path.join(dependencyStateTemplate, 'gradle'),
+    path.join(platformProjectRoot, 'gradle'),
+    { recursive: true, force: true }
+  );
+}
+
 module.exports = {
   DISTRIBUTION_URL_PROPERTY,
   NATIVE_RELEASE_GRADLE_DISTRIBUTION_SHA256,
   NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL,
   NATIVE_RELEASE_GRADLE_VERSION,
   NATIVE_RELEASE_GRADLE_WRAPPER_JAR_SHA256,
-  pinNativeReleaseGradleWrapperProperties
+  injectNativeDependencyLocking,
+  pinNativeReleaseGradleWrapperProperties,
+  restorePhoneGradleDependencyState
 };
