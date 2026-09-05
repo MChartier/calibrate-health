@@ -170,6 +170,7 @@ type WindowEvaluation = {
     dataQuality: CalibrationDataQuality;
     averageIntake: CalibrationInterval | null;
     weeklyWeightChange: CalibrationInterval | null;
+    weightTrend: CalibrationInterval | null;
     targetAdjustment: CalibrationInterval | null;
     recommendation: CalibrationRecommendation | null;
     actionable: boolean;
@@ -477,6 +478,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             dataQuality,
             averageIntake: null,
             weeklyWeightChange: null,
+            weightTrend: null,
             targetAdjustment: null,
             recommendation: null,
             actionable: false,
@@ -599,6 +601,12 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         dataQuality,
         averageIntake,
         weeklyWeightChange,
+        // Keep the displayed weight interval independent of food-dependent bootstrap draws.
+        weightTrend: {
+            low: trendResult.windowAverageRate.lower95KgPerWeek,
+            midpoint: weeklyRateMean,
+            high: trendResult.windowAverageRate.upper95KgPerWeek
+        },
         targetAdjustment,
         recommendation,
         actionable: actionable && recommendation !== null,
@@ -715,6 +723,8 @@ function assessmentPaceStatus(
     configuredDailyDeficitKcal: number
 ): CalibrationPaceStatus | null {
     if (!trend) return null;
+    const dailyWidthKcal = (trend.high - trend.low) * KCAL_PER_KILOGRAM / 7;
+    if (dailyWidthKcal > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) return null;
     const toleranceKgPerWeek = ACTION_THRESHOLD_KCAL * 7 / KCAL_PER_KILOGRAM;
     const goalLow = goalRateKgPerWeek - toleranceKgPerWeek;
     const goalHigh = goalRateKgPerWeek + toleranceKgPerWeek;
@@ -728,10 +738,8 @@ function assessmentPaceStatus(
         if (trend.low > goalHigh) return 'above_maintenance';
         if (trend.high < goalLow) return 'below_maintenance';
     }
-    const dailyWidthKcal = (trend.high - trend.low) * KCAL_PER_KILOGRAM / 7;
     return trend.midpoint >= goalLow &&
-        trend.midpoint <= goalHigh &&
-        dailyWidthKcal <= MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL
+        trend.midpoint <= goalHigh
         ? 'aligned'
         : null;
 }
@@ -775,11 +783,11 @@ function buildCalibrationAssessment(
     if (latestWeightAge > 7) {
         return { ...base, state: 'waiting', blocker: 'current_weigh_in' };
     }
-    if (!selected.weeklyWeightChange) {
+    if (!selected.weightTrend) {
         return { ...base, state: 'waiting', blocker: 'trend_unavailable' };
     }
     const paceStatus = assessmentPaceStatus(
-        selected.weeklyWeightChange,
+        selected.weightTrend,
         goalRateKgPerWeek,
         input.configuredDailyDeficitKcal
     );
@@ -799,7 +807,7 @@ function buildCalibrationAssessment(
             state: 'on_track',
             paceStatus,
             window: assessmentWindow,
-            recentWeightTrendKgPerWeek: selected.weeklyWeightChange,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
             targetDecision: 'no_change_recommended'
         };
     }
@@ -810,7 +818,7 @@ function buildCalibrationAssessment(
             state: 'off_track',
             paceStatus,
             window: assessmentWindow,
-            recentWeightTrendKgPerWeek: selected.weeklyWeightChange,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
             targetDecision: 'change_available'
         };
     }
@@ -820,7 +828,7 @@ function buildCalibrationAssessment(
             state: 'off_track',
             paceStatus,
             window: assessmentWindow,
-            recentWeightTrendKgPerWeek: selected.weeklyWeightChange,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
             targetDecision: 'safety_limited'
         };
     }
@@ -830,7 +838,7 @@ function buildCalibrationAssessment(
             state: 'off_track',
             paceStatus,
             window: assessmentWindow,
-            recentWeightTrendKgPerWeek: selected.weeklyWeightChange,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
             targetDecision: 'policy_unavailable'
         };
     }
@@ -840,7 +848,7 @@ function buildCalibrationAssessment(
             state: 'off_track',
             paceStatus,
             window: assessmentWindow,
-            recentWeightTrendKgPerWeek: selected.weeklyWeightChange,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
             targetDecisionBlocker: 'food_history'
         };
     }
@@ -853,7 +861,7 @@ function buildCalibrationAssessment(
             state: 'off_track',
             paceStatus,
             window: assessmentWindow,
-            recentWeightTrendKgPerWeek: selected.weeklyWeightChange,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
             targetDecisionBlocker: 'food_uncertainty'
         };
     }
@@ -862,7 +870,7 @@ function buildCalibrationAssessment(
         state: 'off_track',
         paceStatus,
         window: assessmentWindow,
-        recentWeightTrendKgPerWeek: selected.weeklyWeightChange,
+        recentWeightTrendKgPerWeek: selected.weightTrend,
         targetDecision: 'no_change_recommended'
     };
 }
@@ -960,6 +968,12 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
         .map((days) => evaluateWindow(input, days));
     const selected = evaluations.find((candidate) => candidate.actionable)
         ?? evaluations.slice().sort((left, right) => right.windowDays - left.windowDays)[0];
+    // A prior segment can invalidate the longest window even after new history is mature.
+    // Preserve the action window when recommending; otherwise use the longest continuous trend.
+    const assessmentWindow = selected.weightTrend ? selected :
+        evaluations.slice().reverse().find((candidate) =>
+            candidate.weightTrend !== null && candidate.windowDays <= selected.dataQuality.weightSpanDays
+        ) ?? selected;
     const hasPace = selected.weeklyWeightChange !== null && selected.dataQuality.weightSpanDays >= CALIBRATION_MIN_INSIGHT_DAYS;
     const hasFoodEvidence = selected.dataQuality.confidentDays >= CALIBRATION_MIN_INSIGHT_DAYS;
     const recommendation = selected.recommendation;
@@ -1106,5 +1120,5 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
         },
         recommendation,
         activityContext: null
-    }, input, selected, configuredWeeklyWeightChangeKg);
+    }, input, assessmentWindow, configuredWeeklyWeightChangeKg);
 }

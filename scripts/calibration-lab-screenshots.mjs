@@ -114,6 +114,32 @@ try {
   });
   process.stdout.write('Captured ' + compactReviewFilename + ': compact adjustment review\n');
 
+  await page.setViewportSize({ width: 320, height: COMPACT_VIEWPORT.height });
+  const waitingUrl = new URL('/', LAB_URL);
+  waitingUrl.searchParams.set('scenario', 'not-ready');
+  await page.goto(waitingUrl.href, { waitUntil: 'networkidle' });
+  await page.locator('.preview-state', { hasText: 'Live preview' }).waitFor();
+  await page.getByText('Not enough history for a reliable plan check', { exact: true }).waitFor();
+  await page.addStyleTag({
+    content: [
+      'header, .preview-heading, .workspace { display: none !important; }',
+      'main, .preview-panel, .product-preview { padding: 0 !important; margin: 0 !important; }',
+    ].join('\n'),
+  });
+  const waitingFilename = '23-waiting-narrow.png';
+  await page.locator('.product-preview').screenshot({
+    animations: 'disabled',
+    path: path.join(OUTPUT_DIRECTORY, waitingFilename),
+  });
+  const overflows = await page.locator('[data-testid="plan-check-waiting"]').evaluate((panel) =>
+    Array.from(panel.querySelectorAll('*')).some((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.right > window.innerWidth + 1 || rect.left < -1;
+    }),
+  );
+  if (overflows) throw new Error('Waiting card content overflows the 320px viewport.');
+  process.stdout.write('Captured ' + waitingFilename + ': narrow waiting card\n');
+
   await context.close();
 } finally {
   await browser.close();

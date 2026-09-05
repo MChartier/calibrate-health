@@ -39,7 +39,7 @@ The card explicitly says that the trend describes the period shown and is not a 
 
 ### Off track
 
-Off track is shown only when the full trend interval supports a faster, slower, above-maintenance, or below-maintenance conclusion.
+Off track is shown only when the full, sufficiently narrow trend interval supports a faster, slower, above-maintenance, or below-maintenance conclusion. An interval wider than the 300 kcal/day-equivalent limit stays in Waiting even if it is entirely beyond the goal band.
 
 The target decision remains separate:
 
@@ -63,6 +63,8 @@ The shared weight-trend model:
 - Returns a midpoint and approximate 95% interval in kilograms per week
 
 Food logs do not determine this trend or widen its interval. They are used with profile-estimated TDEE to decide whether a calorie-target correction is supported.
+
+The displayed interval comes directly from the weight model, not the food-dependent bootstrap samples used by recommendation model 4. Recommendations keep their selected action window. Without a recommendation, a segment reset in the longest window falls back to the longest supported window contained in the current segment.
 
 The goal rate is a planning target:
 
@@ -97,6 +99,8 @@ Recommendation thresholds, 14-42 day action windows, fingerprints, materializati
 Automatic target recommendations are enforced inside the shared evaluator for adult loss goals only. Maintenance and gain goals still receive Plan check assessments but never receive automatic calorie-target changes.
 
 The card exposes one Review adjustment action. Apply is available only inside the review sheet and only when the response contains both an evaluator recommendation and top-level materialized recommendation metadata.
+
+If a recommendation changes during review, the sheet closes and the new target requires a fresh review. Apply and Undo conflicts refresh the check; transient failures remain retryable.
 
 Scheduled changes appear as a slim transactional banner. They do not replace the underlying assessment.
 

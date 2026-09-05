@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CalibrationStatusResponse } from '@calibrate/api-client';
+import { ApiError, type CalibrationStatusResponse } from '@calibrate/api-client';
 import type {
     CalibrationAssessmentBlocker,
     CalibrationInterval,
@@ -98,6 +98,7 @@ export const PlanCheckCard: React.FC<PlanCheckCardProps> = ({
                 {...props}
                 status={statusQuery.data}
                 timezone={user?.timezone}
+                onRetry={isOnline ? () => { void statusQuery.refetch(); } : undefined}
                 onApplyRecommendation={applyRecommendation}
                 onCancelScheduledChange={cancelScheduledChange}
             />
@@ -186,6 +187,8 @@ function waitingTitle(blocker: CalibrationAssessmentBlocker | null): string {
             return 'Your weight trend is still taking shape';
         case 'plan_unavailable':
             return 'Review your calorie plan';
+        case 'trend_unavailable':
+            return 'Your weight trend is unavailable';
         default:
             return 'Not enough history for a reliable plan check';
     }
@@ -197,6 +200,8 @@ function waitingDescription(blocker: CalibrationAssessmentBlocker | null): strin
             return 'Resume food tracking when you are ready. This check will restart with your new history.';
         case 'plan_unavailable':
             return 'This check will return after your calorie plan is available again.';
+        case 'trend_unavailable':
+            return 'We cannot assess your weight trend right now. Check that your weight entries are correct and continue logging consistently.';
         case 'weight_uncertainty':
             return 'Day-to-day weight changes are still too large to assess your pace reliably. Keep logging meals and weight.';
         default:
@@ -303,7 +308,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     const themedStyles = React.useMemo(() => createStyles(theme), [theme]);
     const { width, fontScale } = useWindowDimensions();
     const stackLayout = width < COMPACT_LAYOUT_BREAKPOINT || fontScale >= 1.3;
-    const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [reviewedRecommendationKey, setReviewedRecommendationKey] = useState<string | null>(null);
     const [isApplying, setIsApplying] = useState(false);
     const [applyError, setApplyError] = useState<Error | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
@@ -312,14 +317,23 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     const assessment = evaluation?.assessment;
     const recommendation = evaluation?.recommendation;
     const actionableRecommendation = status?.recommendation && recommendation ? recommendation : null;
+    // Never silently swap the target while the user is reviewing an earlier recommendation.
+    const recommendationKey = actionableRecommendation && status?.recommendation
+        ? JSON.stringify([status.recommendation.id, status.recommendation.inputFingerprint, actionableRecommendation])
+        : null;
+    const isReviewOpen = reviewedRecommendationKey !== null && reviewedRecommendationKey === recommendationKey;
     const scheduledChange = status?.scheduledChange;
     const scheduledChangeIsOnHold = scheduledChange?.dailyCalorieBudgetKcal === null;
 
     useEffect(() => {
-        if (!isReviewOpen || !status || actionableRecommendation) return;
+        setCancelError(null);
+    }, [scheduledChange?.recommendationId, scheduledChange?.effectiveLocalDate]);
+
+    useEffect(() => {
+        if (reviewedRecommendationKey === null || reviewedRecommendationKey === recommendationKey) return;
         setApplyError(null);
-        setIsReviewOpen(false);
-    }, [actionableRecommendation, isReviewOpen, status]);
+        setReviewedRecommendationKey(null);
+    }, [recommendationKey, reviewedRecommendationKey]);
 
     async function applyRecommendation() {
         const recommendationId = status?.recommendation?.id;
@@ -331,9 +345,10 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
         setApplyError(null);
         try {
             await onApplyRecommendation(recommendationId);
-            setIsReviewOpen(false);
+            setReviewedRecommendationKey(null);
         } catch (nextError) {
             setApplyError(nextError instanceof Error ? nextError : new Error('Unable to apply this recommendation.'));
+            if (nextError instanceof ApiError && nextError.status === 409) onRetry?.();
         } finally {
             setIsApplying(false);
         }
@@ -351,6 +366,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
             await onCancelScheduledChange(recommendationId);
         } catch (nextError) {
             setCancelError(nextError instanceof Error ? nextError : new Error('Unable to undo this scheduled update.'));
+            if (nextError instanceof ApiError && nextError.status === 409) onRetry?.();
         } finally {
             setIsCancelling(false);
         }
@@ -368,10 +384,19 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
         );
     }
 
-    if (isLoading || !evaluation || !assessment) {
+    if (isLoading || !evaluation) {
         return (
             <AppCard {...props} density="compact" style={style} accessibilityLabel="Loading plan check">
                 <CardHeader title="Plan check" metadata="Checking your latest completed day..." density="compact" />
+            </AppCard>
+        );
+    }
+
+    if (!assessment) {
+        return (
+            <AppCard {...props} density="compact" style={style}>
+                <CardHeader title="Plan check" density="compact" />
+                <AppText variant="muted">This check is not available from your connected server yet.</AppText>
             </AppCard>
         );
     }
@@ -399,7 +424,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     } else if (assessment.targetDecision === 'policy_unavailable') {
         decisionMessage = 'Automatic calorie-target adjustments are not available for this goal.';
     } else if (assessment.targetDecision === 'change_available') {
-        decisionMessage = 'A calorie-target adjustment is being reviewed.';
+        decisionMessage = 'Refresh this check before reviewing a calorie-target adjustment.';
     } else if (assessment.state === 'off_track') {
         decisionMessage = 'Keep your current calorie target for now.';
     }
@@ -464,7 +489,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                         <View style={themedStyles.waitingPanel} testID="plan-check-waiting">
                             <View style={styles.statusHeading}>
                                 <Ionicons name="time-outline" size={24} color={theme.colors.onSurfaceVariant} />
-                                <AppText variant="subtitle">{waitingTitle(assessment.blocker)}</AppText>
+                                <AppText variant="subtitle" style={styles.statusCopy}>{waitingTitle(assessment.blocker)}</AppText>
                             </View>
                             <AppText variant="muted">{waitingDescription(assessment.blocker)}</AppText>
                             <View style={styles.waitingFor}>
@@ -493,7 +518,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                                 </View>
                             </View>
 
-                            <View style={[styles.metrics, stackLayout && styles.metricsStacked]}>
+                            <View testID="plan-check-metrics" style={[styles.metrics, stackLayout && styles.metricsStacked]}>
                                 <View style={styles.metric}>
                                     <AppText variant="caption">Recent weight trend</AppText>
                                     <AppText variant="subtitle">
@@ -563,7 +588,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                                         variant="secondary"
                                         onPress={() => {
                                             setApplyError(null);
-                                            setIsReviewOpen(true);
+                                            setReviewedRecommendationKey(recommendationKey);
                                         }}
                                     />
                                 </View>
@@ -586,7 +611,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                 showHandle={false}
                 onRequestClose={() => {
                     setApplyError(null);
-                    setIsReviewOpen(false);
+                    setReviewedRecommendationKey(null);
                 }}
             >
                 <View style={styles.sheetContent}>
@@ -671,7 +696,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                                     disabled={isApplying}
                                     onPress={() => {
                                         setApplyError(null);
-                                        setIsReviewOpen(false);
+                                        setReviewedRecommendationKey(null);
                                     }}
                                     style={styles.action}
                                 />
