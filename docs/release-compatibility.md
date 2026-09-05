@@ -193,16 +193,19 @@ separate `expo-publication` approval. Expo's project-wide token is not channel s
 approvals enforce reviewed workflow sequencing rather than a distinct production credential boundary. A missing, unattested, or
 incompatible native tag skips OTA without failing the independent server/image release. Rerun **Publish prepared
 release** only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
-manual OTA workflow with an exact source that descends from the installed native baseline. Neither path waits for or
-triggers self-host deployment.
+manual OTA workflow with an exact source that descends from the installed native baseline. Neither OTA path waits for
+or triggers self-host deployment.
+
+An opted-in deployment job updates the configured self-host alongside OTA using the receipt-verified immutable image
+digest. It also runs when the native baseline is unavailable and OTA is skipped. OTA does not wait for deployment.
 
 Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
 running: native startup uses the Fetch `cache: 'no-store'` request described above to compare its bundled expected
 server contract version before restoring the saved session or synchronizing. An incompatible update can therefore
 download and start before the runtime gate blocks normal authenticated use. Protected production approval is the
 current public-channel promotion control. A future automated gate may require an explicit deployment-readiness signal
-for the release owner's declared server rollout, but independent self-hosts still require the runtime guard. CI must
-not poll private servers.
+for the release owner's declared server rollout, but independent self-hosts still require the runtime guard. The
+optional deployment job verifies only its configured target; CI must not poll independent private servers to gate OTA.
 
 The preparation command is also available for isolated release tooling tests:
 
@@ -232,8 +235,10 @@ version and source-SHA image identities are write-once. Only a registry config d
 attestation is authoritative: recovery fills a missing alias only from that attested manifest, fails if immutable
 identities disagree, and never adopts an unattested pre-existing digest. A fresh publication also proves the pushed
 config digest equals the credential-free build identity. Moving `latest` is created only from that verified immutable
-digest. Validated releases publish version, source-SHA, and moving `latest` tags to GHCR; deployment to a self-host remains an
-operator-controlled Docker Compose operation. No GitHub Release object or generated changelog is created.
+digest. Validated releases publish version, source-SHA, and moving `latest` tags to GHCR. Operators can opt one existing
+Compose stack into [deployment over WireGuard](../deploy/self-hosted/README.md), or keep deploying manually.
+**Deploy self-hosted server** retries a published digest without rebuilding or republishing OTA. No GitHub Release
+object or generated changelog is created.
 
 **Cut release** owns exact-candidate metadata validation plus the production container build and startup smoke.
 Affected pull-request and scheduled workflows own the broader test, dependency, vulnerability, and migration gates.

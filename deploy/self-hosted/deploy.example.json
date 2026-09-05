@@ -1,0 +1,11 @@
+{
+  "imageRepository": "ghcr.io/mchartier/calibratehealth",
+  "projectName": "calibrate",
+  "projectDirectory": "/srv/calibrate/deploy",
+  "composeFiles": ["docker-compose.yml", "docker-compose.postgres.yml", "docker-compose.backup.yml"],
+  "envFile": ".env",
+  "stateDirectory": "/var/lib/calibrate-deploy",
+  "backupMarker": "/srv/calibrate/deploy/backups/.last-success",
+  "backupMaxAgeSeconds": 172800,
+  "waitTimeoutSeconds": 300
+}

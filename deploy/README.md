@@ -119,6 +119,10 @@ exist.
   migrations and readiness succeed. Database migrations are forward-only; rollback means restoring a pre-upgrade
   backup into a clean database and running the matching prior image.
 
+For automatic redeployment after image publication, see [deployment over WireGuard](self-hosted/README.md).
+It is opt-in and targets the existing stack with a published digest, backup freshness checks, and readiness/version
+verification. Expo publication remains independent of the deployment result.
+
 ## Encrypted automated backups
 
 The backup image contains Postgres 16 client tools and `age`. It creates custom-format `pg_dump` files, encrypts each
