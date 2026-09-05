@@ -3,8 +3,10 @@ import { render } from '@testing-library/react-native';
 import { AppText } from './AppText';
 import { Screen } from './Screen';
 
+let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+
 jest.mock('react-native-safe-area-context', () => ({
-    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 })
+    useSafeAreaInsets: () => mockSafeAreaInsets
 }));
 
 describe('Screen', () => {
@@ -42,6 +44,23 @@ describe('Screen', () => {
             alignSelf: 'center'
         }));
         expect(contentStyle.minHeight).toBeUndefined();
+    });
+
+    it('keeps non-scrolling content beyond horizontal display cutouts', () => {
+        mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 80 };
+        try {
+            const view = render(
+                <Screen scroll={false} testID="safe-screen">
+                    <AppText>Landscape tablet</AppText>
+                </Screen>
+            );
+            const style = StyleSheet.flatten(view.getByTestId('safe-screen').props.style);
+
+            expect(style.paddingLeft).toBe(88);
+            expect(style.paddingRight).toBeLessThan(style.paddingLeft);
+        } finally {
+            mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+        }
     });
 
     it('uses the shared keyboard-aware scroller for form content', () => {

@@ -50,13 +50,21 @@ function positiveVersionCode(value, option) {
   return parsed;
 }
 
+/** Keep disposable builds in the same odd phone/even Wear lanes as modern release validation. */
+export function rehearsalVersionCodes(phoneVersionCode) {
+  const phone = positiveVersionCode(phoneVersionCode, 'Phone version code');
+  if (phone % 2 !== 1) throw new Error('Phone version code must be odd; Wear uses the next even code.');
+  const wear = positiveVersionCode(phone + 1, 'Wear version code');
+  return { phone, wear };
+}
+
 /** Parse a dry-run-by-default CLI so emulator mutation always requires explicit intent. */
 export function parseNativeUpgradeArgs(argv, options = {}) {
   const values = {
     baselineRef: null,
     candidateRef: 'HEAD',
     baselineVersionCode: 1,
-    candidateVersionCode: 2,
+    candidateVersionCode: 3,
     phoneSerial: null,
     wearSerial: null,
     serverUrl: 'https://calibratehealth.app',
@@ -99,7 +107,9 @@ export function parseNativeUpgradeArgs(argv, options = {}) {
     throw new Error('--phone-serial and --wear-serial are required so no implicit device can be changed.');
   }
   if (values.phoneSerial === values.wearSerial) throw new Error('Phone and Wear serials must be different.');
-  if (values.candidateVersionCode <= values.baselineVersionCode) {
+  const baselineCodes = rehearsalVersionCodes(values.baselineVersionCode);
+  const candidateCodes = rehearsalVersionCodes(values.candidateVersionCode);
+  if (candidateCodes.phone <= baselineCodes.wear) {
     throw new Error('Candidate version code must be greater than the baseline version code.');
   }
   let serverUrl;
@@ -281,8 +291,14 @@ export function createNativeUpgradePlan(config, context) {
   return {
     schemaVersion: 1,
     mode: config.dryRun ? 'dry-run' : 'execute',
-    baseline: { ref: config.baselineRef, commit: context.baselineCommit, versionCode: config.baselineVersionCode },
-    candidate: { ref: config.candidateRef, commit: context.candidateCommit, versionCode: config.candidateVersionCode },
+    baseline: {
+      ref: config.baselineRef, commit: context.baselineCommit, versionCode: config.baselineVersionCode,
+      wearVersionCode: rehearsalVersionCodes(config.baselineVersionCode).wear
+    },
+    candidate: {
+      ref: config.candidateRef, commit: context.candidateCommit, versionCode: config.candidateVersionCode,
+      wearVersionCode: rehearsalVersionCodes(config.candidateVersionCode).wear
+    },
     targets: context.targets,
     signing: {
       source: config.disposableKeystore ? 'operator-acknowledged disposable keystore copy' : 'generated disposable key',
@@ -339,16 +355,19 @@ export function removeOwnedTempRoot(root, id) {
 }
 
 export function overrideCheckoutVersions(checkout, versionCode) {
+  const { wear: wearVersionCode } = rehearsalVersionCodes(versionCode);
   const appJsonPath = path.join(checkout, 'mobile', 'app.json');
   const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
   appJson.expo.android.versionCode = versionCode;
+  // Historical Android-only checkouts have no iOS config; newer checkouts share the mobile counter.
+  if (appJson.expo.ios) appJson.expo.ios.buildNumber = String(versionCode);
   fs.writeFileSync(appJsonPath, `${JSON.stringify(appJson, null, 2)}\n`);
 
   const releasePath = path.join(checkout, 'shared', 'release.json');
   if (fs.existsSync(releasePath)) {
     const release = JSON.parse(fs.readFileSync(releasePath, 'utf8'));
     release.android.mobile.version_code = versionCode;
-    release.android.wear.version_code = versionCode;
+    release.android.wear.version_code = wearVersionCode;
     fs.writeFileSync(releasePath, `${JSON.stringify(release, null, 2)}\n`);
   }
 
@@ -356,7 +375,7 @@ export function overrideCheckoutVersions(checkout, versionCode) {
   const wearGradle = fs.readFileSync(wearGradlePath, 'utf8');
   const matches = wearGradle.match(/versionCode\s*=\s*\d+/g) ?? [];
   if (matches.length !== 1) throw new Error(`Expected one Wear versionCode in ${wearGradlePath}.`);
-  fs.writeFileSync(wearGradlePath, wearGradle.replace(/versionCode\s*=\s*\d+/, `versionCode = ${versionCode}`));
+  fs.writeFileSync(wearGradlePath, wearGradle.replace(/versionCode\s*=\s*\d+/, `versionCode = ${wearVersionCode}`));
 
   const pairingGradlePath = path.join(checkout, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle');
   const pairingGradle = fs.readFileSync(pairingGradlePath, 'utf8');
@@ -553,11 +572,13 @@ export function assertArtifactSet(artifacts, config) {
   for (const artifact of rows) {
     if (artifact.applicationId !== APPLICATION_ID) throw new Error(`Unexpected APK application ID: ${artifact.applicationId}`);
   }
-  for (const artifact of [artifacts.baseline.phone, artifacts.baseline.wear]) {
-    if (artifact.versionCode !== config.baselineVersionCode) throw new Error('Baseline APK version override was not applied.');
-  }
-  for (const artifact of [artifacts.candidate.phone, artifacts.candidate.wear]) {
-    if (artifact.versionCode !== config.candidateVersionCode) throw new Error('Candidate APK version override was not applied.');
+  for (const stage of ['baseline', 'candidate']) {
+    const codes = rehearsalVersionCodes(config[stage + 'VersionCode']);
+    for (const role of ['phone', 'wear']) {
+      if (artifacts[stage][role].versionCode !== codes[role]) {
+        throw new Error(`${stage} ${role} APK version override was not applied.`);
+      }
+    }
   }
   const signers = new Set(rows.map((artifact) => artifact.signerSha256));
   if (signers.size !== 1) throw new Error('Phone/Wear baseline and candidate APKs do not share one disposable signer.');
@@ -684,7 +705,7 @@ export async function executeUpgradeInstallSequence(options) {
     installArgs.push(artifacts.baseline[role].file);
     await runner(adbRequest(tooling, target.serial, installArgs, `install ${role} baseline`));
     baselineStates[role] = await packageEvidence(target.serial, tooling, runner, `${role} baseline`);
-    if (baselineStates[role].versionCode !== config.baselineVersionCode) {
+    if (baselineStates[role].versionCode !== rehearsalVersionCodes(config.baselineVersionCode)[role]) {
       throw new Error(`${role} baseline version code did not install.`);
     }
     const launch = await runner(launchRequest(role, target, tooling, `launch ${role} baseline`));
@@ -725,7 +746,7 @@ export async function executeUpgradeInstallSequence(options) {
   for (const role of ['phone', 'wear']) {
     const target = targets.find((entry) => entry.role === role);
     candidateStates[role] = await packageEvidence(target.serial, tooling, runner, `${role} candidate`);
-    if (candidateStates[role].versionCode !== config.candidateVersionCode) {
+    if (candidateStates[role].versionCode !== rehearsalVersionCodes(config.candidateVersionCode)[role]) {
       throw new Error(`${role} candidate version code did not install.`);
     }
     if (candidateStates[role].firstInstallTime !== baselineStates[role].firstInstallTime) {
@@ -816,9 +837,20 @@ export function createHostedUpgradeEvidence(rawEvidence, sourceCommit) {
   );
   const processAlive = roles.every((role) => rawEvidence?.install?.crashEvidence?.[role]?.processAlive === true);
   const crashClean = roles.every((role) => rawEvidence?.install?.crashEvidence?.[role]?.clean === true);
-  const versionAdvanced = Number.isSafeInteger(plan?.baseline?.versionCode) &&
-    Number.isSafeInteger(plan?.candidate?.versionCode) &&
-    plan.candidate.versionCode > plan.baseline.versionCode;
+  // Older retained evidence used one code for both roles. New plans record each role explicitly.
+  const plannedCode = (stage, role) => role === 'wear'
+    ? plan?.[stage]?.wearVersionCode ?? plan?.[stage]?.versionCode
+    : plan?.[stage]?.versionCode;
+  const versionAdvanced = roles.every((role) => {
+    const baselineCode = plannedCode('baseline', role);
+    const candidateCode = plannedCode('candidate', role);
+    return Number.isSafeInteger(baselineCode) && baselineCode > 0
+      && Number.isSafeInteger(candidateCode) && candidateCode > baselineCode
+      && baselineStates?.[role]?.versionCode === baselineCode
+      && candidateStates?.[role]?.versionCode === candidateCode
+      && rawEvidence?.artifacts?.baseline?.[role]?.versionCode === baselineCode
+      && rawEvidence?.artifacts?.candidate?.[role]?.versionCode === candidateCode;
+  });
   hosted.checkpoints.disposableSigning = rawEvidence?.signing?.source?.includes('disposable') === true;
   hosted.checkpoints.baselineInstalled = baselineInstalled;
   hosted.checkpoints.candidateInstalledWithReplace = candidateInstalled;
@@ -992,8 +1024,8 @@ Dry-run is the default. Add --execute to build and mutate only the two named emu
 
 Options:
   --candidate <git-ref>               Candidate commit (default: HEAD)
-  --baseline-version-code <number>    Temporary baseline code (default: 1)
-  --candidate-version-code <number>   Temporary candidate code (default: 2)
+  --baseline-version-code <number>    Temporary odd phone baseline code (default: 1); Wear uses code + 1
+  --candidate-version-code <number>   Temporary odd phone candidate code (default: 3); Wear uses code + 1
   --server-url <https-origin>          Compiled server origin
   --output <json-path>                 Retained evidence file
   --disposable-keystore <path>         Copy an existing disposable key; never use a permanent release key

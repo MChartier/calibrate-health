@@ -51,6 +51,10 @@ import {
 } from '../../src/notifications/query';
 import { isProfileSetupComplete } from '../../src/utils/profileCompletion';
 import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../../src/asyncState/resolveAsyncState';
+import {
+    NAVIGATION_RAIL_BREAKPOINT,
+    resolveSafeHorizontalPadding
+} from '../../src/layout/adaptiveLayout';
 import { radius, spacing, useAppTheme, type AppTheme, type AppThemeColors } from '../../src/theme';
 
 const HIDDEN_TAB_OPTIONS = {
@@ -60,9 +64,8 @@ const HIDDEN_TAB_OPTIONS = {
 const TAB_BAR_CONTENT_HEIGHT = 56; // Keeps the UIKit icon, label, and built-in item padding from clipping.
 const TAB_BAR_VERTICAL_PADDING = spacing.sm; // Separates tab content from both bar edges before safe-area padding.
 const TAB_BAR_BASE_HEIGHT = TAB_BAR_CONTENT_HEIGHT + (TAB_BAR_VERTICAL_PADDING * 2);
-const HEADER_ROW_MIN_HEIGHT = 56; // Standard compact Android app-bar height before large-text expansion.
-const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as Android font scale grows toward 200%.
-const DESKTOP_NAV_BREAKPOINT = 1024;
+const HEADER_ROW_MIN_HEIGHT = 56; // Standard compact native app-bar height before large-text expansion.
+const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as the device font scale grows toward 200%.
 const DESKTOP_NAV_RAIL_WIDTH = 176;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
 const QUERY_GATE_MAX_WIDTH = 640; // Keeps terminal shell errors readable on wide screens.
@@ -160,7 +163,7 @@ export default function TabsLayout() {
         && hasBrowserHistorySinceMount(initialBrowserHistoryLength.current, window.history.length);
     const canNavigateBack = routerCanGoBack || browserCanGoBack;
     const activeRoute = getRouteByPath(pathname);
-    const usesNavigationRail = Platform.OS === 'web' && width >= DESKTOP_NAV_BREAKPOINT;
+    const usesNavigationRail = width >= NAVIGATION_RAIL_BREAKPOINT;
     const logDateNavigation = useLogDateNavigation();
     const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user && hasFullAccess));
     const addFoodRequestSequence = React.useRef(0);
@@ -274,6 +277,24 @@ export default function TabsLayout() {
         spacing.xl,
         (width - DESKTOP_NAV_RAIL_WIDTH - DESKTOP_CONTENT_MAX_WIDTH) / 2 + spacing.xl
     );
+    const bottomTabHorizontalPadding = resolveSafeHorizontalPadding(
+        spacing.md,
+        insets.left,
+        insets.right,
+        spacing.sm
+    );
+    const navigationRailHorizontalPadding = resolveSafeHorizontalPadding(
+        spacing.sm,
+        insets.left,
+        0,
+        spacing.sm
+    );
+    const shellNoticeHorizontalPadding = resolveSafeHorizontalPadding(
+        spacing.lg,
+        insets.left,
+        insets.right,
+        spacing.sm
+    );
     const fabKind = resolveContextualFab({
         pathname,
         foodDayStatus: selectedFoodDayQuery.data?.status,
@@ -286,7 +307,7 @@ export default function TabsLayout() {
                 <View style={styles.shell}>
                     {(profileState.kind === ASYNC_RESOURCE_STATES.STALE
                         || profileState.kind === ASYNC_RESOURCE_STATES.DEGRADED) && (
-                        <View style={styles.shellNotice}>
+                        <View style={[styles.shellNotice, shellNoticeHorizontalPadding]}>
                             <AsyncStateBoundary
                                 state={profileState}
                                 resourceLabel="your profile"
@@ -311,14 +332,18 @@ export default function TabsLayout() {
                             tabBarActiveBackgroundColor: usesNavigationRail ? theme.colors.primaryContainer : undefined,
                             tabBarHideOnKeyboard: true,
                             tabBarStyle: usesNavigationRail
-                                ? [styles.navigationRail, { paddingTop: Math.max(insets.top, spacing.lg) }]
+                                ? [styles.navigationRail, {
+                                    paddingTop: Math.max(insets.top, spacing.lg),
+                                    paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm),
+                                    ...navigationRailHorizontalPadding
+                                }]
                                 : {
                                     backgroundColor: theme.colors.surface,
                                     borderTopColor: theme.colors.border,
                                     height: tabBarHeight,
                                     paddingBottom: insets.bottom + TAB_BAR_VERTICAL_PADDING,
                                     paddingTop: TAB_BAR_VERTICAL_PADDING,
-                                    paddingHorizontal: spacing.md
+                                    ...bottomTabHorizontalPadding
                                 },
                             tabBarItemStyle: [styles.tabBarItem, usesNavigationRail && styles.navigationRailItem],
                             tabBarLabelStyle: styles.tabBarLabel,
@@ -329,6 +354,8 @@ export default function TabsLayout() {
                                 return (
                                     <TabHeader
                                         topInset={insets.top}
+                                        leftInset={usesNavigationRail ? 0 : insets.left}
+                                        rightInset={insets.right}
                                         fontScale={fontScale}
                                         title={routeTitle}
                                         backAction={backLabel && activeRoute ? {
@@ -399,7 +426,9 @@ export default function TabsLayout() {
                     {fabKind && (
                         <ContextualFab
                             bottom={usesNavigationRail ? spacing.xxl : tabBarHeight + spacing.lg}
-                            right={usesNavigationRail ? desktopContentGutter : spacing.xl}
+                            right={usesNavigationRail
+                                ? Math.max(desktopContentGutter, insets.right + spacing.md)
+                                : Math.max(spacing.xl, insets.right + spacing.md)}
                             compact={fontScale >= 1.6 || width < 360}
                             colors={theme.colors}
                             styles={styles}
@@ -418,6 +447,8 @@ export default function TabsLayout() {
 const TabHeader: React.FC<{
     topInset: number;
     fontScale: number;
+    leftInset: number;
+    rightInset: number;
     title: string;
     backAction?: { label: string; onPress: () => void };
     unreadCount: number | null;
@@ -429,13 +460,17 @@ const TabHeader: React.FC<{
     styles: TabStyles;
     desktop: boolean;
     isTodayRoute: boolean;
-}> = ({ topInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop, isTodayRoute }) => (
+}> = ({ topInset, leftInset, rightInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop, isTodayRoute }) => (
     <View role="banner" style={[styles.headerRoot, { paddingTop: topInset }]}>
         <View
             style={[
                 styles.headerRow,
                 desktop && styles.headerRowDesktop,
-                { minHeight: HEADER_ROW_MIN_HEIGHT + Math.round(Math.max(0, Math.min(fontScale, 2) - 1) * LARGE_TEXT_HEIGHT_INCREMENT) }
+                {
+                    minHeight: HEADER_ROW_MIN_HEIGHT + Math.round(Math.max(0, Math.min(fontScale, 2) - 1) * LARGE_TEXT_HEIGHT_INCREMENT),
+                    paddingLeft: Math.max(desktop ? spacing.xl : spacing.lg, leftInset + spacing.sm),
+                    paddingRight: Math.max(desktop ? spacing.xl : spacing.lg, rightInset + spacing.sm)
+                }
             ]}
         >
             <View style={styles.headerLeading}>

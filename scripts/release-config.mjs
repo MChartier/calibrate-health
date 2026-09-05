@@ -223,12 +223,27 @@ export function nextReleaseVersion(version, bump) {
   return `${major}.${minor}.${patch}`;
 }
 
-const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'wear_os'];
+const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'ios', 'wear_os'];
 const MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM = 16;
 
+// Only the exact pre-iOS recovery identity may use the historical native contract.
+function isExactHistoricalPreparedRelease(manifest, { validationMode, sourceCommit } = {}) {
+  return validationMode === 'historical-prepared'
+    && sourceCommit === HISTORICAL_PREPARED_RELEASE_COMMIT
+    && isDeepStrictEqual(manifest, HISTORICAL_PREPARED_RELEASE_MANIFEST);
+}
+
+function clientDiagnosticPlatforms(manifest, validationOptions) {
+  if (isExactHistoricalPreparedRelease(manifest, validationOptions)) {
+    return CLIENT_DIAGNOSTIC_PLATFORMS.filter((platform) => platform !== 'ios');
+  }
+  return CLIENT_DIAGNOSTIC_PLATFORMS;
+}
+
 /** Keep the reviewed rollout window synchronized with current releases and the generated API source. */
-export function validateClientDiagnosticVersionContract(manifest, diagnosticVersions, openApiSource) {
+export function validateClientDiagnosticVersionContract(manifest, diagnosticVersions, openApiSource, validationOptions = {}) {
   const errors = [];
+  const platforms = clientDiagnosticPlatforms(manifest, validationOptions);
   const supported = diagnosticVersions?.supported_versions;
   const previousWebRelease = diagnosticVersions?.previous_web_release;
   if (diagnosticVersions?.schema_version !== 1) {
@@ -242,20 +257,22 @@ export function validateClientDiagnosticVersionContract(manifest, diagnosticVers
   }
 
   const keys = Object.keys(supported).sort();
-  if (JSON.stringify(keys) !== JSON.stringify([...CLIENT_DIAGNOSTIC_PLATFORMS].sort())) {
-    errors.push('client-diagnostic-versions.json must define exactly web, android_phone, and wear_os.');
+  if (JSON.stringify(keys) !== JSON.stringify([...platforms].sort())) {
+    errors.push(`client-diagnostic-versions.json must define exactly ${platforms.join(', ')}.`);
   }
   const currentVersions = {
     web: manifest?.server?.version,
     android_phone: manifest?.android?.mobile?.version_name,
+    ios: manifest?.android?.mobile?.version_name,
     wear_os: manifest?.android?.wear?.version_name
   };
   const minimumVersions = {
     android_phone: manifest?.android?.mobile?.minimum_supported_version,
+    ios: manifest?.android?.mobile?.minimum_supported_version,
     wear_os: manifest?.android?.wear?.minimum_supported_version
   };
 
-  for (const platform of CLIENT_DIAGNOSTIC_PLATFORMS) {
+  for (const platform of platforms) {
     const versions = supported[platform];
     if (!Array.isArray(versions) || versions.length === 0 || versions.length > MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM) {
       errors.push(`client diagnostic ${platform} versions must contain 1-${MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM} entries.`);
@@ -337,10 +354,7 @@ export function validateManifest(manifest, { validationMode = 'current', sourceC
     throw new Error(`Unknown release validation mode: ${validationMode}`);
   }
   const isHistoricalPreparedManifest = isDeepStrictEqual(manifest, HISTORICAL_PREPARED_RELEASE_MANIFEST);
-  const isExactHistoricalPreparedRelease = validationMode === 'historical-prepared'
-    && sourceCommit === HISTORICAL_PREPARED_RELEASE_COMMIT
-    && isHistoricalPreparedManifest;
-  const enforceCurrentNativePolicy = !isExactHistoricalPreparedRelease;
+  const enforceCurrentNativePolicy = !isExactHistoricalPreparedRelease(manifest, { validationMode, sourceCommit });
   const errors = [];
   if (
     validationMode === 'historical-prepared'
@@ -455,7 +469,8 @@ export async function checkRepository(
   const resolvedSourceCommit = validationMode === 'historical-prepared'
     ? sourceCommit ?? tryGit(root, ['rev-parse', '--verify', 'HEAD^{commit}'])
     : null;
-  const errors = validateManifest(manifest, { validationMode, sourceCommit: resolvedSourceCommit });
+  const validationOptions = { validationMode, sourceCommit: resolvedSourceCommit };
+  const errors = validateManifest(manifest, validationOptions);
   const [
     rootPackage,
     rootPackageLock,
@@ -487,7 +502,7 @@ export async function checkRepository(
     readFile(path.join(root, 'docs', 'openapi', 'v1.yaml'), 'utf8'),
     readFile(path.join(root, 'packages', 'api-client', 'src', 'generated', 'v1.ts'), 'utf8')
   ]);
-  errors.push(...validateClientDiagnosticVersionContract(manifest, diagnosticVersions, openApiSource));
+  errors.push(...validateClientDiagnosticVersionContract(manifest, diagnosticVersions, openApiSource, validationOptions));
 
   assertMatch(errors, 'package.json version', rootPackage.version, manifest.server.version);
   assertMatch(errors, 'package-lock.json version', rootPackageLock.version, manifest.server.version);
@@ -521,6 +536,15 @@ export async function checkRepository(
   );
   assertMatch(errors, 'mobile/app.json expo.version', expoConfig.expo?.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.android.versionCode', expoConfig.expo?.android?.versionCode, manifest.android.mobile.version_code);
+  // Both platforms share the mobile counter; the exact pre-iOS recovery source has no iOS block.
+  if (!isExactHistoricalPreparedRelease(manifest, validationOptions) || expoConfig.expo?.ios) {
+    assertMatch(
+      errors,
+      'mobile/app.json expo.ios.buildNumber',
+      expoConfig.expo?.ios?.buildNumber,
+      String(manifest.android.mobile.version_code)
+    );
+  }
   assertMatch(errors, 'mobile/app.json expo.android.package', expoConfig.expo?.android?.package, manifest.android.application_id);
   assertMatch(
     errors,
@@ -565,7 +589,7 @@ export async function checkRepository(
     }
   }
 
-  for (const diagnosticPlatform of CLIENT_DIAGNOSTIC_PLATFORMS) {
+  for (const diagnosticPlatform of clientDiagnosticPlatforms(manifest, validationOptions)) {
     const versions = diagnosticVersions?.supported_versions?.[diagnosticPlatform];
     if (Array.isArray(versions)) {
       const marker = `platform?: "${diagnosticPlatform}";`;
@@ -1240,7 +1264,7 @@ export async function prepareServerRelease({ root = REPOSITORY_ROOT, bump, lates
   return nextVersion;
 }
 
-/** Prepare a paired phone/Wear release and roll back every mirror if validation fails. */
+/** Prepare the shared mobile/Wear release and roll back every mirror if validation fails. */
 export async function prepareNativeRelease({
   root = REPOSITORY_ROOT,
   bump,
@@ -1302,6 +1326,7 @@ export async function prepareNativeRelease({
   const mobileApp = JSON.parse(originals.mobileApp);
   const pairingPackage = JSON.parse(originals.pairingPackage);
   const currentPhoneDiagnosticVersions = [...diagnostics.supported_versions.android_phone];
+  const currentIosDiagnosticVersions = [...diagnostics.supported_versions.ios];
   const currentWearDiagnosticVersions = [...diagnostics.supported_versions.wear_os];
   const advanceDiagnosticVersions = (versions) =>
     [nextVersion, ...versions.filter((version) => version !== nextVersion)]
@@ -1313,12 +1338,14 @@ export async function prepareNativeRelease({
   manifest.android.wear.version_name = nextVersion;
   manifest.android.wear.version_code = wearVersionCode;
   diagnostics.supported_versions.android_phone = advanceDiagnosticVersions(currentPhoneDiagnosticVersions);
+  diagnostics.supported_versions.ios = advanceDiagnosticVersions(currentIosDiagnosticVersions);
   diagnostics.supported_versions.wear_os = advanceDiagnosticVersions(currentWearDiagnosticVersions);
   rootLock.packages.mobile.version = nextVersion;
   rootLock.packages['mobile/modules/wear-pairing'].version = nextVersion;
   mobilePackage.version = nextVersion;
   mobileApp.expo.version = nextVersion;
   mobileApp.expo.android.versionCode = mobileVersionCode;
+  mobileApp.expo.ios.buildNumber = String(mobileVersionCode);
   mobileApp.expo.extra.calibrate.nativeReleaseTag = nextNativeTag;
   pairingPackage.version = nextVersion;
 
@@ -1354,6 +1381,7 @@ export async function prepareNativeRelease({
   );
 
   const nextPhoneDiagnosticVersions = diagnostics.supported_versions.android_phone;
+  const nextIosDiagnosticVersions = diagnostics.supported_versions.ios;
   const nextWearDiagnosticVersions = diagnostics.supported_versions.wear_os;
   const openApiLine = (platform, versions) =>
     `- properties: { platform: { const: ${platform} }, version: { enum: [${versions.join(', ')}] } }`;
@@ -1396,6 +1424,18 @@ export async function prepareNativeRelease({
       'generated API wear_os versions'
     )
   };
+  replacements.openApi = replaceExactlyOnce(
+    replacements.openApi,
+    openApiLine('ios', currentIosDiagnosticVersions),
+    openApiLine('ios', nextIosDiagnosticVersions),
+    'docs/openapi/v1.yaml ios versions'
+  );
+  replacements.generatedApi = replaceExactlyOnce(
+    replacements.generatedApi,
+    generatedBlock('ios', currentIosDiagnosticVersions),
+    generatedBlock('ios', nextIosDiagnosticVersions),
+    'generated API ios versions'
+  );
   if (files.mobileGradle) {
     let mobileGradle = replacePatternExactlyOnce(
       originals.mobileGradle,

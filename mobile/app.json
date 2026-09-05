@@ -53,6 +53,22 @@
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
+    "ios": {
+      "bundleIdentifier": "app.calibratehealth.mobile",
+      "buildNumber": "9",
+      "supportsTablet": true,
+      "requireFullScreen": false,
+      "icon": "./assets/icon-ios.png",
+      "associatedDomains": [
+        "applinks:calibratehealth.app"
+      ],
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Allow calibrate to connect to a self-hosted server on your local network.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
     "plugins": [
       "expo-router",
       [
@@ -74,10 +90,20 @@
       "./plugins/withHealthConnect",
       "./plugins/withPinnedGradleWrapper",
       "./plugins/withSharedAndroidSigning",
+      "./plugins/withOptionalCameraHardware",
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow calibrate to scan food barcodes."
+          "cameraPermission": "Allow calibrate to scan food barcodes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow calibrate to choose a profile photo.",
+          "microphonePermission": false
         }
       ],
       [

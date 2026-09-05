@@ -30,11 +30,16 @@ export type PushStatusPresentation = {
     isError: boolean;
 };
 
-export type PushStatusTarget = 'android' | 'web';
+export type PushStatusTarget = 'android' | 'ios' | 'web';
 
-/** Remote push is unavailable in Expo Go and outside the native Android target. */
+/** Remote push is unavailable in Expo Go and outside the supported native targets. */
 export function isNativePushEnvironmentSupported(appOwnership: string | null | undefined, platform: string): boolean {
-    return appOwnership !== 'expo' && platform === 'android';
+    return appOwnership !== 'expo' && (platform === 'android' || platform === 'ios');
+}
+
+export function getPushStatusTarget(platform: string): PushStatusTarget {
+    if (platform === 'web') return 'web';
+    return platform === 'ios' ? 'ios' : 'android';
 }
 
 export function getNotificationPermissionState(permission: {
@@ -93,6 +98,7 @@ export function getPushStatusPresentation(
         }
     }
 
+    const platformLabel = target === 'ios' ? 'iOS' : 'Android';
     switch (state) {
         case NATIVE_PUSH_STATES.CHECKING:
             return { message: 'Checking notification access...', action: null, isError: false };
@@ -104,7 +110,7 @@ export function getPushStatusPresentation(
             };
         case NATIVE_PUSH_STATES.BLOCKED:
             return {
-                message: 'Notifications are blocked for Calibrate. Enable them in Android settings, then check again.',
+                message: `Notifications are blocked for Calibrate. Enable them in ${platformLabel} settings, then check again.`,
                 action: 'settings',
                 isError: true
             };
@@ -114,7 +120,7 @@ export function getPushStatusPresentation(
             return { message: 'Push reminders are ready on this device.', action: null, isError: false };
         case NATIVE_PUSH_STATES.UNSUPPORTED:
             return {
-                message: 'Remote push is unavailable in Expo Go. Use an Android development or release build.',
+                message: `Remote push is unavailable in Expo Go. Use a native ${platformLabel} development or release build.`,
                 action: null,
                 isError: false
             };

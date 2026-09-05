@@ -14,6 +14,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild:android": "expo prebuild --platform android --no-install",
+    "prebuild:ios": "expo prebuild --platform ios --no-install",
     "prebuild:web": "npm --prefix ../shared run build",
     "build:web": "node ../scripts/expo-web-build.mjs",
     "preview:web": "node ../scripts/expo-web-preview.mjs",
@@ -82,6 +83,7 @@
     "preset": "@react-native/jest-preset",
     "moduleNameMapper": {
       "^expo/virtual/env$": "<rootDir>/test/expoVirtualEnv.js",
+      "^expo-application$": "<rootDir>/test/expoApplication.js",
       "^uuid$": "<rootDir>/../node_modules/uuid/dist/cjs/index.js"
     },
     "testMatch": [

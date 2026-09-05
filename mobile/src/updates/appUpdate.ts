@@ -2,7 +2,6 @@ import * as Application from 'expo-application';
 import * as Updates from 'expo-updates';
 import { Platform } from 'react-native';
 import appConfig from '../../app.json';
-import release from '../../../shared/release.json';
 
 export type RunningUpdateInfo = {
     updateId?: string;
@@ -59,6 +58,11 @@ export const appUpdateRuntime: AppUpdateRuntime = {
     reloadAsync: Updates.reloadAsync
 };
 
+export function getConfiguredNativeBuild(platform: string): string {
+    return platform === 'ios'
+        ? appConfig.expo.ios.buildNumber
+        : String(appConfig.expo.android.versionCode);
+}
 export function shortenUpdateId(updateId: string): string {
     return updateId.slice(0, 8);
 }
@@ -104,8 +108,8 @@ export function getAppVersionInfo(runningUpdate: RunningUpdateInfo): AppVersionI
         isDevelopment: typeof __DEV__ !== 'undefined' && __DEV__,
         nativeApplicationVersion: Application.nativeApplicationVersion,
         nativeBuildVersion: Application.nativeBuildVersion,
-        fallbackNativeVersion: release.android.mobile.version_name,
-        fallbackNativeBuild: String(release.android.mobile.version_code),
+        fallbackNativeVersion: appConfig.expo.version,
+        fallbackNativeBuild: getConfiguredNativeBuild(Platform.OS),
         nativeReleaseTag: appConfig.expo.extra.calibrate.nativeReleaseTag,
         runningUpdate
     });

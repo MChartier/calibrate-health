@@ -4,6 +4,7 @@ import {
     normalizeServerUrl,
     parseServerUrl,
     resolveBrowserServerUrl,
+    resolveDefaultNativeServerUrl,
     resolveDefaultWebServerUrl,
     resolveInitialServerUrl,
     testCalibrateServerConnection
@@ -103,6 +104,14 @@ describe('server URL parsing', () => {
             'http://localhost:21508',
             true
         )).toBe('http://localhost:21508');
+    });
+
+    it('uses the correct loopback address for each native simulator', () => {
+        expect(resolveDefaultNativeServerUrl('android', null, true)).toBe('http://10.0.2.2:3000');
+        expect(resolveDefaultNativeServerUrl('ios', null, true)).toBe('http://127.0.0.1:3000');
+        expect(resolveDefaultNativeServerUrl('ios', 'http://192.168.0.10:3000', true))
+            .toBe('http://192.168.0.10:3000');
+        expect(resolveDefaultNativeServerUrl('ios', null, false)).toBe(HOSTED_SERVER_URL);
     });
 });
 

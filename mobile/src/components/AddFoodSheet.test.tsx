@@ -1,10 +1,10 @@
 import React from 'react';
-import { Keyboard, Platform } from 'react-native';
+import { Dimensions, Keyboard, Platform } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { RecentFoodSummary } from '@calibrate/api-client';
-import { AddFoodSheet } from './AddFoodSheet';
+import { AddFoodSheet, usesCompactAddFoodLayout } from './AddFoodSheet';
 import { getSavedFoodsLibraryQueryKey } from '../savedFoods/queryKeys';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -124,8 +124,23 @@ function renderSheet(seed?: (queryClient: QueryClient) => void) {
     );
 }
 
+describe('AddFoodSheet adaptive layout', () => {
+    it('keeps phone search focused while retaining full controls on tablets', () => {
+        expect(usesCompactAddFoodLayout(719)).toBe(true);
+        expect(usesCompactAddFoodLayout(720)).toBe(false);
+        expect(usesCompactAddFoodLayout(1_024)).toBe(false);
+    });
+});
+
 describe('AddFoodSheet async resource states', () => {
     beforeEach(() => {
+        const phoneDimensions = {
+            width: 390,
+            height: 844,
+            scale: 3,
+            fontScale: 1
+        };
+        Dimensions.set({ window: phoneDimensions, screen: phoneDimensions });
         jest.clearAllMocks();
         mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status: 'OPEN' });
         mockApi.getRecentFoods.mockResolvedValue({ items: [] });

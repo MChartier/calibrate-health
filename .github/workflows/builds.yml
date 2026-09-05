@@ -132,9 +132,7 @@ jobs:
               - 'mobile/app.config.js'
               - 'mobile/app.json'
               - 'mobile/eas.json'
-              - 'mobile/assets/adaptive-icon.png'
-              - 'mobile/assets/icon.png'
-              - 'mobile/assets/notification-icon.png'
+              - 'mobile/assets/**'
               - 'mobile/modules/**'
               - 'mobile/package.json'
               - 'mobile/plugins/**'
@@ -470,11 +468,16 @@ jobs:
           retention-days: 7
 
   native-metro-bundle:
-    name: Android Runtime Bundle
+    name: ${{ matrix.platform }} Runtime Bundle
     needs: changes
     if: needs.changes.outputs.native_runtime == 'true' || needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
 
     env:
       CI: "1"
@@ -501,9 +504,9 @@ jobs:
       - name: Test installed mobile build tools
         run: npm run test:mobile-build-tools
 
-      - name: Export the Android Metro bundle
+      - name: Export the ${{ matrix.platform }} Metro bundle
         working-directory: mobile
-        run: node ../node_modules/expo/bin/cli export --platform android --output-dir "${RUNNER_TEMP}/calibrate-android-export"
+        run: node ../node_modules/expo/bin/cli export --platform "${{ matrix.platform }}" --output-dir "${RUNNER_TEMP}/calibrate-${{ matrix.platform }}-export"
 
   mobile-build:
     name: Mobile Build
@@ -567,6 +570,58 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           overwrite: true
+
+  ios-build:
+    name: iOS Build
+    needs: changes
+    if: needs.changes.outputs.native_package == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 35
+
+    env:
+      CI: "1"
+      EXPO_NO_METRO_WORKSPACE_ROOT: "1"
+      NODE_ENV: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --include=dev --no-audit --fund=false
+
+      - name: Type-check mobile
+        run: npm --prefix mobile run typecheck
+
+      - name: Prebuild iOS
+        run: npm --prefix mobile run prebuild:ios
+
+      - name: Install CocoaPods dependencies
+        working-directory: mobile/ios
+        run: pod install
+
+      - name: Build iOS Simulator app
+        working-directory: mobile/ios
+        run: >-
+          xcodebuild
+          -workspace calibrate.xcworkspace
+          -scheme calibrate
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "${RUNNER_TEMP}/calibrate-ios-derived-data"
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          build
 
   wear-build:
     name: Wear Build and JVM Tests
@@ -954,7 +1009,7 @@ jobs:
             node scripts/hosted-native-emulators.mjs start-wear
             node scripts/hosted-native-emulators.mjs wait-wear
             mkdir -p .codex-screenshots/native-emulator
-            npm run test:native:upgrade -- --baseline "$NATIVE_UPGRADE_BASELINE" --candidate "$CALIBRATE_SOURCE_COMMIT" --baseline-version-code 1000000 --candidate-version-code 1000001 --phone-serial emulator-5554 --wear-serial emulator-5556 --server-url https://calibratehealth.app --output .codex-screenshots/native-emulator/native-upgrade.json --execute --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
+            npm run test:native:upgrade -- --baseline "$NATIVE_UPGRADE_BASELINE" --candidate "$CALIBRATE_SOURCE_COMMIT" --baseline-version-code 1000001 --candidate-version-code 1000003 --phone-serial emulator-5554 --wear-serial emulator-5556 --server-url https://calibratehealth.app --output .codex-screenshots/native-emulator/native-upgrade.json --execute --package-only > "$RUNNER_TEMP/native-upgrade-console.log"
             echo "Hosted package-only native upgrade passed."
 
       - name: Stop secondary Wear emulator

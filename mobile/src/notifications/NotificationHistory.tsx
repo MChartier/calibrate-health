@@ -29,7 +29,12 @@ import {
     reconcileNotificationDismissed,
     reconcileNotificationRead
 } from './query';
-import { getNotificationAction, getPushStatusPresentation, NATIVE_PUSH_STATES } from './workflow';
+import {
+    getNotificationAction,
+    getPushStatusPresentation,
+    getPushStatusTarget,
+    NATIVE_PUSH_STATES
+} from './workflow';
 import { useClientQueryFailureDiagnostic } from '../diagnostics/operationDiagnostics';
 
 type DeliveryAction = {
@@ -45,7 +50,7 @@ export function NotificationHistory() {
     const isOnline = useOnlineStatus();
     const pushRegistration = useNativePushRegistration();
     const isWeb = Platform.OS === 'web';
-    const deliveryStatus = getPushStatusPresentation(pushRegistration.state, isWeb ? 'web' : 'android');
+    const deliveryStatus = getPushStatusPresentation(pushRegistration.state, getPushStatusTarget(Platform.OS));
 
     const historyQuery = useInfiniteQuery({
         queryKey: notificationHistoryQueryKey,
@@ -100,7 +105,7 @@ export function NotificationHistory() {
     } else if (deliveryStatus.action === 'settings') {
         deliveryAction = isWeb
             ? { label: 'Check notification access', run: pushRegistration.refreshPermission }
-            : { label: 'Open Android settings', run: pushRegistration.openSettings };
+            : { label: 'Open device settings', run: pushRegistration.openSettings };
     } else if (deliveryStatus.action === 'retry') {
         deliveryAction = { label: 'Retry push registration', run: pushRegistration.retryRegistration };
     }

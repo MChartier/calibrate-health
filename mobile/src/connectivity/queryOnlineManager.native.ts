@@ -12,7 +12,7 @@ export function isNativeNetworkOnline(state: NativeNetworkState): boolean {
     return state.isConnected !== false && state.isInternetReachable !== false;
 }
 
-/** Drive React Query from Android's connection and reachability transitions. */
+/** Drive React Query from native connection and reachability transitions. */
 export function configureQueryOnlineManager(
     source: NativeConnectivitySource = NetInfo
 ): () => void {

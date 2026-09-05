@@ -9,13 +9,13 @@ function wasQueuedOffline(value: unknown): boolean {
     return Boolean(value && typeof value === 'object' && (value as { disposition?: unknown }).disposition === 'queued');
 }
 
-/** Notify only the exact paired node after committed phone mutations and retry durable sends on foreground. */
-export function useWearSyncInvalidation(): void {
+/** Notify only the exact paired node after committed Android mutations and retry durable sends on foreground. */
+export function useWearSyncInvalidation(enabled = true): void {
     const queryClient = useQueryClient();
     const { serverUrl, user } = useAuth();
 
     useEffect(() => {
-        if (!user || !hasFullAccountAccess(user)) return;
+        if (!enabled || !user || !hasFullAccountAccess(user)) return;
         let active = true;
         const notify = () => {
             if (!active) return;
@@ -39,5 +39,5 @@ export function useWearSyncInvalidation(): void {
             unsubscribe();
             subscription.remove();
         };
-    }, [queryClient, serverUrl, user]);
+    }, [enabled, queryClient, serverUrl, user]);
 }

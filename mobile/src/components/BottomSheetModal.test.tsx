@@ -32,10 +32,10 @@ describe('BottomSheetModal', () => {
         expect(resolveFixedSheetHeight(640, 844)).toBe(640);
     });
 
-    it('switches from edge-to-edge sheets to bounded standard and wide dialogs at 840px', () => {
-        expect(resolveAdaptiveDialogWidth(839, 'standard', 24)).toBeUndefined();
-        expect(resolveAdaptiveDialogWidth(840, 'standard', 24)).toBe(640);
-        expect(resolveAdaptiveDialogWidth(840, 'wide', 24)).toBe(792);
+    it('switches from edge-to-edge sheets to bounded standard and wide dialogs at tablet widths', () => {
+        expect(resolveAdaptiveDialogWidth(719, 'standard', 24)).toBeUndefined();
+        expect(resolveAdaptiveDialogWidth(720, 'standard', 24)).toBe(640);
+        expect(resolveAdaptiveDialogWidth(720, 'wide', 24)).toBe(672);
         expect(resolveAdaptiveDialogWidth(1440, 'wide', 24)).toBe(800);
     });
 
@@ -52,6 +52,13 @@ describe('BottomSheetModal', () => {
         );
 
         expect(StyleSheet.flatten(screen.getByTestId('adaptive-dialog-panel').props.style).opacity).toBe(0);
+        expect(screen.UNSAFE_getByType(Modal).props.supportedOrientations).toEqual([
+            'portrait',
+            'portrait-upside-down',
+            'landscape',
+            'landscape-left',
+            'landscape-right'
+        ]);
 
         act(() => {
             screen.UNSAFE_getByType(Modal).props.onShow();

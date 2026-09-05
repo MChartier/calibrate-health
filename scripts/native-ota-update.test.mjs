@@ -60,7 +60,7 @@ test('OTA CLI parses explicit release targeting options', () => {
   assert.throws(() => parseNativeOtaArgs(['--bad']), /Unknown native OTA option/);
 });
 
-test('OTA publish command targets Android and the build channel', () => {
+test('OTA publish command targets only the Android platform covered by the native baseline with the build channel', () => {
   const command = nativeOtaPublishCommand({
     channel: null,
     environment: null,

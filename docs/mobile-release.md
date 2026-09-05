@@ -99,6 +99,8 @@ policy and artifact metadata format. The native phone values mirror it in `mobil
 
 - `expo.version` is the user-visible semantic version.
 - `expo.android.versionCode` is the monotonically increasing Android build number.
+- `expo.ios.buildNumber` is the same mobile build counter as a string; release checks reject missing or stale values.
+  Both mirror `android.mobile.version_code` in the manifest (the existing native mobile version namespace).
 
 Every Play-distributed candidate, including a recovery build, gets a new stable semantic `version` and a higher
 `versionCode`. Use at least a patch bump even when the fix has no user-visible feature. Commit both before building
@@ -124,6 +126,10 @@ checkout's ancestry. It also verifies the annotated tag object's SSH signature a
 `.github/native-release-tag-allowed-signers`, its internal tag name against the requested ref, and its peeled/direct
 target against the exact source commit. Lightweight, unsigned, malformed, wrong-key, and wrong-target tags fail
 closed.
+
+The same preparation also advances `expo.ios.buildNumber` and the iOS diagnostic version window. EAS uses local
+app version management, so this checked-in mobile counter must exceed previous Android and TestFlight uploads;
+promoting an existing artifact does not allocate another counter. Apple distribution remains a separately signed native build.
 
 Run `npm.cmd run release:check` after every version change. It also verifies the backend package, generated Android
 project when present, Wear app, pairing module, application ID, global version-code lanes, and EAS profile names
@@ -463,7 +469,10 @@ storage, or change the application ID/signing key when testing an upgrade.
 
 ## Expo OTA updates between native builds
 
-Expo OTA updates apply only to the Android phone app's JavaScript, styling, and bundled assets. Wear OS, native
+The retained baseline and native-dependency fingerprint currently cover Android only. iOS must use signed native
+builds until an iOS-specific baseline and fingerprint are implemented; neither local nor CI publication targets iOS.
+
+Expo OTA updates currently apply only to the Android mobile app's JavaScript, styling, and bundled assets. Wear OS, native
 modules, permissions, config plugins, app identity/version, dependencies with native code, and native icons require a
 new signed phone/Watch build. The currently installed pre-OTA build must be replaced once after `expo-updates` is
 introduced; later compatible updates can use the faster path below.
@@ -593,17 +602,17 @@ jobs.
 
 ## Preserve on-device data during upgrades
 
-Expo SecureStore tokens and the SQLite offline outbox live in the Android application sandbox. Android preserves
-them when all of the following remain true:
+Expo SecureStore tokens and the SQLite offline outbox live in each native application's sandbox. Preserve them
+through an in-place Android or iOS upgrade by keeping all of the following true:
 
-1. The application ID remains `app.calibratehealth.mobile`.
-2. The new APK/AAB is signed by the same certificate.
-3. `versionCode` increases.
+1. The Android application ID and iOS bundle identifier remain `app.calibratehealth.mobile`.
+2. The new Android artifact retains its signing certificate and the iOS artifact retains its signing identity.
+3. Android `versionCode` or iOS `buildNumber` increases for that platform.
 4. The app is upgraded in place instead of uninstalled or data-cleared.
 
-Before shipping a SQLite or authentication-storage change, test an upgrade from the last distributed signed APK with
+Before shipping a SQLite or authentication-storage change, test an upgrade from each last distributed native build with
 both an active session and pending/failed offline mutations. Export account data first when testing migrations against
-important real data. Database migrations must be forward-compatible; Android cannot safely roll back to a build that
+important real data. Database migrations must be forward-compatible; neither platform can safely roll back to a build that
 does not understand a newer on-device schema.
 
 If a release is bad, prepare a new patch native release and publish its higher odd/even version-code pair. Never move
@@ -611,6 +620,10 @@ an existing `native-vMAJOR.MINOR.PATCH` tag to a fixed commit. A lower-version A
 SecureStore or SQLite changes.
 
 ## Disposable emulator upgrade rehearsal
+
+Rehearsal version flags specify the odd phone code; Wear receives the next even code. Defaults are baseline 1/2
+and candidate 3/4. Both candidate codes must exceed the baseline pair. Historical source clones retain their
+own release validation and need not contain iOS configuration.
 
 `npm run test:native:upgrade` creates isolated local clones, overrides version codes only in those clones, signs phone
 and Wear APKs with one disposable identity, and installs the candidate with `adb install -r`. It never uninstalls the
@@ -643,7 +656,7 @@ npm.cmd run test:native:upgrade -- `
   --baseline a99fcb8 `
   --candidate HEAD `
   --baseline-version-code 1 `
-  --candidate-version-code 2 `
+  --candidate-version-code 3 `
   --phone-serial emulator-5554 `
   --wear-serial emulator-5556 `
   --disposable-keystore mobile\android\app\debug.keystore `

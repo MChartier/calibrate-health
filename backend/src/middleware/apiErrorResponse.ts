@@ -195,7 +195,7 @@ function normalizedExtensions(
     const currentVersion = normalizedVersion(body.current_version, true);
     const minimumVersion = normalizedVersion(body.minimum_supported_version, false);
     if (
-      (body.platform === 'android_phone' || body.platform === 'wear_os') &&
+      (body.platform === 'android_phone' || body.platform === 'ios' || body.platform === 'wear_os') &&
       currentVersion !== undefined &&
       minimumVersion !== undefined
     ) {

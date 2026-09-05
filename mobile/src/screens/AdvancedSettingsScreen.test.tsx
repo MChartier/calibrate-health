@@ -110,6 +110,18 @@ describe('AdvancedSettingsScreen', () => {
         }
     });
 
+    it('uses iOS diagnostics and native-update copy on Apple devices', () => {
+        const platform = jest.replaceProperty(Platform, 'OS', 'ios');
+        try {
+            const view = render(<AdvancedSettingsScreen />);
+
+            expect(view.getByText('iOS')).toBeTruthy();
+            expect(view.getByText(/OTA updates can change iOS JavaScript and assets/)).toBeTruthy();
+        } finally {
+            platform.restore();
+        }
+    });
+
     it('offers the update action from Advanced settings', () => {
         const action = jest.fn(async () => undefined);
         mockedUseAppUpdateController.mockReturnValue(updateController({
