@@ -44,34 +44,34 @@ export default function ConnectedAppsScreen() {
 
     return (
         <TabScreen testID="connected-apps-settings-page">
-                <SectionHeader
-                    title="Authorized assistants"
-                    description="Assistants use revocable, read-only OAuth access. They never receive your Calibrate password."
+            <SectionHeader
+                title="Authorized assistants"
+                description="Assistants use revocable, read-only OAuth access. They never receive your Calibrate password."
+            />
+            <AsyncStateBoundary
+                state={connectedAppsState}
+                resourceLabel="connected assistants"
+                loading={<SettingsManagementListSkeleton label="Loading connected assistants" />}
+                empty={(
+                    <AppCard>
+                        <AppText variant="subtitle">No connected assistants</AppText>
+                        <AppText variant="muted">Connections you approve will appear here.</AppText>
+                    </AppCard>
+                )}
+                onRetry={isOnline ? () => connectedAppsQuery.refetch() : undefined}
+                retrying={connectedAppsQuery.isFetching}
+            >
+                <ConnectedAppsPanel
+                    connections={connectedAppsQuery.data?.connections ?? []}
+                    pendingConnectionId={revokeConnectedApp.isPending
+                        ? revokeConnectedApp.variables
+                        : undefined}
+                    errorMessage={revokeErrorMessage}
+                    onRevoke={async (connectionId) => {
+                        await revokeConnectedApp.mutateAsync(connectionId);
+                    }}
                 />
-                <AsyncStateBoundary
-                    state={connectedAppsState}
-                    resourceLabel="connected assistants"
-                    loading={<SettingsManagementListSkeleton label="Loading connected assistants" />}
-                    empty={(
-                        <AppCard>
-                            <AppText variant="subtitle">No connected assistants</AppText>
-                            <AppText variant="muted">Connections you approve will appear here.</AppText>
-                        </AppCard>
-                    )}
-                    onRetry={isOnline ? () => connectedAppsQuery.refetch() : undefined}
-                    retrying={connectedAppsQuery.isFetching}
-                >
-                    <ConnectedAppsPanel
-                        connections={connectedAppsQuery.data?.connections ?? []}
-                        pendingConnectionId={revokeConnectedApp.isPending
-                            ? revokeConnectedApp.variables
-                            : undefined}
-                        errorMessage={revokeErrorMessage}
-                        onRevoke={async (connectionId) => {
-                            await revokeConnectedApp.mutateAsync(connectionId);
-                        }}
-                    />
-                </AsyncStateBoundary>
+            </AsyncStateBoundary>
         </TabScreen>
     );
 }
