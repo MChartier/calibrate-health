@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
@@ -71,8 +71,8 @@ export default function PreferencesSettingsScreen() {
         || quietHoursEnd !== (baseline.reminder_quiet_hours_end ?? '')
         || hapticsEnabled !== baseline.haptics_enabled
     ));
-    useEffect(() => {
-        if (!user || preferencesAreDirty) return;
+    const resetPreferencesDraft = useCallback(() => {
+        if (!user) return;
         preferencesBaselineRef.current = user;
         setWeightUnit(user.weight_unit);
         setHeightUnit(user.height_unit);
@@ -83,7 +83,10 @@ export default function PreferencesSettingsScreen() {
         setQuietHoursStart(user.reminder_quiet_hours_start ?? '');
         setQuietHoursEnd(user.reminder_quiet_hours_end ?? '');
         setHapticsEnabled(user.haptics_enabled);
-    }, [user, preferencesAreDirty]);
+    }, [user]);
+    useEffect(() => {
+        if (!preferencesAreDirty) resetPreferencesDraft();
+    }, [resetPreferencesDraft, preferencesAreDirty]);
 
     function navigateToSettings() {
         if (router.canGoBack()) {
@@ -106,7 +109,8 @@ export default function PreferencesSettingsScreen() {
     });
     const { allowNavigation, requestNavigation } = useConfirmDiscardNavigation(
         preferencesAreDirty,
-        savePreferences.isPending
+        savePreferences.isPending,
+        resetPreferencesDraft
     );
 
     async function handleCancel() {

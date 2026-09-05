@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { useNavigation } from 'expo-router';
-import { usePreventRemove } from 'expo-router/build/react-navigation/core';
+import { useIsFocused, usePreventRemove } from 'expo-router/build/react-navigation/core';
 import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
 import { useBrowserDiscardNavigation } from './useBrowserDiscardNavigation';
+import { registerNavigationGuard } from '../navigation/guardedNavigation';
 
 type Navigate = () => void;
 
@@ -11,12 +12,19 @@ type Navigate = () => void;
  * Preserves a routed editor's unsaved-change confirmation for shell, browser,
  * gesture, and in-page navigation.
  */
-export function useConfirmDiscardNavigation(isDirty: boolean, isNavigationBlocked = false) {
+export function useConfirmDiscardNavigation(
+    isDirty: boolean,
+    isNavigationBlocked = false,
+    onDiscard?: () => void
+) {
     const navigation = useNavigation();
+    const isFocused = useIsFocused();
+    const discardRef = useRef(onDiscard);
+    discardRef.current = onDiscard;
     const confirmationPendingRef = useRef(false);
     const pendingNavigationRef = useRef<Navigate | null>(null);
     const [navigationAllowed, setNavigationAllowed] = useState(false);
-    const shouldPreventRemoval = (isDirty || isNavigationBlocked) && !navigationAllowed;
+    const shouldPreventRemoval = isFocused && (isDirty || isNavigationBlocked) && !navigationAllowed;
 
     const allowNavigation = useCallback((navigate: Navigate) => {
         pendingNavigationRef.current = navigate;
@@ -30,6 +38,10 @@ export function useConfirmDiscardNavigation(isDirty: boolean, isNavigationBlocke
         navigate?.();
     }, [navigationAllowed]);
 
+    useEffect(() => {
+        if (!isFocused || (!isDirty && !isNavigationBlocked)) setNavigationAllowed(false);
+    }, [isDirty, isFocused, isNavigationBlocked]);
+
     const requestNavigation = useCallback(async (navigate: Navigate) => {
         if (isNavigationBlocked || confirmationPendingRef.current) return;
         if (!isDirty) {
@@ -39,7 +51,10 @@ export function useConfirmDiscardNavigation(isDirty: boolean, isNavigationBlocke
 
         confirmationPendingRef.current = true;
         try {
-            if (await confirmDiscardChanges()) allowNavigation(navigate);
+            if (await confirmDiscardChanges()) {
+                discardRef.current?.();
+                allowNavigation(navigate);
+            }
         } finally {
             confirmationPendingRef.current = false;
         }
@@ -47,17 +62,13 @@ export function useConfirmDiscardNavigation(isDirty: boolean, isNavigationBlocke
 
     useBrowserDiscardNavigation(shouldPreventRemoval, requestNavigation);
 
+    useEffect(() => {
+        if (!shouldPreventRemoval) return;
+        return registerNavigationGuard(requestNavigation);
+    }, [requestNavigation, shouldPreventRemoval]);
+
     usePreventRemove(shouldPreventRemoval, ({ data }) => {
-        if (isNavigationBlocked || confirmationPendingRef.current) return;
-        confirmationPendingRef.current = true;
-        void confirmDiscardChanges()
-            .then((confirmed) => {
-                if (!confirmed) return;
-                allowNavigation(() => navigation.dispatch(data.action));
-            })
-            .finally(() => {
-                confirmationPendingRef.current = false;
-            });
+        void requestNavigation(() => navigation.dispatch(data.action));
     });
 
     useEffect(() => {

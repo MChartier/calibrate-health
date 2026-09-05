@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -65,8 +65,8 @@ export default function ProfileSettingsScreen() {
         && profileQuery.data?.calorieSummary.planStatus === 'available'
         ? profileQuery.data.calorieSummary.dailyCalorieTarget
         : undefined;
-    useEffect(() => {
-        if (!editableProfile || profileIsDirty) return;
+    const resetProfileDraft = useCallback(() => {
+        if (!editableProfile) return;
         profileBaselineRef.current = editableProfile;
         setTimezone(editableProfile.timezone);
         setDateOfBirth(editableProfile.date_of_birth?.slice(0, 10) ?? '');
@@ -77,7 +77,11 @@ export default function ProfileSettingsScreen() {
         const nextImperialHeight = millimetersToFeetInches(editableProfile.height_mm);
         setHeightFeet(nextImperialHeight.feet);
         setHeightInches(nextImperialHeight.inches);
-    }, [editableProfile, profileIsDirty]);
+        setValidationError(null);
+    }, [editableProfile]);
+    useEffect(() => {
+        if (!profileIsDirty) resetProfileDraft();
+    }, [resetProfileDraft, profileIsDirty]);
 
     function navigateToSettings() {
         if (router.canGoBack()) {
@@ -101,7 +105,8 @@ export default function ProfileSettingsScreen() {
     });
     const { allowNavigation, requestNavigation } = useConfirmDiscardNavigation(
         profileIsDirty,
-        saveProfile.isPending
+        saveProfile.isPending,
+        resetProfileDraft
     );
 
     async function handleCancel() {
