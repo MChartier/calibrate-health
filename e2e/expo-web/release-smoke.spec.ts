@@ -530,8 +530,10 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await page.getByTestId('settings-open-connections').click();
   await expect(page).toHaveURL(/\/connections$/);
   await expect(page.getByTestId('settings-category-connections')).toBeVisible();
-  await page.getByRole('button', { name: /Health Connect/ }).click();
-  await expect(page.getByRole('button', { name: 'View activity history', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Health Connect/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Galaxy Watch', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Activity', exact: true }).click();
+  await expect(page).toHaveURL(/\/activity$/);
   await expectNoHorizontalOverflow(page);
 });
 

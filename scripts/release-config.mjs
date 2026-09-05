@@ -523,6 +523,13 @@ export async function checkRepository(
   );
   assertMatch(errors, 'mobile/app.json expo.version', expoConfig.expo?.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.android.versionCode', expoConfig.expo?.android?.versionCode, manifest.android.mobile.version_code);
+  // Both native mobile platforms use the checked-in mobile release counter.
+  assertMatch(
+    errors,
+    'mobile/app.json expo.ios.buildNumber',
+    expoConfig.expo?.ios?.buildNumber,
+    String(manifest.android.mobile.version_code)
+  );
   assertMatch(errors, 'mobile/app.json expo.android.package', expoConfig.expo?.android?.package, manifest.android.application_id);
   assertMatch(
     errors,

@@ -76,35 +76,38 @@ test('CLI is dry-run by default and requires explicit emulator serials', () => {
   );
 });
 
-test('temporary version override keeps phone, Wear, pairing module, and release manifest aligned', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-upgrade-version-test-'));
-  try {
-    for (const directory of [
-      ['mobile'], ['shared'], ['wear', 'app'], ['mobile', 'modules', 'wear-pairing', 'android']
-    ]) fs.mkdirSync(path.join(root, ...directory), { recursive: true });
-    fs.writeFileSync(path.join(root, 'mobile', 'app.json'), JSON.stringify({ expo: { android: { versionCode: 1 } } }));
-    fs.writeFileSync(path.join(root, 'shared', 'release.json'), JSON.stringify({
-      android: { mobile: { version_code: 1 }, wear: { version_code: 1 } }
-    }));
-    fs.writeFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'versionCode = 1\n');
-    fs.writeFileSync(
-      path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'),
-      'versionCode 1\n'
-    );
-    overrideCheckoutVersions(root, 2);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'))).expo.android.versionCode, 2);
-    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'shared', 'release.json'))).android, {
-      mobile: { version_code: 2 }, wear: { version_code: 2 }
-    });
-    assert.match(fs.readFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'utf8'), /versionCode = 2/);
-    assert.match(
-      fs.readFileSync(path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'), 'utf8'),
-      /versionCode 2/
-    );
-  } finally {
-    fs.rmSync(root, { recursive: true });
-  }
-});
+for (const ios of [undefined, { buildNumber: '1' }]) {
+  test(`temporary version override aligns every native mirror (iOS config: ${Boolean(ios)})`, () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-upgrade-version-test-'));
+    try {
+      for (const directory of [
+        ['mobile'], ['shared'], ['wear', 'app'], ['mobile', 'modules', 'wear-pairing', 'android']
+      ]) fs.mkdirSync(path.join(root, ...directory), { recursive: true });
+      fs.writeFileSync(path.join(root, 'mobile', 'app.json'), JSON.stringify({ expo: { android: { versionCode: 1 }, ios } }));
+      fs.writeFileSync(path.join(root, 'shared', 'release.json'), JSON.stringify({
+        android: { mobile: { version_code: 1 }, wear: { version_code: 1 } }
+      }));
+      fs.writeFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'versionCode = 1\n');
+      fs.writeFileSync(
+        path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'),
+        'versionCode 1\n'
+      );
+      overrideCheckoutVersions(root, 2);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'))).expo.android.versionCode, 2);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'))).expo.ios?.buildNumber, ios ? '2' : undefined);
+      assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'shared', 'release.json'))).android, {
+        mobile: { version_code: 2 }, wear: { version_code: 2 }
+      });
+      assert.match(fs.readFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'utf8'), /versionCode = 2/);
+      assert.match(
+        fs.readFileSync(path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'), 'utf8'),
+        /versionCode 2/
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true });
+    }
+  });
+}
 
 test('build sequence runs release mirror validation after prebuild and before Gradle', async () => {
   const labels = [];

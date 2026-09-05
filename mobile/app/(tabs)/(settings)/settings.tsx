@@ -566,6 +566,7 @@ export function SettingsScreen({ category }: SettingsScreenProps) {
             {category ? (
                 <SettingsCategoryPage
                     category={category}
+                    showAndroidIntegrations={showAndroidIntegrations}
                     sessionCount={sessionCount}
                     connectedAppCount={connectedAppCount}
                     isOutboxReady={isOutboxReady}

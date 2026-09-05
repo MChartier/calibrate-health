@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const appConfig = require('./app.json');
+const releaseConfig = require('../shared/release.json');
 const easConfig = require('./eas.json');
 const packageConfig = require('./package.json');
 const { createExpoConfig } = require('./app.config.js');
@@ -27,7 +28,7 @@ test.afterEach(() => {
 test('static Expo config supports iPhone, iPad, and iOS Simulator builds', () => {
   assert.deepEqual(appConfig.expo.ios, {
     bundleIdentifier: 'app.calibratehealth.mobile',
-    buildNumber: '1',
+    buildNumber: String(releaseConfig.android.mobile.version_code),
     supportsTablet: true,
     requireFullScreen: false,
     icon: './assets/icon-ios.png',

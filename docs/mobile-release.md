@@ -99,6 +99,8 @@ policy and artifact metadata format. The native phone values mirror it in `mobil
 
 - `expo.version` is the user-visible semantic version.
 - `expo.android.versionCode` is the monotonically increasing Android build number.
+- `expo.ios.buildNumber` is the same mobile build counter as a string; release checks reject missing or stale values.
+  Both mirror `android.mobile.version_code` in the manifest (the existing native mobile version namespace).
 
 Every Play-distributed candidate, including a recovery build, gets a new stable semantic `version` and a higher
 `versionCode`. Use at least a patch bump even when the fix has no user-visible feature. Commit both before building
@@ -463,7 +465,10 @@ storage, or change the application ID/signing key when testing an upgrade.
 
 ## Expo OTA updates between native builds
 
-Expo OTA updates apply to the Android and iOS mobile apps' JavaScript, styling, and bundled assets. Wear OS, native
+The retained baseline and native-dependency fingerprint currently cover Android only. iOS must use signed native
+builds until an iOS-specific baseline and fingerprint are implemented; neither local nor CI publication targets iOS.
+
+Expo OTA updates currently apply only to the Android mobile app's JavaScript, styling, and bundled assets. Wear OS, native
 modules, permissions, config plugins, app identity/version, dependencies with native code, and native icons require a
 new signed phone/Watch build. The currently installed pre-OTA build must be replaced once after `expo-updates` is
 introduced; later compatible updates can use the faster path below.

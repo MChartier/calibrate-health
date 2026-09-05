@@ -360,6 +360,23 @@ function createPreparedReleaseGit({
     parentCommit
   };
 }
+test('release checks reject a missing or stale iOS build number', async (t) => {
+  const root = await createReleaseFixture(t);
+  const appPath = path.join(root, 'mobile', 'app.json');
+  const app = await readFixtureJson(root, 'mobile/app.json');
+  const manifest = await readFixtureJson(root, 'shared/release.json');
+
+  for (const buildNumber of [undefined, '1', manifest.android.mobile.version_code]) {
+    app.expo.ios.buildNumber = buildNumber;
+    await writeFile(appPath, JSON.stringify(app));
+    const { errors } = await checkRepository(root);
+    assert.match(errors.join('\n'), /expo\.ios\.buildNumber/);
+  }
+
+  app.expo.ios.buildNumber = String(manifest.android.mobile.version_code);
+  await writeFile(appPath, JSON.stringify(app));
+  assert.deepEqual((await checkRepository(root)).errors, []);
+});
 
 test('semantic versions compare numerically', () => {
   assert.equal(compareSemver('1.10.0', '1.9.9'), 1);
