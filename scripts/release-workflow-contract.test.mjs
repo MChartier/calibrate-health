@@ -760,6 +760,60 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.doesNotMatch(workflow, /calibratehealth\.app\/api\/v1\/client-config|wait_for_hosted_release/);
 });
 
+test('optional self-host deployment consumes the published digest without gating OTA', () => {
+  const publisher = readWorkflow('publish-release.yml');
+  const deployment = workflowJobBlock(publisher, 'deploy_self_hosted');
+  const ota = workflowJobBlock(publisher, 'publish_ota');
+  assert.match(deployment, /needs: \[tag_release, build_release_image\]/);
+  assert.match(deployment, /vars\.SELF_HOSTED_DEPLOY_ENABLED == 'true'/);
+  assert.match(deployment, /github\.ref == 'refs\/heads\/master'/);
+  assert.match(deployment, /image_ref: \$\{\{ needs\.build_release_image\.outputs\.image_ref \}\}/);
+  assert.match(deployment, /release_tag: \$\{\{ needs\.tag_release\.outputs\.release_tag \}\}/);
+  assert.match(deployment, /release_commit: \$\{\{ inputs\.release_commit \}\}/);
+  assert.match(deployment, /permissions:\n\s+contents: read/);
+  assert.doesNotMatch(deployment, /native_release_ready|publish_ota/);
+  assert.doesNotMatch(ota, /deploy_self_hosted/);
+
+  const image = readWorkflow('container.yml');
+  const publishImage = workflowJobBlock(image, 'publish_image');
+  assert.match(image, /value: \$\{\{ jobs\.publish_image\.outputs\.image_ref \}\}/);
+  assert.match(publishImage, /image_ref: \$\{\{ steps\.publish\.outputs\.image_ref \}\}/);
+  assert.match(publishImage, /name: Publish write-once immutable identities and verified latest\n\s+id: publish/);
+  const digestOutput = 'echo "image_ref=${GHCR_IMAGE}@${AUTHORITATIVE_DIGEST}" >> "${GITHUB_OUTPUT}"';
+  const outputIndex = publishImage.indexOf(digestOutput);
+  assert.ok(outputIndex > 0, 'publish the verified registry identity, including recovered images');
+  for (const gate of [
+    'verify_receipt_attestation "${AUTHORITATIVE_CONFIG_DIGEST}"',
+    'ensure_immutable_alias "${RELEASE_IMAGE}" "${AUTHORITATIVE_DIGEST}"',
+    'ensure_immutable_alias "${SOURCE_IMAGE}" "${AUTHORITATIVE_DIGEST}"',
+    'require_digest "${LATEST_IMAGE}" "${AUTHORITATIVE_DIGEST}"'
+  ]) {
+    const gateIndex = publishImage.lastIndexOf(gate);
+    assert.ok(gateIndex > 0 && gateIndex < outputIndex, gate + ' must complete before exposing the digest');
+  }
+  assert.doesNotMatch(workflowJobBlock(image, 'build_image'), /image_ref:/);
+  assert.doesNotMatch(image, /^  workflow_dispatch:/m);
+
+  const workflow = readWorkflow('deploy-self-hosted.yml');
+  assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /vars\.SELF_HOSTED_DEPLOY_ENABLED == 'true'.*github\.ref == 'refs\/heads\/master'/);
+  assert.match(workflow, /runs-on: ubuntu-latest/);
+  assert.match(workflow, /environment: self-hosted-testing/);
+  assert.match(workflow, /group: self-hosted-testing-deploy\n\s+cancel-in-progress: false/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /ref: \$\{\{ job\.workflow_sha \}\}/);
+  assert.match(workflow, /node scripts\/release-config\.mjs verify-current-release-workflow/);
+  assert.match(workflow, /if \[\[ -n "\$\{RELEASE_COMMIT\}" \]\]; then\n\s+RELEASE_ARGS=\(--release-commit "\$\{RELEASE_COMMIT\}"\)/);
+  assert.match(workflow, /--workflow-sha "\$\{WORKFLOW_SHA\}"[\s\S]*"\$\{RELEASE_ARGS\[@\]\}"/);
+  assert.ok(workflow.indexOf('verify-current-release-workflow') < workflow.indexOf('secrets.DEPLOY_'));
+  assertReviewedReleaseActionPins('deploy-self-hosted.yml');
+  assert.match(workflow, /if: always\(\)/);
+  assert.doesNotMatch(workflow, /pull_request:|workflow_run:|packages: write|contents: write/);
+  assert.doesNotMatch(workflow, /runs-on:.*self-hosted|continue-on-error|ssh-keyscan/);
+  for (const match of workflow.matchAll(/uses: ([^\n]+)/g)) assert.match(match[1], /@[a-f0-9]{40}(?: |$)/);
+});
+
 test('pull requests build and smoke only Web-impacting changes while exhaustive suites stay manual', () => {
   const workflow = readWorkflow('builds.yml');
   const changes = workflowJobBlock(workflow, 'changes');

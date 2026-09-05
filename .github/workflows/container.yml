@@ -19,6 +19,10 @@ on:
         required: false
         default: false
         type: boolean
+    outputs:
+      image_ref:
+        description: Published immutable image whose release receipt and aliases were verified
+        value: ${{ jobs.publish_image.outputs.image_ref }}
 
 permissions:
   actions: read
@@ -318,6 +322,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: server-release-publication
+    outputs:
+      image_ref: ${{ steps.publish.outputs.image_ref }}
     permissions:
       actions: read
       attestations: read
@@ -629,6 +635,7 @@ jobs:
           password: ${{ secrets.GHCR_PUBLISH_TOKEN }}
 
       - name: Publish write-once immutable identities and verified latest
+        id: publish
         shell: bash
         env:
           EXPECTED_IMAGE_ID: ${{ steps.artifact.outputs.image_id }}
@@ -922,3 +929,8 @@ jobs:
             fi
             require_digest "${LATEST_IMAGE}" "${AUTHORITATIVE_DIGEST}"
           fi
+
+          # Recovery can reuse an attested earlier image even when this run's rebuild differs.
+          echo "image_ref=${GHCR_IMAGE}@${AUTHORITATIVE_DIGEST}" >> "${GITHUB_OUTPUT}"
+          printf 'Verified release image: `%s@%s` (%s).\n' \
+            "${GHCR_IMAGE}" "${AUTHORITATIVE_DIGEST}" "${RELEASE_TAG}" >> "${GITHUB_STEP_SUMMARY}"
