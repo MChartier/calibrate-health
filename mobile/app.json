@@ -55,7 +55,7 @@
     },
     "ios": {
       "bundleIdentifier": "app.calibratehealth.mobile",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "supportsTablet": true,
       "requireFullScreen": false,
       "icon": "./assets/icon-ios.png",
