@@ -344,6 +344,7 @@ test('v1 trend rollback suppresses v2 calibration recommendations without changi
 
   assert.equal(status.evaluation.status, 'not_ready');
   assert.equal(status.evaluation.headline, 'Calibration is temporarily unavailable');
+  assert.equal(status.evaluation.assessment.blocker, 'trend_unavailable');
   assert.equal(status.inputFingerprint, null);
   assert.equal(status.recommendation, null);
   assert.deepEqual(status.scheduledChange, {

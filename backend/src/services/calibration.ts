@@ -108,6 +108,7 @@ function buildUnavailableEvaluation(options: {
     missingCriteria: string[];
     weightUnit: 'KG' | 'LB';
     configuredDailyDeficitKcal?: number;
+    blocker?: 'plan_unavailable' | 'trend_unavailable';
 }): CalibrationResult {
     return {
         modelVersion: CALIBRATION_MODEL_VERSION,
@@ -146,7 +147,7 @@ function buildUnavailableEvaluation(options: {
             window: null,
             recentWeightTrendKgPerWeek: null,
             goalRateKgPerWeek: -((options.configuredDailyDeficitKcal ?? 0) * 7) / 7700,
-            blocker: 'plan_unavailable',
+            blocker: options.blocker ?? 'plan_unavailable',
             targetDecision: 'waiting',
             targetDecisionBlocker: null,
             minimumDailyCalorieTargetKcal: CALIBRATION_MIN_TARGET_KCAL
@@ -368,6 +369,7 @@ async function buildCalibrationStatusSnapshot(
             evaluation: buildUnavailableEvaluation({
                 asOfDate: asOfDateKey,
                 headline: 'Calibration needs valid weight history',
+                blocker: 'trend_unavailable',
                 summary: 'A weight in the calibration window is outside the supported range, so no calorie adjustment can be generated.',
                 missingCriteria: ['Review weight entries outside the supported range.'],
                 weightUnit: user.weight_unit,
@@ -425,6 +427,7 @@ async function buildCalibrationStatusSnapshot(
             evaluation: buildUnavailableEvaluation({
                 asOfDate: asOfDateKey,
                 headline: 'Calibration is temporarily unavailable',
+                blocker: 'trend_unavailable',
                 summary: 'The active compatibility weight trend does not provide the pace uncertainty needed for safe calorie-budget suggestions. Existing approved plan changes remain in effect.',
                 missingCriteria: ['Calibration resumes when the current weight-trend model is available.'],
                 weightUnit: user.weight_unit,

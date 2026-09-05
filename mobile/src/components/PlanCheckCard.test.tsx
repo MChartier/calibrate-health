@@ -1,8 +1,8 @@
 import React from 'react';
 import { Dimensions } from 'react-native';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, cleanupAsync, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { CalibrationStatusResponse } from '@calibrate/api-client';
+import { ApiError, type CalibrationStatusResponse } from '@calibrate/api-client';
 import { PlanCheckCard } from './PlanCheckCard';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 
@@ -189,6 +189,8 @@ function scheduledStatus(): CalibrationStatusResponse {
     };
 }
 
+const testQueryClients: QueryClient[] = [];
+
 function renderCard() {
     const queryClient = new QueryClient({
         defaultOptions: {
@@ -201,6 +203,7 @@ function renderCard() {
             <PlanCheckCard />
         </QueryClientProvider>
     );
+    testQueryClients.push(queryClient);
     return { ...screen, queryClient };
 }
 
@@ -223,6 +226,8 @@ describe('Plan check card', () => {
     });
 
     afterEach(async () => {
+        await cleanupAsync();
+        testQueryClients.splice(0).forEach((client) => client.clear());
         await act(async () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
@@ -319,5 +324,86 @@ describe('Plan check card', () => {
             expect(cached?.recommendation).toBeNull();
             expect(cached?.scheduledChange?.dailyCalorieBudgetKcal).toBe(1750);
         });
+    });
+
+    it('does not display a permanent loading state for an older server response', async () => {
+        const status = baseStatus();
+        const { assessment: _assessment, ...legacyEvaluation } = status.evaluation;
+        mockApi.getCalibrationStatus.mockResolvedValue({ ...status, evaluation: legacyEvaluation });
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText(/not available from your connected server yet/)).toBeTruthy());
+        expect(screen.queryByLabelText('Loading plan check')).toBeNull();
+        expect(screen.queryByText('Legacy headline must not render')).toBeNull();
+    });
+
+    it('does not tell users to change their calorie plan when the trend model is unavailable', async () => {
+        const status = waitingStatus();
+        status.evaluation.assessment.blocker = 'trend_unavailable';
+        mockApi.getCalibrationStatus.mockResolvedValue(status);
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Your weight trend is unavailable')).toBeTruthy());
+        expect(screen.queryByText('Review your calorie plan')).toBeNull();
+    });
+
+    it.each([
+        { width: 320, fontScale: 1 },
+        { width: 1024, fontScale: 1.6 }
+    ])('stacks trend metrics at $width px and $fontScale font scale', async ({ width, fontScale }) => {
+        Dimensions.set({ window: { width, height: 844, scale: 1, fontScale } });
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByTestId('plan-check-metrics')).toHaveStyle({ flexDirection: 'column' }));
+        expect(screen.getByTestId('plan-check-pace-comparison').props.accessibilityLabel)
+            .toMatch(/not a forecast/);
+    });
+
+    it('requires a fresh review when the pending recommendation changes', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(recommendationStatus());
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Review adjustment')).toBeTruthy());
+        fireEvent.press(screen.getByText('Review adjustment'));
+        expect(screen.getByText('Apply 1,750 kcal')).toBeTruthy();
+        const next = recommendationStatus();
+        next.recommendation = { ...next.recommendation!, id: 8, inputFingerprint: 'new-evidence' };
+        next.evaluation.recommendation = { ...next.evaluation.recommendation!, recommendedTargetKcal: 1800 };
+        act(() => screen.queryClient.setQueryData(calibrationStatusQueryKey, next));
+        await waitFor(() => expect(screen.queryByText('Apply 1,750 kcal')).toBeNull());
+        expect(screen.queryByText('Apply 1,800 kcal')).toBeNull();
+        fireEvent.press(screen.getByText('Review adjustment'));
+        expect(screen.getByText('Apply 1,800 kcal')).toBeTruthy();
+        expect(mockApi.applyCalibrationRecommendation).not.toHaveBeenCalled();
+    });
+
+    it('keeps the review retryable after a transient apply failure', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValue(recommendationStatus());
+        mockApi.applyCalibrationRecommendation.mockRejectedValueOnce(new TypeError('Network request failed'));
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Review adjustment')).toBeTruthy());
+        fireEvent.press(screen.getByText('Review adjustment'));
+        fireEvent.press(screen.getByText('Apply 1,750 kcal'));
+        await waitFor(() => expect(screen.getByText('Check your connection and try again.')).toBeTruthy());
+        fireEvent.press(screen.getByText('Apply 1,750 kcal'));
+        await waitFor(() => expect(mockApi.applyCalibrationRecommendation).toHaveBeenCalledTimes(2));
+    });
+
+    it('refreshes stale evidence after an apply conflict instead of retrying the same recommendation', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValueOnce(recommendationStatus()).mockResolvedValue(baseStatus());
+        mockApi.applyCalibrationRecommendation.mockRejectedValue(new ApiError('Stale', 409, null));
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Review adjustment')).toBeTruthy());
+        fireEvent.press(screen.getByText('Review adjustment'));
+        fireEvent.press(screen.getByText('Apply 1,750 kcal'));
+        await waitFor(() => expect(screen.getByText('Your recent weight trend matches your goal')).toBeTruthy());
+        expect(screen.queryByText('Apply 1,750 kcal')).toBeNull();
+        expect(mockApi.getCalibrationStatus).toHaveBeenCalledTimes(2);
+    });
+
+    it('refreshes the scheduled banner after an undo conflict', async () => {
+        mockApi.getCalibrationStatus.mockResolvedValueOnce(scheduledStatus()).mockResolvedValue(baseStatus());
+        mockApi.cancelCalibrationRecommendation.mockRejectedValue(new ApiError('Already effective', 409, null));
+        const screen = renderCard();
+        await waitFor(() => expect(screen.getByText('Undo')).toBeTruthy());
+        await act(async () => { fireEvent.press(screen.getByText('Undo')); });
+        await waitFor(() => expect(screen.queryByText('Calorie target update scheduled')).toBeNull());
+        expect(mockApi.getCalibrationStatus).toHaveBeenCalledTimes(2);
     });
 });

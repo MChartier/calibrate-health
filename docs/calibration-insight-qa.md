@@ -17,7 +17,7 @@ npm run capture:calibration-lab
 ```
 
 Screenshots are written to `docs/screenshots/plan-check/`.
-The reviewed set includes all 19 deterministic scenarios, the desktop adjustment review, and compact card and review layouts.
+The reviewed set includes all 19 deterministic scenarios, the desktop adjustment review, compact card and review layouts, and the waiting state at 320px. Client tests also verify stacking at a 1.6 font scale.
 
 
 ## State coverage

@@ -540,7 +540,22 @@ test('describes a retrospective on-track trend without making a forecast', () =>
   assert.equal(result.assessment.paceStatus, 'aligned');
   assert.equal(result.assessment.window.spanDays, 28);
   assert.equal(result.assessment.window.endDate, '2026-07-31');
-  assert.deepEqual(result.assessment.recentWeightTrendKgPerWeek, result.estimates.observedWeeklyWeightChangeKg);
+  const input = cloneScenarioInput('on-track');
+  const model = computeWeightTrend(input.weightPoints.map((point) => ({
+    date: new Date(point.date + 'T00:00:00.000Z'),
+    weight: point.weightKg
+  })), {
+    asOfDate: new Date(input.asOfDate + 'T23:59:59.999Z'),
+    calibrationWindow: {
+      startDate: new Date(result.assessment.window.startDate + 'T00:00:00.000Z'),
+      endDate: new Date(input.asOfDate + 'T00:00:00.000Z')
+    }
+  }).windowAverageRate;
+  assert.deepEqual(result.assessment.recentWeightTrendKgPerWeek, {
+    low: model.lower95KgPerWeek,
+    midpoint: model.estimateKgPerWeek,
+    high: model.upper95KgPerWeek
+  });
   assert.equal(result.assessment.goalRateKgPerWeek, result.estimates.configuredWeeklyWeightChangeKg);
   assert.equal(result.assessment.targetDecision, 'no_change_recommended');
 });
@@ -580,4 +595,48 @@ test('restarts Plan check after an active tracking pause', () => {
   assert.equal(result.assessment.state, 'waiting');
   assert.equal(result.assessment.blocker, 'tracking_paused');
   assert.equal(result.assessment.targetDecision, 'waiting');
+});
+
+test('food and profile changes do not resample the displayed weight trend in the same window', () => {
+  const input = cloneScenarioInput('maintenance');
+  const baseline = evaluateCalibration(input).assessment;
+  for (const calories of [1600, 1900, 2400, 2900]) {
+    const result = evaluateCalibration({
+      ...input,
+      bmrKcal: 1800,
+      profileTdeeKcal: 2600,
+      foodDays: input.foodDays.map((day) => ({ ...day, calories }))
+    }).assessment;
+    assert.deepEqual(result.window, baseline.window);
+    assert.deepEqual(result.recentWeightTrendKgPerWeek, baseline.recentWeightTrendKgPerWeek);
+  }
+});
+
+test('a wide interval cannot produce a confident off-track assessment in any goal direction', () => {
+  for (const [configuredDailyDeficitKcal, weeklyChangeKg] of [[500, -2], [-500, 2], [0, 2], [0, -2]]) {
+    const input = buildInvariantInput({
+      days: 29, ageYears: 30, weeklyChangeKg, uncertaintyKg: 0.9, bmrKcal: 1600
+    });
+    input.configuredDailyDeficitKcal = configuredDailyDeficitKcal;
+    const result = evaluateCalibration(input);
+    assert.equal(result.assessment.state, 'waiting');
+    assert.equal(result.assessment.blocker, 'weight_uncertainty');
+    assert.equal(result.assessment.recentWeightTrendKgPerWeek, null);
+  }
+});
+
+test('a mature current weight segment is not held back by an older gap in the longest window', () => {
+  const input = cloneScenarioInput('maximum-window');
+  input.configuredDailyDeficitKcal = 0;
+  input.weightPoints = [-42, -41, -21, -18, -14, -10, -7, -3, 0].map((offset) => ({
+    date: addDays(input.asOfDate, offset),
+    weightKg: offset < -21 ? 100 : 90
+  }));
+  const result = evaluateCalibration(input);
+  assert.equal(result.selectedWindowDays, 42);
+  assert.equal(result.estimates.observedWeeklyWeightChangeKg, null);
+  assert.equal(result.assessment.state, 'on_track');
+  assert.equal(result.assessment.window.spanDays, 21);
+  assert.equal(result.assessment.recentWeightTrendKgPerWeek.midpoint, 0);
+  assert.equal(result.recommendation, null);
 });
