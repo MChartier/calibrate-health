@@ -80,8 +80,8 @@ jest.mock('../components/progress/WeightTrendPreviewCard', () => ({
         return null;
     }
 }));
-jest.mock('../components/CalibrationInsightCard', () => ({
-    CalibrationInsightCard: () => null
+jest.mock('../components/PlanCheckCard', () => ({
+    PlanCheckCard: () => null
 }));
 jest.mock('../components/BottomSheetModal', () => {
     const ReactModule = require('react') as typeof React;

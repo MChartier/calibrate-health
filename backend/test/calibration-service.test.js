@@ -344,6 +344,7 @@ test('v1 trend rollback suppresses v2 calibration recommendations without changi
 
   assert.equal(status.evaluation.status, 'not_ready');
   assert.equal(status.evaluation.headline, 'Calibration is temporarily unavailable');
+  assert.equal(status.evaluation.assessment.blocker, 'trend_unavailable');
   assert.equal(status.inputFingerprint, null);
   assert.equal(status.recommendation, null);
   assert.deepEqual(status.scheduledChange, {
@@ -517,4 +518,15 @@ test('recommendation apply rejects a profile or weight race that changes the exa
     /requires review before a recommendation can be applied/
   );
   assert.equal(harness.captured.revision, null);
+});
+test('calibration status returns Plan check assessments for maintenance and gain without actions', async () => {
+  for (const scenarioId of ['maintenance', 'gain']) {
+    const harness = createHarness({ scenarioId });
+    const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00.000Z'));
+
+    assert.notEqual(status.evaluation.assessment.state, 'waiting');
+    assert.equal(status.evaluation.recommendation, null);
+    assert.equal(status.recommendation, null);
+    assert.equal(harness.captured.upserts.length, 0);
+  }
 });

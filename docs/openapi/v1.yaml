@@ -2250,9 +2250,39 @@ components:
         adjustmentStepKcal: { type: integer, minimum: -150, maximum: 150 }
         currentTargetAdjustmentKcal: { type: integer }
         recommendedTargetAdjustmentKcal: { type: integer }
+    CalibrationAssessment:
+      type: object
+      required: [version, state, paceStatus, window, recentWeightTrendKgPerWeek, goalRateKgPerWeek, blocker, targetDecision, targetDecisionBlocker, minimumDailyCalorieTargetKcal]
+      properties:
+        version: { type: integer, enum: [1] }
+        state: { type: string, enum: [waiting, on_track, off_track] }
+        paceStatus:
+          type: [string, 'null']
+          enum: [faster, aligned, slower, above_maintenance, below_maintenance, null]
+        window:
+          type: [object, 'null']
+          required: [startDate, endDate, spanDays, confidenceLevel]
+          properties:
+            startDate: { type: string, format: date }
+            endDate: { type: string, format: date }
+            spanDays: { type: integer, minimum: 1 }
+            confidenceLevel: { type: number, enum: [0.95] }
+        recentWeightTrendKgPerWeek:
+          oneOf: [{ $ref: '#/components/schemas/CalibrationInterval' }, { type: 'null' }]
+        goalRateKgPerWeek: { type: number }
+        blocker:
+          type: [string, 'null']
+          enum: [tracking_paused, plan_unavailable, trend_unavailable, weight_history, current_weigh_in, food_history, food_uncertainty, weight_uncertainty, null]
+        targetDecision:
+          type: string
+          enum: [waiting, no_change_recommended, change_available, safety_limited, policy_unavailable]
+        targetDecisionBlocker:
+          type: [string, 'null']
+          enum: [tracking_paused, plan_unavailable, trend_unavailable, weight_history, current_weigh_in, food_history, food_uncertainty, weight_uncertainty, null]
+        minimumDailyCalorieTargetKcal: { type: integer, minimum: 1000 }
     CalibrationEvaluation:
       type: object
-      required: [modelVersion, asOfDate, weightUnit, status, headline, summary, nextStep, historyProgress, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext]
+      required: [modelVersion, asOfDate, weightUnit, status, headline, summary, nextStep, historyProgress, selectedWindowDays, dataQuality, missingCriteria, assumptions, estimates, recommendation, activityContext, assessment]
       properties:
         modelVersion: { type: integer }
         asOfDate: { type: string, format: date }
@@ -2303,6 +2333,7 @@ components:
             observedDays: { type: integer, minimum: 0 }
             averageSteps: { type: [integer, 'null'] }
             averageActiveCaloriesKcal: { type: [integer, 'null'] }
+        assessment: { $ref: '#/components/schemas/CalibrationAssessment' }
     ScheduledCalibrationChange:
       type: object
       required: [recommendationId, targetAdjustmentKcal, dailyCalorieBudgetKcal, effectiveLocalDate]

@@ -113,11 +113,26 @@ test('calibration lab ignores apply and undo actions for a different recommendat
 
 test('calibration lab uses the same React presentation as Progress', async () => {
   const labMain = await readFile(new URL('../tools/calibration-lab/main.tsx', import.meta.url), 'utf8');
-  assert.match(labMain, /import \{ CalibrationInsightCardView \}/);
-  assert.match(labMain, /<CalibrationInsightCardView/);
+  assert.match(labMain, /import \{ PlanCheckCardView \}/);
+  assert.match(labMain, /<PlanCheckCardView/);
   assert.match(labMain, /onApplyRecommendation=\{applyRecommendation\}/);
   assert.match(labMain, /onCancelScheduledChange=\{cancelScheduledChange\}/);
   assert.doesNotMatch(labMain, /Estimated budget difference/);
+});
+
+test('calibration lab presets cover the new descriptive and scheduled product states', async () => {
+  const scenarios = await readFile(
+    new URL('../shared/calibrationScenarios.ts', import.meta.url),
+    'utf8'
+  );
+  const labMain = await readFile(new URL('../tools/calibration-lab/main.tsx', import.meta.url), 'utf8');
+
+  for (const id of ['not-ready', 'early-insight', 'on-track', 'wide-weight-uncertainty',
+    'target-too-high', 'scheduled', 'after-pause', 'maintenance', 'gain']) {
+    assert.match(scenarios, new RegExp("id: '" + id + "'"));
+  }
+  assert.match(scenarios, /previewState: 'scheduled'/);
+  assert.match(labMain, /previewState === 'scheduled'/);
 });
 
 test('calibration lab builds and serves its shared React preview bundle', async (context) => {

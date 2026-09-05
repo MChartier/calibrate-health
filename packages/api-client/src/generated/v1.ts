@@ -1524,6 +1524,32 @@ export interface components {
             currentTargetAdjustmentKcal: number;
             recommendedTargetAdjustmentKcal: number;
         };
+        CalibrationAssessment: {
+            /** @enum {integer} */
+            version: 1;
+            /** @enum {string} */
+            state: "waiting" | "on_track" | "off_track";
+            /** @enum {string|null} */
+            paceStatus: "faster" | "aligned" | "slower" | "above_maintenance" | "below_maintenance" | null;
+            window: {
+                /** Format: date */
+                startDate: string;
+                /** Format: date */
+                endDate: string;
+                spanDays: number;
+                /** @enum {number} */
+                confidenceLevel: 0.95;
+            } | null;
+            recentWeightTrendKgPerWeek: components["schemas"]["CalibrationInterval"] | null;
+            goalRateKgPerWeek: number;
+            /** @enum {string|null} */
+            blocker: "tracking_paused" | "plan_unavailable" | "trend_unavailable" | "weight_history" | "current_weigh_in" | "food_history" | "food_uncertainty" | "weight_uncertainty" | null;
+            /** @enum {string} */
+            targetDecision: "waiting" | "no_change_recommended" | "change_available" | "safety_limited" | "policy_unavailable";
+            /** @enum {string|null} */
+            targetDecisionBlocker: "tracking_paused" | "plan_unavailable" | "trend_unavailable" | "weight_history" | "current_weigh_in" | "food_history" | "food_uncertainty" | "weight_uncertainty" | null;
+            minimumDailyCalorieTargetKcal: number;
+        };
         CalibrationEvaluation: {
             modelVersion: number;
             /** Format: date */
@@ -1564,6 +1590,7 @@ export interface components {
                 averageSteps: number | null;
                 averageActiveCaloriesKcal: number | null;
             } | null;
+            assessment: components["schemas"]["CalibrationAssessment"];
         };
         ScheduledCalibrationChange: {
             recommendationId: number | null;

@@ -374,7 +374,7 @@ test('uses singular grammar for one uncertain day', () => {
   assert.ok(suspiciousResult.missingCriteria.includes('1 day was marked complete but did not provide a plausible full-day total, so it widens the estimate.'));
 });
 
-test('covers pounds in the lab and preserves maintenance and gain evaluator direction', () => {
+test('covers pounds while keeping automatic target changes limited to loss goals', () => {
   const pounds = evaluateScenario('on-track-pounds');
   assert.equal(pounds.status, 'insight');
   assert.match(pounds.summary, /1\.00 lb per week/);
@@ -391,10 +391,10 @@ test('covers pounds in the lab and preserves maintenance and gain evaluator dire
   maintenanceInput.configuredDailyDeficitKcal = 0;
   maintenanceInput.foodDays.forEach((day) => { day.calories = 2400; });
   const maintenance = evaluateCalibration(maintenanceInput);
-  assert.equal(maintenance.status, 'recommendation');
-  assert.equal(maintenance.headline, 'Weight is trending down instead of staying steady');
-  assert.equal(maintenance.recommendation.adjustmentStepKcal, 150);
-  assert.match(maintenance.summary, /steady-weight projection/);
+  assert.equal(maintenance.status, 'insight');
+  assert.equal(maintenance.recommendation, null);
+  assert.equal(maintenance.assessment.state, 'off_track');
+  assert.equal(maintenance.assessment.targetDecision, 'policy_unavailable');
 
   const gainInput = buildInvariantInput({
     days: 28,
@@ -407,10 +407,10 @@ test('covers pounds in the lab and preserves maintenance and gain evaluator dire
   gainInput.configuredDailyDeficitKcal = -500;
   gainInput.foodDays.forEach((day) => { day.calories = 2900; });
   const gain = evaluateCalibration(gainInput);
-  assert.equal(gain.status, 'recommendation');
-  assert.equal(gain.headline, "You're gaining weight, but slower than planned");
-  assert.equal(gain.recommendation.adjustmentStepKcal, 150);
-  assert.match(gain.summary, /projected gain of 0\.46 kg per week/);
+  assert.equal(gain.status, 'insight');
+  assert.equal(gain.recommendation, null);
+  assert.equal(gain.assessment.state, 'off_track');
+  assert.equal(gain.assessment.targetDecision, 'policy_unavailable');
 });
 
 test('does not surface unused activity data and caps the selected window at 42 days', () => {
@@ -519,4 +519,124 @@ test('is invariant to food and weight input ordering', () => {
     weightPoints: input.weightPoints.slice().reverse()
   };
   assert.deepEqual(evaluateCalibration(reordered), evaluateCalibration(input));
+});
+
+test('keeps Plan check waiting until a decision-grade weight trend is available', () => {
+  const early = evaluateScenario('early-insight');
+  assert.equal(early.assessment.state, 'waiting');
+  assert.equal(early.assessment.blocker, 'weight_history');
+  assert.equal(early.assessment.recentWeightTrendKgPerWeek, null);
+
+  const uncertain = evaluateScenario('wide-weight-uncertainty');
+  assert.equal(uncertain.assessment.state, 'waiting');
+  assert.equal(uncertain.assessment.blocker, 'weight_uncertainty');
+  assert.equal(uncertain.assessment.window, null);
+});
+
+test('describes a retrospective on-track trend without making a forecast', () => {
+  const result = evaluateScenario('on-track');
+  assert.equal(result.assessment.version, 1);
+  assert.equal(result.assessment.state, 'on_track');
+  assert.equal(result.assessment.paceStatus, 'aligned');
+  assert.equal(result.assessment.window.spanDays, 28);
+  assert.equal(result.assessment.window.endDate, '2026-07-31');
+  const input = cloneScenarioInput('on-track');
+  const model = computeWeightTrend(input.weightPoints.map((point) => ({
+    date: new Date(point.date + 'T00:00:00.000Z'),
+    weight: point.weightKg
+  })), {
+    asOfDate: new Date(input.asOfDate + 'T23:59:59.999Z'),
+    calibrationWindow: {
+      startDate: new Date(result.assessment.window.startDate + 'T00:00:00.000Z'),
+      endDate: new Date(input.asOfDate + 'T00:00:00.000Z')
+    }
+  }).windowAverageRate;
+  assert.deepEqual(result.assessment.recentWeightTrendKgPerWeek, {
+    low: model.lower95KgPerWeek,
+    midpoint: model.estimateKgPerWeek,
+    high: model.upper95KgPerWeek
+  });
+  assert.equal(result.assessment.goalRateKgPerWeek, result.estimates.configuredWeeklyWeightChangeKg);
+  assert.equal(result.assessment.targetDecision, 'no_change_recommended');
+});
+
+test('separates an off-track assessment from the calorie-target decision', () => {
+  const change = evaluateScenario('target-too-high');
+  assert.equal(change.assessment.state, 'off_track');
+  assert.equal(change.assessment.paceStatus, 'slower');
+  assert.equal(change.assessment.targetDecision, 'change_available');
+  assert.ok(change.recommendation);
+
+  const adherence = evaluateScenario('adherence-not-target');
+  assert.equal(adherence.assessment.state, 'off_track');
+  assert.equal(adherence.assessment.paceStatus, 'slower');
+  assert.equal(adherence.assessment.targetDecision, 'no_change_recommended');
+  assert.equal(adherence.recommendation, null);
+});
+
+test('supports maintenance and gain assessments without generating target changes', () => {
+  const maintenance = evaluateScenario('maintenance');
+  assert.equal(maintenance.assessment.state, 'on_track');
+  assert.equal(maintenance.assessment.paceStatus, 'aligned');
+  assert.equal(maintenance.assessment.targetDecision, 'no_change_recommended');
+  assert.equal(maintenance.recommendation, null);
+
+  const gain = evaluateScenario('gain');
+  assert.equal(gain.assessment.state, 'off_track');
+  assert.equal(gain.assessment.paceStatus, 'slower');
+  assert.equal(gain.assessment.targetDecision, 'policy_unavailable');
+  assert.equal(gain.recommendation, null);
+});
+
+test('restarts Plan check after an active tracking pause', () => {
+  const input = cloneScenarioInput('target-too-high');
+  input.trackingPaused = true;
+  const result = evaluateCalibration(input);
+  assert.equal(result.assessment.state, 'waiting');
+  assert.equal(result.assessment.blocker, 'tracking_paused');
+  assert.equal(result.assessment.targetDecision, 'waiting');
+});
+
+test('food and profile changes do not resample the displayed weight trend in the same window', () => {
+  const input = cloneScenarioInput('maintenance');
+  const baseline = evaluateCalibration(input).assessment;
+  for (const calories of [1600, 1900, 2400, 2900]) {
+    const result = evaluateCalibration({
+      ...input,
+      bmrKcal: 1800,
+      profileTdeeKcal: 2600,
+      foodDays: input.foodDays.map((day) => ({ ...day, calories }))
+    }).assessment;
+    assert.deepEqual(result.window, baseline.window);
+    assert.deepEqual(result.recentWeightTrendKgPerWeek, baseline.recentWeightTrendKgPerWeek);
+  }
+});
+
+test('a wide interval cannot produce a confident off-track assessment in any goal direction', () => {
+  for (const [configuredDailyDeficitKcal, weeklyChangeKg] of [[500, -2], [-500, 2], [0, 2], [0, -2]]) {
+    const input = buildInvariantInput({
+      days: 29, ageYears: 30, weeklyChangeKg, uncertaintyKg: 0.9, bmrKcal: 1600
+    });
+    input.configuredDailyDeficitKcal = configuredDailyDeficitKcal;
+    const result = evaluateCalibration(input);
+    assert.equal(result.assessment.state, 'waiting');
+    assert.equal(result.assessment.blocker, 'weight_uncertainty');
+    assert.equal(result.assessment.recentWeightTrendKgPerWeek, null);
+  }
+});
+
+test('a mature current weight segment is not held back by an older gap in the longest window', () => {
+  const input = cloneScenarioInput('maximum-window');
+  input.configuredDailyDeficitKcal = 0;
+  input.weightPoints = [-42, -41, -21, -18, -14, -10, -7, -3, 0].map((offset) => ({
+    date: addDays(input.asOfDate, offset),
+    weightKg: offset < -21 ? 100 : 90
+  }));
+  const result = evaluateCalibration(input);
+  assert.equal(result.selectedWindowDays, 42);
+  assert.equal(result.estimates.observedWeeklyWeightChangeKg, null);
+  assert.equal(result.assessment.state, 'on_track');
+  assert.equal(result.assessment.window.spanDays, 21);
+  assert.equal(result.assessment.recentWeightTrendKgPerWeek.midpoint, 0);
+  assert.equal(result.recommendation, null);
 });

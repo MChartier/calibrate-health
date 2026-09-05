@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { CalibrationInput, CalibrationResult } from '@calibrate/shared/calibration';
 import type { CalibrationStatusResponse } from '@calibrate/api-client';
-import { CalibrationInsightCardView } from '../../mobile/src/components/CalibrationInsightCard';
+import { PlanCheckCardView } from '../../mobile/src/components/PlanCheckCard';
 import {
     applyPreviewRecommendation,
     buildPreviewStatus,
@@ -15,6 +15,7 @@ type CalibrationScenario = {
     name: string;
     description: string;
     input: CalibrationInput;
+    previewState?: 'scheduled';
 };
 
 function LabApp() {
@@ -31,7 +32,7 @@ function LabApp() {
         [status]
     );
 
-    async function evaluate(json: string, fingerprint: string) {
+    async function evaluate(json: string, fingerprint: string, previewState?: CalibrationScenario['previewState']) {
         setIsEvaluating(true);
         setError(null);
         try {
@@ -45,7 +46,10 @@ function LabApp() {
             if (!response.ok) {
                 throw new Error('message' in body && body.message ? body.message : 'Unable to evaluate history.');
             }
-            setStatus(buildPreviewStatus(body as CalibrationResult, fingerprint));
+            const nextStatus = buildPreviewStatus(body as CalibrationResult, fingerprint);
+            setStatus(previewState === 'scheduled' && nextStatus.recommendation
+                ? applyPreviewRecommendation(nextStatus, nextStatus.recommendation.id)
+                : nextStatus);
         } catch (nextError) {
             setError(nextError instanceof Error ? nextError : new Error('Invalid calibration history.'));
         } finally {
@@ -63,7 +67,7 @@ function LabApp() {
         const url = new URL(window.location.href);
         url.searchParams.set('scenario', scenario.id);
         window.history.replaceState(null, '', url);
-        void evaluate(json, `lab-${scenario.id}`);
+        void evaluate(json, `lab-${scenario.id}`, scenario.previewState);
     }
 
     useEffect(() => {
@@ -129,18 +133,22 @@ function LabApp() {
                     <div>
                         <span className="eyebrow">Shared product component</span>
                         <h2 id="preview-title">End-user preview</h2>
-                        <p>This is the same calibration card and detail sheet rendered on Progress. Apply and undo are simulated locally.</p>
+                        <p>This is the same Plan check card and review sheet rendered on Progress. Apply and undo are simulated locally.</p>
                     </div>
                     <span className="preview-state">{isEvaluating ? 'Evaluating...' : 'Live preview'}</span>
                 </div>
                 <div className="product-preview">
                     <SafeAreaProvider>
-                        <CalibrationInsightCardView
+                        <PlanCheckCardView
                             status={status}
                             isLoading={isEvaluating && !status}
                             error={error}
                             todayDate={status?.evaluation.asOfDate}
-                            onRetry={() => void evaluate(historyInput, `lab-${selectedScenarioId ?? 'custom'}`)}
+                            onRetry={() => void evaluate(
+                                historyInput,
+                                `lab-${selectedScenarioId ?? 'custom'}`,
+                                scenarios.find((scenario) => scenario.id === selectedScenarioId)?.previewState
+                            )}
                             onApplyRecommendation={applyRecommendation}
                             onCancelScheduledChange={cancelScheduledChange}
                         />
@@ -158,7 +166,11 @@ function LabApp() {
                         <button
                             type="button"
                             disabled={isEvaluating}
-                            onClick={() => void evaluate(historyInput, `lab-${selectedScenarioId ?? 'custom'}`)}
+                            onClick={() => void evaluate(
+                                historyInput,
+                                `lab-${selectedScenarioId ?? 'custom'}`,
+                                scenarios.find((scenario) => scenario.id === selectedScenarioId)?.previewState
+                            )}
                         >
                             {isEvaluating ? 'Evaluating...' : 'Evaluate history'}
                         </button>
