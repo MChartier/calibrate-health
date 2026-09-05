@@ -1,8 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useConfirmDiscardNavigation } from './useConfirmDiscardNavigation';
+import { requestGuardedNavigation } from '../navigation/guardedNavigation';
 
 const mockDispatch = jest.fn();
 let mockShouldPreventRemove = false;
+let mockIsFocused = true;
 let mockPreventRemove: ((options: { data: { action: { type: string } } }) => void) | undefined;
 const mockConfirmDiscardChanges = jest.fn<Promise<boolean>, []>();
 
@@ -13,6 +15,7 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('expo-router/build/react-navigation/core', () => ({
+    useIsFocused: () => mockIsFocused,
     usePreventRemove: (
         shouldPrevent: boolean,
         callback: typeof mockPreventRemove
@@ -30,6 +33,7 @@ describe('useConfirmDiscardNavigation', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockShouldPreventRemove = false;
+        mockIsFocused = true;
         mockPreventRemove = undefined;
     });
 
@@ -68,5 +72,53 @@ describe('useConfirmDiscardNavigation', () => {
         expect(mockShouldPreventRemove).toBe(true);
         expect(mockConfirmDiscardChanges).not.toHaveBeenCalled();
         expect(mockDispatch).not.toHaveBeenCalled();
+    });
+
+    it('blocks shell pushes while saving, including an otherwise clean editor', () => {
+        const navigate = jest.fn();
+        renderHook(() => useConfirmDiscardNavigation(false, true));
+        act(() => requestGuardedNavigation(navigate));
+        expect(navigate).not.toHaveBeenCalled();
+        expect(mockConfirmDiscardChanges).not.toHaveBeenCalled();
+    });
+
+    it('discards once before an approved shell departure and re-arms a retained editor', async () => {
+        mockConfirmDiscardChanges.mockResolvedValue(true);
+        const discard = jest.fn();
+        const navigate = jest.fn();
+        const { rerender } = renderHook(() => useConfirmDiscardNavigation(true, false, discard));
+        await act(async () => requestGuardedNavigation(navigate));
+        expect(discard).toHaveBeenCalledTimes(1);
+        expect(navigate).toHaveBeenCalledTimes(1);
+        expect(discard.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0]);
+
+        mockIsFocused = false;
+        rerender({});
+        act(() => requestGuardedNavigation(navigate));
+        expect(navigate).toHaveBeenCalledTimes(2);
+        expect(mockShouldPreventRemove).toBe(false);
+
+        mockIsFocused = true;
+        rerender({});
+        mockConfirmDiscardChanges.mockResolvedValue(false);
+        await act(async () => requestGuardedNavigation(navigate));
+        expect(mockShouldPreventRemove).toBe(true);
+        expect(mockConfirmDiscardChanges).toHaveBeenCalledTimes(2);
+        expect(discard).toHaveBeenCalledTimes(1);
+        expect(navigate).toHaveBeenCalledTimes(2);
+    });
+
+    it('ignores duplicate shell requests while confirmation is pending', async () => {
+        let confirm: (answer: boolean) => void = () => {};
+        mockConfirmDiscardChanges.mockReturnValue(new Promise((resolve) => { confirm = resolve; }));
+        const navigate = jest.fn();
+        renderHook(() => useConfirmDiscardNavigation(true));
+        act(() => {
+            requestGuardedNavigation(navigate);
+            requestGuardedNavigation(navigate);
+        });
+        expect(mockConfirmDiscardChanges).toHaveBeenCalledTimes(1);
+        await act(async () => confirm(false));
+        expect(navigate).not.toHaveBeenCalled();
     });
 });

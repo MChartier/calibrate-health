@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { expect, test } from './fixtures';
+import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtures';
 
 const destinations = [
   { path: '/profile-details', parent: '/profile', back: 'Profile & preferences', title: 'Profile details' },
@@ -26,8 +26,8 @@ test('promoted settings routes have category fallbacks on direct entry', async (
 });
 
 for (const editor of [
-  { path: '/profile-details', title: 'Profile details', field: 'Height', value: '181' },
-  { path: '/preferences', title: 'Preferences', field: 'Food reminder time', value: '08:30' },
+  { path: '/profile-details', title: 'Profile details', field: 'Height', value: '181', endpoint: 'profile', save: 'Save' },
+  { path: '/preferences', title: 'Preferences', field: 'Food reminder time', value: '08:30', endpoint: 'preferences', save: 'Save preferences' },
 ]) {
   test(editor.title + ' preserves a draft when back is cancelled and discards on confirmation', async ({ page, ux }) => {
     await ux.install('populated');
@@ -56,6 +56,77 @@ for (const editor of [
     page.once('dialog', (dialog) => dialog.accept());
     await page.goBack();
     await expect(page).toHaveURL((url) => url.pathname === '/profile');
+  });
+
+  test(editor.title + ' guards tab and header pushes and re-arms on return', async ({ page, ux }) => {
+    await ux.install('populated');
+    await page.goto('/profile');
+    await hideTransientPwaNotices(page);
+    await page.getByRole('button', { name: editor.title, exact: true }).click();
+    const field = page.getByRole('textbox', { name: editor.field, exact: true });
+    const originalValue = await field.inputValue();
+    const destinations = [
+      { control: page.getByRole('tab', { name: /Today$/ }), path: '/today' },
+      { control: page.getByRole('tab', { name: /Progress$/ }), path: '/progress' },
+      { control: page.getByRole('button', { name: 'Account & settings', exact: true }), path: '/settings' },
+    ];
+    for (const destination of destinations) {
+      const activate = () => destination.path === '/progress'
+        ? destination.control.press('Enter')
+        : destination.control.click();
+      await field.fill(editor.value);
+      let cancelled = false;
+      page.once('dialog', async (dialog) => { cancelled = true; await dialog.dismiss(); });
+      await activate();
+      await expect(page).toHaveURL((url) => url.pathname === editor.path);
+      await expect(field).toHaveValue(editor.value);
+      expect(cancelled).toBe(true);
+
+      page.once('dialog', (dialog) => dialog.accept());
+      await activate();
+      await expect(page).toHaveURL((url) => url.pathname === destination.path);
+      await page.goBack();
+      await expect(page).toHaveURL((url) => url.pathname === editor.path);
+      await expect(field).toHaveValue(originalValue);
+    }
+  });
+
+  test(editor.title + ' blocks tabs and pushes while saving', async ({ page, ux }) => {
+    await ux.install('populated');
+    expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/user/' + editor.endpoint, status: 500 });
+    let releaseSave = () => {};
+    const pendingSave = new Promise<void>((resolve) => { releaseSave = resolve; });
+    await page.route('**/api/v1/user/' + editor.endpoint, async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      await pendingSave;
+      await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'Save failed' }) });
+    });
+    await page.goto(editor.path);
+    await hideTransientPwaNotices(page);
+    const field = page.getByRole('textbox', { name: editor.field, exact: true });
+    await field.fill(editor.value);
+    await page.getByRole('button', { name: editor.save, exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Saving...', exact: true })).toBeDisabled();
+    const prompts: string[] = [];
+    page.on('dialog', async (dialog) => { prompts.push(dialog.message()); await dialog.dismiss(); });
+    try {
+      for (const control of [
+        page.getByRole('tab', { name: /Today$/ }),
+        page.getByRole('tab', { name: /Progress$/ }),
+        page.getByRole('button', { name: 'Account & settings', exact: true }),
+      ]) {
+        await control.click();
+        await expect(page).toHaveURL((url) => url.pathname === editor.path);
+        await expect(field).toHaveValue(editor.value);
+      }
+      expect(prompts).toEqual([]);
+    } finally {
+      releaseSave();
+    }
+    await expect(page.getByRole('button', { name: editor.save, exact: true })).toBeEnabled();
+    await page.getByRole('tab', { name: /Today$/ }).click();
+    await expect(page).toHaveURL((url) => url.pathname === editor.path);
+    expect(prompts).toHaveLength(1);
   });
 }
 
