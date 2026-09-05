@@ -73,6 +73,19 @@ test('Today weight entry returns to Today and can be opened again', async ({ pag
   }
 });
 
+test('web direct links do not expose Android integration controls', async ({ page, ux }) => {
+  await ux.install('populated');
+  await page.goto('/connections');
+  await expect(page.getByRole('button', { name: 'Health Connect', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Galaxy Watch', exact: true })).toHaveCount(0);
+  await page.goto('/health-connect');
+  await expect(page.getByText('Health Connect is available in the Android app.')).toBeVisible();
+  await expect(page.getByRole('switch')).toHaveCount(0);
+  await page.goto('/watch');
+  await expect(page.getByText('Galaxy Watch pairing is available in the Android app.')).toBeVisible();
+  await expect(page.getByRole('button', { name: /check.*watch/i })).toHaveCount(0);
+});
+
 test('nested settings PR screenshot evidence', async ({ page, ux }, testInfo) => {
   test.skip(process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1', 'Screenshot capture is opt-in.');
   test.skip(!['desktop-chrome', 'android-phone-chrome'].includes(testInfo.project.name));
