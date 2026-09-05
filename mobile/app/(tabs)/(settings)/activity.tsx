@@ -21,7 +21,7 @@ import {
 } from '../../../src/components/AsyncStateBoundary';
 import { AppCard } from '../../../src/components/AppCard';
 import { AppText } from '../../../src/components/AppText';
-import { DateNavigation } from '../../../src/components/DateNavigation';
+import { DateNavigationHeader } from '../../../src/components/DateNavigationHeader';
 import { HealthConnectConnectionAction } from '../../../src/components/HealthConnectConnectionAction';
 import { SectionHeader } from '../../../src/components/SectionHeader';
 import { TabScreen } from '../../../src/components/TabScreen';
@@ -272,97 +272,122 @@ export default function ActivityScreen() {
     );
 
     return (
-        <TabScreen>
-            {showConnectionNotice && (
-                <ActivityConnectionState
-                    presentation={healthConnectPresentation}
-                    standalone={!healthConnectPresentation.shouldShowActivity}
-                />
-            )}
-            <DateNavigation navigation={navigation} />
-            {healthConnectPresentation.shouldShowActivity ? (
-                <>
-                <SectionHeader
-                    title={navigation.isToday ? 'Today' : formatDateOnlyForDisplay(navigation.selectedDate)}
-                    description="Read-only activity reported by connected health apps."
-                />
-                <AsyncStateBoundary
-                    state={selectedState}
-                    resourceLabel="selected-day activity"
-                    loading={<ActivitySummaryCard day={undefined} isToday={navigation.isToday} isLoading />}
-                    empty={(
-                        <>
-                            <ActivitySummaryCard day={undefined} isToday={navigation.isToday} />
-                            <ActivityDetailsDisclosure
-                                key={navigation.selectedDate}
-                                day={undefined}
-                                weightUnit={user?.weight_unit ?? WEIGHT_UNITS.KG}
-                            />
-                        </>
-                    )}
-                    onRetry={isOnline ? () => selectedQuery.refetch() : undefined}
-                    retrying={selectedQuery.isFetching}
-                >
+        <View style={styles.screen}>
+            <DateNavigationHeader navigation={navigation} />
+            <TabScreen>
+                {showConnectionNotice && (
+                    <ActivityConnectionState
+                        presentation={healthConnectPresentation}
+                        standalone={!healthConnectPresentation.shouldShowActivity}
+                    />
+                )}
+                {healthConnectPresentation.shouldShowActivity ? (
                     <>
-                        <ActivitySummaryCard day={selectedDay} isToday={navigation.isToday} />
-                        <ExerciseSessions records={exerciseRecords} />
-                        <ActivityDetailsDisclosure
-                            key={selectedDay?.local_date ?? navigation.selectedDate}
-                            day={selectedDay}
-                            weightUnit={user?.weight_unit ?? WEIGHT_UNITS.KG}
+                        <SectionHeader
+                            title={navigation.isToday
+                                ? 'Today'
+                                : formatDateOnlyForDisplay(navigation.selectedDate)}
+                            description="Read-only activity reported by connected health apps."
                         />
-                    </>
-                </AsyncStateBoundary>
-            <AsyncStateBoundary
-                state={historyState}
-                resourceLabel="recent activity"
-                loading={recentDaysLoading}
-                empty={recentDaysEmpty}
-                onRetry={isOnline ? () => historyQuery.refetch() : undefined}
-                retrying={historyQuery.isFetching}
-            >
-                <AppCard testID="activity-recent-days">
-                    <SectionHeader title="Recent Days" description="Select a day to inspect its imported activity." />
-                    {historyDays.map((day) => (
-                        <Pressable
-                            key={day.local_date}
-                            accessibilityRole="button"
-                            accessibilityLabel={'View activity for ' + formatDateOnlyForDisplay(day.local_date)}
-                            onPress={() => navigation.setDate(day.local_date)}
-                            style={({ pressed }) => [
-                                styles.historyRow,
-                                day.local_date === navigation.selectedDate && styles.historyRowSelected,
-                                pressed && styles.pressed
-                            ]}
+                        <AsyncStateBoundary
+                            state={selectedState}
+                            resourceLabel="selected-day activity"
+                            loading={(
+                                <ActivitySummaryCard
+                                    day={undefined}
+                                    isToday={navigation.isToday}
+                                    isLoading
+                                />
+                            )}
+                            empty={(
+                                <>
+                                    <ActivitySummaryCard day={undefined} isToday={navigation.isToday} />
+                                    <ActivityDetailsDisclosure
+                                        key={navigation.selectedDate}
+                                        day={undefined}
+                                        weightUnit={user?.weight_unit ?? WEIGHT_UNITS.KG}
+                                    />
+                                </>
+                            )}
+                            onRetry={isOnline ? () => selectedQuery.refetch() : undefined}
+                            retrying={selectedQuery.isFetching}
                         >
-                            <View style={styles.historyDate}>
-                                <AppText style={styles.exerciseTitle}>
-                                    {formatDateOnlyForDisplay(day.local_date)}
-                                </AppText>
-                                <AppText variant="caption">
-                                    {day.summary
-                                        ? formatNumber(day.summary.exercise_minutes, 0) + ' exercise min'
-                                        : 'No imported summary'}
-                                </AppText>
-                            </View>
-                            <View style={styles.historyMetrics}>
-                                <AppText>{formatNumber(day.summary?.steps, 0) + ' steps'}</AppText>
-                                <AppText variant="caption">
-                                    {formatCalories(day.summary?.active_calories_kcal) + ' active'}
-                                </AppText>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color={theme.colors.onSurfaceVariant} />
-                        </Pressable>
-                    ))}
-                </AppCard>
-            </AsyncStateBoundary>
-                </>
-            ) : null}
-        </TabScreen>
+                            <>
+                                <ActivitySummaryCard day={selectedDay} isToday={navigation.isToday} />
+                                <ExerciseSessions records={exerciseRecords} />
+                                <ActivityDetailsDisclosure
+                                    key={selectedDay?.local_date ?? navigation.selectedDate}
+                                    day={selectedDay}
+                                    weightUnit={user?.weight_unit ?? WEIGHT_UNITS.KG}
+                                />
+                            </>
+                        </AsyncStateBoundary>
+                        <AsyncStateBoundary
+                            state={historyState}
+                            resourceLabel="recent activity"
+                            loading={recentDaysLoading}
+                            empty={recentDaysEmpty}
+                            onRetry={isOnline ? () => historyQuery.refetch() : undefined}
+                            retrying={historyQuery.isFetching}
+                        >
+                            <AppCard testID="activity-recent-days">
+                                <SectionHeader
+                                    title="Recent Days"
+                                    description="Select a day to inspect its imported activity."
+                                />
+                                {historyDays.map((day) => (
+                                    <Pressable
+                                        key={day.local_date}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={
+                                            'View activity for ' + formatDateOnlyForDisplay(day.local_date)
+                                        }
+                                        onPress={() => navigation.setDate(day.local_date)}
+                                        style={({ pressed }) => [
+                                            styles.historyRow,
+                                            day.local_date === navigation.selectedDate
+                                                && styles.historyRowSelected,
+                                            pressed && styles.pressed
+                                        ]}
+                                    >
+                                        <View style={styles.historyDate}>
+                                            <AppText style={styles.exerciseTitle}>
+                                                {formatDateOnlyForDisplay(day.local_date)}
+                                            </AppText>
+                                            <AppText variant="caption">
+                                                {day.summary
+                                                    ? formatNumber(day.summary.exercise_minutes, 0) + ' exercise min'
+                                                    : 'No imported summary'}
+                                            </AppText>
+                                        </View>
+                                        <View style={styles.historyMetrics}>
+                                            <AppText>
+                                                {formatNumber(day.summary?.steps, 0) + ' steps'}
+                                            </AppText>
+                                            <AppText variant="caption">
+                                                {formatCalories(day.summary?.active_calories_kcal) + ' active'}
+                                            </AppText>
+                                        </View>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={18}
+                                            color={theme.colors.onSurfaceVariant}
+                                        />
+                                    </Pressable>
+                                ))}
+                            </AppCard>
+                        </AsyncStateBoundary>
+                    </>
+                ) : null}
+            </TabScreen>
+        </View>
     );
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
+    screen: {
+        flex: 1
+    },
     connectionRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
