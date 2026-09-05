@@ -99,6 +99,10 @@
     "minimatch@5.1.9": {
       "brace-expansion": "2.1.4"
     },
+    "prisma": {
+      ".": "$prisma",
+      "mysql2": "3.24.3"
+    },
     "qs": "6.16.0",
     "valibot": "1.4.2",
     "mysql2": "3.24.3"
