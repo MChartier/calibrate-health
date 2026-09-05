@@ -1,4 +1,6 @@
 import 'react-native-gesture-handler';
+// Record browser history before any lazily loaded editor can register a discard guard.
+import '../src/hooks/useBrowserDiscardNavigation.web';
 import React from 'react';
 import { Slot, usePathname } from 'expo-router';
 import Head from 'expo-router/head';

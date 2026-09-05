@@ -48,36 +48,36 @@ export default function SignedInDevicesScreen() {
 
     return (
         <TabScreen testID="signed-in-devices-settings-page">
-                <SectionHeader
-                    title="Account access"
-                    description="Review every browser, Android phone, and Wear OS session for this account."
+            <SectionHeader
+                title="Account access"
+                description="Review every browser, Android phone, and Wear OS session for this account."
+            />
+            <AsyncStateBoundary
+                state={sessionsState}
+                resourceLabel="signed-in sessions"
+                loading={<SettingsManagementListSkeleton label="Loading active devices" />}
+                empty={(
+                    <AppCard>
+                        <AppText variant="subtitle">No signed-in sessions found</AppText>
+                        <AppText variant="muted">Refresh to check this account again.</AppText>
+                    </AppCard>
+                )}
+                onRetry={isOnline ? () => sessionsQuery.refetch() : undefined}
+                retrying={sessionsQuery.isFetching}
+            >
+                <AccountSessionsPanel
+                    sessions={sessionsQuery.data?.sessions ?? []}
+                    pendingSessionId={revokeSession.isPending ? revokeSession.variables : undefined}
+                    revokingOthers={revokeOtherSessions.isPending}
+                    errorMessage={revokeErrorMessage}
+                    onRevoke={async (sessionId) => {
+                        await revokeSession.mutateAsync(sessionId);
+                    }}
+                    onRevokeOthers={async () => {
+                        await revokeOtherSessions.mutateAsync();
+                    }}
                 />
-                <AsyncStateBoundary
-                    state={sessionsState}
-                    resourceLabel="signed-in sessions"
-                    loading={<SettingsManagementListSkeleton label="Loading active devices" />}
-                    empty={(
-                        <AppCard>
-                            <AppText variant="subtitle">No signed-in sessions found</AppText>
-                            <AppText variant="muted">Refresh to check this account again.</AppText>
-                        </AppCard>
-                    )}
-                    onRetry={isOnline ? () => sessionsQuery.refetch() : undefined}
-                    retrying={sessionsQuery.isFetching}
-                >
-                    <AccountSessionsPanel
-                        sessions={sessionsQuery.data?.sessions ?? []}
-                        pendingSessionId={revokeSession.isPending ? revokeSession.variables : undefined}
-                        revokingOthers={revokeOtherSessions.isPending}
-                        errorMessage={revokeErrorMessage}
-                        onRevoke={async (sessionId) => {
-                            await revokeSession.mutateAsync(sessionId);
-                        }}
-                        onRevokeOthers={async () => {
-                            await revokeOtherSessions.mutateAsync();
-                        }}
-                    />
-                </AsyncStateBoundary>
+            </AsyncStateBoundary>
         </TabScreen>
     );
 }

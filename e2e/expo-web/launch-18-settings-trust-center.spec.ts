@@ -382,8 +382,8 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     await page.getByRole('button', { name: 'Go back', exact: true }).click();
     await page.getByTestId('settings-open-security').click();
     await page.getByTestId('settings-open-sessions').click();
-    const sessions = page.getByTestId('settings-sessions');
-    await expect(page.getByRole('dialog', { name: 'Signed-in devices' })).toBeVisible();
+    const sessions = page.getByTestId('signed-in-devices-settings-page');
+    await expect(page).toHaveURL((url) => url.pathname === '/devices');
     await expect(sessions.getByTestId('settings-sessions-list')).toBeVisible();
     const currentRow = sessions.getByTestId(`settings-session-${CURRENT_SESSION_ID}`);
     const remoteRow = sessions.getByTestId(`settings-session-${REMOTE_SESSION_ID}`);
@@ -392,7 +392,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     await expect(remoteRow).toContainText('Pixel 9');
     await expect(remoteRow.getByTestId(`settings-session-revoke-${REMOTE_SESSION_ID}`)).toBeVisible();
     await expect(sessions.getByTestId('settings-session-revoke-others')).toBeVisible();
-    await expect(page.locator('#root')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await captureEvidence(page, testInfo, 'sessions');
 
@@ -413,7 +413,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     await page.getByTestId('settings-open-security').click();
     await expect(page).toHaveURL((url) => url.pathname === '/security');
     await page.getByTestId('settings-open-sessions').click();
-    const sessions = page.getByTestId('settings-sessions');
+    const sessions = page.getByTestId('signed-in-devices-settings-page');
     await confirmSessionAction(
       page,
       () => sessions.getByTestId(`settings-session-revoke-${REMOTE_SESSION_ID}`).click(),
@@ -421,15 +421,17 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     );
     await expect(sessions.getByTestId(`settings-session-${REMOTE_SESSION_ID}`)).toHaveCount(0);
     await expect(sessions.getByTestId(`settings-session-${CURRENT_SESSION_ID}`)).toContainText('This session');
-    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Go back', exact: true }).click();
     await expect(sessions).toHaveCount(0);
+    await expect(page).toHaveURL((url) => url.pathname === '/security');
 
     await page.getByRole('button', { name: 'Go back', exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/settings');
     await page.getByTestId('settings-open-profile').click();
     await expect(page).toHaveURL((url) => url.pathname === '/profile');
     await page.getByTestId('settings-open-preferences').click();
-    const preferences = page.getByTestId('settings-preferences-sheet');
+    const preferences = page.getByTestId('settings-preferences-page');
+    await expect(page).toHaveURL((url) => url.pathname === '/preferences');
     const reminderIntent = preferences.getByTestId('settings-reminder-intent');
     const deliveryPermission = preferences.getByTestId('settings-delivery-permission');
     await expect(reminderIntent).toContainText('Choose which account reminders Calibrate should create.');

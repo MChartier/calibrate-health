@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { usePreventRemove } from 'expo-router/build/react-navigation/core';
 import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
+import { useBrowserDiscardNavigation } from './useBrowserDiscardNavigation';
 
 type Navigate = () => void;
 
@@ -43,6 +44,8 @@ export function useConfirmDiscardNavigation(isDirty: boolean, isNavigationBlocke
             confirmationPendingRef.current = false;
         }
     }, [allowNavigation, isDirty, isNavigationBlocked]);
+
+    useBrowserDiscardNavigation(shouldPreventRemoval, requestNavigation);
 
     usePreventRemove(shouldPreventRemoval, ({ data }) => {
         if (isNavigationBlocked || confirmationPendingRef.current) return;
