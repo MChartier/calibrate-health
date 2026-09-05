@@ -560,6 +560,18 @@ jobs:
       release_tag: ${{ needs.tag_release.outputs.release_tag }}
       publish_latest: true
 
+  deploy_self_hosted:
+    name: Deploy opted-in self-host
+    needs: [tag_release, build_release_image]
+    if: vars.SELF_HOSTED_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy-self-hosted.yml
+    with:
+      image_ref: ${{ needs.build_release_image.outputs.image_ref }}
+      release_tag: ${{ needs.tag_release.outputs.release_tag }}
+      release_commit: ${{ inputs.release_commit }}
+
   publish_ota:
     name: Publish released Expo OTA update
     needs: [tag_release, publish_release_tag, build_release_image]

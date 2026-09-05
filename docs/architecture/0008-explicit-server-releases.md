@@ -33,6 +33,11 @@ A reserved but missing native tag records an OTA skip without failing the server
 publisher after the signed native baseline is uploaded and tagged. OTA publishes internal first and waits for
 protected production approval; it is never triggered by an ordinary `master` push or self-host deployment.
 
+An optional deployment job updates the owner's configured self-host over WireGuard/SSH using the image publisher's
+receipt-verified immutable digest, including recovered publications. It runs independently alongside OTA, even when
+OTA is skipped for an unavailable native baseline, and does not gate OTA. See
+[automatic self-host deployment](../../deploy/self-hosted/README.md).
+
 Expo's automatic check and download lifecycle remains unchanged. Client configuration responds with
 `Cache-Control: no-store`; server selection, startup before restoring a saved session or synchronizing, and manual
 compatibility recheck also request it with Fetch `cache: 'no-store'`. Once a bundle runs, the phone compares its bundled
@@ -40,8 +45,8 @@ expected server contract version with that response. Different majors block in e
 client minor may trail the server minor but may not lead it; patch drift remains compatible. This runtime check does
 not claim to prevent the update from downloading or starting. Protected production approval is the current
 public-channel promotion control. A future automated promotion rule may require an explicit readiness signal for the
-release owner's declared server rollout, but it cannot attest every independent self-host. Live private-server polling
-is not part of the release workflow, so those installations retain the runtime guard.
+release owner's declared server rollout, but it cannot attest every independent self-host. The optional deployment
+job verifies only its configured target; independent installations retain the runtime guard and are not polled to gate OTA.
 
 ## Consequences
 
