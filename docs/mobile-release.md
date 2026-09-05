@@ -127,6 +127,10 @@ checkout's ancestry. It also verifies the annotated tag object's SSH signature a
 target against the exact source commit. Lightweight, unsigned, malformed, wrong-key, and wrong-target tags fail
 closed.
 
+The same preparation also advances `expo.ios.buildNumber` and the iOS diagnostic version window. EAS uses local
+app version management, so this checked-in mobile counter must exceed previous Android and TestFlight uploads;
+promoting an existing artifact does not allocate another counter. Apple distribution remains a separately signed native build.
+
 Run `npm.cmd run release:check` after every version change. It also verifies the backend package, generated Android
 project when present, Wear app, pairing module, application ID, global version-code lanes, and EAS profile names
 without invoking a native build.
@@ -617,6 +621,10 @@ SecureStore or SQLite changes.
 
 ## Disposable emulator upgrade rehearsal
 
+Rehearsal version flags specify the odd phone code; Wear receives the next even code. Defaults are baseline 1/2
+and candidate 3/4. Both candidate codes must exceed the baseline pair. Historical source clones retain their
+own release validation and need not contain iOS configuration.
+
 `npm run test:native:upgrade` creates isolated local clones, overrides version codes only in those clones, signs phone
 and Wear APKs with one disposable identity, and installs the candidate with `adb install -r`. It never uninstalls the
 app or clears application data. Dry-run is the default and performs only Git/ADB discovery before printing the exact
@@ -648,7 +656,7 @@ npm.cmd run test:native:upgrade -- `
   --baseline a99fcb8 `
   --candidate HEAD `
   --baseline-version-code 1 `
-  --candidate-version-code 2 `
+  --candidate-version-code 3 `
   --phone-serial emulator-5554 `
   --wear-serial emulator-5556 `
   --disposable-keystore mobile\android\app\debug.keystore `

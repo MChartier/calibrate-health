@@ -6,6 +6,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { overrideCheckoutVersions } from './native-upgrade-rehearsal.mjs';
+
 import {
   GOOGLE_PLAY_MAX_VERSION_CODE,
   HISTORICAL_PREPARED_RELEASE_COMMIT,
@@ -113,8 +115,13 @@ async function useHistoricalPreparedV035NativeMirrors(root) {
   const appJsonPath = path.join(root, 'mobile', 'app.json');
   const appJson = await readFixtureJson(root, 'mobile/app.json');
   appJson.expo.android.versionCode = 8;
+  delete appJson.expo.ios;
   appJson.expo.extra.calibrate.nativeReleaseTag = 'v0.13.2';
   await writeFile(appJsonPath, `${JSON.stringify(appJson, null, 2)}\n`);
+
+  const diagnostics = await readFixtureJson(root, 'shared/client-diagnostic-versions.json');
+  delete diagnostics.supported_versions.ios;
+  await writeFile(path.join(root, 'shared/client-diagnostic-versions.json'), JSON.stringify(diagnostics));
 
   const wearGradlePath = path.join(root, 'wear', 'app', 'build.gradle.kts');
   const wearGradle = await readFile(wearGradlePath, 'utf8');
@@ -136,6 +143,7 @@ async function useInvalidModernNativeMirrors(root) {
   const appJsonPath = path.join(root, 'mobile', 'app.json');
   const appJson = await readFixtureJson(root, 'mobile/app.json');
   appJson.expo.android.versionCode = 10;
+  appJson.expo.ios.buildNumber = '10';
   appJson.expo.extra.calibrate.nativeReleaseTag = 'native-v0.2.5';
   await writeFile(appJsonPath, `${JSON.stringify(appJson, null, 2)}\n`);
 
@@ -550,6 +558,73 @@ test('the recorded v0.35.0 commit is the byte-exact canonical transform of its s
       `${relativePath} must be the canonical v0.35.0 transform`
     );
   }
+});
+
+test('modern tooling checks, tags, and verifies the exact pre-iOS canonical image source', async (t) => {
+  const available = spawnSync('git', ['cat-file', '-e', `${HISTORICAL_PREPARED_RELEASE_COMMIT}^{commit}`], {
+    cwd: repositoryRoot, encoding: 'utf8'
+  });
+  if (available.status !== 0) {
+    t.skip('The immutable v0.35.0 source is unavailable in this shallow checkout.');
+    return;
+  }
+  const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), 'calibrate-historical-ios-'));
+  t.after(() => rm(temporaryRoot, { recursive: true, force: true }));
+  const root = path.join(temporaryRoot, 'source');
+  const clone = spawnSync('git', ['clone', '--shared', '--no-checkout', '--quiet', repositoryRoot, root], {
+    encoding: 'utf8'
+  });
+  assert.equal(clone.status, 0, clone.stderr);
+  const git = (args) => {
+    const result = spawnSync('git', ['--no-replace-objects', ...args], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout;
+  };
+  git(['update-ref', '--no-deref', 'HEAD', HISTORICAL_PREPARED_RELEASE_COMMIT]);
+  for (const relativePath of releaseFixturePaths) {
+    const destination = path.join(root, relativePath);
+    await mkdir(path.dirname(destination), { recursive: true });
+    await writeFile(destination, git(['show', `${HISTORICAL_PREPARED_RELEASE_COMMIT}:${relativePath}`]));
+  }
+  assert.equal((await readFixtureJson(root, 'mobile/app.json')).expo.ios, undefined);
+  assert.equal((await readFixtureJson(root, 'shared/client-diagnostic-versions.json')).supported_versions.ios, undefined);
+  for (const command of ['check', 'tag']) {
+    const result = spawnSync(process.execPath, [
+      releaseConfigScriptPath, command, '--repository-root', root, '--validation-mode', 'historical-prepared'
+    ], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, command === 'tag' ? /v0\.35\.0/ : /Release configuration is consistent/);
+  }
+  const fixture = createPreparedReleaseGit({
+    releaseTag: 'v0.35.0',
+    tagCommit: HISTORICAL_PREPARED_RELEASE_COMMIT,
+    parentCommit: git(['rev-parse', 'HEAD^']).trim(),
+    parentVersion: JSON.parse(git(['show', 'HEAD^:shared/release.json'])).server.version,
+    masterVersion: '0.35.0',
+    targetManifest: historicalPreparedV035Manifest
+  });
+  const verified = await verifyPreparedRelease({
+    root, releaseTag: 'v0.35.0', expectedCommit: HISTORICAL_PREPARED_RELEASE_COMMIT, publishLatest: true,
+    git: (cwd, args) => args[0] === 'show' && !args[1].startsWith(fixture.masterCommit + ':')
+      ? git(args) : fixture.git(cwd, args)
+  });
+  assert.equal(verified.sourceCommit, HISTORICAL_PREPARED_RELEASE_COMMIT);
+  for (const options of [
+    { validationMode: 'current', sourceCommit: HISTORICAL_PREPARED_RELEASE_COMMIT },
+    { validationMode: 'historical-prepared', sourceCommit: 'e'.repeat(40) }
+  ]) {
+    const errors = (await checkRepository(root, options)).errors.join('\n');
+    assert.match(errors, /expo\.ios\.buildNumber/);
+    assert.match(errors, /client diagnostic ios/);
+  }
+  const changedManifest = await readFixtureJson(root, 'shared/release.json');
+  changedManifest.android.mobile.version_code = 9;
+  await writeFile(path.join(root, 'shared/release.json'), JSON.stringify(changedManifest));
+  const changedErrors = (await checkRepository(root, {
+    validationMode: 'historical-prepared', sourceCommit: HISTORICAL_PREPARED_RELEASE_COMMIT
+  })).errors.join('\n');
+  assert.match(changedErrors, /expo\.ios\.buildNumber/);
+  assert.match(changedErrors, /client diagnostic ios/);
 });
 
 test('manifest rejects version codes above Google Play\'s limit', () => {
@@ -1429,6 +1504,7 @@ test('native release preparation synchronizes paired identities and every checke
   assert.equal(mobilePackage.version, expectedVersion);
   assert.equal(mobileApp.expo.version, expectedVersion);
   assert.equal(mobileApp.expo.android.versionCode, expectedCodes.mobileVersionCode);
+  assert.equal(mobileApp.expo.ios.buildNumber, String(expectedCodes.mobileVersionCode));
   assert.equal(mobileApp.expo.extra.calibrate.nativeReleaseTag, `native-v${expectedVersion}`);
   assert.equal(pairingPackage.version, expectedVersion);
   assert.equal(rootLock.packages.mobile.version, expectedVersion);
@@ -1444,8 +1520,43 @@ test('native release preparation synchronizes paired identities and every checke
   assert.ok(openApi.includes(`platform: { const: android_phone }, version: { enum: [${expectedVersion},`));
   assert.ok(openApi.includes(`platform: { const: wear_os }, version: { enum: [${expectedVersion},`));
   assert.ok(generatedApi.includes(`platform?: "android_phone";`));
+  assert.deepEqual(diagnostics.supported_versions.ios.slice(0, 2), [expectedVersion, currentVersion]);
+  assert.ok(openApi.includes(`const: ios }, version: { enum: [${diagnostics.supported_versions.ios.join(', ')}]`));
+  const iosBlock = generatedApi.slice(generatedApi.indexOf('platform?: "ios";')).split('platform?: "wear_os";')[0];
+  assert.ok(iosBlock.includes(`version?: "${expectedVersion}" | "${currentVersion}"`));
   assert.ok(generatedApi.includes(`version?: "${expectedVersion}" | "${currentVersion}"`));
   assert.deepEqual((await checkRepository(root)).errors, []);
+});
+
+test('modern rehearsal overrides satisfy strict release checks for both native roles and iOS', async (t) => {
+  const root = await createReleaseFixture(t);
+  for (const phoneCode of [1000001, 1000003]) {
+    overrideCheckoutVersions(root, phoneCode);
+    const checked = await checkRepository(root);
+    assert.deepEqual(checked.errors, []);
+    assert.equal(checked.manifest.android.mobile.version_code, phoneCode);
+    assert.equal(checked.manifest.android.wear.version_code, phoneCode + 1);
+    assert.equal((await readFixtureJson(root, 'mobile/app.json')).expo.ios.buildNumber, String(phoneCode));
+  }
+});
+
+test('native preparation rolls back every Android, iOS, Wear, and diagnostic mirror after a late validation failure', async (t) => {
+  const root = await createReleaseFixture(t);
+  const trackedMirrors = releaseFixturePaths.filter((file) => file !== 'mobile/eas.json');
+  const originals = await Promise.all(trackedMirrors.map((file) => readFile(path.join(root, file), 'utf8')));
+  await assert.rejects(prepareNativeRelease({
+    root, bump: 'patch',
+    verifyNativeReleaseTag: async ({ expectedTag }) => {
+      // Change an external validation input after the initial check, so the failure occurs after mirror writes.
+      const eas = await readFixtureJson(root, 'mobile/eas.json');
+      eas.build.internal.channel = 'invalid-channel';
+      await writeFile(path.join(root, 'mobile/eas.json'), JSON.stringify(eas));
+      return { latestTag: expectedTag };
+    }
+  }), /Prepared native release configuration is inconsistent/);
+  for (const [index, file] of trackedMirrors.entries()) {
+    assert.equal(await readFile(path.join(root, file), 'utf8'), originals[index], `${file} must roll back byte-for-byte`);
+  }
 });
 
 test('native release preparation refuses an untagged current release without changing files', async (t) => {
