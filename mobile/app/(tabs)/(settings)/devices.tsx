@@ -50,7 +50,7 @@ export default function SignedInDevicesScreen() {
         <TabScreen testID="signed-in-devices-settings-page">
             <SectionHeader
                 title="Account access"
-                description="Review every browser, Android phone, and Wear OS session for this account."
+                description="Review every browser, Android, iOS, and Wear OS session for this account."
             />
             <AsyncStateBoundary
                 state={sessionsState}

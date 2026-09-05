@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PreferencesSettingsScreen from '../../app/(tabs)/(settings)/preferences';
 
@@ -41,6 +42,19 @@ function editor(client: QueryClient) {
 
 describe('PreferencesSettingsScreen draft refresh', () => {
     beforeEach(() => { mockUser = { ...initialUser }; });
+    afterEach(() => { jest.restoreAllMocks(); });
+
+    it.each(['ios', 'android'] as const)('uses the %s notification status on the routed page', (platform) => {
+        jest.replaceProperty(Platform, 'OS', platform);
+        const client = new QueryClient();
+        const screen = render(editor(client));
+        const platformLabel = platform === 'ios' ? 'iOS' : 'Android';
+        expect(screen.getByText(
+            `Remote push is unavailable in Expo Go. Use a native ${platformLabel} development or release build.`
+        )).toBeOnTheScreen();
+        screen.unmount();
+        client.clear();
+    });
 
     it('preserves unsaved reminder input when account data refreshes', () => {
         const client = new QueryClient();

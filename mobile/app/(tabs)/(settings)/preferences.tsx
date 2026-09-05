@@ -19,7 +19,7 @@ import { TabScreen } from '../../../src/components/TabScreen';
 import { getSafeActionErrorMessage } from '../../../src/errors/presentation';
 import { useConfirmDiscardNavigation } from '../../../src/hooks/useConfirmDiscardNavigation';
 import { useNativePushRegistration } from '../../../src/hooks/useNativePushRegistration';
-import { getPushStatusPresentation } from '../../../src/notifications/workflow';
+import { getPushStatusPresentation, getPushStatusTarget } from '../../../src/notifications/workflow';
 import { ReminderSettingsPanel } from '../../../src/settings/ReminderSettingsPanel';
 import {
     getReminderScheduleErrors,
@@ -38,7 +38,7 @@ export default function PreferencesSettingsScreen() {
     const { colors } = useAppTheme();
     const nativePush = useNativePushRegistration();
     const isWeb = Platform.OS === 'web';
-    const pushStatus = getPushStatusPresentation(nativePush.state, isWeb ? 'web' : 'android');
+    const pushStatus = getPushStatusPresentation(nativePush.state, getPushStatusTarget(Platform.OS));
     const [weightUnit, setWeightUnit] = useState<WeightUnit>(user?.weight_unit ?? WEIGHT_UNITS.KG);
     const [heightUnit, setHeightUnit] = useState<HeightUnit>(user?.height_unit ?? HEIGHT_UNITS.CM);
     const [logFoodReminders, setLogFoodReminders] = useState(user?.reminder_log_food_enabled ?? true);

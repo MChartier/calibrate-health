@@ -340,7 +340,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
         opener: 'settings-open-connections',
         path: '/connections',
         page: 'settings-category-connections',
-        labels: ['Activity', 'Health Connect', 'Connected assistants'],
+        labels: ['Activity', 'Connected assistants'],
       },
       {
         opener: 'settings-open-data',
@@ -378,6 +378,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
     await expect(page.getByText('Email verification', { exact: true })).toHaveCount(0);
 
     await page.getByTestId('settings-open-connections').click();
+    await expect(page.getByRole('button', { name: 'Health Connect', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Galaxy Watch', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Go back', exact: true }).click();
     await page.getByTestId('settings-open-security').click();
