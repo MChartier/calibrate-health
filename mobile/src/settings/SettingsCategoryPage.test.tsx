@@ -22,6 +22,7 @@ function createCallbacks() {
 }
 
 const resourceProps = {
+    showAndroidIntegrations: false,
     sessionCount: 3,
     connectedAppCount: 2,
     isOutboxReady: true,
@@ -89,12 +90,12 @@ describe('SettingsCategoryPage', () => {
         expect(callbacks.onLogout).toHaveBeenCalledTimes(1);
     });
 
-    it('keeps web connection destinations together and hides Galaxy Watch', () => {
+    it.each([true, false])('hides Android connections on web/iOS (isWeb=%s)', (isWeb) => {
         const callbacks = createCallbacks();
         const screen = render(
             <SettingsCategoryPage
                 category="connections"
-                isWeb
+                isWeb={isWeb}
                 {...resourceProps}
                 {...callbacks}
             />
@@ -103,29 +104,28 @@ describe('SettingsCategoryPage', () => {
         expect(screen.getByTestId('settings-category-connections')).toBeTruthy();
         expect(screen.getAllByRole('button').map((button) => button.props.accessibilityLabel)).toEqual([
             'Activity',
-            'Health Connect',
             'Connected assistants, 2'
         ]);
+        expect(screen.queryByRole('button', { name: 'Health Connect' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Galaxy Watch' })).toBeNull();
 
         fireEvent.press(screen.getByRole('button', { name: 'Activity' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Health Connect' }));
         fireEvent.press(screen.getByRole('button', { name: 'Connected assistants, 2' }));
 
         expect(callbacks.onOpenActivity).toHaveBeenCalledTimes(1);
         expect(callbacks.onOpenSheet.mock.calls).toEqual([
-            ['health-connect'],
             ['connected-apps']
         ]);
     });
 
-    it('shows the Galaxy Watch destination on native and opens the watch sheet', () => {
+    it('shows Android connection destinations and opens their sheets', () => {
         const callbacks = createCallbacks();
         const screen = render(
             <SettingsCategoryPage
                 category="connections"
                 isWeb={false}
                 {...resourceProps}
+                showAndroidIntegrations
                 {...callbacks}
             />
         );
@@ -136,6 +136,8 @@ describe('SettingsCategoryPage', () => {
             'Galaxy Watch',
             'Connected assistants, 2'
         ]);
+        fireEvent.press(screen.getByRole('button', { name: 'Health Connect' }));
+        expect(callbacks.onOpenSheet).toHaveBeenCalledWith('health-connect');
         fireEvent.press(screen.getByRole('button', { name: 'Galaxy Watch' }));
         expect(callbacks.onOpenSheet).toHaveBeenCalledWith('watch');
     });

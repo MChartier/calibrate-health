@@ -16,6 +16,7 @@ type SettingsCategoryPageProps = {
     failedMutationCount: number;
     pendingMutationCount: number;
     isWeb: boolean;
+    showAndroidIntegrations: boolean;
     onEditProfile: () => void;
     onOpenSheet: (sheet: SettingsSheetId) => void;
     onOpenActivity: () => void;
@@ -35,6 +36,7 @@ export function SettingsCategoryPage({
     failedMutationCount,
     pendingMutationCount,
     isWeb,
+    showAndroidIntegrations,
     onEditProfile,
     onOpenSheet,
     onOpenActivity,
@@ -129,19 +131,21 @@ export function SettingsCategoryPage({
                         supportingText="Steps, active calories, and exercise history"
                         onPress={onOpenActivity}
                     />
-                    <SettingsRow
-                        icon="fitness-outline"
-                        label="Health Connect"
-                        supportingText="Read activity and weight from Android"
-                        onPress={() => onOpenSheet('health-connect')}
-                    />
-                    {!isWeb ? (
-                        <SettingsRow
-                            icon="watch-outline"
-                            label="Galaxy Watch"
-                            supportingText="Pair, sync, and manage the Wear OS companion"
-                            onPress={() => onOpenSheet('watch')}
-                        />
+                    {showAndroidIntegrations ? (
+                        <>
+                            <SettingsRow
+                                icon="fitness-outline"
+                                label="Health Connect"
+                                supportingText="Read activity and weight from Android"
+                                onPress={() => onOpenSheet('health-connect')}
+                            />
+                            <SettingsRow
+                                icon="watch-outline"
+                                label="Galaxy Watch"
+                                supportingText="Pair, sync, and manage the Wear OS companion"
+                                onPress={() => onOpenSheet('watch')}
+                            />
+                        </>
                     ) : null}
                     <SettingsRow
                         testID="settings-open-connected-apps"

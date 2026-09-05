@@ -342,6 +342,8 @@ export function overrideCheckoutVersions(checkout, versionCode) {
   const appJsonPath = path.join(checkout, 'mobile', 'app.json');
   const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
   appJson.expo.android.versionCode = versionCode;
+  // Historical Android-only checkouts have no iOS config; newer checkouts share the mobile counter.
+  if (appJson.expo.ios) appJson.expo.ios.buildNumber = String(versionCode);
   fs.writeFileSync(appJsonPath, `${JSON.stringify(appJson, null, 2)}\n`);
 
   const releasePath = path.join(checkout, 'shared', 'release.json');
