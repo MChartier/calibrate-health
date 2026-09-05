@@ -50,5 +50,14 @@ describe('ConnectedAppsPanel', () => {
 
         expect(onRevoke).toHaveBeenCalledWith(connection.id);
         expect(screen.getByText('Revoke connected assistant?')).toBeTruthy();
+        screen.rerender(
+            <ConnectedAppsPanel
+                connections={[connection]}
+                errorMessage="Unable to revoke that connected assistant."
+                onRevoke={onRevoke}
+            />
+        );
+        expect(screen.getByText('Unable to revoke that connected assistant.').props.accessibilityRole)
+            .toBe('alert');
     });
 });

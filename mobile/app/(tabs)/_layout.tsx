@@ -33,6 +33,8 @@ import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
 import { useOfflineOutbox } from '../../src/offline/provider';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { resolveContextualFab } from '../../src/navigation/contextualFab';
+import { GuardedTabButton } from '../../src/navigation/GuardedTabButton';
+import { requestGuardedNavigation } from '../../src/navigation/guardedNavigation';
 import {
     canonicalPathForRoute,
     getRouteByPath,
@@ -209,8 +211,10 @@ export default function TabsLayout() {
         onSuccess: async (notification) => {
             reconcileNotificationRead(queryClient, notification.id);
             await invalidateNotificationQueries(queryClient);
-            setIsNotificationDrawerOpen(false);
-            router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
+            requestGuardedNavigation(() => {
+                setIsNotificationDrawerOpen(false);
+                router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
+            });
         }
     });
     const requestAddFood = React.useCallback((input: AddFoodRequestInput = {}) => {
@@ -360,10 +364,10 @@ export default function TabsLayout() {
                                         title={routeTitle}
                                         backAction={backLabel && activeRoute ? {
                                             label: backLabel,
-                                            onPress: () => navigateBackFromRoute(activeRoute.routeId, {
+                                            onPress: () => requestGuardedNavigation(() => navigateBackFromRoute(activeRoute.routeId, {
                                                 router: routerCanGoBack,
                                                 browser: browserCanGoBack
-                                            })
+                                            }))
                                         } : undefined}
                                         unreadCount={unreadCount}
                                         offlineChangeCount={queuedMutations.length}
@@ -382,7 +386,9 @@ export default function TabsLayout() {
                         <Tabs.Screen
                             name="(today)"
                             options={{
-                                href: canonicalPathForRoute('today') as Href,
+                                tabBarButton: (props) => (
+                                    <GuardedTabButton {...props} href={canonicalPathForRoute('today') as Href} />
+                                ),
                                 title: 'Today',
                                 headerTitle: 'Today',
                                 tabBarIcon: ({ color, size }) => <Ionicons name="today-outline" color={color} size={size} />
@@ -391,7 +397,9 @@ export default function TabsLayout() {
                         <Tabs.Screen
                             name="(progress)"
                             options={{
-                                href: canonicalPathForRoute('progress') as Href,
+                                tabBarButton: (props) => (
+                                    <GuardedTabButton {...props} href={canonicalPathForRoute('progress') as Href} />
+                                ),
                                 title: 'Progress',
                                 headerTitle: 'Progress',
                                 tabBarIcon: ({ color, size }) => <Ionicons name="analytics-outline" color={color} size={size} />
@@ -416,10 +424,10 @@ export default function TabsLayout() {
                         onClose={() => setIsNotificationDrawerOpen(false)}
                         onOpenNotification={(notification) => openNotification.mutate(notification)}
                         onDismissNotification={(notification) => dismissNotification.mutate(notification)}
-                        onViewAll={() => {
+                        onViewAll={() => requestGuardedNavigation(() => {
                             setIsNotificationDrawerOpen(false);
                             router.push(canonicalPathForRoute('notifications') as Href);
-                        }}
+                        })}
                         onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
                     />
                     <ResumeTrackingPrompt />
@@ -520,7 +528,7 @@ const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ s
         disabled={isTodayRoute}
         focusStyle={styles.navigationFocus}
         hoverStyle={styles.navigationHover}
-        onPress={() => router.push(canonicalPathForRoute('today') as Href)}
+        onPress={() => requestGuardedNavigation(() => router.push(canonicalPathForRoute('today') as Href))}
         style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
     >
         <CalibrateLogo size={30} />
@@ -543,7 +551,7 @@ const HeaderActions: React.FC<{
                 accessibilityLabel={`${offlineChangeCount} offline changes ${hasFailedOfflineChanges ? 'need attention' : 'pending'}`}
                 focusStyle={styles.navigationFocus}
                 hoverStyle={styles.navigationHover}
-                onPress={() => router.push(canonicalPathForRoute('settings-data') as Href)}
+                onPress={() => requestGuardedNavigation(() => router.push(canonicalPathForRoute('settings-data') as Href))}
                 style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
             >
                 <Ionicons
@@ -580,7 +588,7 @@ const HeaderActions: React.FC<{
             accessibilityHint="Opens account details and app settings"
             focusStyle={styles.navigationFocus}
             hoverStyle={styles.navigationHover}
-            onPress={() => router.push(canonicalPathForRoute('settings') as Href)}
+            onPress={() => requestGuardedNavigation(() => router.push(canonicalPathForRoute('settings') as Href))}
             style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
         >
             {profileImageUrl ? (

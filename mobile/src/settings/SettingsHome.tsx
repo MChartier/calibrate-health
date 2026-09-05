@@ -5,6 +5,7 @@ import { SettingsRow, SettingsSection } from '../components/settings/SettingsLis
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
+import type { RouteId } from '../navigation/routeRegistry';
 
 const SETTINGS_CATEGORY_IDS = [
     'profile',
@@ -16,17 +17,28 @@ const SETTINGS_CATEGORY_IDS = [
 
 export type SettingsCategoryId = (typeof SETTINGS_CATEGORY_IDS)[number];
 
+// Durable, multi-section settings are routes; sheets stay limited to short contextual tasks.
+const SETTINGS_PAGE_IDS = [
+    'profile-details',
+    'preferences',
+    'activity',
+    'health-connect',
+    'watch',
+    'connected-apps',
+    'devices',
+    'my-foods',
+    'about',
+    'advanced'
+] as const satisfies readonly RouteId[];
+
+export type SettingsPageId = (typeof SETTINGS_PAGE_IDS)[number];
+
 export type SettingsSheetId =
-    | 'preferences'
-    | 'health-connect'
-    | 'watch'
     | 'import'
     | 'profile-photo'
     | 'password'
-    | 'devices'
-    | 'connected-apps'
     | 'offline'
-    | 'data';
+    | 'export';
 
 export type ProductLink = 'support' | 'privacy' | 'terms' | 'licenses';
 

@@ -9,6 +9,7 @@ import { radius, spacing, useAppTheme } from '../theme';
 type ConnectedAppsPanelProps = {
     connections: ConnectedAppSummary[];
     pendingConnectionId?: string;
+    errorMessage?: string;
     onRevoke: (connectionId: string) => void | Promise<void>;
 };
 
@@ -33,6 +34,7 @@ function scopeSummary(scopes: string[]): string {
 export function ConnectedAppsPanel({
     connections,
     pendingConnectionId,
+    errorMessage,
     onRevoke
 }: ConnectedAppsPanelProps) {
     const { colors } = useAppTheme();
@@ -75,6 +77,11 @@ export function ConnectedAppsPanel({
                     />
                 </View>
             ))}
+            {errorMessage && !selected && (
+                <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                    {errorMessage}
+                </AppText>
+            )}
             <BottomSheetModal
                 visible={Boolean(selected)}
                 accessibilityLabel="Revoke connected assistant"
@@ -86,23 +93,30 @@ export function ConnectedAppsPanel({
                 dismissDisabled={Boolean(pendingConnectionId)}
                 onRequestClose={() => setSelected(null)}
             >
-                <View style={styles.confirmationActions}>
-                    <AppButton
-                        title="Cancel"
-                        variant="secondary"
-                        disabled={Boolean(pendingConnectionId)}
-                        onPress={() => setSelected(null)}
-                        style={styles.confirmationButton}
-                    />
-                    <AppButton
-                        testID="settings-connected-app-confirm-revoke"
-                        title="Revoke"
-                        variant="danger"
-                        busy={Boolean(pendingConnectionId)}
-                        busyLabel="Revoking..."
-                        onPress={() => void confirmRevoke()}
-                        style={styles.confirmationButton}
-                    />
+                <View style={styles.confirmationContent}>
+                    {errorMessage && (
+                        <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
+                            {errorMessage}
+                        </AppText>
+                    )}
+                    <View style={styles.confirmationActions}>
+                        <AppButton
+                            title="Cancel"
+                            variant="secondary"
+                            disabled={Boolean(pendingConnectionId)}
+                            onPress={() => setSelected(null)}
+                            style={styles.confirmationButton}
+                        />
+                        <AppButton
+                            testID="settings-connected-app-confirm-revoke"
+                            title="Revoke"
+                            variant="danger"
+                            busy={Boolean(pendingConnectionId)}
+                            busyLabel="Revoking..."
+                            onPress={() => void confirmRevoke()}
+                            style={styles.confirmationButton}
+                        />
+                    </View>
                 </View>
             </BottomSheetModal>
         </View>
@@ -129,6 +143,9 @@ const styles = StyleSheet.create({
     },
     revokeButton: {
         flexShrink: 0
+    },
+    confirmationContent: {
+        gap: spacing.md
     },
     confirmationActions: {
         flexDirection: 'row',

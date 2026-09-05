@@ -60,7 +60,7 @@ export const SummaryRow: React.FC<{ label: string; value: string }> = ({
 type SettingsDetailSheetProps = {
     visible: boolean;
     maxHeight?: BottomSheetModalProps['maxHeight'];
-    title?: string;
+    title: string;
     description?: string;
     size?: BottomSheetModalProps['size'];
     dismissDisabled?: boolean;
@@ -84,7 +84,7 @@ export const SettingsDetailSheet: React.FC<SettingsDetailSheetProps> = ({
 }) => (
     <BottomSheetModal
         visible={visible}
-        accessibilityLabel={title ?? 'Settings details'}
+        accessibilityLabel={title}
         maxHeight={maxHeight}
         title={title}
         description={description}
