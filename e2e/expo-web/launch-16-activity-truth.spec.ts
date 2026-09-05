@@ -309,3 +309,32 @@ test('Activity keeps connection, sync, source, and calorie-target truth across r
   await expect(page.locator('#route-focus-title')).toHaveText('Connections');
   await expectNoHorizontalOverflow(page);
 });
+
+test('Activity date navigation stays anchored and usable after scrolling', async ({ page, ux }) => {
+  await ux.install('populated');
+  await installActivityFixture(page);
+  await installInitialHealthConnectState(page, { state: 'ready' });
+  await page.goto('/activity');
+  await expect(page.getByTestId('activity-summary')).toContainText('8,432');
+  await page.getByRole('button', { name: 'Show activity details', exact: true }).click();
+
+  const header = page.getByTestId('date-navigation-header');
+  const content = page.getByRole('main');
+  await expect(header.getByRole('button', { name: 'Next day', exact: true })).toBeDisabled();
+  const initialHeaderBox = await header.boundingBox();
+  expect(initialHeaderBox).not.toBeNull();
+
+  await content.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect.poll(async () => (await header.boundingBox())?.y).toBe(initialHeaderBox!.y);
+  await expect(header.getByRole('button', { name: 'Choose date', exact: true })).toBeInViewport();
+
+  await header.getByRole('button', { name: 'Previous day', exact: true }).click();
+  await expect(header).toContainText('Jul 20, 2026');
+  await expect(page.getByTestId('activity-summary')).toContainText('7,105');
+  await header.getByRole('button', { name: 'Next day', exact: true }).click();
+  await expect(header).toContainText('Today');
+  await expect(page.getByTestId('activity-summary')).toContainText('8,432');
+  await expect(header.getByRole('button', { name: 'Next day', exact: true })).toBeDisabled();
+  await expectNoHorizontalOverflow(page);
+});
