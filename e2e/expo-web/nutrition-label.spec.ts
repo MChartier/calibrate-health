@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { expect, hideTransientPwaNotices, test } from './fixtures';
 
-const LABEL_PHOTO = path.resolve('e2e/expo-web/fixtures/nutrition-label.png');
+const LABEL_PHOTO = path.resolve('backend/test/fixtures/nutrition-label.png');
 const draft = {
     calories_per_serving: 190, serving_size_quantity: 2, serving_unit_label: 'tbsp (32 g)',
     serving_text: '2 tbsp (32 g)', warnings: []
