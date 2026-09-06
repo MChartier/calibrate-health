@@ -308,6 +308,10 @@ export default function BarcodeScreen() {
         });
     }
 
+    function scanNutritionLabel() {
+        router.push({ pathname: '/nutrition-label', params: { from: 'barcode' } });
+    }
+
     function searchFoods() {
         router.replace({
             pathname: routeContext.returnTo === BARCODE_RETURN_DESTINATIONS.FOOD_LOG
@@ -511,7 +515,7 @@ export default function BarcodeScreen() {
                             }
                             : undefined}
                     />
-                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} />
+                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
                     <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
                 </AppCard>
             </Screen>
@@ -565,7 +569,7 @@ export default function BarcodeScreen() {
                     )}
                     {permissionAction}
                     <AppButton title="Enter barcode" variant="secondary" onPress={() => setMode('manual-barcode')} />
-                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} />
+                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
                     <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
                 </AppCard>
             </Screen>
@@ -597,7 +601,7 @@ export default function BarcodeScreen() {
                             {scanError ?? 'Camera ready. Center an EAN or UPC barcode in the frame.'}
                         </AppText>
                         <AppButton title="Enter barcode" variant="secondary" onPress={() => setMode('manual-barcode')} />
-                        <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} />
+                        <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
                         <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
                     </AppCard>
                 </View>
@@ -697,6 +701,7 @@ export default function BarcodeScreen() {
                 {lookupState.kind === BARCODE_LOOKUP_STATES.AUTH_REQUIRED && (
                     <AppButton title="Sign in again" onPress={() => void clearLocalSession()} />
                 )}
+                <AppButton title="Scan nutrition label" variant="secondary" disabled={logFood.isPending || lookup.isPending} onPress={scanNutritionLabel} />
                 {lookupFailed && (
                     <BarcodeRecoveryActions
                         disabled={logFood.isPending}

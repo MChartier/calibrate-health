@@ -9,6 +9,7 @@ import {
 import { spacing } from '../theme';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
 const mockApi = {
     getMyFoodsLibrary: jest.fn(),

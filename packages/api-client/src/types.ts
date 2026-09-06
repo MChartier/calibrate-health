@@ -1115,6 +1115,14 @@ export type MyFoodDetail = MyFoodSummary & {
     recipe_ingredients?: RecipeIngredientSummary[];
 };
 
+export type NutritionLabelDraft = {
+    calories_per_serving: number | null;
+    serving_size_quantity: number | null;
+    serving_unit_label: string | null;
+    serving_text: string | null;
+    warnings: string[];
+};
+
 export type CreateMyFoodPayload = {
     name: string;
     serving_size_quantity: number;

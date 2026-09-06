@@ -530,6 +530,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/nutrition-labels/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Read an English nutrition-label photo into an unsaved draft for user review. Photos are processed locally and not retained. Saving requires a separate saved-food request. */
+        post: operations["scanNutritionLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/my-foods/library": {
         parameters: {
             query?: never;
@@ -1816,6 +1833,13 @@ export interface components {
         OnboardingCompleteResponse: {
             receipt: components["schemas"]["OnboardingCompleteReceipt"];
             user: components["schemas"]["UserClientPayload"];
+        };
+        NutritionLabelDraft: {
+            calories_per_serving: number | null;
+            serving_size_quantity: number | null;
+            serving_unit_label: string | null;
+            serving_text: string | null;
+            warnings: string[];
         };
         /** @enum {string} */
         MyFoodType: "FOOD" | "RECIPE";
@@ -3819,6 +3843,74 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    scanNutritionLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description One JPEG, PNG, or WebP photo, at most 8 MB and 25 megapixels.
+                     */
+                    image: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Editable values; unreadable or ambiguous fields are null. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NutritionLabelDraft"];
+                };
+            };
+            /** @description Missing, invalid, or unsupported photo. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Photo exceeds the upload limit. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many scans for this user. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another scan is using this server process. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Recognition exceeded its deadline. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     listMyFoodsLibrary: {

@@ -34,6 +34,7 @@ export const ROUTE_IDS = [
   'about',
   'advanced',
   'weight',
+  'nutrition-label',
   'barcode',
 ] as const;
 
@@ -462,6 +463,17 @@ export const ROUTE_REGISTRY = {
     backLabel: 'Back to Progress',
     authClass: 'authenticated',
     shellPolicy: 'overlay',
+    deepLink: 'render',
+    authenticatedRedirect: null,
+  }),
+  'nutrition-label': route({
+    path: '/nutrition-label',
+    title: 'Scan nutrition label',
+    parent: 'my-foods',
+    fallback: 'my-foods',
+    backLabel: 'Back to Saved foods',
+    authClass: 'authenticated',
+    shellPolicy: 'standalone',
     deepLink: 'render',
     authenticatedRedirect: null,
   }),

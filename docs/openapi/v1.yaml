@@ -878,6 +878,43 @@ paths:
           description: Food log deleted; response has no body.
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/nutrition-labels/scan:
+    post:
+      operationId: scanNutritionLabel
+      description: Read an English nutrition-label photo into an unsaved draft for user review. Photos are processed locally and not retained. Saving requires a separate saved-food request.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: One JPEG, PNG, or WebP photo, at most 8 MB and 25 megapixels.
+      responses:
+        '200':
+          description: Editable values; unreadable or ambiguous fields are null.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NutritionLabelDraft' }
+        '400':
+          description: Missing, invalid, or unsupported photo.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: Photo exceeds the upload limit.
+        '429':
+          description: Too many scans for this user.
+        '503':
+          description: Another scan is using this server process.
+        '504':
+          description: Recognition exceeded its deadline.
   /api/v1/my-foods/library:
     get:
       operationId: listMyFoodsLibrary
@@ -2628,6 +2665,17 @@ components:
       properties:
         receipt: { $ref: '#/components/schemas/OnboardingCompleteReceipt' }
         user: { $ref: '#/components/schemas/UserClientPayload' }
+    NutritionLabelDraft:
+      type: object
+      required: [calories_per_serving, serving_size_quantity, serving_unit_label, serving_text, warnings]
+      properties:
+        calories_per_serving: { type: number, nullable: true, minimum: 0 }
+        serving_size_quantity: { type: number, nullable: true, exclusiveMinimum: true, minimum: 0 }
+        serving_unit_label: { type: string, nullable: true, maxLength: 48 }
+        serving_text: { type: string, nullable: true, maxLength: 160 }
+        warnings:
+          type: array
+          items: { type: string }
     MyFoodType:
 
       type: string

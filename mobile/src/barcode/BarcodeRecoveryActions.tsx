@@ -7,18 +7,21 @@ type BarcodeRecoveryActionsProps = {
     disabled?: boolean;
     onSearchFoods: () => void;
     onAddManually: () => void;
+    onScanLabel?: () => void;
 };
 
 /** Shared escape hatches for every camera, connectivity, and lookup failure. */
 export function BarcodeRecoveryActions({
     disabled = false,
     onSearchFoods,
-    onAddManually
+    onAddManually,
+    onScanLabel
 }: BarcodeRecoveryActionsProps) {
     const theme = useAppTheme();
 
     return (
         <View>
+            {onScanLabel && <AppButton title="Scan nutrition label" variant="secondary" disabled={disabled} onPress={onScanLabel} />}
             <AppButton
                 title="Search foods"
                 variant="secondary"

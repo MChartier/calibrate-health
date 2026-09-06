@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { router } from 'expo-router';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -99,6 +100,7 @@ export function SavedFoodsLibrary({
                 <AppText variant="muted">Keep reusable foods and recipes easy to find.</AppText>
             </View>
             <View style={[styles.createActions, isNarrow && styles.createActionsNarrow]}>
+                <AppButton title="Scan label" variant="secondary" onPress={() => router.push('/nutrition-label')} style={isNarrow ? styles.narrowAction : undefined} />
                 <AppButton
                     title="Create food"
                     variant="secondary"

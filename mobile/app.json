@@ -79,6 +79,14 @@
       ],
       "expo-sqlite",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow calibrate to choose profile photos and nutrition labels.",
+          "cameraPermission": "Allow calibrate to scan food barcodes and nutrition labels.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
@@ -94,7 +102,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow calibrate to scan food barcodes.",
+          "cameraPermission": "Allow calibrate to scan food barcodes and nutrition labels.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
@@ -102,7 +110,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow calibrate to choose a profile photo.",
+          "photosPermission": "Allow calibrate to choose a profile photo or nutrition label.",
+          "cameraPermission": "Allow calibrate to photograph nutrition labels.",
           "microphonePermission": false
         }
       ],
