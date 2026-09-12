@@ -5,6 +5,7 @@ import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { RecentFoodSummary } from '@calibrate/api-client';
 import { AddFoodSheet } from './AddFoodSheet';
+import { getSavedFoodsLibraryQueryKey } from '../savedFoods/queryKeys';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
@@ -231,6 +232,27 @@ describe('AddFoodSheet async resource states', () => {
         } finally {
             replacedPlatform.restore();
         }
+    });
+
+    it('finds cached library recipes offline and opens quantity confirmation without logging', async () => {
+        const screen = renderSheet((queryClient) => {
+            queryClient.setQueryData(getSavedFoodsLibraryQueryKey('', 'RECIPE'), {
+                pages: [{ items: [{
+                    id: 14, type: 'RECIPE', name: 'Overnight oats', is_pinned: false,
+                    serving_size_quantity: 1, serving_unit_label: 'serving',
+                    calories_per_serving: 320, recipe_total_calories: 640, yield_servings: 2
+                }], next_cursor: null }], pageParams: [undefined]
+            });
+        });
+        const searchField = screen.getByLabelText('Search foods');
+        fireEvent.changeText(searchField, 'oats');
+        fireEvent(searchField, 'submitEditing');
+        expect(await screen.findByText('Overnight oats')).toBeTruthy();
+        expect(screen.getByText('Offline - showing saved information')).toBeTruthy();
+        fireEvent.press(screen.getByLabelText('Choose amount for Overnight oats'));
+        expect(screen.getByLabelText('Amount')).toBeTruthy();
+        expect(mockApi.getMyFoods).not.toHaveBeenCalled();
+        expect(mockApi.createFoodLog).not.toHaveBeenCalled();
     });
 
     it('offers only Quick and Search while keeping saved recipes discoverable in Search', async () => {

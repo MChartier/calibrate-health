@@ -43,6 +43,7 @@ import {
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { confirmDiscardChanges } from './confirmDiscardChanges';
+import { getCachedSavedFoods } from '../savedFoods/cachedFoods';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
 
 type AddFoodReturnTo = 'today' | 'food-log';
@@ -195,7 +196,14 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     });
     const recentFoodsState = useAsyncResourceState(recentFoodsQuery, (data) => data.items.length === 0);
     const providerSearchState = useAsyncResourceState(providerSearchQuery, (data) => data.items.length === 0);
-    const myFoodsState = useAsyncResourceState(myFoodsQuery, (data) => data.length === 0);
+    const savedFoods = isOnline
+        ? myFoodsQuery.data ?? []
+        : getCachedSavedFoods(queryClient, myFoodsQuery.data, myFoodsQuery.dataUpdatedAt);
+    const myFoodsState = useAsyncResourceState({
+        ...myFoodsQuery,
+        data: savedFoods.length > 0 ? savedFoods : myFoodsQuery.data,
+        dataUpdatedAt: savedFoods.length > 0 ? Math.max(1, myFoodsQuery.dataUpdatedAt) : myFoodsQuery.dataUpdatedAt
+    }, (data) => data.length === 0);
 
     const createFoodLog = useCallback((payload: FoodLogCreatePayload) => {
         if (foodDayQuery.data?.status !== 'OPEN') {
@@ -257,7 +265,6 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         logFood.reset();
     }, [initialMeal, visible]);
 
-    const savedFoods = myFoodsQuery.data ?? [];
     const providerData = requestedQuery === normalizedQuery ? providerSearchQuery.data : undefined;
     const recentData = requestedQuery === normalizedQuery
         ? recentFoodsQuery.data

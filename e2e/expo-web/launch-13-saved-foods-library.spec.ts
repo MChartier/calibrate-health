@@ -62,6 +62,9 @@ test('Saved foods supports create, search, pin, edit, deep recipe use, and snaps
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await ux.install('populated');
   await installSavedFoodsFixture(page);
+  await page.route('**/api/v1/food/search?*', (route) => route.fulfill({
+    json: { items: [], provider: 'usda' }
+  }));
   await page.goto('/my-foods');
 
   await expect(page.locator('#route-focus-title')).toHaveText('Saved foods');
@@ -111,8 +114,9 @@ test('Saved foods supports create, search, pin, edit, deep recipe use, and snaps
   await page.goto('/food-log');
   await page.getByRole('button', { name: 'Add food', exact: true }).click();
   const addFoodDialog = page.getByRole('dialog', { name: 'Add food', exact: true });
-  await addFoodDialog.getByRole('radio', { name: 'Recipes', exact: true }).click();
-  await addFoodDialog.getByLabel('Search recipes').fill(RECIPE_NAME);
+  await expect(addFoodDialog.getByRole('radio', { name: 'Recipes', exact: true })).toHaveCount(0);
+  await addFoodDialog.getByRole('radio', { name: 'Search', exact: true }).click();
+  await addFoodDialog.getByLabel('Search foods').fill(RECIPE_NAME);
   await addFoodDialog.getByText(RECIPE_NAME, { exact: true }).click();
   const foodLogRequestPromise = page.waitForRequest((request) => (
     request.method() === 'POST' && new URL(request.url()).pathname === '/api/v1/food'
