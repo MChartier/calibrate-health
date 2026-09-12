@@ -310,7 +310,7 @@ test('Activity keeps connection, sync, source, and calorie-target truth across r
   await expectNoHorizontalOverflow(page);
 });
 
-test('Activity date navigation stays anchored and usable after scrolling', async ({ page, ux }) => {
+test('Activity date navigation stays anchored and usable after scrolling', async ({ page, ux }, testInfo) => {
   await ux.install('populated');
   await installActivityFixture(page);
   await installInitialHealthConnectState(page, { state: 'ready' });
@@ -328,6 +328,11 @@ test('Activity date navigation stays anchored and usable after scrolling', async
   await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await expect.poll(async () => (await header.boundingBox())?.y).toBe(initialHeaderBox!.y);
   await expect(header.getByRole('button', { name: 'Choose date', exact: true })).toBeInViewport();
+  if (process.env.CALIBRATE_CAPTURE_EVIDENCE === '1') {
+    const directory = path.resolve('docs/screenshots/stack-review');
+    await mkdir(directory, { recursive: true });
+    await page.screenshot({ path: path.join(directory, `369-activity-scrolled-${testInfo.project.name}.png`) });
+  }
 
   await header.getByRole('button', { name: 'Previous day', exact: true }).click();
   await expect(header).toContainText('Jul 20, 2026');
