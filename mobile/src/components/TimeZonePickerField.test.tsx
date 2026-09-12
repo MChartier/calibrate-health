@@ -17,6 +17,7 @@ describe('TimeZonePickerField', () => {
         const screen = render(<TimeZonePickerField value="America/New_York" onChange={onChange} />);
 
         expect(screen.getByText('Pacific Time (Los Angeles)')).toBeTruthy();
+        expect(screen.getByText('Detected from device settings: America/Los_Angeles')).toBeTruthy();
         fireEvent.press(screen.getByText('Use device time zone'));
         expect(onChange).toHaveBeenCalledWith('America/Los_Angeles');
     });

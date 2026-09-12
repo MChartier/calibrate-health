@@ -38,10 +38,17 @@ describe('account deletion cleanup notice', () => {
     });
 
     it('gives both watch disconnect and Android app-data recovery steps', () => {
-        const message = accountDeletionCleanupGuidance(notice);
+        const message = accountDeletionCleanupGuidance(notice, 'android');
         expect(message).toContain('Disconnect this watch');
         expect(message).toContain('clear Calibrate app data');
         expect(message).toContain('Before signing in again');
+    });
+
+    it('uses iOS-safe local-data recovery steps', () => {
+        const message = accountDeletionCleanupGuidance(notice, 'ios');
+        expect(message).toContain('this device was signed out');
+        expect(message).toContain('delete (do not offload) and reinstall Calibrate');
+        expect(message).not.toContain('Android Settings');
     });
 
     it('blocks every new authentication path until cleanup is acknowledged', () => {

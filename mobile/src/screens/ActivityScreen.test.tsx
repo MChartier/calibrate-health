@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ActivityScreen from '../../app/(tabs)/(settings)/activity';
 
@@ -54,16 +54,22 @@ jest.mock('../hooks/useLogDateNavigation', () => ({
     useLogDateNavigation: () => mockNavigation
 }));
 
-jest.mock('../components/DateNavigation', () => {
+jest.mock('../components/DateNavigationHeader', () => {
     const ReactModule = require('react');
     const { View } = require('react-native');
-    return { DateNavigation: () => ReactModule.createElement(View, { testID: 'activity-date-navigation' }) };
+    return {
+        DateNavigationHeader: () => ReactModule.createElement(View, { testID: 'activity-date-navigation' })
+    };
 });
 jest.mock('../components/TabScreen', () => {
     const ReactModule = require('react');
     const { View } = require('react-native');
     return {
-        TabScreen: ({ children }: { children: React.ReactNode }) => ReactModule.createElement(View, null, children)
+        TabScreen: ({ children }: { children: React.ReactNode }) => ReactModule.createElement(
+            View,
+            { testID: 'activity-scroll-content' },
+            children
+        )
     };
 });
 
@@ -179,6 +185,9 @@ describe('ActivityScreen async resource states', () => {
         expect(screen.getByText('No activity imported yet')).toBeTruthy();
         expect(screen.getAllByRole('button', { name: 'Connect Health Connect' })).toHaveLength(1);
         expect(screen.getByTestId('activity-date-navigation')).toBeTruthy();
+        expect(within(screen.getByTestId('activity-scroll-content')).queryByTestId(
+            'activity-date-navigation'
+        )).toBeNull();
         expect(screen.queryByText('Today')).toBeNull();
         expect(screen.queryByText('Recent Days')).toBeNull();
         expect(screen.getByText(

@@ -12,6 +12,8 @@ import {
   executeUpgradeInstallSequence,
   parseApkBadging,
   parseNativeUpgradeArgs,
+  rehearsalVersionCodes,
+  createNativeUpgradePlan,
   parsePackageDump,
   parseSignerFingerprint,
   overrideCheckoutVersions,
@@ -68,7 +70,7 @@ test('CLI is dry-run by default and requires explicit emulator serials', () => {
   assert.equal(parsed.dryRun, true);
   assert.equal(parsed.candidateRef, 'HEAD');
   assert.equal(parsed.baselineVersionCode, 1);
-  assert.equal(parsed.candidateVersionCode, 2);
+  assert.equal(parsed.candidateVersionCode, 3);
   assert.equal(parseNativeUpgradeArgs(validArgs(['--package-only'])).packageOnly, true);
   assert.throws(
     () => parseNativeUpgradeArgs(['--baseline', 'a99fcb8']),
@@ -76,35 +78,50 @@ test('CLI is dry-run by default and requires explicit emulator serials', () => {
   );
 });
 
-test('temporary version override keeps phone, Wear, pairing module, and release manifest aligned', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-upgrade-version-test-'));
-  try {
-    for (const directory of [
-      ['mobile'], ['shared'], ['wear', 'app'], ['mobile', 'modules', 'wear-pairing', 'android']
-    ]) fs.mkdirSync(path.join(root, ...directory), { recursive: true });
-    fs.writeFileSync(path.join(root, 'mobile', 'app.json'), JSON.stringify({ expo: { android: { versionCode: 1 } } }));
-    fs.writeFileSync(path.join(root, 'shared', 'release.json'), JSON.stringify({
-      android: { mobile: { version_code: 1 }, wear: { version_code: 1 } }
-    }));
-    fs.writeFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'versionCode = 1\n');
-    fs.writeFileSync(
-      path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'),
-      'versionCode 1\n'
-    );
-    overrideCheckoutVersions(root, 2);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'))).expo.android.versionCode, 2);
-    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'shared', 'release.json'))).android, {
-      mobile: { version_code: 2 }, wear: { version_code: 2 }
-    });
-    assert.match(fs.readFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'utf8'), /versionCode = 2/);
-    assert.match(
-      fs.readFileSync(path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'), 'utf8'),
-      /versionCode 2/
-    );
-  } finally {
-    fs.rmSync(root, { recursive: true });
-  }
+test('rehearsal plans allocate distinct odd/even role codes and reject invalid pairs', () => {
+  const config = parseNativeUpgradeArgs(validArgs(['--baseline-version-code', '1000001', '--candidate-version-code', '1000003']));
+  const plan = createNativeUpgradePlan(config, { baselineCommit: 'a'.repeat(40), candidateCommit: 'b'.repeat(40), targets: [] });
+  assert.equal(plan.baseline.versionCode, 1000001);
+  assert.equal(plan.baseline.wearVersionCode, 1000002);
+  assert.equal(plan.candidate.versionCode, 1000003);
+  assert.equal(plan.candidate.wearVersionCode, 1000004);
+  assert.deepEqual(rehearsalVersionCodes(2099999999), { phone: 2099999999, wear: 2100000000 });
+  for (const code of [0, 2, 2100000000, 2100000001]) assert.throws(() => rehearsalVersionCodes(code));
+  assert.throws(() => parseNativeUpgradeArgs(validArgs(['--candidate-version-code', '2'])), /must be odd/);
 });
+
+for (const ios of [undefined, { buildNumber: '1' }]) {
+  test(`temporary version override aligns every native mirror (iOS config: ${Boolean(ios)})`, () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-upgrade-version-test-'));
+    try {
+      for (const directory of [
+        ['mobile'], ['shared'], ['wear', 'app'], ['mobile', 'modules', 'wear-pairing', 'android']
+      ]) fs.mkdirSync(path.join(root, ...directory), { recursive: true });
+      fs.writeFileSync(path.join(root, 'mobile', 'app.json'), JSON.stringify({ expo: { android: { versionCode: 1 }, ios } }));
+      fs.writeFileSync(path.join(root, 'shared', 'release.json'), JSON.stringify({
+        android: { mobile: { version_code: 1 }, wear: { version_code: 1 } }
+      }));
+      fs.writeFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'versionCode = 1\n');
+      fs.writeFileSync(
+        path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'),
+        'versionCode 1\n'
+      );
+      overrideCheckoutVersions(root, 3);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'))).expo.android.versionCode, 3);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'))).expo.ios?.buildNumber, ios ? '3' : undefined);
+      assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'shared', 'release.json'))).android, {
+        mobile: { version_code: 3 }, wear: { version_code: 4 }
+      });
+      assert.match(fs.readFileSync(path.join(root, 'wear', 'app', 'build.gradle.kts'), 'utf8'), /versionCode = 4/);
+      assert.match(
+        fs.readFileSync(path.join(root, 'mobile', 'modules', 'wear-pairing', 'android', 'build.gradle'), 'utf8'),
+        /versionCode 3/
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true });
+    }
+  });
+}
 
 test('build sequence runs release mirror validation after prebuild and before Gradle', async () => {
   const labels = [];
@@ -242,13 +259,16 @@ test('artifact gate requires application, version overrides, and one shared sign
     signerSha256
   });
   const artifacts = {
-    baseline: { phone: artifact(1), wear: artifact(1) },
-    candidate: { phone: artifact(2), wear: artifact(2) }
+    baseline: { phone: artifact(1), wear: artifact(2) },
+    candidate: { phone: artifact(3), wear: artifact(4) }
   };
-  assert.doesNotThrow(() => assertArtifactSet(artifacts, { baselineVersionCode: 1, candidateVersionCode: 2 }));
+  assert.doesNotThrow(() => assertArtifactSet(artifacts, { baselineVersionCode: 1, candidateVersionCode: 3 }));
+  artifacts.candidate.wear.versionCode = 3;
+  assert.throws(() => assertArtifactSet(artifacts, { baselineVersionCode: 1, candidateVersionCode: 3 }), /candidate wear APK version/);
+  artifacts.candidate.wear.versionCode = 4;
   artifacts.candidate.wear.signerSha256 = 'different';
   assert.throws(
-    () => assertArtifactSet(artifacts, { baselineVersionCode: 1, candidateVersionCode: 2 }),
+    () => assertArtifactSet(artifacts, { baselineVersionCode: 1, candidateVersionCode: 3 }),
     /do not share one disposable signer/
   );
 });
@@ -301,7 +321,7 @@ test('install sequence replaces baseline and candidate without uninstall or app-
     calls.push({ label: request.label, args: request.args });
     const serial = request.args[1];
     if (request.args.includes('install')) {
-      versions[serial] = request.args.at(-1).includes('candidate') ? 2 : 1;
+      versions[serial] = (request.args.at(-1).includes('candidate') ? 3 : 1) + (serial === WEAR_SERIAL ? 1 : 0);
       return { status: 0, stdout: 'Success\n', stderr: '' };
     }
     if (request.args.includes('dumpsys')) {
@@ -314,7 +334,7 @@ test('install sequence replaces baseline and candidate without uninstall or app-
   };
   let pausedAfterBaseline = false;
   const result = await executeUpgradeInstallSequence({
-    config: { baselineVersionCode: 1, candidateVersionCode: 2 },
+    config: { baselineVersionCode: 1, candidateVersionCode: 3 },
     targets: [
       { role: 'phone', serial: PHONE_SERIAL, installedPackagePath: '/data/app/phone/base.apk' },
       { role: 'wear', serial: WEAR_SERIAL, installedPackagePath: '/data/app/wear/base.apk' }
@@ -327,7 +347,7 @@ test('install sequence replaces baseline and candidate without uninstall or app-
     runner,
     pauseForBaselineState: async ({ baselineStates }) => {
       assert.equal(baselineStates.phone.versionCode, 1);
-      assert.equal(baselineStates.wear.versionCode, 1);
+      assert.equal(baselineStates.wear.versionCode, 2);
       pausedAfterBaseline = true;
     },
     verifyPostUpgradeState: async () => ({ mode: 'operator-confirmed', confirmations: { all: true } }),
@@ -349,11 +369,11 @@ test('install sequence rejects changed firstInstallTime as destructive replaceme
   const runner = async (request) => {
     const serial = request.args[1];
     if (request.args.includes('install')) {
-      versions[serial] = request.args.at(-1).includes('candidate') ? 2 : 1;
+      versions[serial] = (request.args.at(-1).includes('candidate') ? 3 : 1) + (serial === WEAR_SERIAL ? 1 : 0);
       return { status: 0, stdout: 'Success\n', stderr: '' };
     }
     if (request.args.includes('dumpsys')) {
-      const firstInstall = versions[serial] === 2 ? '2026-07-13 11:00:00' : '2026-07-13 10:00:00';
+      const firstInstall = versions[serial] >= 3 ? '2026-07-13 11:00:00' : '2026-07-13 10:00:00';
       return { status: 0, stdout: packageDump(versions[serial], firstInstall), stderr: '' };
     }
     if (request.args.includes('am')) return { status: 0, stdout: 'Status: ok\n', stderr: '' };
@@ -361,7 +381,7 @@ test('install sequence rejects changed firstInstallTime as destructive replaceme
   };
   await assert.rejects(
     executeUpgradeInstallSequence({
-      config: { baselineVersionCode: 1, candidateVersionCode: 2 },
+      config: { baselineVersionCode: 1, candidateVersionCode: 3 },
       targets: [
         { role: 'phone', serial: PHONE_SERIAL, installedPackagePath: null },
         { role: 'wear', serial: WEAR_SERIAL, installedPackagePath: null }
@@ -383,7 +403,7 @@ test('package-only execution skips the TTY checkpoint and labels its limited evi
   const versions = { [PHONE_SERIAL]: 0, [WEAR_SERIAL]: 0 };
   let pauseCalls = 0;
   const result = await executeUpgradeInstallSequence({
-    config: { baselineVersionCode: 1, candidateVersionCode: 2, packageOnly: true },
+    config: { baselineVersionCode: 1, candidateVersionCode: 3, packageOnly: true },
     targets: [
       { role: 'phone', serial: PHONE_SERIAL, installedPackagePath: null },
       { role: 'wear', serial: WEAR_SERIAL, installedPackagePath: null }
@@ -396,7 +416,7 @@ test('package-only execution skips the TTY checkpoint and labels its limited evi
     runner: async (request) => {
       const serial = request.args[1];
       if (request.args.includes('install')) {
-        versions[serial] = request.args.at(-1).includes('candidate') ? 2 : 1;
+        versions[serial] = (request.args.at(-1).includes('candidate') ? 3 : 1) + (serial === WEAR_SERIAL ? 1 : 0);
         return { status: 0, stdout: 'Success\n', stderr: '' };
       }
       if (request.args.includes('dumpsys')) {
@@ -419,7 +439,7 @@ test('baseline and candidate launches must report Status: ok', async () => {
   const versions = { [PHONE_SERIAL]: 0, [WEAR_SERIAL]: 0 };
   await assert.rejects(
     executeUpgradeInstallSequence({
-      config: { baselineVersionCode: 1, candidateVersionCode: 2, packageOnly: true },
+      config: { baselineVersionCode: 1, candidateVersionCode: 3, packageOnly: true },
       targets: [
         { role: 'phone', serial: PHONE_SERIAL, installedPackagePath: null },
         { role: 'wear', serial: WEAR_SERIAL, installedPackagePath: null }
@@ -432,7 +452,7 @@ test('baseline and candidate launches must report Status: ok', async () => {
       runner: async (request) => {
         const serial = request.args[1];
         if (request.args.includes('install')) {
-          versions[serial] = 1;
+          versions[serial] = serial === WEAR_SERIAL ? 2 : 1;
           return { status: 0, stdout: 'Success\n', stderr: '' };
         }
         if (request.args.includes('dumpsys')) {
@@ -538,7 +558,24 @@ test('hosted package upgrade evidence reconstructs only candidate-bound allowlis
       }
     }
   };
+  // Retained legacy evidence remains readable, but new plans bind both installed roles and artifacts.
+  assert.equal(createHostedUpgradeEvidence(raw, candidateCommit).status, 'passed');
+  raw.plan = {
+    ...raw.plan,
+    baseline: { ...raw.plan.baseline, versionCode: 1000001, wearVersionCode: 1000002 },
+    candidate: { ...raw.plan.candidate, versionCode: 1000003, wearVersionCode: 1000004 }
+  };
+  raw.artifacts.baseline = { phone: apk(1000001), wear: apk(1000002) };
+  raw.artifacts.candidate = { phone: apk(1000003), wear: apk(1000004) };
+  raw.install.baselineStates = { phone: state(1000001), wear: state(1000002) };
+  raw.install.candidateStates = { phone: state(1000003), wear: state(1000004) };
   const hosted = createHostedUpgradeEvidence(raw, candidateCommit);
+  assert.equal(hosted.artifacts.find((artifact) => artifact.id === 'candidate-wear').versionCode, 1000004);
+  for (const source of [raw.install.candidateStates.wear, raw.artifacts.candidate.wear]) {
+    source.versionCode = 1000003;
+    assert.throws(() => createHostedUpgradeEvidence(raw, candidateCommit), /requires every checkpoint/);
+    source.versionCode = 1000004;
+  }
   assert.equal(hosted.status, 'passed');
   assert.equal(hosted.sourceCommit, candidateCommit);
   assert.equal(hosted.upgrade.baselineCommit, baselineCommit);

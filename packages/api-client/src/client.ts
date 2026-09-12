@@ -14,6 +14,7 @@ import type {
     ClientConfigResponse,
     ConnectedAppSummary,
     CreateMyFoodPayload,
+    NutritionLabelDraft,
     CreateRecipeFromFoodLogsPayload,
     FoodLogCopyPayload,
     FoodLogCopyResponse,
@@ -185,6 +186,7 @@ export class ApiError extends Error {
 }
 
 type RequestOptions = RequestInit & {
+    timeoutMs?: number;
     auth?: boolean;
     json?: unknown;
     acceptNotModified?: boolean;
@@ -298,6 +300,7 @@ export class CalibrateApiClient {
             json,
             acceptNotModified = false,
             responseMetadata = false,
+            timeoutMs = this.requestTimeoutMs,
             ...fetchOptions
         } = options;
         const headers = new Headers(options.headers);
@@ -330,7 +333,7 @@ export class CalibrateApiClient {
                 timedOut = true;
                 timeoutController.abort();
                 reject(timeoutError());
-            }, this.requestTimeoutMs);
+            }, timeoutMs);
         });
         const callerSignal = options.signal;
         const abortFromCaller = () => timeoutController.abort();
@@ -795,6 +798,16 @@ export class CalibrateApiClient {
         return this.request<MyFoodSummary>(`/api/my-foods/${encodeURIComponent(String(id))}/pin`, {
             method: 'PATCH',
             json: { is_pinned: isPinned }
+        });
+    }
+
+    scanNutritionLabel(image: Blob | { uri: string; name: string; type: string }, signal?: AbortSignal): Promise<NutritionLabelDraft> {
+        const form = new FormData();
+        if (typeof Blob !== 'undefined' && image instanceof Blob) form.append('image', image, 'nutrition-label.jpg');
+        else form.append('image', image as unknown as Blob);
+        // OCR has its own server deadline; leave time for photo upload as well.
+        return this.request<NutritionLabelDraft>('/api/nutrition-labels/scan', {
+            method: 'POST', body: form, signal, timeoutMs: 60_000
         });
     }
 

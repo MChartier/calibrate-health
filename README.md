@@ -17,6 +17,7 @@ Note: calibrate is not medical advice.
 - Daily food logging with fixed meal categories (manual entry + food database search)
 - Food search + barcode scanning (FatSecret default; USDA optional with API key; Open Food Facts fallback)
 - My Foods library + recipe builder for reusable entries
+- Nutrition-label photo scanning with editable calories, serving quantity/unit, and a title before saving
 - Lose It CSV import (food logs + weigh-ins)
 - Weight logging + trend visualization
 - Goal projection from a steady deficit

@@ -5,6 +5,7 @@ import { spacing } from '../theme';
 import type {
     ProductLink,
     SettingsCategoryId,
+    SettingsPageId,
     SettingsSheetId
 } from './SettingsHome';
 
@@ -16,12 +17,9 @@ type SettingsCategoryPageProps = {
     failedMutationCount: number;
     pendingMutationCount: number;
     isWeb: boolean;
-    onEditProfile: () => void;
+    showAndroidIntegrations: boolean;
+    onOpenPage: (page: SettingsPageId) => void;
     onOpenSheet: (sheet: SettingsSheetId) => void;
-    onOpenActivity: () => void;
-    onOpenSavedFoods: () => void;
-    onOpenAbout: () => void;
-    onOpenAdvanced: () => void;
     onOpenProductLink: (link: ProductLink) => void;
     onDeleteAccount: () => void;
     onLogout: () => void;
@@ -35,12 +33,9 @@ export function SettingsCategoryPage({
     failedMutationCount,
     pendingMutationCount,
     isWeb,
-    onEditProfile,
+    showAndroidIntegrations,
+    onOpenPage,
     onOpenSheet,
-    onOpenActivity,
-    onOpenSavedFoods,
-    onOpenAbout,
-    onOpenAdvanced,
     onOpenProductLink,
     onDeleteAccount,
     onLogout
@@ -67,7 +62,7 @@ export function SettingsCategoryPage({
                         icon="person-outline"
                         label="Profile details"
                         supportingText="Body details, activity level, and time zone"
-                        onPress={onEditProfile}
+                        onPress={() => onOpenPage('profile-details')}
                     />
                     <SettingsRow
                         testID="settings-open-preferences"
@@ -75,7 +70,7 @@ export function SettingsCategoryPage({
                         label="Preferences"
                         supportingText="Units, reminders, quiet hours, permissions, and haptics"
                         showDivider={false}
-                        onPress={() => onOpenSheet('preferences')}
+                        onPress={() => onOpenPage('preferences')}
                     />
                 </SettingsSection>
             </View>
@@ -102,7 +97,7 @@ export function SettingsCategoryPage({
                         label="Signed-in devices"
                         supportingText="Review and revoke browser, phone, and watch sessions"
                         value={sessionCount === undefined ? undefined : String(sessionCount)}
-                        onPress={() => onOpenSheet('devices')}
+                        onPress={() => onOpenPage('devices')}
                     />
                     <SettingsRow
                         icon="log-out-outline"
@@ -127,21 +122,23 @@ export function SettingsCategoryPage({
                         icon="walk-outline"
                         label="Activity"
                         supportingText="Steps, active calories, and exercise history"
-                        onPress={onOpenActivity}
+                        onPress={() => onOpenPage('activity')}
                     />
-                    <SettingsRow
-                        icon="fitness-outline"
-                        label="Health Connect"
-                        supportingText="Read activity and weight from Android"
-                        onPress={() => onOpenSheet('health-connect')}
-                    />
-                    {!isWeb ? (
-                        <SettingsRow
-                            icon="watch-outline"
-                            label="Galaxy Watch"
-                            supportingText="Pair, sync, and manage the Wear OS companion"
-                            onPress={() => onOpenSheet('watch')}
-                        />
+                    {showAndroidIntegrations ? (
+                        <>
+                            <SettingsRow
+                                icon="fitness-outline"
+                                label="Health Connect"
+                                supportingText="Read activity and weight from Android"
+                                onPress={() => onOpenPage('health-connect')}
+                            />
+                            <SettingsRow
+                                icon="watch-outline"
+                                label="Galaxy Watch"
+                                supportingText="Pair, sync, and manage the Wear OS companion"
+                                onPress={() => onOpenPage('watch')}
+                            />
+                        </>
                     ) : null}
                     <SettingsRow
                         testID="settings-open-connected-apps"
@@ -150,7 +147,7 @@ export function SettingsCategoryPage({
                         supportingText="Review and revoke read-only Calibrate access"
                         value={connectedAppCount === undefined ? undefined : String(connectedAppCount)}
                         showDivider={false}
-                        onPress={() => onOpenSheet('connected-apps')}
+                        onPress={() => onOpenPage('connected-apps')}
                     />
                 </SettingsSection>
             </View>
@@ -169,7 +166,7 @@ export function SettingsCategoryPage({
                         icon="restaurant-outline"
                         label="Saved foods"
                         supportingText="Foods and recipes you can quickly log"
-                        onPress={onOpenSavedFoods}
+                        onPress={() => onOpenPage('my-foods')}
                     />
                     <SettingsRow
                         icon="cloud-upload-outline"
@@ -191,7 +188,7 @@ export function SettingsCategoryPage({
                         icon="share-outline"
                         label="Export account data"
                         supportingText="Download a portable JSON copy"
-                        onPress={() => onOpenSheet('data')}
+                        onPress={() => onOpenSheet('export')}
                     />
                     <SettingsRow
                         testID="settings-delete-account"
@@ -248,7 +245,7 @@ export function SettingsCategoryPage({
                     label="About Calibrate"
                     supportingText="Purpose, trust, and product links"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
-                    onPress={onOpenAbout}
+                    onPress={() => onOpenPage('about')}
                 />
                 <SettingsRow
                     testID="settings-advanced"
@@ -256,7 +253,7 @@ export function SettingsCategoryPage({
                     label="Advanced settings"
                     supportingText="Connection, diagnostics, and software updates"
                     showDivider={false}
-                    onPress={onOpenAdvanced}
+                    onPress={() => onOpenPage('advanced')}
                 />
             </SettingsSection>
         </View>

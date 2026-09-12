@@ -68,11 +68,13 @@ enum InAppNotificationType {
 
 enum MobileDevicePlatform {
   ANDROID_PHONE
+  IOS
   WEAR_OS
 }
 
 enum NativePushPlatform {
   ANDROID
+  IOS
 }
 
 enum NativePushProvider {
@@ -154,7 +156,7 @@ model User {
   mobile_sessions MobileAuthSession[]
   /// One-time phone-issued Wear OS pairing credentials.
   wear_pairing_credentials WearPairingCredential[]
-  /// Native push tokens for Android app builds.
+  /// Native push tokens for Android and iOS app builds.
   native_push_subscriptions NativePushSubscription[]
   /// Durable idempotency records for native/offline mutation replay.
   client_operations ClientOperation[]
@@ -699,7 +701,7 @@ model MobileAuthSession {
   user                User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
   /// Stable per-install identifier supplied by the native client.
   device_id           String
-  /// Device class for Android phone now and Wear OS later.
+  /// Native device class for Android, iOS, and Wear OS sessions.
   device_platform     MobileDevicePlatform
   /// Optional human-readable device label for account/device management.
   device_name         String?

@@ -14,11 +14,13 @@ import {
 
 const SEMANTIC_PROJECTS = new Set(['desktop-chrome', 'ux-phone-320', 'ux-desktop-1024']);
 
-const CALIBRATION_RECOMMENDATION_STATUS = {
+const PLAN_CHECK_RECOMMENDATION_STATUS = {
   generatedAt: '2026-07-31T20:00:00.000Z',
   inputFingerprint: 'current-input',
+  planStatus: 'available',
+  planReasonCode: null,
   evaluation: {
-    modelVersion: 2,
+    modelVersion: 4,
     asOfDate: '2026-07-31',
     weightUnit: 'KG',
     status: 'recommendation',
@@ -53,6 +55,23 @@ const CALIBRATION_RECOMMENDATION_STATUS = {
       recommendedTargetAdjustmentKcal: -150,
     },
     activityContext: null,
+    assessment: {
+      version: 1,
+      state: 'off_track',
+      paceStatus: 'slower',
+      window: {
+        startDate: '2026-07-03',
+        endDate: '2026-07-31',
+        spanDays: 28,
+        confidenceLevel: 0.95,
+      },
+      recentWeightTrendKgPerWeek: { low: -0.4, midpoint: -0.36, high: -0.3 },
+      goalRateKgPerWeek: -0.455,
+      blocker: null,
+      targetDecision: 'change_available',
+      targetDecisionBlocker: null,
+      minimumDailyCalorieTargetKcal: 1650,
+    },
   },
   recommendation: {
     id: 7,
@@ -126,14 +145,28 @@ async function installAccessibilityApiExtensions(
   ];
   await page.route('**/auth/sessions', (route) => fulfillJson(route, { sessions }));
   await page.route('**/auth/mobile/sessions', (route) => fulfillJson(route, { sessions }));
+  if (surfaceId === 'connected-app-revoke-confirmation') {
+    await page.route('**/api/v1/user/connected-apps', (route) => fulfillJson(route, {
+      connections: [{
+        id: 'c13e23d9-b130-42bd-bb70-901fd65fbfe9',
+        client_id: 'codex-client',
+        client_name: 'Codex',
+        scopes: ['calibrate:food:read', 'calibrate:weight:read'],
+        resource: 'https://calibratehealth.app/mcp',
+        created_at: '2026-08-19T12:00:00.000Z',
+        last_used_at: null,
+        expires_at: '2026-09-18T12:00:00.000Z',
+      }],
+    }));
+  }
   await page.route('**/api/v1/my-foods/library**', (route) => fulfillJson(route, {
     items: [],
     next_cursor: null,
   }));
 
-  if (surfaceId === 'calibration-suggestion-details') {
+  if (surfaceId === 'plan-check-adjustment-review') {
     await page.route('**/api/v1/calibration/status', (route) => {
-      return fulfillJson(route, CALIBRATION_RECOMMENDATION_STATUS);
+      return fulfillJson(route, PLAN_CHECK_RECOMMENDATION_STATUS);
     });
   }
 
@@ -197,13 +230,10 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'historical-calendar',
       'goal-editor',
       'goal-daily-calorie-options',
-      'calibration-suggestion-details',
+      'plan-check-adjustment-review',
       'notifications-drawer',
-      'preferences',
-      'profile-details',
       'profile-time-zone-options',
       'profile-photo',
-      'health-connect',
       'password',
       'import',
       'offline',
@@ -216,8 +246,9 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'food-log-save-recipe',
       'pause-tracking',
       'resume-tracking-prompt',
-      'signed-in-devices',
       'session-revoke-confirmation',
+      'session-revoke-others-confirmation',
+      'connected-app-revoke-confirmation',
       'account-export',
       'delete-account',
     ]));

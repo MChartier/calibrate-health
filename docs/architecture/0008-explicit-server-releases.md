@@ -28,9 +28,15 @@ server-side fast-forward check atomically rejects a concurrent `master` update. 
 commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate
 manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone, Wear,
 and self-host deployment remain independent. After the GHCR image is published, the publisher invokes the reusable
-Expo OTA workflow for the exact release commit without waiting for or triggering self-host deployment. The
-native-build reference comes from the canonical manifest. OTA publishes internal first and waits for protected
-production approval; it is never triggered by an ordinary `master` push.
+Expo OTA workflow for the exact release commit only when the canonical manifest's native-build tag has been published.
+A reserved but missing native tag records an OTA skip without failing the server/image release; recovery can rerun the
+publisher after the signed native baseline is uploaded and tagged. OTA publishes internal first and waits for
+protected production approval; it is never triggered by an ordinary `master` push or self-host deployment.
+
+An optional deployment job updates the owner's configured self-host over WireGuard/SSH using the image publisher's
+receipt-verified immutable digest, including recovered publications. It runs independently alongside OTA, even when
+OTA is skipped for an unavailable native baseline, and does not gate OTA. See
+[automatic self-host deployment](../../deploy/self-hosted/README.md).
 
 Expo's automatic check and download lifecycle remains unchanged. Client configuration responds with
 `Cache-Control: no-store`; server selection, startup before restoring a saved session or synchronizing, and manual
@@ -39,8 +45,8 @@ expected server contract version with that response. Different majors block in e
 client minor may trail the server minor but may not lead it; patch drift remains compatible. This runtime check does
 not claim to prevent the update from downloading or starting. Protected production approval is the current
 public-channel promotion control. A future automated promotion rule may require an explicit readiness signal for the
-release owner's declared server rollout, but it cannot attest every independent self-host. Live private-server polling
-is not part of the release workflow, so those installations retain the runtime guard.
+release owner's declared server rollout, but it cannot attest every independent self-host. The optional deployment
+job verifies only its configured target; independent installations retain the runtime guard and are not polled to gate OTA.
 
 ## Consequences
 
@@ -52,7 +58,8 @@ is not part of the release workflow, so those installations retain the runtime g
 - `master` drift, including a change racing the final merge, aborts before the protected branch is updated.
 - A manifest ahead of the latest tag represents one pending prepared release and blocks another bump until recovered.
 - The release PR and tag add explicit provenance without creating a GitHub Release object or generated changelog.
-- OTA updates follow explicit release image publication, remain tied to the installed native build, and never publish
-  merely because `master` advanced.
+- OTA updates follow explicit release image publication, remain tied to a published native-build tag, and never publish
+  merely because `master` advanced. A missing native tag skips OTA without rolling back the independent server/image
+  release.
 - Protected production approval controls public promotion, while independently managed self-hosts remain protected
   by the runtime directional contract-version guard.

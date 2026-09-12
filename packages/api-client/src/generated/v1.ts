@@ -289,7 +289,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List privacy-safe active browser, Android phone, and Wear OS sessions owned by the authenticated account. */
+        /** @description List privacy-safe active browser, Android, iOS, and Wear OS sessions owned by the authenticated account. */
         get: operations["getAccountSessions"];
         put?: never;
         post?: never;
@@ -525,6 +525,23 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["deleteFoodLog"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nutrition-labels/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Read an English nutrition-label photo into an unsaved draft for user review. Photos are processed locally and not retained. Saving requires a separate saved-food request. */
+        post: operations["scanNutritionLabel"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1524,6 +1541,32 @@ export interface components {
             currentTargetAdjustmentKcal: number;
             recommendedTargetAdjustmentKcal: number;
         };
+        CalibrationAssessment: {
+            /** @enum {integer} */
+            version: 1;
+            /** @enum {string} */
+            state: "waiting" | "on_track" | "off_track";
+            /** @enum {string|null} */
+            paceStatus: "faster" | "aligned" | "slower" | "above_maintenance" | "below_maintenance" | null;
+            window: {
+                /** Format: date */
+                startDate: string;
+                /** Format: date */
+                endDate: string;
+                spanDays: number;
+                /** @enum {number} */
+                confidenceLevel: 0.95;
+            } | null;
+            recentWeightTrendKgPerWeek: components["schemas"]["CalibrationInterval"] | null;
+            goalRateKgPerWeek: number;
+            /** @enum {string|null} */
+            blocker: "tracking_paused" | "plan_unavailable" | "trend_unavailable" | "weight_history" | "current_weigh_in" | "food_history" | "food_uncertainty" | "weight_uncertainty" | null;
+            /** @enum {string} */
+            targetDecision: "waiting" | "no_change_recommended" | "change_available" | "safety_limited" | "policy_unavailable";
+            /** @enum {string|null} */
+            targetDecisionBlocker: "tracking_paused" | "plan_unavailable" | "trend_unavailable" | "weight_history" | "current_weigh_in" | "food_history" | "food_uncertainty" | "weight_uncertainty" | null;
+            minimumDailyCalorieTargetKcal: number;
+        };
         CalibrationEvaluation: {
             modelVersion: number;
             /** Format: date */
@@ -1564,6 +1607,7 @@ export interface components {
                 averageSteps: number | null;
                 averageActiveCaloriesKcal: number | null;
             } | null;
+            assessment: components["schemas"]["CalibrationAssessment"];
         };
         ScheduledCalibrationChange: {
             recommendationId: number | null;
@@ -1790,6 +1834,13 @@ export interface components {
             receipt: components["schemas"]["OnboardingCompleteReceipt"];
             user: components["schemas"]["UserClientPayload"];
         };
+        NutritionLabelDraft: {
+            calories_per_serving: number | null;
+            serving_size_quantity: number | null;
+            serving_unit_label: string | null;
+            serving_text: string | null;
+            warnings: string[];
+        };
         /** @enum {string} */
         MyFoodType: "FOOD" | "RECIPE";
         MyFoodSummary: {
@@ -1828,7 +1879,7 @@ export interface components {
             /** @enum {string} */
             route: "app_shell" | "onboarding" | "today" | "saved_foods" | "notifications" | "progress";
             /** @enum {string} */
-            platform: "web" | "android_phone" | "wear_os";
+            platform: "web" | "android_phone" | "ios" | "wear_os";
             version: string;
             /** @enum {string} */
             outcome: "failure" | "degraded" | "good" | "needs_improvement" | "poor";
@@ -1845,6 +1896,11 @@ export interface components {
             platform?: "android_phone";
             /** @enum {unknown} */
             version?: "0.2.6" | "0.2.5" | "0.2.4" | "0.2.3" | "0.2.2" | "0.2.1" | "0.1.0";
+        } | {
+            /** @constant */
+            platform?: "ios";
+            /** @enum {unknown} */
+            version?: "0.2.6";
         } | {
             /** @constant */
             platform?: "wear_os";
@@ -2043,7 +2099,7 @@ export interface components {
             password: string;
             device_id: string;
             /** @enum {string} */
-            device_platform?: "android_phone";
+            device_platform?: "android_phone" | "ios";
             device_name?: string;
         };
         MobileRegistrationRequest: {
@@ -2052,7 +2108,7 @@ export interface components {
             password: string;
             device_id: string;
             /** @enum {string} */
-            device_platform?: "android_phone";
+            device_platform?: "android_phone" | "ios";
             device_name?: string;
             terms_version?: string;
             privacy_version?: string;
@@ -2112,7 +2168,7 @@ export interface components {
         };
         MobileRefreshResponse: components["schemas"]["MobileAuthResponse"] | components["schemas"]["WearMobileAuthResponse"];
         /** @enum {string} */
-        AccountSessionKind: "browser" | "android_phone" | "wear_os";
+        AccountSessionKind: "browser" | "android_phone" | "ios" | "wear_os";
         AccountSessionSummary: {
             id: string;
             kind: components["schemas"]["AccountSessionKind"];
@@ -2391,7 +2447,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        MobileDevicePlatform: "android_phone" | "wear_os";
+        MobileDevicePlatform: "android_phone" | "ios" | "wear_os";
         SyncChange: {
             cursor: string;
             entity_type: string;
@@ -2953,7 +3009,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Password changed and all browser, Android, and Wear sessions revoked. */
+            /** @description Password changed and all browser, Android, iOS, and Wear sessions revoked. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3066,7 +3122,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Registered Android phone session. */
+            /** @description Registered native mobile session. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3075,7 +3131,7 @@ export interface operations {
                     "application/json": components["schemas"]["MobileAuthResponse"];
                 };
             };
-            /** @description Invalid registration or Android phone device metadata. */
+            /** @description Invalid registration or native mobile device metadata. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3787,6 +3843,74 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    scanNutritionLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description One JPEG, PNG, or WebP photo, at most 8 MB and 25 megapixels.
+                     */
+                    image: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Editable values; unreadable or ambiguous fields are null. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NutritionLabelDraft"];
+                };
+            };
+            /** @description Missing, invalid, or unsupported photo. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Photo exceeds the upload limit. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many scans for this user. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another scan is using this server process. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Recognition exceeded its deadline. */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     listMyFoodsLibrary: {

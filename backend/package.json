@@ -34,6 +34,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
+    "@tesseract.js-data/eng": "^1.0.0",
     "adm-zip": "^0.6.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
@@ -48,6 +49,8 @@
     "passport-local": "^1.0.0",
     "pg": "^8.14.1",
     "prisma": "^7.9.0",
+    "sharp": "^0.35.4",
+    "tesseract.js": "^7.0.0",
     "web-push": "^3.6.7",
     "zod": "^4.4.3"
   },
@@ -89,17 +92,22 @@
   "overrides": {
     "body-parser": "2.3.0",
     "deepmerge-ts": "8.0.1",
-    "fast-uri": "4.1.2",
+    "fast-uri": "4.1.4",
     "find-my-way": "9.7.0",
     "ip-address": "10.4.0",
-    "js-yaml": "4.3.0",
+    "js-yaml": "4.3.2",
     "minimatch@10.2.5": {
       "brace-expansion": "5.0.9"
     },
     "minimatch@5.1.9": {
       "brace-expansion": "2.1.4"
     },
-    "qs": "6.15.3",
-    "valibot": "1.4.2"
+    "prisma": {
+      ".": "$prisma",
+      "mysql2": "3.24.3"
+    },
+    "qs": "6.16.0",
+    "valibot": "1.4.2",
+    "mysql2": "3.24.3"
   }
 }

@@ -47,7 +47,7 @@ receive another message. This prevents account enumeration. A confirm failure us
 - `POST /auth/password-reset/confirm` accepts `token` and `new_password`.
 - Reset tokens expire after 30 minutes.
 
-A successful reset revokes every browser, Android, and Wear session. The user signs in again with
+A successful reset revokes every browser, Android, iOS, and Wear session. The user signs in again with
 the replacement password. Token values and request bodies must never be included in logs, metrics,
 exports, or support diagnostics.
 

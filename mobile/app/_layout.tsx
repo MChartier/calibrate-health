@@ -21,6 +21,7 @@ import { useWearHandoffRouting } from '../src/wear/useWearHandoffRouting';
 import { useWearSyncInvalidation } from '../src/wear/useWearSyncInvalidation';
 import { useQueryOnlineManager } from '../src/connectivity/queryOnlineManager.native';
 import { ClientDiagnosticsRuntime } from '../src/diagnostics/ClientDiagnosticsRuntime';
+import { supportsAndroidIntegrations } from '../src/platform/nativePlatform';
 
 const queryClient = new QueryClient();
 
@@ -28,16 +29,17 @@ const NativeRuntimeHooks: React.FC = () => {
     const { user, serverUrl } = useAuth();
     const runtimeQueryClient = useQueryClient();
     const hasFullAccess = hasFullAccountAccess(user);
+    const androidIntegrationsEnabled = supportsAndroidIntegrations();
     const reconcileNotifications = React.useCallback(() => {
         void invalidateNotificationQueries(runtimeQueryClient);
     }, [runtimeQueryClient]);
     useNotificationTapRouting(Boolean(user && hasFullAccess), reconcileNotifications);
     useWearHandoffRouting({
-        enabled: Boolean(user && hasFullAccess && serverUrl),
+        enabled: Boolean(androidIntegrationsEnabled && user && hasFullAccess && serverUrl),
         serverOrigin: serverUrl,
         userId: user?.id ?? null
     });
-    useWearSyncInvalidation();
+    useWearSyncInvalidation(androidIntegrationsEnabled);
     return null;
 };
 

@@ -80,6 +80,37 @@ test('account session listing is owner-scoped, privacy-safe, and places current 
   ]);
   assert.doesNotMatch(JSON.stringify(sessions), /current-browser-secret/);
 });
+test('account session listing labels iOS phone and tablet sessions distinctly', async () => {
+  const { listAccountSessionsForUser } = loadAccountSessionsService();
+  const db = {
+    sessionStore: {
+      findMany: async () => []
+    },
+    mobileAuthSession: {
+      findMany: async () => [{
+        id: 93,
+        public_id: MOBILE_PUBLIC_ID,
+        device_platform: MobileDevicePlatform.IOS,
+        device_name: 'iPad',
+        created_at: new Date('2026-02-01T00:00:00.000Z'),
+        last_used_at: null
+      }]
+    }
+  };
+
+  const sessions = await listAccountSessionsForUser({
+    userId: 7,
+    currentMobileSessionId: 93,
+    now: new Date('2026-03-01T00:00:00.000Z'),
+    db
+  });
+
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].kind, 'ios');
+  assert.equal(sessions[0].device_label, 'iPad');
+  assert.equal(sessions[0].current, true);
+});
+
 
 test('single-session revocation hides ownership and preserves the current session', async () => {
   const { revokeAccountSessionForUser } = loadAccountSessionsService();

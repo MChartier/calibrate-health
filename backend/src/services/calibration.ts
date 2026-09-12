@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
+    CALIBRATION_ASSESSMENT_VERSION,
     CALIBRATION_MAX_OBSERVATION_DAYS,
+    CALIBRATION_MIN_TARGET_KCAL,
     CALIBRATION_MODEL_VERSION,
     evaluateCalibration,
     type CalibrationFoodDay,
@@ -106,6 +108,7 @@ function buildUnavailableEvaluation(options: {
     missingCriteria: string[];
     weightUnit: 'KG' | 'LB';
     configuredDailyDeficitKcal?: number;
+    blocker?: 'plan_unavailable' | 'trend_unavailable';
 }): CalibrationResult {
     return {
         modelVersion: CALIBRATION_MODEL_VERSION,
@@ -136,7 +139,19 @@ function buildUnavailableEvaluation(options: {
             configuredWeeklyWeightChangeKg: -((options.configuredDailyDeficitKcal ?? 0) * 7) / 7700
         },
         recommendation: null,
-        activityContext: null
+        activityContext: null,
+        assessment: {
+            version: CALIBRATION_ASSESSMENT_VERSION,
+            state: 'waiting',
+            paceStatus: null,
+            window: null,
+            recentWeightTrendKgPerWeek: null,
+            goalRateKgPerWeek: -((options.configuredDailyDeficitKcal ?? 0) * 7) / 7700,
+            blocker: options.blocker ?? 'plan_unavailable',
+            targetDecision: 'waiting',
+            targetDecisionBlocker: null,
+            minimumDailyCalorieTargetKcal: CALIBRATION_MIN_TARGET_KCAL
+        }
     };
 }
 
@@ -304,25 +319,6 @@ async function buildCalibrationStatusSnapshot(
     }
 
     const goal = planning.goal!;
-    if (goal.daily_deficit <= 0) {
-        if (persistRecommendation) await stalePendingRecommendations(database, userId);
-        return {
-            generatedAt,
-            inputFingerprint: null,
-            evaluation: buildUnavailableEvaluation({
-                asOfDate: unavailableAsOfDateKey,
-                headline: 'Calibration is available for active weight-loss goals',
-                summary: 'Choose a calorie-deficit goal before Calibrate evaluates weight-loss pacing.',
-                missingCriteria: ['Set an active weight-loss goal with a daily calorie deficit.'],
-                weightUnit: user.weight_unit,
-                configuredDailyDeficitKcal: goal.daily_deficit
-            }),
-            recommendation: null,
-            scheduledChange: null,
-            planStatus: planning.evaluation.status,
-            planReasonCode: planning.evaluation.reasonCode
-        };
-    }
 
     const todayCompletion = await database.foodLogDay.findUnique({
         where: { user_id_local_date: { user_id: userId, local_date: today } },
@@ -373,6 +369,7 @@ async function buildCalibrationStatusSnapshot(
             evaluation: buildUnavailableEvaluation({
                 asOfDate: asOfDateKey,
                 headline: 'Calibration needs valid weight history',
+                blocker: 'trend_unavailable',
                 summary: 'A weight in the calibration window is outside the supported range, so no calorie adjustment can be generated.',
                 missingCriteria: ['Review weight entries outside the supported range.'],
                 weightUnit: user.weight_unit,
@@ -430,6 +427,7 @@ async function buildCalibrationStatusSnapshot(
             evaluation: buildUnavailableEvaluation({
                 asOfDate: asOfDateKey,
                 headline: 'Calibration is temporarily unavailable',
+                blocker: 'trend_unavailable',
                 summary: 'The active compatibility weight trend does not provide the pace uncertainty needed for safe calorie-budget suggestions. Existing approved plan changes remain in effect.',
                 missingCriteria: ['Calibration resumes when the current weight-trend model is available.'],
                 weightUnit: user.weight_unit,

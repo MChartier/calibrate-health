@@ -13,6 +13,10 @@ import {
     type ViewStyle
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+    SUPPORTED_MODAL_ORIENTATIONS,
+    TABLET_LAYOUT_BREAKPOINT
+} from '../layout/adaptiveLayout';
 import { type AppTheme, useAppTheme } from '../theme';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import { useVisualViewportHeight } from '../hooks/useVisualViewportHeight';
@@ -49,7 +53,7 @@ export type BottomSheetModalProps = {
     revealFocusedInputOnFocus?: boolean;
 };
 
-export const ADAPTIVE_DIALOG_BREAKPOINT = 840;
+export const ADAPTIVE_DIALOG_BREAKPOINT = TABLET_LAYOUT_BREAKPOINT;
 export const STANDARD_DIALOG_WIDTH = 640;
 const WIDE_DIALOG_WIDTH = 800;
 const DIALOG_TRANSLATE_Y = 32; // Keeps centered dialogs from traveling like edge-anchored sheets.
@@ -165,6 +169,8 @@ export function resolveSheetEntranceOffset(viewportHeight: number, isDialog: boo
 
 /**
  * Presents as a mobile bottom sheet or a bounded dialog on larger viewports.
+ * Keep it to a short contextual task, picker, preview, or confirmation; use a
+ * registered route for browsable, multi-section, or independently managed work.
  */
 export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     visible,
@@ -204,7 +210,12 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     const titleId = React.useId();
     const descriptionId = React.useId();
     const isDialog = viewportWidth >= ADAPTIVE_DIALOG_BREAKPOINT;
-    const dialogWidth = resolveAdaptiveDialogWidth(viewportWidth, size, theme.spacing.lg);
+    const dialogHorizontalInset = Math.max(theme.spacing.lg, insets.left, insets.right);
+    const dialogVerticalInset = Math.max(theme.spacing.lg, insets.top, insets.bottom);
+    const dialogWidth = resolveAdaptiveDialogWidth(viewportWidth, size, dialogHorizontalInset);
+    const sheetWidth = dialogWidth ?? Math.max(0, viewportWidth - insets.left - insets.right);
+    const sheetAlignment: ViewStyle['alignSelf'] = isDialog ? 'center' : 'flex-start';
+    const sheetLeftInset = isDialog ? 0 : insets.left;
     const modalAccessibilityLabel = title ?? accessibilityLabel;
 
     const animateIn = useCallback(() => {
@@ -314,7 +325,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
     const fixedSheetHeight = resolveFixedSheetHeight(maxHeight, visualViewportHeight);
     const dialogHeight = resolveFixedSheetHeight(maxHeight, visualViewportHeight ?? viewportHeight);
     const boundedDialogHeight = typeof dialogHeight === 'number'
-        ? Math.min(dialogHeight, Math.max(0, (visualViewportHeight ?? viewportHeight) - (theme.spacing.lg * 2)))
+        ? Math.min(dialogHeight, Math.max(0, (visualViewportHeight ?? viewportHeight) - (dialogVerticalInset * 2)))
         : dialogHeight;
     const usesFixedSheetHeight = !scrollable || Boolean(footer);
     let panelMaxHeight: ViewStyle['maxHeight'] = maxHeight;
@@ -348,6 +359,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
             animationType="none"
             presentationStyle="overFullScreen"
             hardwareAccelerated={Platform.OS === 'android'}
+            supportedOrientations={SUPPORTED_MODAL_ORIENTATIONS}
             onRequestClose={() => {
                 void requestDismiss();
             }}
@@ -364,6 +376,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                 style={[
                     styles.root,
                     isDialog && styles.dialogRoot,
+                    isDialog && { paddingVertical: dialogVerticalInset },
                     visualViewportHeight !== undefined && styles.webViewportRoot,
                     visualViewportHeight !== undefined && { height: visualViewportHeight }
                 ]}
@@ -398,7 +411,9 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
                         isDialog && styles.dialog,
                         usesFixedSheetHeight && styles.fixedHeightSheet,
                         {
-                            width: dialogWidth ?? '100%',
+                            width: sheetWidth,
+                            alignSelf: sheetAlignment,
+                            marginLeft: sheetLeftInset,
                             maxHeight: panelMaxHeight,
                             height: panelHeight,
                             opacity: presentationReady ? 1 : 0,
@@ -475,7 +490,6 @@ function createStyles(theme: AppTheme) {
     dialogRoot: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: theme.spacing.lg
     },
     webViewportRoot: {
         flexGrow: 0,

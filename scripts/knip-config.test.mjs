@@ -35,6 +35,7 @@ test('dynamic workflow, plugin, scenario, and Playwright entry points stay disco
   assert.ok(rootConfig.entry.includes('scripts/reset-test-user-onboarding.mjs'));
   assert.deepEqual(knipConfig.workspaces.mobile.entry, [
     'plugins/withHealthConnect.js',
+    'plugins/withPinnedGradleWrapper.js',
     'plugins/withSharedAndroidSigning.js',
   ]);
   assert.deepEqual(knipConfig.workspaces.shared.entry, ['calibrationScenarios.ts']);

@@ -40,6 +40,7 @@ const DURATION_BUCKET_SET = new Set<string>(CLIENT_DIAGNOSTIC_DURATION_BUCKETS);
 const VERSION_SETS: Record<ClientDiagnosticPlatform, ReadonlySet<string>> = {
   web: new Set(diagnosticVersions.supported_versions.web),
   android_phone: new Set(diagnosticVersions.supported_versions.android_phone),
+  ios: new Set(diagnosticVersions.supported_versions.ios),
   wear_os: new Set(diagnosticVersions.supported_versions.wear_os)
 };
 

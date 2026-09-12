@@ -84,6 +84,22 @@ test('mobile auth parses Android device metadata', () => {
   assert.equal(serializeMobileDevicePlatform(parsed.device.devicePlatform), 'android_phone');
 });
 
+test('mobile auth parses iPhone and iPad device metadata', () => {
+  const { parseMobileDevicePayload, serializeMobileDevicePlatform } = loadMobileAuthService({
+    prismaStub: {}
+  });
+
+  const parsed = parseMobileDevicePayload({
+    device_id: 'ios-install-1',
+    device_platform: 'ios',
+    device_name: 'iPad'
+  });
+
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.device.deviceId, 'ios-install-1');
+  assert.equal(serializeMobileDevicePlatform(parsed.device.devicePlatform), 'ios');
+});
+
 test('Wear pairing origins require HTTPS except on Android-approved local and private hosts', () => {
   const { normalizePairingServerOrigin } = loadMobileAuthService({ prismaStub: {} });
   assert.equal(normalizePairingServerOrigin('https://public.example/'), 'https://public.example');

@@ -100,7 +100,9 @@ test('duplicate watch routes collapse to the stable mDNS serial', () => {
   assert.equal(classifyReleaseDevice('nosdcard,watch'), 'watch');
   assert.equal(classifyReleaseDevice('phone,nosdcard'), 'phone');
   assert.equal(classifyReleaseDevice('default'), 'phone');
-  for (const characteristics of ['tablet', 'tv', 'automotive', 'embedded', 'nosdcard', 'phone,tablet']) {
+  assert.equal(classifyReleaseDevice('tablet'), 'phone');
+  assert.equal(classifyReleaseDevice('phone,tablet'), 'phone');
+  for (const characteristics of ['tv', 'automotive', 'embedded', 'nosdcard']) {
     assert.equal(classifyReleaseDevice(characteristics), 'unsupported');
   }
 });
@@ -112,6 +114,14 @@ test('physical devices are preferred over emulators for release installation', (
     { role: 'phone', serial: 'R5Cphone', isEmulator: false }
   ]);
   assert.deepEqual(candidates.map(({ serial }) => serial), ['R5Cphone']);
+});
+
+test('Android tablets are valid mobile release installation targets', () => {
+  const candidates = releaseDeviceCandidates('phone', [
+    { role: classifyReleaseDevice('tablet'), serial: 'tablet-1', isEmulator: false },
+    { role: 'watch', serial: 'watch-1', isEmulator: false }
+  ]);
+  assert.deepEqual(candidates.map(({ serial }) => serial), ['tablet-1']);
 });
 
 test('APK parsers retain release identity and normalize certificate fingerprints', () => {
@@ -186,6 +196,38 @@ test('tool resolution uses standard Windows Android Studio paths and newest buil
     ANDROID_HOME: result.sdkRoot,
     ANDROID_SDK_ROOT: result.sdkRoot
   });
+});
+
+test('tool resolution honors the exact configured Android build-tools version', () => {
+  const root = path.join('C:', 'Android');
+  const result = resolveNativeReleaseDeviceTooling({
+    ANDROID_HOME: root,
+    ANDROID_BUILD_TOOLS_VERSION: '36.0.0',
+    JAVA_HOME: path.join('C:', 'Java')
+  }, {
+    platform: 'win32',
+    buildToolVersions: ['36.0.0', '37.0.0-rc1'],
+    fileExists: () => true
+  });
+
+  assert.match(result.aapt, /36\.0\.0/);
+  assert.match(result.apksignerJar, /36\.0\.0/);
+  assert.doesNotMatch(result.aapt, /37\.0\.0-rc1/);
+});
+
+test('tool resolution rejects a missing exact Android build-tools version', () => {
+  const root = path.join('C:', 'Android');
+  const requestedDirectory = path.join(root, 'build-tools', '36.0.0');
+
+  assert.throws(() => resolveNativeReleaseDeviceTooling({
+    ANDROID_HOME: root,
+    ANDROID_BUILD_TOOLS_VERSION: '36.0.0',
+    JAVA_HOME: path.join('C:', 'Java')
+  }, {
+    platform: 'win32',
+    buildToolVersions: ['37.0.0-rc1'],
+    fileExists: (candidate) => candidate !== requestedDirectory
+  }), /Configured Android build-tools 36\.0\.0 are missing/);
 });
 
 

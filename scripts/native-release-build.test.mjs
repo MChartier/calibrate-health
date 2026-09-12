@@ -1,24 +1,45 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import {
+  injectNativeDependencyLocking,
+  pinNativeReleaseGradleWrapperProperties,
+  restorePhoneGradleDependencyState
+} from '../mobile/plugins/nativeReleaseGradleWrapper.js';
 import {
   assertNativeReleaseArtifacts,
+  assertNativeReleaseGradleDependencyState,
+  assertNativeReleaseGradleWrapper,
+  assertNativeReleaseVerificationMetadata,
   createNativeReleaseBuildProvenance,
+  NATIVE_RELEASE_GRADLE_DISTRIBUTION_SHA256,
+  NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL_PROPERTY,
+  NATIVE_RELEASE_GRADLE_WRAPPER_JAR_SHA256,
   NATIVE_RELEASE_BUILD_PROVENANCE_PATH,
   nativeReleaseArtifactPaths,
+  nativeReleaseGradleDistributionCachePath,
   nativeReleaseGradleCommands,
+  nativeReleaseCredentialFreeEnvironment,
   nativeReleaseInvocation,
   nativeReleasePrebuildCommand,
   prepareNativeReleaseArtifacts,
+  prepareNativeReleaseGradleExecution,
   readNativeReleaseBuildProvenance,
   readNativeReleaseBuildSource,
   RELEASE_GRADLE_JVM_ARGS,
+  removeNativeReleaseGradleDistributionCache,
   resolveNativeReleaseEnvironment,
   writeNativeReleaseBuildProvenance
 } from './native-release-build.mjs';
 import { NATIVE_RELEASE_ARTIFACT_CONTRACTS } from './native-release-evidence.mjs';
+
+const officialGradleWrapperJar = fs.readFileSync(
+  new URL('../wear/gradle/wrapper/gradle-wrapper.jar', import.meta.url)
+);
 
 const signingEnvironment = {
   CALIBRATE_ANDROID_SIGNING_STORE_FILE: 'signing/calibrate.p12',
@@ -91,10 +112,586 @@ test('native release build always produces phone and Wear APK plus AAB tasks', (
     for (const command of commands) {
       assert.ok(command.args.includes(':app:bundleRelease'));
       assert.ok(command.args.includes(':app:assembleRelease'));
+      assert.ok(command.args.includes('--dependency-verification=strict'));
       assert.ok(command.args.includes('--no-daemon'));
       assert.ok(command.args.includes(`-Dorg.gradle.jvmargs=${RELEASE_GRADLE_JVM_ARGS}`));
     }
   }
+});
+
+test('Expo prebuild finalization restores the reviewed phone Gradle wrapper pins', () => {
+  const generated = [
+    'distributionBase=GRADLE_USER_HOME',
+    'distributionUrl=https\\://services.gradle.org/distributions/gradle-9.0.0-bin.zip',
+    `distributionSha256Sum=${'0'.repeat(64)}`,
+    'networkTimeout=10000',
+    ''
+  ].join('\n');
+  const pinned = pinNativeReleaseGradleWrapperProperties(generated);
+  const pinnedLines = pinned.split(/\r?\n/);
+
+  assert.ok(pinnedLines.includes(
+    `distributionUrl=${NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL_PROPERTY}`
+  ));
+  assert.ok(pinnedLines.includes(
+    `distributionSha256Sum=${NATIVE_RELEASE_GRADLE_DISTRIBUTION_SHA256}`
+  ));
+  assert.equal((pinned.match(/^distributionSha256Sum=/gm) ?? []).length, 1);
+  assert.equal(pinNativeReleaseGradleWrapperProperties(pinned), pinned);
+
+  const appConfig = JSON.parse(fs.readFileSync(new URL('../mobile/app.json', import.meta.url), 'utf8'));
+  assert.ok(appConfig.expo.plugins.includes('./plugins/withPinnedGradleWrapper'));
+
+  const lockedBuild = injectNativeDependencyLocking('// generated Expo root build');
+  assert.match(lockedBuild, /lockAllConfigurations\(\)/);
+  assert.match(lockedBuild, /LockMode\.STRICT/);
+  assert.match(lockedBuild, /gradle\/dependency-locks\/\$\{calibrateDependencyLockName\}\.lockfile/);
+  assert.equal(injectNativeDependencyLocking(lockedBuild), lockedBuild);
+});
+
+test('credential-free prebuild rejects admitted Android signing values and fixed keystore', () => {
+  const clean = {
+    RUNNER_TEMP: 'C:/runner-temp',
+    EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://calibratehealth.app'
+  };
+  assert.deepEqual(
+    nativeReleaseCredentialFreeEnvironment(clean, { fileExists: () => false }),
+    clean
+  );
+  assert.throws(
+    () => nativeReleaseCredentialFreeEnvironment(
+      { ...clean, CALIBRATE_ANDROID_SIGNING_KEY_ALIAS: 'secret' },
+      { fileExists: () => false }
+    ),
+    /rejects admitted Android signing variables: CALIBRATE_ANDROID_SIGNING_KEY_ALIAS/
+  );
+  assert.throws(
+    () => nativeReleaseCredentialFreeEnvironment(
+      { ...clean, CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64: 'secret-keystore' },
+      { fileExists: () => false }
+    ),
+    /rejects admitted Android signing variables: CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64/
+  );
+  let checkedPath;
+  assert.throws(
+    () => nativeReleaseCredentialFreeEnvironment(clean, {
+      fileExists: (candidate) => {
+        checkedPath = candidate;
+        return true;
+      }
+    }),
+    /rejects existing signing material at calibrate-android-upload\.keystore/
+  );
+  assert.match(checkedPath, /runner-temp[\\/]calibrate-android-upload\.keystore$/);
+});
+
+test('Expo finalization copies every reviewed phone dependency-state file', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-phone-gradle-restore-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  const projectRoot = path.join(fixture, 'mobile');
+  const templateRoot = path.join(projectRoot, 'gradle', 'native-release', 'phone');
+  const platformRoot = path.join(projectRoot, 'android');
+  const expected = new Map([
+    ['buildscript-gradle.lockfile', gradleLockFixture],
+    ['settings-gradle.lockfile', gradleLockFixture],
+    ['gradle/verification-metadata.xml', verificationMetadataFixture],
+    ['gradle/dependency-locks/app.lockfile', gradleLockFixture]
+  ]);
+  for (const [relativePath, content] of expected) {
+    const file = path.join(templateRoot, ...relativePath.split('/'));
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  fs.mkdirSync(path.join(platformRoot, 'gradle'), { recursive: true });
+
+  restorePhoneGradleDependencyState(projectRoot, platformRoot);
+  for (const [relativePath, content] of expected) {
+    assert.equal(
+      fs.readFileSync(path.join(platformRoot, ...relativePath.split('/')), 'utf8'),
+      content
+    );
+  }
+  assert.throws(
+    () => restorePhoneGradleDependencyState(path.join(fixture, 'missing'), platformRoot),
+    /Reviewed phone Gradle dependency state is missing/
+  );
+});
+
+function canonicalGradleWrapperProperties(overrides = {}) {
+  return [
+    `distributionUrl=${overrides.distributionUrl ?? NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL_PROPERTY}`,
+    ...(!overrides.omitChecksum
+      ? [`distributionSha256Sum=${overrides.distributionSha256Sum ??
+        NATIVE_RELEASE_GRADLE_DISTRIBUTION_SHA256}`]
+      : []),
+    ''
+  ].join('\n');
+}
+
+function writeGradleWrapperFixture(root, options = {}) {
+  const wrapperDirectory = path.join(root, 'gradle', 'wrapper');
+  fs.mkdirSync(wrapperDirectory, { recursive: true });
+  if (!options.omitProperties) {
+    fs.writeFileSync(
+      path.join(wrapperDirectory, 'gradle-wrapper.properties'),
+      options.properties ?? canonicalGradleWrapperProperties()
+    );
+  }
+  if (!options.omitJar) {
+    fs.writeFileSync(
+      path.join(wrapperDirectory, 'gradle-wrapper.jar'),
+      options.jar ?? officialGradleWrapperJar
+    );
+  }
+}
+
+const gradleLockFixture = [
+  '# This is a Gradle generated file for dependency locking.',
+  '# Manual edits can break the build and are not advised.',
+  '# This file is expected to be part of source control.',
+  'example:dependency:1.0=releaseRuntimeClasspath',
+  ''
+].join('\n');
+const fixtureSha256 = 'a'.repeat(64);
+const commonCleanRunArtifactCoordinates = [
+  'com.google.guava:guava-parent:33.3.1-jre:guava-parent-33.3.1-jre.pom',
+  'org.junit:junit-bom:5.10.2:junit-bom-5.10.2.module',
+  'org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.8.0:kotlinx-coroutines-bom-1.8.0.pom'
+];
+const platformCleanRunArtifactCoordinates = {
+  phone: [
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-linux.jar',
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-windows.jar',
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139.pom',
+    'com.android.tools:play-sdk-proto:31.12.0:play-sdk-proto-31.12.0.jar',
+    'com.android.tools:play-sdk-proto:31.12.0:play-sdk-proto-31.12.0.pom',
+    'com.android.tools.external.com-intellij:intellij-core:31.12.0:intellij-core-31.12.0.jar',
+    'com.android.tools.external.com-intellij:intellij-core:31.12.0:intellij-core-31.12.0.pom',
+    'com.android.tools.external.com-intellij:kotlin-compiler:31.12.0:kotlin-compiler-31.12.0.jar',
+    'com.android.tools.external.com-intellij:kotlin-compiler:31.12.0:kotlin-compiler-31.12.0.pom',
+    'com.android.tools.external.org-jetbrains:uast:31.12.0:uast-31.12.0.jar',
+    'com.android.tools.external.org-jetbrains:uast:31.12.0:uast-31.12.0.pom',
+    'com.android.tools.lint:lint:31.12.0:lint-31.12.0.jar',
+    'com.android.tools.lint:lint:31.12.0:lint-31.12.0.pom',
+    'com.android.tools.lint:lint-api:31.12.0:lint-api-31.12.0.jar',
+    'com.android.tools.lint:lint-api:31.12.0:lint-api-31.12.0.pom',
+    'com.android.tools.lint:lint-checks:31.12.0:lint-checks-31.12.0.jar',
+    'com.android.tools.lint:lint-checks:31.12.0:lint-checks-31.12.0.pom',
+    'com.android.tools.lint:lint-gradle:31.12.0:lint-gradle-31.12.0.jar',
+    'com.android.tools.lint:lint-gradle:31.12.0:lint-gradle-31.12.0.pom',
+    'com.google.devtools.ksp:symbol-processing-aa-embeddable:2.1.20-2.0.1:symbol-processing-aa-embeddable-2.1.20-2.0.1.jar',
+    'com.google.devtools.ksp:symbol-processing-aa-embeddable:2.1.20-2.0.1:symbol-processing-aa-embeddable-2.1.20-2.0.1.pom',
+    'com.google.guava:guava-parent:32.1.3-jre:guava-parent-32.1.3-jre.pom',
+    'com.google.guava:guava-parent:33.3.1-android:guava-parent-33.3.1-android.pom',
+    'com.google.guava:guava-parent:33.4.3-android:guava-parent-33.4.3-android.pom',
+    'com.google.guava:guava-parent:33.4.8-jre:guava-parent-33.4.8-jre.pom',
+    'org.apache.httpcomponents:httpclient:4.5.6:httpclient-4.5.6.jar',
+    'org.apache.httpcomponents:httpclient:4.5.6:httpclient-4.5.6.pom',
+    'org.codehaus.groovy:groovy:3.0.22:groovy-3.0.22.jar',
+    'org.codehaus.groovy:groovy:3.0.22:groovy-3.0.22.pom',
+    'org.jetbrains.kotlin:kotlin-bom:1.8.0:kotlin-bom-1.8.0.pom',
+    'org.junit:junit-bom:5.13.1:junit-bom-5.13.1.module',
+    'org.junit:junit-bom:5.13.4:junit-bom-5.13.4.module',
+    'org.junit:junit-bom:5.8.2:junit-bom-5.8.2.pom',
+    'org.junit:junit-bom:5.9.2:junit-bom-5.9.2.module',
+    'org.junit:junit-bom:5.9.3:junit-bom-5.9.3.module'
+  ],
+  wear: [
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-linux.jar',
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-windows.jar',
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657.pom'
+  ]
+};
+
+function verificationArtifactFixture(coordinate) {
+  const [group, name, version, artifactName] = coordinate.split(':');
+  return `    <component group="${group}" name="${name}" version="${version}"><artifact name="${artifactName}"><sha256 value="${fixtureSha256}" /></artifact></component>`;
+}
+
+const verificationMetadataFixture = [
+  '<verification-metadata>',
+  '  <configuration><verify-metadata>true</verify-metadata></configuration>',
+  '  <components>',
+  '    <component group="org.jetbrains.kotlin.jvm" name="org.jetbrains.kotlin.jvm.gradle.plugin" version="2.1.20">',
+  `      <artifact name="org.jetbrains.kotlin.jvm.gradle.plugin-2.1.20.pom"><sha256 value="${fixtureSha256}" /></artifact>`,
+  '    </component>',
+  '    <component group="com.android.application" name="com.android.application.gradle.plugin" version="8.11.0">',
+  `      <artifact name="com.android.application.gradle.plugin-8.11.0.pom"><sha256 value="${fixtureSha256}" /></artifact>`,
+  '    </component>',
+  verificationArtifactFixture('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20:kotlin-gradle-plugin-2.1.20-gradle85.jar'),
+  verificationArtifactFixture('example:dependency:1.0:dependency-1.0.module'),
+  verificationArtifactFixture('com.facebook.react:react-android:0.86.0:react-android-0.86.0-release.aar'),
+  verificationArtifactFixture('com.google.android.gms:play-services-wearable:20.0.1:play-services-wearable-20.0.1.aar'),
+  verificationArtifactFixture('androidx.room:room-runtime:2.7.0:room-runtime.aar'),
+  verificationArtifactFixture('androidx.compose:compose-bom:2026.06.00:compose-bom-2026.06.00.pom'),
+  ...commonCleanRunArtifactCoordinates.map(verificationArtifactFixture),
+  ...platformCleanRunArtifactCoordinates.phone.map(verificationArtifactFixture),
+  ...platformCleanRunArtifactCoordinates.wear.map(verificationArtifactFixture),
+  '  </components>',
+  '</verification-metadata>',
+  ''
+].join('\n');
+
+function gradleStateSha256(bytes) {
+  return crypto.createHash('sha256')
+    .update(Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8'))
+    .digest('hex');
+}
+
+function writeGradleDependencyStateFixture(root, label) {
+  const files = label === 'phone'
+    ? [
+        'buildscript-gradle.lockfile',
+        'settings-gradle.lockfile',
+        'gradle/dependency-locks/app.lockfile',
+        'gradle/verification-metadata.xml'
+      ]
+    : [
+        'app/gradle.lockfile',
+        'settings-gradle.lockfile',
+        'gradle/verification-metadata.xml'
+      ];
+  for (const relativePath of files) {
+    const file = path.join(root, ...relativePath.split('/'));
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(
+      file,
+      relativePath.endsWith('verification-metadata.xml')
+        ? verificationMetadataFixture
+        : gradleLockFixture
+    );
+  }
+  fs.writeFileSync(
+    path.join(root, label === 'phone' ? 'build.gradle' : 'build.gradle.kts'),
+    label === 'phone'
+      ? 'lockAllConfigurations()\nLockMode.STRICT\ngradle/dependency-locks/'
+      : 'lockAllConfigurations()\nLockMode.STRICT'
+  );
+  const records = files.map((relativePath) => ({
+    path: relativePath,
+    sha256: gradleStateSha256(fs.readFileSync(path.join(root, ...relativePath.split('/'))))
+  }));
+  return {
+    schemaVersion: 1,
+    platforms: { [label]: { files: records } }
+  };
+}
+
+test('tracked phone and Wear dependency state is complete and hash-reviewed', () => {
+  const manifest = JSON.parse(fs.readFileSync(
+    new URL('../mobile/gradle/native-release/integrity.json', import.meta.url),
+    'utf8'
+  ));
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.platforms.phone.files.length, 26);
+  assert.equal(manifest.platforms.wear.files.length, 3);
+
+  for (const [label, relativeRoot] of [
+    ['phone', '../mobile/gradle/native-release/phone'],
+    ['wear', '../wear']
+  ]) {
+    const reviewedRoot = fileURLToPath(new URL(relativeRoot, import.meta.url));
+    const paths = new Set();
+    for (const record of manifest.platforms[label].files) {
+      assert.equal(paths.has(record.path), false);
+      paths.add(record.path);
+      assert.equal(
+        gradleStateSha256(fs.readFileSync(path.join(reviewedRoot, ...record.path.split('/')))),
+        record.sha256,
+        `${label} ${record.path}`
+      );
+    }
+    const metadata = fs.readFileSync(
+      path.join(reviewedRoot, 'gradle', 'verification-metadata.xml'),
+      'utf8'
+    );
+    assert.doesNotThrow(() => assertNativeReleaseVerificationMetadata(label, metadata));
+    assert.ok(paths.has('gradle/verification-metadata.xml'));
+    assert.ok([...paths].some((entry) => entry.endsWith('.lockfile')));
+  }
+});
+
+test('Gradle integrity hashes canonical Git blobs across LF and CRLF checkouts', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-gradle-line-endings-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const manifest = writeGradleDependencyStateFixture(root, 'wear');
+  const build = { label: 'wear', cwd: root };
+
+  for (const record of manifest.platforms.wear.files) {
+    const file = path.join(root, ...record.path.split('/'));
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n'));
+  }
+  assert.doesNotThrow(() => assertNativeReleaseGradleDependencyState(build, { manifest }));
+
+  const metadata = path.join(root, 'gradle', 'verification-metadata.xml');
+  fs.appendFileSync(metadata, '<!-- content mutation -->\r\n');
+  assert.throws(
+    () => assertNativeReleaseGradleDependencyState(build, { manifest }),
+    /reviewed Gradle dependency state changed: gradle\/verification-metadata\.xml/
+  );
+});
+
+test('verification metadata rejects trust shortcuts and incomplete artifact checksums', () => {
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'phone',
+      verificationMetadataFixture.replace(
+        '<components>',
+        '<trusted-artifacts></trusted-artifacts><components>'
+      )
+    ),
+    /without trust or ignore shortcuts/
+  );
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'wear',
+      verificationMetadataFixture.replace(
+        '<components>',
+        '<key-servers><key-server uri="https://keys.invalid" /></key-servers><components>'
+      )
+    ),
+    /without trust or ignore shortcuts/
+  );
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'wear',
+      verificationMetadataFixture.replace(
+        `<sha256 value="${fixtureSha256}" />`,
+        `<sha256 value="${fixtureSha256}" /><sha256 value="${'b'.repeat(64)}" />`
+      )
+    ),
+    /every artifact exactly one 64-hex SHA-256/
+  );
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'phone',
+      verificationMetadataFixture.replace(fixtureSha256, 'not-a-sha256')
+    ),
+    /every artifact exactly one 64-hex SHA-256/
+  );
+});
+
+test('verification metadata requires exact clean-run artifacts for each native platform', () => {
+  for (const label of ['phone', 'wear']) {
+    for (const coordinate of [
+      ...commonCleanRunArtifactCoordinates,
+      ...platformCleanRunArtifactCoordinates[label]
+    ]) {
+      const artifactRecord = verificationArtifactFixture(coordinate);
+      assert.throws(
+        () => assertNativeReleaseVerificationMetadata(
+          label,
+          verificationMetadataFixture.replace(artifactRecord, '')
+        ),
+        /omits representative plugin or clean-run release artifacts/
+      );
+    }
+  }
+
+  for (const coordinate of platformCleanRunArtifactCoordinates.phone) {
+    const artifactRecord = verificationArtifactFixture(coordinate);
+    assert.doesNotThrow(() => assertNativeReleaseVerificationMetadata(
+      'wear',
+      verificationMetadataFixture.replace(artifactRecord, '')
+    ));
+  }
+
+  const phoneAapt2Linux =
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-linux.jar';
+  const liveRecord = verificationArtifactFixture(phoneAapt2Linux);
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'phone',
+      verificationMetadataFixture.replace(liveRecord, `<!-- ${liveRecord} -->`)
+    ),
+    /must not contain XML comments/
+  );
+
+  const phoneAapt2Windows =
+    'com.android.tools.build:aapt2:8.12.0-13700139:aapt2-8.12.0-13700139-windows.jar';
+  const wrongComponent =
+    'com.android.tools.build:aapt2-proto:7.3.1-8691043:aapt2-8.12.0-13700139-windows.jar';
+  assert.throws(
+    () => assertNativeReleaseVerificationMetadata(
+      'phone',
+      verificationMetadataFixture.replace(
+        verificationArtifactFixture(phoneAapt2Windows),
+        verificationArtifactFixture(wrongComponent)
+      )
+    ),
+    /omits representative plugin or clean-run release artifacts/
+  );
+});
+
+test('native release rejects missing or mutated verification metadata and lock state', (t) => {
+  for (const label of ['phone', 'wear']) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), `calibrate-${label}-gradle-state-`));
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+    const manifest = writeGradleDependencyStateFixture(root, label);
+    const build = { label, cwd: root };
+    const metadata = path.join(root, 'gradle', 'verification-metadata.xml');
+    const lock = path.join(
+      root,
+      ...(label === 'phone'
+        ? ['gradle', 'dependency-locks', 'app.lockfile']
+        : ['app', 'gradle.lockfile'])
+    );
+
+    assert.doesNotThrow(() => assertNativeReleaseGradleDependencyState(build, { manifest }));
+    fs.appendFileSync(metadata, '<!-- mutation -->\n');
+    assert.throws(
+      () => assertNativeReleaseGradleDependencyState(build, { manifest }),
+      /reviewed Gradle dependency state changed: gradle\/verification-metadata\.xml/
+    );
+
+    fs.writeFileSync(metadata, verificationMetadataFixture);
+    fs.appendFileSync(lock, 'mutated:dependency:2.0=releaseRuntimeClasspath\n');
+    assert.throws(
+      () => assertNativeReleaseGradleDependencyState(build, { manifest }),
+      /reviewed Gradle dependency state changed: .*\.lockfile/
+    );
+
+    fs.writeFileSync(lock, gradleLockFixture);
+    fs.rmSync(lock);
+    assert.throws(
+      () => assertNativeReleaseGradleDependencyState(build, { manifest }),
+      /reviewed Gradle dependency state is missing: .*\.lockfile/
+    );
+
+    fs.writeFileSync(lock, gradleLockFixture);
+    fs.writeFileSync(
+      path.join(root, label === 'phone' ? 'build.gradle' : 'build.gradle.kts'),
+      'lockAllConfigurations()'
+    );
+    assert.throws(
+      () => assertNativeReleaseGradleDependencyState(build, { manifest }),
+      /dependency locking must use complete state in LockMode\.STRICT/
+    );
+  }
+});
+
+test('native release accepts only the reviewed phone and Wear Gradle wrapper code', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-gradle-wrapper-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  const phoneRoot = path.join(fixture, 'phone');
+  const wearRoot = path.join(fixture, 'wear');
+  writeGradleWrapperFixture(phoneRoot);
+  writeGradleWrapperFixture(wearRoot);
+
+  assert.doesNotThrow(() => assertNativeReleaseGradleWrapper({ label: 'phone', cwd: phoneRoot }));
+  assert.doesNotThrow(() => assertNativeReleaseGradleWrapper({ label: 'wear', cwd: wearRoot }));
+  assert.doesNotThrow(() => assertNativeReleaseGradleWrapper({
+    label: 'checked-in Wear',
+    cwd: fileURLToPath(new URL('../wear', import.meta.url))
+  }));
+  assert.equal(
+    crypto.createHash('sha256').update(officialGradleWrapperJar).digest('hex'),
+    NATIVE_RELEASE_GRADLE_WRAPPER_JAR_SHA256
+  );
+});
+
+test('native release rejects missing or changed Gradle URL, checksum, and wrapper JAR', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-gradle-wrapper-invalid-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  const build = { label: 'phone', cwd: fixture };
+  const propertiesFile = path.join(fixture, 'gradle', 'wrapper', 'gradle-wrapper.properties');
+  const wrapperJar = path.join(fixture, 'gradle', 'wrapper', 'gradle-wrapper.jar');
+
+  writeGradleWrapperFixture(fixture, { omitProperties: true });
+  assert.throws(() => assertNativeReleaseGradleWrapper(build), /wrapper properties are missing/);
+
+  fs.writeFileSync(propertiesFile, 'distributionSha256Sum=0\n');
+  assert.throws(() => assertNativeReleaseGradleWrapper(build), /must pin distributionUrl/);
+
+  fs.writeFileSync(propertiesFile, canonicalGradleWrapperProperties({
+    distributionUrl: 'https\\://example.invalid/gradle-8.14.3-bin.zip'
+  }));
+  assert.throws(() => assertNativeReleaseGradleWrapper(build), /must pin distributionUrl/);
+
+  fs.writeFileSync(propertiesFile, canonicalGradleWrapperProperties({ omitChecksum: true }));
+  assert.throws(() => assertNativeReleaseGradleWrapper(build), /must pin distributionSha256Sum/);
+
+  fs.writeFileSync(propertiesFile, canonicalGradleWrapperProperties({
+    distributionSha256Sum: '0'.repeat(64)
+  }));
+  assert.throws(() => assertNativeReleaseGradleWrapper(build), /must pin distributionSha256Sum/);
+
+  fs.writeFileSync(propertiesFile, canonicalGradleWrapperProperties());
+  fs.rmSync(wrapperJar);
+  assert.throws(() => assertNativeReleaseGradleWrapper(build), /wrapper JAR is missing/);
+
+  fs.writeFileSync(wrapperJar, 'not the reviewed Gradle wrapper');
+  assert.throws(
+    () => assertNativeReleaseGradleWrapper(build),
+    /wrapper JAR SHA-256 .* does not match the reviewed Gradle 8\.14\.3 wrapper JAR/
+  );
+});
+
+test('native release verifies both wrappers before cache eviction', () => {
+  const builds = [{ label: 'phone' }, { label: 'wear' }];
+  const events = [];
+  const removed = prepareNativeReleaseGradleExecution(builds, {}, {
+    assertWrapper: (build) => events.push(`verify:${build.label}`),
+    assertDependencyState: (build) => events.push(`state:${build.label}`),
+    removeDistributionCache: () => {
+      events.push('remove:distribution');
+      return 'distribution-cache';
+    }
+  });
+  assert.equal(removed, 'distribution-cache');
+  assert.deepEqual(events, [
+    'verify:phone',
+    'verify:wear',
+    'state:phone',
+    'state:wear',
+    'remove:distribution'
+  ]);
+
+  events.length = 0;
+  assert.throws(
+    () => prepareNativeReleaseGradleExecution(builds, {}, {
+      assertWrapper: (build) => {
+        events.push(`verify:${build.label}`);
+        if (build.label === 'wear') throw new Error('invalid Wear wrapper');
+      },
+      assertDependencyState: (build) => events.push(`state:${build.label}`),
+      removeDistributionCache: () => events.push('remove:distribution')
+    }),
+    /invalid Wear wrapper/
+  );
+  assert.deepEqual(events, ['verify:phone', 'verify:wear']);
+});
+
+test('native release evicts only the exact pinned distribution and preserves dependency caches', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-gradle-cache-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  const gradleUserHome = path.join(fixture, 'gradle-user-home');
+  const environment = { GRADLE_USER_HOME: gradleUserHome };
+  const distributionCache = nativeReleaseGradleDistributionCachePath(environment);
+  const dependencySentinel = path.join(gradleUserHome, 'caches', 'modules-2', 'dependency.bin');
+  const adjacentDistribution = path.join(
+    gradleUserHome,
+    'wrapper',
+    'dists',
+    'gradle-8.14.3-all',
+    'adjacent.bin'
+  );
+  fs.mkdirSync(distributionCache, { recursive: true });
+  fs.mkdirSync(path.dirname(dependencySentinel), { recursive: true });
+  fs.mkdirSync(path.dirname(adjacentDistribution), { recursive: true });
+  fs.writeFileSync(path.join(distributionCache, 'cached-distribution.zip'), 'stale');
+  fs.writeFileSync(dependencySentinel, 'verified dependency cache');
+  fs.writeFileSync(adjacentDistribution, 'other distribution');
+
+  assert.equal(removeNativeReleaseGradleDistributionCache(environment), distributionCache);
+  assert.equal(fs.existsSync(distributionCache), false);
+  assert.equal(fs.readFileSync(dependencySentinel, 'utf8'), 'verified dependency cache');
+  assert.equal(fs.readFileSync(adjacentDistribution, 'utf8'), 'other distribution');
+  assert.doesNotThrow(() => removeNativeReleaseGradleDistributionCache(environment));
+  assert.equal(
+    nativeReleaseGradleDistributionCachePath({}, { homeDirectory: fixture }),
+    path.join(fixture, '.gradle', 'wrapper', 'dists', 'gradle-8.14.3-bin')
+  );
 });
 
 test('native release builds require freshly generated APK and AAB outputs', () => {

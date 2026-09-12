@@ -41,7 +41,7 @@ the disaster-recovery mechanism.
 
 ## Launch clients and language
 
-The first release is English-only across Web/PWA, Android phone, and Wear OS. Stored language
+The first release is English-only across Web/PWA, Android, iOS, and Wear OS. Stored language
 preference data does not mean those clients are translated. Additional languages require every
 workflow, permission rationale, Tile, and notification string to have equivalent translations.
 Release notes and store metadata must state the English-only boundary.

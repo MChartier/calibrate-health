@@ -14,7 +14,7 @@ export const LAUNCH_24_DATA_STATES = [
 ] as const;
 
 export type SurfaceExpectation = {
-  kind: 'text' | 'testId';
+  kind: 'label' | 'text' | 'testId';
   value: string;
 };
 
@@ -265,6 +265,64 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
     terminalEmptyText: 'No active goal set',
   }),
   settingsCategoryRouteCase('settings-profile', 'settings-category-profile'),
+  routeCase('devices', {
+    resource: {
+      pathname: '/auth/sessions',
+      content: {
+        sessions: [
+          {
+            id: 'browser_current',
+            kind: 'browser',
+            device_label: 'Chrome on Windows',
+            created_at: '2026-08-01T12:00:00.000Z',
+            last_activity_at: '2026-08-27T12:00:00.000Z',
+            current: true,
+          },
+          {
+            id: 'mobile_remote',
+            kind: 'android_phone',
+            device_label: 'Pixel 9',
+            created_at: '2026-07-01T12:00:00.000Z',
+            last_activity_at: null,
+            current: false,
+          },
+        ],
+      },
+      empty: { sessions: [] },
+    },
+    loading: { kind: 'label', value: 'Loading active devices' },
+    content: { kind: 'text', value: 'Pixel 9' },
+    empty: { kind: 'text', value: 'No signed-in sessions found' },
+    errorText: "Can't load signed-in sessions",
+    staleText: "Couldn't refresh signed-in sessions",
+    offlineText: 'Offline - showing saved information',
+    terminalEmptyText: 'No signed-in sessions found',
+  }),
+  routeCase('connected-apps', {
+    resource: {
+      pathname: '/api/v1/user/connected-apps',
+      content: {
+        connections: [{
+          id: 'c13e23d9-b130-42bd-bb70-901fd65fbfe9',
+          client_id: 'codex-client',
+          client_name: 'Codex',
+          scopes: ['calibrate:food:read', 'calibrate:weight:read'],
+          resource: 'https://calibratehealth.app/mcp',
+          created_at: '2026-08-19T12:00:00.000Z',
+          last_used_at: null,
+          expires_at: '2026-09-18T12:00:00.000Z',
+        }],
+      },
+      empty: { connections: [] },
+    },
+    loading: { kind: 'label', value: 'Loading connected assistants' },
+    content: { kind: 'text', value: 'Codex' },
+    empty: { kind: 'text', value: 'No connected assistants' },
+    errorText: "Can't load connected assistants",
+    staleText: "Couldn't refresh connected assistants",
+    offlineText: 'Offline - showing saved information',
+    terminalEmptyText: 'No connected assistants',
+  }),
   routeCase('food-log', {
     resource: {
       pathname: '/api/v1/food',
@@ -384,6 +442,10 @@ export const LAUNCH_24_STATIC_ROUTE_IDS = [
   'settings-connections',
   'settings-data',
   'settings-help',
+  'profile-details',
+  'preferences',
+  'health-connect',
+  'watch',
   'about',
   'advanced',
 ] as const satisfies readonly RouteId[];

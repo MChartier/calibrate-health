@@ -45,7 +45,7 @@ export function isValidIanaTimeZone(value: string): boolean {
     }
 }
 
-/** Read Android's configured timezone through Intl without requesting location access. */
+/** Read the native device's configured timezone through Intl without requesting location access. */
 export function detectDeviceTimeZone(
     resolver: () => string | undefined = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 ): string | null {

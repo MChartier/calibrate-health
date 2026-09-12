@@ -7,7 +7,7 @@
   },
   "workspaces": {
     ".": {
-      "entry": [".codex/local-environment.setup.mjs", "scripts/reset-test-user-onboarding.mjs"],
+      "entry": [".codex/local-environment.setup.mjs", "scripts/reset-test-user-onboarding.mjs", "deploy/scripts/self-hosted-deploy.mjs"],
       "project": [
         ".codex/**/*.mjs",
         "deploy/**/*.{js,mjs,ts}",
@@ -29,7 +29,11 @@
       "prisma": { "config": [] }
     },
     "mobile": {
-      "entry": ["plugins/withHealthConnect.js", "plugins/withSharedAndroidSigning.js"],
+      "entry": [
+        "plugins/withHealthConnect.js",
+        "plugins/withPinnedGradleWrapper.js",
+        "plugins/withSharedAndroidSigning.js"
+      ],
       "project": [
         "app/**/*.{ts,tsx}!",
         "src/**/*.{ts,tsx}!",

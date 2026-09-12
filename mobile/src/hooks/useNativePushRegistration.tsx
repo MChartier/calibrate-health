@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { NATIVE_PUSH_PLATFORMS, NATIVE_PUSH_PROVIDERS } from '@calibrate/shared';
+import { NATIVE_PUSH_PROVIDERS } from '@calibrate/shared';
 import { useAuth } from '../auth/AuthContext';
 import { hasFullAccountAccess } from '../auth/accountAccess';
 import {
@@ -11,6 +11,7 @@ import {
     type NativePushState
 } from '../notifications/workflow';
 import { EXPO_PROJECT_ID_ENV, resolveExpoProjectId } from '../notifications/expoProject';
+import { getNativePushPlatform } from '../platform/nativePlatform';
 
 type NativePushRegistrationContextValue = {
     state: NativePushState;
@@ -38,7 +39,7 @@ async function loadNotificationsModule() {
 }
 
 /**
- * Own native notification permission and registration state for the signed-in Android install.
+ * Own native notification permission and registration state for the signed-in native install.
  * Permission prompts remain user initiated; already-granted devices register automatically.
  */
 export function NativePushRegistrationProvider({ children }: { children: React.ReactNode }) {
@@ -88,7 +89,7 @@ export function NativePushRegistrationProvider({ children }: { children: React.R
 
             await api.registerNativePushSubscription({
                 token: token.data,
-                platform: NATIVE_PUSH_PLATFORMS.ANDROID,
+                platform: getNativePushPlatform(Platform.OS),
                 provider: NATIVE_PUSH_PROVIDERS.EXPO
             });
             if (run === activeRun.current) setState(NATIVE_PUSH_STATES.REGISTERED);

@@ -68,6 +68,23 @@ test('authenticated phone sessions require a current bounded version on every re
   assert.equal(current.res.locals.nativeClientVersion, '0.1.0-internal');
 });
 
+test('authenticated iOS sessions use the mobile release floor and iOS upgrade copy', () => {
+  const missing = run({}, { mobileDevicePlatform: 'ios' });
+  assert.equal(missing.nextCount, 0);
+  assert.equal(missing.res.statusCode, 426);
+  assert.equal(missing.res.body.platform, 'ios');
+  assert.match(missing.res.body.message, /Calibrate for iOS/);
+
+  const current = run({
+    headers: {
+      'x-calibrate-client-platform': 'ios',
+      'x-calibrate-client-version': '0.1.0-internal'
+    }
+  }, { mobileDevicePlatform: 'ios' });
+  assert.equal(current.nextCount, 1);
+  assert.equal(current.res.locals.nativeClientVersion, '0.1.0-internal');
+});
+
 test('authenticated session platform cannot be changed by client headers', () => {
   const { nextCount, res } = run({
     headers: {

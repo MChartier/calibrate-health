@@ -84,13 +84,24 @@ export function resolveNativeReleaseDeviceTooling(environment = process.env, opt
   if (!javaHome) throw new Error('JAVA_HOME is required.');
 
   const buildToolsRoot = path.join(sdkRoot, 'build-tools');
-  const versions = [...(options.buildToolVersions ?? (fileExists(buildToolsRoot)
-    ? fs.readdirSync(buildToolsRoot, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-    : []))].sort((left, right) => right.localeCompare(left, undefined, { numeric: true }));
-  if (versions.length === 0) throw new Error(`Android build-tools are missing under ${buildToolsRoot}.`);
-  const buildTools = path.join(buildToolsRoot, versions[0]);
+  const configuredBuildToolsVersion = environment.ANDROID_BUILD_TOOLS_VERSION?.trim();
+  let buildTools;
+  if (configuredBuildToolsVersion) {
+    buildTools = path.join(buildToolsRoot, configuredBuildToolsVersion);
+    if (!fileExists(buildTools)) {
+      throw new Error(
+        `Configured Android build-tools ${configuredBuildToolsVersion} are missing: ${buildTools}.`
+      );
+    }
+  } else {
+    const versions = [...(options.buildToolVersions ?? (fileExists(buildToolsRoot)
+      ? fs.readdirSync(buildToolsRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+      : []))].sort((left, right) => right.localeCompare(left, undefined, { numeric: true }));
+    if (versions.length === 0) throw new Error(`Android build-tools are missing under ${buildToolsRoot}.`);
+    buildTools = path.join(buildToolsRoot, versions[0]);
+  }
   const configuredBundletool = environment.BUNDLETOOL_JAR?.trim();
   const tooling = {
     sdkRoot,
@@ -207,12 +218,18 @@ export function classifyReleaseDevice(characteristics) {
       ? 'unsupported'
       : 'watch';
   }
-  if (values.some((value) => ['tablet', 'tv', 'automotive', 'embedded'].includes(value))) {
+  if (values.some((value) => ['tv', 'automotive', 'embedded'].includes(value))) {
     return 'unsupported';
   }
-  return values.some((value) => ['phone', 'handset', 'default'].includes(value))
+  return values.some((value) => ['phone', 'handset', 'tablet', 'default'].includes(value))
     ? 'phone'
     : 'unsupported';
+}
+
+function hasHandsetCompatibleCharacteristics(characteristics) {
+  const values = characteristics.toLowerCase().split(',').map((value) => value.trim()).filter(Boolean);
+  return values.some((value) => ['phone', 'handset', 'default'].includes(value))
+    && !values.some((value) => ['tablet', 'tv', 'automotive', 'embedded', 'watch'].includes(value));
 }
 
 async function discoverReleaseDevices(tooling, runner) {
@@ -592,7 +609,7 @@ async function offerWatchPairing(tooling, runner) {
 async function resolveTargets(config, tooling, runner) {
   let devices = await discoverReleaseDevices(tooling, runner);
   let phone = await selectReleaseDevice('phone', config.phoneSerial, devices);
-  if (!phone) throw new Error('No connected Android phone found. Connect USB debugging and authorize this computer.');
+  if (!phone) throw new Error('No connected Android phone or tablet found. Connect USB debugging and authorize this computer.');
   let watch = await selectReleaseDevice('watch', config.watchSerial, devices);
   if (!watch && !config.watchSerial) {
     await offerWatchPairing(tooling, runner);
@@ -653,7 +670,10 @@ export function assertNativeReleaseEvidenceTargets(targets) {
   for (const role of ['phone', 'watch']) {
     const target = targets?.[role];
     if (!target || target.role !== role) throw new Error(`Evidence observation is missing the ${role} target.`);
-    if (classifyReleaseDevice(target.characteristics ?? '') !== role) {
+    const hasExpectedCharacteristics = role === 'phone'
+      ? hasHandsetCompatibleCharacteristics(target.characteristics ?? '')
+      : classifyReleaseDevice(target.characteristics ?? '') === role;
+    if (!hasExpectedCharacteristics) {
       throw new Error(`Evidence observation requires handset-compatible phone or watch-only build characteristics for ${role}.`);
     }
     if (target.isEmulator !== false) throw new Error(`Evidence observation requires a physical non-emulator ${role}.`);
@@ -860,11 +880,11 @@ async function launchAndVerify(target, tooling, runner) {
 function printHelp() {
   process.stdout.write(`Usage: npm run release:native:devices -- [options]
 
-Build, verify, install, and launch the shared-signer phone and Wear release artifacts.
+Build, verify, install, and launch the shared-signer mobile and Wear release artifacts.
 
 Options:
   --skip-build                  Install the existing release APK outputs
-  --phone-serial <serial>       Select an explicit phone ADB or hardware serial
+  --phone-serial <serial>       Select an explicit phone/tablet ADB or hardware serial
   --watch-serial <serial>       Select an explicit watch ADB or hardware serial
   --server-url <https-origin>   Compile a credential-free self-hosted origin
   --keystore <path>             Shared phone/Wear PKCS12 keystore

@@ -5,6 +5,7 @@ export type CalibrationScenario = {
     name: string;
     description: string;
     input: CalibrationInput;
+    previewState?: 'scheduled';
 };
 
 const AS_OF_DATE = '2026-07-31';
@@ -71,8 +72,8 @@ const baseInput = {
 export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     {
         id: 'not-ready',
-        name: 'Building history - 6 days',
-        description: 'Six good days show progress toward the seven-day insight threshold without estimating pace yet.',
+        name: 'Waiting - short history',
+        description: 'A short history sets expectations without showing provisional pace or calorie metrics.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 6, calories: 1900 }),
@@ -105,8 +106,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'early-insight',
-        name: 'Early 7-day insight',
-        description: 'Seven well-tracked days provide an initial comparison between observed and projected pace.',
+        name: 'Waiting - under two weeks',
+        description: 'A one-week trend remains hidden until the weight history can support a reliable conclusion.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 7, calories: 1900 }),
@@ -125,6 +126,28 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
         }
     },
     {
+        id: 'maintenance',
+        name: 'Maintenance goal',
+        description: 'A maintenance goal receives the same measured comparisons without calorie-target actions.',
+        input: {
+            ...baseInput,
+            configuredDailyDeficitKcal: 0,
+            foodDays: buildFoodDays({ days: 28, calories: 2400 }),
+            weightPoints: buildWeights(28, 90, 0)
+        }
+    },
+    {
+        id: 'gain',
+        name: 'Weight-gain goal',
+        description: 'A gain goal receives an honest goal-relative check without automatic target adjustments.',
+        input: {
+            ...baseInput,
+            configuredDailyDeficitKcal: -500,
+            foodDays: buildFoodDays({ days: 28, calories: 2900 }),
+            weightPoints: buildWeights(28, 90, 0.3)
+        }
+    },
+    {
         id: 'on-track-pounds',
         name: 'On-track history in pounds',
         description: 'The same reassuring on-track conclusion is presented entirely in the user\'s pounds preference.',
@@ -137,8 +160,19 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'target-too-high',
-        name: 'Weight loss slower than projected',
-        description: 'Weight is falling more slowly than projected despite consistent logs, so a lower calorie budget may help.',
+        name: 'Weight loss slower than goal',
+        description: 'Weight is falling more slowly than the configured goal despite consistent logs, so a lower calorie budget may help.',
+        input: {
+            ...baseInput,
+            foodDays: buildFoodDays({ days: 28, calories: 1900 }),
+            weightPoints: buildWeights(28, 90, -0.23)
+        }
+    },
+    {
+        id: 'scheduled',
+        name: 'Scheduled target adjustment',
+        description: 'A scheduled target update stays visible alongside the underlying off-track assessment.',
+        previewState: 'scheduled',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),
@@ -147,8 +181,8 @@ export const CALIBRATION_SCENARIOS: CalibrationScenario[] = [
     },
     {
         id: 'target-too-low',
-        name: 'Weight loss faster than projected',
-        description: 'Weight is falling faster than projected with consistent logs, so a higher calorie budget may help.',
+        name: 'Weight loss faster than goal',
+        description: 'Weight is falling faster than the configured goal with consistent logs, so a higher calorie budget may help.',
         input: {
             ...baseInput,
             foodDays: buildFoodDays({ days: 28, calories: 1900 }),

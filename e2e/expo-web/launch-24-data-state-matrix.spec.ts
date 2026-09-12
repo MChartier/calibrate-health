@@ -51,6 +51,7 @@ function runOnlyInDesktopProject(testInfo: TestInfo): void {
 
 function surfaceLocator(page: Page, surface: SurfaceExpectation): Locator {
   if (surface.kind === 'testId') return page.getByTestId(surface.value).first();
+  if (surface.kind === 'label') return page.getByLabel(surface.value, { exact: true }).first();
   return page.getByText(surface.value, { exact: true }).first();
 }
 

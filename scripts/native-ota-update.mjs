@@ -49,7 +49,7 @@ export function parseNativeOtaArgs(argv) {
 
 export function createNativeOtaRunner() {
   return function runCommand(request) {
-    const invocation = resolveNativeOtaInvocation(request);
+    const invocation = { command: request.command, args: request.args ?? [] };
     const result = spawnSync(invocation.command, invocation.args, {
       cwd: request.cwd,
       env: request.env,
@@ -71,34 +71,25 @@ export function createNativeOtaRunner() {
   };
 }
 
-export function resolveNativeOtaInvocation(request, options = {}) {
-  const platform = options.platform ?? process.platform;
-  const args = request.args ?? [];
-  if (platform !== 'win32' || request.command.toLowerCase() !== 'npx.cmd') {
-    return { command: request.command, args };
-  }
-
+export function resolveLockedEasCliInvocation(root, args, options = {}) {
   const nodeExecutable = options.nodeExecutable ?? process.execPath;
   const fileExists = options.fileExists ?? fs.existsSync;
-  const npmExecPath = request.env?.npm_execpath ?? process.env.npm_execpath;
-  const candidates = [];
-  if (npmExecPath) {
-    candidates.push(path.win32.join(path.win32.dirname(npmExecPath), 'npx-cli.js'));
-  }
-  candidates.push(path.win32.join(
-    path.win32.dirname(nodeExecutable),
+  const entryPoint = path.resolve(
+    root,
+    'tools',
+    'eas-cli',
     'node_modules',
-    'npm',
+    'eas-cli',
     'bin',
-    'npx-cli.js'
-  ));
-  const npxCli = candidates.find((candidate) => fileExists(candidate));
-  if (!npxCli) {
+    'run'
+  );
+  if (!fileExists(entryPoint)) {
     throw new Error(
-      'Unable to locate npm/bin/npx-cli.js for the Windows OTA command. Run this workflow through npm.cmd.'
+      'The checked-in EAS CLI tool is not installed. From the repository root, run ' +
+      '`npm ci --prefix tools/eas-cli --include=dev --no-audit --fund=false` and retry.'
     );
   }
-  return { command: nodeExecutable, args: [npxCli, ...args] };
+  return { command: nodeExecutable, args: [entryPoint, ...args], entryPoint };
 }
 
 function gitRequest(root, args, label, allowFailure = false) {
@@ -113,7 +104,7 @@ export function parseDirtyPaths(statusOutput) {
     .filter((file) => !IGNORED_LOCAL_STATUS_PREFIXES.some((prefix) => file.startsWith(prefix)));
 }
 
-export function nativeOtaPublishCommand(config, baseline, platform = process.platform) {
+export function nativeOtaPublishCommand(config, baseline, options = {}) {
   const channel = config.channel ?? baseline.channel;
   if (channel !== baseline.channel) {
     throw new Error(
@@ -122,8 +113,6 @@ export function nativeOtaPublishCommand(config, baseline, platform = process.pla
   }
   const environment = config.environment ?? (channel === 'production' ? 'production' : 'preview');
   const args = [
-    '--yes',
-    'eas-cli@latest',
     'update',
     '--channel', channel,
     '--message', config.message,
@@ -131,7 +120,11 @@ export function nativeOtaPublishCommand(config, baseline, platform = process.pla
     '--platform', 'android'
   ];
   if (config.nonInteractive) args.push('--non-interactive');
-  return { command: platform === 'win32' ? 'npx.cmd' : 'npx', args, channel, environment };
+  return {
+    ...resolveLockedEasCliInvocation(options.root ?? repositoryRoot, args, options),
+    channel,
+    environment
+  };
 }
 
 export function parseEasEnvironmentFile(contents) {
@@ -181,8 +174,7 @@ export function verifyEasUpdateEnvironment({ root, baseline, publish, runner, en
     runner({
       command: publish.command,
       args: [
-        '--yes',
-        'eas-cli@latest',
+        publish.entryPoint,
         'env:pull',
         '--environment', publish.environment,
         '--path', environmentFile,
@@ -211,7 +203,7 @@ function defaultMessage(runner, root) {
 function printHelp() {
   process.stdout.write(`Usage: npm run release:native:ota -- [options]
 
-Publish an Android phone JavaScript/assets update to the channel embedded in the last local release build.
+Publish an Android JavaScript/assets update to the channel embedded in the last local release build.
 
 Options:
   --message <text>             Update message (default: current Git commit subject)
@@ -222,7 +214,7 @@ Options:
   --dry-run                    Validate the baseline and EAS environment without uploading
   --help                       Show this help
 
-Wear OS and native module/configuration changes cannot be delivered by Expo OTA.
+Native module/configuration and Wear OS changes cannot be delivered by Expo OTA.
 `);
 }
 
@@ -289,7 +281,11 @@ export function runNativeOtaUpdate(options = {}) {
   }
 
   const resolvedConfig = { ...config, message: config.message?.trim() || defaultMessage(runner, root) };
-  const publish = nativeOtaPublishCommand(resolvedConfig, baseline, options.platform);
+  const publish = nativeOtaPublishCommand(resolvedConfig, baseline, {
+    root,
+    nodeExecutable: options.nodeExecutable,
+    fileExists: options.fileExists
+  });
   const publishEnvironment = {
     ...environment,
     NODE_ENV: 'production',
@@ -325,7 +321,7 @@ export function runNativeOtaUpdate(options = {}) {
     label: 'publish Expo OTA update',
     inherit: true
   });
-  process.stdout.write('Android phone OTA update published. Wear OS was not changed.\n');
+  process.stdout.write('Android OTA update published. Wear OS was not changed.\n');
   return { baseline, publish, dryRun: false };
 }
 

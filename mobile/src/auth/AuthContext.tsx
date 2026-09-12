@@ -5,7 +5,7 @@ import {
     type MobileAuthResponse,
     type UserClientPayload
 } from '@calibrate/api-client';
-import { MOBILE_DEVICE_PLATFORMS, type ClientUpgradeRequirement } from '@calibrate/shared';
+import type { ClientUpgradeRequirement } from '@calibrate/shared';
 import {
     getClientServerCompatibilityMismatch,
     type ClientServerCompatibilityMismatch
@@ -24,6 +24,7 @@ import {
 import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
 import { getSessionRestoreErrorMessage, isExpectedDevAutoLoginMiss } from './authErrors';
 import { MOBILE_CLIENT_IDENTITY, MOBILE_SERVER_RELEASE_VERSION } from '../config/nativeClient';
+import { getNativeDeviceName } from '../platform/nativePlatform';
 import {
     clearStoredTokens,
     getOrCreateDeviceId,
@@ -178,8 +179,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 email: DEV_TEST_EMAIL,
                 password: DEV_TEST_PASSWORD,
                 device_id: nextDeviceId,
-                device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
-                device_name: Application.applicationName ?? 'Android device'
+                device_platform: MOBILE_CLIENT_IDENTITY.platform,
+                device_name: getNativeDeviceName()
             });
         } catch (error) {
             if (isExpectedDevAutoLoginMiss(error)) return null;
@@ -378,8 +379,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         email,
                         password,
                         device_id: nextDeviceId,
-                        device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
-                        device_name: Application.applicationName ?? 'Android device'
+                        device_platform: MOBILE_CLIENT_IDENTITY.platform,
+                        device_name: getNativeDeviceName()
                     });
                 }
             });
@@ -423,8 +424,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             accept_privacy: legalAcceptance.acceptPrivacy
                         } : {}),
                         device_id: nextDeviceId,
-                        device_platform: MOBILE_DEVICE_PLATFORMS.ANDROID_PHONE,
-                        device_name: Application.applicationName ?? 'Android device'
+                        device_platform: MOBILE_CLIENT_IDENTITY.platform,
+                        device_name: getNativeDeviceName()
                     });
                 }
             });

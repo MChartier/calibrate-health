@@ -44,7 +44,7 @@ export async function getOrCreateDeviceId(): Promise<string> {
 
     const next = typeof Crypto.randomUUID === 'function'
         ? Crypto.randomUUID()
-        : `android-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        : `native-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     await SecureStore.setItemAsync(DEVICE_ID_KEY, next);
     return next;
 }

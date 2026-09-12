@@ -25,6 +25,7 @@ jest.mock('../auth/AuthContext', () => ({ useAuth: () => ({ api: mockApi }) }));
 jest.mock('../hooks/useNativePushRegistration', () => ({
     useNativePushRegistration: () => mockPush()
 }));
+jest.mock('../diagnostics/operationDiagnostics', () => ({ useClientQueryFailureDiagnostic: jest.fn() }));
 
 function notification(id: number, overrides: Partial<InAppNotificationPageItem> = {}): InAppNotificationPageItem {
     return {
@@ -52,7 +53,10 @@ function page(
 }
 
 function renderHistory() {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const queryClient = new QueryClient({ defaultOptions: {
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false, gcTime: 0 }
+    } });
     mockQueryClients.push(queryClient);
     return render(
         <QueryClientProvider client={queryClient}>
@@ -121,5 +125,25 @@ describe('NotificationHistory', () => {
         expect(screen.queryByText(/token|endpoint|p256dh|auth/i)).toBeNull();
         fireEvent.press(action);
         expect(mockRequestPermission).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses iOS delivery copy and opens native device settings when notifications are blocked', async () => {
+        mockApi.getInAppNotifications.mockResolvedValue(page([]));
+        const openSettings = jest.fn(async () => undefined);
+        mockPush.mockReturnValue({
+            state: NATIVE_PUSH_STATES.BLOCKED,
+            requestPermission: mockRequestPermission,
+            openSettings,
+            refreshPermission: jest.fn(async () => undefined),
+            retryRegistration: jest.fn(async () => undefined)
+        });
+        const screen = renderHistory();
+
+        await screen.findByTestId('notification-history-empty');
+        const action = await screen.findByTestId('notification-delivery-action');
+        expect(screen.getByText(/Enable them in iOS settings/)).toBeTruthy();
+        expect(screen.getByText('Open device settings')).toBeTruthy();
+        fireEvent.press(action);
+        await waitFor(() => expect(openSettings).toHaveBeenCalledTimes(1));
     });
 });

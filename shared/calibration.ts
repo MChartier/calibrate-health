@@ -10,6 +10,7 @@ export const CALIBRATION_MIN_ACTIONABLE_DAYS = 14;
 export const CALIBRATION_MAX_ADJUSTMENT_STEP_KCAL = 150;
 export const CALIBRATION_MIN_TARGET_KCAL = ABSOLUTE_MIN_TARGET_KCAL;
 export const CALIBRATION_BOOTSTRAP_REPLICATES = 400;
+export const CALIBRATION_ASSESSMENT_VERSION = 1;
 
 const KCAL_PER_KILOGRAM = 7700;
 const ACTION_THRESHOLD_KCAL = 75;
@@ -77,6 +78,48 @@ export type CalibrationRecommendation = {
     recommendedTargetAdjustmentKcal: number;
 };
 
+export type CalibrationPaceStatus =
+    | 'faster'
+    | 'aligned'
+    | 'slower'
+    | 'above_maintenance'
+    | 'below_maintenance';
+
+export type CalibrationAssessmentBlocker =
+    | 'tracking_paused'
+    | 'plan_unavailable'
+    | 'trend_unavailable'
+    | 'weight_history'
+    | 'current_weigh_in'
+    | 'food_history'
+    | 'food_uncertainty'
+    | 'weight_uncertainty';
+
+export type CalibrationTargetDecision =
+    | 'waiting'
+    | 'no_change_recommended'
+    | 'change_available'
+    | 'safety_limited'
+    | 'policy_unavailable';
+
+export type CalibrationAssessment = {
+    version: 1;
+    state: 'waiting' | 'on_track' | 'off_track';
+    paceStatus: CalibrationPaceStatus | null;
+    window: {
+        startDate: string;
+        endDate: string;
+        spanDays: number;
+        confidenceLevel: 0.95;
+    } | null;
+    recentWeightTrendKgPerWeek: CalibrationInterval | null;
+    goalRateKgPerWeek: number;
+    blocker: CalibrationAssessmentBlocker | null;
+    targetDecision: CalibrationTargetDecision;
+    targetDecisionBlocker: CalibrationAssessmentBlocker | null;
+    minimumDailyCalorieTargetKcal: number;
+};
+
 export type CalibrationResult = {
     modelVersion: number;
     asOfDate: string;
@@ -113,6 +156,7 @@ export type CalibrationResult = {
         averageSteps: number | null;
         averageActiveCaloriesKcal: number | null;
     } | null;
+    assessment: CalibrationAssessment;
 };
 
 type ClassifiedFoodDay = CalibrationFoodDay & {
@@ -126,6 +170,7 @@ type WindowEvaluation = {
     dataQuality: CalibrationDataQuality;
     averageIntake: CalibrationInterval | null;
     weeklyWeightChange: CalibrationInterval | null;
+    weightTrend: CalibrationInterval | null;
     targetAdjustment: CalibrationInterval | null;
     recommendation: CalibrationRecommendation | null;
     actionable: boolean;
@@ -433,6 +478,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             dataQuality,
             averageIntake: null,
             weeklyWeightChange: null,
+            weightTrend: null,
             targetAdjustment: null,
             recommendation: null,
             actionable: false,
@@ -493,6 +539,7 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
             daysSinceLatestWeight <= 7;
         actionable =
             input.ageYears >= 18 &&
+            input.configuredDailyDeficitKcal > 0 &&
             hasMinimumHistory &&
             intervalWidth <= MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL &&
             supportsChange;
@@ -554,6 +601,12 @@ function evaluateWindow(input: CalibrationInput, windowDays: number): WindowEval
         dataQuality,
         averageIntake,
         weeklyWeightChange,
+        // Keep the displayed weight interval independent of food-dependent bootstrap draws.
+        weightTrend: {
+            low: trendResult.windowAverageRate.lower95KgPerWeek,
+            midpoint: weeklyRateMean,
+            high: trendResult.windowAverageRate.upper95KgPerWeek
+        },
         targetAdjustment,
         recommendation,
         actionable: actionable && recommendation !== null,
@@ -664,6 +717,178 @@ function averageLoggedIntake(input: CalibrationInput, windowDays: number): numbe
     return Math.round(loggedDays.reduce((sum, day) => sum + day.calories, 0) / loggedDays.length);
 }
 
+function assessmentPaceStatus(
+    trend: CalibrationInterval | null,
+    goalRateKgPerWeek: number,
+    configuredDailyDeficitKcal: number
+): CalibrationPaceStatus | null {
+    if (!trend) return null;
+    const dailyWidthKcal = (trend.high - trend.low) * KCAL_PER_KILOGRAM / 7;
+    if (dailyWidthKcal > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) return null;
+    const toleranceKgPerWeek = ACTION_THRESHOLD_KCAL * 7 / KCAL_PER_KILOGRAM;
+    const goalLow = goalRateKgPerWeek - toleranceKgPerWeek;
+    const goalHigh = goalRateKgPerWeek + toleranceKgPerWeek;
+    if (configuredDailyDeficitKcal > 0) {
+        if (trend.high < goalLow) return 'faster';
+        if (trend.low > goalHigh) return 'slower';
+    } else if (configuredDailyDeficitKcal < 0) {
+        if (trend.low > goalHigh) return 'faster';
+        if (trend.high < goalLow) return 'slower';
+    } else {
+        if (trend.low > goalHigh) return 'above_maintenance';
+        if (trend.high < goalLow) return 'below_maintenance';
+    }
+    return trend.midpoint >= goalLow &&
+        trend.midpoint <= goalHigh
+        ? 'aligned'
+        : null;
+}
+
+function latestWeightAgeDays(input: CalibrationInput): number | null {
+    const latestDate = input.weightPoints
+        .filter((point) => point.date <= input.asOfDate)
+        .map((point) => point.date)
+        .sort((left, right) => right.localeCompare(left))[0] ?? null;
+    return latestDate === null ? null : inclusiveDateSpan(latestDate, input.asOfDate) - 1;
+}
+
+function buildCalibrationAssessment(
+    input: CalibrationInput,
+    selected: WindowEvaluation | null,
+    goalRateKgPerWeek: number
+): CalibrationAssessment {
+    const base = {
+        version: CALIBRATION_ASSESSMENT_VERSION,
+        paceStatus: null,
+        window: null,
+        recentWeightTrendKgPerWeek: null,
+        goalRateKgPerWeek,
+        blocker: null,
+        targetDecision: 'waiting',
+        targetDecisionBlocker: null,
+        minimumDailyCalorieTargetKcal: minimumTargetForBmr(input.bmrKcal)
+    } as const;
+    if (input.trackingPaused) {
+        return { ...base, state: 'waiting', blocker: 'tracking_paused' };
+    }
+    if (!selected) {
+        return { ...base, state: 'waiting', blocker: 'weight_history' };
+    }
+    const latestWeightAge = latestWeightAgeDays(input);
+    if (latestWeightAge === null ||
+        selected.dataQuality.weightPoints < 3 ||
+        selected.dataQuality.weightSpanDays < CALIBRATION_MIN_ACTIONABLE_DAYS) {
+        return { ...base, state: 'waiting', blocker: 'weight_history' };
+    }
+    if (latestWeightAge > 7) {
+        return { ...base, state: 'waiting', blocker: 'current_weigh_in' };
+    }
+    if (!selected.weightTrend) {
+        return { ...base, state: 'waiting', blocker: 'trend_unavailable' };
+    }
+    const paceStatus = assessmentPaceStatus(
+        selected.weightTrend,
+        goalRateKgPerWeek,
+        input.configuredDailyDeficitKcal
+    );
+    if (!paceStatus) {
+        return { ...base, state: 'waiting', blocker: 'weight_uncertainty' };
+    }
+
+    const assessmentWindow = {
+        startDate: addDateDays(input.asOfDate, -selected.windowDays),
+        endDate: input.asOfDate,
+        spanDays: selected.windowDays,
+        confidenceLevel: 0.95
+    } as const;
+    if (paceStatus === 'aligned') {
+        return {
+            ...base,
+            state: 'on_track',
+            paceStatus,
+            window: assessmentWindow,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
+            targetDecision: 'no_change_recommended'
+        };
+    }
+
+    if (selected.recommendation) {
+        return {
+            ...base,
+            state: 'off_track',
+            paceStatus,
+            window: assessmentWindow,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
+            targetDecision: 'change_available'
+        };
+    }
+    if (selected.safetyFloorBlocked) {
+        return {
+            ...base,
+            state: 'off_track',
+            paceStatus,
+            window: assessmentWindow,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
+            targetDecision: 'safety_limited'
+        };
+    }
+    if (input.ageYears < 18 || input.configuredDailyDeficitKcal <= 0) {
+        return {
+            ...base,
+            state: 'off_track',
+            paceStatus,
+            window: assessmentWindow,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
+            targetDecision: 'policy_unavailable'
+        };
+    }
+    if (selected.dataQuality.confidentDays < CALIBRATION_MIN_INSIGHT_DAYS) {
+        return {
+            ...base,
+            state: 'off_track',
+            paceStatus,
+            window: assessmentWindow,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
+            targetDecisionBlocker: 'food_history'
+        };
+    }
+    const adjustmentWidth = selected.targetAdjustment
+        ? selected.targetAdjustment.high - selected.targetAdjustment.low
+        : Number.POSITIVE_INFINITY;
+    if (adjustmentWidth > MAX_ACTIONABLE_INTERVAL_WIDTH_KCAL) {
+        return {
+            ...base,
+            state: 'off_track',
+            paceStatus,
+            window: assessmentWindow,
+            recentWeightTrendKgPerWeek: selected.weightTrend,
+            targetDecisionBlocker: 'food_uncertainty'
+        };
+    }
+    return {
+        ...base,
+        state: 'off_track',
+        paceStatus,
+        window: assessmentWindow,
+        recentWeightTrendKgPerWeek: selected.weightTrend,
+        targetDecision: 'no_change_recommended'
+    };
+}
+
+type CalibrationResultWithoutAssessment = Omit<CalibrationResult, 'assessment'>;
+
+function attachAssessment(
+    result: CalibrationResultWithoutAssessment,
+    input: CalibrationInput,
+    selected: WindowEvaluation | null,
+    goalRateKgPerWeek: number
+): CalibrationResult {
+    return {
+        ...result,
+        assessment: buildCalibrationAssessment(input, selected, goalRateKgPerWeek)
+    };
+}
+
 /**
  * Evaluate recent intake and weight evidence without mutating state.
  *
@@ -709,7 +934,7 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
                 ? 'After you resume, your next weight-trend estimate will be available after 7 well-tracked food days and weigh-ins spanning 7 days.'
                 : 'Your next weight-trend estimate is available after 7 well-tracked food days and weigh-ins spanning 7 days.';
         }
-        return {
+        return attachAssessment({
             modelVersion: CALIBRATION_MODEL_VERSION,
             asOfDate: input.asOfDate,
             weightUnit: input.weightUnit,
@@ -733,7 +958,7 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
             },
             recommendation: null,
             activityContext: null
-        };
+        }, input, null, configuredWeeklyWeightChangeKg);
     }
 
     const candidateWindows = OBSERVATION_WINDOWS.filter((days) => days <= availableSpan);
@@ -743,6 +968,12 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
         .map((days) => evaluateWindow(input, days));
     const selected = evaluations.find((candidate) => candidate.actionable)
         ?? evaluations.slice().sort((left, right) => right.windowDays - left.windowDays)[0];
+    // A prior segment can invalidate the longest window even after new history is mature.
+    // Preserve the action window when recommending; otherwise use the longest continuous trend.
+    const assessmentWindow = selected.weightTrend ? selected :
+        evaluations.slice().reverse().find((candidate) =>
+            candidate.weightTrend !== null && candidate.windowDays <= selected.dataQuality.weightSpanDays
+        ) ?? selected;
     const hasPace = selected.weeklyWeightChange !== null && selected.dataQuality.weightSpanDays >= CALIBRATION_MIN_INSIGHT_DAYS;
     const hasFoodEvidence = selected.dataQuality.confidentDays >= CALIBRATION_MIN_INSIGHT_DAYS;
     const recommendation = selected.recommendation;
@@ -861,7 +1092,7 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
         }
     }
 
-    return {
+    return attachAssessment({
         modelVersion: CALIBRATION_MODEL_VERSION,
         asOfDate: input.asOfDate,
         weightUnit: input.weightUnit,
@@ -889,5 +1120,5 @@ export function evaluateCalibration(sourceInput: CalibrationInput): CalibrationR
         },
         recommendation,
         activityContext: null
-    };
+    }, input, assessmentWindow, configuredWeeklyWeightChangeKg);
 }

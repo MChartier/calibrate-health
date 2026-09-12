@@ -51,10 +51,10 @@ Only the official `calibratehealth.app` deployment sets `CALIBRATE_HOSTED_SERVIC
 Registration then fails closed until complete provider-neutral SMTP configuration and delivery are
 available. See `../docs/account-access-and-recovery.md` for the endpoint and access-state contract.
 
-The official hosted web tier must also publish `/.well-known/assetlinks.json` as a static,
-unauthenticated, non-redirecting JSON response. The package and signing-certificate contract is
-recorded in `../docs/android-app-links.md`; self-hosted domains are not automatically associated
-with the official Android app.
+The official hosted web tier must publish both `/.well-known/assetlinks.json` and
+`/.well-known/apple-app-site-association` as static, unauthenticated, non-redirecting JSON responses. The Android
+package/certificate and iOS application/team contracts are recorded in `../docs/android-app-links.md`;
+self-hosted domains are not automatically associated with the official mobile apps.
 
 ### Connected assistants (MCP)
 
@@ -118,6 +118,10 @@ exist.
   `docker compose up -d`; Compose does not automatically refresh a moving tag. Watch `docker compose logs -f app` until
   migrations and readiness succeed. Database migrations are forward-only; rollback means restoring a pre-upgrade
   backup into a clean database and running the matching prior image.
+
+For automatic redeployment after image publication, see [deployment over WireGuard](self-hosted/README.md).
+It is opt-in and targets the existing stack with a published digest, backup freshness checks, and readiness/version
+verification. Expo publication remains independent of the deployment result.
 
 ## Encrypted automated backups
 

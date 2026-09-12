@@ -13,6 +13,12 @@ type ClientUpgradeRequiredScreenProps = {
     onChooseServer: () => Promise<void>;
 };
 
+const CLIENT_PLATFORM_LABELS: Record<ClientUpgradeRequirement['platform'], string> = {
+    android_phone: 'Android',
+    ios: 'iOS',
+    wear_os: 'Wear OS'
+};
+
 /** Blocks incompatible traffic while preserving the session and queued data for an in-place update. */
 export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenProps> = ({
     requirement,
@@ -45,7 +51,7 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
                 <CalibrateLogo size={48} />
                 <AppText variant="screenTitle" accessibilityRole="header" aria-level={1}>Update Calibrate to continue</AppText>
                 <AppText>
-                    This server requires Android version {requirement.minimum_supported_version} or newer.
+                    This server requires {CLIENT_PLATFORM_LABELS[requirement.platform]} version {requirement.minimum_supported_version} or newer.
                     Your session and pending offline changes are still stored on this device.
                 </AppText>
                 <View style={styles.details}>

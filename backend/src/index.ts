@@ -26,6 +26,7 @@ import importRoutes from './routes/imports';
 import metricRoutes from './routes/metrics';
 import activityRoutes from './routes/activity';
 import myFoodsRoutes from './routes/myFoods';
+import nutritionLabelsRoutes from './routes/nutritionLabels';
 import notificationRoutes from './routes/notifications';
 import syncRoutes from './routes/sync';
 import userRoutes from './routes/user';
@@ -303,6 +304,7 @@ const bootstrap = async (): Promise<void> => {
   apiRouter.use('/food', foodRoutes);
   apiRouter.use('/food-days', foodDayRoutes);
   apiRouter.use('/my-foods', myFoodsRoutes);
+  apiRouter.use('/nutrition-labels', nutritionLabelsRoutes);
   apiRouter.use('/imports', importRoutes);
   apiRouter.use('/notifications', notificationRoutes);
   apiRouter.use('/sync', syncRoutes);
