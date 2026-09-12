@@ -14,11 +14,13 @@ import {
 
 const SEMANTIC_PROJECTS = new Set(['desktop-chrome', 'ux-phone-320', 'ux-desktop-1024']);
 
-const CALIBRATION_RECOMMENDATION_STATUS = {
+const PLAN_CHECK_RECOMMENDATION_STATUS = {
   generatedAt: '2026-07-31T20:00:00.000Z',
   inputFingerprint: 'current-input',
+  planStatus: 'available',
+  planReasonCode: null,
   evaluation: {
-    modelVersion: 2,
+    modelVersion: 4,
     asOfDate: '2026-07-31',
     weightUnit: 'KG',
     status: 'recommendation',
@@ -53,6 +55,23 @@ const CALIBRATION_RECOMMENDATION_STATUS = {
       recommendedTargetAdjustmentKcal: -150,
     },
     activityContext: null,
+    assessment: {
+      version: 1,
+      state: 'off_track',
+      paceStatus: 'slower',
+      window: {
+        startDate: '2026-07-03',
+        endDate: '2026-07-31',
+        spanDays: 28,
+        confidenceLevel: 0.95,
+      },
+      recentWeightTrendKgPerWeek: { low: -0.4, midpoint: -0.36, high: -0.3 },
+      goalRateKgPerWeek: -0.455,
+      blocker: null,
+      targetDecision: 'change_available',
+      targetDecisionBlocker: null,
+      minimumDailyCalorieTargetKcal: 1650,
+    },
   },
   recommendation: {
     id: 7,
@@ -145,9 +164,9 @@ async function installAccessibilityApiExtensions(
     next_cursor: null,
   }));
 
-  if (surfaceId === 'calibration-suggestion-details') {
+  if (surfaceId === 'plan-check-adjustment-review') {
     await page.route('**/api/v1/calibration/status', (route) => {
-      return fulfillJson(route, CALIBRATION_RECOMMENDATION_STATUS);
+      return fulfillJson(route, PLAN_CHECK_RECOMMENDATION_STATUS);
     });
   }
 
@@ -211,7 +230,7 @@ test.describe('Launch 22 accessibility coverage contracts', () => {
       'historical-calendar',
       'goal-editor',
       'goal-daily-calorie-options',
-      'calibration-suggestion-details',
+      'plan-check-adjustment-review',
       'notifications-drawer',
       'profile-time-zone-options',
       'profile-photo',

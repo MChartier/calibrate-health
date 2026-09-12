@@ -129,20 +129,20 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     },
   },
   {
-    id: 'calibration-suggestion-details',
+    id: 'plan-check-adjustment-review',
     routeId: 'progress',
     path: ROUTE_REGISTRY.progress.path,
     fixtureState: 'populated',
     open: [{
       kind: 'role',
       role: 'button',
-      name: 'See evidence behind this budget suggestion',
+      name: 'Review suggested 1,750 calorie daily target',
       exact: true,
     }],
     ready: {
       kind: 'role',
       role: 'dialog',
-      name: 'Calibration suggestion details',
+      name: 'Review calorie target',
       exact: true,
     },
   },
