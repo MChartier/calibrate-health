@@ -225,14 +225,14 @@ test('credentialed release workflows pin external actions and the EAS CLI immuta
   assert.match(mobileReleaseDocs, /\.\.\\tools\\eas-cli\\node_modules\\\.bin\\eas\.cmd login/);
   assert.match(mobileReleaseDocs, /\.\.\\tools\\eas-cli\\node_modules\\\.bin\\eas\.cmd project:info/);
   assert.doesNotMatch(mobileReleaseDocs, /^\s*eas(?:\.cmd)?\s+(?:login|project:info)\b/gm);
-  assert.doesNotMatch(publishRelease, /workflow_call:[\s\S]*secrets:[\s\S]*EXPO_TOKEN/);
+  assert.match(publishRelease, /workflow_call:[\s\S]*secrets:[\s\S]*EXPO_TOKEN/);
   assert.doesNotMatch(publishRelease, /publish_ota:[\s\S]*secrets: inherit/);
   assert.doesNotMatch(cutRelease, /uses: \.\/\.github\/workflows\/publish-release\.yml[\s\S]*secrets: inherit/);
-  assert.match(mobileReleaseDocs, /GitHub `expo-publication` environment/);
-  assert.match(mobileReleaseDocs, /never store it at repository or organization\s+scope/i);
-  assert.match(mobileReleaseDocs, /restrict it to the selected deployment branch `master` only/i);
-  assert.match(mobileReleaseDocs, /does not provide a channel-scoped update role/i);
-  assert.match(mobileReleaseDocs, /EXPO_RELEASE_TOKEN/);
+  assert.match(mobileReleaseDocs, /GitHub `preview` environment/);
+  assert.match(mobileReleaseDocs, /repository `EXPO_TOKEN` secret/);
+  assert.match(mobileReleaseDocs, /required reviewer and\n   branch policy/);
+  assert.match(mobileReleaseDocs, /account\/project scoped, not channel scoped/);
+  assert.match(mobileReleaseDocs, /EXPO_TOKEN/);
 });
 
 test('server publication accepts read-only master requests through protected default-branch handlers', () => {
@@ -287,8 +287,8 @@ test('server publication accepts read-only master requests through protected def
     assert.match(handler, /types:\s*\n\s+- completed[\s\S]*branches:\s*\n\s+- master/);
     assert.match(handler, /permissions:\s*\n\s+actions: read\s*\n\s+contents: read/);
     if (entry.worker === 'cut-release.yml') assert.match(handler, /pull-requests: read/);
-    assert.doesNotMatch(handler, /^\s{0,8}(?:contents|packages|pull-requests|actions): write\s*$/gm);
-    assert.doesNotMatch(handler, /environment:|secrets\.|secrets: inherit/);
+    assert.doesNotMatch(workflowJobBlock(handler, 'verify_request'), /^\s{0,8}(?:contents|packages|pull-requests|actions): write\s*$/gm);
+    assert.doesNotMatch(handler, /environment:|SERVER_RELEASE_APP_|GHCR_PUBLISH_|secrets: inherit/);
     const handlerFreshness = handler.match(
       /\n      - name: Require current protected master handler\n[\s\S]*?(?=\n      - name:)/
     )?.[0];
@@ -326,63 +326,40 @@ test('server publication accepts read-only master requests through protected def
   }
 
   const releaseDocs = readFileSync(path.join(repositoryRoot, 'docs', 'release-compatibility.md'), 'utf8');
-  assert.match(releaseDocs, /server-release-publication/);
-  assert.match(releaseDocs, /selected deployment branch `master`/);
-  assert.match(releaseDocs, /server-release-tag-creation/);
-  assert.match(releaseDocs, /server-release-tag-immutability/);
-  assert.match(releaseDocs, /empty bypass list/);
-  assert.match(releaseDocs, /detach inherited repository permissions/);
-  assert.match(releaseDocs, /remove this source repository's Actions\s+write access/);
-  assert.match(releaseDocs, /`write:packages` only and no `repo` scope/);
-  assert.match(releaseDocs, /Historical\s+workflow runs retain their original workflow source on rerun/);
+  assert.match(releaseDocs, /Allow GitHub Actions to create and approve pull requests/);
+  assert.match(releaseDocs, /Manage Actions access/);
+  assert.match(releaseDocs, /No new server\npublication environment approvals are required/);
+  assert.match(releaseDocs, /production approval remain in force/);
 });
 
-test('server release approvals match the per-job App and package authority boundaries', () => {
-  const cut = readWorkflow('cut-release.yml');
-  const prepared = readWorkflow('publish-release.yml');
-  const image = readWorkflow('container.yml');
-  const releaseDocs = readFileSync(path.join(repositoryRoot, 'docs', 'release-compatibility.md'), 'utf8');
-
-  const publishCandidate = workflowJobBlock(cut, 'publish_candidate');
-  const finalize = workflowJobBlock(cut, 'finalize');
-  const inspectCleanup = workflowJobBlock(cut, 'inspect_cleanup');
-  const cleanup = workflowJobBlock(cut, 'cleanup-candidate');
-  const publishTag = workflowJobBlock(prepared, 'publish_release_tag');
-  const publishImage = workflowJobBlock(image, 'publish_image');
-  const normalCutApprovals = [publishCandidate, finalize, publishTag, publishImage];
-
-  assert.equal(normalCutApprovals.filter((job) => /environment: server-release-publication/.test(job)).length, 4);
-  assert.match(cleanup, /environment: server-release-publication/);
-  assert.match(inspectCleanup, /needs\.finalize\.result != 'success'/);
-  assert.equal([publishTag, publishImage].filter((job) => /environment: server-release-publication/.test(job)).length, 2);
-  assert.match(publishImage, /environment: server-release-publication/);
-
-  for (const appJob of [publishCandidate, finalize, publishTag]) {
-    assert.match(appJob, /SERVER_RELEASE_APP_PRIVATE_KEY/);
-    assert.doesNotMatch(appJob, /GHCR_PUBLISH_TOKEN/);
+test('server publication grants only the operation-specific built-in token permissions', () => {
+  const cases = [
+    ['cut-release.yml', 'prepare', { contents: 'read' }],
+    ['cut-release.yml', 'publish_candidate', { actions: 'read', contents: 'write' }],
+    ['cut-release.yml', 'release-validation', { contents: 'read' }],
+    ['cut-release.yml', 'finalize', { contents: 'write', 'pull-requests': 'write' }],
+    ['cut-release.yml', 'inspect_cleanup', { contents: 'read', 'pull-requests': 'read' }],
+    ['cut-release.yml', 'cleanup-candidate', { contents: 'write', 'pull-requests': 'write' }],
+    ['publish-release.yml', 'tag_release', { contents: 'read' }],
+    ['publish-release.yml', 'publish_release_tag', { contents: 'write' }],
+    ['publish-release.yml', 'verify_published_release', { contents: 'read' }],
+    ['container.yml', 'build_image', { actions: 'read', contents: 'read' }],
+    ['container.yml', 'attest_image_receipt', { attestations: 'write', contents: 'read', 'id-token': 'write' }],
+    ['container.yml', 'publish_image', { actions: 'read', attestations: 'read', contents: 'read', packages: 'write' }]
+  ];
+  for (const [workflowName, jobName, expected] of cases) {
+    const job = workflowJobBlock(readWorkflow(workflowName), jobName);
+    assert.deepEqual(workflowPermissions(job, 4), expected, workflowName + ' ' + jobName);
+    assert.doesNotMatch(job, /environment:|SERVER_RELEASE_APP_|GHCR_PUBLISH_|create-github-app-token|server-release-tag-protection/);
   }
-  assert.match(publishImage, /GHCR_PUBLISH_TOKEN/);
-  assert.doesNotMatch(publishImage, /SERVER_RELEASE_APP_PRIVATE_KEY/);
-
-  assert.match(
-    releaseDocs,
-    /normal \*\*Cut release\*\*[\s\S]*four sequential server-release approvals:[\s\S]*publish the exact candidate branch[\s\S]*merge the validated pull request[\s\S]*create the immutable stable[\s\S]*publish the verified image identities/
-  );
-  assert.match(
-    releaseDocs,
-    /\*\*Publish\s+prepared release\*\* recovery requires two approvals \(stable tag, then image\), while \*\*Build Release[\s\S]*Image\*\* requires\s+one image approval/
-  );
-  assert.match(
-    releaseDocs,
-    /validation fails before `finalize` starts[\s\S]*two[\s\S]*approvals[\s\S]*`finalize` was approved[\s\S]*cleanup is a third approval[\s\S]*read-only inspection proves[\s\S]*candidate ref is unchanged/
-  );
-  assert.match(
-    releaseDocs,
-    /first three normal Cut checkpoints[\s\S]*same[\s\S]*Server\s+Release App authority[\s\S]*image checkpoint admits the separate package-only robot/
-  );
+  for (const workflowName of ['cut-release-handler.yml', 'publish-release-handler.yml', 'cut-release.yml', 'publish-release.yml']) {
+    const workflow = readWorkflow(workflowName);
+    assert.match(workflow, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
+    assert.doesNotMatch(workflow, /secrets: inherit/);
+  }
 });
 
-test('Cut release uses a read-only request, protected handler, and App-isolated writes', () => {
+test('Cut release uses a read-only request, protected handler, and scoped token writes', () => {
   const request = readWorkflow('cut-release-request.yml');
   const handler = readWorkflow('cut-release-handler.yml');
   const workflow = readWorkflow('cut-release.yml');
@@ -410,7 +387,7 @@ test('Cut release uses a read-only request, protected handler, and App-isolated 
   assert.match(handler, /echo "source_sha=\$\{REQUEST_HEAD_SHA\}"/);
   assert.match(handler, /uses: \.\/\.github\/workflows\/cut-release\.yml/);
   assert.match(handler, /source_sha: \$\{\{ needs\.verify_request\.outputs\.source_sha \}\}/);
-  assert.doesNotMatch(handler, /environment:|secrets\.|contents: write|packages: write|pull-requests: write/);
+  assert.doesNotMatch(workflowJobBlock(handler, 'verify_request'), /environment:|secrets\.|contents: write|packages: write|pull-requests: write/);
 
   assert.match(workflow, /workflow_call:[\s\S]*source_sha:[\s\S]*required: true/);
   assert.doesNotMatch(workflow, /^  (?:workflow_dispatch|workflow_run|push):/gm);
@@ -418,67 +395,24 @@ test('Cut release uses a read-only request, protected handler, and App-isolated 
   assert.match(workflow, /group: cut-release\s*\n\s+queue: max/);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.match(workflow, /permissions:\s*\n\s+contents: read/);
-  for (const permissionsBlock of workflow.matchAll(
-    /^\s*permissions:\s*\n(?:\s+[a-z-]+:\s+[a-z]+\s*\n?)+/gm
-  )) {
-    assert.doesNotMatch(
-      permissionsBlock[0],
-      /(?:contents|packages|pull-requests|actions):\s*write\b/,
-      'Cut may propagate only OIDC/attestation write scopes to its nested source-free receipt job'
-    );
-  }
-  assert.match(workflow, /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/);
-  assert.doesNotMatch(workflow, /secrets: inherit|packages: write/);
+  assert.match(workflow, /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: write\s*\n\s+id-token: write/);
+  assert.doesNotMatch(workflow, /secrets: inherit|SERVER_RELEASE_APP_|create-github-app-token/);
   assert.equal(
     (workflow.match(/GITHUB_TOKEN: \$\{\{ github\.token \}\}/g) ?? []).length,
     6,
-    'the three App jobs must each have an early and credential-adjacent read-only live-master gate'
+    'the three publisher jobs must each have an early and mutation-adjacent live-master gate'
   );
-  for (const [jobName, job] of [
-    ['publish_candidate', publishCandidate],
-    ['finalize', finalize],
-    ['cleanup-candidate', cleanup]
+  for (const [jobName, job, mutation] of [
+    ['publish_candidate', publishCandidate, 'Publish only the exact verified candidate branch'],
+    ['finalize', finalize, 'Open or reuse the exact release pull request'],
+    ['cleanup-candidate', cleanup, 'Find only the exact open candidate pull request']
   ]) {
     const namedSteps = job.split(/\n(?=\s{6}- name:)/);
-    const configurationIndex = namedSteps.findIndex((step) => (
-      step.includes('Require dedicated server release App configuration')
-    ));
-    const authorityIndex = namedSteps.findIndex((step) => (
-      step.includes('Recheck current protected master immediately before App token')
-    ));
-    const tokenIndex = namedSteps.findIndex((step) => (
-      step.includes('actions/create-github-app-token@')
-    ));
-    assert.ok(configurationIndex > 1, `${jobName} must define its App configuration step`);
-    assert.ok(
-      tokenIndex > configurationIndex,
-      `${jobName} must mint its App token after identifier validation`
-    );
-    assert.equal(
-      authorityIndex,
-      tokenIndex - 1,
-      `${jobName} must recheck live master in the final step before App-token minting`
-    );
-    assert.match(
-      namedSteps[authorityIndex],
-      /GITHUB_TOKEN: \$\{\{ github\.token \}\}[\s\S]*WORKFLOW_SHA: \$\{\{ job\.workflow_sha \}\}[\s\S]*git\/ref\/heads\/master/,
-      `${jobName} must recheck live protected master authority at the credential boundary`
-    );
-    assert.doesNotMatch(
-      namedSteps.slice(0, tokenIndex).join('\n'),
-      /secrets\.SERVER_RELEASE_APP_PRIVATE_KEY/,
-      `${jobName} must not reference the App private key before the final authority recheck`
-    );
-    assert.equal(
-      (job.match(/secrets\.SERVER_RELEASE_APP_PRIVATE_KEY/g) ?? []).length,
-      1,
-      `${jobName} must materialize the App private key only in its token action`
-    );
-    assert.match(
-      namedSteps[tokenIndex],
-      /private-key: \$\{\{ secrets\.SERVER_RELEASE_APP_PRIVATE_KEY \}\}/,
-      `${jobName} token action must be the first and only App private-key consumer`
-    );
+    const authorityIndex = namedSteps.findIndex((step) => step.includes('Recheck current protected master immediately before repository writes'));
+    const mutationIndex = namedSteps.findIndex((step) => step.includes(mutation));
+    assert.ok(authorityIndex > 0, jobName + ' must recheck workflow authority');
+    assert.equal(mutationIndex, authorityIndex + 1, jobName + ' must recheck live master immediately before mutation');
+    assert.match(namedSteps[authorityIndex], /WORKFLOW_SHA: \$\{\{ job\.workflow_sha \}\}[\s\S]*git\/ref\/heads\/master/);
   }
   assert.match(packageConfig.scripts['release:prepare'], /release-config\.mjs prepare/);
 
@@ -492,22 +426,21 @@ test('Cut release uses a read-only request, protected handler, and App-isolated 
   assert.match(prepare, /Upload exact release candidate bundle[\s\S]*overwrite: true/);
   assert.doesNotMatch(prepare, /create-github-app-token|SERVER_RELEASE_APP_|git[^\n]*push|github\.token/);
 
-  assert.match(publishCandidate, /environment: server-release-publication/);
-  assert.match(publishCandidate, /permissions:\s*\n\s+actions: read\s*\n\s+contents: read/);
+  assert.doesNotMatch(publishCandidate, /environment:|secrets./);
+  assert.match(publishCandidate, /permissions:\s*\n\s+actions: read\s*\n\s+contents: write/);
   assert.match(publishCandidate, /Download exact release candidate bundle/);
   assert.match(publishCandidate, /Require current protected master workflow[\s\S]*git\/ref\/heads\/master/);
   assert.ok(
     publishCandidate.indexOf('Require current protected master workflow') <
-      publishCandidate.indexOf('SERVER_RELEASE_APP_PRIVATE_KEY')
+      publishCandidate.indexOf('Recheck current protected master immediately before repository writes')
   );
   assert.match(publishCandidate, /sha256sum --check --strict SHA256SUMS/);
   assert.match(publishCandidate, /verify-prepared-candidate[\s\S]*--candidate-parent-current-master true/);
   assert.ok(
     publishCandidate.indexOf('Verify candidate artifact and canonical transformation before authentication') <
-      publishCandidate.indexOf('Mint restricted server release branch token')
+      publishCandidate.indexOf('Publish only the exact verified candidate branch')
   );
-  assert.match(publishCandidate, /actions\/create-github-app-token@[0-9a-f]{40}/);
-  assert.match(publishCandidate, /permission-contents: write/);
+  assert.match(publishCandidate, /RELEASE_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(
     publishCandidate,
     /--force-with-lease="refs\/heads\/\$\{RELEASE_BRANCH\}:"[\s\S]*"\$\{RELEASE_SHA\}:refs\/heads\/\$\{RELEASE_BRANCH\}"/
@@ -526,44 +459,45 @@ test('Cut release uses a read-only request, protected handler, and App-isolated 
   assert.doesNotMatch(validation, /create-github-app-token|SERVER_RELEASE_APP_|github\.token/);
 
   assert.match(finalize, /needs: \[prepare, publish_candidate, release-validation\]/);
-  assert.match(finalize, /environment: server-release-publication/);
-  assert.match(finalize, /permissions:\s*\n\s+contents: read/);
+  assert.doesNotMatch(finalize, /environment:|secrets./);
+  assert.match(finalize, /permissions:\s*\n\s+contents: write\s*\n\s+pull-requests: write/);
   assert.match(finalize, /Require current protected master workflow[\s\S]*git\/ref\/heads\/master/);
   assert.ok(
     finalize.indexOf('Require current protected master workflow') <
-      finalize.indexOf('SERVER_RELEASE_APP_PRIVATE_KEY')
+      finalize.indexOf('Recheck current protected master immediately before repository writes')
   );
   assert.ok(
     finalize.indexOf('Reverify exact branch and candidate before authentication') <
-      finalize.indexOf('Mint restricted server release merge token')
+      finalize.indexOf('Open or reuse the exact release pull request')
   );
-  assert.match(finalize, /permission-contents: write/);
-  assert.match(finalize, /permission-pull-requests: write/);
-  assert.match(finalize, /github-token: \$\{\{ steps\.release-token\.outputs\.token \}\}/);
+
+  assert.match(finalize, /github-token: \$\{\{ github\.token \}\}/);
   assert.match(finalize, /github\.rest\.pulls\.create/);
   assert.doesNotMatch(finalize, /github\.rest\.pulls\.merge/);
   assert.match(finalize, /refs\/pull\/\$\{PULL_REQUEST_NUMBER\}\/merge/);
   assert.match(finalize, /MERGE_SHA\}\^1.*SOURCE_SHA/);
   assert.match(finalize, /MERGE_SHA\}\^2.*RELEASE_SHA/);
-  assert.match(finalize, /--force-with-lease="refs\/heads\/master:\$\{SOURCE_SHA\}"/);
-  assert.match(finalize, /"\$\{MERGE_SHA\}:refs\/heads\/master"/);
+  assert.match(finalize, /--request PUT[\s\S]*sha: \$sha, merge_method: "merge"[\s\S]*pulls\/\$\{PULL_REQUEST_NUMBER\}\/merge/);
+  assert.match(finalize, /select\(\.merged == true\)/);
+  assert.doesNotMatch(finalize, /git[^\n]*push|--force-with-lease/);
+  assert.match(finalize, /Verify exact release ancestry[\s\S]*MERGE_SHA\}\^1[\s\S]*SOURCE_SHA[\s\S]*MERGE_SHA\}\^\{tree\}[\s\S]*RELEASE_SHA\}\^\{tree\}/);
+  assert.match(finalize, /Verify exact release ancestry[\s\S]*MERGE_SHA\}\^2[\s\S]*RELEASE_SHA/);
 
   assert.match(inspectCleanup, /always\(\).*needs\.finalize\.result != 'success'/);
   assert.match(inspectCleanup, /permissions:\s*\n\s+contents: read/);
   assert.doesNotMatch(inspectCleanup, /environment:|create-github-app-token|permission-contents: write/);
-  assert.match(cleanup, /environment: server-release-publication/);
-  assert.match(cleanup, /permissions:\s*\n\s+contents: read/);
+  assert.doesNotMatch(cleanup, /environment:|secrets./);
+  assert.match(cleanup, /permissions:\s*\n\s+contents: write\s*\n\s+pull-requests: write/);
   assert.match(cleanup, /Require current protected master workflow[\s\S]*git\/ref\/heads\/master/);
   assert.ok(
     cleanup.indexOf('Require current protected master workflow') <
-      cleanup.indexOf('SERVER_RELEASE_APP_PRIVATE_KEY')
+      cleanup.indexOf('Recheck current protected master immediately before repository writes')
   );
   assert.ok(
     cleanup.indexOf('Reverify exact cleanup target before authentication') <
-      cleanup.indexOf('Mint restricted server release cleanup token')
+      cleanup.indexOf('Find only the exact open candidate pull request')
   );
-  assert.match(cleanup, /permission-contents: write/);
-  assert.match(cleanup, /permission-pull-requests: write/);
+
   assert.match(cleanup, /github\.rest\.pulls\.update/);
   assert.match(cleanup, /REMOTE_SHA.*RELEASE_SHA/);
   assert.match(
@@ -574,12 +508,13 @@ test('Cut release uses a read-only request, protected handler, and App-isolated 
   assert.match(publish, /uses: \.\/\.github\/workflows\/publish-release\.yml/);
   assert.match(
     publish,
-    /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/
+    /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: write\s*\n\s+id-token: write/
   );
-  assert.doesNotMatch(publish, /(?:contents|packages|pull-requests|actions):\s*write/);
+  assert.doesNotMatch(publish, /(?:pull-requests|actions):\s*write/);
   assert.match(publish, /release_commit: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
   assert.match(publish, /release_branch: \$\{\{ needs\.prepare\.outputs\.release_branch \}\}/);
-  assert.doesNotMatch(publish, /secrets: inherit|EXPO_TOKEN/);
+  assert.doesNotMatch(publish, /secrets: inherit/);
+  assert.match(publish, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
   assert.doesNotMatch(workflow, /\n  database-rollback:|database_migrations_changed|test:db:rollback/);
 
   const checkoutCount = (workflow.match(/uses: actions\/checkout@[0-9a-f]{40}/g) ?? []).length;
@@ -600,7 +535,7 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   const ota = workflowJobBlock(workflow, 'publish_ota');
 
   assert.match(workflow, /workflow_call:/);
-  assert.doesNotMatch(workflow, /workflow_call:[\s\S]*?\n\s{4}secrets:/);
+  assert.match(workflow, /workflow_call:[\s\S]*?\n\s{4}secrets:\s*\n\s+EXPO_TOKEN:\s*\n\s+required: false/);
   assert.doesNotMatch(workflow, /workflow_dispatch:/);
   assert.match(workflow, /release_commit:/);
   assert.match(workflow, /release_branch:/);
@@ -626,10 +561,7 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(tag, /android\?\.mobile\?\.native_release_tag/);
   assert.match(tag, /legacy vMAJOR\.MINOR\.PATCH format for a prepared historical release/);
   assert.match(tag, /native_release_tag=\$\{NATIVE_RELEASE_TAG\}/);
-  assert.match(
-    tag,
-    /Verify stable release tag rulesets with a read-only token[\s\S]*server-release-tag-protection\.mjs verify[\s\S]*--repository "\$\{GITHUB_REPOSITORY\}"[\s\S]*--tag "\$\{RELEASE_TAG\}"/
-  );
+  assert.doesNotMatch(tag, /server-release-tag-protection/);
   assert.match(tag, /native_release_candidate=\$\{NATIVE_RELEASE_CANDIDATE\}/);
   assert.match(tag, /native_release_protected=\$\{NATIVE_RELEASE_PROTECTED\}/);
   assert.match(tag, /native_release_attested=\$\{NATIVE_RELEASE_ATTESTED\}/);
@@ -704,41 +636,12 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
     'historical dependency and compatibility code must not receive a repository token'
   );
 
-  assert.match(publisher, /environment: server-release-publication/);
-  assert.match(publisher, /permissions:\s*\n\s+contents: read/);
-  const publisherAuthority = publisher.match(
-    /\n      - name: Require current protected workflow authority before tag credentials\n[\s\S]*?(?=\n      - name:)/
-  )?.[0];
-  assert.ok(publisherAuthority);
-  assert.match(publisherAuthority, /WORKFLOW_SHA: \$\{\{ job\.workflow_sha \}\}/);
-  assert.match(publisherAuthority, /verify-current-release-workflow/);
-  assert.match(publisherAuthority, /--release-commit "\$\{RELEASE_COMMIT\}"/);
-  assert.match(publisherAuthority, /GIT_NO_REPLACE_OBJECTS=1/);
-  assert.ok(
-    publisher.indexOf('Require current protected workflow authority before tag credentials') <
-      publisher.indexOf('SERVER_RELEASE_APP_PRIVATE_KEY') &&
-      publisher.indexOf('Require current protected workflow authority before tag credentials') <
-        publisher.indexOf('Mint restricted server release tag token')
-  );
+  assert.doesNotMatch(publisher, /environment:|SERVER_RELEASE_APP_|create-github-app-token|server-release-tag-protection/);
+  assert.match(publisher, /permissions:\s*\n\s+contents: write/);
   assert.match(publisher, /needs: tag_release/);
-  assert.match(publisher, /SERVER_RELEASE_APP_ID: \$\{\{ vars\.SERVER_RELEASE_APP_ID \}\}/);
-  assert.doesNotMatch(
-    publisher.slice(0, publisher.indexOf('- name: Recheck current protected workflow immediately before App token')),
-    /secrets\.SERVER_RELEASE_APP_PRIVATE_KEY/,
-    'the App private key must not be referenced before the final live-master recheck'
-  );
-  assert.match(
-    publisher,
-    /Checkout reviewed release tag protection tooling only[\s\S]*ref: \$\{\{ job\.workflow_sha \}\}[\s\S]*persist-credentials: false[\s\S]*path: \.release-tooling[\s\S]*sparse-checkout: \/scripts\/server-release-tag-protection\.mjs[\s\S]*sparse-checkout-cone-mode: false/
-  );
-  assert.match(
-    publisher,
-    /Verify stable release tag rulesets after publication approval[\s\S]*GITHUB_TOKEN: \$\{\{ github\.token \}\}[\s\S]*RELEASE_TAG: \$\{\{ needs\.tag_release\.outputs\.release_tag \}\}[\s\S]*node \.release-tooling\/scripts\/server-release-tag-protection\.mjs verify[\s\S]*--repository "\$\{GITHUB_REPOSITORY\}"[\s\S]*--tag "\$\{RELEASE_TAG\}"/
-  );
-  assert.match(publisher, /actions\/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349/);
-  assert.match(publisher, /permission-contents: write/);
+  assert.match(publisher, /Require current protected workflow authority before tag credentials[\s\S]*verify-current-release-workflow/);
   assert.match(publisher, /actions\/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3/);
-  assert.match(publisher, /github-token: \$\{\{ steps\.release-token\.outputs\.token \}\}/);
+  assert.match(publisher, /github-token: \$\{\{ github\.token \}\}/);
   assert.match(publisher, /\^v\\d\+\\\.\\d\+\\\.\\d\+\$/);
   assert.match(publisher, /branch !== `release\/\$\{tag\}`/);
   assert.match(publisher, /github\.rest\.git\.createTag/);
@@ -747,40 +650,15 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(publisher, /tagObject\.data\.object\.sha !== commit/);
   assert.doesNotMatch(publisher, /ref: \$\{\{ inputs\.release_commit \}\}|\bnpm\b/);
   assert.doesNotMatch(publisher, /secrets\.GITHUB_TOKEN/);
-  const rulesetGateIndex = publisher.indexOf(
-    '- name: Verify stable release tag rulesets after publication approval'
-  );
-  const finalAuthorityGateIndex = publisher.indexOf(
-    '- name: Recheck current protected workflow immediately before App token'
-  );
-  const tokenMintIndex = publisher.indexOf('- name: Mint restricted server release tag token');
+  const finalAuthorityGateIndex = publisher.indexOf('- name: Recheck current protected workflow immediately before repository writes');
   const tagMutationIndex = publisher.indexOf('- name: Create or verify exact annotated release tag');
-  assert.ok(rulesetGateIndex >= 0, 'protected publisher must define the live stable-tag ruleset gate');
-  assert.ok(finalAuthorityGateIndex >= 0, 'protected publisher must repeat its live workflow authority gate');
-  assert.ok(
-    rulesetGateIndex < finalAuthorityGateIndex &&
-      finalAuthorityGateIndex < tokenMintIndex &&
-      tokenMintIndex < tagMutationIndex,
-    'ruleset and fresh workflow authority verification must run before App-token minting and tag mutation'
-  );
-  assert.equal(
-    publisher.slice(0, tokenMintIndex).lastIndexOf('- name:'),
-    finalAuthorityGateIndex,
-    'the fresh live-master authority verification must be the final step before App-token minting'
-  );
-  const finalAuthorityGate = publisher.slice(
-    finalAuthorityGateIndex,
-    publisher.indexOf('\n      - name:', finalAuthorityGateIndex + 1)
-  );
+  assert.ok(finalAuthorityGateIndex > 0);
+  assert.equal(publisher.slice(0, tagMutationIndex).lastIndexOf('- name:'), finalAuthorityGateIndex);
+  const finalAuthorityGate = publisher.slice(finalAuthorityGateIndex, tagMutationIndex);
   assert.match(finalAuthorityGate, /verify-current-release-workflow/);
   assert.match(finalAuthorityGate, /--workflow-sha "\$\{WORKFLOW_SHA\}"/);
   assert.match(finalAuthorityGate, /--release-commit "\$\{RELEASE_COMMIT\}"/);
   assert.match(finalAuthorityGate, /GIT_NO_REPLACE_OBJECTS=1/);
-  assert.doesNotMatch(
-    publisher.slice(tokenMintIndex),
-    /github\.token|secrets\.GITHUB_TOKEN|GITHUB_TOKEN/,
-    'the read-only workflow token must not reach token minting or tag mutation'
-  );
 
   assert.match(publishedVerifier, /needs: \[tag_release, publish_release_tag\]/);
   assert.match(publishedVerifier, /persist-credentials: false/);
@@ -791,7 +669,8 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(image, /uses: \.\/\.github\/workflows\/container\.yml/);
   assert.match(image, /needs: \[tag_release, publish_release_tag, verify_published_release\]/);
   assert.match(image, /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/);
-  assert.doesNotMatch(image, /packages: write|secrets: inherit/);
+  assert.match(image, /packages: write/);
+  assert.doesNotMatch(image, /secrets: inherit/);
   assert.match(image, /publish_latest: true/);
   assert.match(ota, /needs: \[tag_release, publish_release_tag, build_release_image\]/);
   assert.match(ota, /if: needs\.tag_release\.outputs\.native_release_ready == 'true'/);
@@ -799,8 +678,9 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(ota, /source_ref: \$\{\{ inputs\.release_commit \}\}/);
   assert.match(ota, /native_build_ref: \$\{\{ needs\.tag_release\.outputs\.native_release_tag \}\}/);
   assert.match(ota, /message: Release \$\{\{ needs\.tag_release\.outputs\.release_tag \}\}/);
-  assert.doesNotMatch(ota, /secrets: inherit|EXPO_TOKEN/);
-  assert.doesNotMatch(workflow, /^\s{0,8}(?:contents|packages|pull-requests): write\s*$/gm);
+  assert.doesNotMatch(ota, /secrets: inherit/);
+  assert.match(ota, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
+  assert.doesNotMatch(workflow, /SERVER_RELEASE_APP_|GHCR_PUBLISH_|server-release-publication/);
   assert.doesNotMatch(workflow, /native_build_ref_override/);
   assert.doesNotMatch(workflow, /pull_request_target|createWorkflowDispatch/);
   assert.doesNotMatch(workflow, /calibratehealth\.app\/api\/v1\/client-config|wait_for_hosted_release/);
@@ -1223,7 +1103,7 @@ test('release images publish immutable identity and guard the moving latest tag'
   assert.match(workflow, /default: false/);
   assert.match(workflow, /group: release-image-publication[\s\S]*queue: max[\s\S]*cancel-in-progress: false/);
   assert.doesNotMatch(workflow, /group: release-image-\$\{\{/);
-  assert.doesNotMatch(workflow, /^\s{0,8}(?:contents|packages|pull-requests|actions): write\s*$/gm);
+  assert.doesNotMatch(workflow, /^\s{0,8}(?:contents|pull-requests|actions): write\s*$/gm);
 
   assert.match(build, /Checkout exact prepared release source[\s\S]*ref: \$\{\{ inputs\.release_commit \}\}[\s\S]*persist-credentials: false/);
   assert.match(build, /Checkout reviewed release tooling[\s\S]*ref: \$\{\{ job\.workflow_sha \}\}[\s\S]*persist-credentials: false/);
@@ -1275,7 +1155,7 @@ test('release images publish immutable identity and guard the moving latest tag'
   assert.match(attester, /EXPECTED_RECEIPT_SHA256: \$\{\{ needs\.build_image\.outputs\.receipt_sha256 \}\}/);
 
   assert.match(publisher, /needs: \[build_image, attest_image_receipt\]/);
-  assert.match(publisher, /environment: server-release-publication/);
+  assert.doesNotMatch(publisher, /environment:|GHCR_PUBLISH_|SERVER_RELEASE_APP_/);
   assert.match(
     publisher,
     /permissions:\s*\n\s+actions: read\s*\n\s+attestations: read\s*\n\s+contents: read/
@@ -1298,14 +1178,13 @@ test('release images publish immutable identity and guard the moving latest tag'
   const receiptAttestationIndex = publisher.indexOf(
     '- name: Verify exact built image receipt attestation before registry authentication'
   );
-  const rulesetIndex = publisher.indexOf('- name: Verify stable release tag rulesets before registry authentication');
   const finalFreshnessIndex = publisher.indexOf(
     '- name: Recheck current protected workflow authority immediately before GHCR authentication'
   );
   const freshnessIndex = publisher.indexOf(
     '- name: Require current protected workflow authority before image artifact access'
   );
-  const loginIndex = publisher.indexOf('- name: Login with isolated GHCR publisher credential');
+  const loginIndex = publisher.indexOf('- name: Login with the repository package token');
   const publishIndex = publisher.indexOf('- name: Publish write-once immutable identities and verified latest');
   assert.ok(
     0 <= stepsIndex &&
@@ -1316,14 +1195,9 @@ test('release images publish immutable identity and guard the moving latest tag'
       toolingIndex < buildxIndex &&
       buildxIndex < ghCliIndex &&
       ghCliIndex < receiptAttestationIndex &&
-      receiptAttestationIndex < rulesetIndex &&
-      rulesetIndex < finalFreshnessIndex &&
+      receiptAttestationIndex < finalFreshnessIndex &&
       finalFreshnessIndex < loginIndex &&
       loginIndex < publishIndex
-  );
-  assert.ok(
-    publisher.indexOf('environment: server-release-publication') < freshnessIndex,
-    'the current-master gate must run only after publication-environment admission'
   );
   assert.equal(
     publisher.indexOf('- name:', stepsIndex),
@@ -1335,10 +1209,7 @@ test('release images publish immutable identity and guard the moving latest tag'
     /uses:|download-artifact|docker load|\.release-tooling|vars\.|secrets\.|docker\/login-action/,
     'no artifact, action, tooling, variable, secret, or login may precede the authority gate'
   );
-  assert.match(
-    publisher,
-    /Verify stable release tag rulesets before registry authentication[\s\S]*GITHUB_TOKEN: \$\{\{ github\.token \}\}[\s\S]*server-release-tag-protection\.mjs verify[\s\S]*--repository "\$\{GITHUB_REPOSITORY\}"[\s\S]*--tag "\$\{RELEASE_TAG\}"/
-  );
+  assert.doesNotMatch(publisher, /server-release-tag-protection/);
   const freshness = publisher.match(
     /\n      - name: Require current protected workflow authority before image artifact access\n[\s\S]*?(?=\n      - name:)/
   )?.[0];
@@ -1371,9 +1242,9 @@ test('release images publish immutable identity and guard the moving latest tag'
     /verify-prepared|merge-base --is-ancestor|uses:|download-artifact|docker load|vars\.|secrets\.|docker\/login-action/,
     'the first-step gate must delegate the exact Cut exception without exposing later authority'
   );
-  assert.match(publisher, /username: \$\{\{ vars\.GHCR_PUBLISH_USERNAME \}\}/);
-  assert.match(publisher, /password: \$\{\{ secrets\.GHCR_PUBLISH_TOKEN \}\}/);
-  assert.doesNotMatch(publisher, /secrets\.GITHUB_TOKEN|packages: write/);
+  assert.match(publisher, /username: \$\{\{ github\.actor \}\}/);
+  assert.match(publisher, /password: \$\{\{ github\.token \}\}/);
+  assert.match(publisher, /packages: write/);
   assert.equal([...publisher.matchAll(/\$\{\{ github\.token \}\}/g)].length, 3);
   const finalFreshness = publisher.match(
     /\n      - name: Recheck current protected workflow authority immediately before GHCR authentication\n[\s\S]*?(?=\n      - name:)/
@@ -1381,7 +1252,7 @@ test('release images publish immutable identity and guard the moving latest tag'
   assert.ok(finalFreshness);
   assert.match(finalFreshness, /verify-current-release-workflow/);
   assert.equal(
-    publisher.slice(finalFreshnessIndex).indexOf('- name: Login with isolated GHCR publisher credential'),
+    publisher.slice(finalFreshnessIndex).indexOf('- name: Login with the repository package token'),
     publisher.slice(finalFreshnessIndex).indexOf('- name:', 1),
     'the live workflow recheck must be immediately adjacent to GHCR secret materialization'
   );
@@ -1488,7 +1359,7 @@ test('release images publish immutable identity and guard the moving latest tag'
   assert.match(releaseCompatibility, /full supported[\s\S]*recovery window/);
   assert.match(releaseCompatibility, /integrity authority, not an availability boundary/);
   assert.match(releaseCompatibility, /flood or delete records/);
-  assert.match(releaseCompatibility, /inventory every existing `v\*` and `sha-\*` alias/);
+  assert.match(releaseCompatibility, /Missing, deleted, or invalid legitimate receipt evidence therefore fails closed/);
   assert.match(agentGuide, /revoke SHA[\s\S]*overrides every\s+automatic rule/);
   assert.match(agentGuide, /missing\/deleted\/flooded legitimate evidence still fails closed/);
 
@@ -1505,7 +1376,7 @@ test('release images publish immutable identity and guard the moving latest tag'
     const callJob = workflowJobBlock(caller, jobName);
     assert.match(header, /permissions:[\s\S]*attestations: write[\s\S]*id-token: write/);
     assert.match(callJob, new RegExp(`uses: \\.\\/${calledWorkflow.replaceAll('.', '\\.')}`));
-    assert.match(callJob, /permissions:[\s\S]*attestations: write[\s\S]*contents: read[\s\S]*id-token: write/);
+    assert.match(callJob, /permissions:[\s\S]*attestations: write[\s\S]*contents: (?:read|write)[\s\S]*id-token: write/);
   }
   for (const handlerName of ['container-handler.yml', 'publish-release-handler.yml', 'cut-release-handler.yml']) {
     const verifier = workflowJobBlock(readWorkflow(handlerName), 'verify_request');
@@ -1624,25 +1495,16 @@ test('Expo OTA separates source export from clean environment-scoped publication
   ));
   const preflightOutputs = preflight.match(/\n    outputs:\n([\s\S]*?)\n\n    steps:/)?.[1];
 
-  assert.match(
-    mobileReleaseRunbook,
-    /complete run has four explicit approvals:[\s\S]*resolve the internal EAS environment[\s\S]*publish internal[\s\S]*resolve the production EAS environment[\s\S]*publish production/
-  );
+  assert.match(mobileReleaseRunbook, /one reviewer approval in the existing GitHub\n`production`/);
   assert.match(
     mobileReleaseRunbook,
     /Before GitHub opens the first environment approval,[\s\S]*preflight[\s\S]*no Expo, environment, or publisher credential[\s\S]*ephemeral read-only[\s\S]*`persist-credentials: false`[\s\S]*does not pass the token to those commands[\s\S]*no Expo token job can start if[\s\S]*proof fails/
   );
-  assert.match(
-    mobileReleaseRunbook,
-    /later approvals enforce the reviewed workflow's sequencing; they do not prevent[\s\S]*already obtained that token from targeting the production channel/
-  );
-  assert.match(
-    agentGuide,
-    /four separately[\s\S]*approved, source-free credential jobs:[\s\S]*resolve internal environment[\s\S]*publish production[\s\S]*not a channel-scoped capability boundary/
-  );
+  assert.match(mobileReleaseRunbook, /does not prevent someone holding the token from targeting production/);
+  assert.match(agentGuide, /one reviewer-protected \x60production\x60 approval after internal publication/);
 
   assert.match(workflow, /workflow_call:/);
-  assert.doesNotMatch(workflow, /workflow_call:[\s\S]*secrets:/);
+  assert.match(workflow, /workflow_call:[\s\S]*secrets:[\s\S]*EXPO_TOKEN:[\s\S]*required: true/);
   assert.match(workflow, /source_ref:[\s\S]*required: true[\s\S]*type: string/);
   assert.match(workflow, /workflow_dispatch:\s*\n\s+inputs:\s*\n\s+source_ref:[\s\S]*required: true[\s\S]*type: string/);
   assert.equal(
@@ -1684,7 +1546,12 @@ test('Expo OTA separates source export from clean environment-scoped publication
   assert.match(resolveInternal, /needs: preflight-release-target/);
   assert.match(buildInternal, /needs: \[preflight-release-target, resolve-internal-environment\]/);
   assert.match(publishInternal, /needs: \[preflight-release-target, build-internal-update\]/);
-  assert.match(resolveProduction, /needs: \[preflight-release-target, publish-internal\]/);
+  const productionApproval = workflowJobBlock(workflow, 'approve-production');
+  assert.match(productionApproval, /needs: publish-internal/);
+  assert.match(productionApproval, /environment: production/);
+  assert.doesNotMatch(productionApproval, /secrets\.|uses:|EXPO_TOKEN/);
+  assert.equal((workflow.match(/environment: production/g) ?? []).length, 1);
+  assert.match(resolveProduction, /needs: \[preflight-release-target, approve-production\]/);
   assert.match(buildProduction, /needs: \[preflight-release-target, resolve-production-environment\]/);
   assert.match(publishProduction, /needs: \[preflight-release-target, build-production-update\]/);
   const downstreamJobs = [
@@ -1701,11 +1568,11 @@ test('Expo OTA separates source export from clean environment-scoped publication
     assert.match(job, /needs\.preflight-release-target\.outputs\.source_commit/);
   }
   for (const job of [resolveInternal, publishInternal]) {
-    assert.match(job, /environment: expo-publication/);
+    assert.match(job, /environment: preview/);
     assert.match(job, /EXPO_UPDATES_CHANNEL: internal/);
   }
   for (const job of [resolveProduction, publishProduction]) {
-    assert.match(job, /environment: expo-publication/);
+    assert.doesNotMatch(job, /^    environment:/m);
     assert.match(job, /EXPO_UPDATES_CHANNEL: production/);
   }
 
@@ -1729,7 +1596,7 @@ test('Expo OTA separates source export from clean environment-scoped publication
       job.indexOf('Require current protected workflow authority before Expo authentication') <
         job.indexOf('Checkout reviewed OTA publisher tooling only') &&
         job.indexOf('Require current protected workflow authority before Expo authentication') <
-          job.indexOf('secrets.EXPO_RELEASE_TOKEN'),
+          job.indexOf('secrets.EXPO_TOKEN'),
       'live workflow authority must be the first protected-job gate before checkout or Expo credentials'
     );
     assert.ok(
@@ -1738,11 +1605,11 @@ test('Expo OTA separates source export from clean environment-scoped publication
     );
     const credentialSteps = steps.filter((step) => step.includes('secrets.EXPO_'));
     assert.equal(credentialSteps.length, 1);
-    assert.match(credentialSteps[0], /EXPO_TOKEN: \$\{\{ secrets\.EXPO_RELEASE_TOKEN \}\}/);
+    assert.match(credentialSteps[0], /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
     const recheckIndex = steps.findIndex((step) => (
       step.includes('Recheck current protected workflow authority immediately before Expo token')
     ));
-    const credentialIndex = steps.findIndex((step) => step.includes('secrets.EXPO_RELEASE_TOKEN'));
+    const credentialIndex = steps.findIndex((step) => step.includes('secrets.EXPO_TOKEN'));
     assert.ok(recheckIndex > 0);
     assert.equal(
       credentialIndex,
@@ -1780,22 +1647,23 @@ test('Expo OTA separates source export from clean environment-scoped publication
     assert.match(job, /actions\/upload-artifact@[0-9a-f]{40}/);
   }
 
-  assert.equal((workflow.match(/secrets\.EXPO_RELEASE_TOKEN/g) ?? []).length, 4);
+  assert.equal((workflow.match(/secrets\.EXPO_TOKEN/g) ?? []).length, 4);
   assert.equal((workflow.match(/inputs\.source_ref/g) ?? []).length, 3);
   assert.equal((workflow.match(/inputs\.native_build_ref/g) ?? []).length, 2);
   assert.doesNotMatch(
     workflow,
-    /secrets\.EXPO_(?:TOKEN|PREVIEW_TOKEN|PRODUCTION_TOKEN)\b/
+    /secrets\.EXPO_(?:RELEASE_TOKEN|PREVIEW_TOKEN|PRODUCTION_TOKEN)\b/
   );
   for (const job of credentialedJobs) {
-    assert.match(job, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_RELEASE_TOKEN \}\}/);
+    assert.match(job, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
   }
   assert.equal((workflow.match(/node_modules\/\.bin\/eas" env:pull/g) ?? []).length, 2);
   assert.equal((workflow.match(/node_modules\/\.bin\/eas" update/g) ?? []).length, 2);
   assert.doesNotMatch(workflow, /Setup EAS|expo\/expo-github-action|eas-version:|secrets: inherit/);
   assert.doesNotMatch(workflow, /\n\s+push:|github\.event\.(before|head_commit)|--previous-ref/);
   assert.match(releaseOta, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
-  assert.doesNotMatch(releaseOta, /secrets: inherit|EXPO_TOKEN/);
+  assert.doesNotMatch(releaseOta, /secrets: inherit/);
+  assert.match(releaseOta, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
 });
 
 test('native Android store releases build one paired candidate and promote it without rebuilding', () => {

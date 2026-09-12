@@ -114,9 +114,13 @@ jobs:
     permissions:
       actions: read
       attestations: write
-      contents: read
+      contents: write
       id-token: write
+      packages: write
+      pull-requests: write
     uses: ./.github/workflows/cut-release.yml
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       bump: ${{ needs.verify_request.outputs.bump }}
       source_sha: ${{ needs.verify_request.outputs.source_sha }}

@@ -110,9 +110,12 @@ jobs:
     permissions:
       actions: read
       attestations: write
-      contents: read
+      contents: write
       id-token: write
+      packages: write
     uses: ./.github/workflows/publish-release.yml
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       release_branch: ${{ needs.verify_request.outputs.release_branch }}
       release_commit: ${{ needs.verify_request.outputs.release_commit }}

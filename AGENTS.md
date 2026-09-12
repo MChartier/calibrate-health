@@ -263,13 +263,15 @@ UI code style:
   diagnostic, OpenAPI, and generated-client mirrors.
 - After the desired changes land on `master`, run **Cut release** in GitHub Actions and choose `patch`, `minor`, or
   `major`. The action owns the synchronized release commit, version-only PR, tag, and GHCR publication.
-- The visible server release Actions are read-only request workflows. Protected-default-branch `workflow_run` handlers
-  call reusable workers, while every ordinary `GITHUB_TOKEN` remains read-only. Git/master/stable-tag writes use only
-  the restricted Server Release GitHub App in the master-only, reviewer-protected `server-release-publication`
-  environment. GHCR uses a separate package-only robot credential in that environment on a fresh publisher runner;
-  the source repository must have no inherited or Actions write access to the package. Missing environment/App/PAT or
-  ruleset/package onboarding intentionally leaves publication unavailable. The sole GitHub-native write exception is
-  the source-free image-receipt signer, which receives only OIDC plus `attestations: write` and runs the full-SHA-pinned
+- The visible server release Actions are read-only request workflows. Default-branch `workflow_run` handlers verify
+  exact requests before calling reusable workers. Keep build and verification jobs read-only. Use job-scoped
+  `GITHUB_TOKEN` writes only for candidate/tag publication, PR finalization/cleanup, and GHCR publication; callers must
+  propagate every required reusable-workflow permission. Finalization uses the PR merge API with the validated head,
+  honors master protection, and checks merged parents/tree before publication. It must never push directly to master.
+  Keep the repository's existing package Actions write access and PR-creation setting. A Server Release GitHub App,
+  GHCR robot, `server-release-publication` environment, and extra server tag rulesets are not prerequisites.
+  Separate source-free publisher runners retain exact artifact and current-workflow verification. The isolated
+  image-receipt signer receives only Contents read, OIDC write, and `attestations: write` and runs the full-SHA-pinned
   attestation action before package authentication. An existing `v*`/`sha-*` image is authoritative only when its
   exact linux/amd64 config digest reconstructs the release receipt and that receipt verifies against the exact signer
   workflow/source identity. An earlier protected-master signer remains valid automatically only while its critical
@@ -277,17 +279,12 @@ UI code style:
   release commit. Current protected master owns exceptional retention and revocation through exact `allow SHA` and
   `revoke SHA` directives in `.github/release-image-attestation-trusted-workflow-shas`; `revoke SHA` overrides every
   automatic rule. Keep changed signers allowed for the full supported recovery window. Never adopt legacy or
-  prepositioned aliases without that evidence, and inventory/quarantine/delete pre-attestation aliases before enabling
-  the package robot. GitHub's attestation service is an integrity authority, not an availability guarantee: the
+  prepositioned aliases without that evidence. GitHub's attestation service is an integrity authority, not an availability guarantee: the
   verifier raises its bounded lookup limit, but missing/deleted/flooded legitimate evidence still fails closed and
   requires an audited alias quarantine/delete plus fresh publication.
-- GitHub environment approval is per job. A normal **Cut release** requires four sequential
-  `server-release-publication` approvals: candidate publication, validated merge, stable tag creation, and GHCR
-  publication. A pre-finalize validation failure takes candidate plus cleanup approvals; a finalize failure after its
-  approval takes candidate, finalize, then cleanup, and cleanup is eligible only after read-only exact-ref inspection.
-  **Publish prepared release** requires tag and image approvals, and **Build Release Image** requires one image
-  approval. The first three normal Cut checkpoints use
-  the same restricted Server Release App capability; the image checkpoint uses the distinct package-only robot.
+- Server release jobs run automatically with the configured Actions identity. Cleanup is eligible only after
+  read-only exact-ref inspection and must not remove a merged or moved candidate. Job isolation is not an external
+  credential boundary against a user who can edit or rerun write-enabled workflows.
 - **Cut release** revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
   workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
@@ -307,10 +304,11 @@ UI code style:
   workflow/source certificate under the fresh-master allow/revoke policy. A mutable Play name is not provenance;
   missing/legacy/revoked evidence requires a fresh higher odd/even pair, never adoption or tag creation.
 - After the GHCR image is published, **Cut release** publishes the exact release commit to Expo only when the native
-  tag from `shared/release.json` is a verified signed release attestation. Expo publication uses four separately
-  approved, source-free credential jobs: resolve internal environment, publish internal, resolve production
-  environment, and publish production. The single Expo token has project-wide update authority; the later approvals
-  enforce reviewed workflow sequencing but are not a channel-scoped capability boundary. The pinned public key,
+  tag from `shared/release.json` is a verified signed release attestation. Expo uses the configured repository
+  `EXPO_TOKEN`, `preview` environment, and one reviewer-protected `production` approval after internal publication.
+  That approval gates production environment resolution, export, and publication. Keep the four credential stages
+  separate from source export. The token has project-wide update authority; the approval controls workflow sequencing
+  and is not a channel-scoped capability boundary. The pinned public key,
   exact annotated-tag name, and exact peeled target verification must be
   used consistently by prepared-release OTA readiness, Play promotion, and origin-authoritative native preparation;
   a commit signature is insufficient. A reserved

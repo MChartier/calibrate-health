@@ -317,17 +317,17 @@ jobs:
           create-storage-record: false
 
   publish_image:
-    name: Publish verified image with external package credential
+    name: Publish verified image with repository package token
     needs: [build_image, attest_image_receipt]
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: server-release-publication
     outputs:
       image_ref: ${{ steps.publish.outputs.image_ref }}
     permissions:
       actions: read
       attestations: read
       contents: read
+      packages: write
     env:
       GIT_CONFIG_GLOBAL: /dev/null
       GIT_CONFIG_NOSYSTEM: '1'
@@ -589,16 +589,6 @@ jobs:
             --limit 100 \
             --deny-self-hosted-runners
 
-      - name: Verify stable release tag rulesets before registry authentication
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
-        run: >-
-          node .release-tooling/scripts/server-release-tag-protection.mjs verify
-          --repository "${GITHUB_REPOSITORY}"
-          --tag "${RELEASE_TAG}"
-
       - name: Recheck current protected workflow authority immediately before GHCR authentication
         shell: bash
         env:
@@ -627,12 +617,12 @@ jobs:
             "$(paste -sd, "${TRUSTED_REVISIONS}")" "${TRUST_SET_COMMIT}" \
             >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Login with isolated GHCR publisher credential
+      - name: Login with the repository package token
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
           registry: ghcr.io
-          username: ${{ vars.GHCR_PUBLISH_USERNAME }}
-          password: ${{ secrets.GHCR_PUBLISH_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
       - name: Publish write-once immutable identities and verified latest
         id: publish

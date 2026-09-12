@@ -2,6 +2,9 @@ name: Publish Expo OTA Update
 
 on:
   workflow_call:
+    secrets:
+      EXPO_TOKEN:
+        required: true
     inputs:
       source_ref:
         description: Exact released commit to publish
@@ -149,8 +152,7 @@ jobs:
     needs: preflight-release-target
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Expo tokens are account/project scoped rather than channel scoped, so even internal publication requires approval.
-    environment: expo-publication
+    environment: preview
     env:
       EAS_ENVIRONMENT: preview
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
@@ -243,11 +245,11 @@ jobs:
         working-directory: ${{ runner.temp }}/calibrate-eas-environment-project
         shell: bash
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
           if [[ -z "${EXPO_TOKEN}" ]]; then
-            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            echo "Configure the EXPO_TOKEN repository secret before publishing an OTA update." >&2
             exit 1
           fi
           "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" env:pull \
@@ -444,7 +446,7 @@ jobs:
     needs: [preflight-release-target, build-internal-update]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: expo-publication
+    environment: preview
     env:
       EAS_ENVIRONMENT: preview
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
@@ -553,11 +555,11 @@ jobs:
           EAS_NO_VCS: '1'
           EAS_SKIP_AUTO_FINGERPRINT: '1'
           EXPO_NO_DOTENV: '1'
-          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
           if [[ -z "${EXPO_TOKEN}" ]]; then
-            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            echo "Configure the EXPO_TOKEN repository secret before publishing an OTA update." >&2
             exit 1
           fi
           "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" update \
@@ -569,13 +571,24 @@ jobs:
             --platform android \
             --non-interactive
 
+  approve-production:
+    name: Approve production OTA
+    needs: publish-internal
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Approve the same released source for production
+        run: echo "Production publication approved after internal publication."
+
   resolve-production-environment:
-    name: Approve and resolve production public EAS environment
-    needs: [preflight-release-target, publish-internal]
+    name: Resolve production public EAS environment
+    needs: [preflight-release-target, approve-production]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # The same required-reviewer boundary protects all update-capable Expo access.
-    environment: expo-publication
+    # Production stages start only after the existing production approval.
     env:
       EAS_ENVIRONMENT: production
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
@@ -668,11 +681,11 @@ jobs:
         working-directory: ${{ runner.temp }}/calibrate-eas-environment-project
         shell: bash
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
           if [[ -z "${EXPO_TOKEN}" ]]; then
-            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            echo "Configure the EXPO_TOKEN repository secret before publishing an OTA update." >&2
             exit 1
           fi
           "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" env:pull \
@@ -869,8 +882,7 @@ jobs:
     needs: [preflight-release-target, build-production-update]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # The production credential is available only in this clean source-free publisher job.
-    environment: expo-publication
+    # Source export finishes before this clean publisher receives the Expo token.
     env:
       EAS_ENVIRONMENT: production
       EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
@@ -979,11 +991,11 @@ jobs:
           EAS_NO_VCS: '1'
           EAS_SKIP_AUTO_FINGERPRINT: '1'
           EXPO_NO_DOTENV: '1'
-          EXPO_TOKEN: ${{ secrets.EXPO_RELEASE_TOKEN }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
           if [[ -z "${EXPO_TOKEN}" ]]; then
-            echo "Add EXPO_RELEASE_TOKEN to the protected expo-publication environment before publishing an OTA update." >&2
+            echo "Configure the EXPO_TOKEN repository secret before publishing an OTA update." >&2
             exit 1
           fi
           "${GITHUB_WORKSPACE}/.release-tooling/tools/eas-cli/node_modules/.bin/eas" update \

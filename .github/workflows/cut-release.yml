@@ -4,6 +4,9 @@ run-name: Cut ${{ inputs.bump }} release from ${{ github.ref_name }}
 
 on:
   workflow_call:
+    secrets:
+      EXPO_TOKEN:
+        required: false
     inputs:
       bump:
         description: Semantic server/web version component to bump
@@ -249,10 +252,9 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: server-release-publication
     permissions:
       actions: read
-      contents: read
+      contents: write
 
     steps:
       - name: Require current protected master workflow
@@ -384,18 +386,7 @@ jobs:
             --repository-root "${GITHUB_WORKSPACE}"
           test -z "$(git status --porcelain --untracked-files=no)"
 
-      - name: Require dedicated server release App configuration
-        shell: bash
-        env:
-          SERVER_RELEASE_APP_ID: ${{ vars.SERVER_RELEASE_APP_ID }}
-        run: |
-          set -euo pipefail
-          if [[ ! "${SERVER_RELEASE_APP_ID}" =~ ^[0-9]+$ ]]; then
-            echo "SERVER_RELEASE_APP_ID must be configured in the protected server-release-publication environment." >&2
-            exit 1
-          fi
-
-      - name: Recheck current protected master immediately before App token
+      - name: Recheck current protected master immediately before repository writes
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -409,31 +400,21 @@ jobs:
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
             jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"
           if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then
-            echo "Protected master advanced before the Server Release App was admitted; start a new Cut release run." >&2
+            echo "Protected master advanced before repository writes; start a new Cut release run." >&2
             exit 1
           fi
-
-      - name: Mint restricted server release branch token
-        id: release-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ vars.SERVER_RELEASE_APP_ID }}
-          private-key: ${{ secrets.SERVER_RELEASE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
 
       - name: Publish only the exact verified candidate branch
         shell: bash
         env:
-          APP_TOKEN: ${{ steps.release-token.outputs.token }}
+          RELEASE_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
         run: |
           set -euo pipefail
-          AUTH_HEADER="$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')"
+          AUTH_HEADER="$(printf 'x-access-token:%s' "${RELEASE_TOKEN}" | base64 | tr -d '\n')"
           readonly AUTH_HEADER
           REMOTE_MASTER="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             ls-remote --heads origin refs/heads/master | awk '{print $1}')"
@@ -564,9 +545,9 @@ jobs:
     needs: [prepare, publish_candidate, release-validation]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: server-release-publication
     permissions:
-      contents: read
+      contents: write
+      pull-requests: write
     outputs:
       merge_commit: ${{ steps.merge.outputs.merge_commit }}
       pull_request_url: ${{ steps.pr.outputs.pull_request_url }}
@@ -647,18 +628,7 @@ jobs:
           node .release-tooling/scripts/release-config.mjs check \
             --repository-root "${GITHUB_WORKSPACE}"
 
-      - name: Require dedicated server release App configuration
-        shell: bash
-        env:
-          SERVER_RELEASE_APP_ID: ${{ vars.SERVER_RELEASE_APP_ID }}
-        run: |
-          set -euo pipefail
-          if [[ ! "${SERVER_RELEASE_APP_ID}" =~ ^[0-9]+$ ]]; then
-            echo "SERVER_RELEASE_APP_ID must be configured in the protected server-release-publication environment." >&2
-            exit 1
-          fi
-
-      - name: Recheck current protected master immediately before App token
+      - name: Recheck current protected master immediately before repository writes
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -672,20 +642,9 @@ jobs:
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
             jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"
           if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then
-            echo "Protected master advanced before the Server Release App was admitted; start a new Cut release run." >&2
+            echo "Protected master advanced before repository writes; start a new Cut release run." >&2
             exit 1
           fi
-
-      - name: Mint restricted server release merge token
-        id: release-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ vars.SERVER_RELEASE_APP_ID }}
-          private-key: ${{ secrets.SERVER_RELEASE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-          permission-pull-requests: write
 
       - name: Open or reuse the exact release pull request
         id: pr
@@ -696,7 +655,7 @@ jobs:
           BRANCH: ${{ needs.prepare.outputs.release_branch }}
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
         with:
-          github-token: ${{ steps.release-token.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const { VERSION: version, TAG: tag, BRANCH: branch } = process.env;
             const owner = context.repo.owner;
@@ -746,25 +705,25 @@ jobs:
             core.setOutput('pull_request_number', pull.number);
             core.setOutput('pull_request_url', pull.html_url);
 
-      - name: Atomically merge the exact release pull request
+      - name: Merge the exact release pull request through GitHub
         id: merge
         shell: bash
         env:
-          APP_TOKEN: ${{ steps.release-token.outputs.token }}
+          RELEASE_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
           PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
         run: |
           set -euo pipefail
-          AUTH_HEADER="$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')"
+          AUTH_HEADER="$(printf 'x-access-token:%s' "${RELEASE_TOKEN}" | base64 | tr -d '\n')"
           readonly AUTH_HEADER
           REMOTE_MASTER="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             ls-remote --heads origin refs/heads/master | awk '{print $1}')"
           REMOTE_BRANCH="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             ls-remote --heads origin "refs/heads/${RELEASE_BRANCH}" | awk '{print $1}')"
           if [[ "${REMOTE_MASTER}" != "${SOURCE_SHA}" || "${REMOTE_BRANCH}" != "${RELEASE_SHA}" ]]; then
-            echo "Master or the release branch moved before the atomic merge. Rerun Cut release." >&2
+            echo "Master or the release branch moved before the release merge. Rerun Cut release." >&2
             exit 1
           fi
 
@@ -795,10 +754,21 @@ jobs:
             exit 1
           fi
 
-          git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" push \
-            --force-with-lease="refs/heads/master:${SOURCE_SHA}" \
-            origin \
-            "${MERGE_SHA}:refs/heads/master"
+          # The PR merge API honors master protection without a bypass identity.
+          # It locks the head; the ancestry check below also rejects a raced base.
+          REMOTE_MASTER="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
+            ls-remote --heads origin refs/heads/master | awk '{print $1}')"
+          if [[ "${REMOTE_MASTER}" != "${SOURCE_SHA}" ]]; then
+            echo "Master advanced before the release merge. Rerun Cut release." >&2
+            exit 1
+          fi
+          MERGE_RESPONSE="$(curl --fail --silent --show-error --request PUT \
+            --header "Authorization: Bearer ${RELEASE_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data "$(jq -n --arg sha "${RELEASE_SHA}" '{sha: $sha, merge_method: "merge"}')" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls/${PULL_REQUEST_NUMBER}/merge")"
+          MERGE_SHA="$(jq -er 'select(.merged == true) | .sha | select(test("^[0-9a-f]{40}$"))' <<< "${MERGE_RESPONSE}")"
           echo "merge_commit=${MERGE_SHA}" >> "${GITHUB_OUTPUT}"
 
       - name: Verify exact release ancestry
@@ -814,6 +784,7 @@ jobs:
           test "$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')" = "${MERGE_SHA}"
           git --no-replace-objects merge-base --is-ancestor "${RELEASE_SHA}" "${MERGE_SHA}"
           test "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^1")" = "${SOURCE_SHA}"
+          test "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^2")" = "${RELEASE_SHA}"
           test "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^{tree}")" = \
             "$(git --no-replace-objects rev-parse --verify "${RELEASE_SHA}^{tree}")"
 
@@ -846,6 +817,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       needs_write: ${{ steps.inspect.outputs.needs_write }}
 
@@ -895,9 +867,9 @@ jobs:
     needs: [prepare, inspect_cleanup]
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: server-release-publication
     permissions:
-      contents: read
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Require current protected master workflow
@@ -958,19 +930,7 @@ jobs:
           fi
           echo "needs_write=true" >> "${GITHUB_OUTPUT}"
 
-      - name: Require dedicated server release App configuration
-        if: ${{ steps.recheck.outputs.needs_write == 'true' }}
-        shell: bash
-        env:
-          SERVER_RELEASE_APP_ID: ${{ vars.SERVER_RELEASE_APP_ID }}
-        run: |
-          set -euo pipefail
-          if [[ ! "${SERVER_RELEASE_APP_ID}" =~ ^[0-9]+$ ]]; then
-            echo "Candidate cleanup requires the protected server release App configuration." >&2
-            exit 1
-          fi
-
-      - name: Recheck current protected master immediately before App token
+      - name: Recheck current protected master immediately before repository writes
         if: ${{ steps.recheck.outputs.needs_write == 'true' }}
         shell: bash
         env:
@@ -985,21 +945,9 @@ jobs:
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
             jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"
           if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then
-            echo "Protected master advanced before the Server Release App was admitted; start a new Cut release run." >&2
+            echo "Protected master advanced before repository writes; start a new Cut release run." >&2
             exit 1
           fi
-
-      - name: Mint restricted server release cleanup token
-        if: ${{ steps.recheck.outputs.needs_write == 'true' }}
-        id: release-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ vars.SERVER_RELEASE_APP_ID }}
-          private-key: ${{ secrets.SERVER_RELEASE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-          permission-pull-requests: write
 
       - name: Find only the exact open candidate pull request
         if: ${{ steps.recheck.outputs.needs_write == 'true' }}
@@ -1009,7 +957,7 @@ jobs:
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
         with:
-          github-token: ${{ steps.release-token.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -1037,7 +985,7 @@ jobs:
           PULL_REQUEST_NUMBER: ${{ steps.candidate-pr.outputs.pull_request_number }}
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
         with:
-          github-token: ${{ steps.release-token.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -1058,12 +1006,12 @@ jobs:
         if: ${{ steps.recheck.outputs.needs_write == 'true' }}
         shell: bash
         env:
-          APP_TOKEN: ${{ steps.release-token.outputs.token }}
+          RELEASE_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
         run: |
           set -euo pipefail
-          AUTH_HEADER="$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')"
+          AUTH_HEADER="$(printf 'x-access-token:%s' "${RELEASE_TOKEN}" | base64 | tr -d '\n')"
           readonly AUTH_HEADER
           REMOTE_SHA="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             ls-remote --heads origin "refs/heads/${RELEASE_BRANCH}" | awk '{print $1}')"
@@ -1086,9 +1034,12 @@ jobs:
     permissions:
       actions: read
       attestations: write
-      contents: read
+      contents: write
       id-token: write
+      packages: write
     uses: ./.github/workflows/publish-release.yml
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       release_commit: ${{ needs.prepare.outputs.release_sha }}
       release_branch: ${{ needs.prepare.outputs.release_branch }}
