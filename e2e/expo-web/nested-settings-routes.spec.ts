@@ -184,6 +184,7 @@ test('nested settings PR screenshot evidence', async ({ page, ux }, testInfo) =>
   ];
   for (const shot of shots) {
     await page.goto(shot.path);
+    await hideTransientPwaNotices(page);
     const title = shot.path === '/settings' ? 'Settings' : destinations.find((entry) => entry.path === shot.path)!.title;
     await expect(page.getByRole('heading', { name: title, exact: true }).first()).toBeVisible();
     if (shot.path === '/devices') {
