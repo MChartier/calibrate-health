@@ -106,7 +106,20 @@ const historicalPreparedV035Manifest = {
   }
 };
 
-async function useHistoricalPreparedV035NativeMirrors(root) {
+async function useHistoricalPreparedV035Mirrors(root) {
+  const originals = Object.fromEntries(await Promise.all(
+    Object.entries(preparedReleaseSourcePaths).map(async ([key, relativePath]) => [
+      key, await readFile(path.join(root, relativePath), 'utf8')
+    ])
+  ));
+  // Pin both historical server generations instead of inheriting the checkout's version.
+  const historicalSources = createServerReleaseReplacements(
+    createServerReleaseReplacements(originals, '0.34.1'),
+    '0.35.0'
+  );
+  for (const [key, relativePath] of Object.entries(preparedReleaseSourcePaths)) {
+    await writeFile(path.join(root, relativePath), historicalSources[key]);
+  }
   await writeFile(
     path.join(root, 'shared', 'release.json'),
     `${JSON.stringify(historicalPreparedV035Manifest, null, 2)}\n`
@@ -1342,7 +1355,7 @@ test('release-config check and tag accept an explicit repository root', async (t
 
 test('historical-prepared validation requires the exact v0.35.0 mirrors and exact source commit', async (t) => {
   const root = await createReleaseFixture(t);
-  await useHistoricalPreparedV035NativeMirrors(root);
+  await useHistoricalPreparedV035Mirrors(root);
 
   for (const command of ['check', 'tag']) {
     const unbound = spawnSync(process.execPath, [

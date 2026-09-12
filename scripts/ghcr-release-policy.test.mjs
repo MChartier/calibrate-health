@@ -76,6 +76,47 @@ test('only the exact requested GHCR ref absence response classifies an alias as 
   assert.throws(() => isExplicitRegistryAbsence(`ERROR: ${imageRef}: not found`, 'not-an-image'), /malformed/);
 });
 
+test('publisher can replace legacy latest indexes without adopting them as immutable release evidence', {
+  skip: process.platform === 'win32' ? 'The publisher shell runs on the native Linux Actions lane.' : false
+}, () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ghcr-latest-shell-'));
+  const workflow = fs.readFileSync(new URL('../.github/workflows/container.yml', import.meta.url), 'utf8');
+  const helpers = workflow.slice(workflow.indexOf('          inspect_reference_digest()'), workflow.indexOf('          config_digest_for_manifest()'));
+  assert.match(helpers, /inspect_digest\(\)/);
+  const mockDocker = `
+docker() {
+  if [[ "$LOOKUP_MODE" == "denied" ]]; then echo 'unauthorized' >&2; return 1; fi
+  case "$*" in
+    *'{{.Manifest.Digest}}'*) printf '%s' "$MANIFEST_DIGEST" ;;
+    *--raw*) printf '%s' '{"schemaVersion":2,"mediaType":"application/vnd.oci.image.index.v1+json","manifests":[]}' ;;
+    *'{{json .Image}}'*) printf '%s' '{"os":"linux","architecture":"amd64"}' ;;
+    *) return 1 ;;
+  esac
+}
+`;
+  try {
+    const toolingDirectory = path.join(directory, '.release-tooling', 'scripts');
+    fs.mkdirSync(toolingDirectory, { recursive: true });
+    fs.copyFileSync(new URL('./ghcr-release-policy.mjs', import.meta.url), path.join(toolingDirectory, 'ghcr-release-policy.mjs'));
+    const run = (command, lookupMode = 'ok') => spawnSync('bash', ['-c', `set -euo pipefail\n${mockDocker}\n${helpers}\n${command}`], {
+      cwd: directory,
+      encoding: 'utf8',
+      env: { ...process.env, RUNNER_TEMP: directory, MANIFEST_DIGEST: digest, LOOKUP_MODE: lookupMode }
+    });
+    const latest = run('inspect_reference_digest ghcr.io/mchartier/calibratehealth:latest');
+    assert.equal(latest.status, 0, latest.stderr);
+    assert.equal(latest.stdout, digest);
+    const immutable = run('inspect_digest ghcr.io/mchartier/calibratehealth:v0.36.0');
+    assert.notEqual(immutable.status, 0);
+    assert.match(immutable.stderr, /multi-platform index\/list/);
+    const denied = run('inspect_reference_digest ghcr.io/mchartier/calibratehealth:latest', 'denied');
+    assert.notEqual(denied.status, 0);
+    assert.match(denied.stderr, /refusing to treat the failure as absence/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('shell composition captures the config digest and emits exactly one manifest digest line', {
   skip: process.platform === 'win32' ? 'The release shell regression runs on the native Linux Actions lane.' : false
 }, () => {
