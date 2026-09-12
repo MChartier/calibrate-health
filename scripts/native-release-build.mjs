@@ -476,7 +476,11 @@ export function assertNativeReleaseVerificationMetadata(label, source) {
   const wearCleanRunArtifacts = [
     'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-linux.jar',
     'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657-windows.jar',
-    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657.pom'
+    'com.android.tools.build:aapt2:8.11.0-12782657:aapt2-8.11.0-12782657.pom',
+    'com.android.tools.lint:lint:31.11.0:lint-31.11.0.jar',
+    'com.android.tools.lint:lint:31.11.0:lint-31.11.0.pom',
+    'com.android.tools.lint:lint-gradle:31.11.0:lint-gradle-31.11.0.jar',
+    'com.android.tools.lint:lint-gradle:31.11.0:lint-gradle-31.11.0.pom'
   ];
   const cleanRunArtifacts = [
     ...commonCleanRunArtifacts,
