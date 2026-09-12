@@ -146,6 +146,11 @@ with `allow FULL_SHA`, or override every automatic rule with `revoke FULL_SHA`, 
 image/OTA recovery window, and review removals or explicit revocations as release-key revocations. Pre-hardening
 revisions, off-master revisions, changed unlisted revisions, and explicitly revoked revisions fail closed.
 
+GitHub certificates distinguish the reusable signer (`container.yml`) from the top-level build configuration
+(`cut-release-handler.yml`, `publish-release-handler.yml`, or `container-handler.yml`). Both must name this repository
+at the same exact protected-master revision, and the caller must use `workflow_run`. Treating the two workflow paths
+as identical rejects valid receipts and prevents recovery after the initial image push.
+
 The GitHub attestation store is an integrity authority, not an availability boundary. The verifier uses an explicit
 bounded high lookup limit so unrelated attestations cannot exhaust the default result window, then re-verifies the
 authorized certificate with its exact signer and source digest. An actor or workflow with `attestations: write` may

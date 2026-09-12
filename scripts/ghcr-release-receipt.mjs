@@ -95,6 +95,12 @@ export function parseGhcrAttestationWorkflowCandidates(contents, repository) {
 
   const repositoryUri = `https://github.com/${repository}`;
   const workflowUri = `${repositoryUri}/.github/workflows/container.yml@refs/heads/master`;
+  // Fulcio identifies the reusable signer separately from its top-level caller.
+  const callerUris = new Set([
+    'cut-release-handler.yml',
+    'publish-release-handler.yml',
+    'container-handler.yml'
+  ].map((name) => `${repositoryUri}/.github/workflows/${name}@refs/heads/master`));
   const revisions = [];
   const seen = new Set();
   for (const result of results) {
@@ -106,7 +112,8 @@ export function parseGhcrAttestationWorkflowCandidates(contents, repository) {
       || certificate.buildConfigDigest !== revision
       || certificate.githubWorkflowSHA !== revision
       || certificate.buildSignerURI !== workflowUri
-      || certificate.buildConfigURI !== workflowUri
+      || !callerUris.has(certificate.buildConfigURI)
+      || certificate.buildTrigger !== 'workflow_run'
       || certificate.sourceRepositoryURI !== repositoryUri
       || certificate.sourceRepositoryRef !== 'refs/heads/master'
       || certificate.runnerEnvironment !== 'github-hosted'

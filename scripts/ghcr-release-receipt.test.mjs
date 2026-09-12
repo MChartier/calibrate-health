@@ -91,7 +91,8 @@ function attestationResult(revision, overrides = {}) {
       signature: {
         certificate: {
           buildConfigDigest: revision,
-          buildConfigURI: workflowUri,
+          buildConfigURI: `${repositoryUri}/.github/workflows/cut-release-handler.yml@refs/heads/master`,
+          buildTrigger: 'workflow_run',
           buildSignerDigest: revision,
           buildSignerURI: workflowUri,
           githubWorkflowSHA: revision,
@@ -121,6 +122,12 @@ test('discovers only exact protected-master signer revisions from cryptographica
 
   for (const override of [
     { sourceRepositoryDigest: second },
+    { buildConfigDigest: second },
+    { buildTrigger: 'workflow_dispatch' },
+    { buildConfigURI: 'https://github.com/MChartier/calibrate-health/.github/workflows/container.yml@refs/heads/master' },
+    { buildConfigURI: 'https://github.com/MChartier/calibrate-health/.github/workflows/evil.yml@refs/heads/master' },
+    { buildConfigURI: 'https://github.com/MChartier/calibrate-health/.github/workflows/cut-release-handler.yml@refs/heads/feature' },
+    { buildConfigURI: 'https://github.com/other/calibrate-health/.github/workflows/cut-release-handler.yml@refs/heads/master' },
     { sourceRepositoryRef: 'refs/heads/feature' },
     { runnerEnvironment: 'self-hosted' },
     { buildSignerURI: 'https://github.com/MChartier/calibrate-health/.github/workflows/evil.yml@refs/heads/master' }
@@ -153,6 +160,28 @@ test('discovers only exact protected-master signer revisions from cryptographica
     /between 1 and 100/,
     'the bounded discovery policy must reject a 101st attestation result'
   );
+});
+
+test('real Cut release certificate distinguishes the reusable signer from the request handler', () => {
+  // Public output of gh attestation verify for release run 34701986195.
+  const contents = fs.readFileSync(
+    new URL('./fixtures/ghcr-cut-release-attestation-verification.json', import.meta.url),
+    'utf8'
+  );
+  const revision = '9aad13afd54e2d1b0931a444dbdb200b92179ccc';
+  const certificate = JSON.parse(contents)[0].verificationResult.signature.certificate;
+  assert.notEqual(certificate.buildConfigURI, certificate.buildSignerURI);
+  assert.deepEqual(parseGhcrAttestationWorkflowCandidates(contents, values.repository), [revision]);
+
+  for (const caller of ['cut-release-handler.yml', 'publish-release-handler.yml', 'container-handler.yml']) {
+    const result = attestationResult(revision, {
+      buildConfigURI: `https://github.com/${values.repository}/.github/workflows/${caller}@refs/heads/master`
+    });
+    assert.deepEqual(
+      parseGhcrAttestationWorkflowCandidates(JSON.stringify([result]), values.repository),
+      [revision]
+    );
+  }
 });
 
 function createAuthorizationGit({
