@@ -1338,6 +1338,9 @@ test('release images publish immutable identity and guard the moving latest tag'
   assert.match(publisher, /verify_release false[\s\S]*docker push "\$\{RELEASE_IMAGE\}"/);
   assert.match(publisher, /verify_release false[\s\S]*docker buildx imagetools create/);
   assert.match(publisher, /verify_release true[\s\S]*--tag "\$\{LATEST_IMAGE\}"[\s\S]*"\$\{GHCR_IMAGE\}@\$\{AUTHORITATIVE_DIGEST\}"/);
+  assert.equal((publisher.match(/LATEST_DIGEST="\$\(inspect_reference_digest "\$\{LATEST_IMAGE\}"\)"/g) ?? []).length, 2);
+  assert.doesNotMatch(publisher, /(?:RELEASE|SOURCE)_DIGEST="\$\(inspect_reference_digest/);
+  assert.match(publisher, /require_digest "\$\{LATEST_IMAGE\}" "\$\{AUTHORITATIVE_DIGEST\}"/);
 
   assert.match(ghcrPolicy, /application\/vnd\.oci\.image\.index\.v1\+json/);
   assert.match(ghcrPolicy, /application\/vnd\.docker\.distribution\.manifest\.list\.v2\+json/);

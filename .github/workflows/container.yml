@@ -667,10 +667,9 @@ jobs:
             fi
           }
 
-          inspect_digest() {
-            local config_digest config_file config_record digest digest_ref error_file image_ref raw_file repository
+          inspect_reference_digest() {
+            local digest error_file image_ref
             image_ref="$1"
-            raw_file="${RUNNER_TEMP}/registry-manifest.json"
             error_file="${RUNNER_TEMP}/registry-inspect-error"
             if ! digest="$(docker buildx imagetools inspect \
               --format '{{.Manifest.Digest}}' "${image_ref}" 2> "${error_file}")"; then
@@ -690,7 +689,18 @@ jobs:
               echo "Registry returned malformed digest for ${image_ref}: ${digest}" >&2
               return 1
             fi
+            printf '%s' "${digest}"
+          }
 
+          inspect_digest() {
+            local config_digest config_file config_record digest digest_ref error_file image_ref raw_file repository
+            image_ref="$1"
+            digest="$(inspect_reference_digest "${image_ref}")" || return 1
+            if [[ -z "${digest}" ]]; then
+              return 0
+            fi
+            raw_file="${RUNNER_TEMP}/registry-manifest.json"
+            error_file="${RUNNER_TEMP}/registry-inspect-error"
             # Bind media/config validation to the immutable digest observed for this tag so
             # a concurrent ref move cannot mix fields from different registry objects.
             repository="${image_ref%:*}"
@@ -906,10 +916,11 @@ jobs:
           ensure_immutable_alias "${SOURCE_IMAGE}" "${AUTHORITATIVE_DIGEST}"
 
           if [[ "${PUBLISH_LATEST}" == "true" ]]; then
-            LATEST_DIGEST="$(inspect_digest "${LATEST_IMAGE}")"
+            # Prior latest may be an index; only its replacement needs release evidence.
+            LATEST_DIGEST="$(inspect_reference_digest "${LATEST_IMAGE}")"
             if [[ "${LATEST_DIGEST}" != "${AUTHORITATIVE_DIGEST}" ]]; then
               verify_release true
-              LATEST_DIGEST="$(inspect_digest "${LATEST_IMAGE}")"
+              LATEST_DIGEST="$(inspect_reference_digest "${LATEST_IMAGE}")"
               if [[ "${LATEST_DIGEST}" != "${AUTHORITATIVE_DIGEST}" ]]; then
                 docker buildx imagetools create \
                   --prefer-index=false \
