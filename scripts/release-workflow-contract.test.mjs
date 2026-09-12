@@ -49,6 +49,52 @@ function workflowJobBlock(workflow, jobName) {
   return match[0];
 }
 
+// Workflow contracts use explicit, block-style permission maps at these two indentation levels.
+function workflowPermissions(block, indent) {
+  const prefix = ' '.repeat(indent);
+  const declaration = block.match(new RegExp(`^${prefix}permissions:([^\\n]*)`, 'm'));
+  if (!declaration) return undefined;
+  assert.equal(declaration[1].trim(), '', 'permissions must use an explicit block map');
+  const entries = block.slice(declaration.index + declaration[0].length + 1)
+    .match(new RegExp(`^(?:${prefix}  [a-z-]+: (?:read|write|none)\\n)+`));
+  assert.ok(entries, 'permissions must declare literal read, write, or none scopes');
+  return Object.fromEntries([...entries[0].matchAll(/([a-z-]+): (read|write|none)/g)]
+    .map(([, scope, level]) => [scope, level]));
+}
+
+test('local reusable workflow callers cover every called job token permission', () => {
+  const permissionRank = { none: 0, read: 1, write: 2 };
+  const failures = [];
+  for (const file of readdirSync(workflowsDirectory).filter((name) => /\.ya?ml$/.test(name))) {
+    const workflow = readWorkflow(file);
+    const defaults = workflowPermissions(workflow, 0);
+    const jobs = workflow.slice(workflow.indexOf('\njobs:\n'));
+    for (const [, jobName] of jobs.matchAll(/^  ([a-z0-9_-]+):$/gm)) {
+      const caller = workflowJobBlock(workflow, jobName);
+      const reference = caller.match(/^    uses: \.\/\.github\/workflows\/([^\s]+)$/m);
+      if (!reference) continue;
+      const allowed = workflowPermissions(caller, 4) ?? defaults;
+      assert.ok(allowed, `${file}/${jobName} must declare its token permissions`);
+      const callee = readWorkflow(reference[1]);
+      const calleeDefaults = workflowPermissions(callee, 0);
+      const nestedJobs = callee.slice(callee.indexOf('\njobs:\n'));
+      for (const [, nestedJobName] of nestedJobs.matchAll(/^  ([a-z0-9_-]+):$/gm)) {
+        const requested = workflowPermissions(workflowJobBlock(callee, nestedJobName), 4)
+          ?? calleeDefaults;
+        assert.ok(requested, `${reference[1]}/${nestedJobName} must declare its token permissions`);
+        for (const [scope, level] of Object.entries(requested)) {
+          const permitted = allowed[scope] ?? 'none';
+          if (permissionRank[level] > permissionRank[permitted]) {
+            failures.push(`${file}/${jobName} -> ${reference[1]}/${nestedJobName}: ` +
+              `${scope}: ${level} requested, ${permitted} allowed`);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(failures, [], 'Reusable workflows cannot increase caller token permissions');
+});
+
 function workflowPathFilterBlock(job, filterName) {
   assert.match(filterName, /^[a-z_]+$/, 'workflow path filter selector must be a literal safe identifier');
   const match = job.match(
@@ -381,7 +427,7 @@ test('Cut release uses a read-only request, protected handler, and App-isolated 
       'Cut may propagate only OIDC/attestation write scopes to its nested source-free receipt job'
     );
   }
-  assert.match(workflow, /permissions:\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/);
+  assert.match(workflow, /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/);
   assert.doesNotMatch(workflow, /secrets: inherit|packages: write/);
   assert.equal(
     (workflow.match(/GITHUB_TOKEN: \$\{\{ github\.token \}\}/g) ?? []).length,
@@ -528,7 +574,7 @@ test('Cut release uses a read-only request, protected handler, and App-isolated 
   assert.match(publish, /uses: \.\/\.github\/workflows\/publish-release\.yml/);
   assert.match(
     publish,
-    /permissions:\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/
+    /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/
   );
   assert.doesNotMatch(publish, /(?:contents|packages|pull-requests|actions):\s*write/);
   assert.match(publish, /release_commit: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
@@ -744,7 +790,7 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   );
   assert.match(image, /uses: \.\/\.github\/workflows\/container\.yml/);
   assert.match(image, /needs: \[tag_release, publish_release_tag, verify_published_release\]/);
-  assert.match(image, /permissions:\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/);
+  assert.match(image, /permissions:\s*\n\s+actions: read\s*\n\s+attestations: write\s*\n\s+contents: read\s*\n\s+id-token: write/);
   assert.doesNotMatch(image, /packages: write|secrets: inherit/);
   assert.match(image, /publish_latest: true/);
   assert.match(ota, /needs: \[tag_release, publish_release_tag, build_release_image\]/);

@@ -109,6 +109,7 @@ jobs:
     name: Run protected image publication
     needs: verify_request
     permissions:
+      actions: read
       attestations: write
       contents: read
       id-token: write

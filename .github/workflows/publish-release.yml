@@ -17,6 +17,7 @@ on:
         value: ${{ jobs.tag_release.outputs.release_tag }}
 
 permissions:
+  actions: read
   attestations: write
   contents: read
   id-token: write
@@ -551,6 +552,7 @@ jobs:
     name: Build validated release image
     needs: [tag_release, publish_release_tag, verify_published_release]
     permissions:
+      actions: read
       attestations: write
       contents: read
       id-token: write
