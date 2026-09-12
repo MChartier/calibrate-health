@@ -108,6 +108,7 @@ jobs:
     name: Run protected prepared release
     needs: verify_request
     permissions:
+      actions: read
       attestations: write
       contents: read
       id-token: write

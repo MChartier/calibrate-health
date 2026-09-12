@@ -110,7 +110,9 @@ jobs:
   run_release:
     name: Run protected cut release
     needs: verify_request
+    # Nested artifact jobs cannot request scopes omitted by a reusable-workflow caller.
     permissions:
+      actions: read
       attestations: write
       contents: read
       id-token: write
