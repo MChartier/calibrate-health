@@ -2,9 +2,6 @@ name: Publish prepared release
 
 on:
   workflow_call:
-    secrets:
-      EXPO_TOKEN:
-        required: false
     inputs:
       release_commit:
         description: Exact validated release commit that is now an ancestor of master
@@ -39,8 +36,6 @@ jobs:
       contents: read
     outputs:
       release_tag: ${{ steps.release.outputs.release_tag }}
-      native_release_tag: ${{ steps.release.outputs.native_release_tag }}
-      native_release_ready: ${{ steps.native.outputs.native_release_ready }}
 
     steps:
       - name: Require current master workflow authority
@@ -66,25 +61,6 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
           path: .release-tooling
-
-      - name: Checkout current native tag trust set
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: master
-          fetch-depth: 1
-          persist-credentials: false
-          path: .release-trust
-
-      - name: Bind current native tag trust set
-        id: native-trust
-        shell: bash
-        run: |
-          set -euo pipefail
-          TRUST_SET_COMMIT="$(git --no-replace-objects -C .release-trust rev-parse HEAD)"
-          [[ "${TRUST_SET_COMMIT}" =~ ^[0-9a-f]{40}$ ]]
-          test -s .release-trust/.github/native-release-tag-allowed-signers
-          echo "commit=${TRUST_SET_COMMIT}" >> "${GITHUB_OUTPUT}"
-          printf 'Native tag trust set: `%s` from current `master`.\n' "${TRUST_SET_COMMIT}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -123,8 +99,6 @@ jobs:
           TAG="$(node .release-tooling/scripts/release-config.mjs tag \
             --repository-root "${GITHUB_WORKSPACE}" \
             --validation-mode historical-prepared)"
-          NATIVE_RELEASE_TAG="$(node -e \
-            "const fs=require('node:fs'); const value=JSON.parse(fs.readFileSync('shared/release.json','utf8')).android?.mobile?.native_release_tag; if(typeof value!=='string') process.exit(1); process.stdout.write(value)")"
           EXPECTED_BRANCH="release/${TAG}"
           if [[ "${RELEASE_BRANCH}" != "${EXPECTED_BRANCH}" ]]; then
             echo "Release branch ${RELEASE_BRANCH} does not match manifest tag ${TAG}." >&2
@@ -135,50 +109,6 @@ jobs:
             --release-tag "${TAG}" \
             --expected-commit "${RELEASE_COMMIT}" \
             --publish-latest true
-          if [[ ! "${NATIVE_RELEASE_TAG}" =~ ^native-v[0-9]+\.[0-9]+\.[0-9]+$ && ! "${NATIVE_RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Native release tag ${NATIVE_RELEASE_TAG} must match native-vMAJOR.MINOR.PATCH (or the legacy vMAJOR.MINOR.PATCH format for a prepared historical release)." >&2
-            exit 1
-          fi
-          NATIVE_RELEASE_CANDIDATE=false
-          NATIVE_RELEASE_ATTESTED=false
-          NATIVE_RELEASE_REASON=tag-not-published
-          if [[ "${NATIVE_RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::warning::Legacy tag ${NATIVE_RELEASE_TAG} is not a signed native readiness attestation; OTA publication is skipped."
-            NATIVE_RELEASE_REASON=legacy-unattested-native-tag
-          else
-            REMOTE_NATIVE_TAG="$(git ls-remote --tags --refs origin "refs/tags/${NATIVE_RELEASE_TAG}")"
-            if [[ -n "${REMOTE_NATIVE_TAG}" ]]; then
-              if [[ "${REMOTE_NATIVE_TAG}" == *$'\n'* ]]; then
-                echo "Origin returned more than one exact ref for ${NATIVE_RELEASE_TAG}." >&2
-                exit 1
-              fi
-              read -r REMOTE_NATIVE_OBJECT REMOTE_NATIVE_REF <<< "${REMOTE_NATIVE_TAG}"
-              if [[ ! "${REMOTE_NATIVE_OBJECT}" =~ ^[0-9a-f]{40}$ || "${REMOTE_NATIVE_REF}" != "refs/tags/${NATIVE_RELEASE_TAG}" ]]; then
-                echo "Origin returned a malformed exact ref for ${NATIVE_RELEASE_TAG}." >&2
-                exit 1
-              fi
-              git fetch --force origin "+refs/tags/${NATIVE_RELEASE_TAG}:refs/tags/${NATIVE_RELEASE_TAG}"
-              NATIVE_RELEASE_COMMIT="$(git rev-parse "${NATIVE_RELEASE_TAG}^{commit}")"
-              if ! git merge-base --is-ancestor "${NATIVE_RELEASE_COMMIT}" "${RELEASE_COMMIT}"; then
-                echo "::warning::Native release tag ${NATIVE_RELEASE_TAG} is not an ancestor of ${RELEASE_COMMIT}; OTA publication is skipped."
-                NATIVE_RELEASE_REASON=native-tag-not-ancestor
-              else
-                NATIVE_RELEASE_CANDIDATE=true
-                if node .release-tooling/scripts/native-tag-attestation.mjs verify \
-                  --repository-root "${GITHUB_WORKSPACE}" \
-                  --tag "${NATIVE_RELEASE_TAG}" \
-                  --expected-commit "${NATIVE_RELEASE_COMMIT}" \
-                  --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers; then
-                  NATIVE_RELEASE_ATTESTED=true
-                  NATIVE_RELEASE_REASON=pending-protection-check
-                else
-                  echo "::warning::Native release tag ${NATIVE_RELEASE_TAG} lacks the reviewed signed attestation; OTA publication is skipped."
-                  NATIVE_RELEASE_REASON=unattested-native-tag
-                fi
-              fi
-            fi
-          fi
-
           CREATE_TAG=true
           if git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
             TAG_COMMIT="$(git rev-list -n 1 "${TAG}")"
@@ -191,89 +121,7 @@ jobs:
 
           {
             echo "release_tag=${TAG}"
-            echo "native_release_tag=${NATIVE_RELEASE_TAG}"
-            echo "native_release_candidate=${NATIVE_RELEASE_CANDIDATE}"
-            echo "native_release_attested=${NATIVE_RELEASE_ATTESTED}"
-            echo "native_release_reason=${NATIVE_RELEASE_REASON}"
             echo "create_tag=${CREATE_TAG}"
-          } >> "${GITHUB_OUTPUT}"
-
-      - name: Verify native tag protection with a read-only token
-        id: native-policy
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          NATIVE_RELEASE_ATTESTED: ${{ steps.release.outputs.native_release_attested }}
-          NATIVE_RELEASE_CANDIDATE: ${{ steps.release.outputs.native_release_candidate }}
-          NATIVE_RELEASE_REASON: ${{ steps.release.outputs.native_release_reason }}
-          NATIVE_RELEASE_TAG: ${{ steps.release.outputs.native_release_tag }}
-        run: |
-          set -euo pipefail
-          NATIVE_RELEASE_PROTECTED=false
-          FINAL_REASON="${NATIVE_RELEASE_REASON}"
-          if [[ "${NATIVE_RELEASE_CANDIDATE}" == "true" && "${NATIVE_RELEASE_ATTESTED}" == "true" ]]; then
-            if node .release-tooling/scripts/native-tag-protection.mjs verify \
-              --repository "${GITHUB_REPOSITORY}" \
-              --tag "${NATIVE_RELEASE_TAG}"; then
-              NATIVE_RELEASE_PROTECTED=true
-              FINAL_REASON=pending-compatibility-check
-            else
-              echo "::warning::Native release tag ${NATIVE_RELEASE_TAG} is not protected; OTA publication is skipped."
-              FINAL_REASON=unprotected-native-tag
-            fi
-          fi
-          {
-            echo "native_release_protected=${NATIVE_RELEASE_PROTECTED}"
-            echo "native_release_reason=${FINAL_REASON}"
-          } >> "${GITHUB_OUTPUT}"
-
-      - name: Install native compatibility dependencies
-        if: >-
-          steps.release.outputs.native_release_candidate == 'true' &&
-          steps.native-policy.outputs.native_release_protected == 'true' &&
-          steps.release.outputs.native_release_attested == 'true'
-        run: npm ci --ignore-scripts --no-audit --fund=false
-
-      - name: Verify protected and attested native baseline compatibility
-        id: native
-        shell: bash
-        env:
-          NATIVE_RELEASE_CANDIDATE: ${{ steps.release.outputs.native_release_candidate }}
-          NATIVE_RELEASE_PROTECTED: ${{ steps.native-policy.outputs.native_release_protected }}
-          NATIVE_RELEASE_ATTESTED: ${{ steps.release.outputs.native_release_attested }}
-          NATIVE_RELEASE_REASON: ${{ steps.native-policy.outputs.native_release_reason }}
-          NATIVE_RELEASE_TAG: ${{ steps.release.outputs.native_release_tag }}
-        run: |
-          set -euo pipefail
-          if [[ "${NATIVE_RELEASE_CANDIDATE}" != "true" ||
-                "${NATIVE_RELEASE_PROTECTED}" != "true" ||
-                "${NATIVE_RELEASE_ATTESTED}" != "true" ]]; then
-            {
-              echo "native_release_ready=false"
-              echo "native_release_reason=${NATIVE_RELEASE_REASON}"
-            } >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          COMPATIBILITY_OUTPUT="${RUNNER_TEMP}/native-release-compatibility.env"
-          node .release-tooling/scripts/expo-ota-ci-preflight.mjs \
-            --repository-root "${GITHUB_WORKSPACE}" \
-            --native-build-ref "${NATIVE_RELEASE_TAG}" \
-            --allowed-signers-file .release-trust/.github/native-release-tag-allowed-signers \
-            --compatibility-output "${COMPATIBILITY_OUTPUT}"
-          source "${COMPATIBILITY_OUTPUT}"
-
-          FINAL_READY=false
-          FINAL_REASON="${NATIVE_RELEASE_REASON}"
-          if [[ "${native_release_compatible}" != "true" ]]; then
-            FINAL_REASON="${native_release_compatibility_reason}"
-          else
-            FINAL_READY=true
-            FINAL_REASON=compatible
-          fi
-          {
-            echo "native_release_ready=${FINAL_READY}"
-            echo "native_release_reason=${FINAL_REASON}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Summarize immutable release
@@ -282,9 +130,6 @@ jobs:
           RELEASE_COMMIT: ${{ inputs.release_commit }}
           RELEASE_BRANCH: ${{ inputs.release_branch }}
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
-          NATIVE_RELEASE_READY: ${{ steps.native.outputs.native_release_ready }}
-          NATIVE_RELEASE_REASON: ${{ steps.native.outputs.native_release_reason }}
-          NATIVE_RELEASE_TAG: ${{ steps.release.outputs.native_release_tag }}
         run: |
           {
             echo "## Publishing ${RELEASE_TAG}"
@@ -294,13 +139,8 @@ jobs:
             echo "- Source tag: \`${RELEASE_TAG}\`"
             echo "- Image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${RELEASE_TAG}\`"
             echo "- Moving image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:latest\`"
-            if [[ "${NATIVE_RELEASE_READY}" == "true" ]]; then
-              echo "- OTA: publish internal after image publication, then await production approval"
-            else
-              echo "- OTA: skipped for native build tag \`${NATIVE_RELEASE_TAG}\` (\`${NATIVE_RELEASE_REASON}\`)"
-            fi
             echo
-            echo "Use the release runbook's state-specific recovery path for any failed or skipped stage."
+            echo "Upgrade Docker on the host, then publish compatible clients using docs/local-release.md."
           } >> "${GITHUB_STEP_SUMMARY}"
 
   publish_release_tag:
@@ -513,29 +353,3 @@ jobs:
       release_commit: ${{ inputs.release_commit }}
       release_tag: ${{ needs.tag_release.outputs.release_tag }}
       publish_latest: true
-
-  deploy_self_hosted:
-    name: Deploy opted-in self-host
-    needs: [tag_release, build_release_image]
-    if: vars.SELF_HOSTED_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/master'
-    permissions:
-      contents: read
-    uses: ./.github/workflows/deploy-self-hosted.yml
-    with:
-      image_ref: ${{ needs.build_release_image.outputs.image_ref }}
-      release_tag: ${{ needs.tag_release.outputs.release_tag }}
-      release_commit: ${{ inputs.release_commit }}
-
-  publish_ota:
-    name: Publish released Expo OTA update
-    needs: [tag_release, publish_release_tag, build_release_image]
-    if: needs.tag_release.outputs.native_release_ready == 'true'
-    permissions:
-      contents: read
-    uses: ./.github/workflows/expo-ota-update.yml
-    secrets:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-    with:
-      source_ref: ${{ inputs.release_commit }}
-      native_build_ref: ${{ needs.tag_release.outputs.native_release_tag }}
-      message: Release ${{ needs.tag_release.outputs.release_tag }}

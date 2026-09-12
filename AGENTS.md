@@ -263,16 +263,15 @@ UI code style:
   see `docs/local-release.md` and `docs/client-versioning.md`. The current clean checkout supplies
   source identity. Keep instance configuration and credentials in local environment variables.
   Local native records use ordinary JSON plus artifact hashes; no extra receipt/tag signing key
-  or signer onboarding is required. Android application signing remains mandatory. These local
-  rules supersede the legacy native publication/tag prerequisites below during the migration.
+  or signer onboarding is required. Android application signing remains mandatory.
 - `shared/client-release.json` declares the running Expo bundle's explicit `requiresServer` range
   (`>=X.Y.Z <X.Y.Z`). Do not derive it from server release bumps or native app versions. Preserve
   native-owned Expo updates and uncached startup/server-selection checks, including patch precision.
   Native `appVersion` runtime identity and odd phone/even Wear codes remain independent of server
   releases and OTA update IDs. Native fingerprint changes require a new native baseline.
 - Server release/image Actions remain unchanged. Deploy Docker on the host manually; local client
-  publication does not poll servers, require readiness confirmation, or invoke deployment. Existing
-  instance publishing Actions are retired in the separate cleanup change.
+  publication does not poll servers, require readiness confirmation, or invoke deployment. Public Actions stop after
+  server tag/image publication; no personal publishing credentials belong in their settings.
 
 - Ordinary feature and fix PRs must not change `shared/release.json` `server.version` or its package, lockfile,
   diagnostic, OpenAPI, and generated-client mirrors.
@@ -304,57 +303,28 @@ UI code style:
   workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
-- Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are
-  globally unique: phone uses the odd lane and Wear uses the even lane. Use `release:native:prepare` for a paired
-  store version only after its current manifest tag is verified as a signed annotated tag against the reviewed public
-  keys in `.github/native-release-tag-allowed-signers`, the exact tag name and target SHA, the exact published `origin`
-  tag, and `origin/master` ancestry; local-only, lightweight, unsigned, wrong-key, or wrong-target tags are not release
-  evidence. Merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
-  uploads phone/Wear to Play internal tracks, and promotes those exact codes through closed testing before the
-  protected production operation.
-- Before Play upload, a separate source-free job with the workflow's only native Play OIDC/attestation-write scope
-  attests canonical repository/app/source/tag/version and phone/watch track/code/AAB-hash receipt bytes. The Play
-  publisher must independently reconstruct and verify that exact receipt before authentication. Recovery must derive
-  identical bytes solely from singleton Play observations, scrub Play authentication, then verify the original exact
-  workflow/source certificate under the fresh-master allow/revoke policy. A mutable Play name is not provenance;
-  missing/legacy/revoked evidence requires a fresh higher odd/even pair, never adoption or tag creation.
-- After the GHCR image is published, **Cut release** publishes the exact release commit to Expo only when the native
-  tag from `shared/release.json` is a verified signed release attestation. Expo uses the configured repository
-  `EXPO_TOKEN`, `preview` environment, and one reviewer-protected `production` approval after internal publication.
-  That approval gates production environment resolution, export, and publication. Keep the four credential stages
-  separate from source export. The token has project-wide update authority; the approval controls workflow sequencing
-  and is not a channel-scoped capability boundary. The pinned public key,
-  exact annotated-tag name, and exact peeled target verification must be
-  used consistently by prepared-release OTA readiness, Play promotion, and origin-authoritative native preparation;
-  a commit signature is insufficient. A reserved
-  but unpublished native tag skips OTA without failing the independent server/image release; rerun the prepared
-  release or use the manual OTA workflow after the signed native baseline is published. Expo publication itself never
-  waits for or triggers self-host deployment.
-- An opted-in self-host deployment runs alongside OTA using the receipt-verified immutable image digest, including
-  recovered publications. OTA does not wait for deployment or require it to succeed. Configure the restricted
-  WireGuard/SSH target through `deploy/self-hosted/README.md`; deployment credentials stay in `self-hosted-testing`.
-- Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
-  `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
-  every run and rerun obtains and logs the allowed-signers trust set from the exact current protected `master` commit
-  so revocation cannot be undone by rerunning an old workflow. The reviewed allowed-signers file is the trust root; its
-  comment-only placeholder intentionally fails closed until onboarding. Tag rulesets are defense-in-depth, not the sole
-  attestation boundary, because the read-only Rulesets API hides bypass actors. Rotate with overlapping old/new public
-  keys, then switch the workflow secret, verify a new-key tag, and remove the old key only after dependent baselines
-  retire; suspected compromise requires an immediate pause, private-key removal, public-key revocation, tag/Play audit,
-  and a higher native version rather than moving an existing tag.
-- Expo's automatic check and download lifecycle remains native-owned. Client code compares only the running bundle's
-  expected server contract version with client configuration at startup and server selection. Major versions must
-  match; within a major, the server minor must be at least the client minor, while patch drift remains compatible. Do
-  not add candidate-manifest inspection or a download/restart veto.
-- Startup, server-selection, and manual-recheck compatibility requests must use `cache: 'no-store'`; response headers
-  alone cannot invalidate a response cached before the server began sending the no-store policy.
-- Protected production approval is the current public-channel promotion gate. A future explicit readiness signal may
-  cover the release owner's declared server rollout, but independent self-hosts still require the runtime guard. Do
-  not poll independent private servers to gate OTA. The optional deployment job verifies only its configured target.
-- Use **Publish prepared release** with the recorded release commit and branch to recover post-merge tag/image
-  failures and OTA failures whose prepared manifest already records a compatible protected native tag. Historical releases
-  with an incompatible recorded native baseline require **Publish Expo OTA Update** from an exact compatible source
-  that descends from the installed build. **Build Release Image** remains an image-only recovery tool.
+- Android phone and Wear store versions are prepared together with globally unique odd phone / even Wear
+  codes. Use `release:native:prepare`, review and merge the metadata, then build from a clean checkout.
+  Preparation refreshes origin/master to reject stale counters. No published native tag is required.
+- `release:native --profile internal` builds the signed phone/Wear pair locally for direct testing.
+  `--profile production` builds the production-channel pair and uploads it to Play internal tracks;
+  `--build-only` skips upload. Promote those same codes in Play Console without rebuilding.
+- Local native records bind source, artifact hashes, Android signing identity, runtime, and public
+  Expo configuration. Treat them as operator-owned state, preserve them with the artifacts, and
+  verify recorded hashes before retries or upload. Do not introduce an extra receipt/tag signing key.
+- `release:ota --channel internal|production` publishes from the current clean checkout using that
+  runtime/channel's saved native baseline. Require source ancestry and an unchanged native fingerprint.
+  Expo routes Android updates by exact runtime and channel; never override a runtime to bypass a mismatch.
+  Keep credential-free source export separate from Expo environment resolution and publication.
+- Keep Android upload signing, Play service-account access, and Expo tokens in local environment
+  variables or an explicitly loaded gitignored file. No Expo cloud build is used by these commands.
+- Expo's automatic check/download lifecycle remains native-owned. Compare only the running bundle's
+  `shared/client-release.json` server range at startup, server selection, and manual recheck.
+  Use `cache: 'no-store'`; do not add candidate-manifest inspection or a download/restart veto.
+  Maintainers deploy required server changes before publishing clients; commands do not enforce rollout.
+- Use **Publish prepared release** to recover post-merge server tag/image failures and
+  **Build Release Image** for image-only recovery. Local native/OTA recovery uses retained JSON
+  records and artifacts as documented in `docs/local-release.md`.
 
 ## Git And PR Workflow
 

@@ -55,10 +55,10 @@ the served web application.
 Affected pull requests already own unit and integration tests, generated API and deploy contracts, dependency checks,
 database upgrade/rollback rehearsal, and vulnerability scanning. The release cut deliberately does not rerun them.
 Successful metadata and container smoke validation opens and atomically merges the version-only PR before the prepared
-release is tagged and its image is published. The same release commit is then published to the Expo internal channel
-without waiting for self-host deployment when its manifest's native-build tag exists. A reserved but unpublished
-native tag skips OTA without failing the server/image release. Production OTA publishing remains held behind the
-protected production environment approval.
+release is tagged and its image is published. The maintainer upgrades Docker on the host and
+publishes Android/Expo changes through [the local commands](local-release.md). Commands print the
+client's independent server requirement; deployment ordering remains the maintainer's responsibility.
+No instance publishing credentials are used in public Actions.
 
 ## Performance and owner judgment
 

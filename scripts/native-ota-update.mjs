@@ -47,7 +47,7 @@ export function parseNativeOtaArgs(argv) {
   return values;
 }
 
-export function createNativeOtaRunner() {
+function createNativeOtaRunner() {
   return function runCommand(request) {
     const invocation = { command: request.command, args: request.args ?? [] };
     const result = spawnSync(invocation.command, invocation.args, {
@@ -167,7 +167,7 @@ export function validateEasUpdateEnvironment(values, baseline, environmentName) 
   }
 }
 
-export function verifyEasUpdateEnvironment({ root, baseline, publish, runner, environment }) {
+function verifyEasUpdateEnvironment({ root, baseline, publish, runner, environment }) {
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-eas-environment-'));
   const environmentFile = path.join(temporaryDirectory, '.env');
   try {
@@ -218,7 +218,7 @@ Native module/configuration and Wear OS changes cannot be delivered by Expo OTA.
 `);
 }
 
-export function validateNativeOtaState({ root, baseline, runner, environment = process.env }) {
+function validateNativeOtaState({ root, baseline, runner, environment = process.env }) {
   const mobilePackage = JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'package.json'), 'utf8'));
   if (!mobilePackage.dependencies?.['expo-updates']) {
     throw new Error('mobile/package.json does not include expo-updates. A new native build is required.');

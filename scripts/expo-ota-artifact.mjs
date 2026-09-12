@@ -92,7 +92,7 @@ function validateTarget(target, { requireNativeTag = false } = {}) {
   return target;
 }
 
-export function parseEasEnvironmentFile(contents) {
+function parseEasEnvironmentFile(contents) {
   const values = {};
   for (const originalLine of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
     const line = originalLine.trim();
@@ -508,7 +508,7 @@ function requiredOptions(config, names) {
   }
 }
 
-export function runExpoOtaArtifactCli(config = parseExpoOtaArtifactArgs(process.argv.slice(2))) {
+function runExpoOtaArtifactCli(config = parseExpoOtaArtifactArgs(process.argv.slice(2))) {
   if (config.help) {
     printHelp();
     return { help: true };
@@ -563,5 +563,3 @@ if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === imp
     process.exitCode = 1;
   }
 }
-
-export { repositoryRoot };

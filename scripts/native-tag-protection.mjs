@@ -3,7 +3,7 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 export const NATIVE_TAG_REF_PATTERN = 'refs/tags/native-v*';
-export const NATIVE_TAG_RULESETS = Object.freeze({
+const NATIVE_TAG_RULESETS = Object.freeze({
   creation: Object.freeze({
     name: 'native-release-tag-creation',
     ruleTypes: Object.freeze(['creation'])

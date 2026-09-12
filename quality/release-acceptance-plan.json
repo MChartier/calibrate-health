@@ -72,13 +72,12 @@
     },
     {
       "id": "prepared-release-integrity",
-      "title": "Publish the exact merged release image, then publish OTA",
-      "releaseScopes": ["server-web", "ota"],
+      "title": "Publish the exact merged server release image",
+      "releaseScopes": ["server-web"],
       "trigger": "release",
       "workflowPaths": [
         ".github/workflows/cut-release.yml",
-        ".github/workflows/publish-release.yml",
-        ".github/workflows/expo-ota-update.yml"
+        ".github/workflows/publish-release.yml"
       ],
       "jobIds": [
         "prepare",
@@ -86,10 +85,7 @@
         "finalize",
         "publish",
         "tag_release",
-        "build_release_image",
-        "publish_ota",
-        "publish-internal",
-        "publish-production"
+        "build_release_image"
       ]
     }
   ],

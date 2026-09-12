@@ -4,9 +4,6 @@ run-name: Cut ${{ inputs.bump }} release from ${{ github.ref_name }}
 
 on:
   workflow_call:
-    secrets:
-      EXPO_TOKEN:
-        required: false
     inputs:
       bump:
         description: Semantic server/web version component to bump
@@ -692,7 +689,7 @@ jobs:
               '- production image build, readiness, and served-Web smoke',
               '- full tests, dependency scans, and migration checks already completed on affected pull requests',
               '',
-              'Cut release validated this exact candidate before creating the PR. After merge it will publish the image and start the gated OTA rollout when the native tag is ready.',
+              'Cut release validated this exact candidate before creating the PR. After merge it will publish the server image.',
             ].join('\n');
             const { data: pull } = await github.rest.pulls.create({
               owner: context.repo.owner,
@@ -804,9 +801,9 @@ jobs:
             echo "- Source: \`${SOURCE_SHA}\`"
             echo "- Validated release commit: \`${RELEASE_SHA}\`"
             echo "- Release PR: ${PR_URL}"
-            echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`; publish OTA internal when the native tag is ready"
+            echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`"
             echo
-            echo "If tag or image publishing fails, rerun Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`. OTA resumes only when that prepared manifest already records a compatible protected native tag; otherwise use the release runbook's manual OTA path."
+            echo "If tag or image publishing fails, rerun Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`."
           } >> "${GITHUB_STEP_SUMMARY}"
 
   inspect_cleanup:
@@ -1038,8 +1035,6 @@ jobs:
       id-token: write
       packages: write
     uses: ./.github/workflows/publish-release.yml
-    secrets:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       release_commit: ${{ needs.prepare.outputs.release_sha }}
       release_branch: ${{ needs.prepare.outputs.release_branch }}

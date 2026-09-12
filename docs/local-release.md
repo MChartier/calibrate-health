@@ -25,8 +25,8 @@ Local client commands print requiresServer from shared/client-release.json. They
 your instance to approve publication or deploy it. The application's existing runtime guard checks
 the running bundle against the selected server. There is no combined deploy-and-OTA command.
 
-The follow-up cleanup PR retires the old instance publishing Actions. After merging the stack and
-configuring local publishing, remove unused personal Expo/Play/deployment credentials from GitHub.
+Instance publishing and deployment Actions are retired. After configuring local publishing,
+remove unused personal Expo/Play/deployment credentials from GitHub.
 Server tag/image publication stays in GitHub Actions.
 
 ## Local setup
@@ -75,7 +75,7 @@ server version and client server requirement unchanged. Commit and merge the gen
 before publishing. It does not require the previous native tag to be signed or published.
 
 release:native --profile internal builds signed phone/Wear APKs and AABs for direct device testing.
-It does not upload them. Install the APKs using the existing release:native:devices workflow.
+It does not upload them. Install the saved APKs with npm run release:native:devices -- --skip-build.
 release:native --profile production builds the production-channel pair and uploads the AABs to
 Play internal tracks. Add --build-only to stop after creating/verifying artifacts.
 

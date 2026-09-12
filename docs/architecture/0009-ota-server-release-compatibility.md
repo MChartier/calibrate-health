@@ -1,5 +1,9 @@
 # ADR 0009: Block incompatible client/server contract versions at runtime
 
+The current workflow uses [manual server deployment and local client publishing](../local-release.md).
+Version compatibility now uses [independent identities and an explicit client server range](../client-versioning.md).
+The original decision below is retained as history; the current runbooks take precedence.
+
 - Status: Accepted
 - Date: 2026-08-23
 

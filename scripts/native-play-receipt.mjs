@@ -479,7 +479,7 @@ function receiptValuesFromOptions(values) {
   };
 }
 
-export function runNativePlayReceiptCli(args = process.argv.slice(2), output = process.stdout) {
+function runNativePlayReceiptCli(args = process.argv.slice(2), output = process.stdout) {
   const { command, values } = parseArguments(args);
   if (command === 'verify-files') {
     return verifyNativePlayReceiptArtifacts({

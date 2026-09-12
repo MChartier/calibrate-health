@@ -45,7 +45,7 @@
     "release:native:prepare": "node --experimental-strip-types scripts/local-release.mjs native-prepare",
     "release:native:devices": "node scripts/native-release-devices.mjs",
     "release:native:evidence": "node scripts/native-release-evidence.mjs",
-    "release:native:ota": "node scripts/native-ota-update.mjs",
+    "release:native:ota": "node --experimental-strip-types scripts/local-release.mjs ota",
     "release:native:play": "node scripts/native-play-release.mjs",
     "release:acceptance": "node scripts/release-acceptance.mjs verify",
     "api:generate": "node backend/node_modules/openapi-typescript/bin/cli.js docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts",
