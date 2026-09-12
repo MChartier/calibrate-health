@@ -2,6 +2,9 @@ name: Publish prepared release
 
 on:
   workflow_call:
+    secrets:
+      EXPO_TOKEN:
+        required: false
     inputs:
       release_commit:
         description: Exact validated release commit that is now an ancestor of master
@@ -195,16 +198,6 @@ jobs:
             echo "create_tag=${CREATE_TAG}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: Verify stable release tag rulesets with a read-only token
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
-        run: >-
-          node .release-tooling/scripts/server-release-tag-protection.mjs verify
-          --repository "${GITHUB_REPOSITORY}"
-          --tag "${RELEASE_TAG}"
-
       - name: Verify native tag protection with a read-only token
         id: native-policy
         shell: bash
@@ -315,9 +308,8 @@ jobs:
     needs: tag_release
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: server-release-publication
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Require current protected workflow authority before tag credentials
@@ -354,38 +346,7 @@ jobs:
             --workflow-sha "${WORKFLOW_SHA}" \
             --release-commit "${RELEASE_COMMIT}"
 
-      - name: Require dedicated server release App identifier
-        shell: bash
-        env:
-          SERVER_RELEASE_APP_ID: ${{ vars.SERVER_RELEASE_APP_ID }}
-        run: |
-          set -euo pipefail
-          if [[ ! "${SERVER_RELEASE_APP_ID}" =~ ^[0-9]+$ ]]; then
-            echo "SERVER_RELEASE_APP_ID must be configured in the protected server-release-publication environment." >&2
-            exit 1
-          fi
-
-      - name: Checkout reviewed release tag protection tooling only
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: ${{ job.workflow_sha }}
-          fetch-depth: 1
-          persist-credentials: false
-          path: .release-tooling
-          sparse-checkout: /scripts/server-release-tag-protection.mjs
-          sparse-checkout-cone-mode: false
-
-      - name: Verify stable release tag rulesets after publication approval
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.tag_release.outputs.release_tag }}
-        run: >-
-          node .release-tooling/scripts/server-release-tag-protection.mjs verify
-          --repository "${GITHUB_REPOSITORY}"
-          --tag "${RELEASE_TAG}"
-
-      - name: Recheck current protected workflow immediately before App token
+      - name: Recheck current protected workflow immediately before repository writes
         shell: bash
         env:
           RELEASE_COMMIT: ${{ inputs.release_commit }}
@@ -404,16 +365,6 @@ jobs:
             --workflow-sha "${WORKFLOW_SHA}" \
             --release-commit "${RELEASE_COMMIT}"
 
-      - name: Mint restricted server release tag token
-        id: release-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ vars.SERVER_RELEASE_APP_ID }}
-          private-key: ${{ secrets.SERVER_RELEASE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-
       - name: Create or verify exact annotated release tag
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -421,7 +372,7 @@ jobs:
           RELEASE_COMMIT: ${{ inputs.release_commit }}
           RELEASE_TAG: ${{ needs.tag_release.outputs.release_tag }}
         with:
-          github-token: ${{ steps.release-token.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const { RELEASE_BRANCH: branch, RELEASE_COMMIT: commit, RELEASE_TAG: tag } = process.env;
             if (!/^v\d+\.\d+\.\d+$/.test(tag)) {
@@ -556,6 +507,7 @@ jobs:
       attestations: write
       contents: read
       id-token: write
+      packages: write
     uses: ./.github/workflows/container.yml
     with:
       release_commit: ${{ inputs.release_commit }}
@@ -581,6 +533,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/expo-ota-update.yml
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       source_ref: ${{ inputs.release_commit }}
       native_build_ref: ${{ needs.tag_release.outputs.native_release_tag }}

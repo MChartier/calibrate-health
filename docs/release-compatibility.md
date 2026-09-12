@@ -107,47 +107,31 @@ choose the semantic component to advance:
 - `major` for breaking server, API, or deployment contracts: `X.Y.Z` to `(X+1).0.0`.
 
 The three manual Actions entries are read-only request workflows. They upload a small request bound to the exact
-successful `master` run; a `workflow_run` handler whose implementation GitHub loads from protected default `master`
-revalidates that request before calling the reusable worker. Branch-selected workflow code therefore receives no
-server-release credential. This code path is intentionally unavailable until all external controls below exist:
+successful `master` run; a `workflow_run` handler loaded from default `master` revalidates that request before calling
+the reusable worker. Use the existing repository configuration:
 
-1. Create the `server-release-publication` GitHub environment. Allow only the selected deployment branch `master`,
-   require a release-owner review, prevent self-review, and disable administrator bypass. Verify this policy before
-   storing any release variable or secret.
-2. Install a dedicated Server Release GitHub App only on this repository. Grant only Metadata read, Contents write,
-   and Pull requests write; do not grant Packages, Actions, Workflows, Administration, or unrelated permissions.
-   Configure active rulesets for `master` and `release/v*`; make the Server Release App their only automation bypass
-   actor and deny the built-in GitHub Actions App. Configure two separate active tag rulesets targeting exactly
-   `refs/tags/v*`: `server-release-tag-creation` restricts creation and grants bypass only to the Server Release App,
-   while `server-release-tag-immutability` restricts updates and deletions with an empty bypass list. The App never
-   needs to move or delete a stable tag. Verify both exact scopes, rule sets, and bypass lists before storing the App
-   credential; the read-only workflow gate can verify visible rules but GitHub does not expose bypass actors there.
-3. Use a separate robot identity for GHCR with no repository collaborator role. Give it explicit Write access only to
-   the `calibratehealth` package and create a classic PAT with `write:packages` only and no `repo` scope. In the
-   package's granular settings, detach inherited repository permissions and remove this source repository's Actions
-   write access under **Manage Actions access**. `GITHUB_TOKEN` must be unable to push or replace package tags.
-4. Before enabling the package robot, inventory every existing `v*` and `sha-*` alias in the `calibratehealth`
-   package, including the current `v0.35.0` identities when present. Existing aliases predate the protected receipt
-   signer and are not trusted merely because their digests, labels, or two aliases agree. After an owner review,
-   quarantine them outside the release alias namespace or delete them, then use this workflow for a fresh attested
-   publication. Do not let the new publisher adopt, fill from, or move `latest` from an unattested legacy digest.
-5. Only after steps 1-4 are verified, store `SERVER_RELEASE_APP_ID` and `GHCR_PUBLISH_USERNAME` as environment
-   variables and `SERVER_RELEASE_APP_PRIVATE_KEY` and `GHCR_PUBLISH_TOKEN` as environment secrets. Do not duplicate
-   any of those names as repository or organization secrets or variables.
-6. Apply the rulesets and remove the old Actions/package authority before enabling or rerunning publication. Historical
-   workflow runs retain their original workflow source on rerun; external App/ruleset/package controls are what make
-   those old runs powerless. Until this onboarding is complete, missing protected-environment configuration makes the
-   new workers fail closed and the release stack must be treated as not yet operational.
+1. Enable **Allow GitHub Actions to create and approve pull requests** in the repository's Actions settings.
+   The default workflow token can remain read-only; each publishing job declares its required permissions.
+2. Keep the existing `master` pull-request protection. Release finalization uses GitHub's PR merge API and obeys
+   repository rules. Additional required reviews or checks must be satisfied before merging.
+3. Give this repository Write access to the `calibratehealth` GHCR package under **Manage Actions access** (or retain
+   its inherited repository access). The image publisher authenticates with its ephemeral `GITHUB_TOKEN` and
+   `packages: write`. A dedicated Server Release GitHub App, GHCR robot, custom publication environment, and extra
+   server tag rulesets are not prerequisites.
+4. Retain the configured `EXPO_TOKEN` repository secret and the `preview` and reviewer-protected `production`
+   environments for OTA. A server/image release can complete when its native baseline is unavailable; OTA is skipped.
 
-Candidate preparation and image construction run on uncredentialed runners. Fresh environment-bound jobs mint the
-App token only after exact candidate verification, or receive the package-only token only after the image artifact and
-Git tag are reverified. Candidate/source build code is never executed with the GHCR credential; the publisher executes
-only reviewed immutable verifier tooling against its isolated release checkout after authentication. Ordinary
-`GITHUB_TOKEN`s remain read-only throughout this server-release call graph. The narrow exception is the isolated,
-source-free image-receipt signer: its callers propagate `id-token: write` and `attestations: write`, and its concrete
-job uses those GitHub-native capabilities only with the full-SHA-pinned `actions/attest` action. It has no environment,
-package token, App key, source checkout, or package-write permission; every other concrete server-release job remains
-read-only unless it performs its separately protected App/PAT operation.
+Candidate preparation, validation, and image construction use read-only repository tokens with no registry write
+permission. Separate publication jobs receive only the permissions needed for their operation: Contents write for
+candidate branches and stable tags, Contents and Pull requests write for finalization/cleanup, and Packages write
+for GHCR. The image-receipt signer has only Contents read, OIDC write, and Attestations write and runs the full-SHA-pinned
+attestation action before package authentication. Source-owned build commands never run on the package publisher.
+The publisher verifies artifacts and current workflow authority with reviewed tooling before logging into GHCR.
+
+These job boundaries limit accidental credential exposure in the reviewed workflow. They are not an external
+capability boundary against someone allowed to edit or rerun workflows with write permissions. The App/robot design
+was a stronger, optional security migration that required separate onboarding; this flow uses the configured Actions
+identity instead. Existing branch protection and the production approval remain in force.
 
 Before package authentication, the build's deterministic receipt binds the GitHub repository, GHCR repository,
 release tag, release commit, and Docker image config digest. The isolated signer attests those exact bytes before any
@@ -169,23 +153,10 @@ still flood or delete records. Missing, deleted, or invalid legitimate receipt e
 alias fill or `latest` mutation; quarantine/delete the blocked immutable aliases after an owner audit and perform a
 fresh build/attestation/publication rather than trusting the registry bytes.
 
-GitHub approves `server-release-publication` separately for every job that references it. A normal **Cut release**
-therefore has four sequential server-release approvals:
-
-1. publish the exact candidate branch and create its pull request;
-2. merge the validated pull request to `master`;
-3. create the immutable stable `vMAJOR.MINOR.PATCH` tag; and
-4. publish the verified image identities to GHCR.
-
-If validation fails before `finalize` starts, the run needs candidate publication plus conditional cleanup: two
-approvals. If `finalize` was approved and then fails before merging, cleanup is a third approval after candidate and
-finalize. Cleanup becomes eligible only after a read-only inspection proves the pull request/branch still belong to
-the action and the candidate ref is unchanged; it closes and deletes only that exact unmerged candidate. **Publish
-prepared release** recovery requires two approvals (stable tag, then image), while **Build Release Image** requires
-one image approval. The first three normal Cut checkpoints and conditional cleanup expose the same narrow Server
-Release App authority to fixed, operation-specific jobs; they sequence that authority rather than creating
-independent credentials. The image checkpoint admits the separate package-only robot and never receives the App
-private key.
+Server candidate publication, validated PR merge, tag creation, and GHCR publication run automatically. No new server
+publication environment approvals are required. If validation or finalization fails before merging, read-only
+inspection first proves the candidate PR/branch still belong to the action; cleanup closes and deletes only that exact
+unmerged candidate. **Publish prepared release** and **Build Release Image** also run without a server environment gate.
 
 The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
 `release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It verifies the candidate parent and identity,
@@ -195,9 +166,12 @@ dependency checks, vulnerability scanning, and database upgrade/rollback rehears
 scheduled checks and are not replayed for the version-only candidate. If `master` advances while validation runs, the
 candidate is not merged; rerun the action so the later change is part of a newly validated candidate.
 
-After validation, the protected Server Release App creates a version-only release PR, fetches the exact merge commit GitHub generated for
-that PR, and verifies its base parent, candidate parent, and tree. It pushes that commit to `master` without force, so
-GitHub atomically rejects the merge if `master` changed after the final drift check while retaining the PR audit trail.
+After validation, the action creates a version-only release PR and verifies the parents and tree of GitHub's proposed
+merge. It rechecks `master` immediately before calling the PR merge API with the exact validated head SHA. The API
+honors branch protection and locks the head, but does not offer a base-SHA compare-and-swap. The workflow therefore
+checks the actual merged parents, tree, and current `master` again before allowing tag/image publication. A concurrent
+base change in that small window stops publication even if GitHub already merged the PR; inspect the failed run before
+starting recovery. No direct push or ruleset bypass is used to merge `master`.
 **Publish prepared release** verifies that the exact candidate is now an ancestor of `master`, creates or verifies its
 annotated tag, and calls the reusable GHCR image workflow with `publish_latest: true`. It is called directly rather
 than relying on
@@ -205,9 +179,10 @@ token-generated push or PR events, whose workflow behavior is restricted by
 [GitHub's `GITHUB_TOKEN` rules](https://docs.github.com/en/actions/concepts/security/github_token).
 After image publication, the workflow publishes the exact release commit to Expo only when the native-build tag from
 `shared/release.json` is a cryptographically verified release attestation and its app version and native fingerprint
-match the prepared source. Each of the two environment-resolution jobs and two source-free publisher jobs requires a
-separate `expo-publication` approval. Expo's project-wide token is not channel scoped, so the production-stage
-approvals enforce reviewed workflow sequencing rather than a distinct production credential boundary. A missing, unattested, or
+match the prepared source. Internal environment resolution and publication use `preview`. After internal publication,
+one approval in the existing `production` environment gates production environment resolution, export, and publication.
+The four credential stages remain separate from source export. The repository `EXPO_TOKEN` is project-wide, so this
+approval controls workflow sequencing rather than providing a channel-scoped credential boundary. A missing, unattested, or
 incompatible native tag skips OTA without failing the independent server/image release. Rerun **Publish prepared
 release** only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
 manual OTA workflow with an exact source that descends from the installed native baseline. Neither OTA path waits for

@@ -514,12 +514,12 @@ source descends from that native baseline. Its pinned checkout actions may use o
 checkout token; `persist-credentials: false` removes that authentication before source-owned commands run, and the
 workflow does not pass the token to those commands. Every later job consumes the preflight's bound source/tag
 outputs; no Expo token job can start if that proof fails. Expo access tokens are account/project scoped, not channel scoped, so a token able to publish
-`internal` could also target `production`. Every token-bearing stage therefore
-targets the master-restricted, required-reviewer GitHub `expo-publication` environment. GitHub approves environments
-per job, so a complete run has four explicit approvals: resolve the internal EAS environment, publish internal,
-resolve the production EAS environment, and publish production. The same project-wide token becomes available to
-each approved source-free job. The later approvals enforce the reviewed workflow's sequencing; they do not prevent
-someone who already obtained that token from targeting the production channel. A separate Expo project/account or a
+`internal` could also target `production`. The workflow uses the existing repository `EXPO_TOKEN` secret.
+Internal environment resolution and publication run in `preview`; one reviewer approval in the existing GitHub
+`production` environment gates production environment resolution, export, and publication after internal testing.
+The four credential stages remain source-free, with dependency installation and export on separate runners.
+This approval enforces workflow sequencing; it does not prevent someone holding the token from targeting production.
+A separate Expo project/account or a
 channel-enforcing broker would be required for that stronger capability boundary. After image publication, the
 pipeline publishes the exact release commit's Android phone JavaScript/assets to `internal` without waiting for
 self-host deployment, then proceeds through the same protected workflow boundary for production. If the manifest
@@ -551,17 +551,10 @@ independently managed self-hosts still rely on the runtime guard, and GitHub Act
 
 Before its first use:
 
-1. Create the GitHub `expo-publication` environment, restrict it to the selected deployment branch `master` only,
-   require an independent reviewer, and disable self-approval and administrator bypass. Verify those policies before
-   storing a token. Remove repository-, organization-, and other environment-scoped `EXPO_TOKEN`,
-   `EXPO_PREVIEW_TOKEN`, and `EXPO_PRODUCTION_TOKEN` values so a stale or branch-edited workflow cannot fall back to
-   broader authority.
-2. Create a dedicated minimally privileged Expo robot identity for this project and mint one access token for
-   programmatic update publication. Expo does not provide a channel-scoped update role. The protected GitHub
-   environment and current-workflow checks restrict when reviewed jobs receive the token, but the token itself can
-   update either channel after release. Only after step 1 is verified, save the token as `EXPO_RELEASE_TOKEN` in
-   `expo-publication`; never store it at repository or organization scope. Until this exact policy and secret exist,
-   OTA publication is intentionally unavailable.
+1. Configure the repository `EXPO_TOKEN` secret using the existing Expo project identity. No separate Expo robot or
+   `expo-publication` environment is required. The token must have access to the project's update publication.
+2. Keep the GitHub `preview` environment and the protected `production` environment with its required reviewer and
+   branch policy. Production approval occurs after internal publication and before any production stage.
 3. Configure the Expo `preview` EAS environment with `EXPO_PUBLIC_CALIBRATE_SERVER_URL`,
    `EXPO_PUBLIC_EAS_PROJECT_ID`, and `EXPO_UPDATES_CHANNEL=internal`.
 4. Configure the Expo `production` EAS environment with the same project/server values and
@@ -588,17 +581,10 @@ inputs: Expo/EAS config, native assets, config plugins, local native modules, We
 contribute Android code. Server release policy, application JavaScript, root package metadata, and JS-only or
 tooling-only dependency changes remain OTA-compatible. OTA updates never update the Wear app.
 
-Approve each of the four `expo-publication` deployments only when this exact run is authorized to hold project-wide
-Expo update authority:
-
-1. resolve the internal EAS environment;
-2. publish the internal update;
-3. after internal testing, resolve the production EAS environment; and
-4. publish the production update.
-
-Reject or leave any stage pending if verification does not pass. The third and fourth approvals preserve operator
-sequencing, but they do not revoke the production capability of the same token previously released to the first two
-jobs.
+After validating the internal update, approve this run's single `production` deployment to resolve the production
+EAS environment, export the production bundle, and publish it. Reject or leave that approval pending if internal
+verification fails. The same project-wide token is used in both channels; the gate sequences the reviewed workflow
+and does not revoke the token's production authority after internal use.
 
 ## Preserve on-device data during upgrades
 
