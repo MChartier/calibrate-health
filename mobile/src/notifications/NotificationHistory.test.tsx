@@ -53,7 +53,10 @@ function page(
 }
 
 function renderHistory() {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const queryClient = new QueryClient({ defaultOptions: {
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false, gcTime: 0 }
+    } });
     mockQueryClients.push(queryClient);
     return render(
         <QueryClientProvider client={queryClient}>
