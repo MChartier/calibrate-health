@@ -43,12 +43,13 @@ test('static Expo config supports iPhone, iPad, and iOS Simulator builds', () =>
   });
   assert.ok(appConfig.expo.plugins.includes('./plugins/withOptionalCameraHardware'));
   assert.deepEqual(pluginOptions('expo-camera'), {
-    cameraPermission: 'Allow calibrate to scan food barcodes.',
+    cameraPermission: 'Allow calibrate to scan food barcodes and nutrition labels.',
     microphonePermission: false,
     recordAudioAndroid: false
   });
   assert.deepEqual(pluginOptions('expo-image-picker'), {
-    photosPermission: 'Allow calibrate to choose a profile photo.',
+    photosPermission: 'Allow calibrate to choose a profile photo or nutrition label.',
+    cameraPermission: 'Allow calibrate to photograph nutrition labels.',
     microphonePermission: false
   });
   assert.deepEqual(easConfig.build['ios-simulator'], {
