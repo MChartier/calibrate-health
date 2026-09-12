@@ -22,7 +22,15 @@ router.post('/scan', rateLimit({
   message: { message: 'Too many label scans. Try again in a minute.' }
 }), (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
+  const controller = new AbortController();
+  // The request body may already be complete when the client cancels OCR.
+  const cancelDisconnectedScan = () => {
+    if (!res.writableFinished) controller.abort();
+  };
+  res.once('close', cancelDisconnectedScan);
+  res.once('finish', () => res.off('close', cancelDisconnectedScan));
   upload(req, res, async (error: unknown) => {
+    if (res.destroyed) return;
     if (error) {
       const tooLarge = error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
       return res.status(tooLarge ? 413 : 400).json({ message: tooLarge
@@ -31,8 +39,10 @@ router.post('/scan', rateLimit({
     }
     if (!req.file) return res.status(400).json({ message: 'Choose a label photo.' });
     try {
-      return res.json(await scanNutritionLabel(req.file.buffer));
+      const draft = await scanNutritionLabel(req.file.buffer, controller.signal);
+      if (!res.destroyed) return res.json(draft);
     } catch (err) {
+      if (controller.signal.aborted || res.destroyed) return;
       if (isHttpError(err)) return res.status(err.statusCode).json({ message: err.message });
       return res.status(500).json({ message: 'The label could not be read. Try another photo or enter the details manually.' });
     }

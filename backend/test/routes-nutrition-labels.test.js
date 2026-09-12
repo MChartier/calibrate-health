@@ -4,14 +4,30 @@ const express = require('express');
 const Module = require('node:module');
 const { once } = require('node:events');
 
-test('scan endpoint authenticates uploads, returns a draft, and rejects oversized/extra parts', async () => {
+test('scan endpoint authenticates, validates uploads, and aborts work on disconnect', { timeout: 10_000 }, async () => {
   const servicePath = require.resolve('../src/services/nutritionLabelScan');
   const routePath = require.resolve('../src/routes/nutritionLabels');
   const previous = require.cache[servicePath];
   const calls = [];
+  let holdScan = false;
+  let scanStarted;
+  let scanAborted;
+  const started = new Promise((resolve) => { scanStarted = resolve; });
+  const aborted = new Promise((resolve) => { scanAborted = resolve; });
   const draft = { calories_per_serving: 160, serving_size_quantity: 0.5, serving_unit_label: 'cup (40 g)', serving_text: '1/2 cup (40 g)', warnings: [] };
   const stub = new Module(servicePath);
-  stub.exports = { MAX_LABEL_IMAGE_BYTES: 32, scanNutritionLabel: async (image) => { calls.push(image); return draft; } };
+  stub.exports = { MAX_LABEL_IMAGE_BYTES: 32, scanNutritionLabel: async (image, signal) => {
+    calls.push(image);
+    if (holdScan) {
+      assert.ok(signal instanceof AbortSignal);
+      scanStarted();
+      await new Promise((_resolve, reject) => signal.addEventListener('abort', () => {
+        scanAborted();
+        reject(signal.reason);
+      }, { once: true }));
+    }
+    return draft;
+  } };
   stub.loaded = true;
   require.cache[servicePath] = stub;
   delete require.cache[routePath];
@@ -51,6 +67,19 @@ test('scan endpoint authenticates uploads, returns a draft, and rejects oversize
     response = await fetch(url, { method: 'POST', headers: { 'x-test-user': '1' } });
     assert.equal(response.status, 400);
     assert.equal(calls.length, 1);
+    holdScan = true;
+    const controller = new AbortController();
+    const disconnected = assert.rejects(fetch(url, {
+      method: 'POST', headers: { 'x-test-user': '2' }, body: upload(), signal: controller.signal
+    }), { name: 'AbortError' });
+    await started;
+    controller.abort();
+    await Promise.all([disconnected, aborted]);
+    holdScan = false;
+    response = await fetch(url, { method: 'POST', headers: { 'x-test-user': '2' }, body: upload() });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), draft);
+    assert.equal(calls.length, 3);
   } finally {
     server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { mkdir } from 'node:fs/promises';
 import { expect, hideTransientPwaNotices, test } from './fixtures';
 
 const LABEL_PHOTO = path.resolve('backend/test/fixtures/nutrition-label.png');
@@ -41,6 +42,13 @@ test('photo upload is reviewed, titled, and saved with the printed serving size'
     await page.screenshot({ path: testInfo.outputPath('label-photo.png'), fullPage: true });
     await page.getByRole('button', { name: 'Save food', exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: testInfo.outputPath('label-review.png'), fullPage: true });
+    if (process.env.CALIBRATE_CAPTURE_EVIDENCE === '1' &&
+        ['desktop-chrome', 'compact-phone-chrome'].includes(testInfo.project.name)) {
+        const directory = path.resolve('docs/screenshots/nutrition-label-scanning');
+        await mkdir(directory, { recursive: true });
+        const device = testInfo.project.name === 'desktop-chrome' ? 'desktop' : 'phone';
+        await page.screenshot({ path: path.join(directory, `review-${device}.png`), fullPage: true });
+    }
     await page.getByRole('button', { name: 'Save food', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Food saved', exact: true })).toBeVisible();
     expect(saved).toEqual([{
@@ -70,6 +78,7 @@ test('label scanning is reachable for both missing and incorrect barcode matches
         await page.getByRole('button', { name: 'Look up barcode', exact: true }).click();
         if (match) await expect(page.getByText('Found Wrong barcode food.', { exact: true })).toBeVisible();
         else await expect(page.getByText(/No food matched this barcode/)).toBeVisible();
+        await hideTransientPwaNotices(page);
         await page.getByRole('button', { name: 'Scan nutrition label', exact: true }).click();
         await expect(page.getByRole('heading', { name: 'Scan nutrition label', exact: true })).toBeVisible();
     }

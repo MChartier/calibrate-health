@@ -25,3 +25,16 @@ test('real local OCR extracts a label, bounds concurrency, and releases its work
   // The next request reaches validation, proving that the scan slot was released.
   await assert.rejects(scanNutritionLabel(Buffer.from('invalid')), { statusCode: 400 });
 });
+
+test('cancellation terminates OCR and releases the slot before the deadline', { timeout: 10_000 }, async () => {
+  const image = await readFile(path.join(__dirname, 'fixtures/nutrition-label.png'));
+  const controller = new AbortController();
+  const pending = scanNutritionLabel(image, controller.signal);
+  const rejected = assert.rejects(pending, { name: 'AbortError' });
+  controller.abort();
+  await rejected;
+  // A cancelled request must not block the next user with a busy response.
+  await assert.rejects(scanNutritionLabel(Buffer.from('invalid')), { statusCode: 400 });
+  await assert.rejects(scanNutritionLabel(image, controller.signal), { name: 'AbortError' });
+  await assert.rejects(scanNutritionLabel(Buffer.from('invalid')), { statusCode: 400 });
+});

@@ -13,7 +13,8 @@ let scanActive = false;
 type OcrResult = { text: string; confidence: number } | { error: 'invalid-image' | 'ocr-failed' };
 
 /** Runs locally with bundled language data; photos and recognized text are never persisted. */
-export async function scanNutritionLabel(image: Buffer) {
+export async function scanNutritionLabel(image: Buffer, signal?: AbortSignal) {
+  signal?.throwIfAborted();
   if (image.length === 0 || image.length > MAX_LABEL_IMAGE_BYTES) {
     throw createHttpError(413, 'Choose a label photo smaller than 8 MB.');
   }
@@ -21,6 +22,7 @@ export async function scanNutritionLabel(image: Buffer) {
   scanActive = true;
   let worker: Worker | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let abortScan: (() => void) | undefined;
   try {
     worker = new Worker(NUTRITION_LABEL_OCR_WORKER, {
       eval: true,
@@ -34,6 +36,9 @@ export async function scanNutritionLabel(image: Buffer) {
       }
     });
     const result = await new Promise<OcrResult>((resolve, reject) => {
+      abortScan = () => reject(signal?.reason ?? new Error('Label scan cancelled.'));
+      signal?.addEventListener('abort', abortScan, { once: true });
+      if (signal?.aborted) abortScan();
       worker!.once('message', resolve);
       worker!.once('error', reject);
       worker!.once('exit', () => reject(createHttpError(500, 'Label scanning stopped. Try again.')));
@@ -51,6 +56,7 @@ export async function scanNutritionLabel(image: Buffer) {
     return draft;
   } finally {
     if (timer) clearTimeout(timer);
+    if (abortScan) signal?.removeEventListener('abort', abortScan);
     try {
       await worker?.terminate();
     } finally {
