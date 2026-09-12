@@ -48,8 +48,8 @@ test('static Expo config supports iPhone, iPad, and iOS Simulator builds', () =>
     recordAudioAndroid: false
   });
   assert.deepEqual(pluginOptions('expo-image-picker'), {
-    photosPermission: 'Allow calibrate to choose a profile photo or nutrition label.',
-    cameraPermission: 'Allow calibrate to photograph nutrition labels.',
+    photosPermission: 'Allow calibrate to choose profile photos and nutrition labels.',
+    cameraPermission: 'Allow calibrate to scan food barcodes and nutrition labels.',
     microphonePermission: false
   });
   assert.deepEqual(easConfig.build['ios-simulator'], {
