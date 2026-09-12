@@ -33,18 +33,55 @@ function compareNumericIdentifier(left: string, right: string): number {
 
 function versionLabel(version: unknown): string {
     if (typeof version !== 'string') return 'unknown';
-    if (!parseCompatibilityVersion(version) || version.length > 64) return 'invalid';
+    if ((!parseCompatibilityVersion(version) && !parseServerRequirement(version)) || version.length > 128) return 'invalid';
     return version;
 }
 
-/**
- * Compare client and server compatibility. Major versions must match; within
- * one major, the server minor must be at least the client minor.
- */
+// Intentionally one explicit bounded range, avoiding ambiguous 0.x caret semantics.
+export function parseServerRequirement(value: unknown): { minimum: string; maximumExclusive: string } | null {
+    if (typeof value !== 'string') return null;
+    const match = /^>=(\d+\.\d+\.\d+) <(\d+\.\d+\.\d+)$/.exec(value);
+    if (!match || !SEMVER_PATTERN.test(match[1]) || !SEMVER_PATTERN.test(match[2])) return null;
+    if (compareStableVersions(match[1], match[2]) >= 0) return null;
+    return { minimum: match[1], maximumExclusive: match[2] };
+}
+
+function compareStableVersions(left: string, right: string): number {
+    const a = left.split('.');
+    const b = right.split('.');
+    for (let i = 0; i < 3; i++) {
+        const comparison = compareNumericIdentifier(a[i], b[i]);
+        if (comparison !== 0) return comparison;
+    }
+    return 0;
+}
+
+export function serverRequirementMessage(mismatch: ClientServerCompatibilityMismatch): string {
+    const requirement = parseServerRequirement(mismatch.clientVersion);
+    if (!requirement) return 'This client has an invalid server requirement.';
+    const detail = 'This Calibrate update requires server ' + requirement.minimum +
+        ' or newer, below ' + requirement.maximumExclusive +
+        '. The selected server is ' + mismatch.serverVersion + '.';
+    if (mismatch.status === CLIENT_SERVER_COMPATIBILITY_STATUSES.SERVER_BEHIND) return detail + ' Update the server first.';
+    if (mismatch.status === CLIENT_SERVER_COMPATIBILITY_STATUSES.CLIENT_BEHIND) return detail + ' Install a compatible Calibrate update.';
+    return detail;
+}
 export function compareClientServerCompatibility(
     clientVersion: unknown,
     serverVersion: unknown
 ): ClientServerCompatibilityStatus {
+    const requirement = parseServerRequirement(clientVersion);
+    if (requirement) {
+        // Prerelease servers are not admitted by a stable production requirement.
+        if (typeof serverVersion !== 'string' || !SEMVER_PATTERN.test(serverVersion) || serverVersion.split('+')[0].includes('-')) {
+            return CLIENT_SERVER_COMPATIBILITY_STATUSES.INVALID;
+        }
+        const stable = serverVersion.split('+')[0];
+        if (compareStableVersions(stable, requirement.minimum) < 0) return CLIENT_SERVER_COMPATIBILITY_STATUSES.SERVER_BEHIND;
+        if (compareStableVersions(stable, requirement.maximumExclusive) >= 0) return CLIENT_SERVER_COMPATIBILITY_STATUSES.CLIENT_BEHIND;
+        return CLIENT_SERVER_COMPATIBILITY_STATUSES.COMPATIBLE;
+    }
+    // Retain the legacy major/minor contract for callers using a server version.
     const client = parseCompatibilityVersion(clientVersion);
     const server = parseCompatibilityVersion(serverVersion);
     if (!client || !server) return CLIENT_SERVER_COMPATIBILITY_STATUSES.INVALID;

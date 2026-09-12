@@ -5,6 +5,8 @@ import {
     CLIENT_SERVER_COMPATIBILITY_STATUSES,
     formatMajorVersion,
     formatMinorVersion,
+    parseServerRequirement,
+    serverRequirementMessage,
     getClientServerCompatibilityMismatch,
     type ClientServerCompatibilityMismatch
 } from '@calibrate/shared/releaseCompatibility';
@@ -282,6 +284,7 @@ export async function testCalibrateServerConnection(
         } else if (mismatch.status === CLIENT_SERVER_COMPATIBILITY_STATUSES.CLIENT_BEHIND) {
             message = `This server requires a Calibrate client for major version ${serverMajorVersion}, but this client targets ${clientMajorVersion}. Update Calibrate first.`;
         }
+        if (parseServerRequirement(mismatch.clientVersion)) message = serverRequirementMessage(mismatch);
         return {
             ok: false,
             url: parsed.url,

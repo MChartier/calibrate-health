@@ -4,6 +4,8 @@ import {
     CLIENT_SERVER_COMPATIBILITY_STATUSES,
     formatMajorVersion,
     formatMinorVersion,
+    parseServerRequirement,
+    serverRequirementMessage,
     type ClientServerCompatibilityMismatch
 } from '@calibrate/shared/releaseCompatibility';
 import { AppButton } from './AppButton';
@@ -62,6 +64,8 @@ export const ClientServerIncompatibleScreen: React.FC<ClientServerIncompatibleSc
         explanation = `This client targets server major version ${clientMajorVersion}, but the selected server is ${mismatch.serverVersion}. Install a Calibrate update for major version ${serverMajorVersion} before continuing.`;
     }
 
+    if (parseServerRequirement(mismatch.clientVersion)) explanation = serverRequirementMessage(mismatch);
+
     return (
         <View style={styles.screen} accessibilityRole="alert" accessibilityLabel="Calibrate server incompatible">
             <View style={styles.card}>
@@ -72,7 +76,7 @@ export const ClientServerIncompatibleScreen: React.FC<ClientServerIncompatibleSc
                     Any saved session and pending offline changes remain stored on this device.
                 </AppText>
                 <View style={styles.details}>
-                    <AppText variant="label">Client release</AppText>
+                    <AppText variant="label">Server requirement</AppText>
                     <AppText>{mismatch.clientVersion}</AppText>
                     <AppText variant="label">Server release</AppText>
                     <AppText>{mismatch.serverVersion}</AppText>

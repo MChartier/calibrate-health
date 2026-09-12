@@ -259,6 +259,21 @@ UI code style:
 
 ## Release Versioning
 
+- Local native/OTA commands are `release:native:prepare`, `release:native`, and `release:ota`;
+  see `docs/local-release.md` and `docs/client-versioning.md`. The current clean checkout supplies
+  source identity. Keep instance configuration and credentials in local environment variables.
+  Local native records use ordinary JSON plus artifact hashes; no extra receipt/tag signing key
+  or signer onboarding is required. Android application signing remains mandatory. These local
+  rules supersede the legacy native publication/tag prerequisites below during the migration.
+- `shared/client-release.json` declares the running Expo bundle's explicit `requiresServer` range
+  (`>=X.Y.Z <X.Y.Z`). Do not derive it from server release bumps or native app versions. Preserve
+  native-owned Expo updates and uncached startup/server-selection checks, including patch precision.
+  Native `appVersion` runtime identity and odd phone/even Wear codes remain independent of server
+  releases and OTA update IDs. Native fingerprint changes require a new native baseline.
+- Server release/image Actions remain unchanged. Deploy Docker on the host manually; local client
+  publication does not poll servers, require readiness confirmation, or invoke deployment. Existing
+  instance publishing Actions are retired in the separate cleanup change.
+
 - Ordinary feature and fix PRs must not change `shared/release.json` `server.version` or its package, lockfile,
   diagnostic, OpenAPI, and generated-client mirrors.
 - After the desired changes land on `master`, run **Cut release** in GitHub Actions and choose `patch`, `minor`, or

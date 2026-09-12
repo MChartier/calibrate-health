@@ -2,6 +2,16 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ClientServerIncompatibleScreen } from './ClientServerIncompatibleScreen';
 
 describe('ClientServerIncompatibleScreen', () => {
+    it('shows an explicit server requirement rather than a client release number', () => {
+        const view = render(<ClientServerIncompatibleScreen
+            mismatch={{ clientVersion: '>=2.4.1 <3.0.0', serverVersion: '2.4.0', status: 'server_behind' }}
+            serverUrl="https://health.example.com" onRecheck={jest.fn(async () => false)}
+            onChooseServer={jest.fn(async () => undefined)} />);
+        expect(view.getByText('Server requirement')).toBeTruthy();
+        expect(view.getByText('>=2.4.1 <3.0.0')).toBeTruthy();
+        expect(view.getByText(/server 2.4.1 or newer, below 3.0.0/)).toBeTruthy();
+    });
+
     it('directs a user to update a server that is behind the client minor version', () => {
         const view = render(
             <ClientServerIncompatibleScreen

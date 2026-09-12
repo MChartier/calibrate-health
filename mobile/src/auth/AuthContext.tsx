@@ -23,7 +23,7 @@ import {
 } from '../config/server';
 import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
 import { getSessionRestoreErrorMessage, isExpectedDevAutoLoginMiss } from './authErrors';
-import { MOBILE_CLIENT_IDENTITY, MOBILE_SERVER_RELEASE_VERSION } from '../config/nativeClient';
+import { MOBILE_CLIENT_IDENTITY, MOBILE_SERVER_REQUIREMENT } from '../config/nativeClient';
 import { getNativeDeviceName } from '../platform/nativePlatform';
 import {
     clearStoredTokens,
@@ -226,7 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const config = await compatibilityClient.getClientConfig({ cache: 'no-store' });
                 if (!isMounted) return;
                 const compatibilityMismatch = getClientServerCompatibilityMismatch(
-                    MOBILE_SERVER_RELEASE_VERSION,
+                    MOBILE_SERVER_REQUIREMENT,
                     config.server_version
                 );
                 if (compatibilityMismatch) {
@@ -281,7 +281,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const config = await api.getClientConfig({ cache: 'no-store' });
             const compatibilityMismatch = getClientServerCompatibilityMismatch(
-                MOBILE_SERVER_RELEASE_VERSION,
+                MOBILE_SERVER_REQUIREMENT,
                 config.server_version
             );
             if (compatibilityMismatch) {
@@ -315,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const result = await testCalibrateServerConnection(value, {
             mobileVersion: Application.nativeApplicationVersion,
-            clientServerVersion: MOBILE_SERVER_RELEASE_VERSION
+            clientServerVersion: MOBILE_SERVER_REQUIREMENT
         });
         if (serverTestRequestRef.current === requestId) {
             setServerConnection({

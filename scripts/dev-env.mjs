@@ -437,6 +437,7 @@ async function ci() {
   await timed("Validate release configuration", () => {
     run("npm", ["run", "release:check"]);
     run("npm", ["run", "test:release"]);
+    run("npm", ["run", "test:release:local"]);
     run("npm", ["run", "test:native-release"]);
     run("npm", ["run", "test:dev-script"]);
     run("npm", ["run", "test:wear:emulator:unit"]);

@@ -31,7 +31,7 @@ jest.mock('expo-application', () => ({
 
 jest.mock('../config/nativeClient', () => ({
     MOBILE_CLIENT_IDENTITY: { platform: 'android_phone', version: '0.2.6' },
-    MOBILE_SERVER_RELEASE_VERSION: '1.2.0'
+    MOBILE_SERVER_REQUIREMENT: '>=1.2.0 <2.0.0'
 }));
 
 jest.mock('./storage', () => ({

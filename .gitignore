@@ -20,3 +20,6 @@ deploy/backups/
 deploy/*age-identity*
 build/native-release-provenance.json
 .vscode/settings.json
+
+.local-release/
+.release.env

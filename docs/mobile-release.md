@@ -1,5 +1,7 @@
 # Android internal release
 
+Local phone/Wear and OTA publishing commands are documented in [the local release runbook](local-release.md).
+
 This runbook produces locally signed Android artifacts from the Expo project in `mobile/` and the native Wear
 project in `wear/`:
 

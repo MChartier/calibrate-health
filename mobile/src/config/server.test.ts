@@ -195,6 +195,18 @@ describe('testCalibrateServerConnection', () => {
         expect(malformedLocalVersion).toEqual(expect.objectContaining({ ok: false, code: 'incompatible' }));
     });
 
+    it('checks the explicit bundle requirement at patch precision without cache reuse', async () => {
+        const fetchImpl = jest.fn(async () => new Response(JSON.stringify(compatibleConfig), { status: 200 }));
+        const blocked = await testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch, clientServerVersion: '>=1.2.4 <2.0.0'
+        });
+        expect(blocked).toEqual(expect.objectContaining({ ok: false, mismatch: expect.objectContaining({ status: 'server_behind' }) }));
+        expect(fetchImpl).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ cache: 'no-store' }));
+        await expect(testCalibrateServerConnection('https://calibrate.example', {
+            fetchImpl: fetchImpl as typeof fetch, clientServerVersion: '>=1.2.3 <2.0.0'
+        })).resolves.toEqual(expect.objectContaining({ ok: true }));
+    });
+
     it('allows older client minors and patch drift but blocks newer client minors and major mismatches', async () => {
         const fetchImpl = jest.fn(async () => new Response(JSON.stringify(compatibleConfig), { status: 200 }));
         await expect(testCalibrateServerConnection('https://calibrate.example', {

@@ -9,6 +9,8 @@
     "packages/*"
   ],
   "scripts": {
+    "release:local": "node --experimental-strip-types scripts/local-release.mjs",
+    "test:release:local": "node --experimental-strip-types --test scripts/local-release.test.mjs scripts/client-release.test.mjs",
     "dev": "node scripts/dev-stack.mjs dev",
     "dev:manual-auth": "node scripts/dev-stack.mjs dev:manual-auth",
     "dev:setup": "node scripts/dev-stack.mjs setup",
@@ -40,7 +42,7 @@
     "build:expo-web": "npm --prefix mobile run build:web",
     "prepare:native:release": "node scripts/native-release-build.mjs prepare",
     "build:native:release": "node scripts/native-release-build.mjs build-prepared",
-    "release:native:prepare": "node scripts/release-config.mjs prepare-native",
+    "release:native:prepare": "node --experimental-strip-types scripts/local-release.mjs native-prepare",
     "release:native:devices": "node scripts/native-release-devices.mjs",
     "release:native:evidence": "node scripts/native-release-evidence.mjs",
     "release:native:ota": "node scripts/native-ota-update.mjs",
@@ -108,7 +110,9 @@
     "test:coverage:mobile": "npm --prefix mobile test -- --coverage --runInBand",
     "knip": "knip",
     "knip:production": "knip --production --exclude exports,types",
-    "test:dead-code": "node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production"
+    "test:dead-code": "node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production",
+    "release:native": "node --experimental-strip-types scripts/local-release.mjs native",
+    "release:ota": "node --experimental-strip-types scripts/local-release.mjs ota"
   },
   "keywords": [],
   "author": "",
