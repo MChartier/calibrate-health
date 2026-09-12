@@ -481,6 +481,7 @@ test('Cut release uses a read-only request, protected handler, and scoped token 
   assert.match(finalize, /select\(\.merged == true\)/);
   assert.doesNotMatch(finalize, /git[^\n]*push|--force-with-lease/);
   assert.match(finalize, /Verify exact release ancestry[\s\S]*MERGE_SHA\}\^1[\s\S]*SOURCE_SHA[\s\S]*MERGE_SHA\}\^\{tree\}[\s\S]*RELEASE_SHA\}\^\{tree\}/);
+  assert.match(finalize, /Verify exact release ancestry[\s\S]*MERGE_SHA\}\^2[\s\S]*RELEASE_SHA/);
 
   assert.match(inspectCleanup, /always\(\).*needs\.finalize\.result != 'success'/);
   assert.match(inspectCleanup, /permissions:\s*\n\s+contents: read/);

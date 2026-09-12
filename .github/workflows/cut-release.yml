@@ -784,6 +784,7 @@ jobs:
           test "$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')" = "${MERGE_SHA}"
           git --no-replace-objects merge-base --is-ancestor "${RELEASE_SHA}" "${MERGE_SHA}"
           test "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^1")" = "${SOURCE_SHA}"
+          test "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^2")" = "${RELEASE_SHA}"
           test "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^{tree}")" = \
             "$(git --no-replace-objects rev-parse --verify "${RELEASE_SHA}^{tree}")"
 

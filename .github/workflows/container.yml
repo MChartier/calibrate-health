@@ -317,7 +317,7 @@ jobs:
           create-storage-record: false
 
   publish_image:
-    name: Publish verified image with external package credential
+    name: Publish verified image with repository package token
     needs: [build_image, attest_image_receipt]
     runs-on: ubuntu-latest
     timeout-minutes: 20
