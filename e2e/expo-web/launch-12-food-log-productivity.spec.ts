@@ -88,6 +88,7 @@ test('Food Log supports fast add, edit, recoverable delete, and meal/day copy', 
   await expect(page.getByRole('button', { name: 'Collapse Breakfast' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Collapse Dinner' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Expand Morning Snack' })).toHaveCount(0);
+  await expect(page.getByText('No entries', { exact: true })).toHaveCount(4);
   await expectNoHorizontalOverflow(page);
 
   if (!isDesktop) {

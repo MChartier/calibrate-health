@@ -48,13 +48,16 @@ for (const status of ['COMPLETE', 'INCOMPLETE'] as const) {
     await sheet.getByRole('textbox', { name: 'Food name (optional)', exact: true }).fill('Extra afternoon snack');
     const foodRequest = page.waitForRequest((request) => request.method() === 'POST' && new URL(request.url()).pathname === '/api/v1/food');
     await sheet.getByRole('button', { name: 'Add & close', exact: true }).click();
-    expect((await foodRequest).postDataJSON()).toMatchObject({ date, name: 'Extra afternoon snack', calories: 120 });
+    const loggedFood = (await foodRequest).postDataJSON();
+    expect(loggedFood).toMatchObject({ date, name: 'Extra afternoon snack', calories: 120 });
     expect(reopenCount).toBe(1);
     await expect(sheet).toHaveCount(0);
     await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('date') === date);
-    const addedRow = page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/)
-      .filter({ hasText: 'Extra afternoon snack' });
-    await expect(addedRow).toBeVisible();
+    const addedRow = page.getByTestId('today-food-preview').getByTestId(`food-preview-meal-${loggedFood.meal_period}`);
+    const expectedCalories = loggedFood.meal_period === 'BREAKFAST' ? '480 kcal' : '120 kcal';
+    await expect(addedRow).toContainText(expectedCalories);
+    await expect(page.getByTestId('today-food-preview')).toContainText('2 foods');
+    await expect(page.getByTestId('today-food-preview').getByText('Extra afternoon snack', { exact: true })).toHaveCount(0);
     await expect(addFood).toBeVisible();
     await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeVisible();
   });

@@ -103,13 +103,10 @@ for (const scheme of ['light', 'dark'] as const) {
         for (const control of geometry) {
           expect(control.width).toBeGreaterThanOrEqual(48);
           expect(control.height).toBeGreaterThanOrEqual(48);
-          if (surface.name === 'today') expect(control.border).toBe(0);
-          else expect(control.border).toBeGreaterThan(0);
+          expect(control.border).toBe(0);
         }
-        if (surface.name === 'today') {
-          const toolbarBorder = await dateControl.evaluate(element => Number.parseFloat(getComputedStyle(element).borderTopWidth));
-          expect(toolbarBorder).toBeGreaterThan(0);
-        }
+        const toolbarBorder = await dateControl.evaluate(element => Number.parseFloat(getComputedStyle(element).borderTopWidth));
+        expect(toolbarBorder).toBeGreaterThan(0);
       }
       await expectViewportScreenshot(page, `editorial-${surface.name}-${scheme}.png`);
     });
@@ -208,7 +205,7 @@ test('populated Today remains stable in light mode at every release viewport', a
   await ux.install('populated');
   await page.goto('/today');
 
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await expectViewportScreenshot(page, 'today-populated-light.png');
 });
 
@@ -218,7 +215,7 @@ test('empty Today remains legible in dark mode on phone and desktop', async ({ p
   await ux.install('empty');
   await page.goto('/today');
 
-  await expect(page.getByText("Start today's food log", { exact: true })).toBeVisible();
+  await expect(page.getByText("No food logged yet", { exact: true })).toBeVisible();
   await expectViewportScreenshot(page, 'today-empty-dark.png');
 });
 
@@ -247,7 +244,7 @@ test('Today terminal error stays distinct from empty content on tablet', async (
   await page.goto('/today');
 
   await expect(page.getByText("Can't load today's log", { exact: true })).toBeVisible();
-  await expect(page.getByText("Start today's food log", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("No food logged yet", { exact: true })).toHaveCount(0);
   await expect(page.getByLabel(/^Daily balance\./)).toContainText('Day unavailable');
   await expect(page.getByText('Food log unavailable', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeDisabled();
@@ -259,7 +256,7 @@ test('stale Food Log retains cached data and degraded labeling in dark mode', as
   await page.emulateMedia({ colorScheme: 'dark' });
   await ux.install('stale');
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Food log.*View full log/ }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/food-log');
@@ -273,7 +270,7 @@ test('offline Today keeps cached content and stale labeling on the smallest phon
   await page.emulateMedia({ colorScheme: 'light' });
   const controller = await ux.install('offline');
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await controller.activateOffline();
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
@@ -286,7 +283,7 @@ test('Progress uses the shell-owned cached-data notice while offline', async ({ 
   const controller = await ux.install('offline');
   await page.route('**/api/v1/client-diagnostics', (route) => route.fulfill({ status: 204 }));
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await page.goto('/progress');
   await expect(page.getByText('Snapshot', { exact: true })).toBeVisible();
 
@@ -328,7 +325,7 @@ test('Today tolerates 200% text at the smallest release viewport', async ({ page
   await page.emulateMedia({ colorScheme: 'light' });
   await ux.install('populated');
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await applyTwoHundredPercentText(page);
   const metric = page.getByTestId('calorie-balance-value');

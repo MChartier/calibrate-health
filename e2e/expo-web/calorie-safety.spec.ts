@@ -94,7 +94,7 @@ test('reviewed plans keep history while suppressing target, projection, and cali
 
   await expect(page.getByText('Review calorie plan', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Plan needs review', { exact: true })).toBeVisible();
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
     'Daily balance. Plan needs review. 360 calories logged.',
   );

@@ -14,7 +14,10 @@ const FOOD_ENTRIES: NonNullable<AuthenticatedApiOptions['foodEntries']> = [
   { id: 13, meal_period: 'DINNER', name: 'Green beans with toasted almonds and lemon dressing', calories: 110 },
   { id: 15, meal_period: 'EVENING_SNACK', name: 'Dark chocolate', calories: 120 },
 ];
-const CHRONOLOGICAL_IDS = [1, 2, 4, 6, 9, 11, 12, 13, 15];
+const MEAL_TOTALS = [
+  ['BREAKFAST', '230 kcal'], ['MORNING_SNACK', '90 kcal'], ['LUNCH', '520 kcal'],
+  ['AFTERNOON_SNACK', '150 kcal'], ['DINNER', '620 kcal'], ['EVENING_SNACK', '120 kcal']
+] as const;
 
 async function expectTouchTarget(target: Locator) {
   const box = await target.boundingBox();
@@ -31,38 +34,22 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
 }
 
-async function expectPreviewSuffix(page: Page) {
+async function expectMealSummary(page: Page) {
   const preview = page.getByTestId('today-food-preview');
-  const rows = preview.getByTestId(/^food-preview-entry-/);
-  await expect(rows.last()).toContainText('Dark chocolate');
-  const ids = await rows.evaluateAll((elements) => elements.map((element) => (
-    Number(element.getAttribute('data-testid')!.replace('food-preview-entry-', ''))
-  )));
-  expect(ids).toEqual(CHRONOLOGICAL_IDS.slice(-ids.length));
-
-  const bodyBox = (await page.getByTestId('food-preview-body').boundingBox())!;
-  const rowBoxes = await rows.evaluateAll((elements) => elements.map((element) => {
-    const box = element.getBoundingClientRect();
-    return { top: box.top, bottom: box.bottom };
-  }));
-  for (const box of rowBoxes) {
-    expect(box.top).toBeGreaterThanOrEqual(bodyBox.y - 1);
-    expect(box.bottom).toBeLessThanOrEqual(bodyBox.y + bodyBox.height + 1);
+  await expect(preview.getByTestId(/^food-preview-meal-/)).toHaveCount(6);
+  for (const [meal, calories] of MEAL_TOTALS) {
+    await expect(preview.getByTestId(`food-preview-meal-${meal}`)).toContainText(calories);
   }
-  const omitted = FOOD_ENTRIES.length - ids.length;
-  if (omitted) {
-    const count = preview.getByText(`${omitted} earlier ${omitted === 1 ? 'item' : 'items'} in log`, { exact: true });
-    await expect(count).toBeVisible();
-    expect((await count.boundingBox())!.y).toBeLessThan(rowBoxes[0].top);
-  }
+  for (const food of FOOD_ENTRIES) await expect(preview.getByText(food.name, { exact: true })).toHaveCount(0);
+  await expect(preview).toContainText('9 foods');
   return preview;
 }
 
-test('Today anchors its actions, puts weigh-in first, and fills food space chronologically', async ({ page, ux }, testInfo) => {
+test('Today anchors its actions, puts weigh-in first, and shows concise chronological meal totals', async ({ page, ux }, testInfo) => {
   await ux.install('populated', { foodDayStatus: 'OPEN', foodEntries: FOOD_ENTRIES, metrics: [] });
   await page.goto('/today');
   await hideTransientPwaNotices(page);
-  const preview = await expectPreviewSuffix(page);
+  const preview = await expectMealSummary(page);
   const weight = page.getByTestId('today-weight-card-press-layer');
   const addFood = page.getByRole('button', { name: 'Add food', exact: true });
   const completeDay = page.getByRole('button', { name: 'Complete day', exact: true });
@@ -76,7 +63,9 @@ test('Today anchors its actions, puts weigh-in first, and fills food space chron
     weight.boundingBox(), preview.boundingBox(), addFood.boundingBox(), completeDay.boundingBox(), page.getByTestId('today-action-dock').boundingBox(),
   ]);
   expect(weightBox!.y + weightBox!.height).toBeLessThanOrEqual(previewBox!.y + 1);
-  expect(previewBox!.y + previewBox!.height).toBeLessThanOrEqual(dockBox!.y + 1);
+  await preview.getByTestId('food-preview-meal-EVENING_SNACK').scrollIntoViewIfNeeded();
+  const visiblePreview = (await preview.boundingBox())!;
+  expect(visiblePreview.y + visiblePreview.height).toBeLessThanOrEqual(dockBox!.y + 1);
   expect(Math.abs(addBox!.y - completeBox!.y)).toBeLessThanOrEqual(1);
   expect(Math.abs(addBox!.height - completeBox!.height)).toBeLessThanOrEqual(1);
 
@@ -93,18 +82,21 @@ test('Today anchors its actions, puts weigh-in first, and fills food space chron
   await expect(page).toHaveURL((url) => url.pathname === '/food-log');
 });
 
-test('320px short Today keeps the newest whole food row accessible and its action dock visible', async ({ page, ux }, testInfo) => {
+test('320px short Today scrolls every meal above its visible action dock', async ({ page, ux }, testInfo) => {
   test.skip(testInfo.project.name !== 'compact-phone-chrome', 'The minimum-height phone case is covered once.');
   await page.setViewportSize({ width: 320, height: 568 });
   await ux.install('populated', { foodDayStatus: 'OPEN', foodEntries: FOOD_ENTRIES, metrics: [] });
   await page.goto('/today');
   await hideTransientPwaNotices(page);
-  await expectPreviewSuffix(page);
+  await expectMealSummary(page);
   const addFood = page.getByRole('button', { name: 'Add food', exact: true });
   await expectTouchTarget(addFood);
   const dock = (await page.getByTestId('today-action-dock').boundingBox())!;
   expect(dock.y + dock.height).toBeLessThanOrEqual(568);
-  const latestRow = (await page.getByTestId('food-preview-entry-15').boundingBox())!;
+  const lastMeal = page.getByTestId('food-preview-meal-EVENING_SNACK');
+  await lastMeal.scrollIntoViewIfNeeded();
+  await expect(lastMeal).toBeInViewport();
+  const latestRow = (await lastMeal.boundingBox())!;
   expect(latestRow.y + latestRow.height).toBeLessThanOrEqual(dock.y);
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('today-320x568.png') });
@@ -189,17 +181,17 @@ test('320px Today enlarges to natural scrolling at 200% text without losing acti
   await ux.install('populated', { foodDayStatus: 'OPEN', foodEntries: FOOD_ENTRIES, metrics: [] });
   await page.goto('/today');
   await hideTransientPwaNotices(page);
-  await expectPreviewSuffix(page);
+  await expectMealSummary(page);
   await applyTwoHundredPercentText(page);
   const preview = page.getByTestId('today-food-preview');
-  await expect(preview.getByTestId(/^food-preview-entry-/)).toHaveCount(FOOD_ENTRIES.length);
+  await expect(preview.getByTestId(/^food-preview-meal-/)).toHaveCount(6);
   const addFood = page.getByRole('button', { name: 'Add food', exact: true });
   await addFood.scrollIntoViewIfNeeded();
   await expectTouchTarget(addFood);
   await expectTouchTarget(page.getByRole('button', { name: 'Complete day', exact: true }));
   await expectNoHorizontalOverflow(page);
   const dock = page.getByTestId('today-action-dock');
-  const lastRow = preview.getByTestId('food-preview-entry-15');
+  const lastRow = preview.getByTestId('food-preview-meal-EVENING_SNACK');
   await dock.scrollIntoViewIfNeeded();
   const [addBox, completeBox] = await Promise.all([
     addFood.boundingBox(), page.getByRole('button', { name: 'Complete day', exact: true }).boundingBox(),
@@ -243,4 +235,63 @@ test('Today preserves keyboard order and visible actions in forced colors', asyn
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Day completed', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+for (const empty of [false, true]) {
+  test(`the ${empty ? 'empty' : 'populated'} food pane owns spare height and both side gutters`, async ({ page, ux }, testInfo) => {
+    await page.setViewportSize({ width: page.viewportSize()!.width, height: 1200 });
+    await ux.install('populated', { foodDayStatus: 'OPEN', foodEntries: empty ? [] : FOOD_ENTRIES.slice(0, 2), metrics: [] });
+    await page.goto('/today');
+    await hideTransientPwaNotices(page);
+    const pane = page.getByTestId('today-food-preview');
+    await expect(pane).toContainText(empty ? 'No food logged yet' : '2 foods');
+    const dock = page.getByTestId('today-action-dock');
+    await expect.poll(async () => {
+      const [paneBox, dockBox] = await Promise.all([pane.boundingBox(), dock.boundingBox()]);
+      return Math.abs(paneBox!.y + paneBox!.height - dockBox!.y);
+    }).toBeLessThanOrEqual(2);
+    const box = (await pane.boundingBox())!;
+    const contentBox = (await page.getByRole('main').boundingBox())!;
+    expect(box.x).toBe(contentBox.x);
+    expect(box.width).toBe(contentBox.width);
+    await page.screenshot({ path: testInfo.outputPath(`today-${empty ? 'empty' : 'sparse'}-full-pane.png`) });
+    // Tap blank space at the bottom-right edge, outside the constrained reading column.
+    await page.mouse.click(box.x + box.width - 4, box.y + box.height - 8);
+    await expect(page).toHaveURL(url => url.pathname === '/food-log');
+  });
+}
+
+test('date navigation continues the navbar surface across date-based routes', async ({ page, ux }, testInfo) => {
+  await ux.install('populated');
+  await page.goto('/today');
+  await hideTransientPwaNotices(page);
+  const toolbar = page.getByRole('toolbar', { name: 'Food log date', includeHidden: true });
+  const initial = (await toolbar.boundingBox())!;
+  for (const route of ['/food-log', '/activity', '/weight']) {
+    await page.goto(route);
+    const header = page.getByTestId('date-navigation-header');
+    await expect(header).toBeAttached();
+    const bounds = (await toolbar.boundingBox())!;
+    expect(Math.abs(bounds.y - initial.y)).toBeLessThanOrEqual(1);
+    if (page.viewportSize()!.width < 768) {
+      expect(bounds.x).toBe(initial.x);
+      expect(bounds.width).toBe(initial.width);
+    }
+    const presentation = await header.evaluate(element => {
+      const banner = document.querySelector('[role="banner"]')!;
+      const controls = element.querySelector('[role="toolbar"]')!;
+      return {
+        header: getComputedStyle(element).backgroundColor,
+        banner: getComputedStyle(banner).backgroundColor,
+        divider: getComputedStyle(banner).borderBottomWidth,
+        toolbar: getComputedStyle(controls).borderTopWidth,
+        buttons: [...controls.querySelectorAll('[role="button"]')].map(button => getComputedStyle(button).borderTopWidth)
+      };
+    });
+    expect(presentation.header).toBe(presentation.banner);
+    expect(presentation.divider).toBe('0px');
+    expect(presentation.toolbar).toBe('1px');
+    expect(presentation.buttons).toEqual(['0px', '0px', '0px']);
+    if (route !== '/weight') await page.screenshot({ path: testInfo.outputPath(`${route.slice(1)}-attached-date.png`) });
+  }
 });

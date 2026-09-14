@@ -228,7 +228,9 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
   await expectInside(foodSurface, foodPrimary);
   await expectInside(page.getByTestId('today-fixed-page'), foodSecondary);
   await expectInside(foodSecondary, addFood);
+  await foodPrimary.getByTestId('food-preview-meal-EVENING_SNACK').scrollIntoViewIfNeeded();
   await expectNoOverlap(foodPrimary, foodSecondary);
+  await page.getByTestId('fixed-page-scroll').evaluate(element => { element.scrollTop = 0; });
   await expectFullWidthPrimary(foodSurface, foodPrimary);
   await expectInside(weightSurface, weightPrimary);
   await expectFullWidthPrimary(weightSurface, weightPrimary);
@@ -397,7 +399,7 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
     'Daily balance. 2,100 kcal remaining. 0 eaten out of 2,100 calorie target.',
   );
-  await expect(page.getByText("Start today's food log", { exact: true })).toBeVisible();
+  await expect(page.getByText("No food logged yet", { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeEnabled();
 
   options.foodDayStatus = 'PAUSED';
@@ -419,7 +421,7 @@ test('an initial Today failure never resembles an empty or completed day', async
   await page.goto('/today');
 
   await expect(page.getByText("Can't load today's log", { exact: true })).toBeVisible();
-  await expect(page.getByText("Start today's food log", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("No food logged yet", { exact: true })).toHaveCount(0);
   await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toHaveCount(0);
   await expect(page.getByText('Day status unavailable', { exact: true })).toBeVisible();
   await expect(page.getByLabel(/^Daily balance\./)).toContainText('Day unavailable');
@@ -442,7 +444,7 @@ test('a failed refresh keeps cached Today data but retracts the completed status
   await page.getByRole('button', { name: 'Next day', exact: true }).click();
 
   await expect(page.getByText("Couldn't refresh today's log", { exact: true })).toBeVisible();
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await expect(page.getByText('Day status unavailable', { exact: true })).toBeVisible();
   await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
@@ -456,7 +458,7 @@ test('offline cached Today data stays visible and explicitly identifies saved in
 
   const controller = await ux.install('offline', { foodDayStatus: 'COMPLETE' });
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await controller.activateOffline();
 
@@ -467,6 +469,6 @@ test('offline cached Today data stays visible and explicitly identifies saved in
   );
   await expect(savedInformationNotice).toHaveCount(1);
   await expect(savedInformationNotice).toBeVisible();
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

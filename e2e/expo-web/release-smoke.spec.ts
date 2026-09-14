@@ -450,9 +450,9 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await expect(page.getByText('Daily balance', { exact: true })).toBeVisible();
   const foodLogSummary = page.getByRole('button', { name: /Food log.*View full log/ });
-  await expect(foodLogSummary).toHaveAccessibleName('Food log. 1 item. Breakfast, 360 kcal. Greek yogurt and berries, 360 kcal. View full log');
+  await expect(foodLogSummary).toHaveAccessibleName('Food log. 1 food. Breakfast, 360 kcal. Morning Snack, No entries. Lunch, No entries. Afternoon Snack, No entries. Dinner, No entries. Evening Snack, No entries. View full log');
   const foodLogSummaryCard = page.getByTestId('today-food-preview');
-  await expect(foodLogSummaryCard.getByTestId(/^food-preview-entry-/).getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
+  await expect(foodLogSummaryCard.getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await expect(foodLogSummaryCard).toContainText('Breakfast');
   await foodLogSummary.click();
   await expect(page).toHaveURL((url) => url.pathname === '/food-log' && Boolean(url.searchParams.get('date')));
@@ -551,10 +551,10 @@ test('paused days omit calorie progress and only preview food when entries exist
   await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toHaveAccessibleName(
-    'Food log. 1 item. Breakfast, 360 kcal. Greek yogurt and berries, 360 kcal. View full log',
+    'Food log. 1 food. Breakfast, 360 kcal. Morning Snack, No entries. Lunch, No entries. Afternoon Snack, No entries. Dinner, No entries. Evening Snack, No entries. View full log',
   );
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText(
-    'Greek yogurt and berries',
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText(
+    '360 kcal',
     { exact: true },
   )).toBeVisible();
 
@@ -567,7 +567,7 @@ test('paused days omit calorie progress and only preview food when entries exist
   await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeVisible();
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/)).toHaveCount(0);
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-meal-/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Add food', exact: true })).toHaveCount(0);
 });
 
