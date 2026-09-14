@@ -14,7 +14,7 @@ import {
 } from '@calibrate/shared';
 import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
 import { AppButton } from '../src/components/AppButton';
-import { AppCard } from '../src/components/AppCard';
+import { AppSection } from '../src/components/AppSection';
 import { AppText } from '../src/components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../src/components/AsyncStateBoundary';
 import { CalibrateLogo } from '../src/components/CalibrateLogo';
@@ -71,7 +71,7 @@ import {
     isWeightWithinPolicy
 } from '../src/weightEntry/input';
 
-const ONBOARDING_CONTENT_MAX_WIDTH = 760; // Keeps the wizard and its error gate readable on desktop.
+const ONBOARDING_CONTENT_MAX_WIDTH = 640; // Matches the app's open form reading width.
 
 function getTargetWeightForGoal(goalMode: GoalMode, currentWeight: string, targetWeight: string): string {
     if (goalMode === 'maintain' && targetWeight.trim().length === 0) {
@@ -647,10 +647,10 @@ onError: (error) => {
                     contentContainerStyle={styles.wizardContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    <AppCard>
+                    <AppSection>
                         <SectionHeader title={activeStep.title} description={activeStep.description} />
                         {renderStepContent()}
-                    </AppCard>
+                    </AppSection>
                 </KeyboardAwareScrollView>
 
                 <View style={[styles.actionBar, { borderTopColor: themeColors.outlineVariant, backgroundColor: themeColors.background }]}>
@@ -694,18 +694,18 @@ const ConnectionStepIntro: React.FC<{
             style={[
                 styles.connectionIntro,
                 {
-                    backgroundColor: themeColors.primaryContainer,
+                    backgroundColor: 'transparent',
                     borderColor: themeColors.outlineVariant
                 }
             ]}
         >
-            <View style={[styles.connectionIcon, { backgroundColor: themeColors.surface }]}>
+            <View style={styles.connectionIcon}>
                 <Ionicons name={icon} size={26} color={themeColors.primary} />
             </View>
             <View style={styles.connectionCopy}>
-                <AppText variant="label" style={{ color: themeColors.onPrimaryContainer }}>Optional connection</AppText>
-                <AppText variant="subtitle" style={{ color: themeColors.onPrimaryContainer }}>{title}</AppText>
-                <AppText style={{ color: themeColors.onPrimaryContainer }}>{description}</AppText>
+                <AppText variant="label" style={{ color: themeColors.onSurfaceVariant }}>Optional connection</AppText>
+                <AppText variant="subtitle">{title}</AppText>
+                <AppText>{description}</AppText>
             </View>
         </View>
     );
@@ -717,9 +717,8 @@ const PlanSummary: React.FC<{
     unit: string;
     signedDailyDeficit: number;
 }> = ({ currentWeight, targetWeight, unit, signedDailyDeficit }) => {
-    const { colors: themeColors } = useAppTheme();
     return (
-        <View style={[styles.summaryPanel, { backgroundColor: themeColors.surfaceContainer }]}>
+        <View style={styles.summaryPanel}>
             <ReviewRow label="Start" value={`${currentWeight || '-'} ${unit}`} compact />
             <ReviewRow label="Target" value={`${targetWeight || '-'} ${unit}`} compact />
             <ReviewRow
@@ -779,13 +778,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: spacing.md,
-        padding: spacing.lg,
-        borderRadius: radius.lg,
-        borderWidth: StyleSheet.hairlineWidth
+        paddingBottom: spacing.lg,
+        borderBottomWidth: StyleSheet.hairlineWidth
     },
     connectionIcon: {
-        width: 48,
-        height: 48,
+        width: spacing.xl,
+        height: spacing.xl,
         flexShrink: 0,
         alignItems: 'center',
         justifyContent: 'center',
@@ -816,8 +814,7 @@ const styles = StyleSheet.create({
         lineHeight: 20
     },
     summaryPanel: {
-        borderRadius: radius.md,
-        padding: spacing.md,
+        paddingVertical: spacing.md,
         gap: spacing.sm
     },
     reviewRow: {
@@ -835,7 +832,7 @@ const styles = StyleSheet.create({
     reviewValue: {
         flex: 1,
         textAlign: 'right',
-        fontWeight: '800',
+        fontWeight: '600',
         flexWrap: 'wrap'
     },
     actions: {

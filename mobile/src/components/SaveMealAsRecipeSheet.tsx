@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -40,6 +40,7 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
     const { api } = useAuth();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
+    const { fontScale } = useWindowDimensions();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [name, setName] = useState('');
     const [yieldServings, setYieldServings] = useState('1');
@@ -180,7 +181,7 @@ export const SaveMealAsRecipeSheet: React.FC<SaveMealAsRecipeSheetProps> = ({
                     {getSafeActionErrorMessage(saveRecipe.error, 'Unable to save this recipe.')}
                 </AppText>
             )}
-            <View style={styles.actions}>
+            <View style={[styles.actions, fontScale >= 1.3 && styles.actionsStacked]}>
                 <AppButton
                     title="Cancel"
                     variant="secondary"
@@ -209,11 +210,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: theme.spacing.md,
-        borderRadius: theme.radius.md,
-        borderWidth: theme.stroke.control,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderColor: theme.colors.outlineVariant,
-        backgroundColor: theme.colors.surfaceContainer,
-        padding: theme.spacing.md
+        paddingVertical: theme.spacing.md
     },
     ingredientRowSelected: {
         borderColor: theme.colors.primary,
@@ -240,16 +239,19 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     summary: {
         gap: theme.spacing.xs,
-        borderRadius: theme.radius.md,
-        backgroundColor: theme.colors.primaryContainer,
-        padding: theme.spacing.md
+        paddingVertical: theme.spacing.md,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.colors.outlineVariant
     },
     actions: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: theme.spacing.md
     },
+    actionsStacked: { flexDirection: 'column' },
     action: {
-        flex: 1
+        flex: 1,
+        minWidth: Platform.OS === 'web' ? 'auto' : 0
     },
     pressed: {
         opacity: 0.82

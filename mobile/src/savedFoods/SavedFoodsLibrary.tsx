@@ -46,8 +46,9 @@ export function SavedFoodsLibrary({
 }: SavedFoodsLibraryProps) {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const { width } = useWindowDimensions();
+    const { width, fontScale } = useWindowDimensions();
     const isNarrow = width < NARROW_LIBRARY_BREAKPOINT;
+    const stackCreateActions = fontScale >= 1.3;
     const { api } = useAuth();
     const queryClient = useQueryClient();
     const isOnline = useOnlineStatus();
@@ -100,20 +101,22 @@ export function SavedFoodsLibrary({
                 <AppText variant="muted">Keep reusable foods and recipes easy to find.</AppText>
             </View>
             <View style={[styles.createActions, isNarrow && styles.createActionsNarrow]}>
-                <AppButton title="Scan label" variant="secondary" onPress={() => router.push('/nutrition-label')} style={isNarrow ? styles.narrowAction : undefined} />
-                <AppButton
-                    title="Create food"
-                    variant="secondary"
-                    leftIcon={<Ionicons name="add" size={18} color={theme.colors.onSurface} />}
-                    onPress={onCreateFood}
-                    style={isNarrow ? styles.narrowAction : undefined}
-                />
-                <AppButton
-                    title="Create recipe"
-                    leftIcon={<Ionicons name="restaurant-outline" size={18} color={theme.colors.onPrimary} />}
-                    onPress={onCreateRecipe}
-                    style={isNarrow ? styles.narrowAction : undefined}
-                />
+                <View style={[styles.creationPair, isNarrow && styles.creationPairNarrow, stackCreateActions && styles.creationPairStacked]}>
+                    <AppButton
+                        title="Create food"
+                        variant="secondary"
+                        leftIcon={!isNarrow ? <Ionicons name="add" size={18} color={theme.colors.onSurface} /> : undefined}
+                        onPress={onCreateFood}
+                        style={isNarrow ? styles.creationAction : undefined}
+                    />
+                    <AppButton
+                        title="Create recipe"
+                        leftIcon={!isNarrow ? <Ionicons name="restaurant-outline" size={18} color={theme.colors.onPrimary} /> : undefined}
+                        onPress={onCreateRecipe}
+                        style={isNarrow ? styles.creationAction : undefined}
+                    />
+                </View>
+                <AppButton title="Scan label" variant="ghost" onPress={() => router.push('/nutrition-label')} style={isNarrow ? styles.narrowAction : undefined} />
             </View>
         </View>
     );
@@ -207,12 +210,14 @@ export function SavedFoodsLibrary({
                             <View style={[styles.libraryActions, isNarrow && styles.libraryActionsNarrow]}>
                                 <AppIconButton
                                     icon="create-outline"
+                                    variant="ghost"
                                     accessibilityLabel={`Edit ${item.name}`}
                                     iconColor={theme.colors.onSurface}
                                     onPress={() => onEdit(item)}
                                 />
                                 <AppIconButton
                                     icon={item.is_pinned ? 'star' : 'star-outline'}
+                                    variant="ghost"
                                     accessibilityLabel={`${item.is_pinned ? 'Unpin' : 'Pin'} ${item.name}`}
                                     busy={setPinned.isPending && setPinned.variables?.id === item.id}
                                     iconColor={item.is_pinned ? theme.colors.primary : theme.colors.onSurfaceVariant}
@@ -270,10 +275,25 @@ function createStyles(theme: AppTheme) {
         },
         createActionsNarrow: {
             width: '100%',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            justifyContent: 'flex-start'
         },
         narrowAction: {
             width: '100%'
+        },
+        creationPair: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: spacing.sm
+        },
+        creationPairNarrow: {
+            width: '100%'
+        },
+        creationPairStacked: {
+            flexDirection: 'column'
+        },
+        creationAction: {
+            flexGrow: 1
         },
         browseControls: {
             gap: spacing.sm

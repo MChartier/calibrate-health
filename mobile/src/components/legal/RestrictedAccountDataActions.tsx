@@ -3,7 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { AppButton } from '../AppButton';
 import { AppText } from '../AppText';
-import { AppCard } from '../AppCard';
+import { AppSection } from '../AppSection';
 import { DeleteAccountSheet } from '../../settings/AccountSettingsSheets';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -80,7 +80,7 @@ export function RestrictedAccountDataActions() {
 
     return (
         <>
-            <AppCard style={styles.card}>
+            <AppSection style={styles.card}>
                 <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Your account data</AppText>
                 <AppText variant="muted">
                     Export remains available without restoring tracking access. Deletion is permanent.
@@ -108,7 +108,7 @@ export function RestrictedAccountDataActions() {
                         style={styles.action}
                     />
                 </View>
-            </AppCard>
+            </AppSection>
             <DeleteAccountSheet
                 visible={deleteOpen}
                 isOutboxReady

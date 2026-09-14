@@ -2,21 +2,24 @@
  * Defines the Advanced settings Expo Router screen.
  */
 import React, { useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppButton } from '../../../src/components/AppButton';
-import { AppCard } from '../../../src/components/AppCard';
+import { AppSection } from '../../../src/components/AppSection';
+import { AppNotice } from '../../../src/components/AppNotice';
 import { AppText } from '../../../src/components/AppText';
+import { SectionHeader } from '../../../src/components/SectionHeader';
 import { ServerUrlControl } from '../../../src/components/ServerUrlControl';
 import { TabScreen } from '../../../src/components/TabScreen';
 import { useAuth } from '../../../src/auth/AuthContext';
 import { HOSTED_SERVER_URL, normalizeServerUrl } from '../../../src/config/server';
-import { radius, spacing, useAppTheme } from '../../../src/theme';
+import { spacing, useAppTheme } from '../../../src/theme';
 import { useAppUpdateController } from '../../../src/updates/useAppUpdateController';
 import { getNativePlatformLabel } from '../../../src/platform/nativePlatform';
 
 const DIAGNOSTIC_ROW_MIN_HEIGHT = 52; // Keeps support values readable without inflating every row into a full control.
 const UPDATE_STATUS_MIN_HEIGHT = 64; // Reserves stable space while update status swaps between text and progress.
+const STACKED_DIAGNOSTICS_BREAKPOINT = 400; // Long service addresses need a complete line on compact phones.
 
 /** Format update date for stable display or serialization. */
 function formatUpdateDate(value: Date | null): string {
@@ -75,13 +78,10 @@ export default function AdvancedSettingsScreen() {
     }
 
     return (
-        <TabScreen testID="advanced-settings-page" tabIndex={Platform.OS === 'web' ? 0 : undefined}>
+        <TabScreen contentWidth="overview" testID="advanced-settings-page" tabIndex={Platform.OS === 'web' ? 0 : undefined}>
             {Platform.OS !== 'web' ? (
-                <AppCard>
-                    <View style={styles.sectionHeading}>
-                        <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Connection</AppText>
-                        <AppText variant="caption">Optional connection settings for self-hosted services.</AppText>
-                    </View>
+                <AppSection>
+                    <SectionHeader title="Connection" description="Optional connection settings for self-hosted services." />
                     <ServerUrlControl
                         presentation="editor"
                         value={serverInput}
@@ -98,14 +98,13 @@ export default function AdvancedSettingsScreen() {
                         leftIcon={<Ionicons name="server-outline" size={18} color={theme.colors.onPrimary} />}
                         onPress={() => void handleSaveServer()}
                     />
-                </AppCard>
+                </AppSection>
             ) : null}
 
-            <AppCard>
-                <View style={styles.sectionHeading}>
-                    <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Diagnostics</AppText>
-                    <AppText variant="caption">Technical details for support and release verification.</AppText>
-                </View>
+            <AppSection style={Platform.OS !== 'web'
+                ? [styles.dividedSection, { borderTopColor: theme.colors.outlineVariant }]
+                : undefined}>
+                <SectionHeader title="Diagnostics" description="Technical details for support and release verification." />
                 <View style={styles.operatorNotice}>
                     <AppText variant="label">Self-hosting</AppText>
                     <AppText variant="caption">
@@ -114,10 +113,7 @@ export default function AdvancedSettingsScreen() {
                     </AppText>
                 </View>
                 {versionInfo.isEmergencyLaunch ? (
-                    <View style={[
-                        styles.notice,
-                        { backgroundColor: theme.colors.warningContainer, borderColor: theme.colors.warning }
-                    ]}>
+                    <AppNotice tone="warning" style={styles.notice}>
                         <Ionicons name="warning-outline" size={22} color={theme.colors.onWarningContainer} />
                         <View style={styles.noticeCopy}>
                             <AppText variant="label" style={{ color: theme.colors.onWarningContainer }}>
@@ -130,9 +126,9 @@ export default function AdvancedSettingsScreen() {
                                 <AppText variant="caption" selectable>{versionInfo.emergencyLaunchReason}</AppText>
                             ) : null}
                         </View>
-                    </View>
+                    </AppNotice>
                 ) : null}
-                <View style={[styles.infoRows, { backgroundColor: theme.colors.surfaceContainer }]}>
+                <View>
                     <InfoRow label="Service" value={serviceLabel} />
                     <InfoRow label="Service address" value={serverUrl} />
                     <InfoRow label="Platform" value={platformLabel} />
@@ -153,16 +149,13 @@ export default function AdvancedSettingsScreen() {
                         <AppText selectable style={styles.updateId}>{versionInfo.updateId}</AppText>
                     </View>
                 ) : null}
-            </AppCard>
+            </AppSection>
 
-            <AppCard>
-                <View style={styles.sectionHeading}>
-                    <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Software updates</AppText>
-                    <AppText variant="caption">Check for and apply compatible Calibrate updates.</AppText>
-                </View>
+            <AppSection style={[styles.dividedSection, { borderTopColor: theme.colors.outlineVariant }]}>
+                <SectionHeader title="Software updates" description="Check for and apply compatible Calibrate updates." />
                 <View
                     accessibilityLiveRegion="polite"
-                    style={[styles.status, { backgroundColor: theme.colors.surfaceContainer }]}
+                    style={styles.status}
                 >
                     {updates.isBusy ? <ActivityIndicator color={theme.colors.primary} /> : (
                         <Ionicons
@@ -193,7 +186,7 @@ export default function AdvancedSettingsScreen() {
                         ? 'Web and PWA updates are delivered through the browser and installed-site lifecycle.'
                         : `OTA updates can change ${platformLabel} JavaScript and assets. Native ${nativeBuildTargets} changes require a newly signed build.`}
                 </AppText>
-            </AppCard>
+            </AppSection>
         </TabScreen>
     );
 }
@@ -205,27 +198,27 @@ const InfoRow: React.FC<{ label: string; value: string; showDivider?: boolean }>
     showDivider = true
 }) => {
     const theme = useAppTheme();
+    const { width, fontScale } = useWindowDimensions();
+    const stacked = width < STACKED_DIAGNOSTICS_BREAKPOINT || fontScale >= 1.3;
     return (
         <View style={[
             styles.infoRow,
+            stacked && styles.infoRowStacked,
             showDivider && { borderBottomColor: theme.colors.outlineVariant, borderBottomWidth: StyleSheet.hairlineWidth }
         ]}>
             <AppText variant="caption">{label}</AppText>
-            <AppText selectable style={styles.infoValue}>{value}</AppText>
+            <AppText selectable style={[styles.infoValue, stacked && styles.infoValueStacked]}>{value}</AppText>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    sectionHeading: {
-        gap: spacing.xs
+    dividedSection: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        paddingTop: spacing.lg
     },
     operatorNotice: {
         gap: spacing.xs
-    },
-    infoRows: {
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md
     },
     infoRow: {
         minHeight: DIAGNOSTIC_ROW_MIN_HEIGHT,
@@ -235,25 +228,31 @@ const styles = StyleSheet.create({
         gap: spacing.lg,
         paddingVertical: spacing.sm
     },
+    infoRowStacked: {
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: spacing.xs
+    },
     infoValue: {
         flex: 1,
         textAlign: 'right',
-        fontWeight: '700'
+        fontWeight: '600'
+    },
+    infoValueStacked: {
+        flex: 0,
+        textAlign: 'left'
     },
     updateIdBlock: {
         gap: spacing.xs
     },
     updateId: {
         fontFamily: Platform.select({ android: 'monospace', default: undefined }),
-        fontSize: 13
+        fontSize: 14
     },
     notice: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: spacing.md,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderRadius: radius.lg,
-        padding: spacing.lg
+        gap: spacing.md
     },
     noticeCopy: {
         flex: 1,
@@ -264,8 +263,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
     },
     statusCopy: {

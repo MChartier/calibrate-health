@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
+import { AppSection } from '../../src/components/AppSection';
 import { AppText } from '../../src/components/AppText';
 import { AuthBrand } from '../../src/components/auth/AuthBrand';
 import { Screen } from '../../src/components/Screen';
@@ -13,7 +13,7 @@ import { TextField } from '../../src/components/TextField';
 import { LegalConsentFields } from '../../src/components/legal/LegalConsentFields';
 import { useAuth } from '../../src/auth/AuthContext';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
-import { useAppTheme } from '../../src/theme';
+import { spacing, useAppTheme } from '../../src/theme';
 import { getAuthActionErrorMessage } from '../../src/errors/presentation';
 import { requiresHostedLegalAcceptance } from '../../src/auth/accountAccess';
 import {
@@ -83,10 +83,10 @@ export default function RegisterScreen() {
     }
 
     return (
-        <Screen safeTop style={styles.screen}>
+        <Screen contentWidth="form" safeTop style={styles.screen}>
             <AuthBrand description="Track food, weight, and progress against a personalized calorie target." />
 
-            <AppCard>
+            <AppSection>
                 <SectionHeader title="Create account" description="Create your Calibrate account with email and password." />
                 <TextField
                     label="Email"
@@ -145,24 +145,26 @@ export default function RegisterScreen() {
                 )}
                 {(error || authError) && <AppText accessibilityRole="alert" style={{ color: colors.danger }}>{error ?? authError}</AppText>}
                 <AppButton title={isSubmitting ? 'Creating...' : 'Create account'} disabled={isSubmitting} onPress={() => void handleRegister()} />
-            </AppCard>
+            </AppSection>
 
-            <Link
-                href={canSelectServer ? {
-                    pathname: '/(auth)/login',
-                    params: { serverUrl: serverInput }
-                } : '/(auth)/login'}
-                asChild
-            >
-                <Pressable accessibilityRole="link" style={styles.linkTarget}>
-                    <AppText style={[styles.link, { color: colors.primary }]}>Back to sign in</AppText>
-                </Pressable>
-            </Link>
-            <Link href={CALIBRATE_PRODUCT_LINKS.support as Href} asChild>
-                <Pressable accessibilityRole="link" style={styles.linkTarget}>
-                    <AppText style={[styles.link, { color: colors.primary }]}>Support</AppText>
-                </Pressable>
-            </Link>
+            <View style={styles.footerLinks}>
+                <Link
+                    href={canSelectServer ? {
+                        pathname: '/(auth)/login',
+                        params: { serverUrl: serverInput }
+                    } : '/(auth)/login'}
+                    asChild
+                >
+                    <Pressable accessibilityRole="link" style={styles.linkTarget}>
+                        <AppText style={[styles.link, { color: colors.primary }]}>Back to sign in</AppText>
+                    </Pressable>
+                </Link>
+                <Link href={CALIBRATE_PRODUCT_LINKS.support as Href} asChild>
+                    <Pressable accessibilityRole="link" style={styles.linkTarget}>
+                        <AppText style={[styles.link, { color: colors.primary }]}>Support</AppText>
+                    </Pressable>
+                </Link>
+            </View>
         </Screen>
     );
 }
@@ -171,17 +173,23 @@ const styles = StyleSheet.create({
     screen: {
         justifyContent: 'center',
         flexGrow: 1,
-        maxWidth: 520,
         width: '100%',
         alignSelf: 'center'
     },
     linkTarget: {
         minHeight: 48,
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        paddingHorizontal: spacing.sm
+    },
+    footerLinks: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: spacing.md
     },
     link: {
-        fontWeight: '800',
+        fontWeight: '600',
         textAlign: 'center'
     }
 });

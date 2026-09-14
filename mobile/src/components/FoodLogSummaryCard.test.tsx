@@ -48,34 +48,34 @@ describe('FoodLogSummaryCard', () => {
         const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={onPress} />);
 
         fireEvent.press(screen.getByLabelText(/Food log.+View full log/));
-
+        expect(screen.queryByRole('button', { name: 'View food log' })).toBeNull();
+        expect(screen.getAllByRole('button')).toHaveLength(1);
         expect(onPress).toHaveBeenCalledTimes(1);
     });
 
-    it('uses one full-card navigation target behind the compact content', () => {
+    it('keeps the label and preview inside one full-row navigation target', () => {
         const onPress = jest.fn();
-        const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={onPress} compact />);
-        const heading = screen.getByRole('header', { name: 'Food log' });
-        const card = screen.getByTestId('food-log-summary-card');
+        const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={onPress} />);
         const target = screen.getByTestId('food-log-card-press-layer');
         const targetStyle = StyleSheet.flatten(target.props.style);
 
-        expect(within(target).getByRole('header', { name: 'Food log' })).toBe(heading);
+        expect(within(target).queryByRole('header')).toBeNull();
+        expect(within(target).getByText('Food log')).toBeTruthy();
         expect(screen.getByLabelText(/Food log.+View full log/)).toBe(target);
         expect(targetStyle).toMatchObject({
             minHeight: themes.light.interaction.minimumTouchTarget,
             flex: 1
         });
 
-        fireEvent(target, 'pressIn');
-        expect(card).toHaveStyle({ backgroundColor: themes.light.colors.surfacePressed });
-        fireEvent(target, 'pressOut');
+        fireEvent(target, 'hoverIn');
+        expect(target).toHaveStyle({ backgroundColor: themes.light.colors.surfaceHovered });
+        fireEvent(target, 'hoverOut');
         fireEvent.press(target);
         expect(onPress).toHaveBeenCalledTimes(1);
     });
 
     it('allows compact meal details to wrap instead of clipping scaled text', () => {
-        const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={jest.fn()} compact />);
+        const screen = render(<FoodLogSummaryCard entries={ENTRIES} onPress={jest.fn()} />);
 
         expect(screen.getByText('Breakfast').props.numberOfLines).toBeUndefined();
         expect(screen.getByText('425 kcal').props.numberOfLines).toBeUndefined();

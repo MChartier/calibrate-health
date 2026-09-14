@@ -106,6 +106,7 @@ test('Saved foods supports create, search, pin, edit, deep recipe use, and snaps
   await recipeEditor.getByLabel('Recipe name').fill(RECIPE_NAME);
   await recipeEditor.getByRole('button', { name: `Add ${EDITED_FOOD_NAME} to recipe` }).click();
   await recipeEditor.getByRole('button', { name: 'Load more saved foods', exact: true }).click();
+  await recipeEditor.getByLabel('Search saved foods', { exact: true }).fill(DEEP_SAVED_FOOD_NAME);
   await recipeEditor.getByRole('button', { name: `Add ${DEEP_SAVED_FOOD_NAME} to recipe` }).click();
   await expect(recipeEditor.getByRole('button', { name: `Remove ${DEEP_SAVED_FOOD_NAME}` })).toBeVisible();
   await recipeEditor.getByRole('button', { name: 'Save recipe', exact: true }).click();

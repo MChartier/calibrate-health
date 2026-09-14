@@ -3,7 +3,7 @@ import { Platform, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from '@calibrate/api-client';
 import {
-    getWeightTrendChartHeightBounds,
+    getWeightTrendChartMinimumHeight,
     WeightTrendCard
 } from './WeightTrendCard';
 import { spacing } from '../theme';
@@ -375,19 +375,18 @@ describe('WeightTrendCard', () => {
         expect(screen.queryByTestId('weight-trend-data-table')).toBeNull();
     });
 
-    it('clamps mobile chart height to the named responsive bounds', () => {
+    it('preserves the minimum plot height and grows to all available space', () => {
         const screen = render(<WeightTrendCard />);
         const canvas = screen.getByTestId('weight-trend-chart-canvas');
         fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 100 } } });
         expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 188);
         fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 600 } } });
-        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 260);
+        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 600);
+        fireEvent(canvas, 'layout', { nativeEvent: { layout: { width: 340, height: 240 } } });
+        expect(screen.getByTestId('weight-trend-chart')).toHaveProp('height', 240);
     });
 
-    it('clamps desktop chart height to the named responsive bounds', () => {
-        expect(getWeightTrendChartHeightBounds(1_024)).toEqual({
-            minimum: 260,
-            maximum: 420
-        });
+    it('uses a legible minimum on desktop', () => {
+        expect(getWeightTrendChartMinimumHeight(1_024)).toBe(260);
     });
 });

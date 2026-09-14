@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FoodLogCreatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
+import { AppIconButton } from './AppIconButton';
 import { NumberStepperField } from './NumberStepperField';
 import { OverlaySelect, type OverlaySelectOption } from './OverlaySelect';
 import {
@@ -19,7 +20,7 @@ import {
 } from '../food/foodLogSelection';
 import { MINIMUM_FOOD_QUANTITY } from '../food/quantityInput';
 import { formatCalories } from '../utils/format';
-import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
+import { spacing, useAppTheme, type AppTheme } from '../theme';
 
 export type FoodSelectionSubmitRequest = {
     payload: FoodLogCreatePayload;
@@ -47,6 +48,7 @@ export const FoodSelectionEditor: React.FC<FoodSelectionEditorProps> = ({
     onSubmit
 }) => {
     const theme = useAppTheme();
+    const { fontScale } = useWindowDimensions();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [draft, setDraft] = useState(() => createFoodSelectionDraft(selection));
     const [isMeasureSelectorOpen, setIsMeasureSelectorOpen] = useState(false);
@@ -79,15 +81,12 @@ export const FoodSelectionEditor: React.FC<FoodSelectionEditorProps> = ({
     return (
         <View style={styles.root}>
             <View style={styles.header}>
-                <Pressable
-                    accessibilityRole="button"
+                <AppIconButton
+                    icon="arrow-back"
                     accessibilityLabel="Back to food results"
                     disabled={isSubmitting}
                     onPress={onCancel}
-                    style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-                >
-                    <Ionicons name="arrow-back" size={20} color={theme.colors.onSurface} />
-                </Pressable>
+                />
                 <View style={styles.foodText}>
                     <AppText accessibilityRole="header" aria-level={3} variant="subtitle" numberOfLines={2}>
                         {selection.name}
@@ -143,7 +142,7 @@ export const FoodSelectionEditor: React.FC<FoodSelectionEditorProps> = ({
                     accessibilityLabel={`${formatCalories(result.calories)}, ${result.amountDescription}`}
                     style={styles.summary}
                 >
-                    <AppText variant="subtitle">{formatCalories(result.calories)}</AppText>
+                    <AppText variant="metric">{formatCalories(result.calories)}</AppText>
                     <AppText variant="caption">{result.amountDescription}</AppText>
                 </View>
             ) : (
@@ -151,7 +150,7 @@ export const FoodSelectionEditor: React.FC<FoodSelectionEditorProps> = ({
             )}
             {error && <AppText accessibilityRole="alert" style={styles.error}>{error}</AppText>}
 
-            <View style={styles.actions}>
+            <View style={[styles.actions, fontScale >= 1.3 && styles.actionsStacked]}>
                 <AppButton
                     title={isSubmitting ? 'Adding...' : 'Add another'}
                     variant="secondary"
@@ -181,14 +180,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md
     },
-    backButton: {
-        width: 48,
-        height: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.surfaceContainer
-    },
     foodText: {
         flex: 1,
         minWidth: 0,
@@ -199,21 +190,21 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     summary: {
         gap: spacing.xs,
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.primaryContainer,
-        padding: spacing.md
+        paddingVertical: spacing.lg,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.colors.outlineVariant
     },
     actions: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: spacing.md
     },
+    actionsStacked: { flexDirection: 'column' },
     actionButton: {
-        flex: 1
+        flex: 1,
+        minWidth: Platform.OS === 'web' ? 'auto' : 0
     },
     error: {
         color: theme.colors.danger
-    },
-    pressed: {
-        opacity: 0.82
     }
 });

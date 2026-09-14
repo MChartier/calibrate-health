@@ -4,7 +4,7 @@ import type { AccountSessionSummary } from '@calibrate/api-client';
 import { AppButton } from '../components/AppButton';
 import { AppText } from '../components/AppText';
 import { BottomSheetModal } from '../components/BottomSheetModal';
-import { radius, spacing, useAppTheme } from '../theme';
+import { spacing, useAppTheme } from '../theme';
 
 type AccountSessionsPanelProps = {
     sessions: AccountSessionSummary[];
@@ -73,7 +73,7 @@ export function AccountSessionsPanel({
                 <View
                     key={session.id}
                     testID={`settings-session-${session.id}`}
-                    style={[styles.session, { backgroundColor: colors.surfaceContainer, borderColor: colors.outlineVariant }]}
+                    style={[styles.session, { borderColor: colors.outlineVariant }]}
                 >
                     <View style={styles.sessionCopy}>
                         <View style={styles.titleRow}>
@@ -99,7 +99,8 @@ export function AccountSessionsPanel({
                         <AppButton
                             testID={`settings-session-revoke-${session.id}`}
                             title="Revoke"
-                            variant="danger"
+                            variant="secondary"
+                            textStyle={{ color: colors.danger }}
                             busy={pendingSessionId === session.id}
                             busyLabel="Revoking..."
                             disabled={Boolean(pendingSessionId) || revokingOthers}
@@ -173,9 +174,8 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         alignItems: 'center',
         gap: spacing.md,
-        padding: spacing.md,
-        borderRadius: radius.md,
-        borderWidth: StyleSheet.hairlineWidth
+        paddingVertical: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth
     },
     sessionCopy: {
         flex: 1,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
         gap: spacing.sm
     },
     sessionTitle: {
-        fontWeight: '800'
+        fontWeight: '600'
     },
     revokeButton: {
         flexShrink: 0

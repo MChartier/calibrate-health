@@ -209,8 +209,9 @@ Food provider behavior:
 - Reuse the auth primitives under `mobile/src/components/auth/` for
   login/register shell work.
 - Use `mobile/src/components/AppCard.tsx` and existing screen/card primitives
-  where they fit. If card hover or click treatment feels inconsistent, compare
-  sibling components before making one-off changes.
+  only for intentional containment. Ordinary content uses `AppSection`, navigation uses
+  `AppActionRow`, and consequential notices use `AppNotice`. Follow `docs/visual-design.md`
+  for page widths, section rhythm, action hierarchy, and visual acceptance.
 - Keep generic primitives under `mobile/src/components/`; put feature-specific
   behavior in the corresponding `mobile/src/` feature folder.
 - Keep public privacy and account-deletion copy centralized in

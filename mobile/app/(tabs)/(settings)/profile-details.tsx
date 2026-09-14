@@ -135,7 +135,7 @@ export default function ProfileSettingsScreen() {
     }
 
     return (
-        <TabScreen testID="settings-profile-page">
+        <TabScreen contentWidth="form" testID="settings-profile-page">
             <View testID="settings-profile-content" style={styles.content}>
                 <SectionHeader
                     title="Calorie profile"

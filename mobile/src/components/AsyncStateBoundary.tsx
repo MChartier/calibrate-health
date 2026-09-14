@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { onlineManager } from '@tanstack/react-query';
 import {
     ASYNC_RESOURCE_STATES,
@@ -10,7 +10,7 @@ import {
 import { getErrorPresentation } from '../errors/presentation';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppButton } from './AppButton';
-import { AppCard } from './AppCard';
+import { AppNotice } from './AppNotice';
 import { AppText } from './AppText';
 
 type AsyncStateBoundaryProps = {
@@ -22,6 +22,7 @@ type AsyncStateBoundaryProps = {
     onRetry?: () => unknown | Promise<unknown>;
     retrying?: boolean;
     suppressStaleNotice?: boolean;
+    contentStyle?: StyleProp<ViewStyle>;
 };
 
 type AsyncRetryLiveStatusProps = {
@@ -61,7 +62,8 @@ export function AsyncStateBoundary({
     children,
     onRetry,
     retrying = false,
-    suppressStaleNotice = false
+    suppressStaleNotice = false,
+    contentStyle
 }: AsyncStateBoundaryProps) {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
@@ -98,7 +100,8 @@ export function AsyncStateBoundary({
             }
             : getErrorPresentation(state.error, resourceLabel);
         return (
-            <AppCard
+            <AppNotice
+                tone={isOffline ? 'warning' : 'danger'}
                 testID="async-state-error"
                 style={[styles.errorCard, isOffline && styles.offlineCard]}
             >
@@ -125,14 +128,14 @@ export function AsyncStateBoundary({
                     />
                 )}
                 <AsyncRetryLiveStatus retrying={!isOffline && isRetrying} resourceLabel={resourceLabel} />
-            </AppCard>
+            </AppNotice>
         );
     }
 
     const showStaleNotice = state.kind === ASYNC_RESOURCE_STATES.STALE && !suppressStaleNotice;
     const showDegradedNotice = state.kind === ASYNC_RESOURCE_STATES.DEGRADED;
     return (
-        <View style={styles.content}>
+        <View style={[styles.content, contentStyle]}>
             {(showStaleNotice || showDegradedNotice) && (
                 <View
                     accessibilityRole={showDegradedNotice ? 'alert' : undefined}
@@ -185,8 +188,7 @@ function createStyles(theme: AppTheme) {
         },
         notice: {
             alignItems: 'center',
-            borderRadius: theme.radius.md,
-            borderWidth: theme.stroke.control,
+            borderLeftWidth: theme.interaction.focusRingWidth,
             flexDirection: 'row',
             gap: theme.spacing.sm,
             justifyContent: 'space-between',
@@ -211,6 +213,7 @@ function createStyles(theme: AppTheme) {
 
 const hiddenStyles = StyleSheet.create({
     liveStatus: {
+        position: 'absolute',
         height: 0,
         overflow: 'hidden'
     }

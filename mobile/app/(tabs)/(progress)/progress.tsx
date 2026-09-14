@@ -5,18 +5,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
 import { AppButton } from '../../../src/components/AppButton';
-import { AppCard } from '../../../src/components/AppCard';
+import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
 import { BottomSheetModal } from '../../../src/components/BottomSheetModal';
 import { GoalProgressCard } from '../../../src/components/GoalProgressCard';
 import { GoalDailyChangeSelect } from '../../../src/components/GoalDailyChangeSelect';
 import { WeightValueInput } from '../../../src/components/WeightValueInput';
-import { TabScreen } from '../../../src/components/TabScreen';
+import { FixedPage } from '../../../src/components/FixedPage';
 import { SegmentedControl } from '../../../src/components/SegmentedControl';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
 import { WeightTrendPreviewCard } from '../../../src/components/progress/WeightTrendPreviewCard';
-import { PlanCheckCard } from '../../../src/components/PlanCheckCard';
+import { PlanCheckSummary } from '../../../src/components/progress/PlanCheckSummary';
 import { calibrationStatusQueryKey } from '../../../src/calibration/queryKeys';
 import { isNeverEmpty } from '../../../src/asyncState/resolveAsyncState';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
@@ -340,48 +340,57 @@ export default function ProgressScreen() {
 
     return (
         <>
-            <TabScreen>
-                <AsyncStateBoundary
-                    state={progressState}
-                    resourceLabel="goal progress"
-                    loading={(
-                        <AppCard density="compact" testID="progress-loading">
-                            <SkeletonBlock width="42%" height={30} />
-                            <SkeletonBlock height={72} />
-                            <SkeletonBlock height={16} />
-                        </AppCard>
-                    )}
-                    empty={null}
-                    onRetry={isOnline && failedProgressQueries.length > 0
-                        ? retryFailedProgressResources
-                        : undefined}
-                    retrying={failedProgressQueries.some((query) => query.isFetching)}
-                    suppressStaleNotice
-                >
-                    <GoalProgressCard
-                        testID="progress-snapshot-card"
-                        latestMetric={latestMetric}
-                        metrics={metricsQuery.data}
-                        goal={goalQuery.data}
-                        user={user}
-                        onEditGoal={openGoalEditor}
-                        onSetNextGoal={openNextGoalEditor}
-                        weightChangePending={hasPendingWeightChange}
-                        targetCalories={!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available'
-                            ? profileQuery.data.calorieSummary.dailyCalorieTarget
-                            : null}
-                    />
-                </AsyncStateBoundary>
-
-                {!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available' && <PlanCheckCard suppressStaleNotice />}
-
-                <WeightTrendPreviewCard
+            <FixedPage
+                testID="progress-fixed-page"
+                scrollWhenShort
+                minBodyHeight={210}
+                context={(
+                    <AsyncStateBoundary
+                        state={progressState}
+                        resourceLabel="goal progress"
+                        loading={(
+                            <AppSection density="compact" testID="progress-loading" style={styles.snapshotLoading}>
+                                <SkeletonBlock width="42%" height={30} />
+                                <SkeletonBlock height={72} />
+                                <SkeletonBlock height={16} />
+                            </AppSection>
+                        )}
+                        empty={null}
+                        onRetry={isOnline && failedProgressQueries.length > 0
+                            ? retryFailedProgressResources
+                            : undefined}
+                        retrying={failedProgressQueries.some((query) => query.isFetching)}
+                        suppressStaleNotice
+                    >
+                        <GoalProgressCard
+                            testID="progress-snapshot-card"
+                            latestMetric={latestMetric}
+                            metrics={metricsQuery.data}
+                            goal={goalQuery.data}
+                            user={user}
+                            onEditGoal={openGoalEditor}
+                            onSetNextGoal={openNextGoalEditor}
+                            weightChangePending={hasPendingWeightChange}
+                            targetCalories={!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available'
+                                ? profileQuery.data.calorieSummary.dailyCalorieTarget
+                                : null}
+                        />
+                    </AsyncStateBoundary>
+                )}
+                fullWidthFooter
+                fullWidthBody
+                footer={<PlanCheckSummary
+                    onPress={() => router.push('/plan-check')}
+                    planAvailable={profileQuery.data ? profileQuery.data.calorieSummary.planStatus === 'available' : undefined}
+                />}
+            >
+                {({ expanded }) => <WeightTrendPreviewCard
+                    expanded={expanded}
                     suppressStaleNotice
                     onPress={() => router.push('/weight-trend')}
                     onLogWeight={() => router.push('/weight')}
-                />
-
-            </TabScreen>
+                />}
+            </FixedPage>
 
             <BottomSheetModal
                 visible={isGoalEditorOpen}
@@ -495,6 +504,10 @@ export default function ProgressScreen() {
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
+    snapshotLoading: {
+        paddingVertical: spacing.md,
+        gap: spacing.md
+    },
     row: {
         flexDirection: 'row',
         gap: spacing.md

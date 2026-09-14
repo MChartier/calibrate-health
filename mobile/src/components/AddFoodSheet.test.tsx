@@ -18,6 +18,7 @@ jest.mock('./confirmDiscardChanges', () => ({
 
 const mockApi = {
     getFoodDay: jest.fn(),
+    setFoodDayStatus: jest.fn(),
     getRecentFoods: jest.fn(),
     searchFood: jest.fn(),
     getMyFoods: jest.fn(),
@@ -56,8 +57,9 @@ jest.mock('../auth/AuthContext', () => ({
     })
 }));
 
+const mockEnqueue = jest.fn();
 jest.mock('../offline/provider', () => ({
-    useOfflineOutbox: () => ({ enqueue: jest.fn() })
+    useOfflineOutbox: () => ({ enqueue: mockEnqueue })
 }));
 
 jest.mock('./BottomSheetModal', () => {
@@ -142,6 +144,9 @@ describe('AddFoodSheet async resource states', () => {
         Dimensions.set({ window: phoneDimensions, screen: phoneDimensions });
         jest.clearAllMocks();
         mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status: 'OPEN' });
+        mockApi.setFoodDayStatus.mockReset().mockResolvedValue({ date: '2026-08-08', status: 'OPEN' });
+        mockApi.createFoodLog.mockReset().mockResolvedValue({});
+        mockEnqueue.mockReset().mockResolvedValue(undefined);
         mockApi.getRecentFoods.mockResolvedValue({ items: [] });
         mockApi.searchFood.mockResolvedValue({ items: [] });
         mockApi.getMyFoods.mockResolvedValue([]);
@@ -151,6 +156,49 @@ describe('AddFoodSheet async resource states', () => {
     afterEach(() => {
         cleanup();
         onlineManager.setOnline(true);
+    });
+
+    it.each(['COMPLETE', 'INCOMPLETE'])('reopens a %s day only when food is submitted', async (status) => {
+        onlineManager.setOnline(true);
+        mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status });
+        const screen = renderSheet();
+        await screen.findByText('Adding food reopens this day so you can complete it again.');
+        expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+        fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+        await waitFor(() => expect(mockApi.createFoodLog).toHaveBeenCalled());
+        expect(mockApi.setFoodDayStatus).toHaveBeenCalledWith({ date: '2026-08-08', status: 'OPEN' }, expect.any(String));
+        expect(mockApi.setFoodDayStatus.mock.invocationCallOrder[0]).toBeLessThan(mockApi.createFoodLog.mock.invocationCallOrder[0]);
+    });
+
+    it('queues the food after its reopen when the connection fails', async () => {
+        onlineManager.setOnline(true);
+        mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status: 'COMPLETE' });
+        mockApi.setFoodDayStatus.mockRejectedValue(new TypeError('Network request failed'));
+        const screen = renderSheet();
+        await screen.findByText('Adding food reopens this day so you can complete it again.');
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+        fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+        await waitFor(() => expect(mockEnqueue).toHaveBeenCalledTimes(2));
+        expect(mockEnqueue.mock.calls[0]).toEqual(['food-day.set-status', { date: '2026-08-08', status: 'OPEN' }, expect.any(String)]);
+        expect(mockEnqueue.mock.calls[1]).toEqual(['food.create', expect.objectContaining({ date: '2026-08-08', calories: 120 })]);
+        expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+    });
+
+    it('does not add food when reopening is rejected', async () => {
+        onlineManager.setOnline(true);
+        mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status: 'COMPLETE' });
+        mockApi.setFoodDayStatus.mockRejectedValue(new Error('Unable to reopen day'));
+        const screen = renderSheet();
+        await screen.findByText('Adding food reopens this day so you can complete it again.');
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+        fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+        await screen.findByRole('alert');
+        expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+        expect(mockEnqueue).not.toHaveBeenCalled();
     });
 
     it('preloads meal-aware recent foods before typing and refreshes them when the meal changes', async () => {

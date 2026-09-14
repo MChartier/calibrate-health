@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
-import { expect, FROZEN_LOCAL_DATE, test, type AuthenticatedApiOptions } from './fixtures';
+import { expect, FROZEN_LOCAL_DATE, hideTransientPwaNotices, test, type AuthenticatedApiOptions } from './fixtures';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-12');
 const PREVIOUS_LOCAL_DATE = '2026-07-20';
@@ -81,6 +81,7 @@ test('Food Log supports fast add, edit, recoverable delete, and meal/day copy', 
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await ux.install('populated', FOOD_LOG_OPTIONS);
   await page.goto('/food-log');
+  await hideTransientPwaNotices(page);
 
   await expect(page.getByText('Greek yogurt', { exact: true })).toBeVisible();
   await expect(page.getByText('Salmon bowl', { exact: true })).toBeVisible();

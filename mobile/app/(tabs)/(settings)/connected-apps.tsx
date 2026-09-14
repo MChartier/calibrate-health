@@ -2,7 +2,7 @@
  * Defines the connected assistant management Expo Router screen.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppCard } from '../../../src/components/AppCard';
+import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
 import {
     AsyncStateBoundary,
@@ -43,7 +43,7 @@ export default function ConnectedAppsScreen() {
         : undefined;
 
     return (
-        <TabScreen testID="connected-apps-settings-page">
+        <TabScreen contentWidth="overview" testID="connected-apps-settings-page">
             <SectionHeader
                 title="Authorized assistants"
                 description="Assistants use revocable, read-only OAuth access. They never receive your Calibrate password."
@@ -53,10 +53,10 @@ export default function ConnectedAppsScreen() {
                 resourceLabel="connected assistants"
                 loading={<SettingsManagementListSkeleton label="Loading connected assistants" />}
                 empty={(
-                    <AppCard>
+                    <AppSection>
                         <AppText variant="subtitle">No connected assistants</AppText>
                         <AppText variant="muted">Connections you approve will appear here.</AppText>
-                    </AppCard>
+                    </AppSection>
                 )}
                 onRetry={isOnline ? () => connectedAppsQuery.refetch() : undefined}
                 retrying={connectedAppsQuery.isFetching}

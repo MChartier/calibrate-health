@@ -11,9 +11,12 @@ import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 type ScreenProps = ViewProps & {
     scroll?: boolean;
     safeTop?: boolean;
+    contentWidth?: 'overview' | 'form' | 'wide';
 };
 
 export const SCREEN_CONTENT_MAX_WIDTH = 1040; // Keeps forms and metrics readable on wide browser and tablet viewports.
+// Reading widths keep open content cohesive without relying on card boundaries.
+export const SCREEN_CONTENT_WIDTHS = { overview: 760, form: 640, wide: SCREEN_CONTENT_MAX_WIDTH } as const;
 export const SCREEN_WIDE_LAYOUT_BREAKPOINT = TABLET_LAYOUT_BREAKPOINT;
 // Native ScrollViews need a flex floor; web uses its measured percentage viewport.
 const SCROLL_CONTENT_VIEWPORT_FLOOR = Platform.OS === 'web'
@@ -24,6 +27,7 @@ export const Screen: React.FC<ScreenProps> = ({
     children,
     scroll = true,
     safeTop = false,
+    contentWidth = 'wide',
     style,
     accessibilityRole,
     role,
@@ -49,6 +53,7 @@ export const Screen: React.FC<ScreenProps> = ({
     const contentStyle = [
         styles.content,
         {
+            maxWidth: SCREEN_CONTENT_WIDTHS[contentWidth],
             paddingTop: topPadding,
             paddingBottom: bottomPadding,
             ...safeHorizontalPadding
@@ -67,6 +72,7 @@ export const Screen: React.FC<ScreenProps> = ({
                 style={[
                     styles.root,
                     {
+                        maxWidth: SCREEN_CONTENT_WIDTHS[contentWidth],
                         paddingTop: topPadding,
                         paddingBottom: bottomPadding,
                         ...safeHorizontalPadding
@@ -102,7 +108,7 @@ function createStyles(theme: AppTheme) {
             maxWidth: SCREEN_CONTENT_MAX_WIDTH,
             alignSelf: 'center',
             backgroundColor: theme.colors.background,
-            gap: theme.spacing.lg
+            gap: theme.spacing.xxl
         },
         scroller: {
             flex: 1,
@@ -113,7 +119,7 @@ function createStyles(theme: AppTheme) {
             width: '100%',
             maxWidth: SCREEN_CONTENT_MAX_WIDTH,
             alignSelf: 'center',
-            gap: theme.spacing.lg
+            gap: theme.spacing.xxl
         }
     });
 }

@@ -22,7 +22,7 @@ const GOAL: GoalEntry = {
 };
 
 describe('GoalProgressCard', () => {
-    it('combines the latest snapshot and goal projection in one card', () => {
+    it('combines the latest snapshot and goal projection in one section', () => {
         const onEditGoal = jest.fn();
         const screen = render(
             <GoalProgressCard
@@ -36,28 +36,56 @@ describe('GoalProgressCard', () => {
         fireEvent.press(screen.getByLabelText('Edit goal'));
 
         expect(screen.getByText('Snapshot')).toBeTruthy();
-        expect(screen.getByText('Updated Jul 20')).toBeTruthy();
-        expect(screen.getByText('Current scale weight')).toBeTruthy();
+        expect(screen.getByText('172 kg').props.accessibilityHint).toBe('Updated Jul 20');
+        expect(screen.getByText('Current weight')).toHaveStyle({
+            fontSize: 14,
+            lineHeight: 20,
+            fontWeight: '400'
+        });
         expect(screen.getByTestId('snapshot-heading-line')).toHaveStyle({
             flexDirection: 'row',
             alignItems: 'baseline',
             flexWrap: 'wrap'
         });
-        expect(screen.getByText('Goal date at selected pace')).toBeTruthy();
+        expect(screen.getByLabelText('Goal date at selected pace')).toBeTruthy();
         const projection = screen.getByTestId('goal-projection');
-        expect(projection).toHaveStyle({
-            backgroundColor: themes.light.colors.surfaceContainer
-        });
         expect(within(projection).getByText(/, 2026$/)).toHaveStyle({
-            color: themes.light.colors.onSurface
+            color: themes.light.colors.onSurface,
+            fontSize: 20,
+            lineHeight: 26
         });
-        expect(screen.getByText('172 kg')).toBeTruthy();
-        expect(screen.getByText('59% complete')).toBeTruthy();
-        expect(screen.getByText('Losing weight with a 500 kcal/day deficit.')).toBeTruthy();
+        expect(screen.getByText('172 kg')).toHaveStyle({ fontSize: 28, lineHeight: 34 });
+        expect(screen.getByLabelText('Edit goal')).toHaveStyle({ minHeight: 48 });
+        expect(screen.getByText('59% complete')).toHaveStyle({
+            fontSize: 12,
+            fontWeight: '600',
+            flexShrink: 1
+        });
         expect(onEditGoal).toHaveBeenCalledTimes(1);
     });
 
-    it('describes a gain plan as an unsigned surplus', () => {
+    it('keeps the goal action separately focusable from the snapshot content', () => {
+        const screen = render(
+            <GoalProgressCard
+                goal={GOAL}
+                latestMetric={{ id: 1, date: '2026-07-20', weight: 172 }}
+                user={null}
+                onEditGoal={jest.fn()}
+            />
+        );
+
+        const action = screen.getByLabelText('Edit goal');
+        expect(within(action).queryByText('Snapshot')).toBeNull();
+        fireEvent(action, 'focus', { nativeEvent: {} });
+        expect(action).toHaveStyle({
+            outlineWidth: themes.light.interaction.focusRingWidth,
+            outlineColor: themes.light.colors.focusRing
+        });
+        fireEvent(action, 'blur', { nativeEvent: {} });
+        expect(action).not.toHaveStyle({ outlineWidth: themes.light.interaction.focusRingWidth });
+    });
+
+    it('keeps gain progress in the compact snapshot', () => {
         const screen = render(
             <GoalProgressCard
                 goal={{ ...GOAL, daily_deficit: -250, target_weight: 190 }}
@@ -66,7 +94,7 @@ describe('GoalProgressCard', () => {
             />
         );
 
-        expect(screen.getByText('Gaining weight with a 250 kcal/day surplus.')).toBeTruthy();
+        expect(screen.getByText('25% complete')).toBeTruthy();
     });
 
     it('keeps a reached goal durable after a later fluctuation and offers the next-goal flow', () => {

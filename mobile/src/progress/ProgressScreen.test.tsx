@@ -63,6 +63,7 @@ const mockApi = {
 let mockSearchParams: { openNextGoal?: string } = {};
 let mockWeightChangePending = false;
 let mockTrendPreviewProps: { onPress: () => void; onLogWeight: () => void } | null = null;
+let mockPlanSummaryProps: { onPress: () => void; planAvailable?: boolean } | null = null;
 jest.mock('expo-router', () => ({
     router: { push: jest.fn() },
     useLocalSearchParams: () => mockSearchParams
@@ -80,8 +81,11 @@ jest.mock('../components/progress/WeightTrendPreviewCard', () => ({
         return null;
     }
 }));
-jest.mock('../components/PlanCheckCard', () => ({
-    PlanCheckCard: () => null
+jest.mock('../components/progress/PlanCheckSummary', () => ({
+    PlanCheckSummary: (props: { onPress: () => void; planAvailable?: boolean }) => {
+        mockPlanSummaryProps = props;
+        return null;
+    }
 }));
 jest.mock('../components/BottomSheetModal', () => {
     const ReactModule = require('react') as typeof React;
@@ -107,6 +111,7 @@ describe('Progress goal completion flow', () => {
         mockSearchParams = {};
         mockWeightChangePending = false;
         mockTrendPreviewProps = null;
+        mockPlanSummaryProps = null;
         (router.push as jest.Mock).mockClear();
         onlineManager.setOnline(true);
     });
@@ -125,8 +130,13 @@ describe('Progress goal completion flow', () => {
 
         await screen.findByText('Snapshot');
         expect(mockTrendPreviewProps).not.toBeNull();
+        act(() => mockTrendPreviewProps?.onPress());
+        expect(router.push).toHaveBeenCalledWith('/weight-trend');
         act(() => mockTrendPreviewProps?.onLogWeight());
         expect(router.push).toHaveBeenCalledWith('/weight');
+        expect(mockPlanSummaryProps).not.toBeNull();
+        act(() => mockPlanSummaryProps?.onPress());
+        expect(router.push).toHaveBeenCalledWith('/plan-check');
 
         screen.unmount();
         queryClient.clear();
@@ -145,6 +155,9 @@ describe('Progress goal completion flow', () => {
         expect(screen.getByText('Unavailable')).toBeTruthy();
         expect(screen.queryByText('Current target: 2,200 kcal/day')).toBeNull();
         expect(screen.queryByLabelText('Set next goal')).toBeNull();
+        expect(mockPlanSummaryProps).not.toBeNull();
+        act(() => mockPlanSummaryProps?.onPress());
+        expect(router.push).toHaveBeenCalledWith('/plan-check');
         screen.unmount();
         queryClient.clear();
     });

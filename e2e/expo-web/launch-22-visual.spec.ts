@@ -1,7 +1,10 @@
+import { applyTwoHundredPercentText } from './text-scaling';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { installSavedFoodsFixture } from './saved-foods.fixture';
+import { PLAN_CHECK_RECOMMENDATION_STATUS } from './plan-check.fixture';
 
 const SCREENSHOT_OPTIONS = {
   animations: 'disabled',
@@ -11,6 +14,144 @@ const SCREENSHOT_OPTIONS = {
   scale: 'css',
   stylePath: path.resolve('e2e/expo-web/launch-22-visual-screenshot.css'),
 } as const;
+
+// The editorial refresh is reviewed across form, list, overview, and analytical layouts in both themes.
+const EDITORIAL_PROJECTS = ['ux-phone-320', 'ux-phone-390', 'ux-tablet-820', 'ux-desktop-1440'] as const;
+const EDITORIAL_ROUTES = [
+  { name: 'today', path: '/today', ready: 'Daily balance' },
+  { name: 'food-log', path: '/food-log', ready: 'Meals' },
+  { name: 'progress', path: '/progress', ready: 'Snapshot' },
+  { name: 'settings', path: '/settings', ready: 'Browse settings' },
+  { name: 'login', path: '/login', ready: 'Sign in' },
+  { name: 'onboarding', path: '/onboarding', ready: 'Build your daily target' },
+  { name: 'saved-foods', path: '/my-foods', ready: null },
+] as const;
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`plan check comparison and recommendation in ${scheme}`, async ({ page, ux }, testInfo) => {
+    runOn(testInfo, EDITORIAL_PROJECTS);
+    // Capture the complete section at each real device width, including content normally below the fold.
+    await page.setViewportSize({ ...page.viewportSize()!, height: 1000 });
+    await page.emulateMedia({ colorScheme: scheme });
+    await ux.install('populated');
+    await page.route('**/api/v1/calibration/status', (route) => route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify(PLAN_CHECK_RECOMMENDATION_STATUS),
+    }));
+    await page.goto('/progress');
+    await page.getByTestId('plan-check-summary').click();
+    await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+    const section = page.getByTestId('plan-check-section');
+    const review = section.getByRole('button', { name: 'Review suggested 1,750 calorie daily target' });
+    await expect(review).toBeVisible();
+    const metrics = await page.getByTestId('plan-check-metrics').evaluate(element =>
+      Array.from(element.children).map(child => {
+        const { x, y, width } = child.getBoundingClientRect();
+        return { x, y, width };
+      }));
+    expect(metrics[0].y).toBe(metrics[1].y);
+    expect(metrics[0].x + metrics[0].width).toBeLessThan(metrics[1].x);
+    expect((await review.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+    await expect(section).toHaveScreenshot(`plan-check-recommendation-${scheme}.png`, SCREENSHOT_OPTIONS);
+    if (testInfo.project.name === 'ux-phone-320' && scheme === 'light') {
+      await page.setViewportSize({ width: 320, height: 568 });
+      await applyTwoHundredPercentText(page);
+      const target = section.getByText('1,750', { exact: true });
+      const targetSize = await target.evaluate(element => ({
+        height: element.getBoundingClientRect().height,
+        lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+      }));
+      expect(targetSize.height).toBeLessThanOrEqual(targetSize.lineHeight + 1);
+      const overflow = await section.evaluate(element => element.scrollWidth - element.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+    }
+    await review.click();
+    await expect(page.getByRole('dialog', { name: 'Review calorie target', exact: true })).toBeVisible();
+  });
+
+  for (const surface of EDITORIAL_ROUTES) {
+    test(`editorial ${surface.name} in ${scheme}`, async ({ page, ux }, testInfo) => {
+      runOn(testInfo, EDITORIAL_PROJECTS);
+      await page.emulateMedia({ colorScheme: scheme });
+      await ux.install(surface.name === 'login' ? 'signed-out' : 'populated');
+      if (surface.name === 'saved-foods') await installSavedFoodsFixture(page);
+      await page.goto(surface.path);
+      if (surface.ready) await expect(page.getByRole('heading', { name: surface.ready, exact: true })).toBeVisible();
+      if (surface.name === 'saved-foods') await expect(page.getByText('Saved pantry 01', { exact: true })).toBeVisible();
+      if (surface.name === 'today') {
+        const hero = await page.getByTestId('calorie-balance-hero').evaluate((element) => {
+          const bounds = element.getBoundingClientRect();
+          const [gauge, copy] = Array.from(element.children).map((child) => child.getBoundingClientRect());
+          return {
+            gap: copy.left - gauge.right,
+            leftOffset: gauge.left - bounds.left,
+            rightOverflow: copy.right - bounds.right,
+          };
+        });
+        const expectedHeroGap = page.viewportSize()!.width < 360 ? 12 : 20;
+        expect(Math.abs(hero.gap - expectedHeroGap)).toBeLessThanOrEqual(1);
+        expect(Math.abs(hero.leftOffset)).toBeLessThanOrEqual(1);
+        expect(hero.rightOverflow).toBeLessThanOrEqual(1);
+      }
+      if (surface.name === 'today' || surface.name === 'food-log') {
+        const dateControl = page.getByRole('toolbar', { name: 'Food log date' });
+        const geometry = await dateControl.getByRole('button').evaluateAll((elements) => elements.map((element) => ({
+          width: element.getBoundingClientRect().width,
+          height: element.getBoundingClientRect().height,
+          border: Number.parseFloat(getComputedStyle(element).borderTopWidth),
+        })));
+        expect(geometry).toHaveLength(3);
+        for (const control of geometry) {
+          expect(control.width).toBeGreaterThanOrEqual(48);
+          expect(control.height).toBeGreaterThanOrEqual(48);
+          if (surface.name === 'today') expect(control.border).toBe(0);
+          else expect(control.border).toBeGreaterThan(0);
+        }
+        if (surface.name === 'today') {
+          const toolbarBorder = await dateControl.evaluate(element => Number.parseFloat(getComputedStyle(element).borderTopWidth));
+          expect(toolbarBorder).toBeGreaterThan(0);
+        }
+      }
+      await expectViewportScreenshot(page, `editorial-${surface.name}-${scheme}.png`);
+    });
+  }
+
+  test(`editorial food search and amount confirmation in ${scheme}`, async ({ page, ux }, testInfo) => {
+    runOn(testInfo, EDITORIAL_PROJECTS);
+    await page.emulateMedia({ colorScheme: scheme });
+    await ux.install('populated');
+    await installSavedFoodsFixture(page);
+    await page.route('**/api/v1/food/search**', (route) => route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify({ items: [], provider: 'usda' }),
+    }));
+    await page.goto('/today');
+    await page.getByRole('button', { name: 'Add food', exact: true }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add food', exact: true });
+    await sheet.getByRole('radio', { name: 'Search', exact: true }).click();
+    await sheet.getByLabel('Search foods').fill('Saved pantry');
+    await expect(sheet.getByRole('button', { name: 'Choose amount for Saved pantry 01', exact: true })).toBeVisible();
+    await expectViewportScreenshot(page, `editorial-search-${scheme}.png`);
+    await sheet.getByRole('button', { name: 'Choose amount for Saved pantry 01', exact: true }).click();
+    await expect(sheet.getByRole('button', { name: 'Add & close', exact: true })).toBeVisible();
+    await expectViewportScreenshot(page, `editorial-amount-${scheme}.png`);
+  });
+
+  test(`editorial long recipe in ${scheme}`, async ({ page, ux }, testInfo) => {
+    runOn(testInfo, EDITORIAL_PROJECTS);
+    await page.emulateMedia({ colorScheme: scheme });
+    await ux.install('populated');
+    await installSavedFoodsFixture(page);
+    await page.goto('/my-foods');
+    await page.getByRole('button', { name: 'Create recipe', exact: true }).click();
+    const sheet = page.getByRole('dialog', { name: 'Recipe builder', exact: true });
+    await sheet.getByLabel('Recipe name').fill('Weekday breakfast bowl');
+    for (let index = 1; index <= 6; index += 1) {
+      await sheet.getByRole('button', { name: `Add Saved pantry ${String(index).padStart(2, '0')} to recipe`, exact: true }).click();
+    }
+    // Show the populated editing rows rather than the searchable source list above them.
+    await sheet.getByRole('button', { name: 'Save recipe', exact: true }).scrollIntoViewIfNeeded();
+    await expectViewportScreenshot(page, `editorial-recipe-${scheme}.png`);
+  });
+}
 
 const TRANSIENT_PWA_TITLES = new Set([
   'Back online',
@@ -56,26 +197,10 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 async function expectViewportScreenshot(page: Page, filename: string) {
+  await page.mouse.move(0, 0);
   await settleVisualPage(page);
   await expectNoHorizontalOverflow(page);
   await expect(page).toHaveScreenshot(filename, SCREENSHOT_OPTIONS);
-}
-
-async function applyTwoHundredPercentText(page: Page) {
-  await page.evaluate(() => {
-    for (const element of document.querySelectorAll<HTMLElement>('body *')) {
-      const hasDirectText = Array.from(element.childNodes).some((node) => (
-        node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim())
-      ));
-      if (!hasDirectText) continue;
-
-      const computed = getComputedStyle(element);
-      const fontSize = Number.parseFloat(computed.fontSize);
-      const lineHeight = Number.parseFloat(computed.lineHeight);
-      if (Number.isFinite(fontSize)) element.style.fontSize = `${fontSize * 2}px`;
-      if (Number.isFinite(lineHeight)) element.style.lineHeight = `${lineHeight * 2}px`;
-    }
-  });
 }
 
 test('populated Today remains stable in light mode at every release viewport', async ({ page, ux }) => {
@@ -83,7 +208,7 @@ test('populated Today remains stable in light mode at every release viewport', a
   await ux.install('populated');
   await page.goto('/today');
 
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await expectViewportScreenshot(page, 'today-populated-light.png');
 });
 
@@ -93,7 +218,7 @@ test('empty Today remains legible in dark mode on phone and desktop', async ({ p
   await ux.install('empty');
   await page.goto('/today');
 
-  await expect(page.getByText('Nothing logged yet', { exact: true })).toBeVisible();
+  await expect(page.getByText("Start today's food log", { exact: true })).toBeVisible();
   await expectViewportScreenshot(page, 'today-empty-dark.png');
 });
 
@@ -105,7 +230,10 @@ test('Today loading skeleton preserves compact-phone structure', async ({ page, 
   try {
     await page.goto('/today');
     await expect(page.getByRole('button', { name: 'Previous day', exact: true })).toBeVisible();
-    await expect(page.getByLabel(/^Daily balance\./)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeDisabled();
+    await expect(page.getByLabel(/^Daily balance\./)).toContainText('Loading day');
+    await expect(page.getByText('Loading your food log', { exact: true })).toBeVisible();
     await expectViewportScreenshot(page, 'today-loading-light.png');
   } finally {
     controller.releaseLoading();
@@ -119,7 +247,10 @@ test('Today terminal error stays distinct from empty content on tablet', async (
   await page.goto('/today');
 
   await expect(page.getByText("Can't load today's log", { exact: true })).toBeVisible();
-  await expect(page.getByText('Nothing logged yet', { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Start today's food log", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel(/^Daily balance\./)).toContainText('Day unavailable');
+  await expect(page.getByText('Food log unavailable', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeDisabled();
   await expectViewportScreenshot(page, 'today-error-light.png');
 });
 
@@ -128,7 +259,7 @@ test('stale Food Log retains cached data and degraded labeling in dark mode', as
   await page.emulateMedia({ colorScheme: 'dark' });
   await ux.install('stale');
   await page.goto('/today');
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Food log.*View full log/ }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/food-log');
@@ -142,7 +273,7 @@ test('offline Today keeps cached content and stale labeling on the smallest phon
   await page.emulateMedia({ colorScheme: 'light' });
   const controller = await ux.install('offline');
   await page.goto('/today');
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
 
   await controller.activateOffline();
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
@@ -155,7 +286,7 @@ test('Progress uses the shell-owned cached-data notice while offline', async ({ 
   const controller = await ux.install('offline');
   await page.route('**/api/v1/client-diagnostics', (route) => route.fulfill({ status: 204 }));
   await page.goto('/today');
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await page.goto('/progress');
   await expect(page.getByText('Snapshot', { exact: true })).toBeVisible();
 
@@ -172,7 +303,7 @@ test('paused Today is explicit without implying a calorie target on tablet', asy
   await ux.install('paused');
   await page.goto('/today');
 
-  await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
   await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
   await expectViewportScreenshot(page, 'today-paused-dark.png');
 });
@@ -197,9 +328,15 @@ test('Today tolerates 200% text at the smallest release viewport', async ({ page
   await page.emulateMedia({ colorScheme: 'light' });
   await ux.install('populated');
   await page.goto('/today');
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
 
   await applyTwoHundredPercentText(page);
+  const metric = page.getByTestId('calorie-balance-value');
+  const metricGeometry = await metric.evaluate((element) => ({
+    height: element.getBoundingClientRect().height,
+    lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+  }));
+  expect(metricGeometry.height).toBeLessThanOrEqual(metricGeometry.lineHeight + 1);
   await expectViewportScreenshot(page, 'today-200-percent-text.png');
 });
 

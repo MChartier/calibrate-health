@@ -68,6 +68,8 @@ describe('CalorieBalanceCard', () => {
         expect(screen.getByText('Plan needs review')).toBeTruthy();
         expect(screen.getByText('1,456 kcal logged')).toBeTruthy();
         expect(screen.queryByTestId('calorie-gauge-progress', { includeHiddenElements: true })).toBeNull();
+        expect(screen.getByText('-', { includeHiddenElements: true })).toBeTruthy();
+        expect(screen.queryByText('0%', { includeHiddenElements: true })).toBeNull();
     });
 
     it.each([

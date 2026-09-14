@@ -11,19 +11,21 @@ import type {
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import { AppButton } from './AppButton';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 import { AppText } from './AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { BottomSheetModal } from './BottomSheetModal';
 import { CardHeader } from './CardHeader';
+import { paceTitle, paceIcon, waitingTitle } from '../calibration/planCheckPresentation';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { useAuth } from '../auth/AuthContext';
 import { getErrorPresentation, getSafeActionErrorMessage } from '../errors/presentation';
 import { usePendingCalibrationEvidenceMutation } from '../offline/usePendingCalibrationEvidenceMutation';
 import { addDaysToDateOnly, formatDateOnlyForDisplay, getTodayDate } from '../utils/dates';
-import { spacing, type AppTheme, useAppTheme } from '../theme';
+import { spacing, typeScale, type AppTheme, useAppTheme } from '../theme';
 
 const COMPACT_LAYOUT_BREAKPOINT = 640; // Stacks the decision and target rows before text begins to compete.
+const METRIC_MIN_WIDTH = 112; // Keeps paired measurements readable on a 320px phone and lets enlarged text wrap.
 const POUNDS_PER_KILOGRAM = 2.2046226218;
 
 type PlanCheckCardProps = ViewProps & { suppressStaleNotice?: boolean };
@@ -37,6 +39,13 @@ type PlanCheckCardViewProps = ViewProps & {
     onApplyRecommendation?: (recommendationId: number) => Promise<void>;
     onCancelScheduledChange?: (recommendationId: number) => Promise<void>;
 };
+
+const PlanCheckHeading: React.FC<{ metadata?: string }> = ({ metadata }) => (
+    <View style={styles.heading}>
+        <CardHeader title="Plan check" density="compact" />
+        {metadata && <AppText variant="muted">{metadata}</AppText>}
+    </View>
+);
 
 export const PlanCheckCard: React.FC<PlanCheckCardProps> = ({
     suppressStaleNotice,
@@ -54,12 +63,12 @@ export const PlanCheckCard: React.FC<PlanCheckCardProps> = ({
 
     if (hasPendingEvidence) {
         return (
-            <AppCard {...props} density="compact">
-                <CardHeader title="Plan check" metadata="Updating..." density="compact" />
+            <AppSection {...props} density="compact">
+                <PlanCheckHeading metadata="Updating..." />
                 <AppText variant="muted">
                     Your latest food and weight entries are syncing before this check updates.
                 </AppText>
-            </AppCard>
+            </AppSection>
         );
     }
 
@@ -135,24 +144,17 @@ function formatWeightRateRange(interval: CalibrationInterval, unit: 'KG' | 'LB')
         Math.max(0, high).toFixed(2) + ' ' + suffix + ' gain per week';
 }
 
-function paceTitle(status: CalibrationPaceStatus): string {
-    switch (status) {
-        case 'aligned':
-            return 'Your recent weight trend matches your goal';
-        case 'faster':
-            return 'Your recent weight trend is faster than your goal';
-        case 'slower':
-            return 'Your recent weight trend is slower than your goal';
-        case 'above_maintenance':
-            return 'Your recent weight trend is above maintenance';
-        case 'below_maintenance':
-            return 'Your recent weight trend is below maintenance';
-    }
-}
-
-function paceIcon(status: CalibrationPaceStatus): React.ComponentProps<typeof Ionicons>['name'] {
-    return status === 'aligned' ? 'checkmark-circle-outline' : 'speedometer-outline';
-}
+const WeightRateMetric: React.FC<{ label: string; valueKg: number; unit: 'KG' | 'LB' }> = ({ label, valueKg, unit }) => {
+    const value = convertedWeightRate(valueKg, unit);
+    const isSteady = Math.abs(value) < 0.005;
+    return (
+        <View style={styles.metric} accessible accessibilityLabel={label + ': ' + formatWeightRate(valueKg, unit)}>
+            <AppText variant="muted">{label}</AppText>
+            <AppText style={styles.metricValue}>{isSteady ? 'About steady' : Math.abs(value).toFixed(2)}</AppText>
+            {!isSteady && <AppText variant="muted">{weightUnitLabel(unit) + '/week ' + (value < 0 ? 'loss' : 'gain')}</AppText>}
+        </View>
+    );
+};
 
 function blockerLabel(blocker: CalibrationAssessmentBlocker | null): string {
     switch (blocker) {
@@ -174,23 +176,6 @@ function blockerLabel(blocker: CalibrationAssessmentBlocker | null): string {
             return 'a continuous weight trend';
         default:
             return 'more consistent weight history';
-    }
-}
-
-function waitingTitle(blocker: CalibrationAssessmentBlocker | null): string {
-    switch (blocker) {
-        case 'tracking_paused':
-            return 'Plan check is paused';
-        case 'current_weigh_in':
-            return 'Add a current weigh-in';
-        case 'weight_uncertainty':
-            return 'Your weight trend is still taking shape';
-        case 'plan_unavailable':
-            return 'Review your calorie plan';
-        case 'trend_unavailable':
-            return 'Your weight trend is unavailable';
-        default:
-            return 'Not enough history for a reliable plan check';
     }
 }
 
@@ -280,11 +265,11 @@ const PaceComparison: React.FC<{
                 <View style={styles.chartLabels}>
                     <View style={styles.chartLabelItem}>
                         <View style={[styles.rangeKey, { backgroundColor: rangeColor }]} />
-                        <AppText variant="caption">Recent weight trend</AppText>
+                        <AppText variant="muted">Recent weight trend</AppText>
                     </View>
                     <View style={styles.chartLabelItem}>
                         <View style={[styles.goalKey, { backgroundColor: theme.colors.onSurface }]} />
-                        <AppText variant="caption">Your goal</AppText>
+                        <AppText variant="muted">Your goal</AppText>
                     </View>
                 </View>
             </View>
@@ -308,6 +293,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     const themedStyles = React.useMemo(() => createStyles(theme), [theme]);
     const { width, fontScale } = useWindowDimensions();
     const stackLayout = width < COMPACT_LAYOUT_BREAKPOINT || fontScale >= 1.3;
+    const stackMetrics = fontScale >= 1.3;
     const [reviewedRecommendationKey, setReviewedRecommendationKey] = useState<string | null>(null);
     const [isApplying, setIsApplying] = useState(false);
     const [applyError, setApplyError] = useState<Error | null>(null);
@@ -375,29 +361,29 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     if (error && !status) {
         const presentation = getErrorPresentation(error, 'plan check');
         return (
-            <AppCard {...props} density="compact" style={style}>
-                <CardHeader title="Plan check" metadata="Unable to update" density="compact" />
+            <AppSection {...props} density="compact" style={style}>
+                <PlanCheckHeading metadata="Unable to update" />
                 <AppText accessibilityRole="alert" style={themedStyles.error}>{presentation.message}</AppText>
                 {presentation.requestId && <AppText variant="caption">Reference: {presentation.requestId}</AppText>}
                 {onRetry && <AppButton title="Retry" variant="secondary" onPress={onRetry} />}
-            </AppCard>
+            </AppSection>
         );
     }
 
     if (isLoading || !evaluation) {
         return (
-            <AppCard {...props} density="compact" style={style} accessibilityLabel="Loading plan check">
-                <CardHeader title="Plan check" metadata="Checking your latest completed day..." density="compact" />
-            </AppCard>
+            <AppSection {...props} density="compact" style={style} accessibilityLabel="Loading plan check">
+                <PlanCheckHeading metadata="Checking your latest completed day..." />
+            </AppSection>
         );
     }
 
     if (!assessment) {
         return (
-            <AppCard {...props} density="compact" style={style}>
-                <CardHeader title="Plan check" density="compact" />
+            <AppSection {...props} density="compact" style={style}>
+                <PlanCheckHeading />
                 <AppText variant="muted">This check is not available from your connected server yet.</AppText>
-            </AppCard>
+            </AppSection>
         );
     }
 
@@ -441,9 +427,9 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
 
     return (
         <>
-            <AppCard {...props} density="compact" style={style}>
+            <AppSection {...props} density="compact" style={style} testID="plan-check-section">
                 <View style={styles.cardBody}>
-                    <CardHeader title="Plan check" metadata={metadata} density="compact" />
+                    <PlanCheckHeading metadata={metadata} />
 
                     {scheduledChange && (
                         <View style={[
@@ -489,7 +475,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                         <View style={themedStyles.waitingPanel} testID="plan-check-waiting">
                             <View style={styles.statusHeading}>
                                 <Ionicons name="time-outline" size={24} color={theme.colors.onSurfaceVariant} />
-                                <AppText variant="subtitle" style={styles.statusCopy}>{waitingTitle(assessment.blocker)}</AppText>
+                                <AppText style={[styles.statusCopy, styles.assessmentTitle]}>{waitingTitle(assessment.blocker)}</AppText>
                             </View>
                             <AppText variant="muted">{waitingDescription(assessment.blocker)}</AppText>
                             <View style={styles.waitingFor}>
@@ -499,51 +485,39 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                         </View>
                     ) : assessmentWindow && trend && paceStatus ? (
                         <View style={styles.resultBody} testID={'plan-check-' + assessment.state}>
-                            <View style={[
-                                themedStyles.statusPanel,
-                                paceStatus === 'aligned'
-                                    ? themedStyles.statusPanelAligned
-                                    : themedStyles.statusPanelAttention
-                            ]}>
-                                <Ionicons
-                                    name={paceIcon(paceStatus)}
-                                    size={24}
-                                    color={paceStatus === 'aligned' ? theme.colors.success : theme.colors.warning}
-                                />
-                                <View style={styles.statusCopy}>
-                                    <AppText variant="subtitle">{paceTitle(paceStatus)}</AppText>
-                                    <AppText variant="caption">
-                                        This describes the period shown, not a forecast.
-                                    </AppText>
+                            <View style={styles.evidenceGroup}>
+                                <View style={styles.statusHeading}>
+                                    <Ionicons
+                                        name={paceIcon(paceStatus)}
+                                        size={20}
+                                        color={paceStatus === 'aligned' ? theme.colors.success : theme.colors.warning}
+                                    />
+                                    <View style={styles.statusCopy}>
+                                        <AppText style={styles.assessmentTitle}>{paceTitle(paceStatus)}</AppText>
+                                        <AppText variant="muted">
+                                            This describes the period shown, not a forecast.
+                                        </AppText>
+                                    </View>
                                 </View>
-                            </View>
 
-                            <View testID="plan-check-metrics" style={[styles.metrics, stackLayout && styles.metricsStacked]}>
-                                <View style={styles.metric}>
-                                    <AppText variant="caption">Recent weight trend</AppText>
-                                    <AppText variant="subtitle">
-                                        {formatWeightRate(trend.midpoint, evaluation.weightUnit)}
-                                    </AppText>
-                                    <AppText variant="caption">
+                                <View style={styles.comparisonGroup}>
+                                    <View testID="plan-check-metrics" style={[styles.metrics, stackMetrics && styles.metricsStacked]}>
+                                        <WeightRateMetric label="Recent weight trend" valueKg={trend.midpoint} unit={evaluation.weightUnit} />
+                                        <WeightRateMetric label="Your goal" valueKg={assessment.goalRateKgPerWeek} unit={evaluation.weightUnit} />
+                                    </View>
+                                    <PaceComparison
+                                        interval={trend}
+                                        goalRateKgPerWeek={assessment.goalRateKgPerWeek}
+                                        status={paceStatus}
+                                        unit={evaluation.weightUnit}
+                                        startDate={assessmentWindow.startDate}
+                                        endDate={assessmentWindow.endDate}
+                                    />
+                                    <AppText variant="muted">
                                         Likely range: {formatWeightRateRange(trend, evaluation.weightUnit)}
                                     </AppText>
                                 </View>
-                                <View style={styles.metric}>
-                                    <AppText variant="caption">Your goal</AppText>
-                                    <AppText variant="subtitle">
-                                        {formatWeightRate(assessment.goalRateKgPerWeek, evaluation.weightUnit)}
-                                    </AppText>
-                                </View>
                             </View>
-
-                            <PaceComparison
-                                interval={trend}
-                                goalRateKgPerWeek={assessment.goalRateKgPerWeek}
-                                status={paceStatus}
-                                unit={evaluation.weightUnit}
-                                startDate={assessmentWindow.startDate}
-                                endDate={assessmentWindow.endDate}
-                            />
 
                             {!showAdjustment && !scheduledChange && (
                                 <View style={themedStyles.decisionRow}>
@@ -561,23 +535,20 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                             )}
 
                             {showAdjustment && actionableRecommendation && (
-                                <View style={themedStyles.adjustmentPanel} testID="plan-check-adjustment">
-                                    <View style={styles.adjustmentCopy}>
-                                        <AppText variant="label" style={themedStyles.adjustmentText}>
-                                            A calorie-target adjustment may help
-                                        </AppText>
-                                        <View style={styles.budgetTransition}>
-                                            <AppText variant="subtitle" style={themedStyles.adjustmentText}>
-                                                {actionableRecommendation.currentTargetKcal.toLocaleString()} kcal
-                                            </AppText>
-                                            <Ionicons
-                                                name="arrow-forward"
-                                                size={20}
-                                                color={theme.colors.onSuccessContainer}
-                                            />
-                                            <AppText variant="subtitle" style={themedStyles.adjustmentText}>
-                                                {actionableRecommendation.recommendedTargetKcal.toLocaleString()} kcal
-                                            </AppText>
+                                <View style={styles.adjustmentGroup} testID="plan-check-adjustment">
+                                    <AppText style={styles.assessmentTitle}>
+                                        A calorie-target adjustment may help
+                                    </AppText>
+                                    <View style={[styles.metrics, stackMetrics && styles.metricsStacked]}>
+                                        <View style={styles.metric}>
+                                            <AppText variant="muted">Current target</AppText>
+                                            <AppText style={styles.targetValue}>{actionableRecommendation.currentTargetKcal.toLocaleString()}</AppText>
+                                            <AppText variant="muted">kcal/day</AppText>
+                                        </View>
+                                        <View style={styles.metric}>
+                                            <AppText variant="muted">Suggested target</AppText>
+                                            <AppText style={[styles.targetValue, { color: theme.colors.primary }]}>{actionableRecommendation.recommendedTargetKcal.toLocaleString()}</AppText>
+                                            <AppText variant="muted">kcal/day</AppText>
                                         </View>
                                     </View>
                                     <AppButton
@@ -585,7 +556,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                                         accessibilityLabel={'Review suggested ' +
                                             actionableRecommendation.recommendedTargetKcal.toLocaleString() +
                                             ' calorie daily target'}
-                                        variant="secondary"
+                                        style={styles.reviewAction}
                                         onPress={() => {
                                             setApplyError(null);
                                             setReviewedRecommendationKey(recommendationKey);
@@ -596,7 +567,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
                         </View>
                     ) : null}
                 </View>
-            </AppCard>
+            </AppSection>
 
             <BottomSheetModal
                 visible={isReviewOpen}
@@ -710,15 +681,23 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
 };
 
 const styles = StyleSheet.create({
-    cardBody: { gap: spacing.md },
+    cardBody: { gap: spacing.lg },
+    heading: { gap: spacing.xs },
     scheduledCopy: { flex: 1, minWidth: 180, gap: spacing.xs },
-    statusHeading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    statusHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+    assessmentTitle: { ...typeScale.body, fontWeight: '600' },
     waitingFor: { gap: spacing.xs },
-    resultBody: { gap: spacing.md },
-    statusCopy: { flex: 1, gap: spacing.xs },
-    metrics: { flexDirection: 'row', gap: spacing.xl },
-    metricsStacked: { flexDirection: 'column', gap: spacing.md },
-    metric: { flex: 1, gap: spacing.xs, minWidth: 180 },
+    // Group the assessment with its evidence; only the next step gets a larger gap.
+    resultBody: { gap: spacing.xl },
+    evidenceGroup: { gap: spacing.lg },
+    comparisonGroup: { gap: spacing.sm },
+    adjustmentGroup: { gap: spacing.md },
+    statusCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+    metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
+    metricsStacked: { flexDirection: 'column' },
+    metric: { flexGrow: 1, flexBasis: 0, gap: spacing.xs, minWidth: METRIC_MIN_WIDTH },
+    metricValue: { ...typeScale.measurement, fontVariant: ['tabular-nums'] },
+    targetValue: { ...typeScale.section, fontVariant: ['tabular-nums'] },
     comparison: { gap: spacing.xs },
     trackShell: { height: 34, justifyContent: 'center' },
     track: { position: 'absolute', left: 0, right: 0, height: 3, borderRadius: 2 },
@@ -743,8 +722,7 @@ const styles = StyleSheet.create({
     rangeKey: { width: 20, height: 6, borderRadius: 3 },
     goalKey: { width: 2, height: 14, borderRadius: 1 },
     decisionText: { flex: 1 },
-    adjustmentCopy: { flex: 1, minWidth: 220, gap: spacing.xs },
-    budgetTransition: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    reviewAction: { width: '100%' },
     sheetContent: { alignSelf: 'center', width: '100%', maxWidth: 760, gap: spacing.md },
     reviewRow: {
         flexDirection: 'row',
@@ -764,54 +742,26 @@ function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         waitingPanel: {
             gap: spacing.md,
-            borderRadius: theme.radius.md,
-            padding: spacing.lg,
-            backgroundColor: theme.colors.surfaceContainerLow
         },
-        statusPanel: {
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            gap: spacing.sm,
-            borderLeftWidth: 3,
-            borderRadius: theme.radius.sm,
-            padding: spacing.md,
-            backgroundColor: theme.colors.surfaceContainerLow
-        },
-        statusPanelAligned: { borderLeftColor: theme.colors.success },
-        statusPanelAttention: { borderLeftColor: theme.colors.warning },
         decisionRow: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: spacing.sm,
-            borderRadius: theme.radius.md,
-            padding: spacing.md,
-            backgroundColor: theme.colors.surfaceContainerLow
         },
         scheduledBanner: {
             flexDirection: 'row',
             flexWrap: 'wrap',
             alignItems: 'center',
             gap: spacing.md,
+            borderLeftWidth: theme.interaction.focusRingWidth,
+            borderLeftColor: theme.colors.success,
             borderRadius: theme.radius.md,
             padding: spacing.md,
             backgroundColor: theme.colors.successContainer
         },
         scheduledBannerWarning: { backgroundColor: theme.colors.warningContainer },
-        adjustmentPanel: {
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: spacing.md,
-            borderRadius: theme.radius.md,
-            padding: spacing.lg,
-            backgroundColor: theme.colors.successContainer
-        },
-        adjustmentText: { color: theme.colors.onSuccessContainer },
         reviewMetrics: {
             gap: spacing.sm,
-            borderRadius: theme.radius.md,
-            padding: spacing.md,
-            backgroundColor: theme.colors.surfaceContainer
         },
         divider: {
             height: StyleSheet.hairlineWidth,

@@ -3,7 +3,7 @@ import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View, useWi
 import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SUPPORTED_MODAL_ORIENTATIONS } from '../layout/adaptiveLayout';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 import { AppButton } from './AppButton';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
@@ -184,10 +184,10 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             resourceLabel="notifications"
                             loading={<NotificationsSkeleton styles={styles} />}
                             empty={(
-                                <AppCard>
+                                <AppSection>
                                     <AppText variant="subtitle">All caught up</AppText>
                                     <AppText variant="muted">Reminder notifications will appear here.</AppText>
-                                </AppCard>
+                                </AppSection>
                             )}
                             onRetry={onRetry}
                         >
@@ -203,14 +203,14 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                         </AsyncStateBoundary>
 
                         {actionError != null && (
-                            <AppCard accessibilityRole="alert">
+                            <AppSection accessibilityRole="alert">
                                 <AppText style={styles.error}>
                                     {getSafeActionErrorMessage(
                                         actionError,
                                         'Unable to update that notification. Try again.'
                                     )}
                                 </AppText>
-                            </AppCard>
+                            </AppSection>
                         )}
 
                         <AppButton
@@ -227,7 +227,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
 };
 
 const NotificationsSkeleton: React.FC<{ styles: ReturnType<typeof createStyles> }> = ({ styles }) => (
-    <AppCard>
+    <AppSection>
         {[0, 1, 2].map((row) => (
             <View key={row} style={styles.skeletonRow}>
                 <SkeletonBlock width={40} height={40} radius={20} />
@@ -237,7 +237,7 @@ const NotificationsSkeleton: React.FC<{ styles: ReturnType<typeof createStyles> 
                 </View>
             </View>
         ))}
-    </AppCard>
+    </AppSection>
 );
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({

@@ -15,13 +15,13 @@ describe('PwaStatusBanner placement', () => {
         expect(resolvePwaNoticePlacement(320, true).top).toBeUndefined();
     });
 
-    it('moves desktop notices to the top-right without covering shell actions', () => {
+    it('keeps desktop notices below the app bar and above contextual actions', () => {
         expect(resolvePwaNoticePlacement(1440, true)).toMatchObject({
             right: 16,
-            top: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 104px)',
             alignItems: 'flex-end'
         });
-        expect(resolvePwaNoticePlacement(1440, true).bottom).toBeUndefined();
+        expect(resolvePwaNoticePlacement(1440, true).top).toBeUndefined();
     });
 
     it('keeps compact public notices away from landing actions', () => {

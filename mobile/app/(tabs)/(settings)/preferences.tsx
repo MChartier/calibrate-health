@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../../../src/auth/AuthContext';
 import { invalidateProfilePlanningQueries } from '../../../src/caloriePlanning/queryInvalidation';
 import { AppButton } from '../../../src/components/AppButton';
+import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
 import { SectionHeader } from '../../../src/components/SectionHeader';
 import { SegmentedControl } from '../../../src/components/SegmentedControl';
@@ -129,7 +130,7 @@ export default function PreferencesSettingsScreen() {
     }
 
     return (
-        <TabScreen testID="settings-preferences-page">
+        <TabScreen contentWidth="form" testID="settings-preferences-page">
             <View style={styles.content}>
                 <SectionHeader
                     title="Tracking preferences"
@@ -175,11 +176,14 @@ export default function PreferencesSettingsScreen() {
                             ? () => void nativePush.disableRegistration?.()
                             : undefined}
                     />
-                    <PreferenceSwitch
-                        label="Haptics"
-                        value={hapticsEnabled}
-                        onValueChange={setHapticsEnabled}
-                    />
+                    <AppSection style={[styles.dividedSection, { borderTopColor: colors.outlineVariant }]}>
+                        <SectionHeader title="Interaction" />
+                        <PreferenceSwitch
+                            label="Haptics"
+                            value={hapticsEnabled}
+                            onValueChange={setHapticsEnabled}
+                        />
+                    </AppSection>
                     {savePreferences.error && (
                         <AppText accessibilityRole="alert" style={{ color: colors.danger }}>
                             {getSafeActionErrorMessage(
@@ -188,7 +192,7 @@ export default function PreferencesSettingsScreen() {
                             )}
                         </AppText>
                     )}
-                    <View style={styles.actionRow}>
+                    <View style={[styles.actionRow, { borderTopColor: colors.outlineVariant }]}>
                         <AppButton
                             title="Cancel"
                             variant="secondary"
@@ -215,11 +219,21 @@ const styles = StyleSheet.create({
     content: {
         gap: spacing.md
     },
+    dividedSection: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        marginTop: spacing.md,
+        paddingTop: spacing.lg
+    },
     actionRow: {
         flexDirection: 'row',
-        gap: spacing.md
+        flexWrap: 'wrap',
+        gap: spacing.md,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        paddingTop: spacing.lg
     },
     actionButton: {
-        flex: 1
+        flex: 1,
+        // Keep the long Save preferences label readable before paired controls wrap.
+        minWidth: 180
     }
 });

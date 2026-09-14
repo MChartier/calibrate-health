@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from '../AppText';
-import { CardHeader } from '../CardHeader';
+import { SectionHeader } from '../SectionHeader';
 import { useFocusVisible } from '../useFocusVisible';
 import { radius, spacing, useAppTheme } from '../../theme';
 
@@ -32,18 +32,15 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
     style,
     testID
 }) => {
-    const { colors } = useAppTheme();
-
     return (
         <View testID={testID} style={[styles.section, style]}>
-            <CardHeader
+            <SectionHeader
                 title={title}
-                metadata={description}
-                density="compact"
+                description={description}
                 headingLevel={2}
                 style={styles.sectionHeading}
             />
-            <View style={[styles.sectionSurface, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
+            <View>
                 {children}
             </View>
         </View>
@@ -64,7 +61,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
     const { colors } = theme;
     const [hovered, setHovered] = useState(false);
     const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
-    const iconColor = danger ? colors.danger : colors.primaryDark;
+    const iconColor = danger ? colors.danger : colors.onSurfaceVariant;
 
     return (
         <Pressable
@@ -88,10 +85,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
                 }
             ]}
         >
-            <View style={[
-                styles.iconContainer,
-                { backgroundColor: danger ? colors.dangerContainer : colors.primaryContainer }
-            ]}>
+            <View style={styles.iconContainer}>
                 <Ionicons name={icon} size={20} color={iconColor} />
             </View>
             <View style={styles.rowText}>
@@ -109,24 +103,19 @@ const styles = StyleSheet.create({
         gap: spacing.sm
     },
     sectionHeading: {
-        paddingHorizontal: spacing.xs
-    },
-    sectionSurface: {
-        overflow: 'hidden',
-        borderRadius: radius.md,
-        borderWidth: StyleSheet.hairlineWidth
+        paddingHorizontal: 0
     },
     row: {
         minHeight: 64,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: 0,
         paddingVertical: spacing.sm
     },
     iconContainer: {
-        width: 40,
-        height: 40,
+        width: 24,
+        height: 24,
         flexShrink: 0,
         alignItems: 'center',
         justifyContent: 'center',
@@ -138,7 +127,7 @@ const styles = StyleSheet.create({
         gap: spacing.xs
     },
     rowLabel: {
-        fontWeight: '700'
+        fontWeight: '600'
     },
     rowValue: {
         maxWidth: '32%',

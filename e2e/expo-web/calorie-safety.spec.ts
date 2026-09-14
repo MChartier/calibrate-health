@@ -94,7 +94,7 @@ test('reviewed plans keep history while suppressing target, projection, and cali
 
   await expect(page.getByText('Review calorie plan', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Plan needs review', { exact: true })).toBeVisible();
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
     'Daily balance. Plan needs review. 360 calories logged.',
   );
@@ -107,8 +107,8 @@ test('reviewed plans keep history while suppressing target, projection, and cali
     'compact-phone-chrome': 'unsafe-plan-review-compact-phone.png',
   }, async () => {
     await expectNoHorizontalOverflow(page);
-    await expectFullyWithinViewport(page, page.getByTestId('food-log-summary-card'));
-    await expectFullyWithinViewport(page, page.getByText('View', { exact: true }));
+    await expectFullyWithinViewport(page, page.getByTestId('today-food-preview'));
+    await expectFullyWithinViewport(page, page.getByTestId('today-weight-card-press-layer'));
     await expectFullyWithinViewport(page, page.getByRole('button', { name: 'Add food', exact: true }));
   });
 

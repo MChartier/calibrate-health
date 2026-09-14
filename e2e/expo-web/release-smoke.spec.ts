@@ -450,10 +450,10 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await expect(page.getByText('Daily balance', { exact: true })).toBeVisible();
   const foodLogSummary = page.getByRole('button', { name: /Food log.*View full log/ });
-  await expect(foodLogSummary).toHaveAccessibleName('Food log. Breakfast, 360 kcal, 1 item. View full log');
-  const foodLogSummaryCard = page.getByTestId('food-log-summary-card');
-  await expect(foodLogSummaryCard.getByText('Breakfast', { exact: true })).toBeVisible();
-  await expect(foodLogSummaryCard.getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
+  await expect(foodLogSummary).toHaveAccessibleName('Food log. 1 item. Breakfast, 360 kcal. Greek yogurt and berries, 360 kcal. View full log');
+  const foodLogSummaryCard = page.getByTestId('today-food-preview');
+  await expect(foodLogSummaryCard.getByTestId(/^food-preview-entry-/).getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
+  await expect(foodLogSummaryCard).toContainText('Breakfast');
   await foodLogSummary.click();
   await expect(page).toHaveURL((url) => url.pathname === '/food-log' && Boolean(url.searchParams.get('date')));
   await expect(page.getByRole('heading', { name: 'Food log', exact: true })).toBeVisible();
@@ -520,7 +520,7 @@ test('authenticated shell renders real dashboard data and navigates release surf
   const reloadResponse = await page.reload();
   expect(reloadResponse?.status()).toBe(200);
   await expect(page).toHaveURL(/\/progress$/);
-  await expect(page.getByTestId('goal-projection')).toContainText('Goal date at selected pace');
+  await expect(page.getByTestId('goal-projection').getByLabel('Goal date at selected pace')).toBeVisible();
   await expect(page.getByTestId('goal-projection')).toContainText('Nov 20, 2026');
 
   await page.getByRole('button', { name: 'Account & settings', exact: true }).press('Enter');
@@ -548,12 +548,12 @@ test('paused days omit calorie progress and only preview food when entries exist
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
     'Daily balance. Tracking paused. 360 calories logged.',
   );
-  await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toHaveAccessibleName(
-    'Food log. Breakfast, 360 kcal, 1 item. View full log',
+    'Food log. 1 item. Breakfast, 360 kcal. Greek yogurt and berries, 360 kcal. View full log',
   );
-  await expect(page.getByTestId('food-log-summary-card').getByText(
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText(
     'Greek yogurt and berries',
     { exact: true },
   )).toBeVisible();
@@ -564,9 +564,11 @@ test('paused days omit calorie progress and only preview food when entries exist
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
     'Daily balance. Tracking paused. 0 calories logged.',
   );
-  await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeHidden();
+  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Add food', exact: true })).toHaveCount(0);
 });
 
 test('weight logging keeps the progress result visible and hands off a reached goal', async ({ page }) => {

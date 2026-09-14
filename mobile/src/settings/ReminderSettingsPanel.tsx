@@ -2,8 +2,9 @@ import { StyleSheet, View } from 'react-native';
 import type { PushStatusPresentation } from '../notifications/workflow';
 import { AppButton } from '../components/AppButton';
 import { AppText } from '../components/AppText';
+import { SectionHeader } from '../components/SectionHeader';
 import { TextField } from '../components/TextField';
-import { spacing } from '../theme';
+import { spacing, useAppTheme } from '../theme';
 import { PreferenceSwitch } from './SettingsPrimitives';
 import type { ReminderScheduleErrors } from './reminderWallClock';
 
@@ -57,15 +58,15 @@ export function ReminderSettingsPanel({
     onRetryRegistration,
     onDisableRegistration
 }: ReminderSettingsPanelProps) {
+    const { colors } = useAppTheme();
+    const sectionStyle = [styles.section, { borderTopColor: colors.outlineVariant }];
     return (
         <>
-            <View testID="settings-reminder-intent" style={styles.section}>
-                <View style={styles.heading}>
-                    <AppText variant="subtitle">Reminder intent</AppText>
-                    <AppText variant="muted">
-                        Choose which account reminders Calibrate should create. Delivery permission is managed separately.
-                    </AppText>
-                </View>
+            <View testID="settings-reminder-intent" style={sectionStyle}>
+                <SectionHeader
+                    title="Reminders"
+                    description="Choose which account reminders Calibrate should create. Delivery permission is managed separately."
+                />
                 <PreferenceSwitch
                     label="Food reminders"
                     value={logFoodEnabled}
@@ -135,13 +136,11 @@ export function ReminderSettingsPanel({
                 </AppText>
             </View>
 
-            <View testID="settings-delivery-permission" style={styles.section}>
-                <View style={styles.heading}>
-                    <AppText variant="subtitle">Delivery permission</AppText>
-                    <AppText variant="muted">
-                        This browser or device permission controls push delivery; it does not change your reminder choices.
-                    </AppText>
-                </View>
+            <View testID="settings-delivery-permission" style={sectionStyle}>
+                <SectionHeader
+                    title="Delivery permission"
+                    description="This browser or device permission controls push delivery; it does not change your reminder choices."
+                />
                 <AppText
                     accessibilityLiveRegion="polite"
                     accessibilityRole={deliveryStatus.isError ? 'alert' : undefined}
@@ -195,7 +194,10 @@ export function ReminderSettingsPanel({
 
 const styles = StyleSheet.create({
     section: {
-        gap: spacing.md
+        gap: spacing.md,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        marginTop: spacing.md,
+        paddingTop: spacing.lg
     },
     heading: {
         gap: spacing.xs

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { MealPeriod } from '@calibrate/shared';
 import { addDaysToDateOnly, clampDateOnly, formatDateOnlyForDisplay } from '../utils/dates';
@@ -50,6 +50,7 @@ export const CopyFoodSheet: React.FC<CopyFoodSheetProps> = ({
     onSubmit
 }) => {
     const theme = useAppTheme();
+    const { fontScale } = useWindowDimensions();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [targetDate, setTargetDate] = useState(() => getDefaultCopyTargetDate(sourceDate, minDate, maxDate));
     const [targetMeal, setTargetMeal] = useState<MealPeriod>('BREAKFAST');
@@ -123,7 +124,7 @@ export const CopyFoodSheet: React.FC<CopyFoodSheetProps> = ({
                 <AppText accessibilityRole="alert" style={styles.error}>{validationMessage}</AppText>
             )}
             {error && <AppText accessibilityRole="alert" style={styles.error}>{error}</AppText>}
-            <View style={styles.actions}>
+            <View style={[styles.actions, fontScale >= 1.3 && styles.actionsStacked]}>
                 <AppButton
                     title="Cancel"
                     variant="secondary"
@@ -150,10 +151,13 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     actions: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: theme.spacing.md
     },
+    actionsStacked: { flexDirection: 'column' },
     action: {
-        flex: 1
+        flex: 1,
+        minWidth: Platform.OS === 'web' ? 'auto' : 0
     },
     error: {
         color: theme.colors.danger

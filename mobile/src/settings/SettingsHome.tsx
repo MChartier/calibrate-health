@@ -120,8 +120,8 @@ export function SettingsHome({
     isWeb,
     onOpenCategory
 }: SettingsHomeProps) {
-    const unitSummary = `${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${
-        heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'
+    const { colors } = useAppTheme();
+    const unitSummary = `${weightUnit === WEIGHT_UNITS.LB ? 'lb' : 'kg'} | ${heightUnit === HEIGHT_UNITS.FT_IN ? 'ft/in' : 'cm'
     }`;
     const securitySummary = sessionCount === undefined
         ? undefined
@@ -156,6 +156,11 @@ export function SettingsHome({
                 testID="settings-section-categories"
                 title="Browse settings"
                 description="Choose an area to see related controls."
+                style={{
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: colors.outlineVariant,
+                    paddingTop: spacing.lg
+                }}
             >
                 <SettingsRow
                     testID="settings-open-profile"
@@ -205,14 +210,14 @@ export function SettingsHome({
 
 const styles = StyleSheet.create({
     home: {
-        gap: spacing.lg
+        gap: spacing.md
     },
     accountSummary: {
         minHeight: 78,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: 0,
         paddingVertical: spacing.md
     },
     summaryAvatar: {
@@ -229,7 +234,7 @@ const styles = StyleSheet.create({
         gap: spacing.xs
     },
     summaryEmail: {
-        fontWeight: '900'
+        fontWeight: '600'
     },
     avatarImage: {
         width: '100%',

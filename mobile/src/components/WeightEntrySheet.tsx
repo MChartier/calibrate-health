@@ -6,6 +6,7 @@ import {
     Platform,
     Pressable,
     StyleSheet,
+    useWindowDimensions,
     View
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -76,6 +77,8 @@ function findMetricOnOrBeforeDate(metrics: MetricEntry[], targetDate: string): M
 /** Focused two-stage weigh-in sheet shared by Today and deep-linked weight routes. */
 export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, date, onClose, onSaved }) => {
     const theme = useAppTheme();
+    const { fontScale } = useWindowDimensions();
+    const footerRowStyle = [styles.footerRow, fontScale >= 1.3 && styles.footerRowStacked];
     const { colors } = theme;
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
@@ -460,7 +463,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     let footer: React.ReactNode = null;
     if (phase === 'editing') {
         footer = (
-            <View style={styles.footerRow}>
+            <View style={footerRowStyle}>
                 <AppButton title="Cancel" variant="secondary" onPress={handleClose} style={styles.footerButton} />
                 <AppButton
                     title={existingMetric ? 'Save weight' : 'Log weight'}
@@ -474,14 +477,14 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         );
     } else if (phase === 'outlier-confirm') {
         footer = (
-            <View style={styles.footerRow}>
+            <View style={footerRowStyle}>
                 <AppButton title="Go back" variant="secondary" onPress={() => setPhase('editing')} style={styles.footerButton} />
                 <AppButton title={`Save ${formatWeight(parsedWeight, user?.weight_unit)}`} onPress={mutateWeight} style={styles.footerButton} />
             </View>
         );
     } else if (phase === 'delete-confirm') {
         footer = (
-            <View style={styles.footerRow}>
+            <View style={footerRowStyle}>
                 <AppButton title="Keep weigh-in" variant="secondary" onPress={() => setPhase('editing')} style={styles.footerButton} />
                 <AppButton title="Delete" variant="danger" onPress={handleDelete} style={styles.footerButton} />
             </View>
@@ -492,12 +495,12 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         footer = result.queued ? (
             <AppButton title="Done" onPress={handleClose} />
         ) : didReachGoal ? (
-            <View style={styles.footerRow}>
+            <View style={footerRowStyle}>
                 <AppButton title="Done" variant="secondary" onPress={handleClose} style={styles.footerButton} />
                 <AppButton title="Set next goal" onPress={handleSetNextGoal} style={styles.footerButton} />
             </View>
         ) : (
-            <View style={styles.footerRow}>
+            <View style={footerRowStyle}>
                 <AppButton title="View progress" variant="secondary" onPress={handleViewProgress} style={styles.footerButton} />
                 <AppButton title="Done" onPress={handleClose} style={styles.footerButton} />
             </View>
@@ -583,11 +586,13 @@ const styles = StyleSheet.create({
     },
     footerRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: spacing.sm
     },
+    footerRowStacked: { flexDirection: 'column' },
     footerButton: {
         flex: 1,
-        minWidth: 0,
+        minWidth: Platform.OS === 'web' ? 'auto' : 0,
         paddingHorizontal: spacing.sm
     }
 });

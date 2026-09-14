@@ -1,7 +1,7 @@
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppButton } from '../components/AppButton';
-import { useAppTheme } from '../theme';
+import { spacing, useAppTheme } from '../theme';
 
 type BarcodeRecoveryActionsProps = {
     disabled?: boolean;
@@ -20,7 +20,7 @@ export function BarcodeRecoveryActions({
     const theme = useAppTheme();
 
     return (
-        <View>
+        <View style={styles.actions}>
             {onScanLabel && <AppButton title="Scan nutrition label" variant="secondary" disabled={disabled} onPress={onScanLabel} />}
             <AppButton
                 title="Search foods"
@@ -39,3 +39,5 @@ export function BarcodeRecoveryActions({
         </View>
     );
 }
+
+const styles = StyleSheet.create({ actions: { gap: spacing.sm } });

@@ -1,13 +1,13 @@
 import { StyleSheet, View } from 'react-native';
 import { Link, Redirect, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
-import { AppCard } from '../src/components/AppCard';
+import { AppSection } from '../src/components/AppSection';
 import { AppText } from '../src/components/AppText';
 import { AuthBrand } from '../src/components/auth/AuthBrand';
 import { LoadingState } from '../src/components/LoadingState';
 import { Screen } from '../src/components/Screen';
 import { useAuth } from '../src/auth/AuthContext';
-import { radius, spacing, useAppTheme } from '../src/theme';
+import { radius, spacing, typography, useAppTheme } from '../src/theme';
 
 /** Public browser entry point; native keeps its direct authentication redirect. */
 export default function WebHomeRoute() {
@@ -23,9 +23,9 @@ export default function WebHomeRoute() {
     }
 
     return (
-        <Screen testID="hosted-landing" safeTop style={styles.screen}>
+        <Screen contentWidth="form" testID="hosted-landing" safeTop style={styles.screen}>
             <AuthBrand description="Track food, weight, and progress against a personalized calorie target - without losing sight of the daily choices." />
-            <AppCard testID="hosted-landing-primary">
+            <AppSection testID="hosted-landing-primary">
                 <AppText variant="subtitle">A clearer view of what is working.</AppText>
                 <AppText variant="muted">
                     Log meals and weigh-ins, compare them with your personal calorie target, and follow progress over time.
@@ -53,8 +53,12 @@ export default function WebHomeRoute() {
                         Create account
                     </Link>
                 </View>
-            </AppCard>
-            <AppCard testID="hosted-landing-trust">
+            </AppSection>
+            <AppSection testID="hosted-landing-trust" style={{
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: colors.outlineVariant,
+                paddingTop: spacing.lg
+            }}>
                 <AppText variant="subtitle">Your account stays under your control.</AppText>
                 <AppText variant="muted">
                     Review signed-in devices, export your account data, or permanently delete your account from Settings.
@@ -85,7 +89,7 @@ export default function WebHomeRoute() {
                         Account deletion
                     </Link>
                 </View>
-            </AppCard>
+            </AppSection>
         </Screen>
     );
 }
@@ -94,7 +98,6 @@ const styles = StyleSheet.create({
     screen: {
         justifyContent: 'center',
         flexGrow: 1,
-        maxWidth: 640,
         width: '100%',
         alignSelf: 'center'
     },
@@ -102,6 +105,7 @@ const styles = StyleSheet.create({
         gap: spacing.sm
     },
     primaryLink: {
+        ...typography.styles.body,
         minHeight: 48,
         display: 'flex',
         alignItems: 'center',
@@ -110,9 +114,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         textAlign: 'center',
-        fontWeight: '800'
+        fontWeight: '600'
     },
     secondaryLink: {
+        ...typography.styles.body,
         minHeight: 48,
         display: 'flex',
         alignItems: 'center',
@@ -122,7 +127,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         textAlign: 'center',
-        fontWeight: '800'
+        fontWeight: '600'
     },
     legalLinks: {
         flexDirection: 'row',
@@ -131,6 +136,7 @@ const styles = StyleSheet.create({
         gap: spacing.md
     },
     textLink: {
+        ...typography.styles.body,
         minHeight: 48,
         display: 'flex',
         alignItems: 'center',
@@ -138,6 +144,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
         textAlign: 'center',
-        fontWeight: '700'
+        fontWeight: '600'
     }
 });

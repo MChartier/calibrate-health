@@ -12,6 +12,7 @@ import {
 export const BROWSER_OFFLINE_MESSAGE = 'Some information may be out of date. Reconnect before making changes.';
 const DESKTOP_NOTICE_BREAKPOINT = 1024;
 const NOTICE_EDGE_OFFSET = 16;
+const DESKTOP_ACTION_CLEARANCE = 104; // Keeps persistent notices clear of the app bar and bottom contextual action.
 // Clears the largest compact nav, contextual action, and spacing at 200% text.
 const COMPACT_SHELL_CLEARANCE = 174;
 
@@ -30,7 +31,7 @@ export function resolvePwaNoticePlacement(
     if (viewportWidth >= DESKTOP_NOTICE_BREAKPOINT) {
         return {
             ...base,
-            top: `calc(env(safe-area-inset-top, 0px) + ${NOTICE_EDGE_OFFSET}px)`,
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${DESKTOP_ACTION_CLEARANCE}px)`,
             right: NOTICE_EDGE_OFFSET,
             alignItems: 'flex-end'
         };
@@ -85,13 +86,15 @@ type NoticeProps = {
         disabled?: boolean;
         onClick(): void;
     };
+    onDismiss?: () => void;
 };
 
-function Notice({ testID, role, title, detail, background, foreground, border, action }: NoticeProps) {
+function Notice({ testID, role, title, detail, background, foreground, border, action, onDismiss }: NoticeProps) {
     const style: React.CSSProperties = {
         width: 'min(440px, calc(100vw - 32px))',
         boxSizing: 'border-box',
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 16,
@@ -105,8 +108,8 @@ function Notice({ testID, role, title, detail, background, foreground, border, a
         font: '500 14px/20px system-ui, sans-serif',
         pointerEvents: 'auto'
     };
-    const copyStyle: React.CSSProperties = { minWidth: 0 };
-    const titleStyle: React.CSSProperties = { display: 'block', fontWeight: 800 };
+    const copyStyle: React.CSSProperties = { minWidth: 0, flexGrow: 1, flexBasis: action || onDismiss ? '100%' : 'auto' };
+    const titleStyle: React.CSSProperties = { display: 'block', fontWeight: 600 };
     const detailStyle: React.CSSProperties = { display: 'block' };
     const buttonStyle: React.CSSProperties = {
         flexShrink: 0,
@@ -117,7 +120,7 @@ function Notice({ testID, role, title, detail, background, foreground, border, a
         borderRadius: 10,
         background: 'transparent',
         color: foreground,
-        font: '800 14px/20px system-ui, sans-serif',
+        font: '600 14px/20px system-ui, sans-serif',
         cursor: action?.disabled ? 'wait' : 'pointer',
         opacity: action?.disabled ? 0.7 : 1
     };
@@ -128,11 +131,12 @@ function Notice({ testID, role, title, detail, background, foreground, border, a
                 <span style={titleStyle}>{title}</span>
                 <span style={detailStyle}>{detail}</span>
             </span>
-            {action && (
-                <button type="button" disabled={action.disabled} style={buttonStyle} onClick={action.onClick}>
+            {(action || onDismiss) && <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                {onDismiss && <button type="button" aria-label={`Dismiss ${title.toLowerCase()} notification`} style={buttonStyle} onClick={onDismiss}>Dismiss</button>}
+                {action && <button type="button" disabled={action.disabled} style={buttonStyle} onClick={action.onClick}>
                     {action.label}
-                </button>
-            )}
+                </button>}
+            </div>}
         </div>
     );
 }
@@ -151,6 +155,10 @@ export function PwaStatusBanner({
     const theme = useAppTheme();
     const { width } = useWindowDimensions();
     const { network, update, applyUpdate, retryUpdate } = usePwaStatus(runtime);
+    const [updateErrorDismissed, setUpdateErrorDismissed] = React.useState(false);
+    React.useEffect(() => {
+        if (update !== PWA_UPDATE_STATES.ERROR) setUpdateErrorDismissed(false);
+    }, [update]);
     const modalOpen = useDocumentModalOpen();
     const containerStyle = resolvePwaNoticePlacement(width, hasCompactNavigation);
     const notices: React.ReactNode[] = [];
@@ -198,7 +206,7 @@ export function PwaStatusBanner({
                 action={{ label: applying ? 'Refreshing' : 'Refresh', disabled: applying, onClick: applyUpdate }}
             />
         );
-    } else if (showUpdateNotices && update === PWA_UPDATE_STATES.ERROR) {
+    } else if (showUpdateNotices && update === PWA_UPDATE_STATES.ERROR && !updateErrorDismissed) {
         notices.push(
             <Notice
                 key="update-error"
@@ -210,6 +218,7 @@ export function PwaStatusBanner({
                 foreground={theme.colors.onDangerContainer}
                 border={theme.colors.danger}
                 action={{ label: 'Try again', onClick: () => void retryUpdate() }}
+                onDismiss={() => setUpdateErrorDismissed(true)}
             />
         );
     }

@@ -1,69 +1,85 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { AppSection } from './AppSection';
 import { AppCard } from './AppCard';
 import { SkeletonBlock } from './SkeletonBlock';
-import { radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme } from '../theme';
+
+// Matches the supporting ring at the narrowest phone width.
+const BALANCE_GAUGE_SKELETON_SIZE = 80;
 
 /**
  * Glimmer layout for the selected day's log content.
  *
  * The shape mirrors the calorie, food, and weight summaries so date changes do not flash the whole pane.
  */
-export const LogContentSkeleton: React.FC = () => (
+export const LogContentSkeleton: React.FC = () => {
+    const { colors } = useAppTheme();
+    return (
     <>
-        <AppCard testID="log-content-loading">
+        <AppCard density="compact" testID="log-content-loading" style={{ backgroundColor: colors.summaryContainer, borderColor: colors.summaryOutline, elevation: 0, shadowOpacity: 0 }}>
             <View style={styles.metricLine}>
-                <SkeletonBlock width="34%" height={64} />
-                <SkeletonBlock width="18%" height={30} />
-                <SkeletonBlock width="24%" height={30} />
-            </View>
-            <SkeletonBlock height={10} radius={radius.pill} />
-            <SkeletonBlock width="54%" height={18} style={styles.centered} />
-            <SkeletonBlock height={52} />
-        </AppCard>
-
-        <AppCard>
-            <SkeletonBlock width="42%" height={32} />
-            <View style={styles.mealRow}>
-                <SkeletonBlock width={42} height={42} radius={radius.md} />
-                <View style={styles.mealText}>
-                    <SkeletonBlock width="62%" height={24} />
-                    <SkeletonBlock width="78%" height={18} />
-                </View>
-                <SkeletonBlock width={72} height={24} />
-            </View>
-        </AppCard>
-
-        <AppCard>
-            <SkeletonBlock width="42%" height={32} />
-            <View style={styles.mealRow}>
-                <SkeletonBlock width={42} height={42} radius={radius.md} />
-                <View style={styles.mealText}>
-                    <SkeletonBlock width="48%" height={26} />
-                    <SkeletonBlock width="34%" height={18} />
+                <SkeletonBlock width={BALANCE_GAUGE_SKELETON_SIZE} height={BALANCE_GAUGE_SKELETON_SIZE} radius={radius.pill} />
+                <View style={styles.balanceText}>
+                    <SkeletonBlock width="100%" height={26} />
+                    <SkeletonBlock width="85%" height={46} />
+                    <SkeletonBlock width="90%" height={20} />
                 </View>
             </View>
         </AppCard>
+
+        <AppSection>
+            <View style={styles.mealRow}>
+                <SkeletonBlock width={40} height={40} />
+                <View style={styles.mealText}>
+                    <SkeletonBlock width="40%" height={20} />
+                    <SkeletonBlock width="68%" height={26} />
+                    <SkeletonBlock width="90%" height={24} />
+                </View>
+                <SkeletonBlock width={20} height={20} />
+            </View>
+            <SkeletonBlock height={48} />
+        </AppSection>
+
+        <AppSection>
+            <View style={styles.mealRow}>
+                <SkeletonBlock width={40} height={40} />
+                <View style={styles.mealText}>
+                    <SkeletonBlock width="48%" height={20} />
+                    <SkeletonBlock width="58%" height={30} />
+                    <SkeletonBlock width="52%" height={24} />
+                </View>
+                <SkeletonBlock width={20} height={20} />
+            </View>
+        </AppSection>
+        <AppSection divider>
+            <SkeletonBlock width="44%" height={20} />
+            <SkeletonBlock width="85%" height={20} />
+            <View style={styles.mealRow}>
+                <View style={styles.mealText}><SkeletonBlock height={48} /></View>
+                <View style={styles.mealText}><SkeletonBlock height={48} /></View>
+            </View>
+        </AppSection>
     </>
-);
+    );
+};
 
 const styles = StyleSheet.create({
     metricLine: {
         flexDirection: 'row',
-        alignItems: 'flex-end',
-        gap: spacing.sm
+        alignItems: 'center',
+        gap: spacing.md
     },
-    centered: {
-        alignSelf: 'center'
-    },
+    balanceText: { flex: 1, minWidth: 0, gap: spacing.xs },
     mealRow: {
         minHeight: 58,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md
+        gap: spacing.md,
+        paddingVertical: spacing.sm
     },
     mealText: {
         flex: 1,
-        gap: spacing.sm
+        gap: spacing.xs
     }
 });

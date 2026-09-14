@@ -3,27 +3,25 @@ import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { MetricEntry } from '@calibrate/api-client';
 import type { WeightUnit } from '@calibrate/shared';
-import { NavigableCard } from './NavigableCard';
+import { AppActionRow } from './AppActionRow';
 import { AppText } from './AppText';
-import { CardHeader } from './CardHeader';
+import { FixedPageColumn } from './FixedPage';
 import { formatWeight } from '../utils/format';
 import { type AppTheme, useAppTheme } from '../theme';
 
-type TodayWeightCardProps = Omit<React.ComponentProps<typeof NavigableCard>, 'accessibilityLabel' | 'children' | 'onPress' | 'secondaryAction'> & {
+type TodayWeightCardProps = Omit<React.ComponentProps<typeof AppActionRow>, 'accessibilityLabel' | 'children' | 'onPress' | 'secondaryAction'> & {
     metric: MetricEntry | null;
     weightUnit: WeightUnit | undefined;
     isToday: boolean;
     onPress: () => void;
-    compact?: boolean;
 };
 
-/** Compact daily weigh-in summary and entry point for the Today dashboard. */
+/** Compact daily weigh-in summary and entry point for Today. */
 export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
     metric,
     weightUnit,
     isToday,
     onPress,
-    compact = false,
     style,
     ...props
 }) => {
@@ -31,14 +29,13 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const title = isToday ? "Today's weight" : 'Weight';
     const action = metric ? 'Edit' : 'Log';
-    const metricLabel = metric ? formatWeight(metric.weight, weightUnit) : 'No weigh-in yet';
-    const metricVariant = compact || !metric ? 'subtitle' : 'screenTitle';
+    const metricLabel = metric ? formatWeight(metric.weight, weightUnit) : 'Weigh in';
     const supportingLabel = metric
         ? (isToday ? 'Logged today' : 'Logged for this day')
-        : (isToday ? 'Add today\'s measurement' : 'Add a measurement for this day');
+        : (isToday ? "Record today's weight" : 'Record weight for this day');
 
     return (
-        <NavigableCard
+        <AppActionRow
             {...props}
             testID={props.testID ?? 'today-weight-card'}
             primaryActionTestID="today-weight-card-press-layer"
@@ -47,89 +44,41 @@ export const TodayWeightCard: React.FC<TodayWeightCardProps> = ({
             accessibilityHint={metric ? 'Opens this weigh-in for editing' : 'Opens the weight entry form'}
             onPress={onPress}
             style={style}
-            contentDensity={compact ? 'compact' : 'comfortable'}
-            contentStyle={[styles.card, compact && styles.cardCompact]}
+            contentStyle={styles.record}
         >
-            <CardHeader
-                title={title}
-                density="compact"
-                action={<View
-                    accessibilityElementsHidden
-                    aria-hidden
-                    importantForAccessibility="no-hide-descendants"
-                    style={styles.viewAction}
-                >
-                    <AppText style={[styles.viewActionText, compact && styles.viewActionTextCompact]}>{action}</AppText>
-                    <Ionicons name="chevron-forward" size={compact ? 17 : 19} color={theme.colors.primary} />
-                </View>}
-            />
-
-            <View style={[styles.summaryRow, compact && styles.summaryRowCompact]}>
-                <View style={[styles.weightIcon, compact && styles.weightIconCompact]}>
-                    <Ionicons name="scale-outline" size={compact ? 19 : 22} color={theme.colors.primary} />
+            <FixedPageColumn style={styles.summaryRow}>
+                <View style={styles.iconTile} accessibilityElementsHidden aria-hidden>
+                    <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
                 </View>
-                <View style={[styles.summaryText, compact && styles.summaryTextCompact]}>
-                    <AppText variant={metricVariant}>
-                        {metricLabel}
-                    </AppText>
-                    <AppText variant="muted">{supportingLabel}</AppText>
+                <View style={styles.summaryText}>
+                    <AppText style={metric ? styles.measurement : styles.emptyLabel}>{metricLabel}</AppText>
+                    <AppText style={styles.supportingLabel}>{supportingLabel}</AppText>
                 </View>
-            </View>
-        </NavigableCard>
+                <View accessibilityElementsHidden aria-hidden>
+                    <Ionicons name={metric ? 'create-outline' : 'add'} size={20} color={theme.colors.primary} />
+                </View>
+            </FixedPageColumn>
+        </AppActionRow>
     );
 };
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-        card: {
-            gap: theme.spacing.md
-        },
-        cardCompact: {
-            gap: theme.spacing.xs
-        },
-        viewAction: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            flexShrink: 0,
-            gap: theme.spacing.xs
-        },
-        viewActionText: {
-            color: theme.colors.primary,
-            fontSize: theme.typography.small,
-            fontWeight: '800'
-        },
-        viewActionTextCompact: {
-            fontSize: theme.typography.caption
-        },
+        record: { paddingVertical: theme.spacing.sm, borderRadius: 0, borderBottomColor: theme.colors.outline, borderBottomWidth: StyleSheet.hairlineWidth },
+        iconTile: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
         summaryRow: {
             minHeight: theme.interaction.minimumTouchTarget,
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.md
         },
-        summaryRowCompact: {
-            minHeight: theme.interaction.minimumTouchTarget,
-            gap: theme.spacing.sm
-        },
-        weightIcon: {
-            width: 42,
-            height: 42,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: theme.radius.md,
-            backgroundColor: theme.colors.primaryContainer
-        },
-        weightIconCompact: {
-            width: theme.interaction.minimumTouchTarget - theme.spacing.md,
-            height: theme.interaction.minimumTouchTarget - theme.spacing.md
-        },
         summaryText: {
             flex: 1,
             minWidth: 0,
-            gap: theme.spacing.xs
-        },
-        summaryTextCompact: {
             gap: 0
-        }
+        },
+        measurement: { ...theme.typography.styles.measurement, fontVariant: ['tabular-nums'] },
+        emptyLabel: theme.typography.styles.section,
+        supportingLabel: { ...theme.typography.styles.label, color: theme.colors.onSurfaceVariant }
     });
 }

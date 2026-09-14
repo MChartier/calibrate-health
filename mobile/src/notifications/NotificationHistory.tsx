@@ -4,7 +4,8 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { router, type Href } from 'expo-router';
 import type { InAppNotification } from '@calibrate/api-client';
 import { AppButton } from '../components/AppButton';
-import { AppCard } from '../components/AppCard';
+import { AppSection } from '../components/AppSection';
+import { AppNotice } from '../components/AppNotice';
 import { AppText } from '../components/AppText';
 import {
     AsyncStateBoundary,
@@ -116,8 +117,8 @@ export function NotificationHistory() {
     const openPreferences = () => router.push(canonicalPathForRoute('settings-profile') as Href);
 
     return (
-        <TabScreen testID="notification-history">
-            <AppCard style={styles.headerCard}>
+        <TabScreen contentWidth="overview" testID="notification-history">
+            <AppSection style={styles.headerCard}>
                 <SectionHeader
                     title="Notification history"
                     description="Review reminder activity across this account."
@@ -142,15 +143,15 @@ export function NotificationHistory() {
                         style={styles.headerAction}
                     />
                 </View>
-            </AppCard>
+            </AppSection>
 
             {showDeliveryStatus && (
-                <AppCard
+                <AppNotice
                     testID="notification-delivery-status"
+                    tone={deliveryStatus.isError ? 'danger' : 'info'}
                     accessibilityRole={deliveryStatus.isError ? 'alert' : undefined}
-                    style={deliveryStatus.isError ? styles.errorCard : undefined}
                 >
-                    <AppText variant="subtitle">Notification delivery</AppText>
+                    <SectionHeader title="Notification delivery" />
                     <AppText variant="muted">{deliveryStatus.message}</AppText>
                     {deliveryAction && (
                         <AppButton
@@ -160,7 +161,7 @@ export function NotificationHistory() {
                             onPress={() => void deliveryAction?.run()}
                         />
                     )}
-                </AppCard>
+                </AppNotice>
             )}
 
             <AsyncStateBoundary
@@ -168,7 +169,7 @@ export function NotificationHistory() {
                 resourceLabel="notification history"
                 loading={<NotificationHistorySkeleton styles={styles} />}
                 empty={(
-                    <AppCard testID="notification-history-empty">
+                    <AppSection testID="notification-history-empty">
                         <AppText variant="subtitle">No notification history yet</AppText>
                         <AppText variant="muted">
                             Enabled food and weight reminders will appear here after they are created.
@@ -178,7 +179,7 @@ export function NotificationHistory() {
                             variant="secondary"
                             onPress={openPreferences}
                         />
-                    </AppCard>
+                    </AppSection>
                 )}
                 onRetry={isOnline ? () => historyQuery.refetch() : undefined}
                 retrying={historyQuery.isFetching}
@@ -207,11 +208,11 @@ export function NotificationHistory() {
             </AsyncStateBoundary>
 
             {actionError && (
-                <AppCard accessibilityRole="alert" style={styles.errorCard}>
+                <AppNotice tone="danger" accessibilityRole="alert">
                     <AppText style={styles.errorText}>
                         {getSafeActionErrorMessage(actionError, 'Unable to update notification history. Try again.')}
                     </AppText>
-                </AppCard>
+                </AppNotice>
             )}
         </TabScreen>
     );
@@ -219,7 +220,7 @@ export function NotificationHistory() {
 
 function NotificationHistorySkeleton({ styles }: { styles: ReturnType<typeof createStyles> }) {
     return (
-        <AppCard testID="notification-history-loading">
+        <AppSection testID="notification-history-loading">
             {[0, 1, 2].map((row) => (
                 <View key={row} style={styles.skeletonRow}>
                     <SkeletonBlock width={42} height={42} radius={21} />
@@ -229,7 +230,7 @@ function NotificationHistorySkeleton({ styles }: { styles: ReturnType<typeof cre
                     </View>
                 </View>
             ))}
-        </AppCard>
+        </AppSection>
     );
 }
 
@@ -259,9 +260,6 @@ function createStyles(theme: AppTheme) {
         skeletonText: {
             flex: 1,
             gap: spacing.sm
-        },
-        errorCard: {
-            borderColor: theme.colors.danger
         },
         errorText: {
             color: theme.colors.danger

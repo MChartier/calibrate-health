@@ -2,7 +2,8 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import { calibrateDesignTokens, type CalibrateColorScheme } from '../../shared/designTokens';
-import { expect, test } from './fixtures';
+import { expect, test, hideTransientPwaNotices } from './fixtures';
+import { applyTwoHundredPercentText } from './text-scaling';
 
 function cssRgb(hex: string): string {
   const channels = hex.match(/[A-Fa-f0-9]{2}/g);
@@ -17,6 +18,66 @@ async function expectNoHorizontalOverflow(page: Page) {
   }));
   expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
 }
+
+test('public server-rendered pages adopt the selected appearance after hydration', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'compact-phone-chrome', 'Hydration behavior is viewport-independent.');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await ux.install('signed-out');
+  for (const route of ['/forgot-password', '/account-deletion', '/privacy']) {
+    await page.goto(route);
+    await expect(page.getByRole('main')).toHaveCSS('background-color', cssRgb(calibrateDesignTokens.schemes.dark.background));
+    await expect(page.getByRole('heading', { level: 1 }).first()).toHaveCSS('color', cssRgb(calibrateDesignTokens.schemes.dark.onSurface));
+    await page.screenshot({ path: testInfo.outputPath(`${route.slice(1)}-dark.png`) });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await expect(page.getByRole('main')).toHaveCSS('background-color', cssRgb(calibrateDesignTokens.schemes.light.background));
+    await page.emulateMedia({ colorScheme: 'dark' });
+  }
+});
+
+test('long nested page titles remain readable at 320px and 200 percent text', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'compact-phone-chrome', 'Minimum-width text reflow cross-cut.');
+  await ux.install('populated');
+  for (const route of ['/connected-apps', '/advanced']) {
+    await page.goto(route);
+    await hideTransientPwaNotices(page);
+    const title = page.locator('#route-focus-title');
+    await expect(title).toBeVisible();
+    await enlargeLeafText(page);
+    await expectNoHorizontalOverflow(page);
+    await expect.poll(() => title.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: testInfo.outputPath(`${route.slice(1)}-200-percent.png`) });
+  }
+});
+
+test('weight measurement stays readable at 320px and 200 percent text', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'compact-phone-chrome', 'Minimum-width measurement cross-cut.');
+  await ux.install('populated');
+  await page.goto('/weight');
+  const input = page.getByRole('textbox', { name: 'Weight in kilograms', exact: true });
+  await expect(input).toBeVisible();
+  await input.fill('88.2');
+  await enlargeLeafText(page);
+  await input.evaluate(element => {
+    const field = element as HTMLInputElement;
+    const style = getComputedStyle(field);
+    field.style.fontSize = `${Number.parseFloat(style.fontSize) * 2}px`;
+    field.style.lineHeight = `${Number.parseFloat(style.lineHeight) * 2}px`;
+  });
+  await expect.poll(() => input.evaluate(element => {
+    const field = element as HTMLInputElement;
+    const style = getComputedStyle(field);
+    const context = document.createElement('canvas').getContext('2d')!;
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    return context.measureText(field.value).width <= field.clientWidth - Number.parseFloat(style.paddingLeft) - Number.parseFloat(style.paddingRight)
+      && field.clientHeight >= Number.parseFloat(style.lineHeight);
+  })).toBe(true);
+  await expect(input).toHaveCSS('font-size', '104px');
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('weight-200-percent.png') });
+  const save = page.getByRole('dialog', { name: 'Weight entry', exact: true }).getByRole('button', { name: 'Log weight', exact: true });
+  await save.scrollIntoViewIfNeeded();
+  await expect(save).toBeInViewport();
+});
 
 async function expectInside(outer: Locator, inner: Locator) {
   const [outerBox, innerBox] = await Promise.all([outer.boundingBox(), inner.boundingBox()]);
@@ -130,7 +191,7 @@ async function semanticColorAssertions(page: Page, testInfo: TestInfo, schemeNam
   await page.goto('/progress');
 
   const projection = page.getByTestId('goal-projection');
-  await expect(projection).toHaveCSS('background-color', cssRgb(scheme.surfaceContainer));
+  await expect(projection).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(projection).not.toHaveCSS('background-color', cssRgb(scheme.cautionContainer));
   await captureLocatorEvidence(projection, testInfo, `production-info-${schemeName}.png`);
 
@@ -143,7 +204,7 @@ async function semanticColorAssertions(page: Page, testInfo: TestInfo, schemeNam
   await captureLocatorEvidence(chart, testInfo, `production-selection-${schemeName}.png`);
 }
 
-test('dashboard cards share one heading rhythm and separate primary and secondary targets', async ({ page, ux }, testInfo) => {
+test('Today rows keep labels inside a single target and Add food separate', async ({ page, ux }, testInfo) => {
   if (testInfo.project.name === 'desktop-chrome') {
     await page.setViewportSize({ width: 1_024, height: 1_000 });
   }
@@ -152,17 +213,22 @@ test('dashboard cards share one heading rhythm and separate primary and secondar
   await page.emulateMedia({ colorScheme: dashboardScheme });
   await ux.install('populated');
   await page.goto('/today');
+  await hideTransientPwaNotices(page);
 
-  const foodCard = page.getByTestId('food-log-summary-card');
-  const foodPrimary = page.getByTestId('food-log-card-press-layer');
+  const foodCard = page.getByTestId('today-food-preview');
+  const foodPrimary = foodCard;
   const addFood = page.getByRole('button', { name: 'Add food', exact: true });
   const weightPrimary = page.getByLabel(/Today's weight.+weight/);
-  const foodHeading = page.getByRole('heading', { name: 'Food log', exact: true });
-  const weightHeading = page.getByRole('heading', { name: "Today's weight", exact: true });
+  const foodHeading = foodPrimary.getByText('Food log', { exact: true });
+  const weightHeading = weightPrimary.getByText('Weigh in', { exact: true });
 
   await expectInside(foodCard, foodPrimary);
-  await expectInside(foodCard, addFood);
+  await expectInside(page.getByTestId('today-action-dock'), addFood);
   await expectNoOverlap(foodPrimary, addFood);
+  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toHaveCount(1);
+  await expect(page.getByTestId('today-weight-card').getByRole('button')).toHaveCount(1);
+  await expectInside(foodPrimary, foodHeading);
+  await expectInside(weightPrimary, weightHeading);
 
   const [foodHeadingStyle, weightHeadingStyle] = await Promise.all([
     foodHeading.evaluate((element) => ({
@@ -174,7 +240,7 @@ test('dashboard cards share one heading rhythm and separate primary and secondar
       lineHeight: getComputedStyle(element).lineHeight,
     })),
   ]);
-  expect(foodHeadingStyle).toEqual({ fontSize: '16px', lineHeight: '22px' });
+  expect(foodHeadingStyle).toEqual({ fontSize: '20px', lineHeight: '26px' });
   expect(weightHeadingStyle).toEqual(foodHeadingStyle);
 
   const [foodPrimaryBox, foodHeadingBox, weightPrimaryBox, weightHeadingBox] = await Promise.all([
@@ -187,11 +253,11 @@ test('dashboard cards share one heading rhythm and separate primary and secondar
   expect(foodHeadingBox).not.toBeNull();
   expect(weightPrimaryBox).not.toBeNull();
   expect(weightHeadingBox).not.toBeNull();
-  expect(Math.abs(
-    (foodHeadingBox!.y - foodPrimaryBox!.y) - (weightHeadingBox!.y - weightPrimaryBox!.y),
-  )).toBeLessThanOrEqual(1);
+  expect(weightPrimaryBox!.y + weightPrimaryBox!.height).toBeLessThanOrEqual(foodPrimaryBox!.y + 1);
+  expect(foodHeadingBox!.y).toBeGreaterThanOrEqual(foodPrimaryBox!.y);
+  expect(weightHeadingBox!.y).toBeGreaterThanOrEqual(weightPrimaryBox!.y);
 
-  const surfaceBeforePress = await foodCard.evaluate((element) => getComputedStyle(element).backgroundColor);
+  const surfaceBeforePress = await foodPrimary.evaluate((element) => getComputedStyle(element).backgroundColor);
   await foodPrimary.hover();
   const foodPrimaryBoxForPress = await foodPrimary.boundingBox();
   expect(foodPrimaryBoxForPress).not.toBeNull();
@@ -200,7 +266,7 @@ test('dashboard cards share one heading rhythm and separate primary and secondar
     foodPrimaryBoxForPress!.y + (foodPrimaryBoxForPress!.height / 2),
   );
   await page.mouse.down();
-  await expect.poll(() => foodCard.evaluate((element) => getComputedStyle(element).backgroundColor))
+  await expect.poll(() => foodPrimary.evaluate((element) => getComputedStyle(element).backgroundColor))
     .not.toBe(surfaceBeforePress);
   await page.mouse.move(0, 0);
   await page.mouse.up();
@@ -214,14 +280,14 @@ test('dashboard cards share one heading rhythm and separate primary and secondar
 
   await page.keyboard.press('Tab');
   await foodPrimary.focus();
-  await expect(foodCard).toHaveCSS('outline-color', cssRgb(dashboardColors.focusRing));
+  await expect(foodPrimary).toHaveCSS('outline-color', cssRgb(dashboardColors.focusRing));
   await captureDashboardEvidence(page, testInfo);
-  await enlargeLeafText(page);
+  await applyTwoHundredPercentText(page);
   await expectNoHorizontalOverflow(page);
   await expectInside(page.getByRole('main'), page.getByRole('heading', { name: 'Daily balance', exact: true }));
 });
 
-test('Progress card headings share the compact top inset with wrapped trend metadata', async ({ page, ux }, testInfo) => {
+test('Progress aligns the open Snapshot and flexible Trend with supporting metadata', async ({ page, ux }, testInfo) => {
   test.skip(
     !['compact-phone-chrome', 'desktop-chrome'].includes(testInfo.project.name),
     'Progress heading geometry is covered at the compact phone and desktop cross-cuts.',
@@ -252,20 +318,19 @@ test('Progress card headings share the compact top inset with wrapped trend meta
 
   const snapshotTopInset = snapshotHeadingBox!.y - snapshotCardBox!.y;
   const trendTopInset = trendHeadingBox!.y - trendCardBox!.y;
-  const compactInset = calibrateDesignTokens.spacing.medium;
-  expect(Math.abs(snapshotTopInset - trendTopInset)).toBeLessThanOrEqual(1);
-  for (const topInset of [snapshotTopInset, trendTopInset]) {
-    expect(topInset).toBeGreaterThanOrEqual(compactInset);
-    expect(topInset).toBeLessThanOrEqual(compactInset + 2);
-  }
+  expect(snapshotTopInset).toBeGreaterThanOrEqual(0);
+  expect(snapshotTopInset).toBeLessThanOrEqual(12);
+  expect(trendTopInset).toBeGreaterThanOrEqual(0);
+  expect(trendTopInset).toBeLessThanOrEqual(2);
+  expect(snapshotHeadingBox!.x).toBe(trendHeadingBox!.x);
+  await expect(snapshotCard).toHaveCSS('border-top-width', '0px');
 
   if (testInfo.project.name === 'compact-phone-chrome') {
-    const trendMetadata = page.getByText(/^Current underlying trend: .* \| As of /);
-    const metadataGeometry = await trendMetadata.evaluate((element) => ({
-      height: element.getBoundingClientRect().height,
-      lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
-    }));
-    expect(metadataGeometry.height).toBeGreaterThan(metadataGeometry.lineHeight + 1);
+    const trendMetadata = page.getByText(/underlying trend$/);
+    const metadataGeometry = await trendMetadata.boundingBox();
+    expect(metadataGeometry).not.toBeNull();
+    expect(metadataGeometry!.y).toBeGreaterThanOrEqual(trendHeadingBox!.y + trendHeadingBox!.height);
+    await expectInside(trendCard, trendMetadata);
   }
 });
 

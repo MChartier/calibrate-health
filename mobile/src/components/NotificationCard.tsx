@@ -11,7 +11,7 @@ import {
 import { getNotificationAction } from '../notifications/workflow';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
 
@@ -40,12 +40,12 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     const stateLabel = getNotificationStateLabel(notification);
 
     return (
-        <AppCard
+        <AppSection
             testID={`notification-card-${notification.id}`}
-            style={[styles.card, isUnread && styles.unreadCard]}
+            style={styles.card}
         >
             <View style={styles.row}>
-                <View style={[styles.iconTile, isUnread && styles.iconTileUnread]}>
+                <View style={styles.iconTile}>
                     <Ionicons
                         name={isUnread ? 'notifications' : 'notifications-outline'}
                         size={20}
@@ -54,7 +54,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                 </View>
                 <View style={styles.body}>
                     <View style={styles.titleRow}>
-                        <AppText variant="subtitle" numberOfLines={2} style={styles.title}>
+                        <AppText variant="body" style={styles.title}>
                             {text.title}
                         </AppText>
                         {isUnread ? <View style={styles.unreadDot} /> : null}
@@ -71,9 +71,10 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                 <AppButton
                     testID={`notification-open-${notification.id}`}
                     title={action.label}
+                    variant="ghost"
                     accessibilityHint="Marks this reminder read and opens its Calibrate destination."
                     disabled={isBusy}
-                    leftIcon={<Ionicons name="open-outline" size={18} color={theme.colors.onPrimary} />}
+                    leftIcon={<Ionicons name="open-outline" size={18} color={theme.colors.primary} />}
                     onPress={() => onOpen(notification)}
                     style={styles.actionButton}
                 />
@@ -88,16 +89,16 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                     />
                 )}
             </View>
-        </AppCard>
+        </AppSection>
     );
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     card: {
-        gap: spacing.md
-    },
-    unreadCard: {
-        borderColor: theme.colors.primary
+        gap: spacing.md,
+        paddingVertical: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: theme.colors.outlineVariant
     },
     row: {
         flexDirection: 'row',
@@ -105,15 +106,11 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.md
     },
     iconTile: {
-        width: 42,
-        height: 42,
-        borderRadius: radius.md,
+        width: spacing.lg,
+        height: spacing.lg,
+        flexShrink: 0,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.surfaceContainer
-    },
-    iconTileUnread: {
-        backgroundColor: theme.colors.primaryContainer
     },
     body: {
         flex: 1,
@@ -127,7 +124,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     title: {
         flex: 1,
-        minWidth: 0
+        minWidth: 0,
+        fontWeight: '600'
     },
     unreadDot: {
         width: 10,

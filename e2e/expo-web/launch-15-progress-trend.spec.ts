@@ -219,11 +219,11 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
 
   await page.goto('/progress');
   await expect(page.locator('#route-focus-title')).toHaveText('Progress');
-  await expect(page.getByText('Current scale weight', { exact: true })).toBeVisible();
-  await expect(page.getByText('Goal date at selected pace', { exact: true })).toBeVisible();
+  await expect(page.getByText('Current weight', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Goal date at selected pace', { exact: true })).toBeVisible();
   await expect(page.getByTestId('trend-preview-heading-line')).toContainText('Trend');
   await expect(page.getByTestId('trend-preview-heading-line')).toContainText(
-    'Current underlying trend: 88.4 kg | As of Jul 18',
+    '88.4 kg underlying trend',
   );
   await expect(page.getByLabel('Four-week underlying weight trend with 95% estimated range')).toBeVisible();
   await expectNoHorizontalOverflow(page);
@@ -239,7 +239,7 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   expect(viewport).not.toBeNull();
   const desktopChart = viewport!.width >= 840;
   expect(chartBox!.height).toBeGreaterThanOrEqual(desktopChart ? 260 : 188);
-  expect(chartBox!.height).toBeLessThanOrEqual(desktopChart ? 421 : 261);
+  expect(chartBox!.height).toBeLessThan(viewport!.height);
   expect(chartBox!.width).toBeLessThanOrEqual(viewport!.width);
 
   const selectedSummary = page.getByTestId('selected-trend-summary');
@@ -264,6 +264,7 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await captureEvidence(page, testInfo);
 
   await selectedSummary.scrollIntoViewIfNeeded();
+  await hideTransientPwaNotices(page);
   const summaryBeforeHelp = await selectedSummary.boundingBox();
   const help = page.getByRole('button', { name: 'About the 95% trend range', exact: true });
   await help.click();

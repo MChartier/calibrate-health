@@ -16,6 +16,8 @@ type AppButtonProps = Omit<PressableProps, 'android_ripple'> & {
     title: string;
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
     leftIcon?: React.ReactNode;
+    rightIcon?: React.ReactNode;
+    textStyle?: StyleProp<TextStyle>;
     busy?: boolean;
     busyLabel?: string;
 };
@@ -24,6 +26,8 @@ export const AppButton: React.FC<AppButtonProps> = ({
     title,
     variant = 'primary',
     leftIcon,
+    rightIcon,
+    textStyle,
     busy = false,
     busyLabel,
     disabled,
@@ -50,9 +54,13 @@ export const AppButton: React.FC<AppButtonProps> = ({
     const renderedLeftIcon = disabled && React.isValidElement<{ color?: string }>(leftIcon)
         ? React.cloneElement(leftIcon, { color: theme.colors.onSurfaceVariant })
         : leftIcon;
+    const renderedRightIcon = disabled && React.isValidElement<{ color?: string }>(rightIcon)
+        ? React.cloneElement(rightIcon, { color: theme.colors.onSurfaceVariant })
+        : rightIcon;
     let indicatorColor: string = theme.colors.onSurface;
     if (variant === 'primary') indicatorColor = theme.colors.onPrimary;
     if (variant === 'danger') indicatorColor = theme.colors.onDanger;
+    if (disabled) indicatorColor = theme.colors.onSurfaceVariant;
 
     return <Pressable
         {...props}
@@ -88,15 +96,16 @@ export const AppButton: React.FC<AppButtonProps> = ({
         <View style={styles.content}>
             {isBusy ? <ActivityIndicator color={indicatorColor} /> : renderedLeftIcon}
             <AppText
-                numberOfLines={2}
                 style={[
                     styles.label,
                     labelStyle,
+                    textStyle,
                     disabled && styles.disabledLabel
                 ]}
             >
                 {renderedTitle}
             </AppText>
+            {renderedRightIcon}
         </View>
     </Pressable>;
 };
@@ -104,6 +113,8 @@ export const AppButton: React.FC<AppButtonProps> = ({
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         base: {
+            elevation: 0,
+            shadowOpacity: 0,
             minHeight: theme.interaction.minimumTouchTarget,
             borderRadius: theme.radius.md,
             alignItems: 'center',
@@ -112,11 +123,10 @@ function createStyles(theme: AppTheme) {
             paddingVertical: theme.spacing.sm
         },
         primary: {
-            ...theme.shadows.button,
             backgroundColor: theme.colors.primary
         },
         secondary: {
-            backgroundColor: theme.colors.surfaceContainer,
+            backgroundColor: 'transparent',
             borderColor: theme.colors.outline,
             borderWidth: theme.stroke.control
         },
@@ -166,7 +176,7 @@ function createStyles(theme: AppTheme) {
             flexShrink: 1,
             textAlign: 'center',
             ...theme.typography.styles.label,
-            fontWeight: '700'
+            fontWeight: '600'
         },
         primaryLabel: {
             color: theme.colors.onPrimary

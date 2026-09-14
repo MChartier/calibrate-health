@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AppState, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AppState, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FoodLogDay, FoodLogDayStatus, FoodTrackingPause } from '@calibrate/api-client';
@@ -12,7 +12,7 @@ import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { addDaysToDateOnly, getTodayDate } from '../utils/dates';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppButton } from './AppButton';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 import { AppText } from './AppText';
 import { BottomSheetModal } from './BottomSheetModal';
 import { DatePickerField } from './DatePickerField';
@@ -26,6 +26,7 @@ const EXPANDED_STATUS_CONTENT_MAX_WIDTH = 520; // Keeps the status message reada
 const EXPANDED_STATUS_ACTION_MAX_WIDTH = 320; // Keeps the primary action prominent without spanning a desktop card.
 const EXPANDED_STATUS_ICON_SIZE = 80; // Gives the full-height status treatment a clear visual anchor.
 const EXPANDED_STATUS_GLYPH_SIZE = 38; // Scales the pause glyph with its expanded circular container.
+const NARROW_DOCK_BREAKPOINT = 360; // Keep the icon and completed label on one line on a 320px phone.
 
 function storedDay(date: string, status: FoodLogDayStatus): FoodLogDay {
     return {
@@ -80,14 +81,20 @@ export const DayStatusCard: React.FC<{
     date: string;
     isToday: boolean;
     failed?: boolean;
+    loading?: boolean;
+    stackActions?: boolean;
     compact?: boolean;
     expanded?: boolean;
+    presentation?: 'section' | 'dock' | 'controls';
+    onAddFood?: () => void;
+    onActionComplete?: () => void;
     style?: StyleProp<ViewStyle>;
-}> = ({ date, isToday, failed = false, compact = false, expanded = false, style }) => {
+}> = ({ date, isToday, failed = false, loading = false, stackActions = false, compact = false, expanded = false, presentation = 'section', onAddFood, onActionComplete, style }) => {
     const { api } = useAuth();
     const { enqueue } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
+    const { width, fontScale } = useWindowDimensions();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const dayQuery = useFoodDayStatus(date);
     const refresh = useRefreshTrackingState(date);
@@ -134,6 +141,7 @@ export const DayStatusCard: React.FC<{
             setPauseSheetOpen(false);
             setShowExpectedDate(false);
             setExpectedResumeOn('');
+            onActionComplete?.();
             await refresh();
         }
     });
@@ -164,13 +172,18 @@ export const DayStatusCard: React.FC<{
     const day = dayQuery.data;
     const useCompactOpenLayout = compact && isToday && day.status === 'OPEN';
     const useExpandedPauseLayout = expanded && isToday && day.status === 'PAUSED';
-    const isBusy = setStatus.isPending || startPause.isPending || resume.isPending;
+    const isBusy = loading || setStatus.isPending || startPause.isPending || resume.isPending;
     const actionError = setStatus.error ?? startPause.error ?? resume.error;
     const statusFailed = failed || dayQuery.isError;
+    const stackDockActions = stackActions || fontScale >= 1.6;
+    const dockActionStyle = [styles.dockAction, width < NARROW_DOCK_BREAKPOINT && styles.dockActionNarrow, stackDockActions && styles.dockActionStacked];
+    const dockLabelStyle = [styles.dockLabel, width < NARROW_DOCK_BREAKPOINT && styles.dockNarrowLabel];
+    const confirmedComplete = day.status === 'COMPLETE' && !statusFailed && !loading;
+    const completedForeground = theme.mode === 'dark' ? theme.colors.onPrimaryContainer : theme.colors.onPrimary;
     let icon: React.ComponentProps<typeof Ionicons>['name'] = 'options-outline';
     const title = getFoodDayStatusLabel({ status: day.status, failed: statusFailed });
     let description = isToday
-        ? 'Complete the day when the log is finished, or pause tracking when you are taking time off.'
+        ? 'Add the rest of your meals to complete your day.'
         : 'This day remains unresolved until its calorie log represents the full day.';
     if (statusFailed && day.status !== 'PAUSED') {
         icon = 'alert-circle-outline';
@@ -199,18 +212,21 @@ export const DayStatusCard: React.FC<{
                 <Ionicons name={icon} size={24} color={theme.colors.primary} />
             </View>
             <View style={styles.copy}>
-                <AppText accessibilityRole="header" aria-level={2} variant="label" style={styles.cardHeadingTitle}>
+                <AppText accessibilityRole="header" aria-level={2} variant="section" style={styles.cardHeadingTitle}>
                     {title}
                 </AppText>
-                <AppText variant="muted">{description}</AppText>
+                <AppText variant="muted" style={styles.description}>{description}</AppText>
             </View>
         </View>
     );
-    if (useCompactOpenLayout) {
+    if (useCompactOpenLayout && !statusFailed) {
         headingContent = (
-            <AppText accessibilityRole="header" aria-level={2} variant="label" style={styles.cardHeadingTitle}>
-                {title}
-            </AppText>
+            <View style={styles.copy}>
+                <AppText accessibilityRole="header" aria-level={2} variant="section" style={styles.cardHeadingTitle}>
+                    {title}
+                </AppText>
+                <AppText variant="muted" style={styles.description}>{description}</AppText>
+            </View>
         );
     } else if (useExpandedPauseLayout) {
         headingContent = (
@@ -244,10 +260,11 @@ export const DayStatusCard: React.FC<{
 
     return (
         <>
-            <AppCard
+            {presentation === 'section' ? <AppSection
                 density={useCompactOpenLayout ? 'compact' : 'comfortable'}
                 accessibilityLabel={`${title}. ${description}`}
                 style={[
+                    styles.section,
                     useExpandedPauseLayout && styles.cardExpanded,
                     style
                 ]}
@@ -255,16 +272,17 @@ export const DayStatusCard: React.FC<{
                 {headingContent}
 
                 {day.status === 'OPEN' && (
-                    <View style={[styles.actions, useCompactOpenLayout && styles.actionsCompact]}>
+                    <View style={[styles.actions, useCompactOpenLayout && styles.actionsCompact, fontScale >= 1.3 && styles.actionsStacked]}>
                         <AppButton
                             title="Complete day"
+                            variant="primary"
                             accessibilityLabel="Complete day"
                             disabled={isBusy}
                             onPress={() => setStatus.mutate('COMPLETE')}
                             style={[
                                 styles.action,
                                 useCompactOpenLayout && styles.actionCompact,
-                                styles.primaryActionFlat
+                                fontScale >= 1.3 && styles.actionStacked
                             ]}
                             leftIcon={<Ionicons
                                 name="checkmark-circle-outline"
@@ -278,7 +296,8 @@ export const DayStatusCard: React.FC<{
                                 variant="secondary"
                                 disabled={isBusy}
                                 onPress={() => setPauseSheetOpen(true)}
-                                style={[styles.action, useCompactOpenLayout && styles.actionCompact]}
+                                style={[styles.action, styles.pauseAction, useCompactOpenLayout && styles.actionCompact, fontScale >= 1.3 && styles.actionStacked]}
+                                textStyle={styles.pauseText}
                                 leftIcon={<Ionicons
                                     name="pause-circle-outline"
                                     size={18}
@@ -316,7 +335,34 @@ export const DayStatusCard: React.FC<{
                         {getSafeActionErrorMessage(actionError, 'Unable to update food tracking.')}
                     </AppText>
                 )}
-            </AppCard>
+            </AppSection> : <View testID={presentation === 'dock' ? 'today-action-dock' : 'today-day-controls'} style={[styles.dock, style]}>
+                {presentation === 'dock' && <View style={[styles.dockActions, stackDockActions && styles.actionsStacked]}>
+                    {day.status === 'OPEN' && <>
+                        <AppButton title="Add food" onPress={onAddFood} disabled={!onAddFood || isBusy} style={dockActionStyle} textStyle={dockLabelStyle} />
+                        <AppButton title="Complete day" variant="secondary" onPress={() => setStatus.mutate('COMPLETE')} disabled={isBusy || statusFailed} style={[dockActionStyle, styles.dockSecondary]} textStyle={[dockLabelStyle, styles.pauseText]} />
+                    </>}
+                    {day.status === 'COMPLETE' && <>
+                        <AppButton title="Add food" disabled style={dockActionStyle} textStyle={dockLabelStyle} />
+                        <AppButton
+                            title={confirmedComplete ? 'Day completed' : 'Reopen day'}
+                            variant={confirmedComplete ? 'primary' : 'secondary'}
+                            aria-pressed={confirmedComplete}
+                            accessibilityState={{ selected: confirmedComplete }}
+                            accessibilityHint="Reopens this day so you can add or edit food"
+                            disabled={isBusy}
+                            onPress={() => setStatus.mutate('OPEN')}
+                            style={[dockActionStyle, confirmedComplete && styles.completedAction]}
+                            textStyle={[dockLabelStyle, confirmedComplete && { color: completedForeground }]}
+                            leftIcon={confirmedComplete ? <Ionicons name="checkmark" size={18} color={completedForeground} /> : undefined}
+                        />
+                    </>}
+                    {(day.status === 'INCOMPLETE' || (day.status === 'PAUSED' && !isToday)) && <AppButton title="Edit day" variant="secondary" disabled={isBusy} onPress={() => setStatus.mutate('OPEN')} style={[dockActionStyle, styles.dockSecondary]} textStyle={[styles.dockLabel, styles.pauseText]} />}
+                    {day.status === 'PAUSED' && isToday && <AppButton title={resume.isPending ? 'Resuming...' : 'Resume tracking'} disabled={isBusy} onPress={() => resume.mutate()} style={dockActionStyle} textStyle={styles.dockLabel} />}
+                </View>}
+                {presentation === 'dock' && statusFailed && <AppText variant="muted">Day status unavailable</AppText>}
+                {presentation === 'controls' && isToday && day.status === 'OPEN' && <AppButton title="Pause tracking" variant="secondary" disabled={isBusy} onPress={() => setPauseSheetOpen(true)} leftIcon={<Ionicons name="pause-circle-outline" size={20} color={theme.colors.primary} />} />}
+                {actionError && <AppText accessibilityRole="alert" style={styles.error}>{getSafeActionErrorMessage(actionError, 'Unable to update food tracking.')}</AppText>}
+            </View>}
 
             <BottomSheetModal
                 visible={pauseSheetOpen}
@@ -500,6 +546,11 @@ export const ResumeTrackingPrompt: React.FC = () => {
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
+        section: {
+            borderTopColor: theme.colors.outlineVariant,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            paddingTop: theme.spacing.lg
+        },
         cardExpanded: {
             flex: 1,
             alignItems: 'center',
@@ -508,8 +559,8 @@ function createStyles(theme: AppTheme) {
             paddingVertical: theme.spacing.xxl,
             gap: theme.spacing.xl,
             backgroundColor: theme.colors.surfaceContainer,
-            borderColor: theme.colors.primaryContainer,
-            borderWidth: theme.stroke.control
+            borderLeftColor: theme.colors.primary,
+            borderLeftWidth: theme.interaction.focusRingWidth
         },
         expandedContent: {
             width: '100%',
@@ -532,7 +583,7 @@ function createStyles(theme: AppTheme) {
         },
         expandedStatusLabel: {
             color: theme.colors.primary,
-            fontWeight: '800',
+            fontWeight: '600',
             textTransform: 'uppercase'
         },
         expandedTitle: {
@@ -553,12 +604,10 @@ function createStyles(theme: AppTheme) {
             gap: theme.spacing.md
         },
         icon: {
-            width: 44,
-            height: 44,
+            width: 24,
+            height: 24,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: theme.radius.md,
-            backgroundColor: theme.colors.primaryContainer
         },
         copy: {
             flex: 1,
@@ -567,16 +616,27 @@ function createStyles(theme: AppTheme) {
         },
         cardHeadingTitle: {
             color: theme.colors.onSurface,
-            fontWeight: '800'
+            fontWeight: '600'
         },
+        description: { ...theme.typography.styles.label, fontWeight: '400' },
         actions: {
             flexDirection: 'row',
             flexWrap: 'wrap',
             gap: theme.spacing.sm
         },
+        dock: { paddingVertical: theme.spacing.md, gap: theme.spacing.sm },
+        dockActions: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'stretch' },
+        dockAction: { flex: 1, minWidth: 0, minHeight: 52, paddingHorizontal: theme.spacing.sm },
+        dockActionNarrow: { paddingHorizontal: theme.spacing.xs },
+        dockActionStacked: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', width: '100%' },
+        dockLabel: { ...theme.typography.styles.body, fontWeight: '600' },
+        dockNarrowLabel: theme.typography.styles.label,
+        dockSecondary: { borderColor: theme.colors.primary },
+        completedAction: { backgroundColor: theme.mode === 'dark' ? theme.colors.primaryContainer : theme.colors.primary },
         actionsCompact: {
             flexWrap: 'nowrap'
         },
+        actionsStacked: { flexDirection: 'column' },
         action: {
             flexGrow: 1
         },
@@ -587,10 +647,9 @@ function createStyles(theme: AppTheme) {
             paddingHorizontal: theme.spacing.xs,
             width: 0
         },
-        primaryActionFlat: {
-            elevation: 0,
-            shadowOpacity: 0
-        },
+        actionStacked: { width: '100%', flexGrow: 0, flexShrink: 0 },
+        pauseAction: { borderColor: theme.colors.primary, backgroundColor: theme.colors.summaryContainer },
+        pauseText: { color: theme.colors.primary },
         error: {
             color: theme.colors.danger
         }

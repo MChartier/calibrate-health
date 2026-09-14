@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { SettingsRow, SettingsSection } from '../components/settings/SettingsList';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
-import { spacing } from '../theme';
+import { spacing, useAppTheme } from '../theme';
 import type {
     ProductLink,
     SettingsCategoryId,
@@ -40,6 +40,7 @@ export function SettingsCategoryPage({
     onDeleteAccount,
     onLogout
 }: SettingsCategoryPageProps) {
+    const { colors } = useAppTheme();
     const offlineSummary = failedMutationCount > 0
         ? `${failedMutationCount} failed`
         : `${pendingMutationCount} pending`;
@@ -239,6 +240,11 @@ export function SettingsCategoryPage({
                 testID="settings-section-app"
                 title="App"
                 description="Product information, diagnostics, connections, and software updates."
+                style={{
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: colors.outlineVariant,
+                    paddingTop: spacing.lg
+                }}
             >
                 <SettingsRow
                     icon="information-circle-outline"
@@ -262,6 +268,6 @@ export function SettingsCategoryPage({
 
 const styles = StyleSheet.create({
     category: {
-        gap: spacing.lg
+        gap: spacing.xxl
     }
 });

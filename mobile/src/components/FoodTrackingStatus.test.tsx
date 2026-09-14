@@ -1,10 +1,10 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { AppState, StyleSheet } from 'react-native';
+import { AppState, Dimensions, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
 import { DayStatusCard, ResumeTrackingPrompt, foodDayQueryKey } from './FoodTrackingStatus';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
@@ -121,7 +121,9 @@ function renderWithQuery(ui: React.ReactElement, cachedDay?: FoodLogDay) {
 }
 
 describe('food tracking day resolution', () => {
+    const originalWindow = Dimensions.get('window');
     beforeEach(() => {
+        act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 1 } }));
         jest.clearAllMocks();
         foregroundListener = undefined;
         appStateSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_, listener) => {
@@ -130,7 +132,20 @@ describe('food tracking day resolution', () => {
         });
     });
 
-    afterEach(() => appStateSpy.mockRestore());
+    afterEach(() => {
+        appStateSpy.mockRestore();
+        act(() => Dimensions.set({ window: originalWindow }));
+    });
+
+    it('stacks completion and pause targets when native text is enlarged', async () => {
+        act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 2 } }));
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
+        const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday compact />);
+        await waitFor(() => expect(screen.getByText('Not fully logged')).toBeTruthy());
+        for (const name of ['Complete day', 'Pause tracking']) {
+            expect(screen.getByRole('button', { name })).toHaveStyle({ width: '100%', minHeight: 48 });
+        }
+    });
 
     it('offers completion, incomplete, and pause actions for an open current day', async () => {
         mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
@@ -231,7 +246,7 @@ describe('food tracking day resolution', () => {
 
         await waitFor(() => expect(screen.getByText('Paused')).toBeTruthy());
         expect(screen.getByText("Today's status")).toBeTruthy();
-        expect(StyleSheet.flatten(screen.UNSAFE_getByType(AppCard).props.style)).toEqual(
+        expect(StyleSheet.flatten(screen.UNSAFE_getByType(AppSection).props.style)).toEqual(
             expect.objectContaining({
                 flex: 1,
                 alignItems: 'center',

@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import React from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
 import { TextField } from './TextField';
-import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
+import { spacing } from '../theme';
 import { adjustDecimalInput, normalizeDecimalInput, parseDecimalInput } from '../utils/numericInput';
 
 type NumberStepperFieldProps = {
@@ -36,8 +36,6 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
     editable = true,
     containerStyle
 }) => {
-    const theme = useAppTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
     const parsedValue = parseDecimalInput(value);
     const decreaseDisabled = !editable
         || (Number.isFinite(parsedValue) && typeof min === 'number' && parsedValue - step < min);
@@ -55,19 +53,12 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                 {suffix && <AppText variant="caption">{suffix}</AppText>}
             </View>
             <View style={styles.inputRow}>
-                <Pressable
-                    accessibilityRole="button"
+                <AppIconButton
+                    icon="remove"
                     accessibilityLabel={`Decrease ${label} by ${step}`}
                     disabled={decreaseDisabled}
                     onPress={() => adjust(-step)}
-                    style={({ pressed }) => [
-                        styles.stepperButton,
-                        decreaseDisabled && styles.disabled,
-                        pressed && !decreaseDisabled && styles.pressed
-                    ]}
-                >
-                    <Ionicons name="remove" size={18} color={theme.colors.onSurface} />
-                </Pressable>
+                />
                 <TextField
                     label={label}
                     hideLabel
@@ -82,34 +73,29 @@ export const NumberStepperField: React.FC<NumberStepperFieldProps> = ({
                     accessibilityLabel={label}
                     editable={editable}
                 />
-                <Pressable
-                    accessibilityRole="button"
+                <AppIconButton
+                    icon="add"
                     accessibilityLabel={`Increase ${label} by ${step}`}
                     disabled={increaseDisabled}
                     onPress={() => adjust(step)}
-                    style={({ pressed }) => [
-                        styles.stepperButton,
-                        increaseDisabled && styles.disabled,
-                        pressed && !increaseDisabled && styles.pressed
-                    ]}
-                >
-                    <Ionicons name="add" size={18} color={theme.colors.onSurface} />
-                </Pressable>
+                />
             </View>
             {helperText && <AppText variant="caption">{helperText}</AppText>}
         </View>
     );
 };
 
-const createStyles = (theme: AppTheme) => StyleSheet.create({
+const styles = StyleSheet.create({
     root: {
         gap: spacing.sm
     },
     labelRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.md
+        columnGap: spacing.md,
+        rowGap: spacing.xs
     },
     inputRow: {
         flexDirection: 'row',
@@ -122,20 +108,4 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     input: {
         textAlign: 'center'
     },
-    stepperButton: {
-        width: 48,
-        height: 48,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: theme.colors.surfaceContainer,
-        borderColor: theme.colors.outlineVariant,
-        borderWidth: theme.stroke.control
-    },
-    pressed: {
-        backgroundColor: theme.colors.surfacePressed
-    },
-    disabled: {
-        opacity: 0.5
-    }
 });

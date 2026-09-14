@@ -84,37 +84,40 @@ export const RecipeIngredientEditor: React.FC<RecipeIngredientEditorProps> = ({
                     ? ingredient.myFood.calories_per_serving * ingredient.servings
                     : ingredient.caloriesTotal;
                 return (
-                    <View key={ingredient.key} style={styles.ingredientRow}>
+                    <View key={ingredient.key} style={[styles.ingredientRow, index === ingredients.length - 1 && styles.lastIngredientRow]}>
                         <View style={styles.ingredientText}>
-                            <AppText variant="body" numberOfLines={1}>{name}</AppText>
+                            <AppText variant="body" numberOfLines={2}>{name}</AppText>
                             <AppText variant="caption">{formatCalories(calories)}</AppText>
                         </View>
-                        {ingredient.source === 'MY_FOOD' && (
-                            <View style={styles.stepper}>
-                                <AppIconButton
-                                    icon="remove"
-                                    iconSize={16}
-                                    accessibilityLabel={`Decrease ${name} servings`}
-                                    variant="surface"
-                                    disabled={ingredient.servings <= RECIPE_INGREDIENT_INCREMENT}
-                                    onPress={() => adjustServings(index, -RECIPE_INGREDIENT_INCREMENT)}
-                                />
-                                <AppText variant="label">{ingredient.servings}x</AppText>
-                                <AppIconButton
-                                    icon="add"
-                                    iconSize={16}
-                                    accessibilityLabel={`Increase ${name} servings`}
-                                    variant="surface"
-                                    onPress={() => adjustServings(index, RECIPE_INGREDIENT_INCREMENT)}
-                                />
-                            </View>
-                        )}
-                        <AppIconButton
-                            icon="close"
-                            accessibilityLabel={`Remove ${name}`}
-                            iconColor={theme.colors.danger}
-                            onPress={() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                        />
+                        <View style={styles.ingredientActions}>
+                            {ingredient.source === 'MY_FOOD' && (
+                                <View style={styles.stepper}>
+                                    <AppIconButton
+                                        icon="remove"
+                                        iconSize={16}
+                                        accessibilityLabel={`Decrease ${name} servings`}
+                                        variant="surface"
+                                        disabled={ingredient.servings <= RECIPE_INGREDIENT_INCREMENT}
+                                        onPress={() => adjustServings(index, -RECIPE_INGREDIENT_INCREMENT)}
+                                    />
+                                    <AppText variant="label">{ingredient.servings}x</AppText>
+                                    <AppIconButton
+                                        icon="add"
+                                        iconSize={16}
+                                        accessibilityLabel={`Increase ${name} servings`}
+                                        variant="surface"
+                                        onPress={() => adjustServings(index, RECIPE_INGREDIENT_INCREMENT)}
+                                    />
+                                </View>
+                            )}
+                            <AppIconButton
+                                icon="close"
+                                variant="ghost"
+                                accessibilityLabel={`Remove ${name}`}
+                                iconColor={theme.colors.danger}
+                                onPress={() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                            />
+                        </View>
                     </View>
                 );
             })}
@@ -131,14 +134,26 @@ function createStyles(theme: AppTheme) {
             flexDirection: 'row',
             alignItems: 'center',
             gap: theme.spacing.md,
-            borderRadius: theme.radius.md,
-            backgroundColor: theme.colors.surfaceContainer,
-            padding: theme.spacing.md
+            flexWrap: 'wrap',
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: theme.colors.outlineVariant,
+            paddingVertical: theme.spacing.md
         },
         ingredientText: {
             flex: 1,
-            minWidth: 0,
+            // Preserve a readable name before wrapping the independent quantity controls.
+            minWidth: 120,
             gap: theme.spacing.xs
+        },
+        lastIngredientRow: {
+            borderBottomWidth: 0
+        },
+        ingredientActions: {
+            // Wrap quantity and removal together so a narrow row never strands Remove.
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+            marginLeft: 'auto'
         },
         stepper: {
             flexDirection: 'row',

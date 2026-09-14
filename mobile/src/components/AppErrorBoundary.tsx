@@ -2,8 +2,10 @@ import React from 'react';
 import * as Crypto from 'expo-crypto';
 import {
     DevSettings,
+    Appearance,
     Platform,
     Pressable,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
@@ -27,6 +29,7 @@ type AppErrorBoundaryState = {
     hasError: boolean;
     requestId: string | null;
     resetVersion: number;
+    focusedAction: 'retry' | 'restart' | null;
 };
 
 const FALLBACK_MAX_WIDTH = 420; // Keeps recovery copy readable on tablets and unfolded devices.
@@ -64,7 +67,8 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
     state: AppErrorBoundaryState = {
         hasError: false,
         requestId: null,
-        resetVersion: 0
+        resetVersion: 0,
+        focusedAction: null
     };
 
     static getDerivedStateFromError(_error: unknown): Partial<AppErrorBoundaryState> {
@@ -100,12 +104,13 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
 
     render(): React.ReactNode {
         if (this.state.hasError) {
-            const theme = themes.light;
+            const theme = Appearance.getColorScheme() === 'dark' ? themes.dark : themes.light;
             const styles = createStyles(theme);
             return (
-                <View
+                <ScrollView
                     testID="app-error-boundary"
                     style={styles.screen}
+                    contentContainerStyle={styles.content}
                     accessible
                     accessibilityRole="alert"
                     accessibilityLiveRegion="assertive"
@@ -149,7 +154,9 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
                                 accessibilityRole="button"
                                 accessibilityLabel="Try loading Calibrate again"
                                 onPress={this.resetAppShell}
-                                style={({ pressed }) => [styles.button, styles.primaryButton, pressed && styles.pressed]}
+                                onFocus={() => this.setState({ focusedAction: 'retry' })}
+                                onBlur={() => this.setState({ focusedAction: null })}
+                                style={({ pressed }) => [styles.button, styles.primaryButton, pressed && styles.pressed, this.state.focusedAction === 'retry' && styles.focused]}
                             >
                                 <Text style={styles.primaryButtonLabel}>Try again</Text>
                             </Pressable>
@@ -158,13 +165,15 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
                                 accessibilityRole="button"
                                 accessibilityLabel="Restart Calibrate"
                                 onPress={this.restartApp}
-                                style={({ pressed }) => [styles.button, styles.secondaryButton, pressed && styles.pressed]}
+                                onFocus={() => this.setState({ focusedAction: 'restart' })}
+                                onBlur={() => this.setState({ focusedAction: null })}
+                                style={({ pressed }) => [styles.button, styles.secondaryButton, pressed && styles.pressed, this.state.focusedAction === 'restart' && styles.focused]}
                             >
                                 <Text style={styles.secondaryButtonLabel}>Restart app</Text>
                             </Pressable>
                         </View>
                     </View>
-                </View>
+                </ScrollView>
             );
         }
 
@@ -175,20 +184,18 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     screen: {
         flex: 1,
+        backgroundColor: theme.colors.background
+    },
+    content: {
+        flexGrow: 1,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: theme.colors.background,
-        padding: spacing.xxl
+        padding: spacing.lg
     },
     card: {
         width: '100%',
         maxWidth: FALLBACK_MAX_WIDTH,
-        padding: spacing.xxl,
-        borderRadius: radius.md,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: theme.colors.outlineVariant,
-        backgroundColor: theme.colors.surface,
-        ...theme.shadows.card
     },
     brandRow: {
         flexDirection: 'row',
@@ -207,17 +214,17 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     brandMarkText: {
         color: theme.colors.onPrimary,
         fontSize: typography.title,
-        fontWeight: '900'
+        fontWeight: '600'
     },
     brandName: {
         color: theme.colors.onSurface,
         fontSize: typography.screenTitle,
-        fontWeight: '900'
+        fontWeight: '600'
     },
     title: {
         color: theme.colors.onSurface,
         fontSize: typography.title,
-        fontWeight: '900',
+        fontWeight: '600',
         marginBottom: spacing.lg
     },
     description: {
@@ -250,7 +257,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     primaryButton: {
         backgroundColor: theme.colors.primary,
-        ...theme.shadows.button
     },
     secondaryButton: {
         backgroundColor: theme.colors.surfaceContainer,
@@ -260,15 +266,20 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     primaryButtonLabel: {
         color: theme.colors.onPrimary,
         fontSize: typography.body,
-        fontWeight: '800'
+        fontWeight: '600'
     },
     secondaryButtonLabel: {
         color: theme.colors.onSurface,
         fontSize: typography.body,
-        fontWeight: '800'
+        fontWeight: '600'
     },
     pressed: {
         opacity: 0.86,
         transform: [{ translateY: 1 }]
+    },
+    focused: {
+        outlineColor: theme.colors.focusRing,
+        outlineWidth: theme.interaction.focusRingWidth,
+        outlineStyle: 'solid'
     }
 });
