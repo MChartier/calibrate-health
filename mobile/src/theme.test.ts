@@ -58,13 +58,13 @@ describe('mobile semantic theme', () => {
     });
 
     it('defines the locked page, section, card, body, label, caption, and metric scale', () => {
-        expect(typeScale.page).toEqual(expect.objectContaining({ fontSize: 24, lineHeight: 30 }));
-        expect(typeScale.section).toEqual(expect.objectContaining({ fontSize: 18, lineHeight: 24 }));
+        expect(typeScale.page).toEqual(expect.objectContaining({ fontSize: 28, lineHeight: 34 }));
+        expect(typeScale.section).toEqual(expect.objectContaining({ fontSize: 20, lineHeight: 26 }));
         expect(typeScale.card).toEqual(expect.objectContaining({ fontSize: 16, lineHeight: 22 }));
         expect(typeScale.body).toEqual(expect.objectContaining({ fontSize: 16, lineHeight: 24 }));
         expect(typeScale.label).toEqual(expect.objectContaining({ fontSize: 14, lineHeight: 20 }));
         expect(typeScale.caption).toEqual(expect.objectContaining({ fontSize: 12, lineHeight: 16 }));
-        expect(typeScale.metric).toEqual(expect.objectContaining({ fontSize: 32, lineHeight: 38 }));
+        expect(typeScale.metric).toEqual(expect.objectContaining({ fontSize: 44, lineHeight: 50 }));
     });
 
     it('keeps caution separate from neutral selection and informational emphasis', () => {

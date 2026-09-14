@@ -133,7 +133,7 @@ describe('DateNavigation web', () => {
         const dateText = trigger.findByProps({ children: 'Jul 17, 2026' });
         const triggerStyle = trigger.props.style as (state: { pressed: boolean }) => unknown;
 
-        expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ gap: 4 });
+        expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ gap: 8 });
         expect(StyleSheet.flatten(triggerStyle({ pressed: false }))).toMatchObject({ paddingHorizontal: 8 });
         expect(dateText.props.numberOfLines).toBeUndefined();
     });

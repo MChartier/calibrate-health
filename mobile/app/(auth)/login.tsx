@@ -3,7 +3,8 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { AppButton } from '../../src/components/AppButton';
-import { AppCard } from '../../src/components/AppCard';
+import { AppSection } from '../../src/components/AppSection';
+import { AppNotice } from '../../src/components/AppNotice';
 import { AppText } from '../../src/components/AppText';
 import { AuthBrand } from '../../src/components/auth/AuthBrand';
 import { Screen } from '../../src/components/Screen';
@@ -49,11 +50,11 @@ export default function LoginScreen() {
     }
 
     return (
-        <Screen safeTop style={styles.screen}>
+        <Screen contentWidth="form" safeTop style={styles.screen}>
             <AuthBrand description="Track food, weight, and progress against a personalized calorie target." />
 
             {accountDeletionCleanupNotice && (
-                <AppCard accessibilityLiveRegion="polite" style={[styles.cleanupNotice, { borderColor: colors.warning }]}>
+                <AppNotice tone="warning" accessibilityLiveRegion="polite" style={[styles.cleanupNotice, { borderColor: colors.warning }]}>
                     <SectionHeader
                         title="Account deleted - device cleanup needed"
                         description={accountDeletionCleanupGuidance(accountDeletionCleanupNotice)}
@@ -63,10 +64,10 @@ export default function LoginScreen() {
                         variant="secondary"
                         onPress={() => void acknowledgeAccountDeletionCleanupNotice()}
                     />
-                </AppCard>
+                </AppNotice>
             )}
 
-            <AppCard>
+            <AppSection>
                 <SectionHeader title="Sign in" description="Use your Calibrate account." />
                 <TextField
                     label="Email"
@@ -109,7 +110,7 @@ export default function LoginScreen() {
                     disabled={isSubmitting || Boolean(accountDeletionCleanupNotice)}
                     onPress={() => void handleLogin()}
                 />
-            </AppCard>
+            </AppSection>
 
             {!accountDeletionCleanupNotice && (
                 <Link
@@ -150,7 +151,6 @@ const styles = StyleSheet.create({
     screen: {
         justifyContent: 'center',
         flexGrow: 1,
-        maxWidth: 520,
         width: '100%',
         alignSelf: 'center'
     },
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm
     },
     link: {
-        fontWeight: '700',
+        fontWeight: '600',
         textAlign: 'center'
     }
 });

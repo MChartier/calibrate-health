@@ -141,8 +141,8 @@ async function installSettingsSessionsFixture(page: Page) {
   }));
 }
 
-async function installInstalledUpdateFixture(page: Page) {
-  await page.addInitScript(() => {
+async function installInstalledUpdateFixture(page: Page, registrationFails = false) {
+  await page.addInitScript((failRegistration) => {
     const updateFoundListeners = new Set<() => void>();
     const controllerChangeListeners = new Set<() => void>();
     const workerStateListeners = new Set<() => void>();
@@ -170,7 +170,10 @@ async function installInstalledUpdateFixture(page: Page) {
     };
     const container = {
       controller: worker,
-      async register() { return registration; },
+      async register() {
+        if (failRegistration) throw new Error('Fixture update registration failed');
+        return registration;
+      },
       addEventListener(type: string, listener: () => void) {
         if (type === 'controllerchange') controllerChangeListeners.add(listener);
       },
@@ -206,8 +209,24 @@ async function installInstalledUpdateFixture(page: Page) {
         getLastWorkerMessage: () => lastWorkerMessage,
       },
     });
-  });
+  }, registrationFails);
 }
+
+test('failed update remains dismissible and leaves app navigation reachable', async ({ page, ux }) => {
+  await installInstalledUpdateFixture(page, true);
+  await ux.install('populated');
+  await page.goto('/today');
+  const notice = page.getByTestId('pwa-update-error');
+  await expect(notice).toBeVisible();
+  const notifications = page.getByRole('button', { name: /^Open notifications/ });
+  await notifications.click();
+  await expect(page.getByRole('dialog', { name: 'Notifications', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(notice).toBeVisible();
+  await notice.getByRole('button', { name: 'Dismiss update failed notification' }).click();
+  await expect(notice).toBeHidden();
+  await expectNoHorizontalOverflow(page);
+});
 
 async function showFixtureUpdate(page: Page) {
   await page.evaluate(() => {

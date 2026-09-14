@@ -19,12 +19,13 @@ describe('TodayWeightCard', () => {
             <TodayWeightCard metric={TODAY_METRIC} weightUnit="LB" isToday onPress={onPress} />
         );
 
-        expect(screen.getByText("Today's weight")).toBeTruthy();
+        expect(screen.queryByText("Today's weight")).toBeNull();
         expect(screen.getByText('168.2 lb')).toBeTruthy();
         expect(screen.getByText('Logged today')).toBeTruthy();
-        expect(screen.getByText('Edit', { includeHiddenElements: true })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Edit weight' })).toBeNull();
+        expect(screen.getAllByRole('button')).toHaveLength(1);
 
-        fireEvent.press(screen.getByRole('button'));
+        fireEvent.press(screen.getByTestId('today-weight-card-press-layer'));
         expect(onPress).toHaveBeenCalledTimes(1);
     });
 
@@ -33,10 +34,10 @@ describe('TodayWeightCard', () => {
             <TodayWeightCard metric={null} weightUnit="KG" isToday onPress={jest.fn()} />
         );
 
-        expect(screen.getByText('No weigh-in yet')).toBeTruthy();
-        expect(screen.getByText("Add today's measurement")).toBeTruthy();
-        expect(screen.getByText('Log', { includeHiddenElements: true })).toBeTruthy();
-        expect(screen.getByLabelText("Today's weight. No weigh-in yet. Log weight")).toBeTruthy();
+        expect(screen.getByText('Weigh in')).toBeTruthy();
+        expect(screen.getByText("Record today's weight")).toBeTruthy();
+        expect(screen.getByLabelText("Today's weight. Weigh in. Log weight")).toBeTruthy();
+        expect(screen.queryByText('No weigh-in yet')).toBeNull();
     });
 
     it('uses day-specific copy when browsing a previous date', () => {
@@ -44,29 +45,29 @@ describe('TodayWeightCard', () => {
             <TodayWeightCard metric={TODAY_METRIC} weightUnit="LB" isToday={false} onPress={jest.fn()} />
         );
 
-        expect(screen.getByText('Weight')).toBeTruthy();
+        expect(screen.getByLabelText('Weight. 168.2 lb. Edit weight')).toBeTruthy();
         expect(screen.getByText('Logged for this day')).toBeTruthy();
     });
 
-    it('uses one full-card target and lets compact weight copy wrap', () => {
+    it('uses one full-row target and lets compact weight copy wrap', () => {
         const onPress = jest.fn();
         const screen = render(
-            <TodayWeightCard metric={TODAY_METRIC} weightUnit="LB" isToday onPress={onPress} compact />
+            <TodayWeightCard metric={TODAY_METRIC} weightUnit="LB" isToday onPress={onPress} />
         );
-        const card = screen.getByTestId('today-weight-card');
         const target = screen.getByTestId('today-weight-card-press-layer');
 
-        expect(within(target).getByRole('header', { name: "Today's weight" })).toBeTruthy();
-        expect(screen.getAllByRole('button')).toHaveLength(1);
+        expect(within(target).queryByRole('header')).toBeNull();
+        expect(within(target).getByText('168.2 lb')).toBeTruthy();
+        expect(within(target).queryByRole('button', { name: 'Edit weight' })).toBeNull();
         expect(screen.getByText('168.2 lb').props.numberOfLines).toBeUndefined();
         expect(StyleSheet.flatten(target.props.style)).toMatchObject({
             minHeight: themes.light.interaction.minimumTouchTarget,
             flex: 1
         });
 
-        fireEvent(target, 'pressIn');
-        expect(card).toHaveStyle({ backgroundColor: themes.light.colors.surfacePressed });
-        fireEvent(target, 'pressOut');
+        fireEvent(target, 'hoverIn');
+        expect(target).toHaveStyle({ backgroundColor: themes.light.colors.surfaceHovered });
+        fireEvent(target, 'hoverOut');
         fireEvent.press(target);
         expect(onPress).toHaveBeenCalledTimes(1);
     });

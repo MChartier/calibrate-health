@@ -1,8 +1,8 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { Dimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import Svg from 'react-native-svg';
+import Svg, { Text as SvgText } from 'react-native-svg';
 import type { TrendMetricEntry, WeightTrendSummary } from '@calibrate/api-client';
-import { spacing } from '../../theme';
 import { WeightTrendPreviewCard } from './WeightTrendPreviewCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -60,6 +60,10 @@ function trendSummary(overrides: Partial<WeightTrendSummary> = {}): WeightTrendS
 
 describe('WeightTrendPreviewCard', () => {
     beforeEach(() => {
+        Dimensions.set({
+            window: { width: 390, height: 844, scale: 1, fontScale: 1 },
+            screen: { width: 390, height: 844, scale: 1, fontScale: 1 }
+        });
         (useQuery as jest.Mock).mockReturnValue({
             data: {
                 metrics: METRICS,
@@ -81,15 +85,10 @@ describe('WeightTrendPreviewCard', () => {
         const screen = render(<WeightTrendPreviewCard onPress={onPress} onLogWeight={jest.fn()} />);
 
         expect(screen.getByText('Trend')).toBeTruthy();
-        expect(screen.getByTestId('trend-preview-heading-line')).toHaveStyle({
-            flexDirection: 'row',
-            alignItems: 'baseline',
-            flexWrap: 'wrap'
-        });
         expect(screen.queryByText('Weight trend')).toBeNull();
         expect(screen.queryByText('Last four weeks at a glance.')).toBeNull();
         expect(screen.queryByText('Smoothed weight')).toBeNull();
-        expect(screen.getByText('Current underlying trend: 168.2 lb | As of Jul 20')).toBeTruthy();
+        expect(screen.getByText('168.2 lb underlying trend')).toBeTruthy();
         expect(screen.queryByLabelText('Latest smoothed weight 168.2 lb')).toBeNull();
         expect(screen.queryByText('95% estimated trend range')).toBeNull();
         expect(screen.queryByText('167.8 lb - 168.6 lb')).toBeNull();
@@ -101,6 +100,8 @@ describe('WeightTrendPreviewCard', () => {
         expect(screen.queryByText(/Trend line:/)).toBeNull();
         expect(screen.queryByText(/-0\.35|volatility/)).toBeNull();
         expect(screen.queryByText(/^(Week|Month|Year|All)$/)).toBeNull();
+        expect(screen.getAllByRole('button')).toHaveLength(1);
+        expect(screen.queryByRole('button', { name: 'Weight trend details' })).toBeNull();
 
         fireEvent.press(screen.getByLabelText('Open full weight trend'));
         expect(onPress).toHaveBeenCalledTimes(1);
@@ -109,11 +110,29 @@ describe('WeightTrendPreviewCard', () => {
     it('fills its flexed preview immediately', () => {
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} onLogWeight={jest.fn()} />);
         expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({
-            height: 184,
-            marginBottom: spacing.md
+            flex: 1,
+            minHeight: 116
         });
+        expect(screen.getByLabelText('Open full weight trend')).toHaveStyle({ paddingVertical: 0 });
         expect(screen.getByLabelText('Four-week underlying weight trend with 95% estimated range'))
             .toHaveProp('height', '100%');
+    });
+
+    it('keeps a complete chart in the short-screen scrolling layout', () => {
+        const screen = render(<WeightTrendPreviewCard expanded onPress={jest.fn()} onLogWeight={jest.fn()} />);
+        expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({ height: 166, flexShrink: 0, flexBasis: 'auto' });
+        const axisLabels = screen.UNSAFE_getAllByType(SvgText);
+        expect(axisLabels.every((label) => label.props.fontSize >= 12)).toBe(true);
+    });
+
+    it('reserves a larger chart and axis labels for native enlarged text', () => {
+        Dimensions.set({
+            window: { width: 390, height: 844, scale: 1, fontScale: 2 },
+            screen: { width: 390, height: 844, scale: 1, fontScale: 2 }
+        });
+        const screen = render(<WeightTrendPreviewCard expanded onPress={jest.fn()} onLogWeight={jest.fn()} />);
+        expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({ height: 332 });
+        expect(screen.UNSAFE_getAllByType(SvgText).every((label) => label.props.fontSize === 24)).toBe(true);
     });
 
     it('draws the uncertainty band while keeping measurement dots and fallback context out of the preview', () => {

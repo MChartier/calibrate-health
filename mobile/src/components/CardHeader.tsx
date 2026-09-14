@@ -68,7 +68,7 @@ function createStyles(theme: AppTheme) {
         },
         title: {
             color: theme.colors.onSurface,
-            ...theme.typography.styles.card
+            ...theme.typography.styles.section
         },
         metadata: {
             flexShrink: 1,

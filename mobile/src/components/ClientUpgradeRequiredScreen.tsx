@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import type { ClientUpgradeRequirement } from '@calibrate/shared';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
 import { CalibrateLogo } from './CalibrateLogo';
-import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
+import { spacing, useAppTheme, type AppTheme } from '../theme';
 
 type ClientUpgradeRequiredScreenProps = {
     requirement: ClientUpgradeRequirement;
@@ -46,8 +46,8 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
     };
 
     return (
-        <View style={styles.screen} accessibilityRole="alert" accessibilityLabel="Calibrate update required">
-            <View style={styles.card}>
+        <ScrollView style={styles.screen} contentContainerStyle={styles.content} accessibilityRole="alert" accessibilityLabel="Calibrate update required">
+            <View style={styles.body}>
                 <CalibrateLogo size={48} />
                 <AppText variant="screenTitle" accessibilityRole="header" aria-level={1}>Update Calibrate to continue</AppText>
                 <AppText>
@@ -74,30 +74,27 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
                     disabled={checking}
                 />
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     screen: {
         flex: 1,
-        justifyContent: 'center',
         backgroundColor: theme.colors.background,
-        padding: spacing.xl
     },
-    card: {
+    content: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
+    body: {
+        width: '100%',
+        maxWidth: 640, // Uses the same reading width as the account forms.
+        alignSelf: 'center',
         gap: spacing.lg,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: theme.colors.outlineVariant,
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.surface,
-        padding: spacing.xl
     },
     details: {
         gap: spacing.sm,
-        borderRadius: radius.sm,
-        backgroundColor: theme.colors.surfaceContainer,
-        padding: spacing.lg
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.colors.outlineVariant,
+        paddingTop: spacing.lg
     },
     error: {
         color: theme.colors.danger

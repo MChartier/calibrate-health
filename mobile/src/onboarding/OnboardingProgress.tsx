@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs
     },
     optionalText: {
-        fontWeight: '800'
+        fontWeight: '600'
     },
     track: {
         width: '100%',

@@ -9,7 +9,7 @@ import { supportsAndroidIntegrations } from '../../../src/platform/nativePlatfor
 /** Render Health Connect consent and data-access controls as a navigable settings page. */
 export default function HealthConnectSettingsScreen() {
     return (
-        <TabScreen testID="health-connect-settings-page">
+        <TabScreen contentWidth="overview" testID="health-connect-settings-page">
             {supportsAndroidIntegrations() ? <HealthConnectCard /> : (
                 <AppText>Health Connect is available in the Android app.</AppText>
             )}

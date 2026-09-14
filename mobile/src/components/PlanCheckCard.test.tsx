@@ -262,7 +262,8 @@ describe('Plan check card', () => {
         await waitFor(() => expect(
             screen.getByText('Your recent weight trend matches your goal')
         ).toBeTruthy());
-        expect(screen.getAllByText('0.46 kg/week loss')).toHaveLength(2);
+        expect(screen.getByLabelText('Recent weight trend: 0.46 kg/week loss')).toBeTruthy();
+        expect(screen.getByLabelText('Your goal: 0.46 kg/week loss')).toBeTruthy();
         expect(screen.getByText('Likely range: 0.42-0.50 kg/week loss')).toBeTruthy();
         expect(screen.getByText('This describes the period shown, not a forecast.')).toBeTruthy();
         expect(screen.getByText('No calorie-target change suggested right now.')).toBeTruthy();
@@ -346,12 +347,12 @@ describe('Plan check card', () => {
     });
 
     it.each([
-        { width: 320, fontScale: 1 },
-        { width: 1024, fontScale: 1.6 }
-    ])('stacks trend metrics at $width px and $fontScale font scale', async ({ width, fontScale }) => {
+        { width: 320, fontScale: 1, direction: 'row' },
+        { width: 1024, fontScale: 1.6, direction: 'column' }
+    ] as const)('keeps comparisons readable at $width px and $fontScale font scale', async ({ width, fontScale, direction }) => {
         Dimensions.set({ window: { width, height: 844, scale: 1, fontScale } });
         const screen = renderCard();
-        await waitFor(() => expect(screen.getByTestId('plan-check-metrics')).toHaveStyle({ flexDirection: 'column' }));
+        await waitFor(() => expect(screen.getByTestId('plan-check-metrics')).toHaveStyle({ flexDirection: direction }));
         expect(screen.getByTestId('plan-check-pace-comparison').props.accessibilityLabel)
             .toMatch(/not a forecast/);
     });

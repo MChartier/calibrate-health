@@ -1,4 +1,5 @@
-import { useColorScheme, type ColorSchemeName } from 'react-native';
+import { type ColorSchemeName } from 'react-native';
+import { useSystemColorScheme } from './hooks/useSystemColorScheme';
 import {
     calibrateDesignTokens,
     type CalibrateColorScheme,
@@ -140,8 +141,8 @@ export function resolveAppTheme(colorScheme: ColorSchemeName | null | undefined)
     return colorScheme === 'dark' ? themes.dark : themes.light;
 }
 
-/** Follow Android/iOS system appearance unless the caller supplies an override. */
+/** Follow system appearance unless the caller supplies an override. */
 export function useAppTheme(preference: AppThemePreference = 'system'): AppTheme {
-    const systemScheme = useColorScheme();
+    const systemScheme = useSystemColorScheme();
     return resolveAppTheme(preference === 'system' ? systemScheme : preference);
 }

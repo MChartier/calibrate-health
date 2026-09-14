@@ -133,7 +133,7 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     routeId: 'progress',
     path: ROUTE_REGISTRY.progress.path,
     fixtureState: 'populated',
-    open: [{
+    open: [{ kind: 'test-id', value: 'plan-check-summary' }, {
       kind: 'role',
       role: 'button',
       name: 'Review suggested 1,750 calorie daily target',
@@ -260,7 +260,10 @@ export const UX_ACCESSIBILITY_OVERLAY_CASES: readonly UxAccessibilityOverlayCase
     routeId: 'today',
     path: ROUTE_REGISTRY.today.path,
     fixtureState: 'populated',
-    open: [{ kind: 'role', role: 'button', name: 'Pause tracking', exact: true }],
+    open: [
+      { kind: 'role', role: 'button', name: 'Choose date', exact: true },
+      { kind: 'role', role: 'button', name: 'Pause tracking', exact: true },
+    ],
     ready: { kind: 'role', role: 'dialog', name: 'Details', exact: true },
   },
   {

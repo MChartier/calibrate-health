@@ -8,28 +8,41 @@ type SectionHeaderProps = ViewProps & {
     eyebrow?: string;
     description?: string;
     headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
+    action?: React.ReactNode;
 };
 
 /**
- * Compact header pattern shared by native screens and cards.
+ * Shared page and section headings with an independent action slot.
  */
 export const SectionHeader: React.FC<SectionHeaderProps> = ({
     title,
     eyebrow,
     description,
     headingLevel = 2,
+    action,
     style,
     ...props
 }) => (
     <View {...props} style={[styles.root, style]}>
-        {eyebrow && <AppText variant="label">{eyebrow}</AppText>}
-        <AppText accessibilityRole="header" aria-level={headingLevel} variant="screenTitle">{title}</AppText>
-        {description && <AppText variant="muted">{description}</AppText>}
+        <View style={styles.copy}>
+            {eyebrow && <AppText variant="label">{eyebrow}</AppText>}
+            <AppText accessibilityRole="header" aria-level={headingLevel} variant={headingLevel === 1 ? 'page' : 'section'}>{title}</AppText>
+            {description && <AppText variant="muted">{description}</AppText>}
+        </View>
+        {action}
     </View>
 );
 
 const styles = StyleSheet.create({
     root: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: spacing.sm
+    },
+    copy: {
+        flex: 1,
+        minWidth: 0,
         gap: spacing.xs
     }
 });

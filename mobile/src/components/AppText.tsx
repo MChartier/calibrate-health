@@ -14,31 +14,30 @@ export const AppText: React.FC<TextProps & { variant?: 'page' | 'section' | 'car
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-    base: {
-        color: theme.colors.onSurface,
-        fontVariant: ['tabular-nums']
-    },
-    page: theme.typography.styles.page,
-    section: theme.typography.styles.section,
-    card: theme.typography.styles.card,
-    body: theme.typography.styles.body,
-    label: {
-        color: theme.colors.onSurfaceVariant,
-        ...theme.typography.styles.label
-    },
-    caption: {
-        color: theme.colors.onSurfaceVariant,
-        ...theme.typography.styles.caption
-    },
-    metric: theme.typography.styles.metric,
-    // Compatibility variants now map to the production type scale.
-    title: theme.typography.styles.page,
-    screenTitle: theme.typography.styles.page,
-    subtitle: theme.typography.styles.section,
-    muted: {
-        color: theme.colors.onSurfaceVariant,
-        ...theme.typography.styles.label,
-        fontWeight: '400'
-    }
+        base: {
+            color: theme.colors.onSurface
+        },
+        page: theme.typography.styles.page,
+        section: theme.typography.styles.section,
+        card: theme.typography.styles.card,
+        body: theme.typography.styles.body,
+        label: {
+            color: theme.colors.onSurfaceVariant,
+            ...theme.typography.styles.label
+        },
+        caption: {
+            color: theme.colors.onSurfaceVariant,
+            ...theme.typography.styles.caption
+        },
+        metric: { ...theme.typography.styles.metric, fontVariant: ['tabular-nums'] },
+        // Compatibility variants now map to the production type scale.
+        title: theme.typography.styles.page,
+        screenTitle: theme.typography.styles.page,
+        subtitle: theme.typography.styles.section,
+        muted: {
+            color: theme.colors.onSurfaceVariant,
+            ...theme.typography.styles.label,
+            fontWeight: '400'
+        }
     });
 }

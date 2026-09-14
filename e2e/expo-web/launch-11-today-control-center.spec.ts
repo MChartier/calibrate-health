@@ -2,7 +2,8 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import { calibrateDesignTokens } from '../../shared/designTokens';
-import { expect, test, type AuthenticatedApiOptions } from './fixtures';
+import { expect, test, hideTransientPwaNotices, type AuthenticatedApiOptions } from './fixtures';
+import { applyTwoHundredPercentText } from './text-scaling';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-11');
 const TRANSIENT_PWA_TITLES = new Set([
@@ -17,6 +18,40 @@ const CONFIGURED_VIEWPORT_WIDTHS: Record<string, number> = {
   'android-phone-chrome': 390,
   'compact-phone-chrome': 320,
 };
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  test(`incomplete days preserve the daily summary geometry in ${colorScheme}`, async ({ page, ux }, testInfo) => {
+    await page.emulateMedia({ colorScheme });
+    const options: AuthenticatedApiOptions = { foodDayStatus: 'COMPLETE', foodEntries: foodEntry(2310) };
+    await ux.install('populated', options);
+    await page.goto('/today');
+    await hideTransientPwaNotices(page);
+    const summary = page.getByLabel(/^Daily balance\./);
+    const foodHeading = page.getByTestId('today-food-preview');
+    const heading = summary.getByRole('heading', { name: 'Daily balance', exact: true });
+    await expect(summary).toContainText('kcal over target');
+    const complete = { summary: (await summary.boundingBox())!, food: (await foodHeading.boundingBox())!, heading: (await heading.boundingBox())! };
+
+    options.foodDayStatus = 'INCOMPLETE';
+    options.foodEntries = [];
+    await page.getByRole('button', { name: 'Previous day', exact: true }).click();
+    await expect(summary).toHaveAccessibleName('Daily balance. Incomplete day. 0 calories logged.');
+    await expect(summary).toContainText('0 kcal logged');
+    await expect(summary.getByTestId('calorie-gauge-progress')).toHaveCount(0);
+    const incomplete = { summary: (await summary.boundingBox())!, food: (await foodHeading.boundingBox())!, heading: (await heading.boundingBox())! };
+    expect(Math.abs(incomplete.summary.height - complete.summary.height)).toBeLessThanOrEqual(1);
+    expect(Math.abs(incomplete.heading.x - complete.heading.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(incomplete.food.y - complete.food.y)).toBeLessThanOrEqual(1);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: testInfo.outputPath(`incomplete-day-${colorScheme}.png`) });
+
+    options.foodDayStatus = 'COMPLETE';
+    options.foodEntries = foodEntry(2310);
+    await page.getByRole('button', { name: 'Next day', exact: true }).click();
+    await expect(summary).toContainText('kcal over target');
+    expect(Math.abs((await foodHeading.boundingBox())!.y - incomplete.food.y)).toBeLessThanOrEqual(1);
+  });
+}
 
 function foodEntry(calories: number, name = 'Fixture breakfast') {
   return [{
@@ -109,7 +144,15 @@ function relativeLuminance([red, green, blue]: [number, number, number]) {
 async function expectContrast(text: Locator, surface: Locator, minimumRatio: number) {
   const [foreground, background] = await Promise.all([
     text.evaluate((element) => getComputedStyle(element).color),
-    surface.evaluate((element) => getComputedStyle(element).backgroundColor),
+    surface.evaluate((element) => {
+      let current: Element | null = element;
+      while (current) {
+        const color = getComputedStyle(current).backgroundColor;
+        if (color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)') return color;
+        current = current.parentElement;
+      }
+      throw new Error('No painted ancestor behind the calorie text.');
+    }),
   ]);
   const foregroundLuminance = relativeLuminance(parseCssRgb(foreground));
   const backgroundLuminance = relativeLuminance(parseCssRgb(background));
@@ -119,19 +162,7 @@ async function expectContrast(text: Locator, surface: Locator, minimumRatio: num
 }
 
 async function enlargeLeafText(page: Page) {
-  await page.evaluate(() => {
-    for (const element of document.querySelectorAll<HTMLElement>('body *')) {
-      const hasDirectText = Array.from(element.childNodes).some((node) => (
-        node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim())
-      ));
-      if (!hasDirectText) continue;
-      const computed = getComputedStyle(element);
-      const fontSize = Number.parseFloat(computed.fontSize);
-      const lineHeight = Number.parseFloat(computed.lineHeight);
-      if (Number.isFinite(fontSize)) element.style.fontSize = String(fontSize * 2) + 'px';
-      if (Number.isFinite(lineHeight)) element.style.lineHeight = String(lineHeight * 2) + 'px';
-    }
-  });
+  await applyTwoHundredPercentText(page);
 }
 
 async function captureEvidence(page: Page, testInfo: TestInfo) {
@@ -157,6 +188,7 @@ async function captureEvidence(page: Page, testInfo: TestInfo) {
 }
 
 async function expectUnderTargetDashboard(page: Page) {
+  await hideTransientPwaNotices(page);
   const balanceCard = page.getByLabel(/^Daily balance\./);
   await expect(balanceCard).toHaveAccessibleName(
     'Daily balance. 1,740 kcal remaining. 360 eaten out of 2,100 calorie target.',
@@ -168,7 +200,7 @@ async function expectUnderTargetDashboard(page: Page) {
     'stroke',
     calibrateDesignTokens.schemes.light.primary,
   );
-  await expect(page.getByRole('heading', { name: 'Not fully logged', exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Complete day', exact: true })).toBeEnabled();
 }
 
 test('Today is legible, keyboard-operable, and unclipped at every configured viewport', async (
@@ -186,15 +218,15 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
   await expectUnderTargetDashboard(page);
   await expectNoHorizontalOverflow(page);
 
-  const foodSurface = page.getByTestId('food-log-summary-card');
-  const foodPrimary = page.getByTestId('food-log-card-press-layer');
-  const foodSecondary = page.getByTestId('food-log-card-secondary-region');
+  const foodSurface = page.getByTestId('today-food-preview');
+  const foodPrimary = foodSurface;
+  const foodSecondary = page.getByTestId('today-action-dock');
   const addFood = page.getByRole('button', { name: 'Add food', exact: true });
   const weightSurface = page.getByTestId('today-weight-card');
   const weightPrimary = page.getByTestId('today-weight-card-press-layer');
 
   await expectInside(foodSurface, foodPrimary);
-  await expectInside(foodSurface, foodSecondary);
+  await expectInside(page.getByTestId('today-fixed-page'), foodSecondary);
   await expectInside(foodSecondary, addFood);
   await expectNoOverlap(foodPrimary, foodSecondary);
   await expectFullWidthPrimary(foodSurface, foodPrimary);
@@ -209,7 +241,7 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     await page.keyboard.press('Tab');
     await foodPrimary.focus();
     await expect(foodPrimary).toBeFocused();
-    await expect.poll(() => foodSurface.evaluate((element) => getComputedStyle(element).outlineWidth))
+    await expect.poll(() => foodPrimary.evaluate((element) => getComputedStyle(element).outlineWidth))
       .toBe('3px');
     await foodPrimary.press('Enter');
     await expect(page).toHaveURL((url) => url.pathname === '/food-log');
@@ -246,7 +278,9 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     await currentWeightPrimary.focus();
     await currentWeightPrimary.press('Enter');
     await expect(page.getByRole('dialog', { name: 'Weight entry', exact: true })).toBeVisible();
+    await expect(page).toHaveURL((url) => url.pathname === '/today');
     await page.keyboard.press('Escape');
+    await expect(currentWeightPrimary).toBeFocused();
 
     await page.setViewportSize({ width: 1_024, height: 1_000 });
     await expectUnderTargetDashboard(page);
@@ -271,12 +305,12 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     if (!gaugeBox || !headingBox || !valueBox) {
       throw new Error('Daily balance hero geometry was not measurable at 320px.');
     }
-    const gaugeRight = gaugeBox.x + gaugeBox.width;
+    const copyLeft = Math.min(headingBox.x, valueBox.x);
     const gaugeBottom = gaugeBox.y + gaugeBox.height;
     const copyTop = Math.min(headingBox.y, valueBox.y);
     const copyBottom = Math.max(headingBox.y + headingBox.height, valueBox.y + valueBox.height);
     expect(Math.min(gaugeBottom, copyBottom) - Math.max(gaugeBox.y, copyTop)).toBeGreaterThan(0);
-    expect(Math.min(headingBox.x, valueBox.x)).toBeGreaterThanOrEqual(gaugeRight);
+    expect(gaugeBox.x + gaugeBox.width).toBeLessThanOrEqual(copyLeft);
 
     const valueLineTops = await balanceValue.evaluate((element) => {
       const range = document.createRange();
@@ -293,10 +327,10 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     await expectNoHorizontalOverflow(page);
     await expect(page.getByTestId('calorie-balance-value')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeVisible();
-    await expectWithinViewportWidth(page, page.getByTestId('food-log-summary-card'));
+    await expectWithinViewportWidth(page, page.getByTestId('today-food-preview'));
     await expectWithinViewportWidth(page, page.getByTestId('today-weight-card'));
     await expectNoOverlap(
-      page.getByTestId('food-log-summary-card'),
+      page.getByTestId('today-food-preview'),
       page.getByTestId('today-weight-card'),
     );
   }
@@ -323,7 +357,7 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
     'stroke',
     calibrateDesignTokens.schemes.light.primary,
   );
-  await expect(page.getByRole('heading', { name: 'Not fully logged', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeEnabled();
 
   options.foodEntries = foodEntry(2_100, 'At-target breakfast');
   options.foodDayStatus = 'COMPLETE';
@@ -337,7 +371,8 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
     'stroke',
     calibrateDesignTokens.schemes.light.primary,
   );
-  await expect(page.getByRole('heading', { name: 'Fully logged', exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Day completed', exact: true })).toBeVisible();
 
   options.foodEntries = foodEntry(2_310, 'Over-target breakfast');
   options.foodDayStatus = 'OPEN';
@@ -353,7 +388,7 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
     calibrateDesignTokens.schemes.light.danger,
   );
   await expectContrast(page.getByTestId('calorie-balance-value'), balanceCard, 3);
-  await expect(page.getByRole('heading', { name: 'Not fully logged', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeEnabled();
 
   options.foodEntries = [];
   options.foodDayStatus = 'OPEN';
@@ -362,8 +397,8 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
     'Daily balance. 2,100 kcal remaining. 0 eaten out of 2,100 calorie target.',
   );
-  await expect(page.getByText('Nothing logged yet', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Not fully logged', exact: true })).toBeVisible();
+  await expect(page.getByText("Start today's food log", { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeEnabled();
 
   options.foodDayStatus = 'PAUSED';
   await page.reload();
@@ -371,8 +406,8 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
   await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
     'Daily balance. Tracking paused. 0 calories logged.',
   );
-  await expect(page.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
-  await expect(page.getByText('Fully logged', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toHaveCount(0);
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
@@ -384,9 +419,11 @@ test('an initial Today failure never resembles an empty or completed day', async
   await page.goto('/today');
 
   await expect(page.getByText("Can't load today's log", { exact: true })).toBeVisible();
-  await expect(page.getByText('Nothing logged yet', { exact: true })).toHaveCount(0);
-  await expect(page.getByText('Fully logged', { exact: true })).toHaveCount(0);
-  await expect(page.getByLabel(/^Daily balance\./)).toHaveCount(0);
+  await expect(page.getByText("Start today's food log", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toHaveCount(0);
+  await expect(page.getByText('Day status unavailable', { exact: true })).toBeVisible();
+  await expect(page.getByLabel(/^Daily balance\./)).toContainText('Day unavailable');
+  await expect(page.getByText('Food log unavailable', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -398,16 +435,16 @@ test('a failed refresh keeps cached Today data but retracts the completed status
 
   await ux.install('stale', { foodDayStatus: 'COMPLETE' });
   await page.goto('/today');
-  await expect(page.getByRole('heading', { name: 'Fully logged', exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Previous day', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Next day', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Next day', exact: true }).click();
 
   await expect(page.getByText("Couldn't refresh today's log", { exact: true })).toBeVisible();
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Not fully logged', exact: true })).toBeVisible();
-  await expect(page.getByText('Fully logged', { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByText('Day status unavailable', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 
@@ -419,7 +456,7 @@ test('offline cached Today data stays visible and explicitly identifies saved in
 
   const controller = await ux.install('offline', { foodDayStatus: 'COMPLETE' });
   await page.goto('/today');
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
 
   await controller.activateOffline();
 
@@ -430,6 +467,6 @@ test('offline cached Today data stays visible and explicitly identifies saved in
   );
   await expect(savedInformationNotice).toHaveCount(1);
   await expect(savedInformationNotice).toBeVisible();
-  await expect(page.getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

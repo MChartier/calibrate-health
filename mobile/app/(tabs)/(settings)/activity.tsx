@@ -19,7 +19,8 @@ import {
     useAsyncResourceState,
     useOnlineStatus
 } from '../../../src/components/AsyncStateBoundary';
-import { AppCard } from '../../../src/components/AppCard';
+import { AppSection } from '../../../src/components/AppSection';
+import { AppActionRow } from '../../../src/components/AppActionRow';
 import { AppText } from '../../../src/components/AppText';
 import { DateNavigationHeader } from '../../../src/components/DateNavigationHeader';
 import { HealthConnectConnectionAction } from '../../../src/components/HealthConnectConnectionAction';
@@ -29,7 +30,7 @@ import type { HealthConnectPresentation } from '../../../src/healthConnect/prese
 import { useHealthConnectPresentation } from '../../../src/healthConnect/useHealthConnectPresentation';
 import { useAuth } from '../../../src/auth/AuthContext';
 import { useLogDateNavigation } from '../../../src/hooks/useLogDateNavigation';
-import { radius, spacing, useAppTheme, type AppTheme } from '../../../src/theme';
+import { spacing, useAppTheme, type AppTheme } from '../../../src/theme';
 import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../../../src/utils/dates';
 import { gramsToDisplayWeight } from '../../../src/utils/bodyMeasurements';
 import { formatCalories, formatNumber, formatWeightUnit } from '../../../src/utils/format';
@@ -85,7 +86,7 @@ function ActivityConnectionState({
     }
 
     return (
-        <AppCard testID="activity-connection-state">
+        <AppSection testID="activity-connection-state">
             {standalone && (
                 <SectionHeader
                     title="No activity imported yet"
@@ -108,7 +109,7 @@ function ActivityConnectionState({
                     Imported activity never automatically changes your calorie target.
                 </AppText>
             )}
-        </AppCard>
+        </AppSection>
     );
 }
 
@@ -118,7 +119,7 @@ function ExerciseSessions({ records }: { records: ActivityRecordEntry[] }) {
     if (records.length === 0) return null;
 
     return (
-        <AppCard>
+        <AppSection style={styles.dividedSection}>
             <SectionHeader title="Exercise sessions" />
             {records.map((record) => (
                 <View key={record.id} style={styles.exerciseRow}>
@@ -135,7 +136,7 @@ function ExerciseSessions({ records }: { records: ActivityRecordEntry[] }) {
                     </View>
                 </View>
             ))}
-        </AppCard>
+        </AppSection>
     );
 }
 
@@ -156,7 +157,7 @@ function ActivityDetailsDisclosure({
     const sources = getActivitySourceLabels(records);
 
     return (
-        <AppCard testID="activity-details">
+        <AppSection testID="activity-details" style={styles.dividedSection}>
             <Pressable
                 testID="activity-details-toggle"
                 accessibilityRole="button"
@@ -217,7 +218,7 @@ function ActivityDetailsDisclosure({
                     </View>
                 </View>
             )}
-        </AppCard>
+        </AppSection>
     );
 }
 
@@ -259,22 +260,22 @@ export default function ActivityScreen() {
         && healthConnectPresentation.state !== 'empty';
 
     const recentDaysLoading = (
-        <AppCard testID="activity-recent-days">
+        <AppSection testID="activity-recent-days" style={styles.dividedSection}>
             <SectionHeader title="Recent Days" />
             <AppText variant="muted">Loading recent activity...</AppText>
-        </AppCard>
+        </AppSection>
     );
     const recentDaysEmpty = (
-        <AppCard testID="activity-recent-days">
+        <AppSection testID="activity-recent-days" style={styles.dividedSection}>
             <SectionHeader title="Recent Days" />
             <AppText variant="muted">No imported activity was found in the latest 14 days.</AppText>
-        </AppCard>
+        </AppSection>
     );
 
     return (
         <View style={styles.screen}>
-            <DateNavigationHeader navigation={navigation} />
-            <TabScreen>
+            <DateNavigationHeader navigation={navigation} contentWidth="overview" />
+            <TabScreen contentWidth="overview">
                 {showConnectionNotice && (
                     <ActivityConnectionState
                         presentation={healthConnectPresentation}
@@ -330,52 +331,51 @@ export default function ActivityScreen() {
                             onRetry={isOnline ? () => historyQuery.refetch() : undefined}
                             retrying={historyQuery.isFetching}
                         >
-                            <AppCard testID="activity-recent-days">
+                            <AppSection testID="activity-recent-days" style={styles.dividedSection}>
                                 <SectionHeader
                                     title="Recent Days"
                                     description="Select a day to inspect its imported activity."
                                 />
                                 {historyDays.map((day) => (
-                                    <Pressable
+                                    <AppActionRow
                                         key={day.local_date}
                                         accessibilityRole="button"
                                         accessibilityLabel={
                                             'View activity for ' + formatDateOnlyForDisplay(day.local_date)
                                         }
                                         onPress={() => navigation.setDate(day.local_date)}
-                                        style={({ pressed }) => [
-                                            styles.historyRow,
-                                            day.local_date === navigation.selectedDate
-                                                && styles.historyRowSelected,
-                                            pressed && styles.pressed
-                                        ]}
+                                        selected={day.local_date === navigation.selectedDate}
+                                        style={styles.historyRecord}
+                                        contentStyle={styles.historyRow}
                                     >
-                                        <View style={styles.historyDate}>
-                                            <AppText style={styles.exerciseTitle}>
-                                                {formatDateOnlyForDisplay(day.local_date)}
-                                            </AppText>
-                                            <AppText variant="caption">
-                                                {day.summary
-                                                    ? formatNumber(day.summary.exercise_minutes, 0) + ' exercise min'
-                                                    : 'No imported summary'}
-                                            </AppText>
-                                        </View>
-                                        <View style={styles.historyMetrics}>
-                                            <AppText>
-                                                {formatNumber(day.summary?.steps, 0) + ' steps'}
-                                            </AppText>
-                                            <AppText variant="caption">
-                                                {formatCalories(day.summary?.active_calories_kcal) + ' active'}
-                                            </AppText>
+                                        <View style={styles.historyContent}>
+                                            <View style={styles.historyDate}>
+                                                <AppText style={styles.exerciseTitle}>
+                                                    {formatDateOnlyForDisplay(day.local_date)}
+                                                </AppText>
+                                                <AppText variant="caption">
+                                                    {day.summary
+                                                        ? formatNumber(day.summary.exercise_minutes, 0) + ' exercise min'
+                                                        : 'No imported summary'}
+                                                </AppText>
+                                            </View>
+                                            <View style={styles.historyMetrics}>
+                                                <AppText>
+                                                    {formatNumber(day.summary?.steps, 0) + ' steps'}
+                                                </AppText>
+                                                <AppText variant="caption">
+                                                    {formatCalories(day.summary?.active_calories_kcal) + ' active'}
+                                                </AppText>
+                                            </View>
                                         </View>
                                         <Ionicons
                                             name="chevron-forward"
                                             size={18}
                                             color={theme.colors.onSurfaceVariant}
                                         />
-                                    </Pressable>
+                                    </AppActionRow>
                                 ))}
-                            </AppCard>
+                            </AppSection>
                         </AsyncStateBoundary>
                     </>
                 ) : null}
@@ -387,6 +387,11 @@ export default function ActivityScreen() {
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     screen: {
         flex: 1
+    },
+    dividedSection: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.colors.outlineVariant,
+        paddingTop: spacing.lg
     },
     connectionRow: {
         flexDirection: 'row',
@@ -405,19 +410,17 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth
     },
     exerciseIcon: {
-        width: 40,
-        height: 40,
+        width: spacing.lg,
+        height: spacing.lg,
         alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.primaryContainer
+        justifyContent: 'center'
     },
     exerciseText: {
         flex: 1,
         gap: spacing.xs
     },
     exerciseTitle: {
-        fontWeight: '800'
+        fontWeight: '600'
     },
     detailsToggle: {
         minHeight: theme.interaction.minimumTouchTarget,
@@ -427,7 +430,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.md
     },
     detailsTitle: {
-        fontWeight: '800'
+        ...theme.typography.styles.section
     },
     detailsContent: {
         gap: spacing.lg
@@ -442,32 +445,38 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth
     },
     weightValue: {
-        fontSize: 18,
-        fontWeight: '900'
+        ...theme.typography.styles.measurement,
+        fontVariant: ['tabular-nums']
     },
     targetGuardrail: {
-        fontWeight: '800'
+        fontWeight: '600'
+    },
+    historyRecord: {
+        borderBottomColor: theme.colors.outlineVariant,
+        borderBottomWidth: StyleSheet.hairlineWidth
     },
     historyRow: {
-        minHeight: 60,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
-        padding: spacing.md,
-        borderColor: theme.colors.outlineVariant,
-        borderWidth: theme.stroke.control,
-        borderRadius: radius.md
+        gap: spacing.sm,
+        paddingHorizontal: spacing.sm
     },
-    historyRowSelected: {
-        borderColor: theme.colors.primary,
-        backgroundColor: theme.colors.primaryContainer
+    historyContent: {
+        flex: 1,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: spacing.sm
     },
     historyDate: {
-        flex: 1,
+        flexGrow: 1,
+        flexBasis: 120,
         gap: spacing.xs
     },
     historyMetrics: {
-        alignItems: 'flex-end',
+        flexGrow: 1,
+        flexBasis: 120,
+        alignItems: 'flex-start',
         gap: spacing.xs
     },
     pressed: {

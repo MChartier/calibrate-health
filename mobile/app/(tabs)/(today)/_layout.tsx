@@ -8,12 +8,14 @@ export default function TodayStackLayout() {
     const pathname = usePathname();
     const dateNavigation = useSharedLogDateNavigation();
     const activeRoute = getRouteByPath(pathname);
-    const showsDateNavigation = activeRoute?.routeId === 'today'
-        || activeRoute?.routeId === 'food-log';
+    const showsDateNavigation = activeRoute?.routeId === 'food-log';
 
     return (
         <View style={styles.root}>
-            {showsDateNavigation && <DateNavigationHeader navigation={dateNavigation} />}
+            {showsDateNavigation && <DateNavigationHeader
+                navigation={dateNavigation}
+                contentWidth="wide"
+            />}
             <View style={styles.stack}>
                 <Stack screenOptions={{ headerShown: false }} />
             </View>

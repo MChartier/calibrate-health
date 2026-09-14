@@ -5,17 +5,18 @@ import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 import { resolveSafeHorizontalPadding } from '../layout/adaptiveLayout';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 import {
-    SCREEN_CONTENT_MAX_WIDTH,
+    SCREEN_CONTENT_WIDTHS,
     SCREEN_WIDE_LAYOUT_BREAKPOINT
 } from './Screen';
 import { DateNavigation } from './DateNavigation';
 
 type DateNavigationHeaderProps = {
     navigation: LogDateNavigation;
+    contentWidth?: 'overview' | 'wide';
 };
 
 /** Anchors compact day navigation between the app navbar and scrolling route content. */
-export function DateNavigationHeader({ navigation }: DateNavigationHeaderProps) {
+export function DateNavigationHeader({ navigation, contentWidth = 'wide' }: DateNavigationHeaderProps) {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { width } = useWindowDimensions();
@@ -32,7 +33,12 @@ export function DateNavigationHeader({ navigation }: DateNavigationHeaderProps) 
         <View testID="date-navigation-header" style={styles.shell}>
             <View
                 testID="date-navigation-header-content"
-                style={[styles.content, usesWideContentPadding && styles.contentWide, horizontalPadding]}
+                style={[
+                    styles.content,
+                    usesWideContentPadding && styles.contentWide,
+                    usesWideContentPadding && { maxWidth: SCREEN_CONTENT_WIDTHS[contentWidth] },
+                    horizontalPadding
+                ]}
             >
                 <DateNavigation navigation={navigation} compact />
             </View>
@@ -43,16 +49,13 @@ export function DateNavigationHeader({ navigation }: DateNavigationHeaderProps) 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         shell: {
-            backgroundColor: theme.colors.surface,
-            borderBottomColor: theme.colors.border,
-            borderBottomWidth: StyleSheet.hairlineWidth
+            backgroundColor: theme.colors.background
         },
         content: {
             width: '100%',
-            paddingVertical: spacing.md
+            paddingVertical: spacing.sm
         },
         contentWide: {
-            maxWidth: SCREEN_CONTENT_MAX_WIDTH,
             alignSelf: 'center'
         }
     });

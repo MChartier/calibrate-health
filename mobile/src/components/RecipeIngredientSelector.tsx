@@ -6,14 +6,14 @@ import { useAuth } from '../auth/AuthContext';
 import { type AppTheme, useAppTheme } from '../theme';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { AppButton } from './AppButton';
-import { AppChip } from './AppChip';
+import { AppActionRow } from './AppActionRow';
 import { AppText } from './AppText';
 import { TextField } from './TextField';
 
 // Keeps ingredient search responsive without issuing a request for every keystroke.
 const RECIPE_INGREDIENT_SEARCH_DEBOUNCE_MS = 250;
-// Keeps each selector page compact on phones while allowing useful scanning on desktop.
-export const RECIPE_INGREDIENT_PAGE_SIZE = 20;
+// A half-dozen choices keeps selected ingredients close to search on a phone.
+export const RECIPE_INGREDIENT_PAGE_SIZE = 6;
 
 type RecipeIngredientSelectorProps = {
     enabled: boolean;
@@ -104,14 +104,18 @@ export const RecipeIngredientSelector: React.FC<RecipeIngredientSelectorProps> =
             />
             {status}
             {!isSearching && savedFoods.length > 0 && (
-                <View style={styles.chips}>
+                <View>
                     {savedFoods.map((item) => (
-                        <AppChip
+                        <AppActionRow
                             key={item.id}
-                            label={item.name}
                             accessibilityLabel={`Add ${item.name} to recipe`}
                             onPress={() => onAddIngredient(item)}
-                        />
+                            accessibilityRole="button"
+                            contentStyle={styles.ingredientRow}
+                        >
+                            <AppText style={styles.ingredientName}>{item.name}</AppText>
+                            <AppText variant="label" style={styles.addLabel}>Add</AppText>
+                        </AppActionRow>
                     ))}
                 </View>
             )}
@@ -133,11 +137,16 @@ function createStyles(theme: AppTheme) {
         root: {
             gap: theme.spacing.md
         },
-        chips: {
+        ingredientRow: {
+            borderRadius: 0,
             flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: theme.spacing.sm
+            alignItems: 'center',
+            gap: theme.spacing.sm,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: theme.colors.outlineVariant
         },
+        ingredientName: { flex: 1, minWidth: 0 },
+        addLabel: { color: theme.colors.primary },
         status: {
             gap: theme.spacing.sm
         },

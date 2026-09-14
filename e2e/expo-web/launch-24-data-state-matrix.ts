@@ -1,4 +1,5 @@
 import type { ApiResourceFixture } from './fixtures';
+import { PLAN_CHECK_RECOMMENDATION_STATUS } from './plan-check.fixture';
 import {
   ROUTE_REGISTRY,
   type RouteId,
@@ -35,6 +36,26 @@ export type Launch24DataRouteCase = {
 };
 
 const LOCAL_DATE = '2026-07-21';
+
+const EMPTY_PLAN_CHECK_STATUS = {
+  ...PLAN_CHECK_RECOMMENDATION_STATUS,
+  recommendation: null,
+  evaluation: {
+    ...PLAN_CHECK_RECOMMENDATION_STATUS.evaluation,
+    status: 'not_ready',
+    recommendation: null,
+    selectedWindowDays: null,
+    assessment: {
+      ...PLAN_CHECK_RECOMMENDATION_STATUS.evaluation.assessment,
+      state: 'waiting',
+      paceStatus: null,
+      window: null,
+      recentWeightTrendKgPerWeek: null,
+      blocker: 'weight_history',
+      targetDecision: 'waiting',
+    },
+  },
+};
 
 const GOAL = {
   id: 7,
@@ -232,11 +253,11 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
       matches: (url) => (url.searchParams.get('date') ?? LOCAL_DATE) === LOCAL_DATE,
     },
     loading: { kind: 'testId', value: 'log-content-loading' },
-    content: { kind: 'text', value: 'Fixture breakfast' },
-    empty: { kind: 'text', value: 'Nothing logged yet' },
+    content: { kind: 'testId', value: `food-preview-entry-${FOOD_ENTRY.id}` },
+    empty: { kind: 'text', value: "Start today's food log" },
     errorText: "Can't load today's log",
     staleText: "Couldn't refresh today's log",
-    terminalEmptyText: 'Nothing logged yet',
+    terminalEmptyText: "Start today's food log",
   }),
   routeCase('progress', {
     resource: {
@@ -250,6 +271,21 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
     errorText: "Can't load goal progress",
     staleText: "Couldn't refresh goal progress",
     terminalEmptyText: 'Set a goal to add progress and projection details.',
+  }),
+  routeCase('plan-check', {
+    resource: {
+      pathname: '/api/v1/calibration/status',
+      content: PLAN_CHECK_RECOMMENDATION_STATUS,
+      empty: EMPTY_PLAN_CHECK_STATUS,
+    },
+    loading: { kind: 'label', value: 'Loading plan check' },
+    content: { kind: 'text', value: 'Your recent weight trend is slower than your goal' },
+    empty: { kind: 'text', value: 'Not enough history for a reliable plan check' },
+    errorText: "Can't load plan check",
+    errorActionText: 'Retry',
+    staleText: "Couldn't refresh plan check",
+    offlineText: 'Offline - showing saved information',
+    terminalEmptyText: 'Not enough history for a reliable plan check',
   }),
   routeCase('settings', {
     resource: {
@@ -448,4 +484,6 @@ export const LAUNCH_24_STATIC_ROUTE_IDS = [
   'watch',
   'about',
   'advanced',
+  // This form scans and saves only after user actions; it has no initial data resource.
+  'nutrition-label',
 ] as const satisfies readonly RouteId[];

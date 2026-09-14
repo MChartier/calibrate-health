@@ -258,15 +258,24 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
     contentType: 'application/json',
     body: JSON.stringify({ sessions: [] }),
   }));
+  const restoredSession = page.waitForResponse((response) => new URL(response.url()).pathname === '/auth/me');
   await page.goto('/settings');
+  const { user } = await (await restoredSession).json();
+  await page.route('**/api/v1/user/preferences', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ user: { ...user, ...route.request().postDataJSON() } }),
+  }));
   await expectDirectEntryKeepsSkipLinkFirst(page, 'Settings');
   await activateWithKeyboard(page, page.getByTestId('settings-open-profile'));
   await expect(page).toHaveURL((url) => url.pathname === '/profile');
   const preferences = page.getByTestId('settings-open-preferences');
   await activateWithKeyboard(page, preferences);
-  const preferencesDialog = page.getByRole('dialog', { name: 'Preferences', exact: true });
-  await expect(preferencesDialog).toBeVisible();
-  const weightUnit = preferencesDialog.getByRole('radiogroup', { name: 'Weight unit', exact: true });
+  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+  await expectRouteFocus(page, 'Preferences');
+  const preferencesPage = page.getByTestId('settings-preferences-page');
+  await expect(preferencesPage).toBeVisible();
+  const weightUnit = preferencesPage.getByRole('radiogroup', { name: 'Weight unit', exact: true });
   await expect(weightUnit).toHaveAttribute('aria-orientation', 'horizontal');
   const kilograms = weightUnit.getByRole('radio', { name: 'kg', exact: true });
   const pounds = weightUnit.getByRole('radio', { name: 'lb', exact: true });
@@ -277,15 +286,30 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
   await page.keyboard.press('Home');
   await expect(kilograms).toBeFocused();
   await expect(kilograms).toBeChecked();
+  await page.keyboard.press('ArrowRight');
+  await expect(pounds).toBeFocused();
+  await expect(pounds).toBeChecked();
   expect(await simulateTwoHundredPercentText(page)).toBeGreaterThan(10);
-  const dialogBox = await preferencesDialog.boundingBox();
-  expect(dialogBox).not.toBeNull();
-  expect(dialogBox!.x).toBeGreaterThanOrEqual(0);
-  expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(320);
-  expect(dialogBox!.y).toBeGreaterThanOrEqual(0);
-  expect(dialogBox!.y + dialogBox!.height).toBeLessThanOrEqual(568);
-  await expect(page.locator('#root')).toHaveAttribute('aria-hidden', 'true');
+  const pageBox = await preferencesPage.boundingBox();
+  expect(pageBox).not.toBeNull();
+  expect(pageBox!.x).toBeGreaterThanOrEqual(0);
+  expect(pageBox!.x + pageBox!.width).toBeLessThanOrEqual(320);
+  await expect(page.locator('#root')).not.toHaveAttribute('aria-hidden', 'true');
   await expectOneDimensionalReflow(page);
   await expectNoDuplicateIds(page);
   await captureEvidence(page, testInfo, 'settings-preferences-keyboard-200-percent-phone-320x568.png');
+
+  const preferenceUpdate = page.waitForRequest((request) => (
+    new URL(request.url()).pathname === '/api/v1/user/preferences' && request.method() === 'PATCH'
+  ));
+  await activateWithKeyboard(page, preferencesPage.getByRole('button', { name: 'Save preferences', exact: true }));
+  expect((await preferenceUpdate).postDataJSON()).toMatchObject({ weight_unit: 'LB' });
+  await expect(page).toHaveURL((url) => url.pathname === '/profile');
+  await expectRouteFocus(page, 'Profile & preferences');
+  await activateWithKeyboard(page, preferences);
+  await expectRouteFocus(page, 'Preferences');
+  await expect(pounds).toBeChecked();
+  await activateWithKeyboard(page, preferencesPage.getByRole('button', { name: 'Cancel', exact: true }));
+  await expect(page).toHaveURL((url) => url.pathname === '/profile');
+  await expectRouteFocus(page, 'Profile & preferences');
 });

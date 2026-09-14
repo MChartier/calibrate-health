@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ApiError, type NutritionLabelDraft } from '@calibrate/api-client';
 import { useAuth } from '../auth/AuthContext';
 import { AppButton } from '../components/AppButton';
-import { AppCard } from '../components/AppCard';
+import { AppSection } from '../components/AppSection';
+import { AppNotice } from '../components/AppNotice';
 import { AppText } from '../components/AppText';
 import { useOnlineStatus } from '../components/AsyncStateBoundary';
 import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
@@ -15,7 +16,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { TextField } from '../components/TextField';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { SAVED_FOODS_LIBRARY_QUERY_KEY } from '../savedFoods/queryKeys';
-import { spacing } from '../theme';
+import { spacing, useAppTheme } from '../theme';
 import { labelFoodPayload, validateLabelFood, type LabelFoodFields } from './draft';
 import { chooseLabelImage, LabelImageError, releaseLabelImage, type LabelImage, type LabelImageSource } from './imagePicker';
 
@@ -35,6 +36,7 @@ function scanErrorMessage(error: unknown): string {
 }
 
 export default function NutritionLabelScreen() {
+    const theme = useAppTheme();
     const { api, user, isLoading } = useAuth();
     const queryClient = useQueryClient();
     const isOnline = useOnlineStatus();
@@ -155,19 +157,19 @@ export default function NutritionLabelScreen() {
 
     if (savedTitle) {
         return (
-            <Screen safeTop>
-                <AppCard>
+            <Screen contentWidth="form" safeTop>
+                <AppSection>
                     <SectionHeader headingLevel={1} title="Food saved" description={`"${savedTitle}" is ready to use from Saved foods or food search.`} />
                     <AppButton title="View saved foods" onPress={() => router.replace('/my-foods')} />
                     {params.from === 'barcode' && <AppButton title="Back to barcode" variant="secondary" onPress={() => void leave()} />}
-                </AppCard>
+                </AppSection>
             </Screen>
         );
     }
 
     return (
-        <Screen safeTop>
-            <AppCard>
+        <Screen contentWidth="form" safeTop>
+            <AppSection>
                 <SectionHeader
                     headingLevel={1}
                     title="Scan nutrition label"
@@ -175,7 +177,11 @@ export default function NutritionLabelScreen() {
                 />
                 <AppText variant="muted">Use a clear, upright photo of one English label. Keep the whole panel in focus and avoid glare.</AppText>
                 <AppText variant="caption">Your Calibrate server reads the photo without storing it.</AppText>
-                {!isOnline && <AppText accessibilityRole="alert">Connect to the internet to scan or save. You can still edit the details.</AppText>}
+                {!isOnline && (
+                    <AppNotice tone="warning" accessibilityRole="alert">
+                        <AppText>Connect to the internet to scan or save. You can still edit the details.</AppText>
+                    </AppNotice>
+                )}
                 <View style={styles.actions}>
                     <AppButton title="Take photo" variant="secondary" disabled={busy || !isOnline} onPress={() => void scan('camera')} />
                     <AppButton title="Choose photo" variant="secondary" disabled={busy || !isOnline} onPress={() => void scan('library')} />
@@ -188,24 +194,33 @@ export default function NutritionLabelScreen() {
                         {photo && <AppButton title="Cancel scan" variant="ghost" onPress={cancelScan} />}
                     </View>
                 )}
-                {error && <AppText accessibilityRole="alert" accessibilityLiveRegion="polite">{error}</AppText>}
-            </AppCard>
-            <AppCard>
+                {error && (
+                    <AppNotice tone="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
+                        <AppText>{error}</AppText>
+                    </AppNotice>
+                )}
+            </AppSection>
+            <AppSection style={[styles.reviewSection, { borderTopColor: theme.colors.outlineVariant }]}>
                 <SectionHeader title="Review saved food" description="Check the calories and serving size against the label. You can correct or enter any value below." />
                 {draft?.serving_text && <AppText>Serving size on label: {draft.serving_text}</AppText>}
-                {draft?.warnings.map((warning) => <AppText key={warning} accessibilityRole="alert">{warning}</AppText>)}
+                {Boolean(draft?.warnings.length) && (
+                    <AppNotice tone="warning" accessibilityRole="alert">
+                        {draft?.warnings.map((warning) => <AppText key={warning}>{warning}</AppText>)}
+                    </AppNotice>
+                )}
                 <TextField label="Food title" required maxLength={120} value={fields.title} editable={!busy} onChangeText={(value) => updateField('title', value)} placeholder="e.g. Crunchy peanut butter" />
                 <TextField label="Serving quantity" required value={fields.quantity} editable={!busy} keyboardType="decimal-pad" inputMode="decimal" onChangeText={(value) => updateField('quantity', value)} helperText="Use a decimal for fractions, e.g. 0.5 for 1/2." />
                 <TextField label="Serving unit" required maxLength={48} value={fields.unit} editable={!busy} onChangeText={(value) => updateField('unit', value)} placeholder="e.g. tbsp (32 g), cup, or g" />
                 <TextField label="Calories per serving" required value={fields.calories} editable={!busy} keyboardType="decimal-pad" inputMode="decimal" onChangeText={(value) => updateField('calories', value)} helperText="Calories for the serving quantity and unit above." />
                 <AppButton title="Save food" busy={saving} busyLabel="Saving food..." disabled={busy || !isOnline || Boolean(validationError)} onPress={() => void save()} />
                 <AppButton title="Cancel" variant="ghost" disabled={busy} onPress={() => void leave()} />
-            </AppCard>
+            </AppSection>
         </Screen>
     );
 }
 
 const styles = StyleSheet.create({
+    reviewSection: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing.lg },
     photo: { width: '100%', height: LABEL_PREVIEW_HEIGHT },
     actions: { gap: spacing.sm }
 });

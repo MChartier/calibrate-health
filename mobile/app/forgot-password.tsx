@@ -46,7 +46,7 @@ export default function ForgotPasswordRoute() {
             footer={(
                 <Link href="/(auth)/login" asChild>
                     <Pressable accessibilityRole="link" style={trustPageStyles.linkTarget}>
-                        <AppText style={{ color: colors.primary, fontWeight: '700' }}>Back to sign in</AppText>
+                        <AppText style={{ color: colors.primary, fontWeight: '600' }}>Back to sign in</AppText>
                     </Pressable>
                 </Link>
             )}

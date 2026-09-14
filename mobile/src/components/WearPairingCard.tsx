@@ -13,7 +13,7 @@ import {
 import { pollWearPairingInbox, type WearPairingInboxCheck } from '../wear/pairingPoll';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 import { AppText } from './AppText';
 import { SectionHeader } from './SectionHeader';
 
@@ -151,7 +151,7 @@ export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {
         </>
     );
 
-    return embedded ? <View style={styles.embedded}>{content}</View> : <AppCard>{content}</AppCard>;
+    return embedded ? <View style={styles.embedded}>{content}</View> : <AppSection>{content}</AppSection>;
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
@@ -161,11 +161,12 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     statusPanel: {
         gap: spacing.xs,
         padding: spacing.md,
-        borderRadius: spacing.sm,
-        backgroundColor: theme.colors.primaryContainer
+        borderLeftWidth: theme.interaction.focusRingWidth,
+        borderLeftColor: theme.colors.primary,
+        backgroundColor: theme.colors.summaryContainer
     },
     status: {
-        color: theme.colors.onPrimaryContainer,
-        fontWeight: '700'
+        color: theme.colors.onSurface,
+        fontWeight: '600'
     }
 });

@@ -9,7 +9,7 @@ import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../asyncState/resolveAsyncS
 import { useAuth } from '../auth/AuthContext';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { AppButton } from '../components/AppButton';
-import { AppCard } from '../components/AppCard';
+import { AppSection } from '../components/AppSection';
 import { AppText } from '../components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../components/AsyncStateBoundary';
 import {
@@ -406,7 +406,7 @@ export default function BarcodeScreen() {
     }
     if (foodDayState.kind === ASYNC_RESOURCE_STATES.ERROR) {
         return (
-            <Screen safeTop>
+            <Screen contentWidth="form" safeTop>
                 <AsyncStateBoundary
                     state={foodDayState}
                     resourceLabel="tracking status"
@@ -437,25 +437,25 @@ export default function BarcodeScreen() {
     ) : null;
     if (foodDayQuery.data?.status !== 'OPEN') {
         return (
-            <Screen safeTop>
+            <Screen contentWidth="form" safeTop>
                 {trackingStatusNotice}
-                <AppCard>
+                <AppSection>
                     <SectionHeader
                         headingLevel={1}
                         title="Food logging is unavailable"
                         description="Resume tracking or backfill this day before adding food."
                     />
                     <AppButton title="Back to log" onPress={navigateToReturn} />
-                </AppCard>
+                </AppSection>
             </Screen>
         );
     }
 
     if (mode === 'manual-food') {
         return (
-            <Screen safeTop>
+            <Screen contentWidth="form" safeTop>
                 {trackingStatusNotice}
-                <AppCard>
+                <AppSection>
                     <SectionHeader
                         headingLevel={1}
                         title="Add food manually"
@@ -484,16 +484,16 @@ export default function BarcodeScreen() {
                         }}
                         onSubmit={submitFood}
                     />
-                </AppCard>
+                </AppSection>
             </Screen>
         );
     }
 
     if (mode === 'manual-barcode' && !barcode) {
         return (
-            <Screen safeTop>
+            <Screen contentWidth="form" safeTop>
                 {trackingStatusNotice}
-                <AppCard>
+                <AppSection>
                     <SectionHeader
                         headingLevel={1}
                         title="Enter barcode"
@@ -517,7 +517,7 @@ export default function BarcodeScreen() {
                     />
                     <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
                     <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
-                </AppCard>
+                </AppSection>
             </Screen>
         );
     }
@@ -558,9 +558,9 @@ export default function BarcodeScreen() {
             description = 'This device does not report a usable camera. You can still enter the barcode.';
         }
         return (
-            <Screen safeTop>
+            <Screen contentWidth="form" safeTop>
                 {trackingStatusNotice}
-                <AppCard>
+                <AppSection>
                     <SectionHeader headingLevel={1} title={title} description={description} />
                     {cameraMessage && (
                         <AppText accessibilityLiveRegion="polite" style={styles.permissionMessage}>
@@ -571,7 +571,7 @@ export default function BarcodeScreen() {
                     <AppButton title="Enter barcode" variant="secondary" onPress={() => setMode('manual-barcode')} />
                     <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
                     <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
-                </AppCard>
+                </AppSection>
             </Screen>
         );
     }
@@ -586,7 +586,7 @@ export default function BarcodeScreen() {
                     onCameraUnavailable={() => setIsCameraAvailable(false)}
                 />
                 <View style={styles.panel}>
-                    <AppCard>
+                    <AppSection>
                         <SectionHeader
                             headingLevel={1}
                             title="Scan barcode"
@@ -603,7 +603,7 @@ export default function BarcodeScreen() {
                         <AppButton title="Enter barcode" variant="secondary" onPress={() => setMode('manual-barcode')} />
                         <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
                         <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
-                    </AppCard>
+                    </AppSection>
                 </View>
             </Screen>
         );
@@ -638,9 +638,9 @@ export default function BarcodeScreen() {
         || lookupState.kind === BARCODE_LOOKUP_STATES.ERROR;
 
     return (
-        <Screen safeTop>
+        <Screen contentWidth="form" safeTop>
             {trackingStatusNotice}
-            <AppCard>
+            <AppSection>
                 <SectionHeader
                     headingLevel={1}
                     title={`Barcode ${barcode}`}
@@ -724,7 +724,7 @@ export default function BarcodeScreen() {
                         style={styles.actionButton}
                     />
                 </View>
-            </AppCard>
+            </AppSection>
         </Screen>
     );
 }

@@ -24,9 +24,9 @@ describe('CardHeader', () => {
         expect(heading.props['aria-level']).toBe(2);
         expect(heading).toHaveStyle({
             color: themes.light.colors.onSurface,
-            fontSize: 16,
-            lineHeight: 22,
-            fontWeight: '700'
+            fontSize: 20,
+            lineHeight: 26,
+            fontWeight: '600'
         });
         expect(screen.getByText('Current trend: 79.2 kg')).toHaveStyle({
             color: themes.light.colors.onSurfaceVariant,

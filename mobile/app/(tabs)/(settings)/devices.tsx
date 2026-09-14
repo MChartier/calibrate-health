@@ -2,7 +2,7 @@
  * Defines the signed-in device management Expo Router screen.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppCard } from '../../../src/components/AppCard';
+import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
 import {
     AsyncStateBoundary,
@@ -47,7 +47,7 @@ export default function SignedInDevicesScreen() {
         : undefined;
 
     return (
-        <TabScreen testID="signed-in-devices-settings-page">
+        <TabScreen contentWidth="overview" testID="signed-in-devices-settings-page">
             <SectionHeader
                 title="Account access"
                 description="Review every browser, Android, iOS, and Wear OS session for this account."
@@ -57,10 +57,10 @@ export default function SignedInDevicesScreen() {
                 resourceLabel="signed-in sessions"
                 loading={<SettingsManagementListSkeleton label="Loading active devices" />}
                 empty={(
-                    <AppCard>
+                    <AppSection>
                         <AppText variant="subtitle">No signed-in sessions found</AppText>
                         <AppText variant="muted">Refresh to check this account again.</AppText>
-                    </AppCard>
+                    </AppSection>
                 )}
                 onRetry={isOnline ? () => sessionsQuery.refetch() : undefined}
                 retrying={sessionsQuery.isFetching}

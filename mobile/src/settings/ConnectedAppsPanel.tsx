@@ -4,7 +4,7 @@ import type { ConnectedAppSummary } from '@calibrate/api-client';
 import { AppButton } from '../components/AppButton';
 import { AppText } from '../components/AppText';
 import { BottomSheetModal } from '../components/BottomSheetModal';
-import { radius, spacing, useAppTheme } from '../theme';
+import { spacing, useAppTheme } from '../theme';
 
 type ConnectedAppsPanelProps = {
     connections: ConnectedAppSummary[];
@@ -57,18 +57,19 @@ export function ConnectedAppsPanel({
                     key={connection.id}
                     style={[
                         styles.connection,
-                        { backgroundColor: colors.surfaceContainer, borderColor: colors.outlineVariant }
+                        { borderColor: colors.outlineVariant }
                     ]}
                 >
                     <View style={styles.connectionCopy}>
-                        <AppText variant="subtitle">{connection.client_name}</AppText>
+                        <AppText style={styles.connectionTitle}>{connection.client_name}</AppText>
                         <AppText variant="caption">{scopeSummary(connection.scopes)}</AppText>
                         <AppText variant="caption">Last used: {formatTimestamp(connection.last_used_at)}</AppText>
                     </View>
                     <AppButton
                         testID={`settings-connected-app-revoke-${connection.id}`}
                         title="Revoke"
-                        variant="danger"
+                        variant="secondary"
+                        textStyle={{ color: colors.danger }}
                         busy={pendingConnectionId === connection.id}
                         busyLabel="Revoking..."
                         disabled={Boolean(pendingConnectionId)}
@@ -132,14 +133,16 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         alignItems: 'center',
         gap: spacing.md,
-        padding: spacing.md,
-        borderRadius: radius.md,
-        borderWidth: StyleSheet.hairlineWidth
+        paddingVertical: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth
     },
     connectionCopy: {
         flex: 1,
         minWidth: CONNECTION_COPY_MIN_WIDTH,
         gap: spacing.xs
+    },
+    connectionTitle: {
+        fontWeight: '600'
     },
     revokeButton: {
         flexShrink: 0

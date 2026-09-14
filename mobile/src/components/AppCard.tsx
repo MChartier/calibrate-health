@@ -2,10 +2,10 @@ import React from 'react';
 import { View, StyleSheet, type ViewProps, type ViewStyle } from 'react-native';
 import { spacing, type AppTheme, useAppTheme } from '../theme';
 
-export type CardDensity = 'compact' | 'comfortable';
+type CardDensity = 'compact' | 'comfortable';
 
-// Uniform compact insets keep static and navigable card content aligned without wasting edge space.
-export const compactCardContentStyle = {
+// Compact cards use smaller insets while retaining consistent spacing.
+const compactCardContentStyle = {
     padding: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.sm

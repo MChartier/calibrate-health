@@ -1,14 +1,16 @@
 /**
  * Defines the about Expo Router screen.
  */
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
-import { AppCard } from '../../../src/components/AppCard';
+import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
 import { CalibrateLogo } from '../../../src/components/CalibrateLogo';
 import { TabScreen } from '../../../src/components/TabScreen';
+import { useFocusVisible } from '../../../src/components/useFocusVisible';
 import { interaction, radius, spacing, useAppTheme } from '../../../src/theme';
 
 const PRODUCT_LINKS = [
@@ -22,14 +24,48 @@ const PRODUCT_LINKS = [
 ] as const;
 
 const PRODUCT_LINK_MIN_WIDTH = 200; // Keeps every wrapped destination readable as a distinct control.
-const PRODUCT_LINK_PREFERRED_WIDTH = 220; // Forms a responsive multi-column link grid on wider screens.
+
+function ProductLinkRow({ link }: { link: (typeof PRODUCT_LINKS)[number] }) {
+    const theme = useAppTheme();
+    const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
+    const [pressed, setPressed] = useState(false);
+    const [hovered, setHovered] = useState(false);
+    return <Link href={link.href as Href} asChild>
+        <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={link.label}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onPressIn={() => setPressed(true)}
+            onPressOut={() => setPressed(false)}
+            onHoverIn={() => setHovered(true)}
+            onHoverOut={() => setHovered(false)}
+            style={StyleSheet.flatten([
+                styles.productLink,
+                {
+                    borderBottomColor: theme.colors.outlineVariant
+                },
+                hovered && { backgroundColor: theme.colors.surfaceHovered },
+                pressed && { backgroundColor: theme.colors.surfacePressed },
+                focusVisible && {
+                    outlineWidth: theme.interaction.focusRingWidth,
+                    outlineStyle: 'solid',
+                    outlineColor: theme.colors.focusRing
+                }
+            ])}
+        >
+            <AppText style={[styles.productLinkText, { color: theme.colors.primary }]}>{link.label}</AppText>
+            <Ionicons name="open-outline" size={18} color={theme.colors.primary} />
+        </Pressable>
+    </Link>;
+}
 
 /** Render the about screen interface. */
 export default function AboutScreen() {
     const theme = useAppTheme();
     return (
-        <TabScreen>
-            <AppCard style={styles.brandCard}>
+        <TabScreen contentWidth="overview">
+            <AppSection style={styles.brandCard}>
                 <View style={[styles.logoSurface, { backgroundColor: theme.colors.primaryContainer }]}>
                     <CalibrateLogo size={52} />
                 </View>
@@ -37,9 +73,9 @@ export default function AboutScreen() {
                     <AppText variant="title">About Calibrate</AppText>
                     <AppText variant="caption">Food, weight, and goal tracking built around clear daily progress.</AppText>
                 </View>
-            </AppCard>
+            </AppSection>
 
-            <AppCard>
+            <AppSection style={[styles.dividedSection, { borderTopColor: theme.colors.outlineVariant }]}>
                 <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Understand your progress</AppText>
                 <AppText>
                     Calibrate helps you log food and weight, compare calories with a personalized target, and follow
@@ -49,46 +85,28 @@ export default function AboutScreen() {
                     Available in English on the web as an installable PWA and on Android and iOS, with a Wear OS
                     companion for Android.
                 </AppText>
-            </AppCard>
+            </AppSection>
 
-            <AppCard>
+            <AppSection style={[styles.dividedSection, { borderTopColor: theme.colors.outlineVariant }]}>
                 <AppText accessibilityRole="header" aria-level={2} variant="subtitle">Your data, your choices</AppText>
                 <AppText>
                     The service you sign in to stores the account data Calibrate needs to work. You can export a
                     portable copy or permanently delete your account from Settings.
                 </AppText>
                 <View style={styles.productLinks}>
-                    {PRODUCT_LINKS.map((link) => (
-                        <Link key={link.label} href={link.href as Href} asChild>
-                            <Pressable
-                                accessibilityRole="link"
-                                accessibilityLabel={link.label}
-                                style={({ pressed }) => [
-                                    styles.productLink,
-                                    {
-                                        backgroundColor: pressed
-                                            ? theme.colors.surfacePressed
-                                            : theme.colors.surfaceContainerLow,
-                                        borderColor: theme.colors.outline,
-                                        borderWidth: theme.stroke.control
-                                    }
-                                ]}
-                            >
-                                <AppText style={[styles.productLinkText, { color: theme.colors.primary }]}>
-                                    {link.label}
-                                </AppText>
-                                <Ionicons name="open-outline" size={18} color={theme.colors.primary} />
-                            </Pressable>
-                        </Link>
-                    ))}
+                    {PRODUCT_LINKS.map((link) => <ProductLinkRow key={link.label} link={link} />)}
                 </View>
-            </AppCard>
+            </AppSection>
 
         </TabScreen>
     );
 }
 
 const styles = StyleSheet.create({
+    dividedSection: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        paddingTop: spacing.lg
+    },
     brandCard: {
         flexDirection: 'row',
         alignItems: 'center'
@@ -106,25 +124,24 @@ const styles = StyleSheet.create({
         gap: spacing.xs
     },
     productLinks: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: spacing.md
+        gap: spacing.sm
     },
     productLink: {
-        width: 'auto',
+        width: '100%',
         minWidth: PRODUCT_LINK_MIN_WIDTH,
         minHeight: interaction.minimumTouchTarget,
-        flexBasis: PRODUCT_LINK_PREFERRED_WIDTH,
         flexGrow: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.sm,
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        paddingHorizontal: 0,
         paddingVertical: spacing.sm
     },
     productLinkText: {
-        fontWeight: '800'
+        flex: 1,
+        minWidth: 0,
+        fontWeight: '600'
     }
 });

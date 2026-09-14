@@ -1,8 +1,9 @@
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { FoodLogCreatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AppButton } from '../components/AppButton';
 import { TextField } from '../components/TextField';
+import { spacing } from '../theme';
 
 type BarcodeManualFoodFormProps = {
     date: string;
@@ -51,7 +52,7 @@ export function BarcodeManualFoodForm({
     }
 
     return (
-        <View>
+        <View style={styles.form}>
             <TextField
                 label="Food name"
                 value={name}
@@ -95,3 +96,5 @@ export function BarcodeManualFoodForm({
         </View>
     );
 }
+
+const styles = StyleSheet.create({ form: { gap: spacing.md } });

@@ -6,7 +6,7 @@ import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { HEIGHT_UNITS, WEIGHT_UNITS } from '@calibrate/shared';
 import { AppButton } from '../../../src/components/AppButton';
-import { AppCard } from '../../../src/components/AppCard';
+import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
 import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
@@ -24,7 +24,7 @@ import { useOfflineOutbox } from '../../../src/offline/provider';
 import { hasPendingWeightMutation } from '../../../src/offline/pendingWeight';
 import { supportsAndroidIntegrations } from '../../../src/platform/nativePlatform';
 import { formatGoalSummary } from '../../../src/utils/goals';
-import { radius, spacing, useAppTheme } from '../../../src/theme';
+import { spacing, useAppTheme } from '../../../src/theme';
 import { useHealthConnect } from '../../../src/healthConnect/provider';
 import { clearWearAccountData } from '../../../src/wear/accountCleanup';
 import { DeleteAccountSheet } from '../../../src/settings/AccountSettingsSheets';
@@ -323,17 +323,17 @@ export function SettingsScreen({ category }: { category?: SettingsCategoryId }) 
     const showProfilePlanningStatus = category === undefined || category === 'profile';
 
     return (
-        <TabScreen>
+        <TabScreen contentWidth="overview">
             {showProfilePlanningStatus && hasPendingWeightChange && (
-                <AppCard>
+                <AppSection>
                     <AppText variant="subtitle">Weight change syncing</AppText>
                     <AppText variant="muted">
                         Calorie target and projection will return after the server rechecks your plan.
                     </AppText>
-                </AppCard>
+                </AppSection>
             )}
             {showProfilePlanningStatus && planRequiresReview && (
-                <AppCard>
+                <AppSection>
                     <AppText variant="subtitle">{planPresentation.title}</AppText>
                     <AppText variant="muted">{planPresentation.message}</AppText>
                     <AppButton
@@ -341,7 +341,7 @@ export function SettingsScreen({ category }: { category?: SettingsCategoryId }) 
                         variant="secondary"
                         onPress={handlePlanAction}
                     />
-                </AppCard>
+                </AppSection>
             )}
             {showProfilePlanningStatus && shouldShowSettingsResourceStatus(profileState, isWeb) && (
                 <AsyncStateBoundary
@@ -532,7 +532,7 @@ export function SettingsScreen({ category }: { category?: SettingsCategoryId }) 
             >
                 {isOutboxReady ? (
                     <>
-                        <View style={[styles.summaryRows, { backgroundColor: themeColors.surfaceContainer }]}>
+                        <View style={styles.summaryRows}>
                             <SummaryRow label="Pending" value={String(pendingMutationCount)} />
                             <SummaryRow label="Failed" value={String(failedMutations.length)} />
                         </View>
@@ -615,31 +615,33 @@ export function SettingsScreen({ category }: { category?: SettingsCategoryId }) 
 export default SettingsScreen;
 
 const SettingsResourceSkeleton: React.FC<{ label: string }> = ({ label }) => (
-    <AppCard accessibilityLabel={label}>
+    <AppSection accessibilityLabel={label}>
         <AppText variant="muted">{label}</AppText>
         <SkeletonBlock width="72%" height={18} />
-    </AppCard>
+    </AppSection>
 );
 
 const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: spacing.md
     },
     rowButton: {
-        flex: 1
+        flex: 1,
+        // Sync actions wrap before their labels are compressed in phone sheets.
+        minWidth: 160
     },
     sheetContent: {
         gap: spacing.md
     },
     summaryRows: {
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         gap: spacing.xs
     },
     avatarRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         gap: spacing.lg
     },
@@ -658,6 +660,8 @@ const styles = StyleSheet.create({
     },
     avatarActions: {
         flex: 1,
+        // Leave enough space for photo actions beside the avatar, or move them below it.
+        minWidth: 180,
         gap: spacing.sm
     },
 

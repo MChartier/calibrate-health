@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
@@ -32,11 +32,15 @@ import {
 import { confirmDiscardChanges } from '../../../src/components/confirmDiscardChanges';
 import { confirmAction } from '../../../src/components/confirmAction';
 import { FormErrorSummary, type FormErrorSummaryHandle } from '../../../src/components/FormErrorSummary';
+import { formatCalories } from '../../../src/utils/format';
 
 type MyFoodSheet = 'food' | 'recipe' | null;
+// A serving stepper needs room for both 48px controls and a readable numeric input.
+const EDITOR_FIELD_BASIS = 200;
 
 export default function MyFoodsScreen() {
     const theme = useAppTheme();
+    const { fontScale } = useWindowDimensions();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const { api } = useAuth();
     const queryClient = useQueryClient();
@@ -148,6 +152,15 @@ export default function MyFoodsScreen() {
         recipeServingUnit.trim().length > 0 &&
         Number(recipeYield) > 0 &&
         recipeIngredients.length > 0;
+    const recipeCalories = recipeIngredients.reduce((total, ingredient) => total + (
+        ingredient.source === 'MY_FOOD'
+            ? ingredient.myFood.calories_per_serving * ingredient.servings
+            : ingredient.caloriesTotal
+    ), 0);
+    const parsedRecipeYield = Number(recipeYield);
+    const caloriesPerRecipeServing = Number.isFinite(parsedRecipeYield) && parsedRecipeYield > 0
+        ? recipeCalories / parsedRecipeYield
+        : null;
     const foodDraftKey = JSON.stringify([foodName, servingQuantity, servingUnit, caloriesPerServing]);
     const foodDraftBaseline = editingItem?.type === 'FOOD'
         ? JSON.stringify([
@@ -265,7 +278,7 @@ export default function MyFoodsScreen() {
         if (shouldDelete) deleteItem.mutate(editingItem);
     }
     return (
-        <TabScreen>
+        <TabScreen contentWidth="overview">
             <SavedFoodsLibrary
                 onCreateFood={() => openNew('food')}
                 onCreateRecipe={() => openNew('recipe')}
@@ -294,7 +307,7 @@ export default function MyFoodsScreen() {
                     focusError={Boolean(getSavedFoodNameError(foodValidationError))}
                     required
                 />
-                <View style={styles.row}>
+                <View style={styles.fieldsRow}>
                     <NumberStepperField
                         label="Serving"
                         value={servingQuantity}
@@ -331,20 +344,20 @@ export default function MyFoodsScreen() {
                         onPress={() => { void confirmDelete(); }}
                     />
                 )}
-                <View style={styles.row}>
+                <View style={[styles.row, fontScale >= 1.3 && styles.rowStacked]}>
                     <AppButton
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={theme.colors.onSurface} />}
                         onPress={() => { void requestEditorClose(); }}
-                        style={styles.field}
+                        style={styles.action}
                     />
                     <AppButton
                         title={saveFood.isPending ? 'Saving...' : 'Save food'}
                         disabled={saveFood.isPending || deleteItem.isPending}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={handleSaveFood}
-                        style={styles.field}
+                        style={styles.action}
                     />
                 </View>
             </BottomSheetModal>
@@ -372,7 +385,7 @@ export default function MyFoodsScreen() {
                     focusError={Boolean(getRecipeNameError(recipeValidationError))}
                     required
                 />
-                <View style={styles.row}>
+                <View style={styles.fieldsRow}>
                     <NumberStepperField
                         label="Serving"
                         value={recipeServingQuantity}
@@ -396,6 +409,21 @@ export default function MyFoodsScreen() {
                     ingredients={recipeIngredients}
                     onChange={setRecipeIngredients}
                 />
+                {recipeIngredients.length > 0 && (
+                    <View
+                        accessible
+                        accessibilityLiveRegion="polite"
+                        accessibilityLabel={`${formatCalories(recipeCalories)} total${caloriesPerRecipeServing === null ? '' : `, ${formatCalories(caloriesPerRecipeServing)} per serving`}`}
+                        style={styles.recipeSummary}
+                    >
+                        <AppText variant="subtitle">{formatCalories(recipeCalories)} total</AppText>
+                        <AppText variant="caption">
+                            {caloriesPerRecipeServing === null
+                                ? 'Enter a yield to see calories per serving.'
+                                : `${formatCalories(caloriesPerRecipeServing)} per serving | ${parsedRecipeYield} ${parsedRecipeYield === 1 ? 'serving' : 'servings'}`}
+                        </AppText>
+                    </View>
+                )}
                 {recipeValidationError && !getRecipeNameError(recipeValidationError) && (
                     <FormErrorSummary
                         ref={recipeErrorSummaryRef}
@@ -414,20 +442,20 @@ export default function MyFoodsScreen() {
                         onPress={() => { void confirmDelete(); }}
                     />
                 )}
-                <View style={styles.row}>
+                <View style={[styles.row, fontScale >= 1.3 && styles.rowStacked]}>
                     <AppButton
                         title="Cancel"
                         variant="secondary"
                         leftIcon={<Ionicons name="close" size={18} color={theme.colors.onSurface} />}
                         onPress={() => { void requestEditorClose(); }}
-                        style={styles.field}
+                        style={styles.action}
                     />
                     <AppButton
                         title={saveRecipe.isPending ? 'Saving...' : 'Save recipe'}
                         disabled={saveRecipe.isPending || deleteItem.isPending || loadRecipe.isPending}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={handleSaveRecipe}
-                        style={styles.field}
+                        style={styles.action}
                     />
                 </View>
             </BottomSheetModal>
@@ -438,10 +466,30 @@ export default function MyFoodsScreen() {
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     row: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.md
+    },
+    rowStacked: { flexDirection: 'column' },
+    fieldsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: spacing.md
     },
     field: {
-        flex: 1
+        flexGrow: 1,
+        flexShrink: 1,
+        flexBasis: EDITOR_FIELD_BASIS,
+        minWidth: 0
+    },
+    action: {
+        flex: 1,
+        minWidth: Platform.OS === 'web' ? 'auto' : 0
+    },
+    recipeSummary: {
+        gap: spacing.xs,
+        paddingVertical: spacing.md,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.colors.outlineVariant
     },
     error: {
         color: theme.colors.danger

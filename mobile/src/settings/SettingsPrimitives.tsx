@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { BottomSheetModal, type BottomSheetModalProps } from '../components/BottomSheetModal';
+import { useFocusVisible } from '../components/useFocusVisible';
 import { spacing, useAppTheme } from '../theme';
 
 type PreferenceSwitchProps = {
@@ -15,7 +16,8 @@ export const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({
     value,
     onValueChange
 }) => {
-    const { colors } = useAppTheme();
+    const { colors, interaction } = useAppTheme();
+    const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
 
     return (
         <Pressable
@@ -24,7 +26,17 @@ export const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({
             accessibilityRole="switch"
             accessibilityState={{ checked: value }}
             onPress={() => onValueChange(!value)}
-            style={({ pressed }) => [styles.switchRow, pressed && styles.pressedRow]}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={({ pressed }) => [
+                styles.switchRow,
+                pressed && styles.pressedRow,
+                focusVisible && {
+                    outlineWidth: interaction.focusRingWidth,
+                    outlineStyle: 'solid',
+                    outlineColor: colors.focusRing
+                }
+            ]}
         >
             <AppText variant="body" style={styles.switchLabel}>{label}</AppText>
             <View
@@ -53,7 +65,7 @@ export const SummaryRow: React.FC<{ label: string; value: string }> = ({
 }) => (
     <View style={styles.summaryRow}>
         <AppText variant="caption">{label}</AppText>
-        <AppText variant="body" numberOfLines={1} style={styles.summaryValue}>{value}</AppText>
+        <AppText variant="body" style={styles.summaryValue}>{value}</AppText>
     </View>
 );
 
@@ -129,7 +141,7 @@ const styles = StyleSheet.create({
     },
     switchLabel: {
         flex: 1,
-        fontWeight: '700'
+        fontWeight: '600'
     },
     pressedRow: {
         opacity: 0.78
@@ -137,6 +149,7 @@ const styles = StyleSheet.create({
     summaryRow: {
         minHeight: 30,
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.md
@@ -144,6 +157,6 @@ const styles = StyleSheet.create({
     summaryValue: {
         flexShrink: 1,
         textAlign: 'right',
-        fontWeight: '800'
+        fontWeight: '600'
     }
 });

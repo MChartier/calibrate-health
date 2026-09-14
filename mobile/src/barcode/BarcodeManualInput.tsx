@@ -1,8 +1,8 @@
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppButton } from '../components/AppButton';
 import { TextField } from '../components/TextField';
-import { useAppTheme } from '../theme';
+import { spacing, useAppTheme } from '../theme';
 
 type BarcodeManualInputProps = {
     value: string;
@@ -24,7 +24,7 @@ export function BarcodeManualInput({
     const theme = useAppTheme();
 
     return (
-        <View>
+        <View style={styles.form}>
             <TextField
                 label="EAN or UPC barcode"
                 helperText="Enter the 6, 7, 8, 12, or 13 digits printed below the barcode."
@@ -59,3 +59,5 @@ export function BarcodeManualInput({
         </View>
     );
 }
+
+const styles = StyleSheet.create({ form: { gap: spacing.md } });

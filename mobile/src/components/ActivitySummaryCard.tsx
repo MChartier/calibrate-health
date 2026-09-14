@@ -3,11 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ActivityDaysResponse } from '@calibrate/api-client';
 import { isActivitySummaryDelayed, isActivitySummaryEmpty } from '../activity/presentation';
-import { spacing, useAppTheme, type AppThemeColors } from '../theme';
+import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatCalories, formatNumber } from '../utils/format';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 import { AppText } from './AppText';
-import { MetricTile } from './MetricTile';
 import { SkeletonBlock } from './SkeletonBlock';
 
 export type ActivityDay = ActivityDaysResponse['days'][number];
@@ -24,15 +23,16 @@ export function ActivitySummaryCard({
     isToday,
     isLoading = false
 }: ActivitySummaryCardProps) {
-    const { colors } = useAppTheme();
-    const styles = React.useMemo(() => createStyles(colors), [colors]);
+    const theme = useAppTheme();
+    const { colors } = theme;
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
     const summary = day?.summary;
     const records = day?.records ?? [];
     const isEmpty = isActivitySummaryEmpty(summary) && records.length === 0;
     const delayed = isActivitySummaryDelayed(summary, isToday);
 
     return (
-        <AppCard testID="activity-summary">
+        <AppSection testID="activity-summary">
             {isLoading ? (
                 <View style={styles.skeletonGrid}>
                     {[0, 1, 2].map((index) => <SkeletonBlock key={index} width="30%" height={72} />)}
@@ -52,17 +52,18 @@ export function ActivitySummaryCard({
             ) : (
                 <>
                     <View style={styles.metricGrid}>
-                        <MetricTile label="Steps" value={formatNumber(summary?.steps, 0)} style={styles.primaryMetric} />
-                        <MetricTile
-                            label="Active calories"
-                            value={formatCalories(summary?.active_calories_kcal)}
-                            style={styles.primaryMetric}
-                        />
-                        <MetricTile
-                            label="Exercise time"
-                            value={`${formatNumber(summary?.exercise_minutes, 0)} min`}
-                            style={styles.primaryMetric}
-                        />
+                        <View style={styles.primaryMetric}>
+                            <AppText style={styles.metricValue}>{formatNumber(summary?.steps, 0)}</AppText>
+                            <AppText variant="caption">Steps</AppText>
+                        </View>
+                        <View style={styles.primaryMetric}>
+                            <AppText style={styles.metricValue}>{formatCalories(summary?.active_calories_kcal)}</AppText>
+                            <AppText variant="caption">Active calories</AppText>
+                        </View>
+                        <View style={styles.primaryMetric}>
+                            <AppText style={styles.metricValue}>{`${formatNumber(summary?.exercise_minutes, 0)} min`}</AppText>
+                            <AppText variant="caption">Exercise time</AppText>
+                        </View>
                     </View>
                     <View style={styles.totalBurnRow}>
                         <AppText variant="label">Device-estimated total burn</AppText>
@@ -75,11 +76,11 @@ export function ActivitySummaryCard({
                     )}
                 </>
             )}
-        </AppCard>
+        </AppSection>
     );
 }
 
-function createStyles(colors: AppThemeColors) {
+function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         metricGrid: {
             flexDirection: 'row',
@@ -87,7 +88,14 @@ function createStyles(colors: AppThemeColors) {
             gap: spacing.sm
         },
         primaryMetric: {
-            flexBasis: 120
+            flexGrow: 1,
+            flexBasis: 120,
+            gap: spacing.xs,
+            paddingVertical: spacing.sm
+        },
+        metricValue: {
+            ...theme.typography.styles.measurement,
+            fontVariant: ['tabular-nums']
         },
         totalBurnRow: {
             flexDirection: 'row',
@@ -97,7 +105,8 @@ function createStyles(colors: AppThemeColors) {
             gap: spacing.sm
         },
         totalBurnValue: {
-            fontWeight: '800'
+            fontWeight: '600',
+            fontVariant: ['tabular-nums']
         },
         skeletonGrid: {
             flexDirection: 'row',
@@ -115,10 +124,10 @@ function createStyles(colors: AppThemeColors) {
             gap: spacing.xs
         },
         emptyTitle: {
-            fontWeight: '700'
+            fontWeight: '600'
         },
         delay: {
-            color: colors.warning
+            color: theme.colors.warning
         }
     });
 }

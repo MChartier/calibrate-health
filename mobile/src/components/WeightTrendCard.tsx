@@ -17,6 +17,7 @@ import { AppText } from './AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { LoadingState } from './LoadingState';
 import { SectionHeader } from './SectionHeader';
+import { useFocusVisible } from './useFocusVisible';
 import { useAuth } from '../auth/AuthContext';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
@@ -55,23 +56,15 @@ const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
 const DEFAULT_CHART_WIDTH = 340;
 const MIN_CHART_WIDTH = 280;
 const DESKTOP_CHART_BREAKPOINT = 840;
-// Phone bounds preserve chart detail without pushing the selected summary below the fold.
+// Preserve legible plot minima when controls need scrolling on a short screen.
 const MOBILE_CHART_MIN_HEIGHT = 188;
-const MOBILE_CHART_MAX_HEIGHT = 260;
-// Wide-screen bounds use available card space while keeping the chart scannable.
 const DESKTOP_CHART_MIN_HEIGHT = 260;
-const DESKTOP_CHART_MAX_HEIGHT = 420;
 // Axis gutters reserve room for weight and date labels without crowding the data.
 const CHART_PADDING = { left: 58, right: 12, top: 12, bottom: 32 };
 const MIN_WEIGHT_AXIS_SPAN = 0.4;
-// Keeps chart growth deterministic across compact and wide viewports.
-export function getWeightTrendChartHeightBounds(viewportWidth: number): {
-    minimum: number;
-    maximum: number;
-} {
+export function getWeightTrendChartMinimumHeight(viewportWidth: number): number {
     return viewportWidth >= DESKTOP_CHART_BREAKPOINT
-        ? { minimum: DESKTOP_CHART_MIN_HEIGHT, maximum: DESKTOP_CHART_MAX_HEIGHT }
-        : { minimum: MOBILE_CHART_MIN_HEIGHT, maximum: MOBILE_CHART_MAX_HEIGHT };
+        ? DESKTOP_CHART_MIN_HEIGHT : MOBILE_CHART_MIN_HEIGHT;
 }
 
 type ChartPressNativeEvent = {
@@ -122,10 +115,6 @@ function getChartAccessibilityProps(accessibilityLabel: string): SvgProps {
     };
 }
 
-function clampChartHeight(value: number, minimum: number, maximum: number): number {
-    return Math.max(minimum, Math.min(value, maximum));
-}
-
 function describeSelectedTrendPoint(
     point: WeightTrendChartPoint,
     unit: Parameters<typeof formatWeight>[1]
@@ -157,10 +146,8 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const [selectionAnnouncement, setSelectionAnnouncement] = useState('');
     const [chartCanvasWidth, setChartCanvasWidth] = useState(DEFAULT_CHART_WIDTH);
     const [chartCanvasHeight, setChartCanvasHeight] = useState(0);
-    const chartHeightBounds = getWeightTrendChartHeightBounds(viewportWidth);
-    const chartMinHeight = chartHeightBounds.minimum;
-    const chartMaxHeight = chartHeightBounds.maximum;
-    const chartHeight = clampChartHeight(chartCanvasHeight || chartMinHeight, chartMinHeight, chartMaxHeight);
+    const chartMinHeight = getWeightTrendChartMinimumHeight(viewportWidth);
+    const chartHeight = Math.max(chartCanvasHeight, chartMinHeight);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', range],
         queryFn: () => api.getTrendMetrics({ range })
@@ -268,6 +255,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                 ))}
             </View>
             <AsyncStateBoundary
+                contentStyle={styles.trendBody}
                 state={trendState}
                 resourceLabel="weight trend"
                 loading={<LoadingState label="Loading trend..." />}
@@ -309,12 +297,12 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                     </View>
                 </View>
             ) : (
-                <View style={styles.chartShell}>
+                <View testID="weight-trend-chart-shell" style={styles.chartShell}>
                     <View
                         testID="weight-trend-chart-canvas"
                         style={[
                             styles.chartCanvas,
-                            { minHeight: chartMinHeight, maxHeight: chartMaxHeight }
+                            { minHeight: chartMinHeight }
                         ]}
                         onLayout={(event) => {
                             setChartCanvasWidth(event.nativeEvent.layout.width);
@@ -322,6 +310,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                         }}
                     >
                         <Svg
+                            style={StyleSheet.absoluteFill}
                             testID="weight-trend-chart"
                             {...getChartAccessibilityProps(accessibleChartSummary)}
                             width="100%"
@@ -526,6 +515,10 @@ const SelectedTrendPanel: React.FC<{
     const [isRangeInfoHovered, setIsRangeInfoHovered] = useState(false);
     const [isRangeInfoFocused, setIsRangeInfoFocused] = useState(false);
     const [isRangeInfoPinned, setIsRangeInfoPinned] = useState(false);
+    const rangeFocus = useFocusVisible(
+        () => setIsRangeInfoFocused(true),
+        () => setIsRangeInfoFocused(false)
+    );
     const showRangeTooltip = isRangeInfoHovered || isRangeInfoFocused || isRangeInfoPinned;
     let freshnessLabel = '';
     if (freshness === 'stale') freshnessLabel = 'Based on an older weigh-in';
@@ -564,13 +557,12 @@ const SelectedTrendPanel: React.FC<{
                             accessibilityLabel="About the 95% trend range"
                             accessibilityHint="This range shows uncertainty in the estimate, not expected scale readings."
                             accessibilityState={{ expanded: showRangeTooltip }}
-                            hitSlop={12}
                             onHoverIn={() => setIsRangeInfoHovered(true)}
                             onHoverOut={() => setIsRangeInfoHovered(false)}
-                            onFocus={() => setIsRangeInfoFocused(true)}
-                            onBlur={() => setIsRangeInfoFocused(false)}
+                            onFocus={rangeFocus.handleFocus}
+                            onBlur={rangeFocus.handleBlur}
                             onPress={() => setIsRangeInfoPinned((current) => !current)}
-                            style={({ pressed }) => [styles.rangeInfoButton, pressed && styles.pressed]}
+                            style={({ pressed }) => [styles.rangeInfoButton, pressed && styles.pressed, rangeFocus.focusVisible && styles.focusVisible]}
                         >
                             <Ionicons name="information-circle-outline" size={17} color={theme.colors.onSurfaceVariant} />
                             {showRangeTooltip ? (
@@ -611,6 +603,7 @@ const PointNavigationButton: React.FC<{
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const previous = direction === 'previous';
+    const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
     const label = previous ? 'Previous weigh-in' : 'Next weigh-in';
     return (
         <Pressable
@@ -618,8 +611,10 @@ const PointNavigationButton: React.FC<{
             accessibilityLabel={label}
             accessibilityState={{ disabled }}
             disabled={disabled}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             onPress={onPress}
-            style={({ pressed }) => [styles.pointNavigationButton, pressed && !disabled && styles.pressed, disabled && styles.disabled]}
+            style={({ pressed }) => [styles.pointNavigationButton, pressed && !disabled && styles.pressed, disabled && styles.disabled, focusVisible && styles.focusVisible]}
         >
             {previous && <Ionicons name="chevron-back" size={16} color={theme.colors.primary} />}
             <AppText variant="label" style={styles.pointNavigationLabel}>{previous ? 'Previous' : 'Next'}</AppText>
@@ -651,6 +646,7 @@ const TrendChartLegend: React.FC = () => {
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     content: { width: '100%', gap: spacing.md },
+    trendBody: { flexGrow: 1 },
     rangeRow: { flexDirection: 'row', gap: spacing.sm },
     rangeChip: { flex: 1, paddingHorizontal: spacing.xs },
     chartShell: {
@@ -758,15 +754,15 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     rangeInfoButton: {
         position: 'relative',
         zIndex: 3,
-        minWidth: 24,
-        minHeight: 24,
+        minWidth: theme.interaction.minimumTouchTarget,
+        minHeight: theme.interaction.minimumTouchTarget,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: radius.pill
     },
     rangeTooltip: {
         position: 'absolute',
-        top: 28,
+        top: theme.interaction.minimumTouchTarget,
         right: 0,
         width: 220,
         zIndex: 3,
@@ -785,7 +781,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     pointNavigation: { flexDirection: 'row', gap: spacing.sm },
     pointNavigationButton: {
         flex: 1,
-        minHeight: 44,
+        minHeight: theme.interaction.minimumTouchTarget,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -795,6 +791,11 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth
     },
     pointNavigationLabel: { color: theme.colors.primary },
+    focusVisible: {
+        outlineWidth: theme.interaction.focusRingWidth,
+        outlineStyle: 'solid',
+        outlineColor: theme.colors.focusRing
+    },
     pressed: { backgroundColor: theme.colors.surfacePressed },
     disabled: { opacity: 0.45 },
     error: { color: theme.colors.danger }

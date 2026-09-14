@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams, usePathname, type Href } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../../../src/components/AddFoodSheet';
 import { AppButton } from '../../../src/components/AppButton';
-import { AppCard } from '../../../src/components/AppCard';
 import { AppText } from '../../../src/components/AppText';
 import { AsyncStateBoundary, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
 import { CalorieBalanceCard } from '../../../src/components/CalorieBalanceCard';
-import { CardHeader } from '../../../src/components/CardHeader';
-import { FoodLogSummaryCard } from '../../../src/components/FoodLogSummaryCard';
+import { DateNavigation } from '../../../src/components/DateNavigation';
+import { FixedPage, FixedPageColumn } from '../../../src/components/FixedPage';
 import { DayStatusCard, useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
-import { LogContentSkeleton } from '../../../src/components/LogContentSkeleton';
-import { TabScreen } from '../../../src/components/TabScreen';
+import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
+import { TodayFoodPreview } from '../../../src/today/TodayFoodPreview';
 import { TodayWeightCard } from '../../../src/components/TodayWeightCard';
+import { WeightEntrySheet } from '../../../src/components/WeightEntrySheet';
 import { useAuth } from '../../../src/auth/AuthContext';
+import { ASYNC_RESOURCE_STATES } from '../../../src/asyncState/resolveAsyncState';
 import { useSharedLogDateNavigation } from '../../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
 import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPreviousFoodLog';
-import { shouldEmphasizePausedStatus, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
+import { shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
 import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
 import { canonicalPathForRoute } from '../../../src/navigation/routeRegistry';
@@ -28,7 +29,6 @@ import { getMetricDate } from '../../../src/utils/metrics';
 import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
 import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../src/today/dashboardState';
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
-import { usesTabletLayout } from '../../../src/layout/adaptiveLayout';
 import { spacing } from '../../../src/theme';
 
 export default function TodayScreen() {
@@ -40,16 +40,16 @@ export default function TodayScreen() {
     const { request: addFoodRequest, consumeRequest: consumeAddFoodRequest } = useAddFoodRequest();
     const selectedDate = dateNavigation.selectedDate;
     const [addFoodMeal, setAddFoodMeal] = useState<MealPeriod | null | undefined>(undefined);
+    const [isWeightEntryOpen, setIsWeightEntryOpen] = useState(false);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
 
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useFoodDayStatus(selectedDate);
+    const canAddFood = foodDayQuery.data?.status === 'OPEN';
     const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
     const isOnline = useOnlineStatus();
     const hasPendingWeightChange = usePendingWeightMutation();
-    const { fontScale, width } = useWindowDimensions();
-    const useSummaryGrid = usesTabletLayout(width, fontScale);
 
     const dashboardQueries = [profileQuery, foodQuery, foodDayQuery, metricsQuery] as const;
     const failedDashboardQueries = dashboardQueries.filter((query) => query.isError);
@@ -72,15 +72,15 @@ export default function TodayScreen() {
             setLogDate(requestDate);
             return;
         }
-        if (foodDayQuery.data?.status !== 'OPEN') return;
+        if (!canAddFood) return;
         setAddFoodMeal(addFoodRequest.meal ?? null);
         consumeAddFoodRequest(addFoodRequest.id);
-    }, [addFoodRequest, consumeAddFoodRequest, foodDayQuery.data?.status, pathname, selectedDate, setLogDate]);
+    }, [addFoodRequest, canAddFood, consumeAddFoodRequest, pathname, selectedDate, setLogDate]);
 
     useBarcodeSearchHandoff({
         params: routeParams,
         selectedDate,
-        enabled: foodDayQuery.data?.status === 'OPEN',
+        enabled: canAddFood,
         setDate: setLogDate,
         openSheet: setAddFoodMeal,
         scrubParams: (requestDate) => router.setParams({
@@ -98,7 +98,7 @@ export default function TodayScreen() {
     const target = planIsAvailable ? calorieSummary?.dailyCalorieTarget ?? null : null;
     const planPresentation = getCaloriePlanPresentation(calorieSummary?.planReasonCode, planStatus);
     function openWeightEntry() {
-        router.push({ pathname: '/weight', params: { date: selectedDate } });
+        setIsWeightEntryOpen(true);
     }
 
     function handlePlanAction() {
@@ -129,129 +129,94 @@ export default function TodayScreen() {
     if (!planIsAvailable) unavailableLabel = planStatus === 'requires_review' ? 'Plan needs review' : 'Target unavailable';
     if (hasPendingWeightChange) unavailableLabel = 'Rechecking target';
     if (isPaused) unavailableLabel = 'Tracking paused';
-    const emphasizePausedStatus = shouldEmphasizePausedStatus({
-        status: dayStatus?.status,
-        isToday,
-        hasFoodEntries: entries.length > 0,
-        isContentLoading: dashboardState.kind === 'loading'
-    });
+    const contentLoading = dashboardState.kind === 'loading';
+    if (contentLoading) unavailableLabel = 'Loading day';
+    const foodIsUnavailable = foodQuery.data === undefined;
+    if (!contentLoading && foodIsUnavailable) unavailableLabel = 'Day unavailable';
+    let balanceSupportingLabel: string | undefined;
+    if (contentLoading) balanceSupportingLabel = 'Loading your food log';
+    else if (foodIsUnavailable) balanceSupportingLabel = 'Food log unavailable';
 
     return (
-        <TabScreen style={styles.screenContent}>
-            <AsyncStateBoundary
+        <>
+        <FixedPage
+            testID="today-fixed-page"
+            fullWidthBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
+            minBodyHeight={TODAY_BODY_MIN_HEIGHT}
+            context={<>
+                <DateNavigation
+                    navigation={dateNavigation}
+                    compact
+                    unified
+                    style={styles.dateNavigation}
+                    pickerFooter={(closePicker) => <DayStatusCard date={selectedDate} isToday={isToday} presentation="controls" onActionComplete={closePicker} />}
+                />
+                <CalorieBalanceCard
+                    totalCalories={calories}
+                    targetCalories={!contentLoading && !foodIsUnavailable && showCalorieComparison ? target : null}
+                    unavailableLabel={unavailableLabel}
+                    supportingLabel={balanceSupportingLabel}
+                    compact
+                    open
+                />
+                {!contentLoading && !foodIsUnavailable && !isPaused && !hasPendingWeightChange && !planIsAvailable && <View style={styles.planAction}>
+                    <AppText variant="muted">{planPresentation.message}</AppText>
+                    <AppButton title={planPresentation.actionLabel} variant="ghost" onPress={handlePlanAction} />
+                </View>}
+            </>}
+            footer={({ expanded }) => dayStatus ? <DayStatusCard date={selectedDate} isToday={isToday} failed={dashboardHasFailedResource} loading={contentLoading} stackActions={expanded} presentation="dock" onAddFood={canAddFood ? () => setAddFoodMeal(null) : undefined} /> : <View style={styles.loadingActions}>
+                <AppButton title="Add food" disabled style={styles.loadingAction} />
+                <AppButton title="Complete day" variant="secondary" disabled style={styles.loadingAction} />
+            </View>}
+        >
+            {({ expanded }) => <AsyncStateBoundary
+                contentStyle={[styles.body, expanded && styles.bodyExpanded]}
                 state={dashboardState}
                 resourceLabel="today's log"
-                loading={<LogContentSkeleton />}
-                empty={<LogContentSkeleton />}
+                loading={<TodayContentLoading />}
+                empty={<TodayContentLoading />}
                 onRetry={isOnline && failedDashboardQueries.length > 0
                     ? retryFailedDashboardResources
                     : undefined}
                 retrying={failedDashboardQueries.some((query) => query.isFetching)}
                 suppressStaleNotice
             >
-                <>
-                    <CalorieBalanceCard
-                        totalCalories={calories}
-                        targetCalories={showCalorieComparison ? target : null}
-                        unavailableLabel={unavailableLabel}
-                        compact
-                    />
-                    {isPaused && (
-                        <DayStatusCard
-                            date={selectedDate}
-                            isToday={isToday}
-                            failed={dashboardHasFailedResource}
-                            compact
-                            expanded={emphasizePausedStatus}
-                        />
-                    )}
-                    {!isPaused && (
-                        <>
-                            {hasPendingWeightChange ? (
-                                <AppCard density="compact">
-                                    <CardHeader title="Weight change syncing" density="compact" />
-                                    <AppText variant="muted">
-                                        Calorie target and projection will return after the server rechecks your plan.
-                                    </AppText>
-                                </AppCard>
-                            ) : !planIsAvailable && (
-                                <AppCard density="compact">
-                                    <CardHeader title={planPresentation.title} density="compact" />
-                                    <AppText variant="muted">{planPresentation.message}</AppText>
-                                    <AppButton
-                                        title={planPresentation.actionLabel}
-                                        variant="secondary"
-                                        onPress={handlePlanAction}
-                                    />
-                                </AppCard>
-                            )}
-                        </>
-                    )}
-
-                    <View style={[styles.summaryCards, useSummaryGrid && styles.summaryCardsWide]}>
-                        {(!isPaused || entries.length > 0) && (
-                            <View style={[styles.summaryCard, useSummaryGrid && styles.summaryCardWide]}>
-                                <FoodLogSummaryCard
-                                    entries={entries}
-                                    trackingUnavailable={dayStatus?.status !== 'OPEN' && dayStatus?.status !== 'COMPLETE'}
-                                    onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })}
-                                    onAddFood={dayStatus?.status === 'OPEN' ? () => setAddFoodMeal(null) : undefined}
-                                    compact
-                                />
-                            </View>
-                        )}
-
-                        <View style={[styles.summaryCard, useSummaryGrid && styles.summaryCardWide]}>
-                            <TodayWeightCard
-                                metric={selectedDateMetric}
-                                weightUnit={user?.weight_unit}
-                                isToday={isToday}
-                                onPress={openWeightEntry}
-                                compact
-                            />
-                        </View>
-                    </View>
-                    {!isPaused && (
-                        <DayStatusCard
-                            date={selectedDate}
-                            isToday={isToday}
-                            failed={dashboardHasFailedResource}
-                            compact
-                        />
-                    )}
-                </>
-            </AsyncStateBoundary>
+                <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
+                <TodayFoodPreview entries={entries} expanded={expanded} onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })} />
+            </AsyncStateBoundary>}
+        </FixedPage>
             <AddFoodSheet
-                visible={addFoodMeal !== undefined && dayStatus?.status === 'OPEN'}
+                visible={addFoodMeal !== undefined && canAddFood}
                 date={selectedDate}
                 initialMeal={addFoodMeal}
                 returnTo="today"
                 onClose={() => setAddFoodMeal(undefined)}
             />
-        </TabScreen>
+            <WeightEntrySheet
+                visible={isWeightEntryOpen}
+                date={selectedDate}
+                onClose={() => setIsWeightEntryOpen(false)}
+            />
+        </>
     );
 }
 
+const TODAY_BODY_MIN_HEIGHT = 184; // Reserves the weigh-in strip and compact whole-row preview without covering its last line.
+
+function TodayContentLoading() {
+    return <FixedPageColumn testID="log-content-loading" style={styles.body}>
+        <View style={styles.loadingWeight}><SkeletonBlock width="40%" height={24} /><SkeletonBlock width="28%" height={16} /></View>
+        <View style={styles.loadingFood}><SkeletonBlock width="32%" height={24} /><SkeletonBlock width="90%" height={24} /><SkeletonBlock width="72%" height={20} /></View>
+    </FixedPageColumn>;
+}
+
 const styles = StyleSheet.create({
-    screenContent: {
-        flexGrow: 1,
-        gap: spacing.md,
-        paddingTop: 0
-    },
-    summaryCards: {
-        width: '100%',
-        gap: spacing.md
-    },
-    summaryCardsWide: {
-        flexDirection: 'row',
-        alignItems: 'stretch'
-    },
-    summaryCard: {
-        width: '100%',
-        minWidth: 0
-    },
-    summaryCardWide: {
-        flex: 1,
-        width: 'auto'
-    }
+    body: { flex: 1, minHeight: 0, gap: 0 },
+    bodyExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+    dateNavigation: { paddingTop: spacing.xs, paddingBottom: spacing.sm },
+    planAction: { paddingBottom: spacing.md, gap: spacing.sm },
+    loadingActions: { flexDirection: 'row', paddingVertical: spacing.md, gap: spacing.sm },
+    loadingAction: { flex: 1 },
+    loadingWeight: { minHeight: 72, justifyContent: 'center', gap: spacing.xs },
+    loadingFood: { paddingTop: spacing.lg, gap: spacing.md }
 });

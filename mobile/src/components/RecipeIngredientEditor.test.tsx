@@ -48,7 +48,7 @@ describe('RecipeIngredientSelector', () => {
 
     afterEach(cleanup);
 
-    it('pages beyond the former 12-item ceiling and adds an ingredient from a later page', async () => {
+    it('starts with a compact page and can add a saved ingredient from a later page', async () => {
         const firstPage = Array.from({ length: RECIPE_INGREDIENT_PAGE_SIZE }, (_, index) => savedFood(index + 1));
         const deepFood = savedFood(37, 'Deep pantry lentils');
         mockApi.getMyFoodsLibrary.mockImplementation(({ cursor }: { cursor?: string }) => Promise.resolve(
@@ -61,8 +61,8 @@ describe('RecipeIngredientSelector', () => {
             <RecipeIngredientSelector enabled onAddIngredient={onAddIngredient} />
         );
 
-        await waitFor(() => expect(screen.getByText('Saved food 20')).toBeTruthy());
-        expect(screen.getByText('Saved food 13')).toBeTruthy();
+        await waitFor(() => expect(screen.getByText(`Saved food ${RECIPE_INGREDIENT_PAGE_SIZE}`)).toBeTruthy());
+        expect(screen.queryByText('Deep pantry lentils')).toBeNull();
         fireEvent.press(screen.getByRole('button', { name: 'Load more saved foods' }));
         await waitFor(() => expect(screen.getByText('Deep pantry lentils')).toBeTruthy());
         fireEvent.press(screen.getByRole('button', { name: 'Add Deep pantry lentils to recipe' }));

@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions, type ViewProps } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { GoalEntry, MetricEntry, UserClientPayload } from '@calibrate/api-client';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
 import { AppText } from './AppText';
 import { CardHeader } from './CardHeader';
 import { ProgressBar } from './ProgressBar';
@@ -15,6 +15,7 @@ import {
     getGoalReachedDate
 } from '../utils/goals';
 import { formatWeight } from '../utils/format';
+import { useFocusVisible } from './useFocusVisible';
 
 type GoalProgressCardProps = ViewProps & {
     title?: string;
@@ -70,32 +71,32 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     ...props
 }) => {
     const theme = useAppTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
+    const { width, fontScale } = useWindowDimensions();
+    const styles = useMemo(() => createStyles(theme, width), [theme, width]);
 
     if (!goal) {
         return (
-            <AppCard {...props} density="compact" style={style}>
+            <AppSection {...props} density="compact" style={[styles.summary, style]}>
                 <CardHeader
                     title={title}
-                    density="compact"
-                    metadata={formatMetricDate(latestMetric?.date)}
+                    density="comfortable"
                     headingTestID="snapshot-heading-line"
                     action={onEditGoal && <GoalActionButton label="Set goal" onPress={onEditGoal} theme={theme} />}
                 />
-                <View style={styles.metricsRow}>
+                <View style={[styles.metricsRow, fontScale >= 1.6 && styles.metricsStacked]}>
                     <View style={styles.metricBlock}>
-                        <AppText variant="muted">Current scale weight</AppText>
-                        <AppText variant="screenTitle" style={styles.currentWeight}>
+                        <AppText variant="muted" style={styles.supporting}>Current weight</AppText>
+                        <AppText variant="screenTitle" style={styles.currentWeight} accessibilityHint={formatMetricDate(latestMetric?.date)}>
                             {formatWeight(latestMetric?.weight, user?.weight_unit)}
                         </AppText>
                     </View>
                     <View testID="goal-projection" style={styles.projectionBlock}>
-                        <AppText variant="muted">Goal date at selected pace</AppText>
+                        <AppText variant="muted" style={styles.supporting} accessibilityLabel="Goal date at selected pace">Goal date</AppText>
                         <AppText variant="screenTitle" style={styles.projectionValue}>Not configured</AppText>
                     </View>
                 </View>
-                <AppText variant="muted">Set a goal to add progress and projection details.</AppText>
-            </AppCard>
+                <AppText variant="muted" style={styles.supporting}>Set a goal to add progress and projection details.</AppText>
+            </AppSection>
         );
     }
 
@@ -140,21 +141,21 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     if (isMaintenance && planIsAvailable) {
         goalStatus = (
             <View style={styles.statusBlock}>
-                <AppText variant="muted">Goal status</AppText>
+                <AppText variant="muted" style={styles.supporting}>Goal status</AppText>
                 <AppText variant="screenTitle" style={styles.statusValue}>Ongoing</AppText>
             </View>
         );
     } else if (hasReachedGoal) {
         goalStatus = (
             <View style={styles.reachedBlock}>
-                <AppText variant="muted">Goal status</AppText>
+                <AppText variant="muted" style={styles.supporting}>Goal status</AppText>
                 <AppText variant="screenTitle" style={styles.reachedValue}>Reached</AppText>
             </View>
         );
     } else {
         goalStatus = (
             <View testID="goal-projection" style={styles.projectionBlock}>
-                <AppText variant="muted">Goal date at selected pace</AppText>
+                <AppText variant="muted" style={styles.supporting} accessibilityLabel="Goal date at selected pace">Goal date</AppText>
                 <AppText variant="screenTitle" style={styles.projectionValue}>{projection}</AppText>
             </View>
         );
@@ -163,26 +164,26 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     let progressDetails: React.ReactNode;
     if (isMaintenance && planIsAvailable) {
         progressDetails = (
-            <AppText variant="muted">
+            <AppText variant="muted" style={styles.supporting}>
                 Maintenance is ongoing, with no completion percentage or projected end date.
             </AppText>
         );
     } else if (isMaintenance) {
         progressDetails = (
-            <AppText variant="muted">
+            <AppText variant="muted" style={styles.supporting}>
                 This stored maintenance goal is preserved, but its calorie target is unavailable pending review.
             </AppText>
         );
     } else if (hasReachedGoal) {
         progressDetails = (
             <>
-                <ProgressBar accessibilityLabel="Goal progress" value={1} tone="primary" />
+                <ProgressBar accessibilityLabel="Goal progress" style={styles.goalTrack} value={1} tone="primary" />
                 <View style={styles.goalEndpoints}>
-                    <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
-                    <AppText variant="muted" style={styles.progressSummary}>100% reached</AppText>
-                    <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
+                    <AppText variant="muted" style={[styles.supporting, styles.endpoint]}>Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
+                    <AppText variant="muted" style={[styles.supporting, styles.progressSummary]}>100% reached</AppText>
+                    <AppText variant="muted" style={[styles.supporting, styles.endpoint, styles.goalEndpoint]}>Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
                 </View>
-                <AppText variant="muted">
+                <AppText variant="muted" style={styles.supporting}>
                     {reachedDate ? `Goal reached on ${formatDateOnlyForDisplay(reachedDate)}.` : 'Goal reached.'}
                 </AppText>
                 <View style={styles.planWarning}>
@@ -196,87 +197,103 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     } else {
         progressDetails = (
             <>
-                <ProgressBar accessibilityLabel="Goal progress" value={(progress?.percent ?? 0) / 100} tone="primary" />
+                <ProgressBar accessibilityLabel="Goal progress" style={styles.goalTrack} value={(progress?.percent ?? 0) / 100} tone="primary" />
                 <View style={styles.goalEndpoints}>
-                    <AppText variant="muted">Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
+                    <AppText variant="muted" style={[styles.supporting, styles.endpoint]}>Start {formatWeight(goal.start_weight, user?.weight_unit)}</AppText>
                     {progress && (
-                        <AppText variant="muted" style={styles.progressSummary}>
+                        <AppText variant="muted" style={[styles.supporting, styles.progressSummary]}>
                             {Math.round(progress.percent)}% complete
                         </AppText>
                     )}
-                    <AppText variant="muted">Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
+                    <AppText variant="muted" style={[styles.supporting, styles.endpoint, styles.goalEndpoint]}>Goal {formatWeight(goal.target_weight, user?.weight_unit)}</AppText>
                 </View>
-                {!progress && <AppText variant="muted">Log weight on Today to calculate progress.</AppText>}
+                {!progress && <AppText variant="muted" style={styles.supporting}>Log weight on Today to calculate progress.</AppText>}
             </>
         );
     }
 
     return (
-        <AppCard {...props} density="compact" style={style}>
+        <AppSection {...props} density="compact" style={[styles.summary, style]}>
             <CardHeader
                 title={title}
-                density="compact"
-                metadata={formatMetricDate(latestMetric?.date)}
+                density="comfortable"
                 headingTestID="snapshot-heading-line"
                 action={goalAction}
             />
-            <View style={styles.metricsRow}>
+            <View style={[styles.metricsRow, fontScale >= 1.6 && styles.metricsStacked]}>
                 <View style={styles.metricBlock}>
-                    <AppText variant="muted">Current scale weight</AppText>
-                    <AppText variant="screenTitle" style={styles.currentWeight}>
+                    <AppText variant="muted" style={styles.supporting}>Current weight</AppText>
+                    <AppText variant="screenTitle" style={styles.currentWeight} accessibilityHint={formatMetricDate(latestMetric?.date)}>
                         {formatWeight(currentWeight, user?.weight_unit)}
                     </AppText>
                 </View>
                 {goalStatus}
             </View>
-            <AppText variant="muted">
+            {!planIsAvailable && <AppText variant="muted" style={styles.supporting}>
                 {weightChangePending
                     ? 'Weight change syncing. Calorie target and projection will return after the server rechecks this plan.'
                     : describeGoalPlan(goal)}
-            </AppText>
+            </AppText>}
             {progressDetails}
             {!weightChangePending && typeof targetCalories === 'number' && (
-                <AppText variant="muted">Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
+                <AppText variant="muted" style={styles.supporting}>Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
             )}
-        </AppCard>
+        </AppSection>
     );
 };
 
 const GoalActionButton: React.FC<{ label: string; onPress: () => void; theme: AppTheme }> = ({ label, onPress, theme }) => {
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
 
     return (
         <Pressable
             accessibilityRole="button"
             accessibilityLabel={label}
             onPress={onPress}
-            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed, focusVisible && styles.focusVisible]}
         >
-            <Ionicons name="flag-outline" size={16} color={theme.colors.primary} />
             <AppText variant="label" numberOfLines={1} adjustsFontSizeToFit style={styles.actionText}>{label}</AppText>
         </Pressable>
     );
 };
 
-const createStyles = (theme: AppTheme) => StyleSheet.create({
+// A short date stays subordinate to the current measurement on narrow phones.
+const COMPACT_SNAPSHOT_BREAKPOINT = 340;
+const COMPACT_PROJECTION_SIZE = 18;
+
+const createStyles = (theme: AppTheme, width = COMPACT_SNAPSHOT_BREAKPOINT) => StyleSheet.create({
+    supporting: {
+        ...theme.typography.styles.label,
+        fontWeight: '400'
+    },
+    summary: {
+        paddingBottom: spacing.md,
+        gap: spacing.xs
+    },
     actionButton: {
-        minHeight: 48,
+        minHeight: theme.interaction.minimumTouchTarget,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.xs,
         borderRadius: radius.md,
-        borderColor: theme.colors.primary,
-        borderWidth: theme.stroke.control,
-        paddingHorizontal: spacing.md
+        paddingHorizontal: spacing.sm
     },
     actionText: {
         color: theme.colors.primary,
-        fontWeight: '900',
+        fontWeight: '600',
         flexShrink: 1
     },
     pressed: {
         backgroundColor: theme.colors.surfacePressed
+    },
+    focusVisible: {
+        outlineWidth: theme.interaction.focusRingWidth,
+        outlineStyle: 'solid',
+        outlineColor: theme.colors.focusRing
     },
     metricsRow: {
         flexDirection: 'row',
@@ -286,61 +303,65 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     metricBlock: {
         flex: 1,
         minWidth: 0,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         gap: spacing.xs,
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.primaryContainer,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm
+        paddingBottom: spacing.sm
     },
     currentWeight: {
-        color: theme.colors.onPrimaryContainer
+        color: theme.colors.onSurface,
+        ...theme.typography.styles.page,
+        fontVariant: ['tabular-nums']
     },
     goalEndpoints: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.md
+        gap: spacing.sm
+    },
+    goalTrack: { height: 5 },
+    metricsStacked: { flexDirection: 'column' },
+    endpoint: {
+        ...theme.typography.styles.caption,
+        flex: 1,
+        minWidth: 0
+    },
+    goalEndpoint: {
+        textAlign: 'right'
     },
     projectionBlock: {
         flex: 1,
         minWidth: 0,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         gap: spacing.xs,
-        borderRadius: radius.md,
-        // A projection is informational, so it uses the neutral surface treatment.
-        backgroundColor: theme.colors.surfaceContainer,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm
+        paddingBottom: spacing.sm
     },
     projectionValue: {
-        color: theme.colors.onSurface
+        color: theme.colors.onSurface,
+        ...theme.typography.styles.section,
+        fontSize: width < COMPACT_SNAPSHOT_BREAKPOINT ? COMPACT_PROJECTION_SIZE : theme.typography.styles.section.fontSize,
+        fontVariant: ['tabular-nums']
     },
     statusBlock: {
         flex: 1,
         minWidth: 0,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         gap: spacing.xs,
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.surfaceContainer,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm
+        paddingBottom: spacing.sm
     },
     statusValue: {
-        color: theme.colors.onSurface
+        color: theme.colors.onSurface,
+        ...theme.typography.styles.measurement
     },
     reachedBlock: {
         flex: 1,
         minWidth: 0,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         gap: spacing.xs,
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.successContainer,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm
+        paddingBottom: spacing.sm
     },
     reachedValue: {
-        color: theme.colors.onSuccessContainer
+        color: theme.colors.success,
+        ...theme.typography.styles.measurement
     },
     planWarning: {
         flexDirection: 'row',
@@ -351,11 +372,16 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         padding: spacing.md
     },
     planWarningText: {
+        ...theme.typography.styles.label,
+        fontWeight: '400',
         flex: 1,
         color: theme.colors.onWarningContainer
     },
     progressSummary: {
-        fontWeight: '700',
+        ...theme.typography.styles.caption,
+        flexShrink: 1,
+        minWidth: 0,
+        fontWeight: '600',
         textAlign: 'center'
     }
 });

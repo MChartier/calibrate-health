@@ -173,10 +173,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     savedWeight: {
         color: theme.colors.onSurface,
-        fontSize: 44,
-        lineHeight: 54,
-        fontWeight: '800',
-        letterSpacing: -0.5,
+        ...theme.typography.styles.metric,
+        fontVariant: ['tabular-nums'],
         textAlign: 'center'
     },
     summaryStack: {
@@ -184,11 +182,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     summaryCard: {
         gap: theme.spacing.sm,
-        padding: theme.spacing.md,
-        borderRadius: theme.radius.md,
+        paddingVertical: theme.spacing.md,
         borderColor: theme.colors.outlineVariant,
-        borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: theme.colors.surface
+        borderTopWidth: StyleSheet.hairlineWidth,
     },
     summaryHeading: {
         flexDirection: 'row',
@@ -197,6 +193,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     goalHeadingRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: theme.spacing.md

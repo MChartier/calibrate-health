@@ -155,7 +155,7 @@ function createStyles(theme: AppTheme) {
             minHeight: theme.interaction.minimumTouchTarget,
             paddingHorizontal: theme.spacing.sm,
             paddingVertical: theme.spacing.sm,
-            fontWeight: '700'
+            fontWeight: '600'
         }
     });
 }

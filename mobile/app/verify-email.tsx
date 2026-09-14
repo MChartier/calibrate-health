@@ -96,25 +96,25 @@ export default function VerifyEmailRoute() {
                     {!user && (
                         <Link href="/(auth)/login" asChild>
                             <Pressable accessibilityRole="link" style={trustPageStyles.linkTarget}>
-                                <AppText style={{ color: colors.primary, fontWeight: '700' }}>Back to sign in</AppText>
+                                <AppText style={{ color: colors.primary, fontWeight: '600' }}>Back to sign in</AppText>
                             </Pressable>
                         </Link>
                     )}
                     {user && (
                         <Link href="/account-deletion" asChild>
                             <Pressable accessibilityRole="link" style={trustPageStyles.linkTarget}>
-                                <AppText style={{ color: colors.primary, fontWeight: '700' }}>Account data and deletion</AppText>
+                                <AppText style={{ color: colors.primary, fontWeight: '600' }}>Account data and deletion</AppText>
                             </Pressable>
                         </Link>
                     )}
                     <Link href="/support" asChild>
                         <Pressable accessibilityRole="link" style={trustPageStyles.linkTarget}>
-                            <AppText style={{ color: colors.primary, fontWeight: '700' }}>Support</AppText>
+                            <AppText style={{ color: colors.primary, fontWeight: '600' }}>Support</AppText>
                         </Pressable>
                     </Link>
                     {user && (
                         <Pressable accessibilityRole="button" style={trustPageStyles.linkTarget} onPress={() => void logout()}>
-                            <AppText style={{ color: colors.primary, fontWeight: '700' }}>Sign out</AppText>
+                            <AppText style={{ color: colors.primary, fontWeight: '600' }}>Sign out</AppText>
                         </Pressable>
                     )}
                 </View>

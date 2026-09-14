@@ -9,7 +9,7 @@ import { supportsAndroidIntegrations } from '../../../src/platform/nativePlatfor
 /** Render phone-to-watch pairing controls as a navigable settings page. */
 export default function WatchSettingsScreen() {
     return (
-        <TabScreen testID="watch-settings-page">
+        <TabScreen contentWidth="overview" testID="watch-settings-page">
             {supportsAndroidIntegrations() ? <WearPairingCard /> : (
                 <AppText>Galaxy Watch pairing is available in the Android app.</AppText>
             )}

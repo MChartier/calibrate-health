@@ -27,6 +27,7 @@ type HistoricalDatePickerProps = {
     maxDate: string;
     onSelectDate: (date: string) => void;
     onRequestClose: () => void;
+    footer?: React.ReactNode;
 };
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
@@ -91,7 +92,8 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
     minDate,
     maxDate,
     onSelectDate,
-    onRequestClose
+    onRequestClose,
+    footer
 }) => {
     const { api } = useAuth();
     const theme = useAppTheme();
@@ -274,6 +276,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     </>
                 </AsyncStateBoundary>
             </View>
+            {footer}
         </CalendarModal>
     );
 };

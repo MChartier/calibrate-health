@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { SearchedFoodItem } from '../food/serving';
 import { AppText } from '../components/AppText';
-import { radius, spacing, useAppTheme } from '../theme';
+import { AppActionRow } from '../components/AppActionRow';
+import { spacing, useAppTheme } from '../theme';
 
 type BarcodeResultListProps = {
     candidates: SearchedFoodItem[];
@@ -16,21 +17,17 @@ export function BarcodeResultList({ candidates, disabled = false, onChoose }: Ba
     return (
         <View style={styles.results}>
             {candidates.map((candidate) => (
-                <Pressable
+                <AppActionRow
                     key={`${candidate.source ?? 'food'}:${candidate.id}`}
                     accessibilityRole="button"
                     accessibilityLabel={`Choose ${candidate.name}`}
                     disabled={disabled}
                     onPress={() => onChoose(candidate)}
-                    style={({ pressed }) => [
+                    contentStyle={[
                         styles.resultRow,
                         {
-                            minHeight: theme.interaction.minimumTouchTarget,
-                            borderWidth: theme.stroke.control,
-                            borderColor: theme.colors.outlineVariant,
-                            backgroundColor: theme.colors.surfaceContainer
-                        },
-                        pressed && styles.pressed
+                            borderBottomColor: theme.colors.outlineVariant
+                        }
                     ]}
                 >
                     <View style={styles.resultText}>
@@ -41,7 +38,7 @@ export function BarcodeResultList({ candidates, disabled = false, onChoose }: Ba
                         </AppText>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={theme.colors.onSurfaceVariant} />
-                </Pressable>
+                </AppActionRow>
             ))}
         </View>
     );
@@ -55,15 +52,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        borderRadius: radius.md,
-        padding: spacing.md
+        borderRadius: 0,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        paddingVertical: spacing.md
     },
     resultText: {
         flex: 1,
         minWidth: 0,
         gap: spacing.xs
-    },
-    pressed: {
-        opacity: 0.82
     }
 });

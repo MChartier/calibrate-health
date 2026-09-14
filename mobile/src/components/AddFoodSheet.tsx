@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Keyboard, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { FlatList, Keyboard, Linking, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodLogCreatePayload, MyFoodSummary, RecentFoodSummary } from '@calibrate/api-client';
+import { AppActionRow } from './AppActionRow';
 import { AppButton } from './AppButton';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from './AsyncStateBoundary';
 import { AppText } from './AppText';
@@ -20,7 +21,8 @@ import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { getProviderAttribution, type ProviderAttribution } from '../barcode/workflow';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
-import { useFoodDayStatus } from './FoodTrackingStatus';
+import { foodDayQueryKey, useFoodDayStatus } from './FoodTrackingStatus';
+import { foodDayRangeQueryRoot } from '../food/calendar';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatCalories, formatMealPeriod } from '../utils/format';
 import { triggerHapticFeedback } from '../utils/haptics';
@@ -41,7 +43,7 @@ import {
     normalizeSearchedFoodItem,
     type SearchedFoodItem
 } from '../food/serving';
-import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
+import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { confirmDiscardChanges } from './confirmDiscardChanges';
 import { getCachedSavedFoods } from '../savedFoods/cachedFoods';
@@ -143,7 +145,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const { width: viewportWidth } = useWindowDimensions();
+    const { width: viewportWidth, fontScale } = useWindowDimensions();
     const isOnline = useOnlineStatus();
     const { api, user } = useAuth();
     const { enqueue } = useOfflineOutbox();
@@ -210,9 +212,25 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         dataUpdatedAt: savedFoods.length > 0 ? Math.max(1, myFoodsQuery.dataUpdatedAt) : myFoodsQuery.dataUpdatedAt
     }, (data) => data.length === 0);
 
-    const createFoodLog = useCallback((payload: FoodLogCreatePayload) => {
-        if (foodDayQuery.data?.status !== 'OPEN') {
-            throw new Error('Backfill this day before adding food.');
+    const createFoodLog = useCallback(async (payload: FoodLogCreatePayload) => {
+        const day = foodDayQuery.data;
+        if (!day) throw new Error('Day status is unavailable. Try again.');
+        if (day.status === 'PAUSED') throw new Error('Resume tracking before adding food.');
+        // Browsing keeps a signed-off day intact. Only a submitted food entry reopens it.
+        if (day.status !== 'OPEN') {
+            const reopenPayload = { date: payload.date, status: 'OPEN' as const };
+            const reopened = await executeOrQueueMutation({
+                operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
+                payload: reopenPayload,
+                execute: (operationId) => api.setFoodDayStatus(reopenPayload, operationId),
+                enqueue
+            });
+            if (reopened.disposition === 'queued') {
+                // Queue the dependent entry after its reopen instead of racing the server's closed day.
+                await enqueue(OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG, payload);
+                return;
+            }
+            queryClient.setQueryData(foodDayQueryKey(payload.date), reopened.value);
         }
         return executeOrQueueMutation({
             operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
@@ -220,12 +238,13 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             execute: (operationId) => api.createFoodLog(payload, operationId),
             enqueue
         });
-    }, [api, enqueue, foodDayQuery.data?.status]);
+    }, [api, enqueue, foodDayQuery.data, queryClient]);
 
     async function invalidateLogQueries() {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['mobile-food', date] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-food-day', date] }),
+            queryClient.invalidateQueries({ queryKey: foodDayRangeQueryRoot }),
             queryClient.invalidateQueries({ queryKey: calibrationStatusQueryKey }),
             queryClient.invalidateQueries({ queryKey: ['mobile-profile'] }),
             queryClient.invalidateQueries({ queryKey: ['mobile-recent-foods'] }),
@@ -601,7 +620,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                         <AppText accessibilityRole="alert" style={styles.error}>Calories must be zero or greater.</AppText>
                     )}
                     {mutationError && <AppText accessibilityRole="alert" style={styles.error}>{mutationError}</AppText>}
-                    <View style={styles.actions}>
+                    <View style={[styles.actions, fontScale >= 1.3 && styles.actionsStacked]}>
                         <AppButton
                             title={logFood.isPending ? 'Adding...' : 'Add another'}
                             variant="secondary"
@@ -704,6 +723,11 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             onRequestClose={onClose}
             contentStyle={usesEdgeToEdgeSheetContent ? styles.edgeToEdgeSheetContent : undefined}
         >
+            {(foodDayQuery.data?.status === 'COMPLETE' || foodDayQuery.data?.status === 'INCOMPLETE') && (
+                <AppText variant="muted" style={isMobileSearchWorkspace ? styles.reopenNotice : undefined}>
+                    Adding food reopens this day so you can complete it again.
+                </AppText>
+            )}
             {!isMobileSearchWorkspace && (
                 <>
                     <View style={styles.mealControl}>
@@ -746,27 +770,28 @@ const FoodActionRow: React.FC<FoodActionRowProps> = ({
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     return (
-        <Pressable
+        <AppActionRow
             accessibilityRole="button"
             accessibilityLabel={`Choose amount for ${title}`}
             accessibilityHint={disabled ? disabledReason : undefined}
             accessibilityState={{ disabled: Boolean(disabled) }}
             disabled={disabled}
             onPress={onPress}
-            style={({ pressed }) => [styles.foodRow, disabled && styles.disabled, pressed && styles.pressed]}
+            contentStyle={styles.foodRow}
         >
             <View style={styles.foodText}>
                 <AppText variant="body" numberOfLines={1}>{title}</AppText>
                 <AppText variant="caption" numberOfLines={2}>{subtitle}</AppText>
             </View>
             <View style={styles.rowIcon}>
-                <Ionicons name="chevron-forward" size={18} color={theme.colors.onPrimary} />
+                <Ionicons name="chevron-forward" size={18} color={theme.colors.onSurfaceVariant} />
             </View>
-        </Pressable>
+        </AppActionRow>
     );
 };
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
+    reopenNotice: { marginHorizontal: spacing.lg, marginTop: spacing.sm },
     flex: {
         flex: 1,
         minHeight: 0
@@ -834,12 +859,13 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     foodRow: {
         minHeight: 64,
+        borderRadius: 0,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.surfaceContainer,
-        padding: spacing.md
+        borderBottomColor: theme.colors.outlineVariant,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        paddingVertical: spacing.md
     },
     foodText: {
         flex: 1,
@@ -849,17 +875,18 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     rowIcon: {
         width: 34,
         height: 34,
-        borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.primary
     },
     actions: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: spacing.md
     },
+    actionsStacked: { flexDirection: 'column' },
     actionButton: {
-        flex: 1
+        flex: 1,
+        minWidth: Platform.OS === 'web' ? 'auto' : 0
     },
     disabled: {
         opacity: 0.45

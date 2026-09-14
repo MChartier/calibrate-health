@@ -130,18 +130,54 @@ for (const editor of [
   });
 }
 
-test('Today weight entry returns to Today and can be opened again', async ({ page, ux }) => {
+test('Today weight entry stays on Today and can be opened again', async ({ page, ux }) => {
   await ux.install('populated');
   await page.goto('/today');
+  await hideTransientPwaNotices(page);
   for (let attempt = 0; attempt < 2; attempt += 1) {
     await page.getByTestId('today-weight-card-press-layer').click();
-    await expect(page).toHaveURL((url) => url.pathname === '/weight');
+    await expect(page).toHaveURL((url) => url.pathname === '/today');
     const dialog = page.getByRole('dialog', { name: 'Weight entry', exact: true });
     await expect(dialog).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page).toHaveURL((url) => url.pathname === '/today');
     await expect(dialog).toHaveCount(0);
+    await expect(page.getByTestId('today-weight-card-press-layer')).toBeFocused();
   }
+});
+
+test('Today saves the selected historical weight without changing tabs', async ({ page, ux }) => {
+  await ux.install('populated');
+  const selectedDate = '2026-07-11';
+  let savedWeight = 89;
+  await page.route('**/api/v1/metrics', async (route) => {
+    if (route.request().method() === 'POST') {
+      const payload = route.request().postDataJSON();
+      expect(payload).toMatchObject({ date: selectedDate, weight: 88.9 });
+      savedWeight = payload.weight;
+      await route.fulfill({ json: { id: 2, date: selectedDate, weight: savedWeight } });
+      return;
+    }
+    await route.fulfill({ json: [{ id: 2, date: selectedDate, weight: savedWeight }] });
+  });
+  await page.goto(`/today?date=${selectedDate}`);
+  await hideTransientPwaNotices(page);
+  const weightRow = page.getByTestId('today-weight-card-press-layer');
+  await weightRow.click();
+  const dialog = page.getByRole('dialog', { name: 'Weight entry', exact: true });
+  const input = dialog.getByRole('textbox', { name: 'Weight in kilograms', exact: true });
+  await expect(input).toHaveValue('89');
+  await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('date') === selectedDate);
+  await input.fill('88.9');
+  await dialog.getByRole('button', { name: 'Save weight', exact: true }).click();
+  const result = page.getByRole('dialog', { name: 'Weight progress update', exact: true });
+  await expect(result.getByLabel('Saved weight 88.9 kg', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('date') === selectedDate);
+  await result.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(result).toHaveCount(0);
+  await expect(weightRow).toContainText('88.9 kg');
+  await expect(weightRow).toBeFocused();
+  await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('date') === selectedDate);
 });
 
 test('web direct links do not expose Android integration controls', async ({ page, ux }) => {

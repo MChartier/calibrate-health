@@ -2,7 +2,7 @@ import React from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import type { LogDateNavigation } from '../hooks/useLogDateNavigation';
 import { DateNavigationHeader } from './DateNavigationHeader';
-import { SCREEN_CONTENT_MAX_WIDTH, SCREEN_WIDE_LAYOUT_BREAKPOINT } from './Screen';
+import { SCREEN_CONTENT_WIDTHS, SCREEN_WIDE_LAYOUT_BREAKPOINT } from './Screen';
 
 type TestInstance = {
     props: Record<string, unknown>;
@@ -26,10 +26,11 @@ jest.mock('react-native-safe-area-context', () => ({
     useSafeAreaInsets: () => mockSafeAreaInsets
 }));
 jest.mock('../theme', () => ({
-    spacing: { sm: 8, md: 16, lg: 24, xl: 32 },
+    spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },
     useAppTheme: () => ({
         colors: {
             border: '#cdd7c9',
+            background: '#faf9f6',
             surface: '#ffffff'
         }
     })
@@ -83,16 +84,14 @@ describe('DateNavigationHeader', () => {
         expect(dateNavigation.props).toMatchObject({ navigation, compact: true });
         expect(StyleSheet.flatten(content.props.style)).toMatchObject({
             width: '100%',
-            maxWidth: SCREEN_CONTENT_MAX_WIDTH,
+            maxWidth: SCREEN_CONTENT_WIDTHS.wide,
             alignSelf: 'center',
             paddingLeft: 32,
             paddingRight: 32,
-            paddingVertical: 16
+            paddingVertical: 8
         });
         expect(StyleSheet.flatten(shell.props.style)).toMatchObject({
-            backgroundColor: '#ffffff',
-            borderBottomColor: '#cdd7c9',
-            borderBottomWidth: StyleSheet.hairlineWidth
+            backgroundColor: '#faf9f6'
         });
     });
 

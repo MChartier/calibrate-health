@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { AppCard } from '../AppCard';
+import { AppSection } from '../AppSection';
 import { AppText } from '../AppText';
 import { CalibrateLogo } from '../CalibrateLogo';
 import { Screen } from '../Screen';
@@ -16,18 +16,18 @@ type TrustPageShellProps = {
 export function TrustPageShell({ title, description, children, footer }: TrustPageShellProps) {
     const { colors } = useAppTheme();
     return (
-        <Screen safeTop style={styles.screen}>
+        <Screen contentWidth="form" safeTop style={styles.screen}>
             <View style={styles.brandRow}>
                 <CalibrateLogo size={42} />
                 <AppText variant="label" style={{ color: colors.primary }}>Calibrate Health</AppText>
             </View>
             <View style={styles.heading}>
-                <AppText nativeID="route-focus-title" accessibilityRole="header" aria-level={1} variant="title">
+                <AppText nativeID="route-focus-title" accessibilityRole="header" aria-level={1} variant="title" style={styles.headingText}>
                     {title}
                 </AppText>
-                <AppText variant="muted">{description}</AppText>
+                <AppText variant="muted" style={styles.headingText}>{description}</AppText>
             </View>
-            <AppCard style={styles.card}>{children}</AppCard>
+            <AppSection style={styles.card}>{children}</AppSection>
             {footer}
         </Screen>
     );
@@ -56,7 +56,6 @@ const styles = StyleSheet.create({
     screen: {
         justifyContent: 'center',
         flexGrow: 1,
-        maxWidth: 640,
         width: '100%',
         alignSelf: 'center'
     },
@@ -69,6 +68,9 @@ const styles = StyleSheet.create({
     heading: {
         alignItems: 'center',
         gap: spacing.xs
+    },
+    headingText: {
+        textAlign: 'center'
     },
     card: {
         gap: spacing.lg

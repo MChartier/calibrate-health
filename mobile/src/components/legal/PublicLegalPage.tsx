@@ -97,6 +97,7 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links, ac
             ) : null}
 
             <Screen
+                contentWidth="overview"
                 testID={inApp ? 'legal-in-app-shell' : 'legal-public-shell'}
                 safeTop={!inApp}
                 style={styles.screen}
@@ -181,7 +182,6 @@ const styles = StyleSheet.create({
     },
     screen: {
         width: '100%',
-        maxWidth: 920,
         alignSelf: 'center'
     },
     appHeader: {
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
         flexShrink: 1,
         fontSize: 20,
         lineHeight: 26,
-        fontWeight: '800'
+        fontWeight: '600'
     },
     appHeaderActions: {
         flexDirection: 'row',
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
         textAlign: 'center',
-        fontWeight: '800'
+        fontWeight: '600'
     },
     content: {
         gap: spacing.lg
@@ -277,6 +277,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         textAlign: 'center',
-        fontWeight: '800'
+        fontWeight: '600'
     }
 });

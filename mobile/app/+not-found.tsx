@@ -2,7 +2,7 @@ import { router, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { useAuth } from '../src/auth/AuthContext';
 import { AppButton } from '../src/components/AppButton';
-import { AppCard } from '../src/components/AppCard';
+import { AppSection } from '../src/components/AppSection';
 import { AppText } from '../src/components/AppText';
 import { LoadingState } from '../src/components/LoadingState';
 import { PageHeader } from '../src/components/PageHeader';
@@ -32,7 +32,7 @@ export default function NotFoundScreen() {
                 title="Page not found"
                 description={description}
             />
-            <AppCard testID="route-recovery-actions">
+            <AppSection testID="route-recovery-actions">
                 <AppText variant="card">The address may be outdated, incomplete, or no longer available.</AppText>
                 <View style={styles.actions}>
                     <AppButton
@@ -47,7 +47,7 @@ export default function NotFoundScreen() {
                         style={styles.action}
                     />
                 </View>
-            </AppCard>
+            </AppSection>
         </Screen>
     );
 }

@@ -8,7 +8,8 @@ import { useHealthConnectPresentation } from '../healthConnect/useHealthConnectP
 import { HEALTH_CONNECT_FEATURES, type HealthConnectFeature } from '../healthConnect/types';
 import { spacing, useAppTheme, type AppTheme } from '../theme';
 import { AppButton } from './AppButton';
-import { AppCard } from './AppCard';
+import { AppSection } from './AppSection';
+import { AppNotice } from './AppNotice';
 import { AppText } from './AppText';
 import { HealthConnectConnectionAction } from './HealthConnectConnectionAction';
 import { SectionHeader } from './SectionHeader';
@@ -66,17 +67,17 @@ export function HealthConnectCard() {
     }
 
     return (
-        <AppCard>
+        <AppSection>
             <SectionHeader
                 title="Health Connect"
                 description="Read activity from Samsung Health and other connected apps on this phone."
             />
-            <View style={styles.rationale}>
+            <AppNotice style={styles.rationale}>
                 <Ionicons name="shield-checkmark-outline" size={22} color={theme.colors.primary} />
                 <AppText style={styles.rationaleText}>
                     Read only: Calibrate never writes health records, and imported activity will not automatically change your calorie target.
                 </AppText>
-            </View>
+            </AppNotice>
             <AppText
                 accessibilityLiveRegion="polite"
                 accessibilityRole={presentation.tone === 'danger' ? 'alert' : undefined}
@@ -116,7 +117,7 @@ export function HealthConnectCard() {
 
             {isAvailable && (
                 <>
-                    <AppText variant="label">Data Calibrate may read</AppText>
+                    <SectionHeader title="Data Calibrate may read" />
                     <View style={styles.featureList}>
                         {FEATURE_PRESENTATION.map(({ feature, label, description }) => {
                             const enabled = healthConnect.selection[feature];
@@ -141,6 +142,7 @@ export function HealthConnectCard() {
                                         </AppText>
                                     </View>
                                     <Switch
+                                        style={styles.featureSwitch}
                                         accessibilityLabel={'Read ' + label.toLowerCase() + ' from Health Connect'}
                                         accessibilityHint={isWeight ? 'Weight import requires separate, explicit permission.' : undefined}
                                         value={enabled}
@@ -186,7 +188,7 @@ export function HealthConnectCard() {
             )}
 
             <View style={styles.footer}>
-                <AppText variant="caption">
+                <AppText variant="caption" style={styles.footerCopy}>
                     Last permission check: {formatPermissionCheck(healthConnect.lastRefreshedAt)}
                 </AppText>
                 {isAvailable && (
@@ -213,7 +215,7 @@ export function HealthConnectCard() {
                 variant="ghost"
                 onPress={() => router.push('/health-connect-privacy')}
             />
-        </AppCard>
+        </AppSection>
     );
 }
 
@@ -222,8 +224,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: spacing.md,
-        padding: spacing.md,
-        backgroundColor: theme.colors.primaryContainer
+        backgroundColor: theme.colors.summaryContainer,
+        borderLeftColor: theme.colors.primary
     },
     rationaleText: {
         flex: 1
@@ -247,14 +249,20 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1,
         gap: spacing.xs
     },
+    featureSwitch: {
+        minWidth: theme.interaction.minimumTouchTarget,
+        minHeight: theme.interaction.minimumTouchTarget
+    },
     featureTitleRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.sm
     },
     featureTitle: {
-        fontWeight: '800'
+        flexShrink: 1,
+        fontWeight: '600'
     },
     granted: {
         color: theme.colors.success
@@ -264,19 +272,30 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     },
     actionRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: spacing.md
     },
     actionButton: {
-        flex: 1
+        flex: 1,
+        // Permission actions need enough room for their full labels at phone widths.
+        minWidth: 180
     },
     footer: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.md
+        gap: spacing.md,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.colors.outlineVariant,
+        paddingTop: spacing.md
+    },
+    footerCopy: {
+        flex: 1,
+        minWidth: 180
     },
     compactButton: {
-        minHeight: 36,
+        minHeight: theme.interaction.minimumTouchTarget,
         paddingVertical: spacing.sm
     },
     error: {

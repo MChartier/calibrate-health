@@ -224,12 +224,11 @@ export function Listbox<T extends string>({
                             styles.option,
                             selected && styles.optionSelected,
                             active && styles.optionActive,
-                            pressed && !inactive && styles.optionPressed,
-                            inactive && styles.optionDisabled
+                            pressed && !inactive && styles.optionPressed
                         ]}
                     >
                         <View style={styles.optionCopy}>
-                            <AppText style={[styles.optionTitle, selected && styles.optionTitleSelected]}>
+                            <AppText style={[styles.optionTitle, selected && styles.optionTitleSelected, inactive && styles.optionTitleDisabled]}>
                                 {option.label}
                             </AppText>
                             {option.description && (
@@ -507,9 +506,6 @@ function createStyles(theme: AppTheme) {
             backgroundColor: theme.colors.surfacePressed,
             opacity: theme.interaction.pressedOpacity
         },
-        optionDisabled: {
-            opacity: theme.interaction.disabledOpacity
-        },
         optionCopy: {
             flex: 1,
             minWidth: 0,
@@ -521,6 +517,9 @@ function createStyles(theme: AppTheme) {
         },
         optionTitleSelected: {
             color: theme.colors.onSelectionContainer
+        },
+        optionTitleDisabled: {
+            color: theme.colors.onSurfaceVariant
         },
         optionDescriptionSelected: {
             color: theme.colors.onSelectionContainer

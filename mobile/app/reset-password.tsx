@@ -70,14 +70,14 @@ export default function ResetPasswordRoute() {
                 <View style={trustPageStyles.links}>
                     <Link href={complete ? '/(auth)/login' : '/forgot-password'} asChild>
                         <Pressable accessibilityRole="link" style={trustPageStyles.linkTarget}>
-                            <AppText style={{ color: colors.primary, fontWeight: '700' }}>
+                            <AppText style={{ color: colors.primary, fontWeight: '600' }}>
                                 {complete ? 'Sign in' : 'Request a new link'}
                             </AppText>
                         </Pressable>
                     </Link>
                     <Link href="/support" asChild>
                         <Pressable accessibilityRole="link" style={trustPageStyles.linkTarget}>
-                            <AppText style={{ color: colors.primary, fontWeight: '700' }}>Support</AppText>
+                            <AppText style={{ color: colors.primary, fontWeight: '600' }}>Support</AppText>
                         </Pressable>
                     </Link>
                 </View>

@@ -66,7 +66,12 @@ const HIDDEN_TAB_OPTIONS = {
 const TAB_BAR_CONTENT_HEIGHT = 56; // Keeps the UIKit icon, label, and built-in item padding from clipping.
 const TAB_BAR_VERTICAL_PADDING = spacing.sm; // Separates tab content from both bar edges before safe-area padding.
 const TAB_BAR_BASE_HEIGHT = TAB_BAR_CONTENT_HEIGHT + (TAB_BAR_VERTICAL_PADDING * 2);
+// A short underline distinguishes selection without filling the whole tab.
+const TAB_SELECTION_WIDTH = 64;
+const TAB_SELECTION_STROKE = 3;
 const HEADER_ROW_MIN_HEIGHT = 56; // Standard compact native app-bar height before large-text expansion.
+const HEADER_TITLE_FONT_SIZE = 20;
+const HEADER_EXPANDED_FONT_SCALE = 1.6; // Gives enlarged titles a full row without displacing app controls.
 const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as the device font scale grows toward 200%.
 const DESKTOP_NAV_RAIL_WIDTH = 176;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
@@ -333,7 +338,7 @@ export default function TabsLayout() {
                                 ? theme.colors.onPrimaryContainer
                                 : theme.colors.primary,
                             tabBarInactiveTintColor: theme.colors.muted,
-                            tabBarActiveBackgroundColor: usesNavigationRail ? theme.colors.primaryContainer : undefined,
+                            tabBarActiveBackgroundColor: usesNavigationRail ? theme.colors.selectionContainer : undefined,
                             tabBarHideOnKeyboard: true,
                             tabBarStyle: usesNavigationRail
                                 ? [styles.navigationRail, {
@@ -351,6 +356,15 @@ export default function TabsLayout() {
                                 },
                             tabBarItemStyle: [styles.tabBarItem, usesNavigationRail && styles.navigationRailItem],
                             tabBarLabelStyle: styles.tabBarLabel,
+                            tabBarLabel: ({ focused, color, children }) => (
+                                <View style={[styles.tabLabelContent, usesNavigationRail && styles.railLabelContent]}>
+                                    <AppText style={[styles.tabBarLabel, { color }]}>{children}</AppText>
+                                    {!usesNavigationRail && <View style={[
+                                        styles.tabSelection,
+                                        { backgroundColor: focused ? theme.colors.primary : 'transparent' }
+                                    ]} />}
+                                </View>
+                            ),
                             header: ({ options }) => {
                                 const routeTitle = activeRoute?.definition.title
                                     ?? (typeof options.headerTitle === 'string' ? options.headerTitle : 'Calibrate');
@@ -378,6 +392,7 @@ export default function TabsLayout() {
                                         styles={styles}
                                         desktop={usesNavigationRail}
                                         isTodayRoute={isRouteActive(pathname, 'today')}
+                                        summaryBackground={activeRoute?.routeId === 'today' || activeRoute?.routeId === 'progress'}
                                     />
                                 );
                             }
@@ -468,56 +483,88 @@ const TabHeader: React.FC<{
     styles: TabStyles;
     desktop: boolean;
     isTodayRoute: boolean;
-}> = ({ topInset, leftInset, rightInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop, isTodayRoute }) => (
-    <View role="banner" style={[styles.headerRoot, { paddingTop: topInset }]}>
-        <View
-            style={[
-                styles.headerRow,
-                desktop && styles.headerRowDesktop,
-                {
-                    minHeight: HEADER_ROW_MIN_HEIGHT + Math.round(Math.max(0, Math.min(fontScale, 2) - 1) * LARGE_TEXT_HEIGHT_INCREMENT),
-                    paddingLeft: Math.max(desktop ? spacing.xl : spacing.lg, leftInset + spacing.sm),
-                    paddingRight: Math.max(desktop ? spacing.xl : spacing.lg, rightInset + spacing.sm)
-                }
-            ]}
-        >
-            <View style={styles.headerLeading}>
-                {backAction ? (
-                    <NavigationPressable
-                        accessibilityRole="button"
-                        accessibilityLabel={backAction.label}
-                        focusStyle={styles.navigationFocus}
-                        hoverStyle={styles.navigationHover}
-                        onPress={backAction.onPress}
-                        style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
-                    >
-                        <Ionicons name="chevron-back" size={24} color={colors.text} />
-                    </NavigationPressable>
-                ) : (
-                    <HeaderBrand styles={styles} isTodayRoute={isTodayRoute} />
-                )}
-                <AppText
-                    accessibilityRole="header"
-                    aria-level={1}
-                    nativeID="route-focus-title"
-                    numberOfLines={2}
-                    style={styles.headerTitleText}
+    summaryBackground: boolean;
+}> = ({ topInset, leftInset, rightInset, fontScale, title, backAction, unreadCount, offlineChangeCount, hasFailedOfflineChanges, profileImageUrl, onOpenNotifications, colors, styles, desktop, isTodayRoute, summaryBackground }) => {
+    const headerRef = React.useRef<View>(null);
+    const [webTextExpanded, setWebTextExpanded] = React.useState(false);
+    const expanded = fontScale >= HEADER_EXPANDED_FONT_SCALE || webTextExpanded;
+    const readTitleScale = React.useCallback(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+        const headerElement = headerRef.current as unknown as HTMLElement | null;
+        const titleElement = headerElement?.querySelector('[data-testid="app-header-title"]');
+        if (!titleElement) return;
+        // Browser text enlargement changes computed text size without changing native fontScale.
+        const renderedFontSize = Number.parseFloat(window.getComputedStyle(titleElement).fontSize);
+        setWebTextExpanded(renderedFontSize >= HEADER_TITLE_FONT_SIZE * HEADER_EXPANDED_FONT_SCALE);
+    }, []);
+
+    React.useLayoutEffect(readTitleScale, [readTitleScale, title]);
+
+    const leadingControl = (
+        <View key="leading" style={[styles.headerLeading, expanded && styles.headerLeadingExpanded]}>
+            {backAction ? (
+                <NavigationPressable
+                    accessibilityRole="button"
+                    accessibilityLabel={backAction.label}
+                    focusStyle={styles.navigationFocus}
+                    hoverStyle={styles.navigationHover}
+                    onPress={backAction.onPress}
+                    style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
                 >
-                    {title}
-                </AppText>
-            </View>
-            <HeaderActions
-                unreadCount={unreadCount}
-                offlineChangeCount={offlineChangeCount}
-                hasFailedOfflineChanges={hasFailedOfflineChanges}
-                profileImageUrl={profileImageUrl}
-                onOpenNotifications={onOpenNotifications}
-                colors={colors}
-                styles={styles}
-            />
+                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                </NavigationPressable>
+            ) : (
+                <HeaderBrand styles={styles} isTodayRoute={isTodayRoute} />
+            )}
         </View>
-    </View>
-);
+    );
+    const heading = (
+        <AppText
+            key="title"
+            accessibilityRole="header"
+            aria-level={1}
+            nativeID="route-focus-title"
+            testID="app-header-title"
+            numberOfLines={expanded ? undefined : 2}
+            onLayout={readTitleScale}
+            style={[styles.headerTitleText, expanded && styles.headerTitleExpanded]}
+        >
+            {title}
+        </AppText>
+    );
+    const actions = (
+        <HeaderActions
+            key="actions"
+            unreadCount={unreadCount}
+            offlineChangeCount={offlineChangeCount}
+            hasFailedOfflineChanges={hasFailedOfflineChanges}
+            profileImageUrl={profileImageUrl}
+            onOpenNotifications={onOpenNotifications}
+            colors={colors}
+            styles={styles}
+        />
+    );
+
+    return (
+        <View ref={headerRef} role="banner" style={[styles.headerRoot, { paddingTop: topInset }, summaryBackground && { backgroundColor: colors.summaryContainer, borderBottomWidth: 0 }]}>
+            <View
+                style={[
+                    styles.headerRow,
+                    desktop && styles.headerRowDesktop,
+                    expanded && styles.headerRowExpanded,
+                    {
+                        minHeight: HEADER_ROW_MIN_HEIGHT + Math.round(Math.max(0, Math.min(fontScale, 2) - 1) * LARGE_TEXT_HEIGHT_INCREMENT),
+                        paddingLeft: Math.max(desktop ? spacing.xl : spacing.lg, leftInset + spacing.sm),
+                        paddingRight: Math.max(desktop ? spacing.xl : spacing.lg, rightInset + spacing.sm)
+                    }
+                ]}
+            >
+                {/* Stable sibling keys preserve text sizing and focus when the title moves below the controls. */}
+                {expanded ? [leadingControl, actions, heading] : [leadingControl, heading, actions]}
+            </View>
+        </View>
+    );
+};
 
 const HeaderBrand: React.FC<{ styles: TabStyles; isTodayRoute: boolean }> = ({ styles, isTodayRoute }) => (
     <NavigationPressable
@@ -653,7 +700,7 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
     navigationRail: {
         width: DESKTOP_NAV_RAIL_WIDTH,
         height: '100%',
-        backgroundColor: colors.surface,
+        backgroundColor: colors.background,
         borderTopWidth: 0,
         borderRightColor: colors.border,
         borderRightWidth: StyleSheet.hairlineWidth,
@@ -669,12 +716,15 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
     tabBarLabel: {
         fontSize: 12,
         lineHeight: 16,
-        fontWeight: '700'
+        fontWeight: '600'
     },
+    tabLabelContent: { alignItems: 'center', gap: spacing.xs },
+    railLabelContent: { marginLeft: spacing.sm },
+    tabSelection: { width: TAB_SELECTION_WIDTH, height: TAB_SELECTION_STROKE, borderRadius: radius.pill },
     headerRoot: {
-        backgroundColor: colors.surface,
+        backgroundColor: colors.background,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
-        borderBottomWidth: StyleSheet.hairlineWidth
     },
     headerRow: {
         flexDirection: 'row',
@@ -688,19 +738,35 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
         alignSelf: 'center',
         paddingHorizontal: spacing.xl
     },
+    headerRowExpanded: {
+        flexWrap: 'wrap',
+        rowGap: spacing.sm,
+        paddingVertical: spacing.xs
+    },
     headerLeading: {
-        flex: 1,
-        minWidth: 0,
+        flexShrink: 0,
+        marginRight: spacing.sm,
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm
+        alignItems: 'center'
+    },
+    headerLeadingExpanded: {
+        flexGrow: 1,
+        marginRight: 0
     },
     headerTitleText: {
-        flexShrink: 1,
+        flex: 1,
+        minWidth: 0,
         color: colors.text,
-        fontSize: 20,
+        fontSize: HEADER_TITLE_FONT_SIZE,
         lineHeight: 26,
-        fontWeight: '800'
+        fontWeight: '600'
+    },
+    headerTitleExpanded: {
+        flexGrow: 0,
+        flexShrink: 0,
+        flexBasis: '100%',
+        width: '100%',
+        paddingBottom: spacing.xs
     },
     brand: {
         width: 48,
@@ -710,6 +776,7 @@ function createStyles(colors: AppThemeColors, shadows: AppTheme['shadows']) {
         borderRadius: radius.md
     },
     headerActions: {
+        flexShrink: 0,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs

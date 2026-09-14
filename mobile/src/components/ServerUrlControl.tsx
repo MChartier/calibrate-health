@@ -2,8 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
+import { AppButton } from './AppButton';
+import { useFocusVisible } from './useFocusVisible';
 import { TextField } from './TextField';
-import { radius, spacing, useAppTheme, type AppThemeColors, type AppTheme } from '../theme';
+import { spacing, useAppTheme, type AppThemeColors, type AppTheme } from '../theme';
 import {
     HOSTED_SERVER_URL,
     normalizeServerUrl,
@@ -52,6 +54,7 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [isEditing, setIsEditing] = useState(presentation === 'editor');
+    const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
     const normalizedValue = normalizeServerUrl(value);
     const isHosted = normalizedValue === HOSTED_SERVER_URL;
     const matchesTestedCandidate = normalizedValue
@@ -79,7 +82,9 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
                     accessibilityState={{ expanded: isEditing }}
                     aria-expanded={isEditing}
                     onPress={() => setIsEditing((current) => !current)}
-                    style={({ pressed }) => [styles.summary, pressed && styles.pressed]}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    style={({ pressed }) => [styles.summary, pressed && styles.pressed, focusVisible && styles.focused]}
                 >
                     <View style={styles.summaryText}>
                         <AppText variant="label">Advanced</AppText>
@@ -113,28 +118,19 @@ export const ServerUrlControl: React.FC<ServerUrlControlProps> = ({
                         helperText="Release builds require HTTPS. Local HTTP is limited to development builds."
                     />
                     <View style={styles.editorActions}>
-                        <Pressable
-                            accessibilityRole="button"
+                        <AppButton
+                            title="Use hosted service"
+                            variant="ghost"
                             accessibilityLabel="Use Calibrate hosted service"
                             onPress={() => onChangeText(HOSTED_SERVER_URL)}
-                            style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}
-                        >
-                            <AppText style={styles.secondaryActionText}>Use hosted service</AppText>
-                        </Pressable>
-                        <Pressable
-                            accessibilityRole="button"
+                        />
+                        <AppButton
+                            title={isTesting ? 'Testing...' : 'Test connection'}
                             accessibilityLabel="Test Calibrate server connection"
                             disabled={isTesting}
                             onPress={() => void onTestConnection(value)}
-                            style={({ pressed }) => [
-                                styles.testAction,
-                                isTesting && styles.disabled,
-                                pressed && !isTesting && styles.pressed
-                            ]}
-                        >
-                            <Ionicons name="pulse" size={16} color={theme.colors.onPrimary} />
-                            <AppText style={styles.testActionText}>{isTesting ? 'Testing...' : 'Test connection'}</AppText>
-                        </Pressable>
+                            leftIcon={<Ionicons name="pulse" size={16} color={theme.colors.onPrimary} />}
+                        />
                     </View>
                 </View>
             )}
@@ -161,15 +157,10 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.sm
     },
     summary: {
-        minHeight: 54,
+        minHeight: theme.interaction.minimumTouchTarget,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        borderRadius: radius.md,
-        borderColor: theme.colors.outlineVariant,
-        borderWidth: theme.stroke.control,
-        backgroundColor: theme.colors.surfaceContainer,
-        paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm
     },
     summaryText: {
@@ -186,31 +177,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     editorActions: {
         gap: spacing.sm
     },
-    secondaryAction: {
-        minHeight: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: spacing.lg,
-        borderRadius: radius.md
-    },
-    secondaryActionText: {
-        color: theme.colors.primary,
-        fontWeight: '800'
-    },
-    testAction: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing.sm,
-        paddingHorizontal: spacing.lg,
-        borderRadius: radius.md,
-        backgroundColor: theme.colors.primary
-    },
-    testActionText: {
-        color: theme.colors.onPrimary,
-        fontWeight: '800'
-    },
     connectionStatus: {
         minHeight: 22,
         flexDirection: 'row',
@@ -221,9 +187,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1,
         fontSize: 12
     },
-    disabled: {
-        opacity: 0.55
-    },
+    focused: { outlineColor: theme.colors.focusRing, outlineWidth: theme.interaction.focusRingWidth, outlineStyle: 'solid' },
     pressed: {
         backgroundColor: theme.colors.surfacePressed
     }
