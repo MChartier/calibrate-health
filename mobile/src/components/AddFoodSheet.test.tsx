@@ -158,6 +158,7 @@ describe('AddFoodSheet async resource states', () => {
         onlineManager.setOnline(true);
     });
 
+    // The first sheet render also initializes React Native on a cold Jest cache.
     it.each(['COMPLETE', 'INCOMPLETE'])('reopens a %s day only when food is submitted', async (status) => {
         onlineManager.setOnline(true);
         mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status });
@@ -170,7 +171,7 @@ describe('AddFoodSheet async resource states', () => {
         await waitFor(() => expect(mockApi.createFoodLog).toHaveBeenCalled());
         expect(mockApi.setFoodDayStatus).toHaveBeenCalledWith({ date: '2026-08-08', status: 'OPEN' }, expect.any(String));
         expect(mockApi.setFoodDayStatus.mock.invocationCallOrder[0]).toBeLessThan(mockApi.createFoodLog.mock.invocationCallOrder[0]);
-    });
+    }, 10_000);
 
     it('queues the food after its reopen when the connection fails', async () => {
         onlineManager.setOnline(true);

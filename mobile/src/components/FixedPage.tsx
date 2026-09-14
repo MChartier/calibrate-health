@@ -9,7 +9,7 @@ const LARGE_TEXT_SCALE = 1.6; // Intrinsic layout keeps enlarged labels and acti
 const SHORT_PROGRESS_HEIGHT = 520; // Below this remaining shell height, a complete chart needs page scrolling.
 const TEXT_PROBE_SIZE = 16; // Measures browser text enlargement, which does not update native fontScale.
 
-export type FixedPageLayout = { expanded: boolean };
+type FixedPageLayout = { expanded: boolean };
 const ColumnStyleContext = React.createContext<StyleProp<ViewStyle>>(undefined);
 
 /** Constrain copy inside an edge-to-edge interaction surface without shrinking its hit target. */

@@ -14,7 +14,7 @@ type ScreenProps = ViewProps & {
     contentWidth?: 'overview' | 'form' | 'wide';
 };
 
-export const SCREEN_CONTENT_MAX_WIDTH = 1040; // Keeps forms and metrics readable on wide browser and tablet viewports.
+const SCREEN_CONTENT_MAX_WIDTH = 1040; // Keeps forms and metrics readable on wide browser and tablet viewports.
 // Reading widths keep open content cohesive without relying on card boundaries.
 export const SCREEN_CONTENT_WIDTHS = { overview: 760, form: 640, wide: SCREEN_CONTENT_MAX_WIDTH } as const;
 export const SCREEN_WIDE_LAYOUT_BREAKPOINT = TABLET_LAYOUT_BREAKPOINT;
