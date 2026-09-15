@@ -40,7 +40,7 @@ export function DateNavigationHeader({ navigation, contentWidth = 'wide' }: Date
                     horizontalPadding
                 ]}
             >
-                <DateNavigation navigation={navigation} compact />
+                <DateNavigation navigation={navigation} compact unified />
             </View>
         </View>
     );
@@ -49,11 +49,12 @@ export function DateNavigationHeader({ navigation, contentWidth = 'wide' }: Date
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
         shell: {
-            backgroundColor: theme.colors.background
+            backgroundColor: theme.colors.summaryContainer
         },
         content: {
             width: '100%',
-            paddingVertical: spacing.sm
+            paddingTop: spacing.xs,
+            paddingBottom: spacing.sm
         },
         contentWide: {
             alignSelf: 'center'

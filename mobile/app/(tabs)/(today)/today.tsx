@@ -143,6 +143,7 @@ export default function TodayScreen() {
             testID="today-fixed-page"
             fullWidthBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
             minBodyHeight={TODAY_BODY_MIN_HEIGHT}
+            intrinsicBody
             context={<>
                 <DateNavigation
                     navigation={dateNavigation}
@@ -169,8 +170,8 @@ export default function TodayScreen() {
                 <AppButton title="Complete day" variant="secondary" disabled style={styles.loadingAction} />
             </View>}
         >
-            {({ expanded }) => <AsyncStateBoundary
-                contentStyle={[styles.body, expanded && styles.bodyExpanded]}
+            <AsyncStateBoundary
+                contentStyle={styles.body}
                 state={dashboardState}
                 resourceLabel="today's log"
                 loading={<TodayContentLoading />}
@@ -182,8 +183,8 @@ export default function TodayScreen() {
                 suppressStaleNotice
             >
                 <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
-                <TodayFoodPreview entries={entries} expanded={expanded} onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })} />
-            </AsyncStateBoundary>}
+                <TodayFoodPreview entries={entries} onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })} />
+            </AsyncStateBoundary>
         </FixedPage>
             <AddFoodSheet
                 visible={addFoodMeal !== undefined && canAddFood}
@@ -201,7 +202,7 @@ export default function TodayScreen() {
     );
 }
 
-const TODAY_BODY_MIN_HEIGHT = 184; // Reserves the weigh-in strip and compact whole-row preview without covering its last line.
+const TODAY_BODY_MIN_HEIGHT = 184; // Holds the loading weight and food summary before their intrinsic content is ready.
 
 function TodayContentLoading() {
     return <FixedPageColumn testID="log-content-loading" style={styles.body}>
@@ -211,8 +212,7 @@ function TodayContentLoading() {
 }
 
 const styles = StyleSheet.create({
-    body: { flex: 1, minHeight: 0, gap: 0 },
-    bodyExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+    body: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', gap: 0 },
     dateNavigation: { paddingTop: spacing.xs, paddingBottom: spacing.sm },
     planAction: { paddingBottom: spacing.md, gap: spacing.sm },
     loadingActions: { flexDirection: 'row', paddingVertical: spacing.md, gap: spacing.sm },

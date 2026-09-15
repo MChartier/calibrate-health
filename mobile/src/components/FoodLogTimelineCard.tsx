@@ -27,8 +27,6 @@ type MealGroup = {
     calories: number;
 };
 
-const EMPTY_MEAL_HEADER_HEIGHT = 44; // Keeps an empty six-meal day scannable without shrinking interactive rows.
-
 // Populated meals open at first render; empty rows remain compact and do not expose a disclosure control.
 const DEFAULT_EXPANDED_MEALS: Record<MealPeriod, boolean> = {
     BREAKFAST: true,
@@ -68,8 +66,7 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
                     entries: mealEntries,
                     calories: mealEntries.reduce((total, entry) => total + entry.calories, 0)
                 };
-            })
-            .filter((group) => group.entries.length > 0);
+            });
     }, [entries]);
 
     function toggleMeal(meal: MealPeriod) {
@@ -170,7 +167,9 @@ const MealTimelineRow: React.FC<MealTimelineRowProps> = ({
                         </AppText>
                     </View>
                     <View style={[styles.mealMetaRow, useStackedLayout && styles.mealMetaRowStacked]}>
-                        <AppText variant="body" style={styles.mealCalories}>{formatCalories(group.calories)}</AppText>
+                        <AppText style={hasEntries ? styles.mealCalories : styles.noEntries}>
+                            {hasEntries ? formatCalories(group.calories) : 'No entries'}
+                        </AppText>
                         {hasEntries ? (
                             <Pressable
                                 accessibilityRole="button"
@@ -323,7 +322,8 @@ function createStyles(theme: AppTheme) {
         gap: theme.spacing.xs
     },
     emptyMealHeader: {
-        minHeight: EMPTY_MEAL_HEADER_HEIGHT
+        // Match Today's compact meal rhythm while populated headers retain room for their controls.
+        minHeight: theme.interaction.minimumTouchTarget
     },
     mealHeaderStacked: {
         alignItems: 'stretch',
@@ -361,6 +361,12 @@ function createStyles(theme: AppTheme) {
         fontWeight: '600',
         textAlign: 'right',
         fontSize: 14
+    },
+    noEntries: {
+        ...theme.typography.styles.label,
+        fontWeight: '400',
+        color: theme.colors.onSurfaceVariant,
+        textAlign: 'right'
     },
     expandButton: {
         width: theme.interaction.minimumTouchTarget,

@@ -45,10 +45,10 @@ describe('FoodLogTimelineCard', () => {
         expect(style).not.toHaveProperty('backgroundColor');
     });
 
-    it('omits unlogged meals and leaves the detailed page add-food entry point to its FAB', () => {
-        const { queryByLabelText, queryByText, getByLabelText, getByText } = render(
+    it.each([350, 0])('shows empty meal rows alongside a logged %i kcal meal', (calories) => {
+        const { queryByLabelText, getAllByText, getByLabelText, getByText } = render(
             <FoodLogTimelineCard
-                entries={[MORNING_SNACK_ENTRY]}
+                entries={[{ ...MORNING_SNACK_ENTRY, calories }]}
                 onEditEntry={jest.fn()}
                 onDeleteEntry={jest.fn()}
             />
@@ -58,9 +58,27 @@ describe('FoodLogTimelineCard', () => {
         expect(getByLabelText('Collapse Morning Snack')).toBeTruthy();
         expect(getByText('Oatmeal')).toBeTruthy();
         expect(queryByLabelText('Expand Breakfast')).toBeNull();
-        expect(queryByText('Breakfast')).toBeNull();
-        expect(queryByText('Lunch')).toBeNull();
-        expect(queryByText('Dinner')).toBeNull();
+        for (const meal of ['Breakfast', 'Morning Snack', 'Lunch', 'Afternoon Snack', 'Dinner', 'Evening Snack']) {
+            expect(getByText(meal)).toBeTruthy();
+        }
+        expect(getAllByText('No entries')).toHaveLength(5);
+        expect(getAllByText(`${calories} kcal`)).toHaveLength(2);
+    });
+
+    it('shows all six empty periods without disclosure or copy actions on an empty day', () => {
+        const { getAllByText, queryAllByRole } = render(
+            <FoodLogTimelineCard
+                entries={[]}
+                onEditEntry={jest.fn()}
+                onDeleteEntry={jest.fn()}
+                onCopyMeal={jest.fn()}
+                onCopyDay={jest.fn()}
+                onSaveMealAsRecipe={jest.fn()}
+            />
+        );
+
+        expect(getAllByText('No entries')).toHaveLength(6);
+        expect(queryAllByRole('button')).toHaveLength(0);
     });
 
     it('shows the real snapshot amount after expanding a meal', () => {

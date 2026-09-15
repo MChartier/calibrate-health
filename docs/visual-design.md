@@ -52,6 +52,8 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
 - Keep date navigation in one contained, rounded toolbar with separate 48px previous/date/next targets,
   a visible calendar icon at 320px, and a disabled next-day target on Today. Date controls retain date
   selection and provide the secondary Pause tracking action, including its existing confirmation flow.
+  Food log, Activity, and Weight use the same unified toolbar, top spacing, and continuous
+  `summaryContainer` behind the navbar. Preserve each route's content width and date behavior.
 - The open balance region continues the top surface: ring left, quiet divider, balance copy right.
   Do not show the goal number; it remains in Progress's Snapshot. Incomplete, paused, or unavailable
   comparisons retain a neutral ring and the same metric space with status and logged calories.
@@ -60,13 +62,14 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   queued-sync status. Never use "No weigh-in yet" as its principal content. Use the existing scale
   icon and a decorative plus/pencil. Tapping opens the weight sheet over Today with the selected date;
   saving or dismissing stays on Today unless View progress is explicitly requested.
-- The food preview fills the remaining body height. It is one navigation target containing the Food
-  log label, meal headings with whole-meal totals, and individual food names/calories. Show the latest
-  portion of the day that fits, ordered chronologically from top to bottom using the full log's meal
-  and item order. Newest is last. Omitted earlier items are counted above the visible entries. Keep
-  each visible meal heading with at least one complete item; do not cut rows, orphan headings, or
-  change a whole-meal total to the visible subtotal. Omit the count when every item fits. Do not add
-  blank space merely to force sparse entries against the bottom edge.
+- The food summary is one full-width navigation target that fills the remaining body height,
+  including blank space below sparse content. Keep the Food log label, food count, and one chevron
+  above six chronological meal-period rows. Each row shows the whole-meal calorie total or neutral
+  **No entries**; zero-calorie foods still count as logged. Use the shared 48px row rhythm without
+  individual food names, row actions, omission counts, or height-based fitting. A completely empty
+  day shows **No food logged yet** and an invitation to add food. Rows retain intrinsic height and
+  scroll with the page on short screens or at enlarged text sizes; never create a clipped or
+  separately scrolling food panel. Extra height expands the tap target, not the spacing between rows.
 - Anchor equal-width **Add food** (filled) and **Complete day** (outlined) controls above the tabs on
   an open day. Add food opens the existing inline search/quantity workflow without navigating away.
   Complete day applies immediately without a confirmation dialog because the action is reversible.
@@ -101,6 +104,10 @@ the recommendation open and its Review action full-width. Scheduled changes reta
 Undo action. Preserve all calculation, data-state, offline, attribution, and confirmation behavior.
 
 ## Supporting surfaces
+
+The full Food log retains all six meal periods in chronological order. Empty meals show compact
+rows with neutral **No entries** text, matching Today. A logged zero-calorie meal shows its total.
+Only populated meals expose expansion, food entries, copy, and save-recipe actions.
 
 Recipe ingredient search starts with six results and retains search and Load more. Keep quantity and
 Remove controls together, and put totals below a rule. Saved foods keeps equal Create food/Create recipe

@@ -76,6 +76,8 @@ const LARGE_TEXT_HEIGHT_INCREMENT = 18; // Adds vertical room as the device font
 const DESKTOP_NAV_RAIL_WIDTH = 176;
 const DESKTOP_CONTENT_MAX_WIDTH = 1040;
 const QUERY_GATE_MAX_WIDTH = 640; // Keeps terminal shell errors readable on wide screens.
+// Continue the overview/date surface through the app bar on these routes.
+const SUMMARY_HEADER_ROUTES: readonly RouteId[] = ['today', 'progress', 'food-log', 'activity', 'weight'];
 
 function navigateBackFromRoute(
     routeId: RouteId,
@@ -392,7 +394,7 @@ export default function TabsLayout() {
                                         styles={styles}
                                         desktop={usesNavigationRail}
                                         isTodayRoute={isRouteActive(pathname, 'today')}
-                                        summaryBackground={activeRoute?.routeId === 'today' || activeRoute?.routeId === 'progress'}
+                                        summaryBackground={Boolean(activeRoute && SUMMARY_HEADER_ROUTES.includes(activeRoute.routeId))}
                                     />
                                 );
                             }

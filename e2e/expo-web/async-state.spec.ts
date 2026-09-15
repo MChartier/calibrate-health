@@ -41,7 +41,7 @@ test('a failed Today resource never becomes an empty state and Retry is resource
   await page.goto('/today');
 
   await expect(page.getByText("Can't load today's log", { exact: true })).toBeVisible();
-  await expect(page.getByText("Start today's food log", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("No food logged yet", { exact: true })).toHaveCount(0);
   await expect(page.getByText('Day unavailable', { exact: true })).toBeVisible();
   await expect(page.getByText('Food log unavailable', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeDisabled();
@@ -68,7 +68,7 @@ test('a failed Today resource never becomes an empty state and Retry is resource
 test('a failed refresh keeps cached food usable and labels it degraded', async ({ page, ux }, testInfo) => {
   await ux.install('stale');
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Food log.*View full log/ }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/food-log');
@@ -82,21 +82,21 @@ test('a failed refresh keeps cached food usable and labels it degraded', async (
 test('offline cached Today content stays visible and is explicitly labeled stale', async ({ page, ux }) => {
   const controller = await ux.install('offline');
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await controller.activateOffline();
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
   const savedInformationNotice = page.getByText('Offline - showing saved information', { exact: true });
   await expect(savedInformationNotice).toHaveCount(1);
   await expect(savedInformationNotice).toBeVisible();
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
 test('an uncached offline day shows connection guidance without Retry or empty reassurance', async ({ page, ux }) => {
   const controller = await ux.install('offline');
   await page.goto('/today');
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-entry-/).getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await controller.activateOffline();
   // The immediately previous day is intentionally prefetched; the second is uncached.
@@ -110,6 +110,6 @@ test('an uncached offline day shows connection guidance without Retry or empty r
     { exact: true },
   )).toBeVisible();
   await expect(terminalState.getByRole('button', { name: 'Retry', exact: true })).toHaveCount(0);
-  await expect(page.getByText("Start today's food log", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("No food logged yet", { exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });

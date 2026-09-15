@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { DateNavigation } from '../../../src/components/DateNavigation';
+import { DateNavigationHeader } from '../../../src/components/DateNavigationHeader';
 import { TabScreen } from '../../../src/components/TabScreen';
 import { WeightEntrySheet } from '../../../src/components/WeightEntrySheet';
 import { useLogDateNavigation } from '../../../src/hooks/useLogDateNavigation';
@@ -27,14 +28,19 @@ export default function WeightScreen() {
     }
 
     return (
-        <TabScreen>
-            <DateNavigation navigation={dateNavigation} />
-
-            <WeightEntrySheet
-                visible={isSheetOpen}
-                date={dateNavigation.selectedDate}
-                onClose={closeSheet}
-            />
-        </TabScreen>
+        <View style={styles.screen}>
+            <DateNavigationHeader navigation={dateNavigation} />
+            <TabScreen>
+                <WeightEntrySheet
+                    visible={isSheetOpen}
+                    date={dateNavigation.selectedDate}
+                    onClose={closeSheet}
+                />
+            </TabScreen>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    screen: { flex: 1 }
+});

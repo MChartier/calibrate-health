@@ -31,6 +31,7 @@ jest.mock('../theme', () => ({
         colors: {
             border: '#cdd7c9',
             background: '#faf9f6',
+            summaryContainer: '#f2f7f2',
             surface: '#ffffff'
         }
     })
@@ -81,17 +82,18 @@ describe('DateNavigationHeader', () => {
         const content = tree!.root.findByProps({ testID: 'date-navigation-header-content' });
         const shell = tree!.root.findByProps({ testID: 'date-navigation-header' });
 
-        expect(dateNavigation.props).toMatchObject({ navigation, compact: true });
+        expect(dateNavigation.props).toMatchObject({ navigation, compact: true, unified: true });
         expect(StyleSheet.flatten(content.props.style)).toMatchObject({
             width: '100%',
             maxWidth: SCREEN_CONTENT_WIDTHS.wide,
             alignSelf: 'center',
             paddingLeft: 32,
             paddingRight: 32,
-            paddingVertical: 8
+            paddingTop: 4,
+            paddingBottom: 8
         });
         expect(StyleSheet.flatten(shell.props.style)).toMatchObject({
-            backgroundColor: '#faf9f6'
+            backgroundColor: '#f2f7f2'
         });
     });
 
