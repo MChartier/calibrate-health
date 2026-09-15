@@ -82,7 +82,7 @@ test('Today anchors its actions, puts weigh-in first, and shows concise chronolo
   await expect(page).toHaveURL((url) => url.pathname === '/food-log');
 });
 
-test('320px short Today scrolls every meal above its visible action dock', async ({ page, ux }, testInfo) => {
+test('320px Today scrolls only the food pane while its surrounding controls stay fixed', async ({ page, ux }, testInfo) => {
   test.skip(testInfo.project.name !== 'compact-phone-chrome', 'The minimum-height phone case is covered once.');
   await page.setViewportSize({ width: 320, height: 568 });
   await ux.install('populated', { foodDayStatus: 'OPEN', foodEntries: FOOD_ENTRIES, metrics: [] });
@@ -93,12 +93,30 @@ test('320px short Today scrolls every meal above its visible action dock', async
   await expectTouchTarget(addFood);
   const dock = (await page.getByTestId('today-action-dock').boundingBox())!;
   expect(dock.y + dock.height).toBeLessThanOrEqual(568);
+  const fixedControls = [
+    page.getByRole('toolbar', { name: 'Food log date' }),
+    page.getByTestId('calorie-balance-hero'),
+    page.getByTestId('today-weight-card-press-layer'),
+    page.getByTestId('today-action-dock'),
+  ];
+  const before = await Promise.all(fixedControls.map(control => control.boundingBox()));
+  const foodScroll = page.getByTestId('today-food-scroll');
+  await expect(page.getByTestId('fixed-page-scroll')).toHaveCount(0);
+  await foodScroll.hover();
+  await page.mouse.wheel(0, 800);
+  await expect.poll(() => foodScroll.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  const after = await Promise.all(fixedControls.map(control => control.boundingBox()));
+  expect(after).toEqual(before);
+  await expect(page).toHaveURL(url => url.pathname === '/today');
   const lastMeal = page.getByTestId('food-preview-meal-EVENING_SNACK');
-  await lastMeal.scrollIntoViewIfNeeded();
   await expect(lastMeal).toBeInViewport();
   const latestRow = (await lastMeal.boundingBox())!;
   expect(latestRow.y + latestRow.height).toBeLessThanOrEqual(dock.y);
+  await foodScroll.hover();
+  await page.mouse.wheel(0, 800);
+  expect(await Promise.all(fixedControls.map(control => control.boundingBox()))).toEqual(before);
   await expectNoHorizontalOverflow(page);
+  await page.mouse.move(0, 0);
   await page.screenshot({ path: testInfo.outputPath('today-320x568.png') });
 });
 

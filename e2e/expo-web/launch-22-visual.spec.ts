@@ -78,19 +78,22 @@ for (const scheme of ['light', 'dark'] as const) {
       if (surface.ready) await expect(page.getByRole('heading', { name: surface.ready, exact: true })).toBeVisible();
       if (surface.name === 'saved-foods') await expect(page.getByText('Saved pantry 01', { exact: true })).toBeVisible();
       if (surface.name === 'today') {
-        const hero = await page.getByTestId('calorie-balance-hero').evaluate((element) => {
-          const bounds = element.getBoundingClientRect();
-          const [gauge, copy] = Array.from(element.children).map((child) => child.getBoundingClientRect());
-          return {
-            gap: copy.left - gauge.right,
-            leftOffset: gauge.left - bounds.left,
-            rightOverflow: copy.right - bounds.right,
-          };
-        });
-        const expectedHeroGap = page.viewportSize()!.width < 360 ? 12 : 20;
-        expect(Math.abs(hero.gap - expectedHeroGap)).toBeLessThanOrEqual(1);
-        expect(Math.abs(hero.leftOffset)).toBeLessThanOrEqual(1);
-        expect(hero.rightOverflow).toBeLessThanOrEqual(1);
+        // Wait for measured layout to settle if loading selects a different scroll container.
+        await expect(async () => {
+          const hero = await page.getByTestId('calorie-balance-hero').evaluate((element) => {
+            const bounds = element.getBoundingClientRect();
+            const [gauge, copy] = Array.from(element.children).map((child) => child.getBoundingClientRect());
+            return {
+              gap: copy.left - gauge.right,
+              leftOffset: gauge.left - bounds.left,
+              rightOverflow: copy.right - bounds.right,
+            };
+          });
+          const expectedHeroGap = page.viewportSize()!.width < 360 ? 12 : 20;
+          expect(Math.abs(hero.gap - expectedHeroGap)).toBeLessThanOrEqual(1);
+          expect(Math.abs(hero.leftOffset)).toBeLessThanOrEqual(1);
+          expect(hero.rightOverflow).toBeLessThanOrEqual(1);
+        }).toPass({ timeout: 10_000 });
       }
       if (surface.name === 'today' || surface.name === 'food-log') {
         const dateControl = page.getByRole('toolbar', { name: 'Food log date' });
@@ -275,7 +278,14 @@ test('offline Today keeps cached content and stale labeling on the smallest phon
   await controller.activateOffline();
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
   await expect(page.getByText('Offline - showing saved information', { exact: true })).toHaveCount(1);
+  // The offline banner reduces the shell below the fixed regions' minimum height.
+  await expect(page.getByTestId('fixed-page-scroll')).toBeVisible();
+  await expect(page.getByTestId('today-food-scroll')).toHaveCount(0);
   await expectViewportScreenshot(page, 'today-offline-light.png');
+  const addFood = page.getByRole('button', { name: 'Add food', exact: true });
+  await addFood.scrollIntoViewIfNeeded();
+  await expect(addFood).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeInViewport();
 });
 
 test('Progress uses the shell-owned cached-data notice while offline', async ({ page, ux }, testInfo) => {

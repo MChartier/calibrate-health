@@ -68,8 +68,12 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   **No entries**; zero-calorie foods still count as logged. Use the shared 48px row rhythm without
   individual food names, row actions, omission counts, or height-based fitting. A completely empty
   day shows **No food logged yet** and an invitation to add food. Rows retain intrinsic height and
-  scroll with the page on short screens or at enlarged text sizes; never create a clipped or
-  separately scrolling food panel. Extra height expands the tap target, not the spacing between rows.
+  scroll inside the food pane on short screens, keeping the date, balance, weight, and action dock
+  fixed. Extra height expands the tap target, not the spacing between rows. Use the full-page
+  fallback at enlarged text sizes or whenever the measured context, minimum body, and footer
+  cannot fit in the available shell height. Restore food-only scrolling when they fit again.
+  Stack the action buttons only for enlarged text, so the height fallback does not change the
+  footer height used to decide whether the fixed layout fits.
 - Anchor equal-width **Add food** (filled) and **Complete day** (outlined) controls above the tabs on
   an open day. Add food opens the existing inline search/quantity workflow without navigating away.
   Complete day applies immediately without a confirmation dialog because the action is reversible.
