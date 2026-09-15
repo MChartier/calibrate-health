@@ -143,7 +143,7 @@ export default function TodayScreen() {
             testID="today-fixed-page"
             fullWidthBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
             minBodyHeight={TODAY_BODY_MIN_HEIGHT}
-            intrinsicBody
+            containedBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
             context={<>
                 <DateNavigation
                     navigation={dateNavigation}
@@ -170,8 +170,8 @@ export default function TodayScreen() {
                 <AppButton title="Complete day" variant="secondary" disabled style={styles.loadingAction} />
             </View>}
         >
-            <AsyncStateBoundary
-                contentStyle={styles.body}
+            {({ expanded }) => <AsyncStateBoundary
+                contentStyle={[styles.body, expanded && styles.bodyExpanded]}
                 state={dashboardState}
                 resourceLabel="today's log"
                 loading={<TodayContentLoading />}
@@ -183,8 +183,8 @@ export default function TodayScreen() {
                 suppressStaleNotice
             >
                 <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
-                <TodayFoodPreview entries={entries} onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })} />
-            </AsyncStateBoundary>
+                <TodayFoodPreview entries={entries} expanded={expanded} onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })} />
+            </AsyncStateBoundary>}
         </FixedPage>
             <AddFoodSheet
                 visible={addFoodMeal !== undefined && canAddFood}
@@ -212,7 +212,8 @@ function TodayContentLoading() {
 }
 
 const styles = StyleSheet.create({
-    body: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', gap: 0 },
+    body: { flex: 1, minHeight: 0, gap: 0 },
+    bodyExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
     dateNavigation: { paddingTop: spacing.xs, paddingBottom: spacing.sm },
     planAction: { paddingBottom: spacing.md, gap: spacing.sm },
     loadingActions: { flexDirection: 'row', paddingVertical: spacing.md, gap: spacing.sm },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { FoodLogEntry } from '@calibrate/api-client';
 import { AppText } from '../components/AppText';
@@ -13,9 +13,10 @@ type TodayFoodPreviewProps = {
     entries: FoodLogEntry[];
     onPress: () => void;
     style?: StyleProp<ViewStyle>;
+    expanded?: boolean;
 };
 
-export function TodayFoodPreview({ entries, onPress, style }: TodayFoodPreviewProps) {
+export function TodayFoodPreview({ entries, onPress, style, expanded = false }: TodayFoodPreviewProps) {
     const theme = useAppTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const meals = React.useMemo(() => getTodayFoodMeals(entries), [entries]);
@@ -26,7 +27,7 @@ export function TodayFoodPreview({ entries, onPress, style }: TodayFoodPreviewPr
         `${formatMealPeriod(meal.meal)}, ${meal.entryCount ? formatCalories(meal.calories) : 'No entries'}.`
     )).join(' ') : 'No food logged yet.';
 
-    return <Pressable
+    const content = <Pressable
         testID="today-food-preview"
         accessibilityRole="button"
         accessibilityLabel={`Food log. ${foodCount}. ${accessibleMeals} View full log`}
@@ -62,10 +63,24 @@ export function TodayFoodPreview({ entries, onPress, style }: TodayFoodPreviewPr
             </View>}
         </FixedPageColumn>
     </Pressable>;
+
+    if (expanded) return content;
+    return <ScrollView
+        testID="today-food-scroll"
+        style={styles.scroller}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+        overScrollMode="never"
+    >
+        {content}
+    </ScrollView>;
 }
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
+        scroller: { flex: 1, minHeight: 0 },
+        scrollContent: { flexGrow: 1 },
         // Grow the hit target into spare page space while keeping all meal rows at their natural height.
         root: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', width: '100%', paddingTop: theme.spacing.md, paddingBottom: theme.spacing.sm },
         heading: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, marginBottom: theme.spacing.sm },

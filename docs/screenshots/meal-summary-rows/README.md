@@ -3,7 +3,7 @@
 Today summarizes the six meal periods without individual food items. Empty periods use
 neutral "No entries" text; zero-calorie entries still show a logged total. The entire
 food pane, including spare height and side gutters, opens the detailed log. Short
-screens scroll the complete rows above the action dock.
+screens scroll only the food pane, with the date, daily balance, weight, and action dock fixed. Enlarged text retains the full-page accessibility fallback when those controls cannot fit.
 
 Food log, Activity, and Weight use the same continuous navbar surface and unified date
 toolbar as Today, while retaining their route widths and date behavior. The detailed Food log also displays empty meal periods as compact "No entries" rows, including all six periods on an empty day.
@@ -19,7 +19,7 @@ Additional evidence:
 - [Tall desktop with spare space inside the food navigation pane](today-tall-desktop.png)
 
 Browser regression checks verify the bottom-right blank area navigates to Food log,
-all six rows remain reachable at 320px and 200% text, and the date toolbar keeps its
+all six rows remain reachable at 320px and 200% text, wheel input scrolls only the food pane without moving surrounding controls, and the date toolbar keeps its
 vertical position and continuous navbar surface across Today, Food log, Activity,
 and Weight. These screenshots use deterministic test data; native device runtime
 validation is separate.

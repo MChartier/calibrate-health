@@ -11,6 +11,7 @@ describe('TodayFoodPreview', () => {
         const screen = render(<TodayFoodPreview entries={[]} onPress={onPress} />);
         const preview = screen.getByRole('button', { name: /Food log\. 0 foods\./ });
         expect(screen.getAllByRole('button')).toHaveLength(1);
+        expect(screen.getByTestId('today-food-scroll')).toBeTruthy();
         expect(screen.getByText('No food logged yet')).toBeTruthy();
         expect(screen.queryByText('No entries')).toBeNull();
         expect(preview).toHaveStyle({ flexGrow: 1, flexShrink: 0, flexBasis: 'auto', width: '100%' });
