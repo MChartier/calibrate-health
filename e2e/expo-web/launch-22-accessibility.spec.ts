@@ -1,6 +1,6 @@
 import type { Page, TestInfo } from '@playwright/test';
 import { ROUTE_IDS, ROUTE_REGISTRY } from '../../mobile/src/navigation/routeRegistry';
-import { expect, test } from './fixtures';
+import { expect, hideTransientPwaNotices, test } from './fixtures';
 import { installAccessibilityApiExtensions, locatorForContract, waitForReadySurface } from './ux-surface-fixtures';
 import {
   attachAccessibilitySummary,
@@ -120,11 +120,17 @@ test.describe('Launch 22 open overlay accessibility', () => {
       await ux.install(overlayCase.fixtureState);
       await installAccessibilityApiExtensions(page, overlayCase.routeId, overlayCase.id);
       await page.goto(overlayCase.path);
+      if (overlayCase.routeId === 'today') await hideTransientPwaNotices(page);
 
       for (const action of overlayCase.open) {
         const trigger = locatorForContract(page, action).first();
         await expect(trigger).toBeVisible();
-        await trigger.evaluate((element: HTMLElement) => element.click());
+        if (overlayCase.routeId === 'today') {
+          // Today can reparent the dock after measuring its loading and loaded layouts.
+          await trigger.click();
+        } else {
+          await trigger.evaluate((element: HTMLElement) => element.click());
+        }
       }
 
       await waitForReadySurface(page, overlayCase.ready);

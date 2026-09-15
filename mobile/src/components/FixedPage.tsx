@@ -9,7 +9,7 @@ const LARGE_TEXT_SCALE = 1.6; // Intrinsic layout keeps enlarged labels and acti
 const SHORT_PROGRESS_HEIGHT = 520; // Below this remaining shell height, a complete chart needs page scrolling.
 const TEXT_PROBE_SIZE = 16; // Measures browser text enlargement, which does not update native fontScale.
 
-type FixedPageLayout = { expanded: boolean };
+type FixedPageLayout = { expanded: boolean; enlargedText: boolean };
 const ColumnStyleContext = React.createContext<StyleProp<ViewStyle>>(undefined);
 
 /** Constrain copy inside an edge-to-edge interaction surface without shrinking its hit target. */
@@ -37,6 +37,7 @@ export function FixedPage({ context, children, footer, scrollWhenShort = false, 
     const [height, setHeight] = React.useState(0);
     const [scrollHeight, setScrollHeight] = React.useState(0);
     const [contextHeight, setContextHeight] = React.useState(0);
+    const [footerHeight, setFooterHeight] = React.useState(0);
     const [webTextScale, setWebTextScale] = React.useState(1);
     const probe = React.useRef<Text>(null);
     const readTextScale = React.useCallback(() => {
@@ -45,8 +46,13 @@ export function FixedPage({ context, children, footer, scrollWhenShort = false, 
         if (element) setWebTextScale(Number.parseFloat(window.getComputedStyle(element).fontSize) / TEXT_PROBE_SIZE);
     }, []);
     React.useLayoutEffect(readTextScale, [readTextScale, width]);
-    const expanded = Math.max(fontScale, webTextScale) >= LARGE_TEXT_SCALE
+    const enlargedText = Math.max(fontScale, webTextScale) >= LARGE_TEXT_SCALE;
+    // A contained pane needs room for its minimum body after the measured context and footer.
+    const cannotContainBody = containedBody && height > 0
+        && contextHeight + minBodyHeight + footerHeight > height;
+    const expanded = enlargedText || cannotContainBody
         || (scrollWhenShort && height > 0 && height < SHORT_PROGRESS_HEIGHT);
+    const layout = { expanded, enlargedText };
     const horizontalPadding = resolveSafeHorizontalPadding(
         width >= SCREEN_WIDE_LAYOUT_BREAKPOINT ? theme.spacing.xl : theme.spacing.lg,
         insets.left, insets.right, theme.spacing.sm
@@ -56,16 +62,20 @@ export function FixedPage({ context, children, footer, scrollWhenShort = false, 
     const naturalHeight = contextHeight + minBodyHeight;
     const contentHeight = Math.max(scrollHeight, naturalHeight);
     const containBody = containedBody && !expanded;
-    const footerContent = typeof footer === 'function' ? footer({ expanded }) : footer;
+    const footerContent = typeof footer === 'function' ? footer(layout) : footer;
+    const footerView = footerContent && <View
+        style={[styles.footer, { borderTopColor: theme.colors.outline }]}
+        onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
+    ><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></View>;
 
     const pageContent = <>
         {context && <View style={{ backgroundColor: theme.colors.summaryContainer }} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
             <View style={columnStyle}>{context}</View>
         </View>}
         <View style={[!fullWidthBody && columnStyle, styles.body, { minHeight: minBodyHeight }, expanded && styles.bodyExpanded, containBody && styles.bodyContained]}>
-            {typeof children === 'function' ? children({ expanded }) : children}
+            {typeof children === 'function' ? children(layout) : children}
         </View>
-        {expanded && footerContent && <View style={[styles.footer, { borderTopColor: theme.colors.outline }]}><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></View>}
+        {expanded && footerView}
     </>;
 
     return <ColumnStyleContext.Provider value={columnStyle}><View testID={testID} style={[styles.root, { backgroundColor: theme.colors.background }]} onLayout={updateHeight}>
@@ -82,7 +92,7 @@ export function FixedPage({ context, children, footer, scrollWhenShort = false, 
         >
             {pageContent}
         </ScrollView>}
-        {!expanded && footerContent && <View style={[styles.footer, { borderTopColor: theme.colors.outline }]}><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></View>}
+        {!expanded && footerView}
     </View></ColumnStyleContext.Provider>;
 
 }

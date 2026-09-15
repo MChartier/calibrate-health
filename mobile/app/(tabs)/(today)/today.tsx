@@ -165,7 +165,7 @@ export default function TodayScreen() {
                     <AppButton title={planPresentation.actionLabel} variant="ghost" onPress={handlePlanAction} />
                 </View>}
             </>}
-            footer={({ expanded }) => dayStatus ? <DayStatusCard date={selectedDate} isToday={isToday} failed={dashboardHasFailedResource} loading={contentLoading} stackActions={expanded} presentation="dock" onAddFood={canAddFood ? () => setAddFoodMeal(null) : undefined} /> : <View style={styles.loadingActions}>
+            footer={({ enlargedText }) => dayStatus ? <DayStatusCard date={selectedDate} isToday={isToday} failed={dashboardHasFailedResource} loading={contentLoading} stackActions={enlargedText} presentation="dock" onAddFood={canAddFood ? () => setAddFoodMeal(null) : undefined} /> : <View style={styles.loadingActions}>
                 <AppButton title="Add food" disabled style={styles.loadingAction} />
                 <AppButton title="Complete day" variant="secondary" disabled style={styles.loadingAction} />
             </View>}
@@ -202,7 +202,7 @@ export default function TodayScreen() {
     );
 }
 
-const TODAY_BODY_MIN_HEIGHT = 184; // Holds the loading weight and food summary before their intrinsic content is ready.
+const TODAY_BODY_MIN_HEIGHT = 184; // Reserves the weight row and a usable food pane before falling back to page scrolling.
 
 function TodayContentLoading() {
     return <FixedPageColumn testID="log-content-loading" style={styles.body}>
