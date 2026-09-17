@@ -8,8 +8,8 @@ import { AppText } from './AppText';
 import { useFocusVisible } from './useFocusVisible';
 
 // The pane edges and displaced sections share one clock, without scaling text or charts.
-export const PAGE_EXPAND_DURATION = 400;
-export const PAGE_COLLAPSE_DURATION = 360;
+const PAGE_EXPAND_DURATION = 400;
+const PAGE_COLLAPSE_DURATION = 360;
 const DETAIL_REVEAL_END = 0.65; // Crossfade source and detail together so the growing pane never blanks the source.
 
 type Region = { ref: React.RefObject<View | null>; order: number };
