@@ -1,4 +1,31 @@
-# Visual review - September 13, 2026
+# Visual review - September 15, 2026
+
+## Approved expansion navigation
+
+The user approved the designer-reviewed expansion mock before implementation. Food log now grows
+below Today's retained date picker; Trend and Plan check grow below Progress's app bar. The shared
+pane keeps the existing shell, moves surrounding sections away, and reverses into the mounted
+overview on collapse. Detail content crossfades with its source while the pane changes size; text
+and charts are not scaled. A pinned Collapse control, Escape, native Back, and browser Back/Forward
+provide return paths. Existing direct detail URLs remain available.
+
+Designer readback of actual phone, tablet, and desktop renders found the final geometry consistent
+with the mock. The initial blank interval identified during motion review was corrected by fading
+the whole pane together with its source. Regression coverage checks actual animation frames,
+retained date/shell bounds, scroll and keyboard focus restoration, nested Add food dismissal,
+browser history, resizing, enlarged text, and expanded-content accessibility. Physical-device
+animation, screen-reader behavior, keyboards, and insets remain unverified.
+
+Validation: Expo type-check and web export passed, along with 956 mobile tests, 16 web release checks,
+and the normal UX gate (239 passed, 71 viewport skips). The broader browser run passed 155 checks;
+its one update-notice interception was corrected using the existing notice-suppression helper.
+The final expansion/history rerun passed all 19 applicable checks across four viewports (nine skips),
+and the final native Back/Progress component rerun passed all six checks. Nine intentional visual
+baseline changes were reviewed before updating. The [PR screenshot gallery](../.github/pr-screenshots/page-expansion/README.md)
+contains 12 inspected implementation renders. Its fresh capture run passed all 11 applicable
+expansion checks across four viewports, with nine intentional project skips.
+
+The evidence below records the preceding overview redesign separately.
 
 The approved Today and Progress iteration replaces the remaining variable-height overview stack with
 full-page compositions. A designer reviewed the responsive mock before implementation. Its final
@@ -47,11 +74,11 @@ phone and desktop widths in `.codex-screenshots/trend-target-browser`.
 | Shared shell | Continuous pale top surface, existing logo, header actions, bottom tabs, and desktop rail. Content remains a centered column on larger screens. |
 | Today context | One contained date toolbar followed by the open ring/balance arrangement. Keep unavailable comparisons the same size; the goal number stays in Progress. |
 | Today weight | Stable full-width Weigh in control above food, changing to the saved measurement/status after entry. The bathroom-scale icon stays; saving or dismissing the local sheet keeps Today visible. |
-| Today food | Fill available height with the latest portion of the day in chronological meal/item order. Put omitted-earlier-item count at the top; retain whole rows, meal headings, and whole-meal totals. |
+| Today food | Six chronological meal summaries fill available height; keep whole-meal totals and food-only scrolling when needed. Tapping expands the detailed log below the date picker. |
 | Today actions | Anchor Add food and Complete day as a filled/outlined pair. Completion keeps Add food disabled beside a green checked Day completed toggle; toggle it off to reopen. Paused tracking uses Resume tracking. Pause lives in the date/day controls. |
 | Progress context | Compact Snapshot retains weight, goal date, goal progress, target, and direct goal editing. |
-| Progress middle | Trend expands into the available space and opens the existing full-screen trend route. |
-| Progress bottom | A compact Plan check diagnosis/state opens `/plan-check` for evidence, recommendations, and scheduled-change actions. |
+| Progress middle | Trend fills the available space and expands in place for its detailed chart. |
+| Progress bottom | A compact Plan check diagnosis/state expands in place for evidence, recommendations, and scheduled-change actions. |
 
 `FixedPage` measures the space inside the real app shell instead of estimating it from window height.
 Normal-sized controls keep stable geometry while food and the chart use the remainder. At 320x568,

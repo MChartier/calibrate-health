@@ -88,7 +88,7 @@ function presentSummary({ status, pendingEvidence, planAvailable, isLoading, err
     };
 }
 
-/** A stable diagnosis slot; the detail route owns review, apply, and undo actions. */
+/** A stable diagnosis slot; expanded details own review, apply, and undo actions. */
 export function PlanCheckSummary({ onPress, planAvailable }: PlanCheckSummaryProps) {
     const { api } = useAuth();
     const statusQuery = useQuery({
@@ -137,7 +137,7 @@ export function PlanCheckSummaryView(props: PlanCheckSummaryViewProps) {
                     <AppText variant="muted">{metadata}</AppText>
                 </View>
                 <View accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                    <Ionicons name="chevron-forward" size={20} color={theme.colors.primary} />
+                    <Ionicons name="expand-outline" size={20} color={theme.colors.primary} />
                 </View>
             </View>
             <View style={styles.diagnosis}>

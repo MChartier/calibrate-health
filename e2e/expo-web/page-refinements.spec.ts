@@ -25,7 +25,7 @@ test('full-width rows include the page gutters in their hover and tap targets', 
   expect(Math.abs(planBox.x - bounds.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(planBox.width - bounds.width)).toBeLessThanOrEqual(1);
   await plan.click({ position: { x: 2, y: 16 } });
-  await expect(page).toHaveURL(url => url.pathname === '/plan-check');
+  await expect(page.getByTestId('expanded-plan')).toBeVisible();
 });
 
 for (const scheme of ['light', 'dark'] as const) {

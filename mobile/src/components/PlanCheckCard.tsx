@@ -28,8 +28,9 @@ const COMPACT_LAYOUT_BREAKPOINT = 640; // Stacks the decision and target rows be
 const METRIC_MIN_WIDTH = 112; // Keeps paired measurements readable on a 320px phone and lets enlarged text wrap.
 const POUNDS_PER_KILOGRAM = 2.2046226218;
 
-type PlanCheckCardProps = ViewProps & { suppressStaleNotice?: boolean };
+type PlanCheckCardProps = ViewProps & { suppressStaleNotice?: boolean; hideTitle?: boolean };
 type PlanCheckCardViewProps = ViewProps & {
+    hideTitle?: boolean;
     status?: CalibrationStatusResponse;
     isLoading?: boolean;
     error?: Error | null;
@@ -40,15 +41,16 @@ type PlanCheckCardViewProps = ViewProps & {
     onCancelScheduledChange?: (recommendationId: number) => Promise<void>;
 };
 
-const PlanCheckHeading: React.FC<{ metadata?: string }> = ({ metadata }) => (
+const PlanCheckHeading: React.FC<{ metadata?: string; hideTitle?: boolean }> = ({ metadata, hideTitle }) => (
     <View style={styles.heading}>
-        <CardHeader title="Plan check" density="compact" />
+        {!hideTitle && <CardHeader title="Plan check" density="compact" />}
         {metadata && <AppText variant="muted">{metadata}</AppText>}
     </View>
 );
 
 export const PlanCheckCard: React.FC<PlanCheckCardProps> = ({
     suppressStaleNotice,
+    hideTitle,
     ...props
 }) => {
     const { api, user } = useAuth();
@@ -64,7 +66,7 @@ export const PlanCheckCard: React.FC<PlanCheckCardProps> = ({
     if (hasPendingEvidence) {
         return (
             <AppSection {...props} density="compact">
-                <PlanCheckHeading metadata="Updating..." />
+                <PlanCheckHeading hideTitle={hideTitle} metadata="Updating..." />
                 <AppText variant="muted">
                     Your latest food and weight entries are syncing before this check updates.
                 </AppText>
@@ -97,13 +99,13 @@ export const PlanCheckCard: React.FC<PlanCheckCardProps> = ({
         <AsyncStateBoundary
             state={statusState}
             resourceLabel="plan check"
-            loading={<PlanCheckCardView {...props} isLoading timezone={user?.timezone} />}
-            empty={<PlanCheckCardView {...props} isLoading timezone={user?.timezone} />}
+            loading={<PlanCheckCardView hideTitle={hideTitle} {...props} isLoading timezone={user?.timezone} />}
+            empty={<PlanCheckCardView hideTitle={hideTitle} {...props} isLoading timezone={user?.timezone} />}
             onRetry={isOnline ? () => statusQuery.refetch() : undefined}
             retrying={statusQuery.isFetching}
             suppressStaleNotice={suppressStaleNotice}
         >
-            <PlanCheckCardView
+            <PlanCheckCardView hideTitle={hideTitle}
                 {...props}
                 status={statusQuery.data}
                 timezone={user?.timezone}
@@ -279,6 +281,7 @@ const PaceComparison: React.FC<{
 
 export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     status,
+    hideTitle,
     isLoading = false,
     error = null,
     timezone,
@@ -362,7 +365,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
         const presentation = getErrorPresentation(error, 'plan check');
         return (
             <AppSection {...props} density="compact" style={style}>
-                <PlanCheckHeading metadata="Unable to update" />
+                <PlanCheckHeading hideTitle={hideTitle} metadata="Unable to update" />
                 <AppText accessibilityRole="alert" style={themedStyles.error}>{presentation.message}</AppText>
                 {presentation.requestId && <AppText variant="caption">Reference: {presentation.requestId}</AppText>}
                 {onRetry && <AppButton title="Retry" variant="secondary" onPress={onRetry} />}
@@ -373,7 +376,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     if (isLoading || !evaluation) {
         return (
             <AppSection {...props} density="compact" style={style} accessibilityLabel="Loading plan check">
-                <PlanCheckHeading metadata="Checking your latest completed day..." />
+                <PlanCheckHeading hideTitle={hideTitle} metadata="Checking your latest completed day..." />
             </AppSection>
         );
     }
@@ -381,7 +384,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     if (!assessment) {
         return (
             <AppSection {...props} density="compact" style={style}>
-                <PlanCheckHeading />
+                <PlanCheckHeading hideTitle={hideTitle} />
                 <AppText variant="muted">This check is not available from your connected server yet.</AppText>
             </AppSection>
         );
@@ -429,7 +432,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
         <>
             <AppSection {...props} density="compact" style={style} testID="plan-check-section">
                 <View style={styles.cardBody}>
-                    <PlanCheckHeading metadata={metadata} />
+                    <PlanCheckHeading hideTitle={hideTitle} metadata={metadata} />
 
                     {scheduledChange && (
                         <View style={[

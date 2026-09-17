@@ -66,7 +66,8 @@ let mockTrendPreviewProps: { onPress: () => void; onLogWeight: () => void } | nu
 let mockPlanSummaryProps: { onPress: () => void; planAvailable?: boolean } | null = null;
 jest.mock('expo-router', () => ({
     router: { push: jest.fn() },
-    useLocalSearchParams: () => mockSearchParams
+    useLocalSearchParams: () => mockSearchParams,
+    usePathname: () => '/progress'
 }));
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('../auth/AuthContext', () => ({
@@ -131,12 +132,12 @@ describe('Progress goal completion flow', () => {
         await screen.findByText('Snapshot');
         expect(mockTrendPreviewProps).not.toBeNull();
         act(() => mockTrendPreviewProps?.onPress());
-        expect(router.push).toHaveBeenCalledWith('/weight-trend');
+        expect(router.push).not.toHaveBeenCalled();
         act(() => mockTrendPreviewProps?.onLogWeight());
         expect(router.push).toHaveBeenCalledWith('/weight');
         expect(mockPlanSummaryProps).not.toBeNull();
         act(() => mockPlanSummaryProps?.onPress());
-        expect(router.push).toHaveBeenCalledWith('/plan-check');
+        expect(router.push).not.toHaveBeenCalledWith('/plan-check');
 
         screen.unmount();
         queryClient.clear();
@@ -157,7 +158,7 @@ describe('Progress goal completion flow', () => {
         expect(screen.queryByLabelText('Set next goal')).toBeNull();
         expect(mockPlanSummaryProps).not.toBeNull();
         act(() => mockPlanSummaryProps?.onPress());
-        expect(router.push).toHaveBeenCalledWith('/plan-check');
+        expect(router.push).not.toHaveBeenCalled();
         screen.unmount();
         queryClient.clear();
     });

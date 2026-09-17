@@ -37,23 +37,27 @@ async function capture(page: Page, filename: string) {
   });
 }
 
-test('Trend keeps the app shell and browser Back returns through real Progress history', async ({ page, ux }) => {
+test('Trend keeps the app shell and browser Back collapses into Progress', async ({ page, ux }) => {
   await page.setViewportSize({ width: 1_024, height: 1_000 });
   await ux.install('populated');
   await page.goto('/progress');
+  await hideTransientPwaNotices(page);
   await page.getByRole('button', { name: 'Open full weight trend', exact: true }).click();
 
-  await expect(page).toHaveURL((url) => url.pathname === '/weight-trend');
-  await expectFocusedRouteTitle(page, 'Trend', 'Trend - Calibrate');
-  await expect(page.getByRole('button', { name: 'Go back', exact: true })).toBeVisible();
+  await expect(page).toHaveURL((url) => url.pathname === '/progress');
+  await expect(page.getByRole('button', { name: 'Collapse Trend', exact: true })).toBeFocused();
+  await expect(page.locator('#route-focus-title')).toHaveText('Progress');
   await expect(page.getByRole('button', { name: 'Open notifications' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Account & settings', exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await capture(page, 'trend-desktop-1024x1000.png');
 
-  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await page.goBack();
   await expect(page).toHaveURL((url) => url.pathname === '/progress');
-  await expectFocusedRouteTitle(page, 'Progress', 'Progress - Calibrate');
+  await expect(page.getByTestId('expanded-trend')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open full weight trend', exact: true })).toBeFocused();
+  await page.goForward();
+  await expect(page.getByTestId('expanded-trend')).toBeVisible();
 });
 
 test('Activity direct entry falls back to its registered Connections parent', async ({ page, ux }) => {
@@ -72,20 +76,22 @@ test('Activity direct entry falls back to its registered Connections parent', as
   await expectFocusedRouteTitle(page, 'Connections', 'Connections - Calibrate');
 });
 
-test('Food Log uses real Today history on a compact phone viewport', async ({ page, ux }) => {
+test('Food log returns to Today with browser Back on a compact phone', async ({ page, ux }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await ux.install('populated');
   await page.goto('/today');
+  await hideTransientPwaNotices(page);
   await page.getByRole('button', { name: /Food log\..*View full log/ }).click();
 
-  await expect(page).toHaveURL((url) => url.pathname === '/food-log');
-  await expectFocusedRouteTitle(page, 'Food log', 'Food log - Calibrate');
-  await expect(page.getByRole('button', { name: 'Go back', exact: true })).toBeVisible();
+  await expect(page).toHaveURL((url) => url.pathname === '/today');
+  await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toBeFocused();
+  await expect(page.locator('#route-focus-title')).toHaveText('Today');
   await expectNoHorizontalOverflow(page);
   await capture(page, 'food-log-phone-320x568.png');
 
-  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await page.goBack();
   await expect(page).toHaveURL((url) => url.pathname === '/today');
+  await expect(page.getByTestId('expanded-food')).toHaveCount(0);
 });
 
 test('Saved Foods is discoverable from Settings and returns through real history', async ({ page, ux }) => {

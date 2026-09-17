@@ -62,8 +62,8 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   queued-sync status. Never use "No weigh-in yet" as its principal content. Use the existing scale
   icon and a decorative plus/pencil. Tapping opens the weight sheet over Today with the selected date;
   saving or dismissing stays on Today unless View progress is explicitly requested.
-- The food summary is one full-width navigation target that fills the remaining body height,
-  including blank space below sparse content. Keep the Food log label, food count, and one chevron
+- The food summary is one full-width expansion target that fills the remaining body height,
+  including blank space below sparse content. Keep the Food log label, food count, and one expand icon
   above six chronological meal-period rows. Each row shows the whole-meal calorie total or neutral
   **No entries**; zero-calorie foods still count as logged. Use the shared 48px row rhythm without
   individual food names, row actions, omission counts, or height-based fitting. A completely empty
@@ -87,15 +87,15 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
 
 Keep the compact Snapshot in the top surface, with paired weight/date metrics, goal progress, current
 target, and direct Edit goal access. Trend's heading, decorative fullscreen icon, and graph form one
-full-width tap target with a shared hover/focus treatment. Trend expands through the middle and opens the existing full-screen
-trend route. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.
-The detailed Trend route also gives its plot all remaining height after the range controls, legend,
+full-width tap target with a shared hover/focus treatment. Trend fills the middle and expands in place
+when tapped. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.
+The detailed Trend content also gives its plot all remaining height after the range controls, legend,
 selected reading, and point navigation. Keep a legible minimum and scroll short screens; do not cap
 the plot height while leaving unused space below it.
 
-`PlanCheckSummary` occupies the bottom area as one navigation target: heading, assessment period,
+`PlanCheckSummary` occupies the bottom area as one expansion target: heading, assessment period,
 and available diagnosis or a useful pending/building/unavailable state. Keep this area stable when a
-diagnosis is absent. Tapping opens `/plan-check`; the overview does not contain the full evidence and
+diagnosis is absent. Tapping expands Plan check in place; the overview does not contain the full evidence and
 recommendation sequence. On short screens, including 320x568, Snapshot, Trend, and Plan check scroll
 together, with Plan check following the complete chart below the fold. Enlarged text uses the same
 intrinsic scrolling model. A rule marks the lower diagnosis area; do not repeat page rules for every
@@ -106,6 +106,25 @@ step in that order. Group related evidence with 8–16px spacing and separate th
 gap. Use 16px supporting titles, 14px labels, and smaller target values than pace measurements. Keep
 the recommendation open and its Review action full-width. Scheduled changes retain their status and
 Undo action. Preserve all calculation, data-state, offline, attribution, and confirmation behavior.
+
+### Expansion and return
+
+Food log expands into the shell content below Today's retained date picker. Trend and Plan check
+expand into everything below Progress's app bar, above the existing tabs. Preserve the app bar,
+desktop rail, tabs, and centered reading width. These are page regions with a pinned heading and
+Collapse action; there is no modal scrim or second navigation bar. Direct detail URLs remain supported.
+
+Measure the source region and available pane. Animate its top and height together with the overview
+sections moving past the upper and lower edges: 400ms to expand and 360ms to collapse. Crossfade the
+moving source and growing detail together, without a blank interval or scaling text and charts.
+Reduced motion changes state immediately. Keep detail content scrollable, including at 200% text,
+and remeasure the source before collapsing after resize or reflow.
+
+Keep the overview mounted and preserve its scroll position. Hide its controls from interaction and
+accessibility while expanded. Focus Collapse after opening and restore the source's keyboard focus
+after closing. Escape and native system Back collapse; nested dialogs handle dismissal first. Browser
+Back/Forward traverses the expansion without changing the route URL. Food editing, copy, recipes,
+date selection, and Add food, plus Trend controls and Plan check review/apply/undo retain their behavior.
 
 ## Supporting surfaces
 

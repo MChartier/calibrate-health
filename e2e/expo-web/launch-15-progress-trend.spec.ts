@@ -229,8 +229,8 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole('button', { name: 'Open full weight trend', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/weight-trend');
-  await expect(page.locator('#route-focus-title')).toHaveText('Trend');
+  await expect(page.getByTestId('expanded-trend')).toBeVisible();
+  await expect(page.locator('#route-focus-title')).toHaveText('Progress');
 
   const chartCanvas = page.getByTestId('weight-trend-chart-canvas');
   const chartBox = await chartCanvas.boundingBox();
@@ -315,7 +315,7 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await hideTransientPwaNotices(page);
   await page.getByText('Month', { exact: true }).click();
   await expect(selectedSummary).toContainText('Jul 18, 2026');
-  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await page.getByRole('button', { name: 'Collapse Trend', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/progress');
   await expect(page.locator('#route-focus-title')).toHaveText('Progress');
 

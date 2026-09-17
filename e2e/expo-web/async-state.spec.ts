@@ -71,9 +71,9 @@ test('a failed refresh keeps cached food usable and labels it degraded', async (
   await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Food log.*View full log/ }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/food-log');
+  await expect(page.getByTestId('expanded-food')).toBeVisible();
   await expect(page.getByText("Couldn't refresh food log", { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Meals', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Food log', exact: true })).toBeVisible();
   await expect(page.getByText(/provider details that must stay private/)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   await captureLaunchEvidence(page, testInfo, 'food-log-degraded');

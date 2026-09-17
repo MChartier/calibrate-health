@@ -455,11 +455,13 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(foodLogSummaryCard.getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
   await expect(foodLogSummaryCard).toContainText('Breakfast');
   await foodLogSummary.click();
-  await expect(page).toHaveURL((url) => url.pathname === '/food-log' && Boolean(url.searchParams.get('date')));
+  await expect(page.getByTestId('expanded-food')).toBeVisible();
+  await expect(page).toHaveURL((url) => url.pathname === '/today');
   await expect(page.getByRole('heading', { name: 'Food log', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Collapse Breakfast', exact: true })).toBeVisible();
   await expect(page.getByRole('main').getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  await page.getByRole('button', { name: 'Collapse Food log', exact: true }).click();
 
   await page.getByRole('tab', { name: /Today$/ }).click();
   await expect(page).toHaveURL(/\/today$/);

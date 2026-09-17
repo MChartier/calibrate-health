@@ -10,6 +10,7 @@ import { AsyncStateBoundary, useOnlineStatus } from '../../../src/components/Asy
 import { CalorieBalanceCard } from '../../../src/components/CalorieBalanceCard';
 import { DateNavigation } from '../../../src/components/DateNavigation';
 import { FixedPage, FixedPageColumn } from '../../../src/components/FixedPage';
+import { ExpansionRegion } from '../../../src/components/PageExpansion';
 import { DayStatusCard, useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
 import { TodayFoodPreview } from '../../../src/today/TodayFoodPreview';
@@ -31,6 +32,8 @@ import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../s
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
 import { spacing } from '../../../src/theme';
 
+const FoodLogContent = React.lazy(() => import('../../../src/food/FoodLogContent'));
+
 export default function TodayScreen() {
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
     const pathname = usePathname();
@@ -41,6 +44,7 @@ export default function TodayScreen() {
     const selectedDate = dateNavigation.selectedDate;
     const [addFoodMeal, setAddFoodMeal] = useState<MealPeriod | null | undefined>(undefined);
     const [isWeightEntryOpen, setIsWeightEntryOpen] = useState(false);
+    const [isFoodExpanded, setIsFoodExpanded] = useState(false);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
 
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
@@ -144,14 +148,24 @@ export default function TodayScreen() {
             fullWidthBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
             minBodyHeight={TODAY_BODY_MIN_HEIGHT}
             containedBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
-            context={<>
-                <DateNavigation
+            expansion={{
+                id: isFoodExpanded ? 'food' : null,
+                title: 'Food log',
+                onClose: () => setIsFoodExpanded(false),
+                onRestore: id => setIsFoodExpanded(id === 'food'),
+                focused: getActiveTabRoute(pathname) === 'today',
+                renderContent: () => <React.Suspense fallback={<TodayContentLoading />}>
+                    <FoodLogContent key={selectedDate} embedded onAddFood={() => setAddFoodMeal(null)} />
+                </React.Suspense>
+            }}
+            header={<DateNavigation
                     navigation={dateNavigation}
                     compact
                     unified
                     style={styles.dateNavigation}
                     pickerFooter={(closePicker) => <DayStatusCard date={selectedDate} isToday={isToday} presentation="controls" onActionComplete={closePicker} />}
-                />
+                />}
+            context={<>
                 <CalorieBalanceCard
                     totalCalories={calories}
                     targetCalories={!contentLoading && !foodIsUnavailable && showCalorieComparison ? target : null}
@@ -182,8 +196,12 @@ export default function TodayScreen() {
                 retrying={failedDashboardQueries.some((query) => query.isFetching)}
                 suppressStaleNotice
             >
-                <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
-                <TodayFoodPreview entries={entries} expanded={expanded} onPress={() => router.push({ pathname: '/food-log', params: { date: selectedDate } })} />
+                <ExpansionRegion id="weight" order={1}>
+                    <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
+                </ExpansionRegion>
+                <ExpansionRegion id="food" order={2} style={[styles.body, expanded && styles.bodyExpanded]}>
+                    <TodayFoodPreview entries={entries} expanded={expanded} onPress={() => setIsFoodExpanded(true)} />
+                </ExpansionRegion>
             </AsyncStateBoundary>}
         </FixedPage>
             <AddFoodSheet

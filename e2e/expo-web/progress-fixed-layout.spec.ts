@@ -35,7 +35,7 @@ test('Trend heading, fullscreen icon, and graph share one full-width navigation 
       await page.screenshot({ path: testInfo.outputPath('progress-trend-shared-hover.png') });
     }
     await target.click({ position });
-    await expect(page).toHaveURL(url => url.pathname === '/weight-trend');
+    await expect(page.getByTestId("expanded-trend")).toBeVisible();
   }
 });
 
@@ -61,7 +61,7 @@ test('Progress gives the chart available space and keeps one Plan check target a
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('progress-fixed-layout.png') });
   await summary.click();
-  await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+  await expect(page.getByTestId("expanded-plan")).toBeVisible();
   await expect(page.getByRole('button', { name: 'Review suggested 1,750 calorie daily target', exact: true })).toBeVisible();
 });
 
@@ -139,7 +139,7 @@ test('Plan check detail navigation preserves recommendation review, apply, and u
   await page.goto('/progress');
   await hideTransientPwaNotices(page);
   await page.getByTestId('plan-check-summary').click();
-  await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+  await expect(page.getByTestId("expanded-plan")).toBeVisible();
   await page.getByRole('button', { name: 'Review suggested 1,750 calorie daily target', exact: true }).click();
   const review = page.getByRole('dialog', { name: 'Review calorie target', exact: true });
   await expect(review).toBeVisible();
@@ -148,7 +148,7 @@ test('Plan check detail navigation preserves recommendation review, apply, and u
   await expect(review).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Undo scheduled calorie target update', exact: true })).toBeVisible();
   expect(mutations).toEqual(['apply']);
-  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await page.getByRole('button', { name: "Collapse Plan check", exact: true }).click();
   await expect(page.getByTestId('plan-check-summary')).toContainText('A calorie target update is scheduled.');
   await page.getByTestId('plan-check-summary').click();
   await page.getByRole('button', { name: 'Undo scheduled calorie target update', exact: true }).click();
@@ -163,5 +163,5 @@ test('unavailable calorie plans keep a Plan check destination', async ({ page, u
   const summary = page.getByTestId('plan-check-summary');
   await expect(summary).toContainText('Review your calorie plan to restart this check.');
   await summary.click();
-  await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+  await expect(page.getByTestId("expanded-plan")).toBeVisible();
 });

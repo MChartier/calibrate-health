@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
 import { AppButton } from '../../../src/components/AppButton';
@@ -43,6 +43,8 @@ import {
     isWeightWithinPolicy
 } from '../../../src/weightEntry/input';
 
+const ProgressExpansionContent = React.lazy(() => import('../../../src/progress/ProgressExpansionContent'));
+
 function formatWeightInput(value: number): string {
     return value.toFixed(1).replace(/\.0$/, '');
 }
@@ -76,6 +78,8 @@ function getGoalDraftKey(startWeight: string, targetWeight: string, goalMode: Go
 }
 
 export default function ProgressScreen() {
+    const pathname = usePathname();
+    const [expandedSection, setExpandedSection] = useState<'trend' | 'plan' | null>(null);
     const routeParams = useLocalSearchParams<{ openNextGoal?: string; openPlanReview?: string }>();
     const { api, user } = useAuth();
     const theme = useAppTheme();
@@ -344,6 +348,18 @@ export default function ProgressScreen() {
                 testID="progress-fixed-page"
                 scrollWhenShort
                 minBodyHeight={210}
+                bodyExpansionId="trend"
+                footerExpansionId="plan"
+                expansion={{
+                    id: expandedSection,
+                    title: expandedSection === 'plan' ? 'Plan check' : 'Trend',
+                    onClose: () => setExpandedSection(null),
+                    onRestore: id => { if (id === 'trend' || id === 'plan') setExpandedSection(id); },
+                    focused: pathname === '/progress',
+                    renderContent: section => <React.Suspense fallback={<View style={styles.snapshotLoading}><SkeletonBlock height={120} /></View>}>
+                        <ProgressExpansionContent section={section} />
+                    </React.Suspense>
+                }}
                 context={(
                     <AsyncStateBoundary
                         state={progressState}
@@ -380,14 +396,14 @@ export default function ProgressScreen() {
                 fullWidthFooter
                 fullWidthBody
                 footer={<PlanCheckSummary
-                    onPress={() => router.push('/plan-check')}
+                    onPress={() => setExpandedSection('plan')}
                     planAvailable={profileQuery.data ? profileQuery.data.calorieSummary.planStatus === 'available' : undefined}
                 />}
             >
                 {({ expanded }) => <WeightTrendPreviewCard
                     expanded={expanded}
                     suppressStaleNotice
-                    onPress={() => router.push('/weight-trend')}
+                    onPress={() => setExpandedSection('trend')}
                     onLogWeight={() => router.push('/weight')}
                 />}
             </FixedPage>
