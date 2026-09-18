@@ -10,7 +10,7 @@ import { MEAL_OPTIONS } from '../utils/meals';
 import { getFoodLogAmountText } from '../food/foodLogAmount';
 
 type FoodLogTimelineCardProps = ViewProps & {
-    title?: string;
+    title?: string | null;
     entries: FoodLogEntry[];
     disabled?: boolean;
     copyDisabled?: boolean;
@@ -77,7 +77,8 @@ export const FoodLogTimelineCard: React.FC<FoodLogTimelineCardProps> = ({
         <View {...props} style={[styles.content, style]}>
             <View style={styles.headerRow}>
                 <View style={styles.headerText}>
-                    <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>
+                    {title === null ? <AppText variant="muted">{entries.length} {entries.length === 1 ? 'food' : 'foods'} | {formatCalories(entries.reduce((total, entry) => total + entry.calories, 0))}</AppText>
+                        : <AppText accessibilityRole="header" aria-level={2} variant="screenTitle">{title}</AppText>}
                 </View>
                 {entries.length > 0 && onCopyDay && (
                     <Pressable

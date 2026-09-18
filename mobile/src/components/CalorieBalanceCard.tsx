@@ -173,7 +173,7 @@ function createStyles(colors: AppThemeColors) {
         primaryText: {
             color: colors.primary
         },
-        open: { borderWidth: 0, borderRadius: 0, paddingHorizontal: 0, paddingTop: spacing.sm, paddingBottom: spacing.lg, minHeight: 112 },
+        open: { backgroundColor: 'transparent', borderWidth: 0, borderRadius: 0, paddingHorizontal: 0, paddingTop: spacing.sm, paddingBottom: spacing.lg, minHeight: 112 },
         openHeading: { fontWeight: '600' },
         dangerText: {
             color: colors.danger

@@ -37,5 +37,5 @@ verified against the final export before copying; the interaction captures were 
 
 The first three specs run through `node scripts/expo-web-playwright.mjs`; the final spec runs through
 `npm run test:ux`. The PR's release export passed all 239 applicable UX gates and 61 applicable
-fixed-page/interaction checks. See [design review](../../../docs/design-review.md) for broader
-coverage, previous iterations, and physical-device validation limits.
+fixed-page/interaction checks. These captures are browser evidence; physical-device behavior remains
+unverified.

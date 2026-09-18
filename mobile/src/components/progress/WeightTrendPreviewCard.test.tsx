@@ -3,6 +3,8 @@ import { Dimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Text as SvgText } from 'react-native-svg';
 import type { TrendMetricEntry, WeightTrendSummary } from '@calibrate/api-client';
+import { WeightTrendCard } from '../WeightTrendCard';
+import { WeightTrendChart } from '../WeightTrendChart';
 import { WeightTrendPreviewCard } from './WeightTrendPreviewCard';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
@@ -92,11 +94,7 @@ describe('WeightTrendPreviewCard', () => {
         expect(screen.queryByLabelText('Latest smoothed weight 168.2 lb')).toBeNull();
         expect(screen.queryByText('95% estimated trend range')).toBeNull();
         expect(screen.queryByText('167.8 lb - 168.6 lb')).toBeNull();
-        expect(screen.getByLabelText('Four-week underlying weight trend with 95% estimated range')).toBeTruthy();
-        expect(screen.getByLabelText('169.2 lb weight axis label')).toBeTruthy();
-        expect(screen.getByLabelText('167.8 lb weight axis label')).toBeTruthy();
-        expect(screen.getByLabelText('Jul 19 date axis label')).toBeTruthy();
-        expect(screen.getByLabelText('Jul 20 date axis label')).toBeTruthy();
+        expect(screen.getByLabelText('Four-week underlying weight trend with scale readings and 95% estimated range')).toBeTruthy();
         expect(screen.queryByText(/Trend line:/)).toBeNull();
         expect(screen.queryByText(/-0\.35|volatility/)).toBeNull();
         expect(screen.queryByText(/^(Week|Month|Year|All)$/)).toBeNull();
@@ -111,16 +109,16 @@ describe('WeightTrendPreviewCard', () => {
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} onLogWeight={jest.fn()} />);
         expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({
             flex: 1,
-            minHeight: 116
+            minHeight: 188
         });
         expect(screen.getByLabelText('Open full weight trend')).toHaveStyle({ paddingVertical: 0 });
-        expect(screen.getByLabelText('Four-week underlying weight trend with 95% estimated range'))
-            .toHaveProp('height', '100%');
+        expect(screen.getByLabelText('Four-week underlying weight trend with scale readings and 95% estimated range'))
+            .toHaveProp('height', 188);
     });
 
     it('keeps a complete chart in the short-screen scrolling layout', () => {
         const screen = render(<WeightTrendPreviewCard expanded onPress={jest.fn()} onLogWeight={jest.fn()} />);
-        expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({ height: 166, flexShrink: 0, flexBasis: 'auto' });
+        expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({ height: 188, flexShrink: 0, flexBasis: 'auto' });
         const axisLabels = screen.UNSAFE_getAllByType(SvgText);
         expect(axisLabels.every((label) => label.props.fontSize >= 12)).toBe(true);
     });
@@ -131,11 +129,11 @@ describe('WeightTrendPreviewCard', () => {
             screen: { width: 390, height: 844, scale: 1, fontScale: 2 }
         });
         const screen = render(<WeightTrendPreviewCard expanded onPress={jest.fn()} onLogWeight={jest.fn()} />);
-        expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({ height: 332 });
+        expect(screen.getByTestId('weight-trend-preview-canvas')).toHaveStyle({ height: 376 });
         expect(screen.UNSAFE_getAllByType(SvgText).every((label) => label.props.fontSize === 24)).toBe(true);
     });
 
-    it('draws the uncertainty band while keeping measurement dots and fallback context out of the preview', () => {
+    it('uses the same full visualization, axes, readings, and estimate band as the expanded chart', () => {
         const metrics = [
             metric(3, '2026-07-20', 168, 168.2),
             metric(2, '2026-07-19', 169, 168.8),
@@ -151,9 +149,15 @@ describe('WeightTrendPreviewCard', () => {
         });
 
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} onLogWeight={jest.fn()} />);
-        expect(screen.queryByTestId('weight-trend-preview-measurement-path')).toBeNull();
-        expect(screen.getByTestId('weight-trend-preview-smoothed-path-0').props.d).toMatch(/^M 190\.00 /);
-        expect(screen.getByTestId('weight-trend-preview-range-0')).toBeTruthy();
+        expect(screen.getAllByTestId('weight-trend-measurement')).toHaveLength(3);
+        expect(screen.getByLabelText('Chart legend')).toBeTruthy();
+        const previewLayout = screen.UNSAFE_getByType(WeightTrendChart).props.chartLayout;
+        const previewBand = screen.getByTestId('weight-trend-range-0').props;
+        const expanded = render(<WeightTrendCard />);
+        expect(expanded.UNSAFE_getByType(WeightTrendChart).props.chartLayout).toEqual(previewLayout);
+        const expandedBand = expanded.getByTestId('weight-trend-range-0').props;
+        expect(previewBand.fill).toEqual(expandedBand.fill);
+        expect(previewBand.stroke).toEqual(expandedBand.stroke);
         expect(screen.queryByText(/Trend line:/)).toBeNull();
     });
 
@@ -184,7 +188,7 @@ describe('WeightTrendPreviewCard', () => {
 
         expect(screen.getByText('Underlying trend: 168.2 lb | As of Jul 12')).toBeTruthy();
         expect(screen.queryByText(/Current underlying trend/)).toBeNull();
-        expect(screen.getByLabelText('Four-week underlying weight trend with 95% estimated range')).toBeTruthy();
+        expect(screen.getByLabelText('Four-week underlying weight trend with scale readings and 95% estimated range')).toBeTruthy();
         expect(screen.queryByLabelText('Log weight')).toBeNull();
     });
 
@@ -220,7 +224,7 @@ describe('WeightTrendPreviewCard', () => {
             'Log a current scale weight to refresh the underlying trend estimate.'
         )).toBeTruthy();
         expect(screen.queryByText(/168\.2 lb/)).toBeNull();
-        expect(screen.queryByLabelText('Four-week underlying weight trend with 95% estimated range')).toBeNull();
+        expect(screen.queryByLabelText('Four-week underlying weight trend with scale readings and 95% estimated range')).toBeNull();
 
         fireEvent.press(screen.getByLabelText('Log weight'));
         expect(onLogWeight).toHaveBeenCalledTimes(1);
@@ -256,7 +260,7 @@ describe('WeightTrendPreviewCard', () => {
             'Your scale weights are saved, but the underlying trend estimate is temporarily unavailable.'
         )).toBeTruthy();
         expect(screen.queryByText(/Current underlying trend/)).toBeNull();
-        expect(screen.queryByLabelText('Four-week underlying weight trend with 95% estimated range')).toBeNull();
+        expect(screen.queryByLabelText('Four-week underlying weight trend with scale readings and 95% estimated range')).toBeNull();
         expect(screen.queryByLabelText('Log weight')).toBeNull();
     });
 

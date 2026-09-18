@@ -224,8 +224,8 @@ test('critical web flows remain keyboard-operable across forced colors, reflow, 
 
     const openTrend = page.getByRole('button', { name: 'Open full weight trend', exact: true });
     await activateWithKeyboard(page, openTrend);
-    await expect(page).toHaveURL((url) => url.pathname === '/weight-trend');
-    await expectRouteFocus(page, 'Trend');
+    await expect(page.getByTestId('expanded-trend')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Collapse Trend', exact: true })).toBeFocused();
 
     const chart = page.getByRole('img', { name: /^Weight chart from/ });
     await expect(chart).toHaveCount(1);

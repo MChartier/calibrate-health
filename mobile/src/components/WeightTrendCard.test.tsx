@@ -1,5 +1,5 @@
 import { fireEvent, render, within } from '@testing-library/react-native';
-import { Platform, StyleSheet } from 'react-native';
+import { Dimensions, Platform, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from '@calibrate/api-client';
 import {
@@ -88,6 +88,7 @@ function response(metrics = METRICS, summary: WeightTrendSummary | null = create
 
 describe('WeightTrendCard', () => {
     beforeEach(() => {
+        Dimensions.set({ window: { width: 390, height: 844, scale: 1, fontScale: 1 }, screen: { width: 390, height: 844, scale: 1, fontScale: 1 } });
         (useQuery as jest.Mock).mockReturnValue({ data: response(), error: null, isLoading: false, status: 'success' });
     });
 

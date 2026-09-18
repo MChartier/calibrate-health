@@ -35,11 +35,11 @@ test('Trend heading, fullscreen icon, and graph share one full-width navigation 
       await page.screenshot({ path: testInfo.outputPath('progress-trend-shared-hover.png') });
     }
     await target.click({ position });
-    await expect(page).toHaveURL(url => url.pathname === '/weight-trend');
+    await expect(page.getByTestId("expanded-trend")).toBeVisible();
   }
 });
 
-test('Progress gives the chart available space and keeps one Plan check target above navigation', async ({ page, ux }, testInfo) => {
+test('Progress gives the complete chart available space and keeps Plan check reachable', async ({ page, ux }, testInfo) => {
   await ux.install('populated');
   await installPlanCheck(page);
   await page.goto('/progress');
@@ -52,16 +52,17 @@ test('Progress gives the chart available space and keeps one Plan check target a
   await expect(summary.getByRole('button')).toHaveCount(0);
   const [snapshotBox, canvasBox, summaryBox] = await Promise.all([snapshot.boundingBox(), canvas.boundingBox(), summary.boundingBox()]);
   expect(snapshotBox!.y + snapshotBox!.height).toBeLessThan(canvasBox!.y);
-  expect(canvasBox!.height).toBeGreaterThanOrEqual(116);
+  expect(canvasBox!.height).toBeGreaterThanOrEqual(188);
   expect(canvasBox!.y + canvasBox!.height).toBeLessThanOrEqual(summaryBox!.y);
-  expect(summaryBox!.y + summaryBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await summary.scrollIntoViewIfNeeded();
+  await expect(summary).toBeInViewport({ ratio: 1 });
   const axisFontSizes = await canvas.locator('text').evaluateAll(elements => elements.map(element => Number.parseFloat(getComputedStyle(element).fontSize)));
   expect(axisFontSizes.length).toBeGreaterThanOrEqual(4);
   expect(axisFontSizes.every(size => size >= 12)).toBe(true);
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('progress-fixed-layout.png') });
   await summary.click();
-  await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+  await expect(page.getByTestId("expanded-plan")).toBeVisible();
   await expect(page.getByRole('button', { name: 'Review suggested 1,750 calorie daily target', exact: true })).toBeVisible();
 });
 
@@ -74,7 +75,7 @@ test('short Progress scrolls Plan check after a complete chart', async ({ page, 
   await hideTransientPwaNotices(page);
   const canvas = page.getByTestId('weight-trend-preview-canvas');
   const summary = page.getByTestId('plan-check-summary');
-  await expect(canvas).toHaveCSS('height', '166px');
+  await expect(canvas).toHaveCSS('height', '188px');
   const canvasBox = (await canvas.boundingBox())!;
   const summaryBox = (await summary.boundingBox())!;
   expect(canvasBox.y + canvasBox.height).toBeLessThan(summaryBox.y);
@@ -97,7 +98,7 @@ test('200 percent Progress text keeps the chart and diagnosis in natural page or
   await applyTwoHundredPercentText(page);
   const canvas = page.getByTestId('weight-trend-preview-canvas');
   const summary = page.getByTestId('plan-check-summary');
-  await expect(canvas).toHaveCSS('height', '332px');
+  await expect(canvas).toHaveCSS('height', '376px');
   const canvasBox = (await canvas.boundingBox())!;
   const summaryBox = (await summary.boundingBox())!;
   expect(canvasBox.y + canvasBox.height).toBeLessThan(summaryBox.y);
@@ -139,7 +140,7 @@ test('Plan check detail navigation preserves recommendation review, apply, and u
   await page.goto('/progress');
   await hideTransientPwaNotices(page);
   await page.getByTestId('plan-check-summary').click();
-  await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+  await expect(page.getByTestId("expanded-plan")).toBeVisible();
   await page.getByRole('button', { name: 'Review suggested 1,750 calorie daily target', exact: true }).click();
   const review = page.getByRole('dialog', { name: 'Review calorie target', exact: true });
   await expect(review).toBeVisible();
@@ -148,7 +149,7 @@ test('Plan check detail navigation preserves recommendation review, apply, and u
   await expect(review).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Undo scheduled calorie target update', exact: true })).toBeVisible();
   expect(mutations).toEqual(['apply']);
-  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+  await page.getByRole('button', { name: "Collapse Plan check", exact: true }).click();
   await expect(page.getByTestId('plan-check-summary')).toContainText('A calorie target update is scheduled.');
   await page.getByTestId('plan-check-summary').click();
   await page.getByRole('button', { name: 'Undo scheduled calorie target update', exact: true }).click();
@@ -163,5 +164,5 @@ test('unavailable calorie plans keep a Plan check destination', async ({ page, u
   const summary = page.getByTestId('plan-check-summary');
   await expect(summary).toContainText('Review your calorie plan to restart this check.');
   await summary.click();
-  await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+  await expect(page.getByTestId("expanded-plan")).toBeVisible();
 });

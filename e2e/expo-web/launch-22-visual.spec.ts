@@ -39,7 +39,7 @@ for (const scheme of ['light', 'dark'] as const) {
     }));
     await page.goto('/progress');
     await page.getByTestId('plan-check-summary').click();
-    await expect(page).toHaveURL((url) => url.pathname === '/plan-check');
+    await expect(page.getByTestId('expanded-plan')).toBeVisible();
     const section = page.getByTestId('plan-check-section');
     const review = section.getByRole('button', { name: 'Review suggested 1,750 calorie daily target' });
     await expect(review).toBeVisible();
@@ -262,7 +262,7 @@ test('stale Food Log retains cached data and degraded labeling in dark mode', as
   await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText('360 kcal', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Food log.*View full log/ }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/food-log');
+  await expect(page.getByTestId('expanded-food')).toBeVisible();
   await expect(page.getByText("Couldn't refresh food log", { exact: true })).toBeVisible();
   await expect(page.getByRole('main').getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await expectViewportScreenshot(page, 'food-log-stale-dark.png');

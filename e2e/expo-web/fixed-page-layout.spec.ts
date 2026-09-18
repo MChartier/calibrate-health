@@ -79,7 +79,8 @@ test('Today anchors its actions, puts weigh-in first, and shows concise chronolo
   await page.screenshot({ path: testInfo.outputPath('today-fixed-layout.png') });
 
   await preview.click();
-  await expect(page).toHaveURL((url) => url.pathname === '/food-log');
+  await expect(page.getByTestId('expanded-food')).toBeVisible();
+  await expect(page).toHaveURL((url) => url.pathname === '/today');
 });
 
 test('320px Today scrolls only the food pane while its surrounding controls stay fixed', async ({ page, ux }, testInfo) => {
@@ -275,7 +276,7 @@ for (const empty of [false, true]) {
     await page.screenshot({ path: testInfo.outputPath(`today-${empty ? 'empty' : 'sparse'}-full-pane.png`) });
     // Tap blank space at the bottom-right edge, outside the constrained reading column.
     await page.mouse.click(box.x + box.width - 4, box.y + box.height - 8);
-    await expect(page).toHaveURL(url => url.pathname === '/food-log');
+    await expect(page.getByTestId('expanded-food')).toBeVisible();
   });
 }
 

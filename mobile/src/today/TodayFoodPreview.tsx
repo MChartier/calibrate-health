@@ -31,7 +31,7 @@ export function TodayFoodPreview({ entries, onPress, style, expanded = false }: 
         testID="today-food-preview"
         accessibilityRole="button"
         accessibilityLabel={`Food log. ${foodCount}. ${accessibleMeals} View full log`}
-        accessibilityHint="Opens the detailed food log for this day"
+        accessibilityHint="Expands the detailed food log below the date picker"
         onPress={onPress}
         onFocus={handleFocus}
         onBlur={handleBlur}
@@ -47,7 +47,7 @@ export function TodayFoodPreview({ entries, onPress, style, expanded = false }: 
                 <AppText variant="section" style={styles.title}>Food log</AppText>
                 {entries.length > 0 && <AppText style={styles.foodCount}>{foodCount}</AppText>}
                 <View accessibilityElementsHidden aria-hidden>
-                    <Ionicons name="chevron-forward" size={20} color={theme.colors.primary} />
+                    <Ionicons name="expand-outline" size={20} color={theme.colors.primary} />
                 </View>
             </View>
             {entries.length > 0 ? <View testID="food-preview-body">

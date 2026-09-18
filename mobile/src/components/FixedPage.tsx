@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveSafeHorizontalPadding } from '../layout/adaptiveLayout';
 import { useAppTheme } from '../theme';
 import { SCREEN_CONTENT_WIDTHS, SCREEN_WIDE_LAYOUT_BREAKPOINT } from './Screen';
+import { ExpansionRegion, PageExpansion, type PageExpansionConfig } from './PageExpansion';
 
 const LARGE_TEXT_SCALE = 1.6; // Intrinsic layout keeps enlarged labels and actions fully reachable.
 const SHORT_PROGRESS_HEIGHT = 520; // Below this remaining shell height, a complete chart needs page scrolling.
@@ -17,6 +18,7 @@ export function FixedPageColumn({ style, ...props }: ViewProps) {
     return <View {...props} style={[styles.column, React.useContext(ColumnStyleContext), style]} />;
 }
 type FixedPageProps = {
+    header?: React.ReactNode;
     context?: React.ReactNode;
     children: React.ReactNode | ((layout: FixedPageLayout) => React.ReactNode);
     footer?: React.ReactNode | ((layout: FixedPageLayout) => React.ReactNode);
@@ -27,14 +29,19 @@ type FixedPageProps = {
     fullWidthBody?: boolean;
     fullWidthFooter?: boolean;
     testID?: string;
+    expansion?: PageExpansionConfig;
+    bodyExpansionId?: string;
+    footerExpansionId?: string;
+    persistentFooter?: boolean;
 };
 
 /** A full-page composition within the measured app shell; tabs already own the bottom inset. */
-export function FixedPage({ context, children, footer, scrollWhenShort = false, containedBody = false, minBodyHeight = 120, contentWidth = 'overview', fullWidthBody = false, fullWidthFooter = false, testID }: FixedPageProps) {
+export function FixedPage({ header, context, children, footer, scrollWhenShort = false, containedBody = false, minBodyHeight = 120, contentWidth = 'overview', fullWidthBody = false, fullWidthFooter = false, testID, expansion, bodyExpansionId, footerExpansionId = 'page-footer', persistentFooter = false }: FixedPageProps) {
     const theme = useAppTheme();
     const insets = useSafeAreaInsets();
     const { width, fontScale } = useWindowDimensions();
     const [height, setHeight] = React.useState(0);
+    const [headerHeight, setHeaderHeight] = React.useState(0);
     const [scrollHeight, setScrollHeight] = React.useState(0);
     const [contextHeight, setContextHeight] = React.useState(0);
     const [footerHeight, setFooterHeight] = React.useState(0);
@@ -47,11 +54,11 @@ export function FixedPage({ context, children, footer, scrollWhenShort = false, 
     }, []);
     React.useLayoutEffect(readTextScale, [readTextScale, width]);
     const enlargedText = Math.max(fontScale, webTextScale) >= LARGE_TEXT_SCALE;
-    // A contained pane needs room for its minimum body after the measured context and footer.
-    const cannotContainBody = containedBody && height > 0
-        && contextHeight + minBodyHeight + footerHeight > height;
+    // Scroll when the measured context, complete middle section, and footer cannot fit.
+    const cannotContainBody = (containedBody || scrollWhenShort) && height > 0
+        && contextHeight + minBodyHeight + footerHeight > height - headerHeight;
     const expanded = enlargedText || cannotContainBody
-        || (scrollWhenShort && height > 0 && height < SHORT_PROGRESS_HEIGHT);
+        || (scrollWhenShort && height > 0 && height - headerHeight < SHORT_PROGRESS_HEIGHT);
     const layout = { expanded, enlargedText };
     const horizontalPadding = resolveSafeHorizontalPadding(
         width >= SCREEN_WIDE_LAYOUT_BREAKPOINT ? theme.spacing.xl : theme.spacing.lg,
@@ -63,25 +70,27 @@ export function FixedPage({ context, children, footer, scrollWhenShort = false, 
     const contentHeight = Math.max(scrollHeight, naturalHeight);
     const containBody = containedBody && !expanded;
     const footerContent = typeof footer === 'function' ? footer(layout) : footer;
-    const footerView = footerContent && <View
+    const footerView = footerContent && <ExpansionRegion id={persistentFooter ? undefined : footerExpansionId} order={3}
         style={[styles.footer, { borderTopColor: theme.colors.outline }]}
         onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
-    ><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></View>;
+    ><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></ExpansionRegion>;
 
-    const pageContent = <>
-        {context && <View style={{ backgroundColor: theme.colors.summaryContainer }} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
+    const pageContent = (transitioning: boolean) => <>
+        {context && <ExpansionRegion id="page-context" order={0} style={[styles.context, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.outline }]} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
             <View style={columnStyle}>{context}</View>
-        </View>}
-        <View style={[!fullWidthBody && columnStyle, styles.body, { minHeight: minBodyHeight }, expanded && styles.bodyExpanded, containBody && styles.bodyContained]}>
+        </ExpansionRegion>}
+        <ExpansionRegion id={bodyExpansionId} order={2} style={[!fullWidthBody && columnStyle, styles.body, { minHeight: minBodyHeight }, expanded && styles.bodyExpanded, containBody && styles.bodyContained, transitioning && styles.bodyTransitioning]}>
             {typeof children === 'function' ? children(layout) : children}
-        </View>
-        {expanded && footerView}
+        </ExpansionRegion>
+        {expanded && !persistentFooter && footerView}
     </>;
 
     return <ColumnStyleContext.Provider value={columnStyle}><View testID={testID} style={[styles.root, { backgroundColor: theme.colors.background }]} onLayout={updateHeight}>
         {Platform.OS === 'web' && <Text ref={probe} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" onLayout={readTextScale} style={styles.probe}>M</Text>}
+        {header && <View style={{ backgroundColor: theme.colors.summaryContainer }} onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}><View style={columnStyle}>{header}</View></View>}
+        <PageExpansion config={expansion} columnStyle={columnStyle} footer={persistentFooter && footerView}>{blocked => <>
         {containBody ? <View role="main" testID="fixed-page-content" style={styles.scroller}>
-            {pageContent}
+            {pageContent(blocked)}
         </View> : <ScrollView
             role="main"
             testID="fixed-page-scroll"
@@ -89,10 +98,12 @@ export function FixedPage({ context, children, footer, scrollWhenShort = false, 
             contentContainerStyle={[styles.scrollContent, !expanded && scrollHeight > 0 && { height: contentHeight }]}
             onLayout={(event) => { setScrollHeight(event.nativeEvent.layout.height); readTextScale(); }}
             keyboardShouldPersistTaps="handled"
+            scrollEnabled={!blocked}
         >
-            {pageContent}
+            {pageContent(blocked)}
         </ScrollView>}
-        {!expanded && footerView}
+        {!expanded && !persistentFooter && footerView}
+        </>}</PageExpansion>
     </View></ColumnStyleContext.Provider>;
 
 }
@@ -102,10 +113,13 @@ const styles = StyleSheet.create({
     scroller: { flex: 1, minHeight: 0 },
     scrollContent: { flexGrow: 1 },
     column: { width: '100%', alignSelf: 'center', minWidth: 0 },
+    context: { borderBottomWidth: StyleSheet.hairlineWidth },
     body: { flex: 1 },
     bodyExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
     // Let the body own scrolling within the space left by the fixed context and footer.
     bodyContained: { minHeight: 0, overflow: 'hidden' },
+    // Moving child regions clip at the pane/header edge, not the body's resting bounds.
+    bodyTransitioning: { overflow: 'visible' },
     footer: { flexShrink: 0, borderTopWidth: StyleSheet.hairlineWidth },
     probe: { position: 'absolute', opacity: 0, fontSize: TEXT_PROBE_SIZE, pointerEvents: 'none' }
 });

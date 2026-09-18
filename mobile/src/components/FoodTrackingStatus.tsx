@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
 import { foodDayRangeQueryRoot } from '../food/calendar';
+import { FoodLogDockActions } from '../food/FoodLogDockActions';
 import { getFoodDayStatusLabel } from '../food/dayPresentation';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { addDaysToDateOnly, getTodayDate } from '../utils/dates';
@@ -337,13 +338,15 @@ export const DayStatusCard: React.FC<{
                 )}
             </AppSection> : <View testID={presentation === 'dock' ? 'today-action-dock' : 'today-day-controls'} style={[styles.dock, style]}>
                 {presentation === 'dock' && <View style={[styles.dockActions, stackDockActions && styles.actionsStacked]}>
-                    {day.status === 'OPEN' && <>
-                        <AppButton title="Add food" onPress={onAddFood} disabled={!onAddFood || isBusy} style={dockActionStyle} textStyle={dockLabelStyle} />
-                        <AppButton title="Complete day" variant="secondary" onPress={() => setStatus.mutate('COMPLETE')} disabled={isBusy || statusFailed} style={[dockActionStyle, styles.dockSecondary]} textStyle={[dockLabelStyle, styles.pauseText]} />
-                    </>}
-                    {day.status === 'COMPLETE' && <>
-                        <AppButton title="Add food" disabled style={dockActionStyle} textStyle={dockLabelStyle} />
-                        <AppButton
+                    {day.status === 'OPEN' && <FoodLogDockActions
+                        stacked={stackDockActions}
+                        addFood={<AppButton title="Add food" onPress={onAddFood} disabled={!onAddFood || isBusy} style={dockActionStyle} textStyle={dockLabelStyle} />}
+                        dayAction={<AppButton title="Complete day" variant="secondary" onPress={() => setStatus.mutate('COMPLETE')} disabled={isBusy || statusFailed} style={[dockActionStyle, styles.dockSecondary]} textStyle={[dockLabelStyle, styles.pauseText]} />}
+                    />}
+                    {day.status === 'COMPLETE' && <FoodLogDockActions
+                        stacked={stackDockActions}
+                        addFood={<AppButton title="Add food" disabled style={dockActionStyle} textStyle={dockLabelStyle} />}
+                        dayAction={<AppButton
                             title={confirmedComplete ? 'Day completed' : 'Reopen day'}
                             variant={confirmedComplete ? 'primary' : 'secondary'}
                             aria-pressed={confirmedComplete}
@@ -354,8 +357,8 @@ export const DayStatusCard: React.FC<{
                             style={[dockActionStyle, confirmedComplete && styles.completedAction]}
                             textStyle={[dockLabelStyle, confirmedComplete && { color: completedForeground }]}
                             leftIcon={confirmedComplete ? <Ionicons name="checkmark" size={18} color={completedForeground} /> : undefined}
-                        />
-                    </>}
+                        />}
+                    />}
                     {(day.status === 'INCOMPLETE' || (day.status === 'PAUSED' && !isToday)) && <AppButton title="Edit day" variant="secondary" disabled={isBusy} onPress={() => setStatus.mutate('OPEN')} style={[dockActionStyle, styles.dockSecondary]} textStyle={[styles.dockLabel, styles.pauseText]} />}
                     {day.status === 'PAUSED' && isToday && <AppButton title={resume.isPending ? 'Resuming...' : 'Resume tracking'} disabled={isBusy} onPress={() => resume.mutate()} style={dockActionStyle} textStyle={styles.dockLabel} />}
                 </View>}
@@ -626,7 +629,8 @@ function createStyles(theme: AppTheme) {
         },
         dock: { paddingVertical: theme.spacing.md, gap: theme.spacing.sm },
         dockActions: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'stretch' },
-        dockAction: { flex: 1, minWidth: 0, minHeight: 52, paddingHorizontal: theme.spacing.sm },
+        // Keep keyboard focus visible inside the animated dock clipping boundary.
+        dockAction: { flex: 1, minWidth: 0, minHeight: 52, paddingHorizontal: theme.spacing.sm, outlineOffset: -theme.interaction.focusRingWidth },
         dockActionNarrow: { paddingHorizontal: theme.spacing.xs },
         dockActionStacked: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', width: '100%' },
         dockLabel: { ...theme.typography.styles.body, fontWeight: '600' },
