@@ -230,7 +230,7 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
   await expectInside(foodSecondary, addFood);
   await foodPrimary.getByTestId('food-preview-meal-EVENING_SNACK').scrollIntoViewIfNeeded();
   await expectNoOverlap(foodPrimary, foodSecondary);
-  await page.getByTestId('fixed-page-scroll').evaluate(element => { element.scrollTop = 0; });
+  await page.getByTestId('today-food-scroll').evaluate(element => { element.scrollTop = 0; });
   await expectFullWidthPrimary(foodSurface, foodPrimary);
   await expectInside(weightSurface, weightPrimary);
   await expectFullWidthPrimary(weightSurface, weightPrimary);
@@ -246,8 +246,10 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
     await expect.poll(() => foodPrimary.evaluate((element) => getComputedStyle(element).outlineWidth))
       .toBe('3px');
     await foodPrimary.press('Enter');
-    await expect(page).toHaveURL((url) => url.pathname === '/food-log');
-    await page.goto('/today');
+    await expect(page.getByTestId('expanded-food')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toBeFocused();
+    await page.getByRole('button', { name: 'Collapse Food log', exact: true }).click();
+    await expect(foodPrimary).toBeFocused();
     await expectUnderTargetDashboard(page);
     await expect(page).toHaveURL((url) => url.pathname === '/today');
 

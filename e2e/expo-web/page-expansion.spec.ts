@@ -1,4 +1,4 @@
-import { expect, hideTransientPwaNotices, test } from './fixtures';
+import { expect, FROZEN_NOW, hideTransientPwaNotices, test } from './fixtures';
 import { expectNoBlockingAccessibilityViolations } from './ux-a11y';
 import { PLAN_CHECK_RECOMMENDATION_STATUS } from './plan-check.fixture';
 import { applyTwoHundredPercentText } from './text-scaling';
@@ -27,7 +27,7 @@ test('Food log expands below the date and restores its source, scroll and focus'
   await expect(pane.getByText('Fixture breakfast', { exact: true })).toBeVisible();
   await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'probe', surfaceId: 'expanded-food' });
   await page.screenshot({ path: testInfo.outputPath('food-expanded.png') });
-  await pane.getByRole('button', { name: 'Add food', exact: true }).click();
+  await page.getByRole('button', { name: 'Add food', exact: true }).click();
   await expect(page.getByTestId('adaptive-dialog-panel')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -74,7 +74,7 @@ test('Progress expansions use the whole pane and return a scrolled overview', as
   }
 });
 
-test('real motion moves the pane and both siblings in both directions', async ({ page, ux }, testInfo) => {
+test('real motion expands the pane and Add food while the dock stays anchored', async ({ page, ux }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chrome', 'Measure animation frames once without touch emulation.');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await ux.install('populated');
@@ -82,34 +82,109 @@ test('real motion moves the pane and both siblings in both directions', async ({
   await hideTransientPwaNotices(page);
   const source = page.getByTestId('today-food-preview');
   await expect(source).toBeVisible();
-  const sample = async (selector: string) => page.locator(selector).evaluate(button => new Promise<Array<{ top: number; height: number; above: number; below: number }>>(resolve => {
-    const frames: Array<{ top: number; height: number; above: number; below: number }> = [];
+  const sample = async (selector: string) => page.locator(selector).evaluate(button => new Promise<Array<{ top: number; height: number; above: number; dockY: number; addX: number; addY: number; addWidth: number; completeX: number; addCount: number }>>(resolve => {
+    const frames: Array<{ top: number; height: number; above: number; dockY: number; addX: number; addY: number; addWidth: number; completeX: number; addCount: number }> = [];
     const start = performance.now();
     (button as HTMLElement).click();
     const capture = () => {
       const pane = document.querySelector('[data-testid="expanded-food"]')?.getBoundingClientRect();
       const above = document.querySelector('[data-testid="calorie-balance-hero"]')!.getBoundingClientRect().y;
-      const below = document.querySelector('[data-testid="today-action-dock"]')!.getBoundingClientRect().y;
-      if (pane) frames.push({ top: pane.y, height: pane.height, above, below });
+      const dockY = document.querySelector('[data-testid="today-action-dock"]')!.getBoundingClientRect().y;
+      const addButtons = document.querySelectorAll('[aria-label="Add food"]');
+      const add = addButtons[0].getBoundingClientRect();
+      const complete = document.querySelector('[aria-label="Complete day"]')!.getBoundingClientRect();
+      if (pane) frames.push({ top: pane.y, height: pane.height, above, dockY, addX: add.x, addY: add.y, addWidth: add.width, completeX: complete.x, addCount: addButtons.length });
       if (performance.now() - start < 650) requestAnimationFrame(capture);
       else resolve(frames);
     };
     requestAnimationFrame(capture);
   }));
   const opening = await sample('[data-testid="today-food-preview"]');
-  for (const field of ['top', 'height', 'above', 'below'] as const) {
+  for (const field of ['top', 'height', 'above', 'addWidth', 'completeX'] as const) {
     expect(new Set(opening.map(frame => Math.round(frame[field]))).size).toBeGreaterThan(3);
   }
   expect(opening.at(-1)!.top).toBeLessThan(opening[0].top);
   expect(opening.at(-1)!.height).toBeGreaterThan(opening[0].height);
   expect(opening.at(-1)!.above).toBeLessThan(opening[0].above);
-  expect(opening.at(-1)!.below).toBeGreaterThan(opening[0].below);
+  expect(opening.at(-1)!.addWidth).toBeGreaterThan(opening[0].addWidth);
+  expect(opening.at(-1)!.completeX).toBeGreaterThan(opening[0].completeX);
   const closing = await sample('[aria-label="Collapse Food log"]');
   expect(new Set(closing.map(frame => Math.round(frame.top))).size).toBeGreaterThan(3);
   expect(closing.at(-1)!.top).toBeGreaterThan(closing[0].top);
+  expect(closing.at(-1)!.addWidth).toBeLessThan(closing[0].addWidth);
+  expect(closing.at(-1)!.completeX).toBeLessThan(closing[0].completeX);
+  for (const frame of [...opening, ...closing]) {
+    expect(frame.addCount).toBe(1);
+    for (const field of ['dockY', 'addX', 'addY'] as const) {
+      expect(Math.abs(frame[field] - opening[0][field]), field + ' remains anchored').toBeLessThanOrEqual(1);
+    }
+  }
+  await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeVisible();
   await expect(page.getByTestId('expanded-food')).toHaveCount(0);
   await expect(source).toBeFocused();
   await testInfo.attach('expansion-animation-frames', { body: JSON.stringify({ opening, closing }), contentType: 'application/json' });
+});
+
+test('weight slides beneath the date header without clipping at its old body boundary', async ({ page, ux }, testInfo) => {
+  test.skip(!['desktop-chrome', 'android-phone-chrome'].includes(testInfo.project.name), 'Check contained layouts with mouse and touch.');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.clock.install({ time: new Date(FROZEN_NOW) });
+  await ux.install('populated');
+  await page.goto('/today');
+  await hideTransientPwaNotices(page);
+  const source = page.getByTestId('today-food-preview');
+  const weight = page.getByTestId('today-weight-card');
+  const collapse = page.getByRole('button', { name: 'Collapse Food log' });
+  await expect(weight).toBeVisible();
+  // Load the detail bundle and fonts before pausing time for reproducible screenshots.
+  await source.click();
+  await expect(page.getByTestId('expanded-food').getByText('Fixture breakfast', { exact: true })).toBeVisible();
+  await expect(collapse).toBeFocused();
+  await page.evaluate(() => document.fonts.ready);
+  await collapse.click();
+  await expect(source).toBeFocused();
+  const restingWeight = (await weight.boundingBox())!;
+  const viewport = (await page.getByTestId('page-expansion-viewport').boundingBox())!;
+  await page.clock.pauseAt(new Date(Date.parse(FROZEN_NOW) + 60_000));
+
+  const checkMovingWeight = async (direction: string) => {
+    // Freeze an actual animation frame after the row has left its old container,
+    // but before it reaches the retained date header. Bounding boxes alone miss clipping.
+    let movingWeight = restingWeight;
+    for (let frame = 0; frame < 40; frame++) {
+      await page.clock.runFor(16);
+      movingWeight = (await weight.boundingBox())!;
+      if (movingWeight.y > viewport.y + 1 && movingWeight.y + movingWeight.height < restingWeight.y - 1) break;
+    }
+    expect(movingWeight.y).toBeGreaterThan(viewport.y + 1);
+    expect(movingWeight.y + movingWeight.height).toBeLessThan(restingWeight.y - 1);
+    const paintedHeight = await weight.evaluate(element => {
+      const bounds = element.getBoundingClientRect();
+      let top = bounds.top;
+      let bottom = bounds.bottom;
+      for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        if (getComputedStyle(ancestor).overflowY === 'visible') continue;
+        const clip = ancestor.getBoundingClientRect();
+        top = Math.max(top, clip.top);
+        bottom = Math.min(bottom, clip.bottom);
+      }
+      return Math.max(0, bottom - top);
+    });
+    expect(await page.locator('[aria-label="Add food"]').evaluate(element => Boolean(element.closest('[inert]')))).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`food-${direction}-weight.png`) });
+    expect(paintedHeight, 'The entire weight row should remain visible until it meets the date header').toBeCloseTo(movingWeight.height, 0);
+  };
+
+  await source.click({ force: true });
+  await checkMovingWeight('expanding');
+  await page.clock.runFor(500);
+  await expect(collapse).toBeFocused();
+  await collapse.click({ force: true });
+  await checkMovingWeight('collapsing');
+  await page.clock.runFor(500);
+  await expect(page.getByTestId('expanded-food')).toHaveCount(0);
+  expect(await weight.boundingBox()).toEqual(restingWeight);
+  await expect(source).toBeFocused();
 });
 
 test('expanded pages reflow after resizing and keep enlarged-text actions reachable', async ({ page, ux }, testInfo) => {
@@ -140,7 +215,7 @@ test('expanded pages reflow after resizing and keep enlarged-text actions reacha
       return Math.abs(paneBox!.height - viewportBox!.height);
     }).toBeLessThanOrEqual(1);
     await expect(collapse).toBeInViewport({ ratio: 1 });
-    const lastAction = id === 'food' ? pane.getByRole('button', { name: 'Add food', exact: true })
+    const lastAction = id === 'food' ? page.getByRole('button', { name: 'Add food', exact: true })
       : id === 'plan' ? pane.getByRole('button', { name: 'Review suggested 1,750 calorie daily target' })
         : pane.getByTestId('selected-trend-summary');
     await lastAction.scrollIntoViewIfNeeded();

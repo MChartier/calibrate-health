@@ -145,6 +145,7 @@ export default function TodayScreen() {
         <>
         <FixedPage
             testID="today-fixed-page"
+            persistentFooter
             fullWidthBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
             minBodyHeight={TODAY_BODY_MIN_HEIGHT}
             containedBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
@@ -155,7 +156,7 @@ export default function TodayScreen() {
                 onRestore: id => setIsFoodExpanded(id === 'food'),
                 focused: getActiveTabRoute(pathname) === 'today',
                 renderContent: () => <React.Suspense fallback={<TodayContentLoading />}>
-                    <FoodLogContent key={selectedDate} embedded onAddFood={() => setAddFoodMeal(null)} />
+                    <FoodLogContent key={selectedDate} embedded />
                 </React.Suspense>
             }}
             header={<DateNavigation

@@ -25,6 +25,23 @@ baseline changes were reviewed before updating. The [PR screenshot gallery](../.
 contains 12 inspected implementation renders. Its fresh capture run passed all 11 applicable
 expansion checks across four viewports, with nine intentional project skips.
 
+### Motion refinement - September 17, 2026
+
+The user identified premature clipping of the weight row and an interrupted handoff between two
+bottom button bars. The weight row now travels through its original body boundary and clips only
+beneath the date header. Today retains one action dock: Add food grows horizontally while Complete
+day slides right out of view, reversing on collapse. Enlarged text keeps full-width buttons and
+collapses the vacated second row. The persistent primary action is briefly blocked during motion
+so opening Add food cannot race the pane's focus handoff.
+
+The designer approved this geometry and identified the interaction/focus race addressed above.
+Validation for the refinement: Expo type-check/export and dead-code checks passed, as did 12 focused
+component tests, 31 Today/food/expansion browser checks (25 project skips), and 21 affected visual
+checks (29 project skips). Four legacy Today checks were updated to reset the food-only scroller
+and use the approved in-place expansion. Six intended visual baselines were inspected and updated.
+The gallery now contains 14 current captures, including paused expansion/collapse frames; the
+clipping regression failed before the fix and passes in both directions on desktop and phone.
+
 The evidence below records the preceding overview redesign separately.
 
 The approved Today and Progress iteration replaces the remaining variable-height overview stack with

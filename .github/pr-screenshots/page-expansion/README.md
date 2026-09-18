@@ -2,8 +2,8 @@
 
 Actual browser renders of the Expo web release export, captured with deterministic food, weight,
 and Plan check fixtures. These images show the implementation in this PR; they are not design mocks
-or physical-device screenshots. The screenshot run passed all 11 applicable expansion checks across
-four viewports, with nine intentional project skips.
+or physical-device screenshots. The screenshot run passed all 13 applicable expansion checks across
+four viewports, with 11 intentional project skips.
 
 ## Phone overview and expanded pages - 390x844
 
@@ -34,13 +34,32 @@ continuation, not removed content.
 | --- | --- | --- | --- |
 | ![Short phone Trend with a complete plot](trend-320.png) | ![Food log keeps Collapse and Add food at enlarged text](food-200-text.png) | ![Enlarged Trend reading scrolls below its pinned heading](trend-200-text.png) | ![Enlarged Plan check reaches Review adjustment](plan-200-text.png) |
 
+## Anchored buttons and weight row during motion - 390x844
+
+These paused animation frames show the weight row above its original body boundary, still fully
+visible below the date header. The bottom bar stays anchored: Add food grows as Complete day slides
+right, then both reverse on collapse. Only the outer content pane clips the moving weight row. The source and
+detail content are partway through their crossfade, so both are visible in these frames.
+
+| Expanding Food log | Collapsing Food log |
+| --- | --- |
+| ![Weight row stays visible as Food log expands](food-expanding-weight-phone.png) | ![Weight row slides back from below the date header on collapse](food-collapsing-weight-phone.png) |
+
+The clipping regression failed before the fix: the row had zero visible height while all 65 pixels
+were still below the header. It now passes for desktop and phone in both directions. The updated
+expansion suite passed 13 checks with 11 intentional viewport skips. The broader Today/food suite
+passed 31 checks (25 project skips), including the four corrected legacy layout checks. Expo type-check,
+web export, dead-code checks, 12 focused component tests, and 21 affected visual checks passed. Six
+intentional visual baseline changes were inspected before updating.
+
 ## Behavior and reproduction
 
 `e2e/expo-web/page-expansion.spec.ts` captures these images and verifies pane bounds, the retained
 date toolbar, keyboard focus and scroll restoration, browser history, nested Add food dismissal,
 resizing, 200% text, and accessibility. Its motion test samples actual animation frames in both
-directions and checks that the pane grows while the sections above and below move away.
-The screenshots themselves show settled states.
+directions and checks that the pane grows while upper sections move away, the dock stays fixed,
+and the single Add food button widens as Complete day exits to the right.
+The original screenshots show settled states; the weight-row screenshots above pause actual animation frames and check the row against every ancestor's clipping bounds.
 
 ```powershell
 npm.cmd run test:web:e2e -- e2e/expo-web/page-expansion.spec.ts

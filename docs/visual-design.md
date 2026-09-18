@@ -69,9 +69,9 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   individual food names, row actions, omission counts, or height-based fitting. A completely empty
   day shows **No food logged yet** and an invitation to add food. Rows retain intrinsic height and
   scroll inside the food pane on short screens, keeping the date, balance, weight, and action dock
-  fixed. Extra height expands the tap target, not the spacing between rows. Use the full-page
-  fallback at enlarged text sizes or whenever the measured context, minimum body, and footer
-  cannot fit in the available shell height. Restore food-only scrolling when they fit again.
+  fixed. Extra height expands the tap target, not the spacing between rows. At enlarged text sizes
+  or whenever the measured context, minimum body, and footer cannot fit, scroll the overview
+  between the retained date header and action dock. Restore food-only scrolling when they fit again.
   Stack the action buttons only for enlarged text, so the height fallback does not change the
   footer height used to decide whether the fixed layout fits.
 - Anchor equal-width **Add food** (filled) and **Complete day** (outlined) controls above the tabs on
@@ -117,6 +117,14 @@ Collapse action; there is no modal scrim or second navigation bar. Direct detail
 Measure the source region and available pane. Animate its top and height together with the overview
 sections moving past the upper and lower edges: 400ms to expand and 360ms to collapse. Crossfade the
 moving source and growing detail together, without a blank interval or scaling text and charts.
+On Today, retain one action dock below both overview and expanded content. Add food stays anchored
+at the left edge and grows to full width as Complete day slides out to the right, then reverses on
+collapse. Keep the same button mounted; do not crossfade or fly in a second dock. At enlarged text
+sizes, Add food is already full width: slide the second stacked action right and collapse its vacant
+row. Hide that secondary action from interaction and accessibility while expanded, and briefly block
+Add food during motion to avoid opening a dialog before focus settles. Moving overview regions clip
+at the retained date header, not at their original inner containers.
+
 Reduced motion changes state immediately. Keep detail content scrollable, including at 200% text,
 and remeasure the source before collapsing after resize or reflow.
 

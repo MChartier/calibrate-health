@@ -32,10 +32,11 @@ type FixedPageProps = {
     expansion?: PageExpansionConfig;
     bodyExpansionId?: string;
     footerExpansionId?: string;
+    persistentFooter?: boolean;
 };
 
 /** A full-page composition within the measured app shell; tabs already own the bottom inset. */
-export function FixedPage({ header, context, children, footer, scrollWhenShort = false, containedBody = false, minBodyHeight = 120, contentWidth = 'overview', fullWidthBody = false, fullWidthFooter = false, testID, expansion, bodyExpansionId, footerExpansionId = 'page-footer' }: FixedPageProps) {
+export function FixedPage({ header, context, children, footer, scrollWhenShort = false, containedBody = false, minBodyHeight = 120, contentWidth = 'overview', fullWidthBody = false, fullWidthFooter = false, testID, expansion, bodyExpansionId, footerExpansionId = 'page-footer', persistentFooter = false }: FixedPageProps) {
     const theme = useAppTheme();
     const insets = useSafeAreaInsets();
     const { width, fontScale } = useWindowDimensions();
@@ -69,27 +70,27 @@ export function FixedPage({ header, context, children, footer, scrollWhenShort =
     const contentHeight = Math.max(scrollHeight, naturalHeight);
     const containBody = containedBody && !expanded;
     const footerContent = typeof footer === 'function' ? footer(layout) : footer;
-    const footerView = footerContent && <ExpansionRegion id={footerExpansionId} order={3}
+    const footerView = footerContent && <ExpansionRegion id={persistentFooter ? undefined : footerExpansionId} order={3}
         style={[styles.footer, { borderTopColor: theme.colors.outline }]}
         onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
     ><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></ExpansionRegion>;
 
-    const pageContent = <>
+    const pageContent = (transitioning: boolean) => <>
         {context && <ExpansionRegion id="page-context" order={0} style={{ backgroundColor: theme.colors.summaryContainer }} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
             <View style={columnStyle}>{context}</View>
         </ExpansionRegion>}
-        <ExpansionRegion id={bodyExpansionId} order={2} style={[!fullWidthBody && columnStyle, styles.body, { minHeight: minBodyHeight }, expanded && styles.bodyExpanded, containBody && styles.bodyContained]}>
+        <ExpansionRegion id={bodyExpansionId} order={2} style={[!fullWidthBody && columnStyle, styles.body, { minHeight: minBodyHeight }, expanded && styles.bodyExpanded, containBody && styles.bodyContained, transitioning && styles.bodyTransitioning]}>
             {typeof children === 'function' ? children(layout) : children}
         </ExpansionRegion>
-        {expanded && footerView}
+        {expanded && !persistentFooter && footerView}
     </>;
 
     return <ColumnStyleContext.Provider value={columnStyle}><View testID={testID} style={[styles.root, { backgroundColor: theme.colors.background }]} onLayout={updateHeight}>
         {Platform.OS === 'web' && <Text ref={probe} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" onLayout={readTextScale} style={styles.probe}>M</Text>}
         {header && <View style={{ backgroundColor: theme.colors.summaryContainer }} onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}><View style={columnStyle}>{header}</View></View>}
-        <PageExpansion config={expansion} columnStyle={columnStyle}>{blocked => <>
+        <PageExpansion config={expansion} columnStyle={columnStyle} footer={persistentFooter && footerView}>{blocked => <>
         {containBody ? <View role="main" testID="fixed-page-content" style={styles.scroller}>
-            {pageContent}
+            {pageContent(blocked)}
         </View> : <ScrollView
             role="main"
             testID="fixed-page-scroll"
@@ -99,9 +100,9 @@ export function FixedPage({ header, context, children, footer, scrollWhenShort =
             keyboardShouldPersistTaps="handled"
             scrollEnabled={!blocked}
         >
-            {pageContent}
+            {pageContent(blocked)}
         </ScrollView>}
-        {!expanded && footerView}
+        {!expanded && !persistentFooter && footerView}
         </>}</PageExpansion>
     </View></ColumnStyleContext.Provider>;
 
@@ -116,6 +117,8 @@ const styles = StyleSheet.create({
     bodyExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
     // Let the body own scrolling within the space left by the fixed context and footer.
     bodyContained: { minHeight: 0, overflow: 'hidden' },
+    // Moving child regions clip at the pane/header edge, not the body's resting bounds.
+    bodyTransitioning: { overflow: 'visible' },
     footer: { flexShrink: 0, borderTopWidth: StyleSheet.hairlineWidth },
     probe: { position: 'absolute', opacity: 0, fontSize: TEXT_PROBE_SIZE, pointerEvents: 'none' }
 });

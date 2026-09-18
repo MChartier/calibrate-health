@@ -28,8 +28,15 @@ type ExpansionContextValue = {
     transition: Transition | null;
     progress: Animated.Value;
     height: number;
+    moving: boolean;
 };
 const ExpansionContext = React.createContext<ExpansionContextValue | null>(null);
+
+/** Let persistent controls follow the selected pane's expansion and collapse clock. */
+export function useExpansionMotion(id: string) {
+    const context = React.useContext(ExpansionContext);
+    return context?.transition?.id === id ? { progress: context.progress, moving: context.moving } : null;
+}
 
 /** A measured overview region stays mounted while its siblings move out of the pane. */
 export function ExpansionRegion({ id, order, style, ...props }: ViewProps & { id?: string; order: number }) {
@@ -56,10 +63,11 @@ type PageExpansionProps = {
     config?: PageExpansionConfig;
     columnStyle: ViewProps['style'];
     children: (blocked: boolean) => React.ReactNode;
+    footer?: React.ReactNode;
 };
 
 /** Expands inside the available shell viewport; this is page content, not a modal. */
-export function PageExpansion({ config, columnStyle, children }: PageExpansionProps) {
+export function PageExpansion({ config, columnStyle, children, footer }: PageExpansionProps) {
     const theme = useAppTheme();
     const reducedMotion = useReducedMotionPreference();
     const viewport = useRef<View>(null);
@@ -196,7 +204,7 @@ export function PageExpansion({ config, columnStyle, children }: PageExpansionPr
         return () => document.removeEventListener('keydown', onKey);
     }, [id, config?.focused, requestClose]);
 
-    const context = useMemo(() => ({ register, transition, progress, height }), [register, transition, progress, height]);
+    const context = useMemo(() => ({ register, transition, progress, height, moving }), [register, transition, progress, height, moving]);
     const paneStyle = transition && {
         top: progress.interpolate({ inputRange: [0, 1], outputRange: [transition.top, 0] }),
         height: progress.interpolate({ inputRange: [0, 1], outputRange: [transition.height, height] }),
@@ -230,6 +238,7 @@ export function PageExpansion({ config, columnStyle, children }: PageExpansionPr
                 </View>
             </Animated.View>}
         </View>
+        {footer}
     </ExpansionContext.Provider>;
 }
 

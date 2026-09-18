@@ -21,7 +21,6 @@ import { useFoodDayStatus } from '../components/FoodTrackingStatus';
 import { NumberStepperField } from '../components/NumberStepperField';
 import { OverlaySelect } from '../components/OverlaySelect';
 import { TabScreen } from '../components/TabScreen';
-import { FixedPageColumn } from '../components/FixedPage';
 import { SaveMealAsRecipeSheet } from '../components/SaveMealAsRecipeSheet';
 import { SkeletonBlock } from '../components/SkeletonBlock';
 import { TextField } from '../components/TextField';
@@ -45,7 +44,7 @@ import { parseDecimalInput } from '../utils/numericInput';
 import { useBarcodeSearchHandoff } from '../barcode/useBarcodeSearchHandoff';
 import { reportClientOperationFailure } from '../diagnostics/operationDiagnostics';
 
-export default function FoodLogContent({ embedded = false, onAddFood }: { embedded?: boolean; onAddFood?: () => void }) {
+export default function FoodLogContent({ embedded = false }: { embedded?: boolean }) {
     const routeParams = useLocalSearchParams<{ date?: string; meal?: string; openAddFood?: string }>();
     const pathname = usePathname();
     const { api, user } = useAuth();
@@ -278,7 +277,7 @@ export default function FoodLogContent({ embedded = false, onAddFood }: { embedd
     }
 
     return (
-        <FoodLogFrame embedded={embedded} canEditFood={canEditFood} onAddFood={onAddFood}>
+        <FoodLogFrame embedded={embedded} canEditFood={canEditFood}>
             <AsyncStateBoundary
                 state={foodState}
                 resourceLabel="food log"
@@ -469,24 +468,17 @@ export default function FoodLogContent({ embedded = false, onAddFood }: { embedd
     );
 }
 
-function FoodLogFrame({ embedded, canEditFood, onAddFood, children }: { embedded: boolean; canEditFood: boolean; onAddFood?: () => void; children: React.ReactNode }) {
-    const theme = useAppTheme();
+function FoodLogFrame({ embedded, canEditFood, children }: { embedded: boolean; canEditFood: boolean; children: React.ReactNode }) {
     return <View style={frameStyles.root}>
         <TabScreen reserveFab={!embedded && canEditFood} contentWidth={embedded ? 'overview' : 'wide'} style={frameStyles.content}>
             {children}
         </TabScreen>
-        {embedded && <View style={[frameStyles.dock, { borderTopColor: theme.colors.outline }]}>
-            <FixedPageColumn>
-                <AppButton title="Add food" disabled={!canEditFood} onPress={onAddFood} leftIcon={<Ionicons name="add" size={20} color={theme.colors.onPrimary} />} />
-            </FixedPageColumn>
-        </View>}
     </View>;
 }
 
 const frameStyles = StyleSheet.create({
     root: { flex: 1, minHeight: 0 },
-    content: { paddingTop: 0 },
-    dock: { paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth }
+    content: { paddingTop: 0 }
 });
 
 const FoodLogSkeleton: React.FC = () => (
