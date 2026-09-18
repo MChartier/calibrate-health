@@ -90,4 +90,4 @@ npm.cmd run test:web:e2e -- e2e/expo-web/page-expansion.spec.ts
 Broader validation passed: Expo type-check and web export, 956 mobile tests, 16 web release checks,
 239 normal UX checks, and the final 19-check expansion/history regression run. The designer
 reviewed the final geometry and source/detail crossfade. Native-device animation, screen readers,
-software keyboards, and insets remain unverified. See the [design review](../../../docs/design-review.md).
+software keyboards, and insets remain unverified.
