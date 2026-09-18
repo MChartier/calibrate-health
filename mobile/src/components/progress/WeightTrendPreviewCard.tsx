@@ -1,7 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Svg, { Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
+import {
+    WeightTrendChart,
+    TrendChartLegend,
+    buildWeightTrendVisualization,
+    getWeightTrendChartMinimumHeight,
+    useWeightTrendChartTypography
+} from '../WeightTrendChart';
 import { useQuery } from '@tanstack/react-query';
 import { AppButton } from '../AppButton';
 import { FixedPageColumn } from '../FixedPage';
@@ -14,11 +20,6 @@ import { spacing, useAppTheme, type AppTheme } from '../../theme';
 import { ASYNC_RESOURCE_STATES } from '../../asyncState/resolveAsyncState';
 import { dateOnlyToLocalDate } from '../../utils/dates';
 import { formatWeight } from '../../utils/format';
-import {
-    buildWeightTrendBandPoints,
-    buildWeightTrendChartGeometry,
-    buildWeightTrendLinePath
-} from '../../weightTrend/geometry';
 import { getLatestWeightTrendSnapshot } from '../../weightTrend/presentation';
 
 type WeightTrendPreviewCardProps = {
@@ -34,19 +35,7 @@ type PreviewCanvasSize = {
 };
 
 const DEFAULT_PREVIEW_WIDTH = 340;
-const MIN_PREVIEW_WIDTH = 240;
-const PREVIEW_HEIGHT = 166; // Gives the compact chart enough vertical scale to separate the estimate and uncertainty band.
-const PREVIEW_PADDING = {
-    left: 48, // Reserves a compact gutter for weight labels without widening the card.
-    right: 8,
-    top: 10,
-    bottom: 32 // Keeps the date labels clear of the chart edge at compact widths.
-};
-const PREVIEW_AXIS_FONT_SIZE = 12; // Axis labels remain readable in the smallest supported chart.
-const PREVIEW_AXIS_TICK_SIZE = 4;
-const PREVIEW_DATE_LABEL_BOTTOM_OFFSET = 10;
-const MIN_PREVIEW_WEIGHT_SPAN = 0.4;
-const MIN_PREVIEW_HEIGHT = 116; // The bounded middle section keeps axes readable before the page scrolls.
+const MIN_PREVIEW_HEIGHT = getWeightTrendChartMinimumHeight(0);
 
 function formatPreviewDate(value: string): string {
     return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
@@ -56,29 +45,14 @@ function formatPreviewDate(value: string): string {
 export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress, onLogWeight, suppressStaleNotice, expanded = false }) => {
     const { api, user } = useAuth();
     const theme = useAppTheme();
-    const { width, fontScale } = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const [webAxisScale, setWebAxisScale] = useState(1);
-    const axisProbe = React.useRef<Text>(null);
-    const readAxisScale = React.useCallback(() => {
-        if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-        const element = axisProbe.current as unknown as HTMLElement | null;
-        if (element) setWebAxisScale(Number.parseFloat(window.getComputedStyle(element).fontSize) / PREVIEW_AXIS_FONT_SIZE);
-    }, []);
-    React.useLayoutEffect(readAxisScale, [readAxisScale, width]);
-    const axisScale = Math.max(1, fontScale, webAxisScale);
-    const axisFontSize = PREVIEW_AXIS_FONT_SIZE * axisScale;
-    // Reserve measured space for enlarged SVG text instead of clipping labels at the old gutter.
-    const axisPadding = useMemo(() => ({
-        ...PREVIEW_PADDING,
-        left: PREVIEW_PADDING.left * axisScale,
-        top: PREVIEW_PADDING.top * axisScale,
-        bottom: PREVIEW_PADDING.bottom * axisScale
-    }), [axisScale]);
-    const expandedPreviewStyle = expanded ? [styles.previewExpanded, { height: PREVIEW_HEIGHT * axisScale }] : undefined;
+    const { axisScale, axisPadding, axisFontSize, axisProbe } = useWeightTrendChartTypography();
+    const chartMinHeight = getWeightTrendChartMinimumHeight(width) * axisScale;
+    const previewStyle = [styles.preview, { minHeight: chartMinHeight }, expanded && [styles.previewExpanded, { height: chartMinHeight }]];
     const [canvasSize, setCanvasSize] = useState<PreviewCanvasSize>({
         width: DEFAULT_PREVIEW_WIDTH,
-        height: PREVIEW_HEIGHT
+        height: MIN_PREVIEW_HEIGHT
     });
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', 'month'],
@@ -116,17 +90,13 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
         }
     }
     const chartLayout = useMemo(
-        () => buildWeightTrendChartGeometry(metrics, {
+        () => buildWeightTrendVisualization(metrics, {
             width: canvasSize.width,
             height: canvasSize.height,
-            minWidth: MIN_PREVIEW_WIDTH,
-            minHeight: MIN_PREVIEW_HEIGHT,
-            minWeightSpan: MIN_PREVIEW_WEIGHT_SPAN,
-            padding: axisPadding,
-            xTickCount: 2,
-            yAxisMode: 'bounds'
+            minHeight: chartMinHeight,
+            padding: axisPadding
         }),
-        [axisPadding, canvasSize, metrics]
+        [axisPadding, canvasSize, chartMinHeight, metrics]
     );
     const points = chartLayout.points;
     const hasWeightHistory = (trendQuery.data?.meta.total_points ?? 0) > 0;
@@ -157,20 +127,19 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
     const Slot = trendState.kind === ASYNC_RESOURCE_STATES.ERROR ? FixedPageColumn : View;
     return (
         <Slot style={[styles.flexSlot, expanded && styles.expanded]}>
-            {Platform.OS === 'web' && <Text ref={axisProbe} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-                onLayout={readAxisScale} style={styles.axisProbe}>M</Text>}
+            {axisProbe}
             <AsyncStateBoundary
                 state={trendState}
                 resourceLabel="weight trend"
                 contentStyle={styles.boundaryContent}
                 loading={<TrendTarget onPress={onPress}>
                     {heading}
-                    <SkeletonBlock height={PREVIEW_HEIGHT} />
+                    <SkeletonBlock height={chartMinHeight} />
                 </TrendTarget>}
                 empty={
                     <TrendTarget onPress={onPress}>
                         {heading}
-                        <View testID="weight-trend-preview-canvas" style={[styles.preview, expandedPreviewStyle]}>
+                        <View testID="weight-trend-preview-canvas" style={previewStyle}>
                             <AppText variant="muted">
                                 {hasWeightHistory
                                     ? 'No weigh-ins in the last four weeks. Open Details to view your history.'
@@ -187,109 +156,43 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                     <TrendTarget onPress={onPress}>
                         {heading}
                         <View
-                        testID="weight-trend-preview-canvas"
-                        style={[styles.preview, expandedPreviewStyle]}
-                        onLayout={(event) => {
-                            const { width, height } = event.nativeEvent.layout;
-                            setCanvasSize((current) => (
-                                current.width === width && current.height === height
-                                    ? current
-                                    : { width, height }
-                            ));
-                        }}
-                    >
-                        {suppressedEstimateMessage && (
-                            <View style={styles.suppressedEstimate}>
-                                <Ionicons name="time-outline" size={22} color={theme.colors.onSurfaceVariant} />
-                                <AppText variant="muted" style={styles.suppressedEstimateText}>
-                                    {suppressedEstimateMessage}
-                                </AppText>
-                            </View>
-                        )}
-                        {!estimateIsSuppressed && points.length === 1 && (
-                            <View style={styles.firstWeighIn}>
-                                <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
-                                <AppText variant="body">First weigh-in recorded</AppText>
-                            </View>
-                        )}
-                        {!estimateIsSuppressed && points.length !== 1 && (
-                            <Svg
-                                accessibilityLabel="Four-week underlying weight trend with 95% estimated range"
-                                width="100%"
-                                height="100%"
-                                viewBox={`0 0 ${chartLayout.width} ${chartLayout.height}`}
-                            >
-                                {chartLayout.yTicks.map((tick) => (
-                                    <React.Fragment key={tick.value}>
-                                        <Line
-                                            x1={axisPadding.left}
-                                            y1={tick.y}
-                                            x2={chartLayout.width - axisPadding.right}
-                                            y2={tick.y}
-                                            stroke={theme.colors.outlineVariant}
-                                            strokeWidth={1}
-                                            strokeDasharray=""
-                                        />
-                                        <SvgText
-                                            accessibilityLabel={`${formatWeight(tick.value, user?.weight_unit)} weight axis label`}
-                                            x={axisPadding.left - 6}
-                                            y={tick.y + 3}
-                                            fill={theme.colors.onSurfaceVariant}
-                                            fontSize={axisFontSize}
-                                            textAnchor="end"
-                                        >
-                                            {formatWeight(tick.value, user?.weight_unit)}
-                                        </SvgText>
-                                    </React.Fragment>
-                                ))}
-                                {chartLayout.xTicks.map((tick) => (
-                                    <React.Fragment key={tick.key}>
-                                        <Line
-                                            x1={tick.x}
-                                            y1={chartLayout.height - axisPadding.bottom}
-                                            x2={tick.x}
-                                            y2={chartLayout.height - axisPadding.bottom + PREVIEW_AXIS_TICK_SIZE}
-                                            stroke={theme.colors.outlineVariant}
-                                            strokeWidth={1}
-                                        />
-                                        <SvgText
-                                            accessibilityLabel={`${formatPreviewDate(tick.dateKey)} date axis label`}
-                                            x={tick.x}
-                                            y={chartLayout.height - PREVIEW_DATE_LABEL_BOTTOM_OFFSET}
-                                            fill={theme.colors.onSurfaceVariant}
-                                            fontSize={axisFontSize}
-                                            textAnchor={tick.textAnchor}
-                                        >
-                                            {formatPreviewDate(tick.dateKey)}
-                                        </SvgText>
-                                    </React.Fragment>
-                                ))}
-                                {chartLayout.trendSegments.map((segment, index) => (
-                                    <React.Fragment key={`preview-trend-segment-${index}`}>
-                                        {segment.length > 1 && (
-                                            <Polygon
-                                                testID={`weight-trend-preview-range-${index}`}
-                                                points={buildWeightTrendBandPoints(segment)}
-                                                fill={theme.colors.neutralEmphasisContainer}
-                                                stroke="none"
-                                                strokeWidth={0.75}
-                                                opacity={0.62}
-                                            />
-                                        )}
-                                        <Path
-                                            testID={`weight-trend-preview-smoothed-path-${index}`}
-                                            d={buildWeightTrendLinePath(segment)}
-                                            stroke={theme.colors.primary}
-                                            strokeWidth={3}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            fill="none"
-                                        />
-                                    </React.Fragment>
-                                ))}
-                            </Svg>
-                        )}
-                    </View>
+                            testID="weight-trend-preview-canvas"
+                            style={previewStyle}
+                            onLayout={(event) => {
+                                const { width, height } = event.nativeEvent.layout;
+                                setCanvasSize((current) => (
+                                    current.width === width && current.height === height
+                                        ? current
+                                        : { width, height }
+                                ));
+                            }}
+                        >
+                            {suppressedEstimateMessage && (
+                                <View style={styles.suppressedEstimate}>
+                                    <Ionicons name="time-outline" size={22} color={theme.colors.onSurfaceVariant} />
+                                    <AppText variant="muted" style={styles.suppressedEstimateText}>
+                                        {suppressedEstimateMessage}
+                                    </AppText>
+                                </View>
+                            )}
+                            {!estimateIsSuppressed && points.length === 1 && (
+                                <View style={styles.firstWeighIn}>
+                                    <Ionicons name="scale-outline" size={22} color={theme.colors.primary} />
+                                    <AppText variant="body">First weigh-in recorded</AppText>
+                                </View>
+                            )}
+                            {!estimateIsSuppressed && points.length !== 1 && (
+                                <WeightTrendChart
+                                    accessibleChartSummary="Four-week underlying weight trend with scale readings and 95% estimated range"
+                                    chartLayout={chartLayout}
+                                    unit={user?.weight_unit}
+                                    padding={axisPadding}
+                                    axisFontSize={axisFontSize}
+                                    selectedPoint={points[points.length - 1]}
+                                />
+                            )}
+                        </View>
+                        {!estimateIsSuppressed && points.length > 1 && <TrendChartLegend />}
                     </TrendTarget>
                     {estimateIsOutdated && <FixedPageColumn><AppButton
                         title="Log weight" variant="secondary"
@@ -333,8 +236,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     pressed: { backgroundColor: theme.colors.surfacePressed },
     focusVisible: { outlineWidth: theme.interaction.focusRingWidth, outlineColor: theme.colors.focusRing, outlineStyle: 'solid' },
     preview: { flex: 1, minHeight: MIN_PREVIEW_HEIGHT, alignItems: 'center', justifyContent: 'center' },
-    previewExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', height: PREVIEW_HEIGHT },
-    axisProbe: { position: 'absolute', opacity: 0, pointerEvents: 'none', fontSize: PREVIEW_AXIS_FONT_SIZE },
+    previewExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', height: MIN_PREVIEW_HEIGHT },
     firstWeighIn: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     suppressedEstimate: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     suppressedEstimateText: { flex: 1 }

@@ -53,6 +53,13 @@ test('Progress expansions use the whole pane and return a scrolled overview', as
     await source.scrollIntoViewIfNeeded();
     const before = await source.boundingBox();
     const scroll = await page.getByTestId('fixed-page-scroll').evaluate(el => el.scrollTop);
+    const chartAppearance = async (scope: typeof source) => scope.getByTestId('weight-trend-chart').evaluate(svg => ({
+      readings: svg.querySelectorAll('[data-testid="weight-trend-measurement"]').length,
+      band: Array.from(svg.querySelectorAll('[data-testid^="weight-trend-range-"]')).map(el => [el.getAttribute('fill'), el.getAttribute('stroke')]),
+      trend: Array.from(svg.querySelectorAll('[data-testid^="weight-trend-smoothed-path-"]')).map(el => [el.getAttribute('stroke'), el.getAttribute('stroke-width')]),
+      font: getComputedStyle(svg.querySelector('text')!).fontFamily,
+    }));
+    const overviewChart = id === 'trend' ? await chartAppearance(source) : null;
     await page.screenshot({ path: testInfo.outputPath(`${id}-overview.png`) });
     await source.click();
     const pane = page.getByTestId(`expanded-${id}`);
@@ -62,7 +69,11 @@ test('Progress expansions use the whole pane and return a scrolled overview', as
     expect(Math.abs(bounds.y - viewport.y)).toBeLessThanOrEqual(1);
     expect(Math.abs(bounds.height - viewport.height)).toBeLessThanOrEqual(1);
     await expect(page.getByTestId('app-header-title')).toHaveText('Progress');
-    if (id === 'trend') await expect(pane.getByTestId('selected-trend-summary')).toBeVisible();
+    if (id === 'trend') {
+      await expect(pane.getByTestId('selected-trend-summary')).toBeVisible();
+      expect(await chartAppearance(pane)).toEqual(overviewChart);
+      await expect(pane.getByLabel('Chart legend', { exact: true })).toBeVisible();
+    }
     else await expect(pane.getByRole('button', { name: 'Review suggested 1,750 calorie daily target' })).toBeAttached();
     await page.screenshot({ path: testInfo.outputPath(`${id}-expanded.png`) });
     await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'probe', surfaceId: `expanded-${id}` });

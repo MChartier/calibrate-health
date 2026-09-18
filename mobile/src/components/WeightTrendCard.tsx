@@ -9,8 +9,13 @@ import {
     type ViewProps
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Svg, { Circle, Line, Path, Polygon, Text as SvgText } from 'react-native-svg';
-import type { SvgProps } from 'react-native-svg';
+import {
+    WeightTrendChart,
+    TrendChartLegend,
+    buildWeightTrendVisualization,
+    getWeightTrendChartMinimumHeight,
+    useWeightTrendChartTypography
+} from './WeightTrendChart';
 import { useQuery } from '@tanstack/react-query';
 import { AppChip } from './AppChip';
 import { AppText } from './AppText';
@@ -22,12 +27,7 @@ import { useAuth } from '../auth/AuthContext';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { formatDateOnlyForDisplay } from '../utils/dates';
 import { formatWeight } from '../utils/format';
-import {
-    buildWeightTrendBandPoints,
-    buildWeightTrendChartGeometry,
-    buildWeightTrendLinePath,
-    type WeightTrendChartPoint
-} from '../weightTrend/geometry';
+import type { WeightTrendChartPoint } from '../weightTrend/geometry';
 import {
     describeVisibleWeightTrend,
     formatEstimatedTrendRange,
@@ -54,18 +54,7 @@ const RANGE_OPTIONS: Array<{ value: TrendRange; label: string }> = [
 ];
 
 const DEFAULT_CHART_WIDTH = 340;
-const MIN_CHART_WIDTH = 280;
-const DESKTOP_CHART_BREAKPOINT = 840;
-// Preserve legible plot minima when controls need scrolling on a short screen.
-const MOBILE_CHART_MIN_HEIGHT = 188;
-const DESKTOP_CHART_MIN_HEIGHT = 260;
-// Axis gutters reserve room for weight and date labels without crowding the data.
-const CHART_PADDING = { left: 58, right: 12, top: 12, bottom: 32 };
-const MIN_WEIGHT_AXIS_SPAN = 0.4;
-export function getWeightTrendChartMinimumHeight(viewportWidth: number): number {
-    return viewportWidth >= DESKTOP_CHART_BREAKPOINT
-        ? DESKTOP_CHART_MIN_HEIGHT : MOBILE_CHART_MIN_HEIGHT;
-}
+export { getWeightTrendChartMinimumHeight } from './WeightTrendChart';
 
 type ChartPressNativeEvent = {
     locationX?: unknown;
@@ -82,17 +71,6 @@ function getPointKey(point: WeightTrendChartPoint): string {
     return `${point.metric.id}-${point.dateKey}`;
 }
 
-function formatAxisDate(value: string, includeYear: boolean): string {
-    const [yearString, monthString, dayString] = value.split('-');
-    const date = new Date(Number(yearString), Number(monthString) - 1, Number(dayString));
-    if (Number.isNaN(date.getTime())) return value;
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        ...(includeYear ? { year: '2-digit' as const } : {})
-    }).format(date);
-}
-
 /** React Native reports locationX, while React Native Web forwards the browser click's offsetX. */
 function getChartPressX(nativeEvent: ChartPressNativeEvent): number | null {
     const pressX = typeof nativeEvent.locationX === 'number'
@@ -103,16 +81,6 @@ function getChartPressX(nativeEvent: ChartPressNativeEvent): number | null {
 
 function getKeyboardKey(event: KeyboardLikeEvent): string {
     return event.key ?? event.nativeEvent?.key ?? '';
-}
-
-/** Map the chart summary to platform-safe SVG accessibility props. */
-function getChartAccessibilityProps(accessibilityLabel: string): SvgProps {
-    if (Platform.OS === 'web') return { 'aria-label': accessibilityLabel, role: 'img' };
-    return {
-        accessible: true,
-        accessibilityRole: 'image',
-        accessibilityLabel
-    };
 }
 
 function describeSelectedTrendPoint(
@@ -146,7 +114,8 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const [selectionAnnouncement, setSelectionAnnouncement] = useState('');
     const [chartCanvasWidth, setChartCanvasWidth] = useState(DEFAULT_CHART_WIDTH);
     const [chartCanvasHeight, setChartCanvasHeight] = useState(0);
-    const chartMinHeight = getWeightTrendChartMinimumHeight(viewportWidth);
+    const { axisScale, axisPadding, axisFontSize, axisProbe } = useWeightTrendChartTypography();
+    const chartMinHeight = getWeightTrendChartMinimumHeight(viewportWidth) * axisScale;
     const chartHeight = Math.max(chartCanvasHeight, chartMinHeight);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', range],
@@ -157,19 +126,15 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const metrics = trendQuery.data?.metrics ?? [];
     const trendSummary = trendQuery.data?.meta.trend_summary;
     const chartLayout = useMemo(
-        () => buildWeightTrendChartGeometry(metrics, {
+        () => buildWeightTrendVisualization(metrics, {
             width: chartCanvasWidth,
             height: chartHeight,
-            minWidth: MIN_CHART_WIDTH,
             minHeight: chartMinHeight,
-            minWeightSpan: MIN_WEIGHT_AXIS_SPAN,
-            padding: CHART_PADDING,
-            xTickCount: 3,
-            yAxisMode: 'nice',
+            padding: axisPadding,
             downsampleMeasurements: range === 'all',
             modelStartDate: trendSummary?.modeled_start_date
         }),
-        [chartCanvasWidth, chartHeight, chartMinHeight, metrics, range, trendSummary?.modeled_start_date]
+        [axisPadding, chartCanvasWidth, chartHeight, chartMinHeight, metrics, range, trendSummary?.modeled_start_date]
     );
     const chartPoints = chartLayout.points;
     const selectedPointIndex = useMemo(() => {
@@ -192,9 +157,6 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
     const latestSnapshot = getLatestWeightTrendSnapshot(metrics, trendSummary);
     const visibleTrendSummary = describeVisibleWeightTrend(metrics, user?.weight_unit);
     const showModelBoundary = (range === 'year' || range === 'all') && chartLayout.modelBoundaryPoint !== null;
-    const firstYear = chartLayout.xTicks[0]?.dateKey.slice(0, 4);
-    const lastYear = chartLayout.xTicks[chartLayout.xTicks.length - 1]?.dateKey.slice(0, 4);
-    const includeYear = firstYear !== lastYear;
     const accessibleChartSummary = latestSnapshot
         ? `Weight chart from ${formatDateOnlyForDisplay(chartPoints[0]?.dateKey ?? '')} to ${formatDateOnlyForDisplay(chartPoints[chartPoints.length - 1]?.dateKey ?? '')}, with ${chartPoints.length} measurements. Latest smoothed weight ${formatWeight(latestSnapshot.weight, user?.weight_unit)}. 95% estimated trend range ${formatEstimatedTrendRange(latestSnapshot, user?.weight_unit)}.`
         : `Weight chart with ${chartPoints.length} measurements. Smoothed estimates are not available for this selected history.`;
@@ -238,6 +200,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
 
     return (
         <View {...props} style={[styles.content, style]}>
+            {axisProbe}
             {(title || description) && <SectionHeader title={title ?? ''} description={description} />}
             <View style={styles.rangeRow}>
                 {RANGE_OPTIONS.map((option) => (
@@ -309,135 +272,15 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                             setChartCanvasHeight(event.nativeEvent.layout.height);
                         }}
                     >
-                        <Svg
-                            style={StyleSheet.absoluteFill}
-                            testID="weight-trend-chart"
-                            {...getChartAccessibilityProps(accessibleChartSummary)}
-                            width="100%"
-                            height={chartHeight}
-                            viewBox={`0 0 ${chartLayout.width} ${chartHeight}`}
-                        >
-                            {chartLayout.yTicks.map((tick) => (
-                                <React.Fragment key={tick.value}>
-                                    <Line
-                                        x1={CHART_PADDING.left}
-                                        y1={tick.y}
-                                        x2={chartLayout.width - CHART_PADDING.right}
-                                        y2={tick.y}
-                                        stroke={theme.colors.outlineVariant}
-                                        strokeWidth={1}
-                                        strokeDasharray="3 4"
-                                    />
-                                    <SvgText
-                                        x={CHART_PADDING.left - 8}
-                                        y={tick.y + 4}
-                                        fill={theme.colors.onSurfaceVariant}
-                                        fontSize={11}
-                                        textAnchor="end"
-                                    >
-                                        {formatWeight(tick.value, user?.weight_unit)}
-                                    </SvgText>
-                                </React.Fragment>
-                            ))}
-                            <Line
-                                x1={CHART_PADDING.left}
-                                y1={chartHeight - CHART_PADDING.bottom}
-                                x2={chartLayout.width - CHART_PADDING.right}
-                                y2={chartHeight - CHART_PADDING.bottom}
-                                stroke={theme.colors.outlineVariant}
-                                strokeWidth={1}
-                            />
-                            {showModelBoundary && chartLayout.modelBoundaryPoint && (
-                                <React.Fragment>
-                                    <Line
-                                        testID="weight-trend-model-boundary"
-                                        x1={chartLayout.modelBoundaryPoint.x}
-                                        y1={CHART_PADDING.top}
-                                        x2={chartLayout.modelBoundaryPoint.x}
-                                        y2={chartHeight - CHART_PADDING.bottom}
-                                        stroke={theme.colors.onSurfaceVariant}
-                                        strokeWidth={1.5}
-                                        strokeDasharray="5 4"
-                                    />
-                                    <SvgText
-                                        x={chartLayout.modelBoundaryPoint.x > chartLayout.width - 90
-                                            ? chartLayout.modelBoundaryPoint.x - 5
-                                            : chartLayout.modelBoundaryPoint.x + 5}
-                                        y={CHART_PADDING.top + 12}
-                                        fill={theme.colors.onSurfaceVariant}
-                                        fontSize={10}
-                                        textAnchor={chartLayout.modelBoundaryPoint.x > chartLayout.width - 90 ? 'end' : 'start'}
-                                    >
-                                        Trend starts
-                                    </SvgText>
-                                </React.Fragment>
-                            )}
-                            {chartLayout.trendSegments.map((segment, index) => (
-                                <React.Fragment key={`trend-segment-${index}`}>
-                                    {segment.length > 1 && (
-                                        <Polygon
-                                            testID={`weight-trend-range-${index}`}
-                                            points={buildWeightTrendBandPoints(segment)}
-                                            fill={theme.colors.infoContainer}
-                                            stroke={theme.colors.info}
-                                            strokeWidth={0.75}
-                                            opacity={0.72}
-                                        />
-                                    )}
-                                    <Path
-                                        testID={`weight-trend-smoothed-path-${index}`}
-                                        d={buildWeightTrendLinePath(segment)}
-                                        stroke={theme.colors.primary}
-                                        strokeWidth={4}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        fill="none"
-                                    />
-                                </React.Fragment>
-                            ))}
-                            {chartLayout.measurementPoints.map((point) => (
-                                <Circle
-                                    key={getPointKey(point)}
-                                    cx={point.x}
-                                    cy={point.measurementY}
-                                    r={3.5}
-                                    fill={theme.colors.surface}
-                                    stroke={theme.colors.info}
-                                    strokeWidth={1.5}
-                                />
-                            ))}
-                            {selectedPoint && (
-                                <Circle
-                                    cx={selectedPoint.x}
-                                    cy={selectedPoint.measurementY}
-                                    r={6}
-                                    fill={theme.colors.selectionContainer}
-                                    stroke={theme.colors.selection}
-                                    strokeWidth={2}
-                                />
-                            )}
-                            {chartLayout.xTicks.map((tick) => (
-                                <React.Fragment key={tick.key}>
-                                    <Line
-                                        x1={tick.x}
-                                        y1={chartHeight - CHART_PADDING.bottom}
-                                        x2={tick.x}
-                                        y2={chartHeight - CHART_PADDING.bottom + 4}
-                                        stroke={theme.colors.outlineVariant}
-                                        strokeWidth={1}
-                                    />
-                                    <SvgText
-                                        x={tick.x}
-                                        y={chartHeight - 6}
-                                        fill={theme.colors.onSurfaceVariant}
-                                        fontSize={11}
-                                        textAnchor={tick.textAnchor}
-                                    >
-                                        {formatAxisDate(tick.dateKey, includeYear)}
-                                    </SvgText>
-                                </React.Fragment>
-                            ))}
-                        </Svg>
+                        <WeightTrendChart
+                            chartLayout={chartLayout}
+                            padding={axisPadding}
+                            axisFontSize={axisFontSize}
+                            unit={user?.weight_unit}
+                            accessibleChartSummary={accessibleChartSummary}
+                            selectedPoint={selectedPoint}
+                            showModelBoundary={showModelBoundary}
+                        />
                         <Pressable
                             accessibilityActions={[
                                 { name: 'decrement', label: 'Previous weigh-in' },
@@ -623,27 +466,6 @@ const PointNavigationButton: React.FC<{
     );
 };
 
-const TrendChartLegend: React.FC = () => {
-    const theme = useAppTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
-    return (
-        <View accessible accessibilityLabel="Chart legend" style={styles.chartLegend}>
-            <View style={styles.chartLegendItem}>
-                <View style={styles.readingLegendMarker} />
-                <AppText variant="caption">Scale reading</AppText>
-            </View>
-            <View style={styles.chartLegendItem}>
-                <View style={styles.trendLegendMarker} />
-                <AppText variant="caption">Underlying trend</AppText>
-            </View>
-            <View style={styles.chartLegendItem}>
-                <View style={styles.rangeLegendMarker} />
-                <AppText variant="caption">95% estimate range</AppText>
-            </View>
-        </View>
-    );
-};
-
 const createStyles = (theme: AppTheme) => StyleSheet.create({
     content: { width: '100%', gap: spacing.md },
     trendBody: { flexGrow: 1 },
@@ -659,40 +481,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.sm
     },
     chartCanvas: { position: 'relative', flexGrow: 1, flexShrink: 1 },
-    chartLegend: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-        gap: spacing.md,
-        paddingHorizontal: spacing.sm
-    },
-    chartLegendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-    readingLegendMarker: {
-        width: 10,
-        height: 10,
-        borderRadius: radius.pill,
-        borderColor: theme.colors.info,
-        borderWidth: 1.5,
-        backgroundColor: theme.colors.surface
-    },
-    trendLegendMarker: {
-        width: 20,
-        height: 4,
-        borderRadius: radius.pill,
-        backgroundColor: theme.colors.primary
-    },
-    rangeLegendMarker: {
-        width: 20,
-        height: 10,
-        borderRadius: radius.sm,
-        borderColor: theme.colors.info,
-        borderWidth: StyleSheet.hairlineWidth,
-        backgroundColor: theme.colors.infoContainer
-    },
     emptyChart: {
         flexGrow: 1,
-        minHeight: MOBILE_CHART_MIN_HEIGHT,
+        minHeight: getWeightTrendChartMinimumHeight(0),
         borderRadius: radius.md,
         backgroundColor: theme.colors.surfaceContainer,
         alignItems: 'center',

@@ -27,6 +27,15 @@ to capture the subtle color difference even where it falls within screenshot com
 | --- | --- |
 | ![Today's date area stays tinted above the page-colored balance](today-dark-phone.png) | ![Progress Snapshot is separate from the tinted app bar](progress-dark-phone.png) |
 
+## Shared Trend visualization
+
+Collapsed and expanded Trend use the same chart renderer: scale-reading dots, the blue 95% estimate
+band, the green underlying trend, axis styling, and legend. Only the available plot size changes;
+range and reading-selection controls appear in the expanded view. Short screens scroll the complete
+overview instead of compressing the plot beneath Plan check.
+
+![Desktop Progress with the full visualization in its collapsed section](progress-desktop.png)
+
 ## Desktop - 1440x1000
 
 The expanded content keeps the app bar, navigation rail, and centered reading column.

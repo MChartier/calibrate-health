@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
+import { useWindowDimensions, AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import { WeightValueInput } from '../../../src/components/WeightValueInput';
 import { FixedPage } from '../../../src/components/FixedPage';
 import { SegmentedControl } from '../../../src/components/SegmentedControl';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
+import { getWeightTrendPreviewMinimumHeight } from '../../../src/components/WeightTrendChart';
 import { WeightTrendPreviewCard } from '../../../src/components/progress/WeightTrendPreviewCard';
 import { PlanCheckSummary } from '../../../src/components/progress/PlanCheckSummary';
 import { calibrationStatusQueryKey } from '../../../src/calibration/queryKeys';
@@ -83,6 +84,7 @@ export default function ProgressScreen() {
     const routeParams = useLocalSearchParams<{ openNextGoal?: string; openPlanReview?: string }>();
     const { api, user } = useAuth();
     const theme = useAppTheme();
+    const { width: viewportWidth } = useWindowDimensions();
     const { colors: themeColors } = theme;
     const styles = useMemo(() => createStyles(theme), [theme]);
     const queryClient = useQueryClient();
@@ -347,7 +349,7 @@ export default function ProgressScreen() {
             <FixedPage
                 testID="progress-fixed-page"
                 scrollWhenShort
-                minBodyHeight={210}
+                minBodyHeight={getWeightTrendPreviewMinimumHeight(viewportWidth)}
                 bodyExpansionId="trend"
                 footerExpansionId="plan"
                 expansion={{

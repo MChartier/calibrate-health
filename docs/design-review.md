@@ -211,3 +211,18 @@ and no configured AVD was listed, so no usable target was available. Browser scr
 those native runtime results.
 
 No API, database, calculation, server-version, or release-publication changes are part of this pass.
+
+
+### Shared Trend visualization refinement
+
+The collapsed Trend now uses the full visualization at a smaller size: the same green trend line,
+blue scale-reading dots, blue outlined estimate band, nice-axis scale, typography, and wrapping
+legend as the expanded view. The designer reviewed compact sizing and recommended preserving the
+188px phone / 260px desktop plot minima, scaling for enlarged text, and scrolling the overview
+when its measured sections cannot fit. The collapsed surface remains one expansion target; range
+controls and reading selection remain in the expanded section.
+
+Validation: 47 Trend unit tests, typecheck, web export, 39 browser checks across expansion, responsive
+Progress layout, interactive history and degraded data, and 29 Today/Progress visual checks. Eight
+Progress visual baselines and the PR screenshot gallery were refreshed. Phone light/dark, expanded,
+desktop, and 200% text captures were inspected.

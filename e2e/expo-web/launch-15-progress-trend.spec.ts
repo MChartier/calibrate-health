@@ -225,7 +225,7 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await expect(page.getByTestId('trend-preview-heading-line')).toContainText(
     '88.4 kg underlying trend',
   );
-  await expect(page.getByLabel('Four-week underlying weight trend with 95% estimated range')).toBeVisible();
+  await expect(page.getByLabel('Four-week underlying weight trend with scale readings and 95% estimated range')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole('button', { name: 'Open full weight trend', exact: true }).click();
@@ -251,14 +251,14 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await expect(selectedSummary).toContainText('88.2 kg');
   await expect(page.getByRole('button', { name: 'Next weigh-in', exact: true })).toBeDisabled();
 
-  const legend = page.getByLabel('Chart legend');
+  const legend = page.getByTestId('expanded-trend').getByLabel('Chart legend');
   await expect(legend.getByText('Scale reading', { exact: true })).toBeVisible();
   await expect(legend.getByText('Underlying trend', { exact: true })).toBeVisible();
   await expect(legend.getByText('95% estimate range', { exact: true })).toBeVisible();
-  await expect(page.getByTestId('weight-trend-smoothed-path-0')).toBeVisible();
-  await expect(page.getByTestId('weight-trend-smoothed-path-1')).toBeVisible();
-  await expect(page.getByTestId('weight-trend-range-0')).toBeVisible();
-  await expect(page.getByTestId('weight-trend-range-1')).toBeVisible();
+  await expect(page.getByTestId('expanded-trend').getByTestId('weight-trend-smoothed-path-0')).toBeVisible();
+  await expect(page.getByTestId('expanded-trend').getByTestId('weight-trend-smoothed-path-1')).toBeVisible();
+  await expect(page.getByTestId('expanded-trend').getByTestId('weight-trend-range-0')).toBeVisible();
+  await expect(page.getByTestId('expanded-trend').getByTestId('weight-trend-range-1')).toBeVisible();
   await expect(page.getByText('Current pace estimate', { exact: true })).toBeHidden();
   await expect(page.getByText('Goal date at selected pace', { exact: true })).toBeHidden();
   await captureEvidence(page, testInfo);
@@ -336,7 +336,7 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
     'Log a current scale weight to refresh the underlying trend estimate.',
     { exact: true },
   )).toBeVisible();
-  await expect(page.getByLabel('Four-week underlying weight trend with 95% estimated range')).toHaveCount(0);
+  await expect(page.getByLabel('Four-week underlying weight trend with scale readings and 95% estimated range')).toHaveCount(0);
   await page.getByRole('button', { name: 'Log weight', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/weight');
   await expectNoHorizontalOverflow(page);

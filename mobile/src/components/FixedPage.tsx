@@ -54,8 +54,8 @@ export function FixedPage({ header, context, children, footer, scrollWhenShort =
     }, []);
     React.useLayoutEffect(readTextScale, [readTextScale, width]);
     const enlargedText = Math.max(fontScale, webTextScale) >= LARGE_TEXT_SCALE;
-    // A contained pane needs room for its minimum body after the measured context and footer.
-    const cannotContainBody = containedBody && height > 0
+    // Scroll when the measured context, complete middle section, and footer cannot fit.
+    const cannotContainBody = (containedBody || scrollWhenShort) && height > 0
         && contextHeight + minBodyHeight + footerHeight > height - headerHeight;
     const expanded = enlargedText || cannotContainBody
         || (scrollWhenShort && height > 0 && height - headerHeight < SHORT_PROGRESS_HEIGHT);

@@ -91,6 +91,11 @@ Keep the compact Snapshot on the page background, with paired weight/date metric
 target, and direct Edit goal access. Trend's heading, decorative fullscreen icon, and graph form one
 full-width tap target with a shared hover/focus treatment. Trend fills the middle and expands in place
 when tapped. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.
+Collapsed and expanded Trend share one visualization: blue scale-reading dots and outlined estimate
+band, green underlying trend, the same axis scale and typography, and a wrapping legend. Keep the
+collapsed section as one expansion target; range controls and reading selection belong in the expanded
+view. Preserve at least 188px of plot on phones and 260px on desktop, scaling axis gutters and plot
+height for enlarged text. Scroll the overview when its measured sections cannot fit together.
 The detailed Trend content also gives its plot all remaining height after the range controls, legend,
 selected reading, and point navigation. Keep a legible minimum and scroll short screens; do not cap
 the plot height while leaving unused space below it.
