@@ -76,7 +76,7 @@ export function FixedPage({ header, context, children, footer, scrollWhenShort =
     ><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></ExpansionRegion>;
 
     const pageContent = (transitioning: boolean) => <>
-        {context && <ExpansionRegion id="page-context" order={0} style={{ backgroundColor: theme.colors.summaryContainer }} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
+        {context && <ExpansionRegion id="page-context" order={0} style={{ backgroundColor: theme.colors.background }} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
             <View style={columnStyle}>{context}</View>
         </ExpansionRegion>}
         <ExpansionRegion id={bodyExpansionId} order={2} style={[!fullWidthBody && columnStyle, styles.body, { minHeight: minBodyHeight }, expanded && styles.bodyExpanded, containBody && styles.bodyContained, transitioning && styles.bodyTransitioning]}>

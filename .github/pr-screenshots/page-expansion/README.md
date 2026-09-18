@@ -15,6 +15,18 @@ four viewports, with 11 intentional project skips.
 | --- | --- | --- |
 | ![Progress overview with Snapshot, Trend, and Plan check](progress-phone.png) | ![Expanded Trend with its complete plot and reading controls](trend-phone.png) | ![Expanded Plan check with evidence and Review adjustment](plan-phone.png) |
 
+## Stationary header boundary in dark mode - 390x844
+
+The navbar tint ends beneath Today's retained date controls and immediately below Progress's
+app bar. Daily balance and Snapshot share the page background, so they move behind a distinct
+stationary surface. The light overview images above show the same boundary. All 13 expansion
+checks and 29 affected visual checks passed for this refinement; the visual baselines were refreshed
+to capture the subtle color difference even where it falls within screenshot comparison tolerance.
+
+| Today | Progress |
+| --- | --- |
+| ![Today's date area stays tinted above the page-colored balance](today-dark-phone.png) | ![Progress Snapshot is separate from the tinted app bar](progress-dark-phone.png) |
+
 ## Desktop - 1440x1000
 
 The expanded content keeps the app bar, navigation rail, and centered reading column.

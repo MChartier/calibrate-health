@@ -39,8 +39,10 @@ short viewports, enlarged text, or consequential notices require more space. Nev
 force a single screen. Large-text action pairs stack. Preserve the desktop rail and a centered reading
 column on larger displays; extra room expands the food preview or trend, not a grid of equal tiles.
 
-Use `summaryContainer` as a continuous, full-bleed top surface behind the header and overview context,
-with constrained inner content. Preserve the real `CalibrateLogo` and existing bathroom-scale icon.
+Use `summaryContainer` for the stationary navbar and Today's retained date area. Daily balance and
+Progress's Snapshot use the normal page background, creating a clear edge where moving content
+passes behind the header during expansion. Keep the inner content constrained. Preserve the real
+`CalibrateLogo` and existing bathroom-scale icon.
 Bottom tabs retain their destinations and short selected underline. Ordinary food items have no icon
 tiles, individual frames, or duplicate navigation decorators.
 Full-width navigation rows own the entire page width, including the side gutters, for hit testing,
@@ -54,7 +56,7 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   selection and provide the secondary Pause tracking action, including its existing confirmation flow.
   Food log, Activity, and Weight use the same unified toolbar, top spacing, and continuous
   `summaryContainer` behind the navbar. Preserve each route's content width and date behavior.
-- The open balance region continues the top surface: ring left, quiet divider, balance copy right.
+- The open balance region uses the page background: ring left, quiet divider, balance copy right.
   Do not show the goal number; it remains in Progress's Snapshot. Incomplete, paused, or unavailable
   comparisons retain a neutral ring and the same metric space with status and logged calories.
 - Place the full-width weight control immediately below the balance, above food. It begins with
@@ -85,7 +87,7 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
 
 ### Progress
 
-Keep the compact Snapshot in the top surface, with paired weight/date metrics, goal progress, current
+Keep the compact Snapshot on the page background, with paired weight/date metrics, goal progress, current
 target, and direct Edit goal access. Trend's heading, decorative fullscreen icon, and graph form one
 full-width tap target with a shared hover/focus treatment. Trend fills the middle and expands in place
 when tapped. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.

@@ -42,6 +42,16 @@ and use the approved in-place expansion. Six intended visual baselines were insp
 The gallery now contains 14 current captures, including paused expansion/collapse frames; the
 clipping regression failed before the fix and passes in both directions on desktop and phone.
 
+### Stationary header surface refinement
+
+The user requested a clearer boundary between the navbar and the summaries that slide behind it.
+The navbar tint now ends below Today's retained date picker and below Progress's app bar. Daily
+balance and Snapshot use the normal page background. The designer confirmed that the existing
+clipping boundary now matches this visual separation; no additional border, shadow, or geometry
+change is needed. Light and dark renders were inspected. Expo type-check/export, 13 expansion
+checks, and 29 affected visual checks passed. The gallery contains 16 refreshed captures including
+dark-mode overview evidence; 28 existing baselines record the updated background colors.
+
 The evidence below records the preceding overview redesign separately.
 
 The approved Today and Progress iteration replaces the remaining variable-height overview stack with
