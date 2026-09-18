@@ -19,7 +19,8 @@ four viewports, with 11 intentional project skips.
 
 The navbar tint ends beneath Today's retained date controls and immediately below Progress's
 app bar. Daily balance and Snapshot share the page background, so they move behind a distinct
-stationary surface. The light overview images above show the same boundary. All 13 expansion
+stationary surface. Full-width rules below Daily balance and Snapshot separate the summaries from
+the content below and move with them during expansion. The light overview images above show the same boundary. All 13 expansion
 checks and 29 affected visual checks passed for this refinement; the visual baselines were refreshed
 to capture the subtle color difference even where it falls within screenshot comparison tolerance.
 

@@ -76,7 +76,7 @@ export function FixedPage({ header, context, children, footer, scrollWhenShort =
     ><View style={!fullWidthFooter && columnStyle}>{footerContent}</View></ExpansionRegion>;
 
     const pageContent = (transitioning: boolean) => <>
-        {context && <ExpansionRegion id="page-context" order={0} style={{ backgroundColor: theme.colors.background }} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
+        {context && <ExpansionRegion id="page-context" order={0} style={[styles.context, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.outline }]} onLayout={(event) => setContextHeight(event.nativeEvent.layout.height)}>
             <View style={columnStyle}>{context}</View>
         </ExpansionRegion>}
         <ExpansionRegion id={bodyExpansionId} order={2} style={[!fullWidthBody && columnStyle, styles.body, { minHeight: minBodyHeight }, expanded && styles.bodyExpanded, containBody && styles.bodyContained, transitioning && styles.bodyTransitioning]}>
@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
     scroller: { flex: 1, minHeight: 0 },
     scrollContent: { flexGrow: 1 },
     column: { width: '100%', alignSelf: 'center', minWidth: 0 },
+    context: { borderBottomWidth: StyleSheet.hairlineWidth },
     body: { flex: 1 },
     bodyExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
     // Let the body own scrolling within the space left by the fixed context and footer.

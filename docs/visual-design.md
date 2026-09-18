@@ -57,6 +57,7 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   Food log, Activity, and Weight use the same unified toolbar, top spacing, and continuous
   `summaryContainer` behind the navbar. Preserve each route's content width and date behavior.
 - The open balance region uses the page background: ring left, quiet divider, balance copy right.
+  A full-width horizontal rule separates the balance from the weight and Food log content below.
   Do not show the goal number; it remains in Progress's Snapshot. Incomplete, paused, or unavailable
   comparisons retain a neutral ring and the same metric space with status and logged calories.
 - Place the full-width weight control immediately below the balance, above food. It begins with
@@ -91,6 +92,7 @@ Keep the compact Snapshot on the page background, with paired weight/date metric
 target, and direct Edit goal access. Trend's heading, decorative fullscreen icon, and graph form one
 full-width tap target with a shared hover/focus treatment. Trend fills the middle and expands in place
 when tapped. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.
+A full-width horizontal rule separates Snapshot from Trend, matching the rule above Plan check.
 Collapsed and expanded Trend share one visualization: blue scale-reading dots and outlined estimate
 band, green underlying trend, the same axis scale and typography, and a wrapping legend. Keep the
 collapsed section as one expansion target; range controls and reading selection belong in the expanded

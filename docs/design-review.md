@@ -226,3 +226,11 @@ Validation: 47 Trend unit tests, typecheck, web export, 39 browser checks across
 Progress layout, interactive history and degraded data, and 29 Today/Progress visual checks. Eight
 Progress visual baselines and the PR screenshot gallery were refreshed. Phone light/dark, expanded,
 desktop, and 200% text captures were inspected.
+
+
+### Summary boundary rules
+
+Daily balance and Snapshot now end with the same full-width hairline rule used above the bottom
+sections. The rules belong to the moving summary regions and disappear with them on expansion.
+Light/dark phone renders were inspected; typecheck, web export, 13 expansion checks, and 29
+Today/Progress visual checks passed. The gallery and affected baselines were refreshed.
