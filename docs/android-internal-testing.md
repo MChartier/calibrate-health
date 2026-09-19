@@ -12,7 +12,10 @@ The server/web version remains **0.36.0**.
 ## One-time Windows setup
 
 Install Node 22.14 or newer, JDK 17, and Android command-line tools. The repository currently requires
-Android platform 36, build-tools 36.0.0, platform-tools, NDK 27.1.12297006, and CMake 3.22.1.
+Android platform 36, build-tools 36.0.0, platform-tools, NDK 27.1.12297006, and CMake 3.31.6 (including Ninja 1.12.1).
+The local wrapper writes the generated Android `local.properties` CMake location after Expo prebuild.
+CMake 3.22.1 can repeatedly regenerate Ninja files on Windows; an older Ninja also has long-path limitations.
+See [Reanimated Windows guidance](https://docs.swmansion.com/react-native-reanimated/docs/guides/building-on-windows/).
 Use bundletool 1.18.3 from the official Google release; its SHA-256 is
 `a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29`.
 

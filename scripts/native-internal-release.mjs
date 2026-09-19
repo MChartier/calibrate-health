@@ -19,6 +19,7 @@ export const INTERNAL_CHANNEL = 'internal';
 export const INTERNAL_PROJECT_ID = 'fda8f8c5-e646-47ac-82fb-35003c9cbec7';
 export const LOCAL_RECORD_PATH = 'build/native-local-internal.json';
 const RECORD_KIND = 'local-internal';
+export const WINDOWS_CMAKE_VERSION = '3.31.6';
 // Bound health checks and archive-tool output so failures remain actionable on the host.
 const CONNECTION_TIMEOUT_MS = 15_000;
 const MAX_TOOL_OUTPUT_BYTES = 32 * 1024 * 1024;
@@ -130,6 +131,31 @@ function inspectCommand(command, args, environment, options = {}) {
   } catch { throw new Error(`Android inspection failed (${path.basename(command)}). Check the installed toolchain and bundle.`); }
 }
 
+export function inspectWindowsCmake(tooling, environment, execute = inspectCommand) {
+  const directory = path.join(tooling.sdkRoot, 'cmake', WINDOWS_CMAKE_VERSION);
+  const cmake = execute(path.join(directory, 'bin/cmake.exe'), ['--version'], environment);
+  const ninja = execute(path.join(directory, 'bin/ninja.exe'), ['--version'], environment).trim();
+  const version = ninja.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!cmake.includes(`cmake version ${WINDOWS_CMAKE_VERSION}`) || !version ||
+      Number(version[1]) < 1 || (Number(version[1]) === 1 && Number(version[2]) < 12)) {
+    throw new Error(`Install SDK CMake ${WINDOWS_CMAKE_VERSION} with Ninja 1.12 or newer for Windows.`);
+  }
+  return { directory, ninja };
+}
+
+export function configureLocalInternalToolchain(root, environment, options = {}) {
+  if ((options.platform ?? process.platform) !== 'win32') return;
+  const tooling = options.tooling ?? resolveNativeReleaseDeviceTooling(environment);
+  const { directory } = inspectWindowsCmake(tooling, environment, options.execute);
+  const file = path.join(root, 'mobile/android/local.properties');
+  const previous = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const lines = previous.split(/\r?\n/).filter((line) => !/^\s*cmake\.dir\s*[=:]/.test(line));
+  // Pin the generated host file after prebuild: CMake 3.22 can loop on Windows glob regeneration.
+  const value = directory.replaceAll('\\', '/').replace(/[^\x20-\x7e]/g,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`);
+  fs.writeFileSync(file, `${lines.join('\n').trimEnd()}\ncmake.dir=${value}\n`);
+}
+
 function metadataValue(xml, name) {
   const entries = xml.match(/<meta-data\b[^>]*>/g) ?? [];
   const entry = entries.find((value) => value.includes(`android:name="${name}"`));
@@ -239,6 +265,7 @@ export async function buildLocalInternalRelease({ root = ROOT, credentialsFile, 
   fs.rmSync(path.join(root, LOCAL_RECORD_PATH), { force: true });
   const run = dependencies.runStage ?? runBuildStage;
   run(root, 'prepare', env);
+  (dependencies.configureToolchain ?? configureLocalInternalToolchain)(root, env);
   // Preparation executes Expo config/plugins; admit the external keystore only after it finishes.
   const signedEnvironment = (dependencies.loadSigning ?? loadLocalSigningEnvironment)(root, credentialsFile, env);
   run(root, 'build-prepared', signedEnvironment);
@@ -279,7 +306,8 @@ export async function internalReleaseDoctor(root = ROOT, environment = process.e
     for (const required of requiredPaths) {
       if (!fs.existsSync(path.join(tooling.sdkRoot, required))) throw new Error(`Install Android SDK component for ${required}.`);
     }
-    return { sdk: tooling.sdkRoot, java: tooling.javaHome, javaVersion: result.stderr.trim() };
+    const cmake = process.platform === 'win32' ? inspectWindowsCmake(tooling, env) : null;
+    return { sdk: tooling.sdkRoot, java: tooling.javaHome, javaVersion: result.stderr.trim(), cmake };
   });
   await check('private backend compatibility', async () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'shared/release.json'), 'utf8'));

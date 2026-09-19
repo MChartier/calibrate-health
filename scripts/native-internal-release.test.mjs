@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
-  buildLocalInternalRelease, createLocalInternalPlan, INTERNAL_CHANNEL, INTERNAL_PROJECT_ID,
+  buildLocalInternalRelease, configureLocalInternalToolchain, createLocalInternalPlan, inspectWindowsCmake, INTERNAL_CHANNEL, INTERNAL_PROJECT_ID,
   INTERNAL_SERVER_URL, LOCAL_RECORD_PATH, loadLocalSigningEnvironment, localInternalEnvironment,
   parseBundleResourceValue, parseLocalInternalArgs, requireExternalFile, validateInternalBundleManifest,
   validateLocalInternalBaseline, verifyLocalRecord
@@ -127,6 +127,7 @@ test('build admits signing only after preparation and verifies without signing/P
       if (stage === 'prepare') assert.equal(env.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD, undefined);
       else assert.equal(env.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD, 'password');
     },
+    configureToolchain: () => order.push('toolchain'),
     loadSigning: (_root, _file, env) => {
       order.push('credentials');
       return { ...env, CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD: 'password' };
@@ -138,7 +139,7 @@ test('build admits signing only after preparation and verifies without signing/P
     },
     readBaseline: () => ({ baseline }), tooling: {}, inspectConfiguration: () => ({ inspected: true })
   });
-  assert.deepEqual(order, ['prepare', 'credentials', 'build-prepared', 'verify']);
+  assert.deepEqual(order, ['prepare', 'toolchain', 'credentials', 'build-prepared', 'verify']);
   assert.equal(result.provenance, 'local-internal');
   const record = JSON.parse(fs.readFileSync(path.join(root, LOCAL_RECORD_PATH), 'utf8'));
   verifyLocalRecord(root, record);
@@ -175,4 +176,23 @@ test('bundletool resource strings resolve all configurations and reject conflict
     assert.equal(key, '0x7f001');
     return parseBundleResourceValue(dump);
   });
+});
+
+
+test('Windows prebuild selects current CMake without retaining an older host override', (t) => {
+  const { root, temporary } = fixture(t);
+  const directory = path.join(root, 'mobile/android');
+  fs.mkdirSync(directory, { recursive: true });
+  const file = path.join(directory, 'local.properties');
+  fs.writeFileSync(file, 'sdk.dir=C:/Android/Sdk\ncmake.dir=C:/old\n');
+  const tooling = { sdkRoot: path.join(temporary, 'SDK') };
+  const execute = (command) => command.endsWith('cmake.exe') ? 'cmake version 3.31.6' : '1.12.1';
+  configureLocalInternalToolchain(root, {}, { platform: 'win32', tooling, execute });
+  const configured = fs.readFileSync(file, 'utf8');
+  assert.match(configured, /sdk.dir=C:\/Android\/Sdk/);
+  assert.match(configured, /cmake.dir=.*SDK\/cmake\/3.31.6/);
+  assert.equal(configured.includes('C:/old'), false);
+  assert.throws(() => inspectWindowsCmake(tooling, {}, (command) =>
+    command.endsWith('cmake.exe') ? 'cmake version 3.31.6' : '1.10.2'), /Ninja 1.12/);
+  assert.throws(() => inspectWindowsCmake(tooling, {}, () => 'cmake version 3.22.1'), /CMake 3.31.6/);
 });
