@@ -3,6 +3,18 @@ import { expectNoBlockingAccessibilityViolations } from './ux-a11y';
 import { PLAN_CHECK_RECOMMENDATION_STATUS } from './plan-check.fixture';
 import { applyTwoHundredPercentText } from './text-scaling';
 
+// Animated.timing reads Date.now; a per-read fixture clock speeds it up with unrelated query work.
+async function useElapsedAnimationClock(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    const epoch = Date.now();
+    const start = performance.now();
+    Object.defineProperty(Date, 'now', {
+      configurable: true,
+      value: () => epoch + Math.floor(performance.now() - start),
+    });
+  });
+}
+
 test('Food log expands below the date and restores its source, scroll and focus', async ({ page, ux }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await ux.install('populated', { foodDayStatus: 'OPEN' });
@@ -92,6 +104,7 @@ test('Trend collapse reverses its expanding bounds and returns the surrounding s
   await page.route('**/api/v1/calibration/status', route => route.fulfill({ json: PLAN_CHECK_RECOMMENDATION_STATUS }));
   await page.goto('/progress');
   await hideTransientPwaNotices(page);
+  await useElapsedAnimationClock(page);
   const source = page.getByTestId('weight-trend-preview-card');
   await expect(source).toBeVisible();
   await source.scrollIntoViewIfNeeded();
@@ -141,6 +154,7 @@ for (const foodDayStatus of ['OPEN', 'COMPLETE'] as const) {
     await ux.install('populated', { foodDayStatus });
     await page.goto('/today');
     await hideTransientPwaNotices(page);
+    await useElapsedAnimationClock(page);
     const source = page.getByTestId('today-food-preview');
     await expect(source).toBeVisible();
     const dayActionLabel = foodDayStatus === 'COMPLETE' ? 'Day completed' : 'Complete day';
@@ -199,6 +213,7 @@ test('weight slides beneath the date header without clipping at its old body bou
   await ux.install('populated');
   await page.goto('/today');
   await hideTransientPwaNotices(page);
+  await useElapsedAnimationClock(page);
   const source = page.getByTestId('today-food-preview');
   const weight = page.getByTestId('today-weight-card');
   const collapse = page.getByRole('button', { name: 'Collapse Food log' });

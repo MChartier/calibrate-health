@@ -81,6 +81,7 @@ function getGoalDraftKey(startWeight: string, targetWeight: string, goalMode: Go
 export default function ProgressScreen() {
     const pathname = usePathname();
     const [expandedSection, setExpandedSection] = useState<'trend' | 'plan' | null>(null);
+    const [trendMinimumHeight, setTrendMinimumHeight] = useState(0);
     const routeParams = useLocalSearchParams<{ openNextGoal?: string; openPlanReview?: string }>();
     const { api, user } = useAuth();
     const theme = useAppTheme();
@@ -349,7 +350,7 @@ export default function ProgressScreen() {
             <FixedPage
                 testID="progress-fixed-page"
                 scrollWhenShort
-                minBodyHeight={getWeightTrendPreviewMinimumHeight(viewportWidth)}
+                minBodyHeight={Math.max(getWeightTrendPreviewMinimumHeight(viewportWidth), trendMinimumHeight)}
                 bodyExpansionId="trend"
                 footerExpansionId="plan"
                 expansion={{
@@ -404,6 +405,7 @@ export default function ProgressScreen() {
             >
                 {({ expanded }) => <WeightTrendPreviewCard
                     expanded={expanded}
+                    onMinimumHeightChange={setTrendMinimumHeight}
                     suppressStaleNotice
                     onPress={() => setExpandedSection('trend')}
                     onLogWeight={() => router.push('/weight')}
