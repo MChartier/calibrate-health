@@ -76,7 +76,8 @@ const styles = StyleSheet.create({
     row: { width: '100%', flexDirection: 'row', alignItems: 'stretch' },
     stacked: { flexDirection: 'column' },
     clipped: { overflow: 'hidden' },
-    action: { flex: 1, minWidth: 0 },
+    // Explicit flex properties let native Yoga honor animated widths and stacked heights.
+    action: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0 },
     sizedAction: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
     stackedAction: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', width: '100%' }
 });
