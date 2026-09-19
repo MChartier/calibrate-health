@@ -10,7 +10,7 @@ Standalone native Kotlin/Compose application for the Calibrate Wear OS companion
 - `internal`: uses shared release signing when all signing values are supplied, otherwise falls back to the phone debug key; defaults to the hosted server.
 - `release`: release signing is supplied outside the repository.
 
-Every variant uses `app.calibratehealth.mobile`, matching the phone app. Wear Data Layer requires the installed
+Every variant uses `net.darkmachines.healthtracker`, matching the phone app. Wear Data Layer requires the installed
 phone and watch artifacts to have both the same application ID and the same signing identity. Debug builds and
 debug-fallback internal builds pair with a debug-signed phone build. A release-signed internal build pairs only with
 a phone artifact signed by that same release identity. Production phone and watch artifacts must also use the same

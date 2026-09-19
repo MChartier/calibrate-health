@@ -126,8 +126,8 @@ test('Android tablets are valid mobile release installation targets', () => {
 
 test('APK parsers retain release identity and normalize certificate fingerprints', () => {
   assert.deepEqual(
-    parseApkBadging("package: name='app.calibratehealth.mobile' versionCode='2' versionName='0.2.0' platformBuildVersionName='16'"),
-    { applicationId: 'app.calibratehealth.mobile', versionCode: 2, versionName: '0.2.0' }
+    parseApkBadging("package: name='net.darkmachines.healthtracker' versionCode='2' versionName='0.2.0' platformBuildVersionName='16'"),
+    { applicationId: 'net.darkmachines.healthtracker', versionCode: 2, versionName: '0.2.0' }
   );
   const fingerprint = Array.from({ length: 32 }, (_, index) => index.toString(16).padStart(2, '0')).join(':');
   assert.equal(
@@ -382,7 +382,7 @@ test('artifact capture independently inspects two APK and two AAB signers', asyn
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const manifest = {
     android: {
-      application_id: 'app.calibratehealth.mobile',
+      application_id: 'net.darkmachines.healthtracker',
       mobile: { version_name: '0.2.5', version_code: 7 },
       wear: { version_name: '0.3.0', version_code: 8 }
     }
@@ -404,7 +404,7 @@ test('artifact capture independently inspects two APK and two AAB signers', asyn
       return {
         status: 0,
         stderr: '',
-        stdout: `package: name='app.calibratehealth.mobile' versionCode='${watch ? 8 : 7}' versionName='${watch ? '0.3.0' : '0.2.5'}'`
+        stdout: `package: name='net.darkmachines.healthtracker' versionCode='${watch ? 8 : 7}' versionName='${watch ? '0.3.0' : '0.2.5'}'`
       };
     }
     if (request.command === 'keytool') {
@@ -415,7 +415,7 @@ test('artifact capture independently inspects two APK and two AAB signers', asyn
       return {
         status: 0,
         stderr: '',
-        stdout: `<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.calibratehealth.mobile" android:versionCode="${watch ? 8 : 7}" android:versionName="${watch ? '0.3.0' : '0.2.5'}"></manifest>`
+        stdout: `<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="net.darkmachines.healthtracker" android:versionCode="${watch ? 8 : 7}" android:versionName="${watch ? '0.3.0' : '0.2.5'}"></manifest>`
       };
     }
     return {
@@ -443,9 +443,9 @@ test('artifact capture independently inspects two APK and two AAB signers', asyn
 
 test('artifact parsers reject stale AAB metadata and multiple signer identities', async (t) => {
   assert.deepEqual(parseAabManifestMetadata(
-    '<manifest package="app.calibratehealth.mobile" android:versionName="1.2.3" android:versionCode="12"></manifest>'
+    '<manifest package="net.darkmachines.healthtracker" android:versionName="1.2.3" android:versionCode="12"></manifest>'
   ), {
-    applicationId: 'app.calibratehealth.mobile',
+    applicationId: 'net.darkmachines.healthtracker',
     versionName: '1.2.3',
     versionCode: 12
   });
@@ -462,7 +462,7 @@ test('artifact parsers reject stale AAB metadata and multiple signer identities'
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const manifest = {
     android: {
-      application_id: 'app.calibratehealth.mobile',
+      application_id: 'net.darkmachines.healthtracker',
       mobile: { version_name: '0.2.5', version_code: 7 },
       wear: { version_name: '0.3.0', version_code: 8 }
     }
@@ -481,7 +481,7 @@ test('artifact parsers reject stale AAB metadata and multiple signer identities'
       return {
         status: 0,
         stderr: '',
-        stdout: `package: name='app.calibratehealth.mobile' versionCode='${watch ? 8 : 7}' versionName='${watch ? '0.3.0' : '0.2.5'}'`
+        stdout: `package: name='net.darkmachines.healthtracker' versionCode='${watch ? 8 : 7}' versionName='${watch ? '0.3.0' : '0.2.5'}'`
       };
     }
     if (request.command === 'keytool') {
@@ -491,7 +491,7 @@ test('artifact parsers reject stale AAB metadata and multiple signer identities'
       return {
         status: 0,
         stderr: '',
-        stdout: `<manifest package="app.calibratehealth.mobile" android:versionCode="${watch ? 99 : 7}" android:versionName="${watch ? 'stale' : '0.2.5'}"></manifest>`
+        stdout: `<manifest package="net.darkmachines.healthtracker" android:versionCode="${watch ? 99 : 7}" android:versionName="${watch ? 'stale' : '0.2.5'}"></manifest>`
       };
     }
     return { status: 0, stderr: '', stdout: `certificate SHA-256 digest: ${first}` };

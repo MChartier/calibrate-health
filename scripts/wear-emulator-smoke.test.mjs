@@ -137,12 +137,12 @@ test('Wear readiness waits for one complete exact UI tree', () => {
 test('Wear readiness reasserts the app after first-boot System UI takes foreground', () => {
   const trees = [
     '<hierarchy><node package="com.google.android.wearable.sysui" /></hierarchy>',
-    '<hierarchy><node package="app.calibratehealth.mobile" text="calibrate" /></hierarchy>'
+    '<hierarchy><node package="net.darkmachines.healthtracker" text="calibrate" /></hierarchy>'
   ];
   let reads = 0;
   let relaunches = 0;
   const readUi = createRecoveringWearUiReader(
-    'app.calibratehealth.mobile',
+    'net.darkmachines.healthtracker',
     () => trees[reads++],
     () => { relaunches += 1; }
   );
@@ -236,7 +236,7 @@ test('Wear action audit accepts named 48 dp targets and ignores disabled nodes',
 });
 
 test('Wear action audit excludes unrelated System UI actions', () => {
-  const appPackage = 'app.calibratehealth.mobile';
+  const appPackage = 'net.darkmachines.healthtracker';
   const xml = `<hierarchy>${node({
     package: appPackage,
     text: 'Connection',
@@ -338,7 +338,7 @@ test('Wear font-scale exercise rejects ignored and clamped settings writes', () 
 });
 test('Wear package evidence requires the exact permission set and detects native crashes', () => {
   const reviewed = [
-    'Package [app.calibratehealth.mobile]',
+    'Package [net.darkmachines.healthtracker]',
     '    requested permissions:',
     '      android.permission.INTERNET',
     '      android.permission.ACCESS_NETWORK_STATE',
@@ -346,7 +346,7 @@ test('Wear package evidence requires the exact permission set and detects native
     '      android.permission.POST_NOTIFICATIONS',
     '      android.permission.RECEIVE_BOOT_COMPLETED',
     '      android.permission.WAKE_LOCK',
-    '      app.calibratehealth.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION',
+    '      net.darkmachines.healthtracker.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION',
     '    install permissions:',
     '      android.permission.INTERNET: granted=true'
   ].join('\n');
@@ -357,7 +357,7 @@ test('Wear package evidence requires the exact permission set and detects native
     'android.permission.POST_NOTIFICATIONS',
     'android.permission.RECEIVE_BOOT_COMPLETED',
     'android.permission.WAKE_LOCK',
-    'app.calibratehealth.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+    'net.darkmachines.healthtracker.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
   ]);
   assert.deepEqual(assertWearRequestedPermissions(reviewed), parseWearRequestedPermissions(reviewed));
   assert.throws(
@@ -369,8 +369,8 @@ test('Wear package evidence requires the exact permission set and detects native
   );
   assert.throws(() => parseWearRequestedPermissions('Package without section'), /section is missing/);
 
-  const nativeCrash = 'Fatal signal 11\npid: 42 >>> app.calibratehealth.mobile <<<';
-  const javaCrash = 'FATAL EXCEPTION: main\nProcess: app.calibratehealth.mobile, PID: 42';
+  const nativeCrash = 'Fatal signal 11\npid: 42 >>> net.darkmachines.healthtracker <<<';
+  const javaCrash = 'FATAL EXCEPTION: main\nProcess: net.darkmachines.healthtracker, PID: 42';
   const unrelatedCrash = 'FATAL EXCEPTION: main\nProcess: com.android.systemui, PID: 50';
   assert.equal(crashBufferContainsWearProcess(nativeCrash), true);
   assert.equal(crashBufferContainsWearProcess(javaCrash), true);

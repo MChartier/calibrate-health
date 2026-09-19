@@ -21,6 +21,7 @@ import {
   getReleaseTag,
   nextReleaseVersion,
   prepareNativeRelease,
+  prepareLocalInternalNativeRelease,
   prepareServerRelease,
   verifyPreparedRelease,
   verifyPreparedReleaseCandidate,
@@ -107,6 +108,20 @@ const historicalPreparedV035Manifest = {
 };
 
 async function useHistoricalPreparedV035Mirrors(root) {
+  // Freeze native mirrors too: future package/version changes must not rewrite historical evidence.
+  for (const relativePath of releaseFixturePaths) {
+    const file = path.join(root, relativePath);
+    let source = await readFile(file, 'utf8');
+    const current = JSON.parse(await readFile(path.join(repositoryRoot, 'shared/release.json'), 'utf8'));
+    source = source.replaceAll(current.android.application_id, 'app.calibratehealth.mobile')
+      .replaceAll(current.android.mobile.version_name, '0.2.6');
+    // Advancing diagnostics may introduce the frozen version a second time.
+    source = source.replaceAll('"0.2.6",\n      "0.2.6"', '"0.2.6"')
+      .replaceAll('0.2.6, 0.2.6', '0.2.6')
+      .replaceAll('"0.2.6" | "0.2.6"', '"0.2.6"');
+    await writeFile(file, source);
+  }
+
   const originals = Object.fromEntries(await Promise.all(
     Object.entries(preparedReleaseSourcePaths).map(async ([key, relativePath]) => [
       key, await readFile(path.join(root, relativePath), 'utf8')
@@ -223,7 +238,7 @@ const validManifest = {
   schema_version: 1,
   server: { version: '1.2.3', api: { current: 'v1', supported: ['v1'] } },
   android: {
-    application_id: 'app.calibratehealth.mobile',
+    application_id: 'net.darkmachines.healthtracker',
     mobile: {
       version_name: '2.0.0',
       version_code: 21,
@@ -1642,4 +1657,23 @@ test('release preparation rejects stale mirrors before making any writes', async
     new RegExp(`root package version.*expected "${currentVersion.replaceAll('.', '\\.')}"`)
   );
   assert.equal(await readFile(manifestPath, 'utf8'), before);
+});
+
+
+test('local internal preparation advances all native mirrors without a tag or changing the server', async (t) => {
+  const root = await createReleaseFixture(t);
+  const before = await readFixtureJson(root, 'shared/release.json');
+  const result = await prepareLocalInternalNativeRelease({ root, bump: 'patch' });
+  const after = await readFixtureJson(root, 'shared/release.json');
+  assert.equal(result.version_name, nextReleaseVersion(before.android.mobile.version_name, 'patch'));
+  assert.equal(after.android.mobile.version_code % 2, 1);
+  assert.equal(after.android.wear.version_code, after.android.mobile.version_code + 1);
+  assert.deepEqual(after.server, before.server);
+  assert.deepEqual((await checkRepository(root)).errors, []);
+  await assert.rejects(prepareNativeRelease({ root, bump: 'patch', verifyNativeReleaseTag: () => { throw new Error('No signed tag'); } }), /No signed tag/);
+});
+
+
+test('protected preparation cannot disable signed-tag verification with a null callback', async () => {
+  await assert.rejects(prepareNativeRelease({ root: repositoryRoot, bump: 'patch', verifyNativeReleaseTag: null }), /requires signed-tag verification/);
 });

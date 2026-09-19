@@ -130,11 +130,11 @@ android {
 
     defaultConfig {
         // Wear Data Layer only connects artifacts with matching package names and signatures.
-        applicationId = "app.calibratehealth.mobile"
+        applicationId = "net.darkmachines.healthtracker"
         minSdk = 30
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.2.6"
+        versionCode = 12
+        versionName = "0.2.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SERVER_URL", quoteBuildConfig(configuredServerOrigin))

@@ -917,7 +917,7 @@ jobs:
           disable-animations: true
           script: |
             npm run test:wear:emulator
-            adb -s "$WEAR_ADB_SERIAL" uninstall app.calibratehealth.mobile
+            adb -s "$WEAR_ADB_SERIAL" uninstall net.darkmachines.healthtracker
             ./wear/gradlew -p wear :app:connectedDebugAndroidTest -PcalibrateWearServerUrl=https://calibratehealth.app -PcalibrateWearDebugServerUrl=http://10.0.2.2:3000 --no-daemon --console=plain
 
 

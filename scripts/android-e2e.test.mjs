@@ -71,10 +71,10 @@ test('Android E2E opens Add food through a fresh canonical native route', () => 
     'shell', 'am', 'start', '-W', '-S',
     '-a', 'android.intent.action.VIEW',
     '-d', 'https://calibratehealth.app/log?date=2026-08-10',
-    'app.calibratehealth.mobile',
+    'net.darkmachines.healthtracker',
   ]);
   assert.doesNotThrow(() => assertAndroidAppLinkLaunch(
-    'Status: ok\nActivity: app.calibratehealth.mobile/.MainActivity\nTotalTime: 842',
+    'Status: ok\nActivity: net.darkmachines.healthtracker/.MainActivity\nTotalTime: 842',
   ));
   assert.throws(
     () => assertAndroidAppLinkLaunch('Status: ok\nActivity: com.android.chrome/.Main'),
@@ -138,9 +138,9 @@ E/AndroidRuntime( 4036): PID: 4036
 E/AndroidRuntime( 4036): java.lang.RuntimeException: Timeout while connecting UiAutomation`;
   const calibrateCrash = `
 E/AndroidRuntime( 8123): FATAL EXCEPTION: main
-E/AndroidRuntime( 8123): Process: app.calibratehealth.mobile, PID: 8123`;
+E/AndroidRuntime( 8123): Process: net.darkmachines.healthtracker, PID: 8123`;
 
-  const nativeCrash = 'Fatal signal 11 (SIGSEGV)\npid: 8123 >>> app.calibratehealth.mobile <<<';
+  const nativeCrash = 'Fatal signal 11 (SIGSEGV)\npid: 8123 >>> net.darkmachines.healthtracker <<<';
 
   assert.equal(crashBufferContainsCalibrateProcess(uiautomatorCrash), false);
   assert.equal(crashBufferContainsCalibrateProcess(calibrateCrash), true);

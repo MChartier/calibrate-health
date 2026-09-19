@@ -16,7 +16,7 @@ const SOURCE_COMMIT = 'a'.repeat(40);
 function artifact(id, buildType = 'release') {
   return {
     id,
-    packageName: 'app.calibratehealth.mobile',
+    packageName: 'net.darkmachines.healthtracker',
     versionName: buildType === 'debug' ? '0.2.5-dev' : '0.2.5',
     versionCode: 7,
     sha256: 'b'.repeat(64),

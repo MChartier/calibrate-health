@@ -235,7 +235,7 @@ test('CLI requires a real version increase and a credential-free HTTPS origin', 
 
 test('APK and installed-package evidence parsers preserve upgrade identifiers', () => {
   assert.deepEqual(
-    parseApkBadging("package: name='app.calibratehealth.mobile' versionCode='2' versionName='0.1.0' platformBuildVersionName='16'"),
+    parseApkBadging("package: name='net.darkmachines.healthtracker' versionCode='2' versionName='0.1.0' platformBuildVersionName='16'"),
     { applicationId: APPLICATION_ID, versionCode: 2, versionName: '0.1.0' }
   );
   assert.equal(

@@ -16,7 +16,7 @@ import {
 const API_URL = process.env.CALIBRATE_E2E_API_URL ?? 'http://127.0.0.1:3000';
 const TEST_EMAIL = process.env.CALIBRATE_E2E_EMAIL ?? 'test@calibratehealth.app';
 const TEST_PASSWORD = process.env.CALIBRATE_E2E_PASSWORD ?? 'password123';
-const APP_ID = 'app.calibratehealth.mobile';
+const APP_ID = 'net.darkmachines.healthtracker';
 export const ANDROID_E2E_METRO_STATUS_URL = 'http://localhost:8081/status';
 export const ANDROID_E2E_INITIAL_LAUNCH_TIMEOUT_MS = 150_000;
 const ONLINE_FOOD = { name: 'Android E2E latte', calories: 190 };
@@ -37,7 +37,7 @@ export function buildAddFoodLaunchArgs(date) {
 }
 
 export function assertAndroidAppLinkLaunch(output) {
-  if (!/\bStatus:\s*ok\b/i.test(output) || !/\bActivity:\s*app\.calibratehealth\.mobile\//i.test(output)) {
+  if (!/\bStatus:\s*ok\b/i.test(output) || !/\bActivity:\s*net\.darkmachines\.healthtracker\//i.test(output)) {
     throw new Error('Android E2E app link did not launch the Calibrate activity.');
   }
 }
@@ -263,10 +263,10 @@ export function buildE2eRequestHeaders(initialHeaders = {}) {
 /** Ignore shell/test-runner crashes while still failing on Java, ANR, or native Calibrate crashes. */
 export function crashBufferContainsCalibrateProcess(crashBuffer) {
   return [
-    /Process:\s*app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
-    /ANR in\s+app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
-    /Cmdline:\s*app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
-    />>>\s*app\.calibratehealth\.mobile\s*<<</i
+    /Process:\s*net\.darkmachines\.healthtracker(?:[:,\s]|$)/i,
+    /ANR in\s+net\.darkmachines\.healthtracker(?:[:,\s]|$)/i,
+    /Cmdline:\s*net\.darkmachines\.healthtracker(?:[:,\s]|$)/i,
+    />>>\s*net\.darkmachines\.healthtracker\s*<<</i
   ].some((pattern) => pattern.test(crashBuffer));
 }
 

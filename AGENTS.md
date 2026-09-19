@@ -298,7 +298,14 @@ UI code style:
   evidence. Merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
   uploads phone/Wear to Play internal tracks, and promotes those exact codes through closed testing before the
   protected production operation.
-- Before Play upload, a separate source-free job with the workflow's only native Play OIDC/attestation-write scope
+- Local operator-controlled Play testing uses `release:native:internal` (doctor, prepare, build, submit, status).
+  Its explicitly separate preparation can allocate a native version without a published tag. The local path uses
+  `net.darkmachines.healthtracker`, the private WireGuard origin, Expo channel `internal`, and only `qa`/`wear:qa`.
+  It loads external Expo-format signing credentials after credential-free prebuild, verifies both final bundles,
+  and records local provenance. It never creates authoritative `native-v*` tags or adopts uploads into the protected
+  workflow. Follow `docs/android-internal-testing.md`; the server/web version stays unchanged. A later protected
+  release requires a fresh higher pair and the existing GitHub attestation path.
+- Before protected-workflow Play upload, a separate source-free job with the workflow's only native Play OIDC/attestation-write scope
   attests canonical repository/app/source/tag/version and phone/watch track/code/AAB-hash receipt bytes. The Play
   publisher must independently reconstruct and verify that exact receipt before authentication. Recovery must derive
   identical bytes solely from singleton Play observations, scrub Play authentication, then verify the original exact

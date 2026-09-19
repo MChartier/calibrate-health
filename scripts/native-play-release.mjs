@@ -505,12 +505,15 @@ export function createGooglePlayPublisher(options) {
       );
     },
 
-    async uploadBundle(editId, file) {
+    async uploadBundle(editId, file, expectedSha256) {
       let bytes;
       try {
         bytes = fs.readFileSync(file);
       } catch {
         throw new Error('Google Play bundle upload source is missing.');
+      }
+      if (expectedSha256 && sha256(bytes) !== expectedSha256) {
+        throw new Error('Google Play bundle changed after artifact verification. Rebuild and verify before uploading.');
       }
       return request(
         `${editRoot(applicationId, true)}/${encodeURIComponent(editId)}/bundles?uploadType=media`,
@@ -729,12 +732,61 @@ export async function uploadNativePlayInternal(options) {
   if (verification?.sourceCommit !== plan?.sourceCommit || verification?.applicationId !== plan?.applicationId) {
     throw new Error('Native artifact verification does not match the requested Play release.');
   }
-  const verifiedAabs = verifiedNativePlayAabs(plan, verification);
   const expectedReceipt = createNativePlayArtifactReceipt({ repository, plan, verification });
   if (!receipt || serializeNativePlayReceipt(receipt) !== serializeNativePlayReceipt(expectedReceipt)) {
     throw new Error('Native Play upload requires the exact independently attested artifact receipt.');
   }
 
+  return uploadVerifiedInternalPair({ root, plan, verification, publisher });
+}
+
+/** Operator-controlled internal uploads carry local provenance, never a GitHub attestation. */
+export async function uploadLocalNativePlayInternal({ root = repositoryRoot, plan, verification, publisher }) {
+  assertLocalInternalPlan(plan);
+  return uploadVerifiedInternalPair({ root, plan, verification, publisher });
+}
+
+function assertLocalInternalPlan(plan) {
+  if (plan?.applicationId !== NATIVE_PLAY_APPLICATION_ID || !COMMIT_PATTERN.test(plan?.sourceCommit ?? '')) {
+    throw new Error('Invalid local internal application or source commit.');
+  }
+  for (const role of ['phone', 'watch']) {
+    const candidate = plan.candidates?.[role];
+    const prefix = role === 'phone' ? 'local-p' : 'local-w';
+    if (candidate?.internalTrack !== NATIVE_PLAY_TRACKS.internal[role] ||
+        candidate?.releaseName !== `${prefix}@${plan.sourceCommit}`) {
+      throw new Error('Local releases require internal tracks and local source markers.');
+    }
+  }
+}
+
+/** Inspect the exact pair without committing a Play edit, including manually bootstrapped releases. */
+export async function inspectLocalNativePlayInternal({ plan, verification, publisher }) {
+  assertLocalInternalPlan(plan);
+  if (verification?.sourceCommit !== plan.sourceCommit || verification?.applicationId !== plan.applicationId) {
+    throw new Error('Native artifact verification does not match the requested Play release.');
+  }
+  const verifiedAabs = verifiedNativePlayAabs(plan, verification);
+  const editId = await publisher.createEdit();
+  try {
+    for (const role of ['phone', 'watch']) {
+      const candidate = plan.candidates[role];
+      const track = await publisher.getTrack(editId, candidate.internalTrack);
+      assertDestinationReleasesCompleted(track, role);
+      assertExactCompletedCandidate(track, candidate, role);
+    }
+    assertExistingBundleDigests(await publisher.listBundles(editId), plan, verifiedAabs);
+    return { provenance: 'local-internal', verified: true, sourceCommit: plan.sourceCommit, tracks: NATIVE_PLAY_TRACKS.internal };
+  } finally {
+    await publisher.deleteEdit(editId);
+  }
+}
+
+async function uploadVerifiedInternalPair({ root, plan, verification, publisher }) {
+  if (verification?.sourceCommit !== plan?.sourceCommit || verification?.applicationId !== plan?.applicationId) {
+    throw new Error('Native artifact verification does not match the requested Play release.');
+  }
+  const verifiedAabs = verifiedNativePlayAabs(plan, verification);
   return runAtomicEdit(publisher, async (editId) => {
     const phoneTrack = await publisher.getTrack(editId, plan.candidates.phone.internalTrack);
     const watchTrack = await publisher.getTrack(editId, plan.candidates.watch.internalTrack);
@@ -766,7 +818,7 @@ export async function uploadNativePlayInternal(options) {
 
     for (const role of ['phone', 'watch']) {
       const candidate = plan.candidates[role];
-      const uploaded = await publisher.uploadBundle(editId, path.resolve(root, candidate.artifactPath));
+      const uploaded = await publisher.uploadBundle(editId, path.resolve(root, candidate.artifactPath), verifiedAabs[role].sha256);
       if (Number(uploaded?.versionCode) !== candidate.versionCode) {
         throw new Error(
           `Google Play reported ${role} bundle version code ${uploaded?.versionCode ?? 'unknown'}; ` +

@@ -20,3 +20,7 @@ deploy/backups/
 deploy/*age-identity*
 build/native-release-provenance.json
 .vscode/settings.json
+
+# Local internal release evidence contains no credentials.
+build/native-local-internal.json
+build/native-internal-validation/

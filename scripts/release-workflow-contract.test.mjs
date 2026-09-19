@@ -1060,7 +1060,7 @@ test('manual Wear emulator runs persistence instrumentation after its release-pa
   assert.match(wear, /-alias androiddebugkey/);
   assert.match(emulatorStep, /script: \|/);
   assert.match(emulatorStep, /npm run test:wear:emulator/);
-  assert.match(emulatorStep, /adb -s "\$WEAR_ADB_SERIAL" uninstall app\.calibratehealth\.mobile/);
+  assert.match(emulatorStep, /adb -s "\$WEAR_ADB_SERIAL" uninstall net\.darkmachines\.healthtracker/);
   assert.match(emulatorStep, /:app:connectedDebugAndroidTest/);
   assert.match(emulatorStep, /-PcalibrateWearServerUrl=https:\/\/calibratehealth\.app/);
   assert.match(emulatorStep, /-PcalibrateWearDebugServerUrl=http:\/\/10\.0\.2\.2:3000/);
@@ -1071,7 +1071,7 @@ test('manual Wear emulator runs persistence instrumentation after its release-pa
   );
 
   const releaseSmokeIndex = emulatorStep.indexOf('npm run test:wear:emulator');
-  const uninstallIndex = emulatorStep.indexOf('uninstall app.calibratehealth.mobile');
+  const uninstallIndex = emulatorStep.indexOf('uninstall net.darkmachines.healthtracker');
   const instrumentationIndex = emulatorStep.indexOf(':app:connectedDebugAndroidTest');
   assert.ok(releaseSmokeIndex >= 0, 'Wear release-package smoke must run');
   assert.ok(

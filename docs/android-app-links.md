@@ -12,7 +12,7 @@ Endpoint requirements:
 - Return HTTP 200 with `Content-Type: application/json`.
 - Do not redirect to another host or require a cookie.
 - Serve the document over a valid public HTTPS certificate.
-- Use the Android package `app.calibratehealth.mobile`.
+- Use the Android package `net.darkmachines.healthtracker`.
 - Include every currently accepted production signing certificate fingerprint and remove retired
   certificates only after affected app versions are outside support.
 
@@ -24,7 +24,7 @@ The document shape is:
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "app.calibratehealth.mobile",
+      "package_name": "net.darkmachines.healthtracker",
       "sha256_cert_fingerprints": [
         "REPLACE_WITH_PRODUCTION_CERTIFICATE_SHA256"
       ]

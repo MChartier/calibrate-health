@@ -17,7 +17,7 @@ Data Layer discovery, which requires matching application IDs and signing certif
 
 Keep the watch as a standalone native Kotlin/Compose project under `wear/`. Keep phone product flows in the Expo
 project and isolate Android-only phone/watch bridging in the Expo native module. Phone and watch artifacts use the
-same `app.calibratehealth.mobile` application ID and signing identity, while retaining separate build systems.
+same `net.darkmachines.healthtracker` application ID and signing identity, while retaining separate build systems.
 
 The backend is the canonical health-data boundary. The phone consumes the OpenAPI-backed
 `@calibrate/api-client`; the watch consumes the restricted `/api/v1/watch` snapshot and mutation contract through

@@ -1270,6 +1270,16 @@ export async function prepareNativeRelease({
   bump,
   verifyNativeReleaseTag = verifyPublishedNativeReleaseTag
 }) {
+  if (typeof verifyNativeReleaseTag !== 'function') throw new Error('Protected native preparation requires signed-tag verification.');
+  return prepareNativeVersion({ root, bump, verifyNativeReleaseTag });
+}
+
+/** Reserve a local internal candidate without claiming a protected release attestation. */
+export async function prepareLocalInternalNativeRelease({ root = REPOSITORY_ROOT, bump }) {
+  return prepareNativeVersion({ root, bump });
+}
+
+async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
   if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
 
   const beforeCheck = await checkRepository(root);
@@ -1283,18 +1293,20 @@ export async function prepareNativeRelease({
     throw new Error('Paired native preparation requires matching stable phone and Wear version names.');
   }
   const currentNativeTag = `native-v${currentVersion}`;
-  const verification = await verifyNativeReleaseTag({ root, expectedTag: currentNativeTag });
-  const latestTag = verification?.latestTag ?? null;
-  if (latestTag === null) {
-    throw new Error(`Cannot prepare another native release until ${currentNativeTag} has been published.`);
-  }
-  if (!NATIVE_RELEASE_TAG_PATTERN.test(latestTag)) {
-    throw new Error(`Invalid latest native release tag: ${latestTag}`);
-  }
-  if (latestTag !== currentNativeTag) {
-    throw new Error(
-      `Manifest native release ${currentNativeTag} must match the latest native tag ${latestTag} before preparation.`
-    );
+  if (verifyNativeReleaseTag) {
+    const verification = await verifyNativeReleaseTag({ root, expectedTag: currentNativeTag });
+    const latestTag = verification?.latestTag ?? null;
+    if (latestTag === null) {
+      throw new Error(`Cannot prepare another native release until ${currentNativeTag} has been published.`);
+    }
+    if (!NATIVE_RELEASE_TAG_PATTERN.test(latestTag)) {
+      throw new Error(`Invalid latest native release tag: ${latestTag}`);
+    }
+    if (latestTag !== currentNativeTag) {
+      throw new Error(
+        `Manifest native release ${currentNativeTag} must match the latest native tag ${latestTag} before preparation.`
+      );
+    }
   }
 
   const nextVersion = nextReleaseVersion(currentVersion, bump);

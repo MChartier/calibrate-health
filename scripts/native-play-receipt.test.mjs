@@ -26,7 +26,7 @@ const WATCH_SHA = '2'.repeat(64);
 function values(overrides = {}) {
   return {
     repository: REPOSITORY,
-    applicationId: 'app.calibratehealth.mobile',
+    applicationId: 'net.darkmachines.healthtracker',
     sourceCommit: SOURCE,
     nativeTag: 'native-v1.2.3',
     nativeVersion: '1.2.3',
@@ -67,7 +67,7 @@ test('native Play receipt has deterministic epoch-marked canonical bytes', () =>
     schema_version: 1,
     attestation_epoch: 1,
     repository: REPOSITORY,
-    application_id: 'app.calibratehealth.mobile',
+    application_id: 'net.darkmachines.healthtracker',
     source_commit: SOURCE,
     native_release_tag: 'native-v1.2.3',
     version_name: '1.2.3',

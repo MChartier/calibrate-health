@@ -504,7 +504,7 @@ jobs:
           echo "${WATCH_AAB_SHA256}  ${WATCH_AAB}" | sha256sum --check
           node "${NATIVE_PLAY_RECEIPT_TOOL}" create \
             --repository "${GITHUB_REPOSITORY}" \
-            --application-id app.calibratehealth.mobile \
+            --application-id net.darkmachines.healthtracker \
             --source-commit "${SOURCE_COMMIT}" \
             --native-tag "${NATIVE_TAG}" \
             --native-version "${NATIVE_VERSION}" \
