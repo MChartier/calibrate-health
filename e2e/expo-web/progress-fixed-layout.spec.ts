@@ -66,6 +66,28 @@ test('Progress gives the complete chart available space and keeps Plan check rea
   await expect(page.getByRole('button', { name: 'Review suggested 1,750 calorie daily target', exact: true })).toBeVisible();
 });
 
+test('Progress fits a Galaxy Ultra-sized viewport without scrolling the overview', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-phone-chrome', 'One large-phone cross-cut.');
+  // Also allow for the usable height left by browser and device chrome.
+  await page.setViewportSize({ width: 412, height: 820 });
+  await ux.install('populated');
+  await installPlanCheck(page);
+  await page.goto('/progress');
+  await hideTransientPwaNotices(page);
+  const canvas = page.getByTestId('weight-trend-preview-canvas');
+  const summary = page.getByTestId('plan-check-summary');
+  await expect(summary).toContainText('Your recent weight trend is slower than your goal');
+  await expect(page.getByLabel('Chart legend', { exact: true })).toHaveCount(0);
+  const scroller = page.getByTestId('fixed-page-scroll');
+  await expect.poll(() => scroller.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+  const canvasBox = (await canvas.boundingBox())!;
+  const summaryBox = (await summary.boundingBox())!;
+  expect(canvasBox.height).toBeGreaterThanOrEqual(188);
+  expect(summaryBox.y - canvasBox.y - canvasBox.height).toBeLessThanOrEqual(5);
+  await expect(summary).toBeInViewport({ ratio: 1 });
+  await page.screenshot({ path: testInfo.outputPath('progress-galaxy-ultra.png') });
+});
+
 test('short Progress scrolls Plan check after a complete chart', async ({ page, ux }, testInfo) => {
   test.skip(testInfo.project.name !== 'compact-phone-chrome', 'One minimum phone cross-cut.');
   await page.setViewportSize({ width: 320, height: 568 });

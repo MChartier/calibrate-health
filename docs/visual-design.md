@@ -94,8 +94,9 @@ full-width tap target with a shared hover/focus treatment. Trend fills the middl
 when tapped. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.
 A full-width horizontal rule separates Snapshot from Trend, matching the rule above Plan check.
 Collapsed and expanded Trend share one visualization: blue scale-reading dots and outlined estimate
-band, green underlying trend, the same axis scale and typography, and a wrapping legend. Keep the
-collapsed section as one expansion target; range controls and reading selection belong in the expanded
+band, green underlying trend, and the same axis scale and typography. Keep the overview compact with
+no legend and only a small gap below the graph. Keep the collapsed section as one expansion target;
+the wrapping legend, range controls, and reading selection belong in the expanded
 view. Preserve at least 188px of plot on phones and 260px on desktop, scaling axis gutters and plot
 height for enlarged text. Scroll the overview when its measured sections cannot fit together.
 The detailed Trend content also gives its plot all remaining height after the range controls, legend,

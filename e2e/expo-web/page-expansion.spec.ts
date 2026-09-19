@@ -85,56 +85,112 @@ test('Progress expansions use the whole pane and return a scrolled overview', as
   }
 });
 
-test('real motion expands the pane and Add food while the dock stays anchored', async ({ page, ux }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop-chrome', 'Measure animation frames once without touch emulation.');
+test('Trend collapse reverses its expanding bounds and returns the surrounding sections smoothly', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-phone-chrome', 'Measure the phone Trend animation.');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await ux.install('populated');
-  await page.goto('/today');
+  await page.route('**/api/v1/calibration/status', route => route.fulfill({ json: PLAN_CHECK_RECOMMENDATION_STATUS }));
+  await page.goto('/progress');
   await hideTransientPwaNotices(page);
-  const source = page.getByTestId('today-food-preview');
+  const source = page.getByTestId('weight-trend-preview-card');
   await expect(source).toBeVisible();
-  const sample = async (selector: string) => page.locator(selector).evaluate(button => new Promise<Array<{ top: number; height: number; above: number; dockY: number; addX: number; addY: number; addWidth: number; completeX: number; addCount: number }>>(resolve => {
-    const frames: Array<{ top: number; height: number; above: number; dockY: number; addX: number; addY: number; addWidth: number; completeX: number; addCount: number }> = [];
+  await source.scrollIntoViewIfNeeded();
+  const before = await source.boundingBox();
+  const sample = (selector: string) => page.locator(selector).evaluate(button => new Promise<Array<{ top: number; height: number; above: number; below: number; opacity: number }>>(resolve => {
+    const frames: Array<{ top: number; height: number; above: number; below: number; opacity: number }> = [];
     const start = performance.now();
     (button as HTMLElement).click();
     const capture = () => {
-      const pane = document.querySelector('[data-testid="expanded-food"]')?.getBoundingClientRect();
-      const above = document.querySelector('[data-testid="calorie-balance-hero"]')!.getBoundingClientRect().y;
-      const dockY = document.querySelector('[data-testid="today-action-dock"]')!.getBoundingClientRect().y;
-      const addButtons = document.querySelectorAll('[aria-label="Add food"]');
-      const add = addButtons[0].getBoundingClientRect();
-      const complete = document.querySelector('[aria-label="Complete day"]')!.getBoundingClientRect();
-      if (pane) frames.push({ top: pane.y, height: pane.height, above, dockY, addX: add.x, addY: add.y, addWidth: add.width, completeX: complete.x, addCount: addButtons.length });
-      if (performance.now() - start < 650) requestAnimationFrame(capture);
+      const pane = document.querySelector('[data-testid="expanded-trend"]');
+      if (pane) {
+        const bounds = pane.getBoundingClientRect();
+        frames.push({
+          top: bounds.y, height: bounds.height,
+          above: document.querySelector('[data-testid="progress-snapshot-card"]')!.getBoundingClientRect().y,
+          below: document.querySelector('[data-testid="plan-check-summary"]')!.getBoundingClientRect().y,
+          opacity: Number(getComputedStyle(pane).opacity),
+        });
+      }
+      if (performance.now() - start < 750) requestAnimationFrame(capture);
       else resolve(frames);
     };
     requestAnimationFrame(capture);
   }));
-  const opening = await sample('[data-testid="today-food-preview"]');
-  for (const field of ['top', 'height', 'above', 'addWidth', 'completeX'] as const) {
-    expect(new Set(opening.map(frame => Math.round(frame[field]))).size).toBeGreaterThan(3);
-  }
-  expect(opening.at(-1)!.top).toBeLessThan(opening[0].top);
-  expect(opening.at(-1)!.height).toBeGreaterThan(opening[0].height);
-  expect(opening.at(-1)!.above).toBeLessThan(opening[0].above);
-  expect(opening.at(-1)!.addWidth).toBeGreaterThan(opening[0].addWidth);
-  expect(opening.at(-1)!.completeX).toBeGreaterThan(opening[0].completeX);
-  const closing = await sample('[aria-label="Collapse Food log"]');
-  expect(new Set(closing.map(frame => Math.round(frame.top))).size).toBeGreaterThan(3);
-  expect(closing.at(-1)!.top).toBeGreaterThan(closing[0].top);
-  expect(closing.at(-1)!.addWidth).toBeLessThan(closing[0].addWidth);
-  expect(closing.at(-1)!.completeX).toBeLessThan(closing[0].completeX);
-  for (const frame of [...opening, ...closing]) {
-    expect(frame.addCount).toBe(1);
-    for (const field of ['dockY', 'addX', 'addY'] as const) {
-      expect(Math.abs(frame[field] - opening[0][field]), field + ' remains anchored').toBeLessThanOrEqual(1);
+  const opening = await sample('[data-testid="weight-trend-preview-card"]');
+  await expect(page.getByRole('button', { name: 'Collapse Trend' })).toBeFocused();
+  const closing = await sample('[aria-label="Collapse Trend"]');
+  await testInfo.attach('trend-animation-frames', { body: JSON.stringify({ opening, closing }), contentType: 'application/json' });
+  for (const frames of [opening, closing]) {
+    for (const field of ['top', 'height', 'above', 'below', 'opacity'] as const) {
+      expect(new Set(frames.map(frame => Math.round(frame[field] * 100))).size, field).toBeGreaterThan(3);
     }
   }
-  await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeVisible();
-  await expect(page.getByTestId('expanded-food')).toHaveCount(0);
+  expect(closing.at(-1)!.top).toBeGreaterThan(closing[0].top);
+  expect(closing.at(-1)!.height).toBeLessThan(closing[0].height);
+  expect(closing.at(-1)!.above).toBeGreaterThan(closing[0].above);
+  expect(closing.at(-1)!.below).toBeLessThan(closing[0].below);
+  await expect(page.getByTestId('expanded-trend')).toHaveCount(0);
+  expect(await source.boundingBox()).toEqual(before);
   await expect(source).toBeFocused();
-  await testInfo.attach('expansion-animation-frames', { body: JSON.stringify({ opening, closing }), contentType: 'application/json' });
 });
+
+for (const foodDayStatus of ['OPEN', 'COMPLETE'] as const) {
+  test(`real motion keeps the ${foodDayStatus} day dock anchored while Add food expands`, async ({ page, ux }, testInfo) => {
+    test.skip(!['desktop-chrome', 'android-phone-chrome'].includes(testInfo.project.name), 'Cover mouse and touch dock motion.');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await ux.install('populated', { foodDayStatus });
+    await page.goto('/today');
+    await hideTransientPwaNotices(page);
+    const source = page.getByTestId('today-food-preview');
+    await expect(source).toBeVisible();
+    const dayActionLabel = foodDayStatus === 'COMPLETE' ? 'Day completed' : 'Complete day';
+    const sample = async (selector: string) => page.locator(selector).evaluate((button, dayActionLabel) => new Promise<Array<{ top: number; height: number; above: number; dockY: number; addX: number; addY: number; addWidth: number; completeX: number; addCount: number }>>(resolve => {
+      const frames: Array<{ top: number; height: number; above: number; dockY: number; addX: number; addY: number; addWidth: number; completeX: number; addCount: number }> = [];
+      const start = performance.now();
+      (button as HTMLElement).click();
+      const capture = () => {
+        const pane = document.querySelector('[data-testid="expanded-food"]')?.getBoundingClientRect();
+        const above = document.querySelector('[data-testid="calorie-balance-hero"]')!.getBoundingClientRect().y;
+        const dockY = document.querySelector('[data-testid="today-action-dock"]')!.getBoundingClientRect().y;
+        const addButtons = document.querySelectorAll('[aria-label="Add food"]');
+        const add = addButtons[0].getBoundingClientRect();
+        const complete = document.querySelector(`[aria-label="${dayActionLabel}"]`)!.getBoundingClientRect();
+        if (pane) frames.push({ top: pane.y, height: pane.height, above, dockY, addX: add.x, addY: add.y, addWidth: add.width, completeX: complete.x, addCount: addButtons.length });
+        if (performance.now() - start < 650) requestAnimationFrame(capture);
+        else resolve(frames);
+      };
+      requestAnimationFrame(capture);
+    }), dayActionLabel);
+    const opening = await sample('[data-testid="today-food-preview"]');
+    for (const field of ['top', 'height', 'above', 'addWidth', 'completeX'] as const) {
+      expect(new Set(opening.map(frame => Math.round(frame[field]))).size).toBeGreaterThan(3);
+    }
+    expect(opening.at(-1)!.top).toBeLessThan(opening[0].top);
+    expect(opening.at(-1)!.height).toBeGreaterThan(opening[0].height);
+    expect(opening.at(-1)!.above).toBeLessThan(opening[0].above);
+    expect(opening.at(-1)!.addWidth).toBeGreaterThan(opening[0].addWidth);
+    expect(opening.at(-1)!.completeX).toBeGreaterThan(opening[0].completeX);
+    const dock = (await page.getByTestId('food-log-dock-actions').boundingBox())!;
+    expect(opening.at(-1)!.addWidth).toBeCloseTo(dock.width, 0);
+    expect(opening.at(-1)!.completeX).toBeGreaterThanOrEqual(dock.x + dock.width);
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toContainText('Add food');
+    const closing = await sample('[aria-label="Collapse Food log"]');
+    expect(new Set(closing.map(frame => Math.round(frame.top))).size).toBeGreaterThan(3);
+    expect(closing.at(-1)!.top).toBeGreaterThan(closing[0].top);
+    expect(closing.at(-1)!.addWidth).toBeLessThan(closing[0].addWidth);
+    expect(closing.at(-1)!.completeX).toBeLessThan(closing[0].completeX);
+    for (const frame of [...opening, ...closing]) {
+      expect(frame.addCount).toBe(1);
+      for (const field of ['dockY', 'addX', 'addY'] as const) {
+        expect(Math.abs(frame[field] - opening[0][field]), field + ' remains anchored').toBeLessThanOrEqual(1);
+      }
+    }
+    await expect(page.getByRole('button', { name: dayActionLabel, exact: true })).toBeVisible();
+    await expect(page.getByTestId('expanded-food')).toHaveCount(0);
+    await expect(source).toBeFocused();
+    await testInfo.attach('expansion-animation-frames', { body: JSON.stringify({ opening, closing }), contentType: 'application/json' });
+  });
+}
 
 test('weight slides beneath the date header without clipping at its old body boundary', async ({ page, ux }, testInfo) => {
   test.skip(!['desktop-chrome', 'android-phone-chrome'].includes(testInfo.project.name), 'Check contained layouts with mouse and touch.');

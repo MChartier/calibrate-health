@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
     WeightTrendChart,
-    TrendChartLegend,
     buildWeightTrendVisualization,
     getWeightTrendChartMinimumHeight,
     useWeightTrendChartTypography
@@ -192,7 +191,6 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 />
                             )}
                         </View>
-                        {!estimateIsSuppressed && points.length > 1 && <TrendChartLegend />}
                     </TrendTarget>
                     {estimateIsOutdated && <FixedPageColumn><AppButton
                         title="Log weight" variant="secondary"
@@ -225,7 +223,7 @@ function TrendTarget({ onPress, children }: { onPress: () => void; children: Rea
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-    flexSlot: { width: '100%', flex: 1, minHeight: 0, paddingVertical: spacing.lg },
+    flexSlot: { width: '100%', flex: 1, minHeight: 0, paddingTop: spacing.lg, paddingBottom: spacing.xs },
     expanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', minHeight: 254 },
     boundaryContent: { flex: 1, minHeight: 0, gap: spacing.sm },
     heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

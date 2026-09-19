@@ -20,8 +20,8 @@ const WEIGHT_TREND_AXIS_FONT_SIZE = 12;
 const DESKTOP_CHART_BREAKPOINT = 840;
 const MOBILE_CHART_MIN_HEIGHT = 188;
 const DESKTOP_CHART_MIN_HEIGHT = 260;
-// Heading, wrapped legend, section padding, and gaps surround the collapsed plot.
-const PREVIEW_CHROME_HEIGHT = 164;
+// Two heading lines, section padding, and the heading-to-chart gap surround the preview.
+const PREVIEW_CHROME_HEIGHT = 50 + spacing.lg + spacing.sm + spacing.xs;
 export function getWeightTrendChartMinimumHeight(viewportWidth: number) {
     return viewportWidth >= DESKTOP_CHART_BREAKPOINT ? DESKTOP_CHART_MIN_HEIGHT : MOBILE_CHART_MIN_HEIGHT;
 }

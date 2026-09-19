@@ -150,10 +150,11 @@ describe('WeightTrendPreviewCard', () => {
 
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} onLogWeight={jest.fn()} />);
         expect(screen.getAllByTestId('weight-trend-measurement')).toHaveLength(3);
-        expect(screen.getByLabelText('Chart legend')).toBeTruthy();
+        expect(screen.queryByLabelText('Chart legend')).toBeNull();
         const previewLayout = screen.UNSAFE_getByType(WeightTrendChart).props.chartLayout;
         const previewBand = screen.getByTestId('weight-trend-range-0').props;
         const expanded = render(<WeightTrendCard />);
+        expect(expanded.getByLabelText('Chart legend')).toBeTruthy();
         expect(expanded.UNSAFE_getByType(WeightTrendChart).props.chartLayout).toEqual(previewLayout);
         const expandedBand = expanded.getByTestId('weight-trend-range-0').props;
         expect(previewBand.fill).toEqual(expandedBand.fill);
