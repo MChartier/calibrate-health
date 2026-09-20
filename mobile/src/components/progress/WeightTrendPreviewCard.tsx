@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
     WeightTrendChart,
-    TrendChartLegend,
     buildWeightTrendVisualization,
     getWeightTrendChartMinimumHeight,
+    getWeightTrendPreviewMinimumHeight,
     useWeightTrendChartTypography
 } from '../WeightTrendChart';
 import { useQuery } from '@tanstack/react-query';
@@ -25,6 +25,7 @@ import { getLatestWeightTrendSnapshot } from '../../weightTrend/presentation';
 type WeightTrendPreviewCardProps = {
     onPress: () => void;
     onLogWeight: () => void;
+    onMinimumHeightChange?: (height: number) => void;
     suppressStaleNotice?: boolean;
     expanded?: boolean;
 };
@@ -42,13 +43,15 @@ function formatPreviewDate(value: string): string {
         .format(dateOnlyToLocalDate(value));
 }
 
-export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress, onLogWeight, suppressStaleNotice, expanded = false }) => {
+export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ onPress, onLogWeight, onMinimumHeightChange, suppressStaleNotice, expanded = false }) => {
     const { api, user } = useAuth();
     const theme = useAppTheme();
     const { width } = useWindowDimensions();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const { axisScale, axisPadding, axisFontSize, axisProbe } = useWeightTrendChartTypography();
     const chartMinHeight = getWeightTrendChartMinimumHeight(width) * axisScale;
+    const [headingHeight, setHeadingHeight] = useState<number>();
+    const [actionHeight, setActionHeight] = useState(0);
     const previewStyle = [styles.preview, { minHeight: chartMinHeight }, expanded && [styles.previewExpanded, { height: chartMinHeight }]];
     const [canvasSize, setCanvasSize] = useState<PreviewCanvasSize>({
         width: DEFAULT_PREVIEW_WIDTH,
@@ -63,6 +66,15 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
     const latestSnapshot = getLatestWeightTrendSnapshot(metrics, trendSummary);
     const freshness = trendSummary?.freshness ?? (trendSummary?.status === 'stale' ? 'stale' : 'current');
     const estimateIsOutdated = freshness === 'outdated';
+    const minimumHeight = getWeightTrendPreviewMinimumHeight(width, {
+        chartScale: axisScale,
+        headingHeight,
+        actionHeight: estimateIsOutdated ? Math.max(actionHeight, theme.interaction.minimumTouchTarget) : 0
+    });
+    // Budget wrapped headings and the optional recovery action without measuring the flexible plot.
+    useLayoutEffect(() => {
+        onMinimumHeightChange?.(minimumHeight);
+    }, [minimumHeight, onMinimumHeightChange]);
     const estimateIsUnavailable = freshness === 'unavailable' || trendSummary?.status === 'unavailable';
     const estimateIsSuppressed = estimateIsOutdated || estimateIsUnavailable;
     const metricDates = metrics
@@ -113,7 +125,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
     }
 
     const heading = (
-        <View style={styles.heading}>
+        <View testID="trend-preview-heading" style={styles.heading} onLayout={event => setHeadingHeight(event.nativeEvent.layout.height)}>
             <View testID="trend-preview-heading-line" style={styles.headingCopy}>
                 <AppText variant="section" accessibilityRole="header">Trend</AppText>
                 {trendMetadata && <AppText variant="muted">{trendMetadata}</AppText>}
@@ -126,7 +138,7 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
     );
     const Slot = trendState.kind === ASYNC_RESOURCE_STATES.ERROR ? FixedPageColumn : View;
     return (
-        <Slot style={[styles.flexSlot, expanded && styles.expanded]}>
+        <Slot style={[styles.flexSlot, { minHeight: minimumHeight }, expanded && styles.expanded]}>
             {axisProbe}
             <AsyncStateBoundary
                 state={trendState}
@@ -192,13 +204,19 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
                                 />
                             )}
                         </View>
-                        {!estimateIsSuppressed && points.length > 1 && <TrendChartLegend />}
                     </TrendTarget>
-                    {estimateIsOutdated && <FixedPageColumn><AppButton
-                        title="Log weight" variant="secondary"
-                        leftIcon={<Ionicons name="scale-outline" size={18} color={theme.colors.primary} />}
-                        onPress={onLogWeight}
-                    /></FixedPageColumn>}
+                    {estimateIsOutdated && (
+                        <FixedPageColumn
+                            testID="trend-preview-recovery-action"
+                            onLayout={event => setActionHeight(event.nativeEvent.layout.height)}
+                        >
+                            <AppButton
+                                title="Log weight" variant="secondary"
+                                leftIcon={<Ionicons name="scale-outline" size={18} color={theme.colors.primary} />}
+                                onPress={onLogWeight}
+                            />
+                        </FixedPageColumn>
+                    )}
                 </View>
             </AsyncStateBoundary>
         </Slot>
@@ -225,8 +243,8 @@ function TrendTarget({ onPress, children }: { onPress: () => void; children: Rea
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-    flexSlot: { width: '100%', flex: 1, minHeight: 0, paddingVertical: spacing.lg },
-    expanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', minHeight: 254 },
+    flexSlot: { width: '100%', flex: 1, minHeight: 0, paddingTop: spacing.lg, paddingBottom: spacing.xs },
+    expanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
     boundaryContent: { flex: 1, minHeight: 0, gap: spacing.sm },
     heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     headingCopy: { flex: 1, minWidth: 0, gap: spacing.xs },

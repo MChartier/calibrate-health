@@ -150,10 +150,11 @@ describe('WeightTrendPreviewCard', () => {
 
         const screen = render(<WeightTrendPreviewCard onPress={jest.fn()} onLogWeight={jest.fn()} />);
         expect(screen.getAllByTestId('weight-trend-measurement')).toHaveLength(3);
-        expect(screen.getByLabelText('Chart legend')).toBeTruthy();
+        expect(screen.queryByLabelText('Chart legend')).toBeNull();
         const previewLayout = screen.UNSAFE_getByType(WeightTrendChart).props.chartLayout;
         const previewBand = screen.getByTestId('weight-trend-range-0').props;
         const expanded = render(<WeightTrendCard />);
+        expect(expanded.getByLabelText('Chart legend')).toBeTruthy();
         expect(expanded.UNSAFE_getByType(WeightTrendChart).props.chartLayout).toEqual(previewLayout);
         const expandedBand = expanded.getByTestId('weight-trend-range-0').props;
         expect(previewBand.fill).toEqual(expandedBand.fill);
@@ -192,9 +193,10 @@ describe('WeightTrendPreviewCard', () => {
         expect(screen.queryByLabelText('Log weight')).toBeNull();
     });
 
-    it('suppresses an outdated estimate with no in-range metrics and offers Log weight', () => {
+    it('budgets the outdated estimate recovery action and releases its space when fresh data arrives', () => {
         const onPress = jest.fn();
         const onLogWeight = jest.fn();
+        const onMinimumHeightChange = jest.fn();
         (useQuery as jest.Mock).mockReturnValue({
             data: {
                 metrics: [],
@@ -216,7 +218,7 @@ describe('WeightTrendPreviewCard', () => {
         });
 
         const screen = render(
-            <WeightTrendPreviewCard onPress={onPress} onLogWeight={onLogWeight} />
+            <WeightTrendPreviewCard onPress={onPress} onLogWeight={onLogWeight} onMinimumHeightChange={onMinimumHeightChange} />
         );
 
         expect(screen.getByText('Estimate out of date | Last scale weight Jul 1')).toBeTruthy();
@@ -226,9 +228,31 @@ describe('WeightTrendPreviewCard', () => {
         expect(screen.queryByText(/168\.2 lb/)).toBeNull();
         expect(screen.queryByLabelText('Four-week underlying weight trend with scale readings and 95% estimated range')).toBeNull();
 
+        // The button needs its touch target and gap even before the first layout event.
+        expect(onMinimumHeightChange).toHaveBeenLastCalledWith(322);
+        fireEvent(screen.getByTestId('trend-preview-heading'), 'layout', {
+            nativeEvent: { layout: { width: 358, height: 70 } }
+        });
+        expect(onMinimumHeightChange).toHaveBeenLastCalledWith(342);
+        fireEvent(screen.getByTestId('trend-preview-recovery-action'), 'layout', {
+            nativeEvent: { layout: { width: 358, height: 62 } }
+        });
+        expect(onMinimumHeightChange).toHaveBeenLastCalledWith(356);
+
         fireEvent.press(screen.getByLabelText('Log weight'));
         expect(onLogWeight).toHaveBeenCalledTimes(1);
         expect(onPress).not.toHaveBeenCalled();
+
+        (useQuery as jest.Mock).mockReturnValue({
+            data: { metrics: METRICS, meta: { total_points: 2, trend_summary: trendSummary() } },
+            error: null, isLoading: false, status: 'success'
+        });
+        screen.rerender(<WeightTrendPreviewCard onPress={onPress} onLogWeight={onLogWeight} onMinimumHeightChange={onMinimumHeightChange} />);
+        fireEvent(screen.getByTestId('trend-preview-heading'), 'layout', {
+            nativeEvent: { layout: { width: 358, height: 50 } }
+        });
+        expect(screen.queryByLabelText('Log weight')).toBeNull();
+        expect(onMinimumHeightChange).toHaveBeenLastCalledWith(266);
     });
 
     it('does not label an unavailable estimate as current', () => {

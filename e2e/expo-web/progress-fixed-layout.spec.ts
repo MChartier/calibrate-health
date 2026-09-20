@@ -66,6 +66,88 @@ test('Progress gives the complete chart available space and keeps Plan check rea
   await expect(page.getByRole('button', { name: 'Review suggested 1,750 calorie daily target', exact: true })).toBeVisible();
 });
 
+test('Progress fits a Galaxy Ultra-sized viewport without scrolling the overview', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-phone-chrome', 'One large-phone cross-cut.');
+  // Also allow for the usable height left by browser and device chrome.
+  await page.setViewportSize({ width: 412, height: 820 });
+  await ux.install('populated');
+  await installPlanCheck(page);
+  await page.goto('/progress');
+  await hideTransientPwaNotices(page);
+  const canvas = page.getByTestId('weight-trend-preview-canvas');
+  const summary = page.getByTestId('plan-check-summary');
+  await expect(summary).toContainText('Your recent weight trend is slower than your goal');
+  await expect(page.getByLabel('Chart legend', { exact: true })).toHaveCount(0);
+  const scroller = page.getByTestId('fixed-page-scroll');
+  await expect.poll(() => scroller.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+  const canvasBox = (await canvas.boundingBox())!;
+  const summaryBox = (await summary.boundingBox())!;
+  expect(canvasBox.height).toBeGreaterThanOrEqual(188);
+  expect(summaryBox.y - canvasBox.y - canvasBox.height).toBeLessThanOrEqual(5);
+  await expect(summary).toBeInViewport({ ratio: 1 });
+  await page.screenshot({ path: testInfo.outputPath('progress-galaxy-ultra.png') });
+});
+
+test('outdated Trend scrolls its recovery action and Plan check only when they do not fit', async ({ page, ux }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-phone-chrome', 'One phone cross-cut with changing usable heights.');
+  const outdatedTrend = {
+    metrics: [],
+    meta: {
+      total_points: 2, total_span_days: 19, weekly_rate: null, volatility: 'low',
+      trend_summary: {
+        status: 'stale', evidence: 'provisional', freshness: 'outdated', model_version: 2,
+        as_of_date: '2026-07-21', scope_start_date: '2026-06-23', scope_end_date: '2026-07-21',
+        latest_observation_date: '2026-07-01', days_since_latest: 20,
+        modeled_points: 2, observation_span_days: 1, segment_start_date: '2026-06-30',
+        latest_trend: { weight: 168.2, lower: 167.8, upper: 168.6 },
+        weekly_rate: null, short_term_variation: null,
+      },
+    },
+  };
+  await ux.install('populated', {
+    apiResources: [{
+      pathname: '/api/v1/metrics', matches: url => url.searchParams.get('include_trend') === 'true',
+      state: 'content', content: outdatedTrend, empty: outdatedTrend,
+    }],
+  });
+  await installPlanCheck(page);
+  await page.setViewportSize({ width: 390, height: 740 });
+  await page.goto('/progress');
+  await hideTransientPwaNotices(page);
+  const scroller = page.getByTestId('fixed-page-scroll');
+  const canvas = page.getByTestId('weight-trend-preview-canvas');
+  const action = page.getByRole('button', { name: 'Log weight', exact: true });
+  const summary = page.getByTestId('plan-check-summary');
+  await expect(page.getByTestId('trend-preview-heading')).toContainText('Estimate out of date');
+  for (const { width, height, shouldScroll } of [
+    { width: 390, height: 740, shouldScroll: true },
+    { width: 320, height: 800, shouldScroll: true },
+    { width: 390, height: 800, shouldScroll: false },
+  ]) {
+    await page.setViewportSize({ width, height });
+    await expect(scroller.getByTestId('plan-check-summary')).toHaveCount(shouldScroll ? 1 : 0);
+    const canvasBox = (await canvas.boundingBox())!;
+    const actionBox = (await action.boundingBox())!;
+    const summaryBox = (await summary.boundingBox())!;
+    expect(canvasBox.height).toBeGreaterThanOrEqual(188);
+    expect(actionBox.height).toBeGreaterThanOrEqual(48);
+    expect(canvasBox.y + canvasBox.height).toBeLessThanOrEqual(actionBox.y);
+    expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(summaryBox.y);
+    if (shouldScroll) {
+      await summary.scrollIntoViewIfNeeded();
+    } else {
+      await expect.poll(() => scroller.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+    }
+    await expect(summary).toBeInViewport({ ratio: 1 });
+    await action.scrollIntoViewIfNeeded();
+    await expect(action).toBeInViewport({ ratio: 1 });
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: testInfo.outputPath(`progress-outdated-${width}x${height}.png`) });
+  }
+  await action.click();
+  await expect(page).toHaveURL(/\/weight$/);
+});
+
 test('short Progress scrolls Plan check after a complete chart', async ({ page, ux }, testInfo) => {
   test.skip(testInfo.project.name !== 'compact-phone-chrome', 'One minimum phone cross-cut.');
   await page.setViewportSize({ width: 320, height: 568 });

@@ -45,17 +45,19 @@ export function ExpansionRegion({ id, order, style, ...props }: ViewProps & { id
     const register = context?.register;
     useEffect(() => id ? register?.(id, { ref, order }) : undefined, [id, order, register]);
     const transition = context?.transition;
-    let motion: ViewProps['style'];
-    if (context && transition && id) {
+    const progress = context?.progress;
+    const height = context?.height;
+    const motion = useMemo(() => {
+        if (!progress || !transition || !id || height === undefined) return undefined;
         let travel = -transition.top;
-        if (order > transition.order) travel = context.height - transition.top - transition.height;
-        motion = {
-            transform: [{ translateY: context.progress.interpolate({ inputRange: [0, 1], outputRange: [0, travel] }) }],
+        if (order > transition.order) travel = height - transition.top - transition.height;
+        return {
+            transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, travel] }) }],
             opacity: id === transition.id
-                ? context.progress.interpolate({ inputRange: [0, DETAIL_REVEAL_END, 1], outputRange: [1, 0, 0] })
+                ? progress.interpolate({ inputRange: [0, DETAIL_REVEAL_END, 1], outputRange: [1, 0, 0] })
                 : 1
         } as ViewProps['style'];
-    }
+    }, [height, id, order, progress, transition]);
     return <Animated.View {...props} ref={ref} collapsable={false} style={[style, motion]} />;
 }
 
@@ -108,7 +110,11 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
             if (!sourceView) { configRef.current?.onClose(); return; }
             sourceView.measureInWindow((_sourceX, sourceY, _width, sourceHeight) => {
                 if (configRef.current?.id !== current.id) return;
-                setTransition({ ...current, top: sourceY - viewportY + current.top * progressValue.current, height: sourceHeight });
+                const top = sourceY - viewportY + current.top * progressValue.current;
+                // Reuse the opening geometry unless the resting layout actually changed.
+                if (top !== current.top || sourceHeight !== current.height) {
+                    setTransition({ ...current, top, height: sourceHeight });
+                }
                 configRef.current.onClose();
             });
         });
@@ -150,7 +156,7 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
             easing: Easing.inOut(Easing.cubic),
             useNativeDriver: false
         });
-        animation.start(({ finished }) => {
+        const start = () => animation.start(({ finished }) => {
             if (!finished) return;
             setMoving(false);
             if (!opening) {
@@ -165,7 +171,14 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
                 if (handle) AccessibilityInfo.setAccessibilityFocus(handle);
             }
         });
-        return () => animation.stop();
+        // Commit the moving state and measured return bounds before native frames begin.
+        // Keep reduced motion immediate.
+        const frame = reducedMotion ? undefined : requestAnimationFrame(start);
+        if (reducedMotion) start();
+        return () => {
+            if (frame !== undefined) cancelAnimationFrame(frame);
+            animation.stop();
+        };
     }, [id, progress, reducedMotion, transition]);
 
     useLayoutEffect(() => {
@@ -205,12 +218,13 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
     }, [id, config?.focused, requestClose]);
 
     const context = useMemo(() => ({ register, transition, progress, height, moving }), [register, transition, progress, height, moving]);
-    const paneStyle = transition && {
+    // Keep the animated nodes attached while focus and moving state update.
+    const paneStyle = useMemo(() => transition && {
         top: progress.interpolate({ inputRange: [0, 1], outputRange: [transition.top, 0] }),
         height: progress.interpolate({ inputRange: [0, 1], outputRange: [transition.height, height] }),
         opacity: progress.interpolate({ inputRange: [0, DETAIL_REVEAL_END, 1], outputRange: [0, 1, 1] }),
         backgroundColor: theme.colors.background
-    };
+    }, [height, progress, theme.colors.background, transition]);
 
     return <ExpansionContext.Provider value={context}>
         <View ref={viewport} collapsable={false} testID="page-expansion-viewport" style={styles.viewport} onLayout={event => setHeight(event.nativeEvent.layout.height)}>
