@@ -841,6 +841,19 @@ test('pull requests run backend builds only for backend-impacting paths', () => 
   assert.doesNotMatch(workflow, /\n  performance-regression:/);
 });
 
+test('Android SDK setup explicitly excludes the retired tools package', () => {
+  let setupCount = 0;
+  for (const file of readdirSync(workflowsDirectory).filter((name) => /\.ya?ml$/.test(name))) {
+    for (const step of readWorkflow(file).split(/\n(?=      - )/)) {
+      if (!/uses: android-actions\/setup-android@/.test(step)) continue;
+      setupCount += 1;
+      assert.match(step, /^          packages: platform-tools$/m,
+        `${file} must override setup-android's obsolete default tools package`);
+    }
+  }
+  assert.ok(setupCount > 0, 'Android SDK setup steps must be covered');
+});
+
 test('pull requests run targeted native compilation while emulator and upgrade rehearsals stay manual', () => {
   const workflow = readWorkflow('builds.yml');
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
@@ -928,6 +941,10 @@ test('pull requests run targeted native compilation while emulator and upgrade r
   assert.match(iosBuild, /npm ci --include=dev --no-audit --fund=false/);
   assert.match(iosBuild, /npm --prefix mobile run prebuild:ios/);
   assert.match(iosBuild, /pod install/);
+  const { expo } = JSON.parse(readFileSync(path.join(repositoryRoot, 'mobile/app.json'), 'utf8'));
+  assert.equal(iosBuild.match(/-workspace (\S+)/)?.[1], `${expo.name}.xcworkspace`);
+  assert.equal(iosBuild.match(/-scheme (\S+)/)?.[1], expo.name,
+    'Xcode scheme names must match the case of the Expo-generated project');
   assert.match(iosBuild, /xcodebuild[\s\S]*generic\/platform=iOS Simulator[\s\S]*CODE_SIGNING_ALLOWED=NO/);
   assert.match(wearBuild, /if: needs\.changes\.outputs\.wear == 'true'/);
   assert.match(wearBuild, /assembleDebug testDebugUnitTest/);
