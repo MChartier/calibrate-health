@@ -97,55 +97,69 @@ test('Progress expansions use the whole pane and return a scrolled overview', as
   }
 });
 
-test('Trend collapse reverses its expanding bounds and returns the surrounding sections smoothly', async ({ page, ux }, testInfo) => {
-  test.skip(testInfo.project.name !== 'android-phone-chrome', 'Measure the phone Trend animation.');
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await ux.install('populated');
-  await page.route('**/api/v1/calibration/status', route => route.fulfill({ json: PLAN_CHECK_RECOMMENDATION_STATUS }));
-  await page.goto('/progress');
-  await hideTransientPwaNotices(page);
-  await useElapsedAnimationClock(page);
-  const source = page.getByTestId('weight-trend-preview-card');
-  await expect(source).toBeVisible();
-  await source.scrollIntoViewIfNeeded();
-  const before = await source.boundingBox();
-  const sample = (selector: string) => page.locator(selector).evaluate(button => new Promise<Array<{ top: number; height: number; above: number; below: number; opacity: number }>>(resolve => {
-    const frames: Array<{ top: number; height: number; above: number; below: number; opacity: number }> = [];
-    const start = performance.now();
-    (button as HTMLElement).click();
-    const capture = () => {
-      const pane = document.querySelector('[data-testid="expanded-trend"]');
-      if (pane) {
-        const bounds = pane.getBoundingClientRect();
-        frames.push({
-          top: bounds.y, height: bounds.height,
-          above: document.querySelector('[data-testid="progress-snapshot-card"]')!.getBoundingClientRect().y,
-          below: document.querySelector('[data-testid="plan-check-summary"]')!.getBoundingClientRect().y,
-          opacity: Number(getComputedStyle(pane).opacity),
-        });
-      }
-      if (performance.now() - start < 750) requestAnimationFrame(capture);
-      else resolve(frames);
-    };
-    requestAnimationFrame(capture);
-  }));
-  const opening = await sample('[data-testid="weight-trend-preview-card"]');
-  await expect(page.getByRole('button', { name: 'Collapse Trend' })).toBeFocused();
-  const closing = await sample('[aria-label="Collapse Trend"]');
-  await testInfo.attach('trend-animation-frames', { body: JSON.stringify({ opening, closing }), contentType: 'application/json' });
-  for (const frames of [opening, closing]) {
-    for (const field of ['top', 'height', 'above', 'below', 'opacity'] as const) {
-      expect(new Set(frames.map(frame => Math.round(frame[field] * 100))).size, field).toBeGreaterThan(3);
+for (const section of [
+  { route: '/today', name: 'Food log', id: 'food', source: 'today-food-preview', above: 'calorie-balance-hero', below: null },
+  { route: '/progress', name: 'Trend', id: 'trend', source: 'weight-trend-preview-card', above: 'progress-snapshot-card', below: 'plan-check-summary' },
+  { route: '/progress', name: 'Plan check', id: 'plan', source: 'plan-check-summary', above: 'progress-snapshot-card', below: null },
+]) {
+  test(`${section.name} collapse shrinks back on every expansion cycle`, async ({ page, ux }, testInfo) => {
+    test.skip(!['desktop-chrome', 'android-phone-chrome'].includes(testInfo.project.name), 'Measure repeated mouse and touch motion.');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await ux.install('populated');
+    await page.route('**/api/v1/calibration/status', route => route.fulfill({ json: PLAN_CHECK_RECOMMENDATION_STATUS }));
+    await page.goto(section.route);
+    await hideTransientPwaNotices(page);
+    await useElapsedAnimationClock(page);
+    const source = page.getByTestId(section.source);
+    await expect(source).toBeVisible();
+    await source.scrollIntoViewIfNeeded();
+    const before = await source.boundingBox();
+    const sample = (selector: string) => page.locator(selector).evaluate((button, section) => new Promise<Array<{ top: number; height: number; above: number; below: number; opacity: number }>>(resolve => {
+      const frames: Array<{ top: number; height: number; above: number; below: number; opacity: number }> = [];
+      const start = performance.now();
+      (button as HTMLElement).click();
+      const capture = () => {
+        const pane = document.querySelector(`[data-testid="expanded-${section.id}"]`);
+        if (pane) {
+          const bounds = pane.getBoundingClientRect();
+          frames.push({
+            top: bounds.y, height: bounds.height,
+            above: document.querySelector(`[data-testid="${section.above}"]`)!.getBoundingClientRect().y,
+            below: section.below ? document.querySelector(`[data-testid="${section.below}"]`)!.getBoundingClientRect().y : 0,
+            opacity: Number(getComputedStyle(pane).opacity),
+          });
+        }
+        if (performance.now() - start < 750) requestAnimationFrame(capture);
+        else resolve(frames);
+      };
+      requestAnimationFrame(capture);
+    }), section);
+    for (let cycle = 1; cycle <= 3; cycle++) {
+      await test.step(`Expansion/collapse cycle ${cycle}`, async () => {
+        const opening = await sample(`[data-testid="${section.source}"]`);
+        await expect(page.getByRole('button', { name: `Collapse ${section.name}` })).toBeFocused();
+        const closing = await sample(`[aria-label="Collapse ${section.name}"]`);
+        await testInfo.attach(`${section.id}-animation-cycle-${cycle}`, { body: JSON.stringify({ opening, closing }), contentType: 'application/json' });
+        const fields = ['top', 'height', 'above', 'opacity'] as const;
+        for (const frames of [opening, closing]) {
+          for (const field of fields) {
+            expect(new Set(frames.map(frame => Math.round(frame[field] * 100))).size, field).toBeGreaterThan(3);
+          }
+        }
+        expect(closing.at(-1)!.top).toBeGreaterThan(closing[0].top);
+        expect(closing.at(-1)!.height).toBeLessThan(closing[0].height);
+        expect(closing.at(-1)!.above).toBeGreaterThan(closing[0].above);
+        if (section.below) {
+          expect(new Set(closing.map(frame => Math.round(frame.below))).size).toBeGreaterThan(3);
+          expect(closing.at(-1)!.below).toBeLessThan(closing[0].below);
+        }
+        await expect(page.getByTestId(`expanded-${section.id}`)).toHaveCount(0);
+        expect(await source.boundingBox()).toEqual(before);
+        await expect(source).toBeFocused();
+      });
     }
-  }
-  expect(closing.at(-1)!.top).toBeGreaterThan(closing[0].top);
-  expect(closing.at(-1)!.height).toBeLessThan(closing[0].height);
-  expect(closing.at(-1)!.above).toBeGreaterThan(closing[0].above);
-  expect(closing.at(-1)!.below).toBeLessThan(closing[0].below);
-  await expect(page.getByTestId('expanded-trend')).toHaveCount(0);
-  expect(await source.boundingBox()).toEqual(before);
-  await expect(source).toBeFocused();
-});
+  });
+}
 
 for (const foodDayStatus of ['OPEN', 'COMPLETE'] as const) {
   test(`real motion keeps the ${foodDayStatus} day dock anchored while Add food expands`, async ({ page, ux }, testInfo) => {

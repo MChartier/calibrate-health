@@ -1,7 +1,7 @@
 import React from 'react';
-import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { ExpansionRegion, PageExpansion, type PageExpansionConfig } from './PageExpansion';
+import { ExpansionRegion, PageExpansion, useExpansionMotion, type PageExpansionConfig } from './PageExpansion';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 let mockReducedMotion = true;
@@ -33,40 +33,60 @@ describe('native expansion Back handling', () => {
     });
 });
 
-it('shrinks the native pane through intermediate bounds before returning to the overview', () => {
+it.each([450, 180])('shrinks on every native cycle after %i ms of expansion', (openingTime) => {
     jest.useFakeTimers();
     mockReducedMotion = false;
     let sourceY = 200;
+    let progress: Animated.Value | undefined;
     const measure = jest.spyOn(View.prototype, 'measureInWindow').mockImplementation(function (this: View, callback) {
         const isSource = this.props.testID === 'trend-source';
         callback(0, isSource ? sourceY : 0, 412, isSource ? 260 : 680);
     });
+    function MotionConsumer() {
+        const motion = useExpansionMotion('trend');
+        if (motion) progress = motion.progress;
+        return null;
+    }
     function Example() {
         const [id, setId] = React.useState<string | null>(null);
         return <PageExpansion columnStyle={undefined} config={{
             id, title: 'Trend', onClose: () => setId(null), onRestore: setId,
             focused: false, renderContent: () => <View testID="trend-detail" />
         }}>{() => <ExpansionRegion id="trend" order={2} testID="trend-source">
+            <MotionConsumer />
             <Pressable accessibilityLabel="Expand Trend" onPress={() => setId('trend')} />
         </ExpansionRegion>}</PageExpansion>;
     }
     const screen = render(<Example />);
     try {
-        fireEvent.press(screen.getByLabelText('Expand Trend'));
-        act(() => jest.advanceTimersByTime(450));
-        expect(screen.getByTestId('expanded-trend')).toHaveStyle({ top: 0, height: 680 });
-        sourceY = 0; // Native measurement includes the expanded source's translation.
-        fireEvent.press(screen.getByLabelText('Collapse Trend'));
-        act(() => jest.advanceTimersByTime(180));
-        const middle = StyleSheet.flatten(screen.getByTestId('expanded-trend').props.style);
-        expect(middle.top).toBeGreaterThan(0);
-        expect(middle.top).toBeLessThan(200);
-        expect(middle.height).toBeGreaterThan(260);
-        expect(middle.height).toBeLessThan(680);
-        expect(screen.getByTestId('trend-detail')).toBeTruthy();
-        act(() => jest.advanceTimersByTime(250));
-        expect(screen.queryByTestId('expanded-trend')).toBeNull();
-        expect(screen.getByLabelText('Expand Trend')).toBeTruthy();
+        for (let cycle = 0; cycle < 3; cycle++) {
+            sourceY = 200;
+            fireEvent.press(screen.getByLabelText('Expand Trend'));
+            act(() => jest.advanceTimersByTime(openingTime));
+            const opening = StyleSheet.flatten(screen.getByTestId('expanded-trend').props.style);
+            expect(opening.top).toBeLessThan(200);
+            expect(opening.height).toBeGreaterThan(260);
+            if (openingTime === 450) {
+                expect(screen.getByTestId('expanded-trend')).toHaveStyle({ top: 0, height: 680 });
+            }
+            // Native measurement includes the source's translation, even mid-expansion.
+            sourceY = opening.top;
+            fireEvent.press(screen.getByLabelText('Collapse Trend'));
+            fireEvent.press(screen.getByLabelText('Collapse Trend')); // A repeated tap must not stop collapse.
+            act(() => jest.advanceTimersByTime(180));
+            const middle = StyleSheet.flatten(screen.getByTestId('expanded-trend').props.style);
+            expect(middle.top).toBeGreaterThan(opening.top);
+            expect(middle.top).toBeLessThan(200);
+            expect(middle.height).toBeGreaterThan(260);
+            expect(middle.height).toBeLessThan(opening.height);
+            expect(screen.getByTestId('trend-detail')).toBeTruthy();
+            act(() => jest.advanceTimersByTime(250));
+            expect(screen.queryByTestId('expanded-trend')).toBeNull();
+            expect(screen.getByLabelText('Expand Trend')).toBeTruthy();
+            // Native AnimatedNode.__detach clears listeners when its last view detaches.
+            // Test-renderer host views do not perform that native attachment cleanup.
+            act(() => progress!.removeAllListeners());
+        }
     } finally {
         screen.unmount();
         measure.mockRestore();
