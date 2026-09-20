@@ -81,7 +81,6 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
     const [transition, setTransition] = useState<Transition | null>(null);
     const transitionRef = useRef(transition);
     transitionRef.current = transition;
-    const progressValue = useRef(0);
     const [title, setTitle] = useState('');
     const [moving, setMoving] = useState(false);
     const returnFocus = useRef<HTMLElement | null>(null);
@@ -96,29 +95,29 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
         return () => { regions.current.delete(id); };
     }, []);
     const id = config?.id;
-    useEffect(() => {
-        const listener = progress.addListener(({ value }) => { progressValue.current = value; });
-        return () => progress.removeListener(listener);
-    }, [progress]);
     const requestClose = useCallback(() => {
         const current = transitionRef.current;
         const source = current && regions.current.get(current.id);
         if (!current || !source?.ref.current || !viewport.current) { configRef.current?.onClose(); return; }
-        // Re-measure the resting source after a resize or data change, removing its current translation.
-        viewport.current.measureInWindow((_x, viewportY) => {
-            const sourceView = source.ref.current;
-            if (!sourceView) { configRef.current?.onClose(); return; }
-            sourceView.measureInWindow((_sourceX, sourceY, _width, sourceHeight) => {
-                if (configRef.current?.id !== current.id) return;
-                const top = sourceY - viewportY + current.top * progressValue.current;
-                // Reuse the opening geometry unless the resting layout actually changed.
-                if (top !== current.top || sourceHeight !== current.height) {
-                    setTransition({ ...current, top, height: sourceHeight });
-                }
-                configRef.current.onClose();
+        if (configRef.current?.id !== current.id) return;
+        // Read the current value directly: native node detachment clears listeners between cycles.
+        // Pause while measuring so an interrupted expansion cannot move beneath the measurement.
+        progress.stopAnimation(currentProgress => {
+            viewport.current?.measureInWindow((_x, viewportY) => {
+                const sourceView = source.ref.current;
+                if (!sourceView) { configRef.current?.onClose(); return; }
+                sourceView.measureInWindow((_sourceX, sourceY, _width, sourceHeight) => {
+                    if (configRef.current?.id !== current.id) return;
+                    const top = sourceY - viewportY + current.top * currentProgress;
+                    // Reuse the opening geometry unless the resting layout actually changed.
+                    if (top !== current.top || sourceHeight !== current.height) {
+                        setTransition({ ...current, top, height: sourceHeight });
+                    }
+                    configRef.current.onClose();
+                });
             });
         });
-    }, []);
+    }, [progress]);
     useExpansionHistory(id, config?.focused !== false, requestClose, restored => configRef.current?.onRestore(restored));
 
     useEffect(() => {
