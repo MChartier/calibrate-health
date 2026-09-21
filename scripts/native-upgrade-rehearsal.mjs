@@ -13,7 +13,7 @@ import {
   writeHostedNativeEvidence
 } from './hosted-native-evidence.mjs';
 
-export const APPLICATION_ID = 'app.calibratehealth.mobile';
+export const APPLICATION_ID = 'net.darkmachines.healthtracker';
 export const REHEARSAL_STORE_PASSWORD_ENV = 'CALIBRATE_REHEARSAL_STORE_PASSWORD';
 export const REHEARSAL_KEY_PASSWORD_ENV = 'CALIBRATE_REHEARSAL_KEY_PASSWORD';
 

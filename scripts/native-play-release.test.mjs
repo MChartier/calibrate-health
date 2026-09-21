@@ -25,6 +25,8 @@ import {
   resolveGooglePlayAccessToken,
   runNativePlayReleaseCli,
   uploadNativePlayInternal,
+  uploadLocalNativePlayInternal,
+  inspectLocalNativePlayInternal,
   verifyNativePlayArtifacts,
   writeNativePlayArtifactReceipt
 } from './native-play-release.mjs';
@@ -52,7 +54,7 @@ function createReleaseRoot(t, options = {}) {
   const manifest = {
     schema_version: 1,
     android: {
-      application_id: options.applicationId ?? 'app.calibratehealth.mobile',
+      application_id: options.applicationId ?? 'net.darkmachines.healthtracker',
       mobile: {
         version_name: phoneVersionName,
         version_code: options.phoneVersionCode ?? 9,
@@ -98,7 +100,7 @@ test('Play plan binds one package to distinct phone and Wear tracks and code lan
   const { root } = createReleaseRoot(t);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
 
-  assert.equal(plan.applicationId, 'app.calibratehealth.mobile');
+  assert.equal(plan.applicationId, 'net.darkmachines.healthtracker');
   assert.equal(plan.versionName, '1.2.3');
   assert.equal(plan.candidates.phone.versionCode, 9);
   assert.equal(plan.candidates.watch.versionCode, 10);
@@ -240,7 +242,7 @@ test('artifact inspection dispatches APKs through aapt and apksigner and AABs th
   const execute = (command, args) => {
     calls.push({ command, args });
     if (command === tooling.aapt) {
-      return "package: name='app.calibratehealth.mobile' versionCode='9' versionName='1.2.3'\n";
+      return "package: name='net.darkmachines.healthtracker' versionCode='9' versionName='1.2.3'\n";
     }
     if (command === tooling.keytool) return `SHA256: ${SHARED_SIGNER}\n`;
     if (args[1] === tooling.apksignerJar) {
@@ -248,7 +250,7 @@ test('artifact inspection dispatches APKs through aapt and apksigner and AABs th
         `Signer #1 certificate SHA-256 digest: ${SHARED_SIGNER}\n`;
     }
     if (args[1] === tooling.bundletoolJar) {
-      return '<manifest package="app.calibratehealth.mobile" ' +
+      return '<manifest package="net.darkmachines.healthtracker" ' +
         'android:versionCode="9" android:versionName="1.2.3">\n';
     }
     assert.fail(`Unexpected inspection command: ${command} ${args.join(' ')}`);
@@ -257,13 +259,13 @@ test('artifact inspection dispatches APKs through aapt and apksigner and AABs th
   const aab = NATIVE_RELEASE_ARTIFACT_CONTRACTS.find(({ id }) => id === 'phone-aab');
 
   assert.deepEqual(inspectNativePlayArtifact('candidate.apk', apk, { execute, tooling }), {
-    applicationId: 'app.calibratehealth.mobile',
+    applicationId: 'net.darkmachines.healthtracker',
     versionCode: 9,
     versionName: '1.2.3',
     signerSha256: SHARED_SIGNER
   });
   assert.deepEqual(inspectNativePlayArtifact('candidate.aab', aab, { execute, tooling }), {
-    applicationId: 'app.calibratehealth.mobile',
+    applicationId: 'net.darkmachines.healthtracker',
     versionName: '1.2.3',
     versionCode: 9,
     signerSha256: SHARED_SIGNER
@@ -312,7 +314,7 @@ test('artifact inspection subprocesses cannot inherit Google Play credentials', 
     environments.push(options.env);
     if (command === tooling.keytool) return `SHA256: ${SHARED_SIGNER}\n`;
     if (args[1] === tooling.bundletoolJar) {
-      return '<manifest package="app.calibratehealth.mobile" ' +
+      return '<manifest package="net.darkmachines.healthtracker" ' +
         'android:versionCode="9" android:versionName="1.2.3">\n';
     }
     assert.fail(`Unexpected inspection command: ${command} ${args.join(' ')}`);
@@ -382,7 +384,7 @@ test('artifact verification rejects independently inspected package and version 
           : inspected
       })
     }),
-    /phone-apk application ID must be app\.calibratehealth\.mobile/
+    /phone-apk application ID must be net\.darkmachines\.healthtracker/
   );
   assert.throws(
     () => verifyNativePlayArtifacts({
@@ -489,7 +491,7 @@ test('publisher uses one edit, media upload, form-factor tracks, and safe commit
   fs.writeFileSync(bundle, 'bundle-bytes');
   const requests = [];
   const publisher = createGooglePlayPublisher({
-    applicationId: 'app.calibratehealth.mobile',
+    applicationId: 'net.darkmachines.healthtracker',
     accessToken: 'secret-access-token',
     fetchImpl: async (url, init) => {
       requests.push({ url, init });
@@ -513,7 +515,7 @@ test('publisher uses one edit, media upload, form-factor tracks, and safe commit
   await publisher.commitEdit(editId);
 
   assert.equal(requests[0].url,
-    'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/app.calibratehealth.mobile/edits');
+    'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/net.darkmachines.healthtracker/edits');
   assert.match(requests[1].url, /tracks\/wear%3Aqa$/);
   assert.match(requests[2].url, /edits\/edit-123\/bundles$/);
   assert.equal(requests[2].init.method, 'GET');
@@ -736,7 +738,7 @@ test('internal recovery returns an exact Play receipt without local artifacts or
     schema_version: 1,
     attestation_epoch: 1,
     repository: REPOSITORY,
-    application_id: 'app.calibratehealth.mobile',
+    application_id: 'net.darkmachines.healthtracker',
     source_commit: SOURCE_COMMIT,
     native_release_tag: 'native-v1.2.3',
     version_name: '1.2.3',
@@ -1253,4 +1255,47 @@ test('production promotion moves the exact completed pair without uploading new 
   );
   assert.equal(publisher.calls.some(([operation]) => operation === 'upload'), false);
   assert.equal(publisher.calls.at(-1)[0], 'commit');
+});
+
+
+test('local internal upload uses paired transaction, checks retries and rejects partial/production state', async (t) => {
+  const { root } = createReleaseRoot(t);
+  addReleaseArtifacts(root);
+  const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
+  plan.candidates.phone.releaseName = `local-p@${SOURCE_COMMIT}`;
+  plan.candidates.watch.releaseName = `local-w@${SOURCE_COMMIT}`;
+  const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: createArtifactInspector(root) });
+  const fresh = fakePublisher();
+  await uploadLocalNativePlayInternal({ root, plan, verification, publisher: fresh });
+  assert.deepEqual(fresh.calls.filter(([kind]) => kind === 'update').map((call) => call[2]), ['qa', 'wear:qa']);
+  assert.equal(fresh.calls.filter(([kind]) => kind === 'commit').length, 1);
+  const tracks = Object.fromEntries(Object.values(plan.candidates).map((c) => [c.internalTrack, {
+    releases: [{ status: 'completed', name: c.releaseName, versionCodes: [String(c.versionCode)] }]
+  }]));
+  const retry = fakePublisher(tracks, { bundles: existingBundleEntries(verification) });
+  const result = await uploadLocalNativePlayInternal({ root, plan, verification, publisher: retry });
+  assert.equal(result.alreadyComplete, true);
+  assert.equal(retry.calls.some(([kind]) => ['upload', 'commit'].includes(kind)), false);
+  const status = fakePublisher(tracks, { bundles: existingBundleEntries(verification) });
+  assert.equal((await inspectLocalNativePlayInternal({ plan, verification, publisher: status })).verified, true);
+  assert.equal(status.calls.some(([kind]) => kind === 'commit'), false);
+  const partial = fakePublisher({ qa: tracks.qa });
+  await assert.rejects(uploadLocalNativePlayInternal({ root, plan, verification, publisher: partial }), /one half/);
+  assert.equal(partial.calls.some(([kind]) => kind === 'upload'), false);
+  const wrongHashes = fakePublisher(tracks, { bundles: existingBundleEntries(verification).map((v) => ({ ...v, sha256: '0'.repeat(64) })) });
+  await assert.rejects(inspectLocalNativePlayInternal({ plan, verification, publisher: wrongHashes }), /SHA-256/);
+  const malicious = structuredClone(plan);
+  malicious.candidates.watch.internalTrack = 'wear:production';
+  const untouched = fakePublisher();
+  await assert.rejects(uploadLocalNativePlayInternal({ root, plan: malicious, verification, publisher: untouched }), /internal tracks/);
+  assert.deepEqual(untouched.calls, []);
+});
+
+test('publisher rejects a bundle changed after inspection before making an upload request', async (t) => {
+  const { root } = createReleaseRoot(t);
+  const file = path.join(root, 'changed.aab');
+  fs.writeFileSync(file, 'changed');
+  const publisher = createGooglePlayPublisher({ applicationId: 'net.darkmachines.healthtracker', accessToken: 'test',
+    fetchImpl: () => assert.fail('must reject before sending bytes') });
+  await assert.rejects(publisher.uploadBundle('edit', file, 'f'.repeat(64)), /changed after artifact verification/);
 });

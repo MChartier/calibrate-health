@@ -18,7 +18,7 @@ import {
   validateNativeReleaseObservation
 } from './native-release-evidence.mjs';
 
-export const APPLICATION_ID = 'app.calibratehealth.mobile';
+export const APPLICATION_ID = 'net.darkmachines.healthtracker';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');

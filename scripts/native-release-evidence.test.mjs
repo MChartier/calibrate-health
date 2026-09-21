@@ -22,7 +22,7 @@ const SIGNER = 'c'.repeat(64);
 const MANIFEST = `${JSON.stringify({
   schema_version: 1,
   android: {
-    application_id: 'app.calibratehealth.mobile',
+    application_id: 'net.darkmachines.healthtracker',
     mobile: { version_name: '1.2.3', version_code: 12 },
     wear: { version_name: '2.3.4', version_code: 23 }
   }
@@ -44,7 +44,7 @@ function evidenceFixture() {
       ...contract,
       sizeBytes: 1_000 + index,
       sha256: `${index + 1}`.repeat(64),
-      applicationId: 'app.calibratehealth.mobile',
+      applicationId: 'net.darkmachines.healthtracker',
       ...version,
       signerSha256: SIGNER
     };

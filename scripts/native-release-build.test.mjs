@@ -763,7 +763,7 @@ test('candidate-bound sidecar records and revalidates all four artifact bytes', 
   const sourceCommit = 'a'.repeat(40);
   const manifest = {
     android: {
-      application_id: 'app.calibratehealth.mobile',
+      application_id: 'net.darkmachines.healthtracker',
       mobile: { version_name: '1.2.3', version_code: 12 },
       wear: { version_name: '1.2.4', version_code: 13 }
     }

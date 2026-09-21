@@ -11,10 +11,10 @@ const ENVIRONMENT_ARTIFACT_KIND = 'calibrate-expo-ota-environment';
 const UPDATE_ARTIFACT_KIND = 'calibrate-expo-ota-update';
 const EAS_CLI_VERSION = '22.4.0';
 const PROJECT = Object.freeze({
-  name: 'calibrate',
+  name: 'Calibrate',
   slug: 'calibrate-health-app',
   owner: 'calibrate-health',
-  androidPackage: 'app.calibratehealth.mobile'
+  androidPackage: 'net.darkmachines.healthtracker'
 });
 const FULL_COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const NATIVE_RELEASE_TAG_PATTERN = /^native-v\d+\.\d+\.\d+$/;

@@ -30,7 +30,7 @@ Current requirements used by this worksheet:
 
 | Area | Confirmed behavior | Source |
 | --- | --- | --- |
-| Android identity | Phone and watch use `app.calibratehealth.mobile`. Their candidate version names and codes come from the frozen `shared/release.json` and must be confirmed from each final artifact rather than copied into this worksheet. | `shared/release.json`, `mobile/app.json`, `wear/app/build.gradle.kts` |
+| Android identity | Phone and watch use `net.darkmachines.healthtracker`. Their candidate version names and codes come from the frozen `shared/release.json` and must be confirmed from each final artifact rather than copied into this worksheet. | `shared/release.json`, `mobile/app.json`, `wear/app/build.gradle.kts` |
 | Phone platform | Expo config sets minimum SDK 26, disables backup, requests camera, vibration, and notifications, and blocks storage, microphone, and system-alert-window permissions. | `mobile/app.json` |
 | Camera | Camera access is requested only from the barcode screen after explanatory copy. Frames stay in `CameraView`; only the decoded UPC/EAN is sent for lookup. | `mobile/app/barcode.tsx` |
 | Profile image | A user-selected image is cropped, compressed, base64-encoded, and uploaded as the optional profile avatar. | `mobile/app/(tabs)/settings.tsx`, `backend/src/utils/profileImage.ts` |
@@ -129,7 +129,7 @@ enrollment and duration remain Play Console onboarding work.
 - [ ] Confirm Wear includes the reviewed internet, network-state, notifications, wake/boot, and foreground-service
   declarations, with backup disabled and no unrelated runtime permission.
 - [ ] Confirm both Play artifacts explicitly disable cleartext and reject an `http://` server origin.
-- [ ] Confirm the installed phone and watch package names are both `app.calibratehealth.mobile`.
+- [ ] Confirm the installed phone and watch package names are both `net.darkmachines.healthtracker`.
 - [ ] Confirm installed Play-generated phone and watch APKs have the same app-signing certificate fingerprint.
 - [ ] Distinguish the Play app-signing key from the upload key in the release record. Direct internal APK pairing
   must use matching local certificates; Play-delivered artifacts must match after Play signing.
@@ -138,7 +138,7 @@ enrollment and duration remain Play Console onboarding work.
 
 ## Play Console setup
 
-- [ ] Create or select the listing for `app.calibratehealth.mobile` and enable Play App Signing.
+- [ ] Create or select the listing for `net.darkmachines.healthtracker` and enable Play App Signing.
 - [ ] Enable the Wear OS form factor, create custom closed-testing tracks with API aliases `closed` and `wear:closed`,
   and complete any Console-required first upload or closed-testing gate.
 - [ ] Configure the closed tester email list or Google Group and retain its shareable opt-in link. Internal testers

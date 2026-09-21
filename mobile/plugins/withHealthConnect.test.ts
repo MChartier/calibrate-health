@@ -71,7 +71,7 @@ describe('withHealthConnect config plugin', () => {
     });
 
     it('injects the permission delegate import and registration once', () => {
-        const source = `package app.calibratehealth.mobile
+        const source = `package net.darkmachines.healthtracker
 
 import android.os.Bundle
 

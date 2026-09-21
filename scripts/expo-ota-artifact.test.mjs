@@ -72,7 +72,7 @@ function createExportFixture(root, metadataOverride = null) {
 function createSourceMetadata(root) {
   const publicConfig = path.join(root, 'public-config.json');
   writeJson(publicConfig, {
-    name: 'calibrate',
+    name: 'Calibrate',
     slug: 'calibrate-health-app',
     owner: 'calibrate-health',
     version: '0.2.6',
@@ -82,7 +82,7 @@ function createSourceMetadata(root) {
       url: `https://u.expo.dev/${projectId}`,
       requestHeaders: { 'expo-channel-name': 'internal' }
     },
-    android: { package: 'app.calibratehealth.mobile' },
+    android: { package: 'net.darkmachines.healthtracker' },
     extra: { eas: { projectId } }
   });
   const packageLock = path.join(root, 'package-lock.json');
@@ -278,7 +278,7 @@ test('clean publisher projects contain only fixed inert configuration', (t) => {
   createEnvironmentPublisherProject({ outputDir: environmentProject, projectId });
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(environmentProject, 'app.json'), 'utf8')), {
     expo: {
-      name: 'calibrate',
+      name: 'Calibrate',
       slug: 'calibrate-health-app',
       owner: 'calibrate-health',
       extra: { eas: { projectId } }

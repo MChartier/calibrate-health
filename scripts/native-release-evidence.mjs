@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 export const NATIVE_RELEASE_EVIDENCE_SCHEMA_VERSION = 3;
 export const NATIVE_RELEASE_OBSERVATION_SCHEMA_VERSION = 2;
 export const NATIVE_RELEASE_BUILD_PROVENANCE_SCHEMA_VERSION = 1;
-export const NATIVE_RELEASE_APPLICATION_ID = 'app.calibratehealth.mobile';
+export const NATIVE_RELEASE_APPLICATION_ID = 'net.darkmachines.healthtracker';
 export const NATIVE_RELEASE_PROTOCOL = 'docs/physical-galaxy-validation.md';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));

@@ -65,7 +65,7 @@ Compatibility changes follow these rules:
 - Additive API and database changes remain compatible with the current API version.
 - A breaking wire change requires a new API version while the old version remains in `supported` during migration.
 - Raising a minimum client version is a last-resort safety boundary and must be called out in release notes.
-- Phone and Wear artifacts must keep application ID `app.calibratehealth.mobile` and use the same signing certificate
+- Phone and Wear artifacts must keep application ID `net.darkmachines.healthtracker` and use the same signing certificate
   for Wear Data Layer communication.
 - Phone and watch versions may advance independently, but each artifact's `version_code` must exceed its previously
   distributed build.

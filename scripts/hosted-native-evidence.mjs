@@ -157,7 +157,7 @@ function validateArtifacts(lane, artifacts, status, errors) {
     }
     ids.push(artifact.id);
     if (!expectedIds.includes(artifact.id)) errors.push(`Unexpected ${artifact.id} artifact for ${lane}.`);
-    if (artifact.packageName !== 'app.calibratehealth.mobile') {
+    if (artifact.packageName !== 'net.darkmachines.healthtracker') {
       errors.push('Hosted native artifact packageName is invalid.');
     }
     if (!VERSION_PATTERN.test(artifact.versionName ?? '') ||

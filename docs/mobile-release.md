@@ -1,4 +1,9 @@
-# Android internal release
+# Android native releases
+
+For the supported Windows local-build / Google Play internal-testing path, use
+[Local Google Play internal testing](android-internal-testing.md). It covers the first Play Console upload,
+private WireGuard backend, operator-held signing keys, and repeatable `release:native:internal` commands.
+The protected GitHub production path below remains independently attested and does not adopt local uploads.
 
 This runbook produces locally signed Android artifacts from the Expo project in `mobile/` and the native Wear
 project in `wear/`:
@@ -6,7 +11,7 @@ project in `wear/`:
 - Phone and Wear APKs are used for direct installation on owned devices.
 - Phone and Wear AABs are used for Google Play testing and later store tracks.
 
-The permanent Android identity is the application ID `app.calibratehealth.mobile` plus its signing certificate.
+The permanent Android identity is the application ID `net.darkmachines.healthtracker` plus its signing certificate.
 Changing either creates a different app or prevents an in-place upgrade.
 
 This runbook defines release procedures; it is not proof that a permanent-signed artifact was built, a device was
@@ -16,7 +21,7 @@ repository-safe evidence described below and the access-controlled Console recor
 ## One-time release setup
 
 The canonical release path uses one operator-controlled keystore for both phone and Wear. This is required for Wear
-Data Layer communication because both artifacts share `app.calibratehealth.mobile`. Generate the keystore outside
+Data Layer communication because both artifacts share `net.darkmachines.healthtracker`. Generate the keystore outside
 the repository, retain an encrypted offline backup, and record its alias and passwords in a password manager.
 
 Set these values in the current PowerShell session. The store path may be absolute or relative to the repository
@@ -325,7 +330,7 @@ npm.cmd run release:native:play -- plan --source-commit $nativeSource
 The workflow is intentionally safe to merge before account setup. It fails closed with the missing configuration and
 cannot publish anonymously. Complete these one-time tasks when the Play account and permanent keys are ready:
 
-- Create or adopt the Play application `app.calibratehealth.mobile`, finish its required listing/policy setup, enable
+- Create or adopt the Play application `net.darkmachines.healthtracker`, finish its required listing/policy setup, enable
   the Wear OS form factor, enroll it in Play App Signing, and create custom closed-testing tracks with API aliases
   `closed` for phone and `wear:closed` for Wear. Configure their tester list or Google Group and retain the closed
   opt-in link. Any Console-required first upload or testing enrollment remains an onboarding task; automation does
@@ -591,7 +596,7 @@ and does not revoke the token's production authority after internal use.
 Expo SecureStore tokens and the SQLite offline outbox live in each native application's sandbox. Preserve them
 through an in-place Android or iOS upgrade by keeping all of the following true:
 
-1. The Android application ID and iOS bundle identifier remain `app.calibratehealth.mobile`.
+1. The Android application ID and iOS bundle identifier remain `net.darkmachines.healthtracker`.
 2. The new Android artifact retains its signing certificate and the iOS artifact retains its signing identity.
 3. Android `versionCode` or iOS `buildNumber` increases for that platform.
 4. The app is upgraded in place instead of uninstalled or data-cleared.
@@ -672,7 +677,7 @@ development.
 - [ ] `version` is correct; phone has the next odd `versionCode`, Wear has the next even code, and both exceed every
   code already allocated to either form factor.
 - [ ] This semantic version and immutable native tag have not been used for an earlier store candidate.
-- [ ] Application ID is still `app.calibratehealth.mobile`.
+- [ ] Application ID is still `net.darkmachines.healthtracker`.
 - [ ] Public Expo config includes camera/notification permissions but does not request microphone access.
 - [ ] OTA-enabled phone config has the expected EAS project ID, app-version runtime, and update channel.
 - [ ] Phone and Wear report the same expected Android signing certificate fingerprint.

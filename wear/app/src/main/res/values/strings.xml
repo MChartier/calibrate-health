@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">calibrate</string>
+    <string name="app_name">Calibrate</string>
     <string name="tile_label">Today</string>
     <string name="tile_description">Calories consumed, remaining, and daily tracking status</string>
     <string name="complication_label">Calorie balance</string>

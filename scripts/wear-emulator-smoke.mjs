@@ -11,7 +11,7 @@ import {
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');
-const APP_ID = 'app.calibratehealth.mobile';
+const APP_ID = 'net.darkmachines.healthtracker';
 const ACTIVITY = `${APP_ID}/app.calibratehealth.wear.MainActivity`;
 const UI_DUMP_PATH = '/sdcard/calibrate-wear-smoke.xml';
 const REVIEWED_FONT_SCALES = Object.freeze([1, 1.3]);
@@ -31,7 +31,7 @@ const REVIEWED_WEAR_PERMISSIONS = Object.freeze([
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.RECEIVE_BOOT_COMPLETED',
   'android.permission.WAKE_LOCK',
-  'app.calibratehealth.mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+  'net.darkmachines.healthtracker.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
 ]);
 
 export function parseBoundsRectangle(value) {
@@ -216,10 +216,10 @@ export function assertWearRequestedPermissions(output) {
 
 export function crashBufferContainsWearProcess(crashBuffer) {
   return [
-    /Process:\s*app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
-    /ANR in\s+app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
-    /Cmdline:\s*app\.calibratehealth\.mobile(?:[:,\s]|$)/i,
-    />>>\s*app\.calibratehealth\.mobile\s*<<</i
+    /Process:\s*net\.darkmachines\.healthtracker(?:[:,\s]|$)/i,
+    /ANR in\s+net\.darkmachines\.healthtracker(?:[:,\s]|$)/i,
+    /Cmdline:\s*net\.darkmachines\.healthtracker(?:[:,\s]|$)/i,
+    />>>\s*net\.darkmachines\.healthtracker\s*<<</i
   ].some((pattern) => pattern.test(crashBuffer));
 }
 export function parseWearFontScale(output) {

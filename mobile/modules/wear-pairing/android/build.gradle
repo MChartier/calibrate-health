@@ -4,13 +4,13 @@ plugins {
 }
 
 group = 'app.calibratehealth'
-version = '0.2.6'
+version = '0.2.7'
 
 android {
   namespace 'app.calibratehealth.wearpairing'
   defaultConfig {
-    versionCode 9
-    versionName '0.2.6'
+    versionCode 11
+    versionName '0.2.7'
   }
 }
 
