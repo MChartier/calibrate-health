@@ -322,8 +322,7 @@ export async function setupNative(argv = [], options = {}) {
     log('[native-setup] Saved native tool paths for your Windows account; native commands read them automatically.\n' +
       'For direct tool commands in this PowerShell session, refresh its environment:\n' + ENVIRONMENT_REFRESH);
   }
-  log('[native-setup] ' + (ok ? 'Local prerequisites are ready.' : 'Run npm run native:setup to install missing prerequisites.') +
-    ' Backend connectivity and release metadata: npm run native:doctor');
+  log('[native-setup] ' + (ok ? 'Local prerequisites are ready.' : 'Run npm run native:setup to install missing prerequisites.'));
   return { ok, checks, environment: values };
 }
 

@@ -27,7 +27,7 @@ function fixture() {
 
 test('root exposes native package commands and a separate OTA publication command without implementation stages', () => {
   const { scripts } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url)));
-  const nativeActions = ['build', 'install', 'submit', 'configure', 'setup', 'doctor', 'version', 'status'];
+  const nativeActions = ['build', 'install', 'submit', 'configure', 'setup'];
   for (const action of nativeActions) assert.equal(scripts['native:' + action], 'node scripts/native.mjs ' + action);
   assert.deepEqual(Object.keys(scripts).filter((name) => name.startsWith('native:')).sort(),
     nativeActions.map((action) => 'native:' + action).sort());
@@ -39,11 +39,12 @@ test('root exposes native package commands and a separate OTA publication comman
 test('root and per-action help do not inspect settings, credentials or artifacts', async () => {
   const { options, calls } = fixture();
   options.resolveCredentialFile = () => assert.fail('Help must not read configured credentials');
-  for (const argv of [[], ['--help'], ...['build','ota','install','submit','configure','setup','doctor','version','status'].map((action) => [action, '--help'])]) {
+  for (const argv of [[], ['--help'], ...['build','ota','install','submit','configure','setup'].map((action) => [action, '--help'])]) {
     const output = await runNative(argv, options);
     if (argv[0] === 'ota') assert.match(output, /npm run ota:publish -- /);
     else assert.match(output, /npm run /);
     assert.doesNotMatch(output, /npm run native --/);
+    assert.doesNotMatch(output, /native:(?:doctor|version|status)/);
   }
   assert.deepEqual(calls, []);
 });
@@ -51,7 +52,8 @@ test('root and per-action help do not inspect settings, credentials or artifacts
 test('invalid actions and options fail before any side effects or authentication', async () => {
   const { options, calls } = fixture();
   for (const argv of [
-    ['prepare'], ['deploy'], ['build', '--credentials-file'], ['build', '--credentials-file', 'a', '--track', 'production'],
+    ['prepare'], ['deploy'], ['doctor'], ['version'], ['status'],
+    ['build', '--credentials-file'], ['build', '--credentials-file', 'a', '--track', 'production'],
     ['submit', '--service-account-file'], ['submit', '--service-account-file', 'a', '--confirm-play-console-clean', '--track', 'production'],
     ['configure', '--credentials-file'], ['configure', '--service-account-file', 'a', '--service-account-file', 'b'],
     ['install', '--skip-build'], ['install', '--keystore', 'secret'], ['install', '--phone-serial'],
@@ -69,12 +71,11 @@ test('configure saves credential paths before any SDK setup and with inherited s
   assert.equal(calls[0][2].environment.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
 });
 
-test('bare build, submit and status use machine configuration and submit supplies Console coordination implicitly', async () => {
+test('bare build and submit use machine configuration and submit supplies Console coordination implicitly', async () => {
   const { options, calls } = fixture();
   for (const [action, expected] of [
     ['build', ['build', '--credentials-file', 'configured-signing.json']],
-    ['submit', ['submit', '--service-account-file', 'configured-play.json', '--confirm-play-console-clean']],
-    ['status', ['status', '--service-account-file', 'configured-play.json']]
+    ['submit', ['submit', '--service-account-file', 'configured-play.json', '--confirm-play-console-clean']]
   ]) {
     calls.length = 0;
     await runNative([action], options);
@@ -98,13 +99,6 @@ test('build uses external credentials after isolating inherited secrets and rest
   assert.equal(environment.BUNDLETOOL_JAR, undefined);
 });
 
-test('version allocation does not build or require an Android SDK', async () => {
-  const { options, calls } = fixture();
-  await runNative(['version', '--bump', 'patch'], options);
-  assert.deepEqual(calls.map(([name]) => name), ['internal']);
-  assert.deepEqual(calls[0][1], ['prepare', '--bump', 'patch']);
-});
-
 test('install verifies retained artifacts before device access and always skips building', async () => {
   const { options, calls } = fixture();
   await runNative(['install', '--phone-serial', 'phone', '--watch-serial', 'watch', '--no-launch'], options);
@@ -122,18 +116,13 @@ test('install verifies retained artifacts before device access and always skips 
   assert.deepEqual(calls.map(([name]) => name), ['settings']);
 });
 
-test('submit and status reuse the local internal worker and explicit Play file', async () => {
+test('submit reuses the local internal worker and explicit Play file', async () => {
   const { options, calls } = fixture();
-  for (const argv of [
-    ['submit', '--service-account-file', 'play.json', '--confirm-play-console-clean'],
-    ['status', '--service-account-file', 'play.json']
-  ]) {
-    calls.length = 0;
-    await runNative(argv, options);
-    assert.deepEqual(calls.map(([name]) => name), argv[0] === 'submit' ? ['settings', 'log', 'internal'] : ['settings', 'internal']);
-    assert.deepEqual(calls.at(-1)[1], argv);
-    assert.equal(calls.at(-1)[2].environment.EXPO_TOKEN, undefined);
-  }
+  const argv = ['submit', '--service-account-file', 'play.json', '--confirm-play-console-clean'];
+  await runNative(argv, options);
+  assert.deepEqual(calls.map(([name]) => name), ['settings', 'log', 'internal']);
+  assert.deepEqual(calls.at(-1)[1], argv);
+  assert.equal(calls.at(-1)[2].environment.EXPO_TOKEN, undefined);
 });
 
 test('OTA forwards dry-run and baseline options, admits only Expo auth, and needs no Android SDK', async () => {

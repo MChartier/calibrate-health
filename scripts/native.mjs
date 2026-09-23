@@ -18,10 +18,7 @@ const ACTIONS = {
   install: 'Install and verify the last build on a local phone and watch.',
   submit: 'Upload the last verified AABs through Play API to qa and wear:qa.',
   configure: 'Save external credential-file paths for this user on this machine.',
-  setup: 'Install/check Windows native tools and repository dependencies.',
-  doctor: 'Check native tools, release configuration and private backend access.',
-  version: 'Allocate a new local native version pair; review and commit before building.',
-  status: 'Verify the last build against the Play internal tracks.'
+  setup: 'Install/check Windows native tools and repository dependencies.'
 };
 const EXAMPLES = {
   build: '',
@@ -29,10 +26,7 @@ const EXAMPLES = {
   install: '[--phone-serial SERIAL] [--watch-serial SERIAL] [--no-launch] [--replace-incompatible]',
   submit: '',
   configure: '--credentials-file C:\\secure\\healthtracker\\credentials.json --service-account-file C:\\secure\\healthtracker\\play-testing.json',
-  setup: '[--check] [--skip-deps] [--accept-licenses]',
-  doctor: '',
-  version: '--bump patch|minor|major',
-  status: ''
+  setup: '[--check] [--skip-deps] [--accept-licenses]'
 };
 
 function npmScript(action) {
@@ -47,7 +41,7 @@ function help(action) {
       'Requires installed tools/dependencies, external signing credentials, and a clean committed checkout.',
       'Uses native:configure settings; --credentials-file FILE overrides signing for this run.',
       'Run npm run native:setup for machine/worktree setup.',
-      'For a new Play release, allocate unused codes with npm run native:version -- --bump patch and commit them first.',
+      'For a new Play release, commit unused native version codes first; see docs/mobile-release.md.',
       'Prebuild, signing, phone/Wear APK/AAB builds, and verification are included.'
     );
     if (action === 'submit') lines.push(
@@ -62,7 +56,6 @@ function help(action) {
       'Either option can be set on its own. With no options, shows the saved paths.',
       'No Android SDK or remote authentication is required.'
     );
-    if (action === 'status') lines.push('Uses the configured Play file; --service-account-file FILE overrides it for this run.');
     if (action === 'ota') lines.push(
       'Options: --message TEXT, --dry-run, --non-interactive, --baseline FILE, --channel NAME, --environment NAME.',
       'Run without --dry-run to publish. The channel must match the installed native baseline.'
@@ -114,10 +107,7 @@ export function parseNativeArguments(argv) {
   } else {
     const internalArgs = [...args];
     if (action === 'submit' && !internalArgs.includes('--confirm-play-console-clean')) internalArgs.push('--confirm-play-console-clean');
-    config = parseLocalInternalArgs([action === 'version' ? 'prepare' : action, ...internalArgs], { requireCredentials: false });
-    if (action === 'version' && !['patch', 'minor', 'major'].includes(config.values['--bump'])) {
-      throw new Error('--bump must be patch, minor, or major.');
-    }
+    config = parseLocalInternalArgs([action, ...internalArgs], { requireCredentials: false });
   }
   return { action, args, config };
 }
@@ -132,8 +122,8 @@ export async function runNative(argv = [], options = {}) {
   const environment = nativeSetupEnvironment(inherited);
   const configurationOptions = { root, environment, platform: options.platform ?? process.platform };
   if (action === 'configure') return (options.configure ?? configureNative)(config, configurationOptions);
-  let internalArgs = [action === 'version' ? 'prepare' : action, ...args];
-  if (['build', 'submit', 'status'].includes(action)) {
+  let internalArgs = [action, ...args];
+  if (['build', 'submit'].includes(action)) {
     const field = action === 'build' ? 'credentialsFile' : 'serviceAccountFile';
     const flag = action === 'build' ? '--credentials-file' : '--service-account-file';
     const file = (options.resolveCredentialFile ?? resolveNativeCredentialFile)(field, config.values[flag], configurationOptions);
@@ -142,7 +132,7 @@ export async function runNative(argv = [], options = {}) {
   }
   if (action === 'ota' && inherited.EXPO_TOKEN) environment.EXPO_TOKEN = inherited.EXPO_TOKEN;
   if (action === 'setup') return (options.setup ?? setupNative)(args, { root, environment });
-  if (['build', 'doctor', 'install', 'submit', 'status'].includes(action) &&
+  if (['build', 'install', 'submit'].includes(action) &&
       (options.platform ?? process.platform) === 'win32') {
     const saved = (options.readUserEnvironment ?? readNativeUserEnvironment)(environment);
     for (const key of NATIVE_ENVIRONMENT_KEYS) {
@@ -168,12 +158,7 @@ export async function runNative(argv = [], options = {}) {
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
   runNative(process.argv.slice(2)).then((result) => {
     const action = process.argv[2];
-    if (action === 'doctor' && result?.checks) {
-      for (const check of result.checks) {
-        console.log((check.ok ? 'OK ' : 'MISSING ') + check.name + ': ' +
-          (typeof check.detail === 'string' ? check.detail : JSON.stringify(check.detail)));
-      }
-    } else if (typeof result === 'string') console.log(result);
+    if (typeof result === 'string') console.log(result);
     else if (!['setup', 'ota', 'install'].includes(action) && result !== undefined) {
       console.log(JSON.stringify(result, null, 2));
     }

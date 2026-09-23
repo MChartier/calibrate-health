@@ -301,13 +301,16 @@ UI code style:
   protected production operation.
 - Local Android package operations use `native:build`, `native:install`, and `native:submit`.
   Phone JavaScript/assets updates use `ota:publish`. Run these scripts through `npm run <script> -- <options>`.
-  `native:configure`, `native:setup`, `native:doctor`, `native:version`, and `native:status` are supporting commands.
+  `native:configure` and `native:setup` are the only supporting root commands; `native:setup -- --check`
+  checks prerequisites without changes, and submit includes upload readback. Keep diagnostic and version-maintenance
+  workers under `scripts/` rather than adding root aliases.
   Configure validates external signing/Play JSON locally and saves only absolute file paths under the user's
-  configuration directory, outside the repository and shared across checkouts. Build/submit/status use these
+  configuration directory, outside the repository and shared across checkouts. Build/submit use these
   paths by default; explicit file flags override them for one run. Keep credential contents out of saved settings.
   The public submit command supplies Console-coordination acknowledgement implicitly, with a reminder but no
   confirmation flag or prompt. Preserve the protected CI publisher and its independent credential boundaries.
-  The explicit `native:version -- --bump` command can allocate a native version without a published tag. The local path uses
+  The existing `node scripts/native-internal-release.mjs prepare --bump patch` helper can allocate a native version
+  without a published tag. The local path uses
   `net.darkmachines.healthtracker`, the private WireGuard origin, Expo channel `internal`, and only `qa`/`wear:qa`.
   The local entry point strips inherited signing/Play credentials, loads external Expo-format signing credentials
   only after credential-free prebuild, verifies all four artifacts,

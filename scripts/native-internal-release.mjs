@@ -320,11 +320,13 @@ async function internalReleaseDoctor(root = ROOT, environment = process.env, dep
 
 const HELP = `Local phone + Wear internal releases (never production or signed native tags).
   npm run native:configure -- --credentials-file ABSOLUTE_EXTERNAL_FILE --service-account-file ABSOLUTE_EXTERNAL_FILE
-  npm run native:doctor
-  npm run native:version -- --bump patch|minor|major
+  npm run native:setup
   npm run native:build
   npm run native:submit
-  npm run native:status
+Maintainer helpers (not additional build/submit stages):
+  node scripts/native-internal-release.mjs doctor
+  node scripts/native-internal-release.mjs prepare --bump patch|minor|major
+  node scripts/native-internal-release.mjs status --service-account-file ABSOLUTE_EXTERNAL_FILE
 Backend: ${INTERNAL_SERVER_URL}; Expo channel: ${INTERNAL_CHANNEL}.
 Commit all source/version changes before build. Keep credentials outside the repository.`;
 
