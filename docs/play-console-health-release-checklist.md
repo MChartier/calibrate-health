@@ -107,7 +107,7 @@ enrollment and duration remain Play Console onboarding work.
 
 ## Artifact gate
 
-- [ ] Run `npm.cmd run release:native:prepare -- --bump patch` (or the intended semantic bump) and review every mirror.
+- [ ] Run `node scripts/release-config.mjs prepare-native --bump patch` (or the intended semantic bump) and review every mirror.
 - [ ] Confirm the phone code is the next global odd code, the Wear code is the next global even code, and neither was
   previously uploaded under the shared application ID.
 - [ ] Run `npm.cmd run release:check` and `npm.cmd run test:release` on a clean release commit.
@@ -145,7 +145,7 @@ enrollment and duration remain Play Console onboarding work.
   must opt out of the internal test before opting in to the closed test; verify the served phone/Wear version codes.
 - [ ] Configure the Android upload keystore only in protected `native-release-signing`, plus separate Android
   Publisher identities and keys: a testing-only identity in `play-internal`, and a distinct production-capable
-  identity only in protected `play-production`, as described in `docs/mobile-release.md`.
+  identity only in protected `play-production`, as described in `docs/native-store-release.md`.
 - [ ] Replace the comment-only `.github/native-release-tag-allowed-signers` placeholder with a reviewed SSH public key
   and put only its private key in `native-release-attestation`. Confirm releases fail closed before this is configured.
 - [ ] Configure the separate native-tag GitHub App and `native-release-tags` push environment. Confirm it contains no

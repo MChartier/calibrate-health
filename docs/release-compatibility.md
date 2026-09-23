@@ -79,7 +79,7 @@ Compatibility changes follow these rules:
 | `production` | Locally signed release AAB | `release` | Store-distributed release |
 
 The internal Wear build uses shared release signing when all `CALIBRATE_ANDROID_SIGNING_*` values are supplied and
-falls back to the repository debug key for local phone-debug pairing. `npm run build:native:release` supplies the same
+falls back to the repository debug key for local phone-debug pairing. `npm run native:build` supplies the same
 validated signing environment to the phone and Wear release builds. Any future EAS-built phone artifact can pair only
 with a Wear artifact signed by that same certificate. Never place signing material in `shared/release.json` or
 generated metadata.
@@ -221,7 +221,7 @@ Recovery is deliberately state-specific:
 - If a post-merge tag or image stage failed, rerun **Publish prepared release** with the release commit and branch
   shown in the action summary. Its OTA stage is also replayable when that prepared manifest already records a
   compatible protected native tag. A historical release whose recorded native baseline is incompatible requires the explicit
-  exact-source manual OTA path in `docs/mobile-release.md`; do not relax source ancestry or fingerprint checks.
+  exact-source manual OTA path in `docs/native-store-release.md`; do not relax source ancestry or fingerprint checks.
   Tag creation is idempotent, and a manifest ahead of the latest tag blocks another version bump until this is
   resolved.
 - **Build Release Image** remains available for an image-only rebuild. Moving `latest` is allowed only for the highest
@@ -249,14 +249,14 @@ paired version so the shared signing and Data Layer contract are tested together
 the globally unique code pair, and the native source tag atomically:
 
 ```powershell
-npm.cmd run release:native:prepare -- --bump patch
+node scripts/release-config.mjs prepare-native --bump patch
 npm.cmd run release:check
 npm.cmd run test:release
 ```
 
 Merge the reviewed native metadata with the implementation, then dispatch **Native Android Store Release** with the
 exact full merge commit. Expo prebuild continues to generate ignored native files. Play/GitHub account setup and
-signing secrets are described in `docs/mobile-release.md`. Native preparation verifies the current manifest tag
+signing secrets are described in `docs/native-store-release.md`. Native preparation verifies the current manifest tag
 against the exact published `origin` tag and `origin/master` history; an unfetched remote tag is fetched exactly, while
 a local-only tag is rejected. The authoritative evidence is a signed annotated tag whose tag-object signature verifies
 with reviewed verifier code pinned to the workflow SHA, against
@@ -277,7 +277,7 @@ odd/even pair and upload.
 Repository creation/update/deletion rulesets for `refs/tags/native-v*` remain defense-in-depth. The read-only GitHub
 Rulesets API hides bypass actors, so observing the expected rules cannot prove which identities may bypass them and
 cannot replace the signed-tag check. Key isolation, onboarding, overlapping-key rotation, old-key retirement, and
-emergency revocation procedures are defined in `docs/mobile-release.md`; the comment-only allowed-signers placeholder
+emergency revocation procedures are defined in `docs/native-store-release.md`; the comment-only allowed-signers placeholder
 trusts nobody and therefore fails every release-attestation check closed.
 
 ## Reproducible artifact metadata

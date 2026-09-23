@@ -18,7 +18,7 @@ import {
   validateNativeReleaseObservation
 } from './native-release-evidence.mjs';
 
-export const APPLICATION_ID = 'net.darkmachines.healthtracker';
+const APPLICATION_ID = 'net.darkmachines.healthtracker';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');
@@ -276,7 +276,7 @@ async function promptText(message, defaultValue = null) {
 }
 
 /** Read a secret from a TTY without echoing it or placing it in shell history. */
-export async function promptHidden(message) {
+async function promptHidden(message) {
   if (!process.stdin.isTTY || !process.stdout.isTTY || typeof process.stdin.setRawMode !== 'function') {
     throw new Error(`${message} requires a TTY or an environment-provided secret.`);
   }
@@ -878,7 +878,7 @@ async function launchAndVerify(target, tooling, runner) {
 }
 
 function printHelp() {
-  process.stdout.write(`Usage: npm run release:native:devices -- [options]
+  process.stdout.write(`Usage: node scripts/native-release-devices.mjs [options]
 
 Build, verify, install, and launch the shared-signer mobile and Wear release artifacts.
 

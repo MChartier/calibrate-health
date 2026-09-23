@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const NATIVE_RELEASE_EVIDENCE_SCHEMA_VERSION = 3;
 export const NATIVE_RELEASE_OBSERVATION_SCHEMA_VERSION = 2;
-export const NATIVE_RELEASE_BUILD_PROVENANCE_SCHEMA_VERSION = 1;
+const NATIVE_RELEASE_BUILD_PROVENANCE_SCHEMA_VERSION = 1;
 export const NATIVE_RELEASE_APPLICATION_ID = 'net.darkmachines.healthtracker';
 export const NATIVE_RELEASE_PROTOCOL = 'docs/physical-galaxy-validation.md';
 
@@ -79,7 +79,7 @@ export const NATIVE_RELEASE_CHECKPOINT_GROUPS = Object.freeze({
   ])
 });
 
-export const NATIVE_RELEASE_GATE_CHECKPOINTS = Object.freeze([
+const NATIVE_RELEASE_GATE_CHECKPOINTS = Object.freeze([
   'gate-native-release',
   'gate-android-emulator',
   'gate-wear-emulator',
@@ -87,7 +87,7 @@ export const NATIVE_RELEASE_GATE_CHECKPOINTS = Object.freeze([
   'gate-ota'
 ]);
 
-export const NATIVE_RELEASE_CHECKPOINTS = Object.freeze([
+const NATIVE_RELEASE_CHECKPOINTS = Object.freeze([
   ...new Set([
     ...Object.values(NATIVE_RELEASE_CHECKPOINT_GROUPS).flat(),
     ...NATIVE_RELEASE_GATE_CHECKPOINTS
@@ -669,7 +669,7 @@ function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-export function runNativeReleaseEvidenceCli(argv = process.argv.slice(2), options = {}) {
+function runNativeReleaseEvidenceCli(argv = process.argv.slice(2), options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
   const args = parseNativeReleaseEvidenceArgs(argv);
   if (args.help || !args.command) {

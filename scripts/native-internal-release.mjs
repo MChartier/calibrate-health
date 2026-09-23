@@ -8,6 +8,8 @@ import { checkRepository, prepareLocalInternalNativeRelease } from './release-co
 import { nativeReleaseCredentialFreeEnvironment, readNativeReleaseBuildSource } from './native-release-build.mjs';
 import { nativeReleaseToolEnvironment, resolveNativeReleaseDeviceTooling } from './native-release-devices.mjs';
 import { readNativeOtaBaseline } from './native-ota-contract.mjs';
+import { assertNativeNodeVersion, inspectNativeToolchain, NATIVE_TOOLCHAIN } from './native-toolchain.mjs';
+import { inspectNativeEasDependency, inspectNativeHostDependencies } from './native-setup.mjs';
 import {
   createGooglePlayPublisher, createNativePlayReleasePlan, inspectLocalNativePlayInternal,
   resolveGooglePlayAccessToken, uploadLocalNativePlayInternal, verifyNativePlayArtifacts
@@ -19,7 +21,7 @@ export const INTERNAL_CHANNEL = 'internal';
 export const INTERNAL_PROJECT_ID = 'fda8f8c5-e646-47ac-82fb-35003c9cbec7';
 export const LOCAL_RECORD_PATH = 'build/native-local-internal.json';
 const RECORD_KIND = 'local-internal';
-export const WINDOWS_CMAKE_VERSION = '3.31.6';
+const WINDOWS_CMAKE_VERSION = NATIVE_TOOLCHAIN.cmake;
 // Bound health checks and archive-tool output so failures remain actionable on the host.
 const CONNECTION_TIMEOUT_MS = 15_000;
 const MAX_TOOL_OUTPUT_BYTES = 32 * 1024 * 1024;
@@ -28,7 +30,7 @@ const COMMAND_OPTIONS = {
   submit: ['--service-account-file', '--confirm-play-console-clean'], status: ['--service-account-file']
 };
 
-export function parseLocalInternalArgs(argv) {
+export function parseLocalInternalArgs(argv, { requireCredentials = true } = {}) {
   const [command, ...args] = argv;
   if (!command || command === '--help' || command === '-h') return { command: 'help' };
   if (!Object.hasOwn(COMMAND_OPTIONS, command)) throw new Error(`Unknown internal release command: ${command}`);
@@ -43,7 +45,8 @@ export function parseLocalInternalArgs(argv) {
     if (!value || value.startsWith('--')) throw new Error(`${option} requires a value.`);
     values[option] = value;
   }
-  const required = COMMAND_OPTIONS[command].filter((option) => option !== '--confirm-play-console-clean');
+  const required = COMMAND_OPTIONS[command].filter((option) => option !== '--confirm-play-console-clean' &&
+    (requireCredentials || !['--credentials-file', '--service-account-file'].includes(option)));
   for (const option of required) if (!values[option]) throw new Error(`${command} requires ${option}.`);
   if (command === 'submit' && !values['--confirm-play-console-clean']) {
     throw new Error('Check Play Publishing overview for unrelated pending changes and pause other Console/API writers, then pass --confirm-play-console-clean.');
@@ -61,7 +64,7 @@ export function localInternalEnvironment(environment = process.env) {
     EXPO_PUBLIC_CALIBRATE_SERVER_URL: INTERNAL_SERVER_URL,
     EXPO_PUBLIC_EAS_PROJECT_ID: INTERNAL_PROJECT_ID,
     EXPO_UPDATES_CHANNEL: INTERNAL_CHANNEL,
-    ANDROID_BUILD_TOOLS_VERSION: '36.0.0'
+    ANDROID_BUILD_TOOLS_VERSION: NATIVE_TOOLCHAIN.buildTools
   };
 }
 
@@ -195,7 +198,7 @@ export function parseBundleResourceValue(dump) {
 }
 
 /** Read final AABs, including compiled JS/DEX, rather than trusting build-time environment alone. */
-export function inspectInternalBundleConfiguration({ root, plan, tooling, environment }) {
+function inspectInternalBundleConfiguration({ root, plan, tooling, environment }) {
   const jar = path.join(tooling.javaHome, 'bin', process.platform === 'win32' ? 'jar.exe' : 'jar');
   const observations = {};
   for (const role of ['phone', 'watch']) {
@@ -253,10 +256,20 @@ function writeLocalRecord(root, record) {
 export function verifyLocalRecord(root, current) {
   let recorded;
   try { recorded = JSON.parse(fs.readFileSync(path.join(root, LOCAL_RECORD_PATH), 'utf8')); }
-  catch { throw new Error('Local internal release record is missing. Run release:native:internal build first.'); }
+  catch { throw new Error('Local internal release record is missing. Run npm run native:build first.'); }
   if (!isDeepStrictEqual(recorded, current)) {
-    throw new Error('Local internal artifacts or build configuration changed. Rebuild before submitting.');
+    throw new Error('Local internal artifacts or build configuration changed. Rebuild before installing or submitting.');
   }
+}
+
+export async function verifyLocalInternalArtifacts({ root = ROOT, environment = process.env }, dependencies = {}) {
+  await (dependencies.checkConfiguration ?? assertReleaseConfiguration)(root);
+  const sourceCommit = (dependencies.readSource ?? readNativeReleaseBuildSource)(root);
+  const env = nativeReleaseCredentialFreeEnvironment(localInternalEnvironment(environment));
+  const plan = createLocalInternalPlan(root, sourceCommit);
+  const record = verifyCandidate(root, plan, env, dependencies);
+  verifyLocalRecord(root, record);
+  return record;
 }
 
 export async function buildLocalInternalRelease({ root = ROOT, credentialsFile, environment = process.env }, dependencies = {}) {
@@ -277,38 +290,17 @@ export async function buildLocalInternalRelease({ root = ROOT, credentialsFile, 
   return { provenance: RECORD_KIND, sourceCommit, serverUrl: INTERNAL_SERVER_URL, candidates: plan.candidates, record: LOCAL_RECORD_PATH };
 }
 
-export async function internalReleaseDoctor(root = ROOT, environment = process.env, dependencies = {}) {
+async function internalReleaseDoctor(root = ROOT, environment = process.env, dependencies = {}) {
   const checks = [];
   const check = async (name, action) => {
     try { checks.push({ name, ok: true, detail: await action() }); }
     catch (error) { checks.push({ name, ok: false, detail: error.message }); }
   };
   const env = localInternalEnvironment(Object.fromEntries(Object.entries(environment).filter(([name]) => !name.toUpperCase().startsWith('CALIBRATE_ANDROID_'))));
-  await check('node', () => {
-    if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('Install Node 22.14 or newer.');
-    return process.version;
-  });
+  await check('node', () => assertNativeNodeVersion());
   await check('release configuration', () => assertReleaseConfiguration(root).then((manifest) => manifest.android));
-  await check('host dependencies', () => {
-    for (const file of ['node_modules/expo/package.json', 'shared/dist/cjs/releaseCompatibility.js']) {
-      if (!fs.existsSync(path.join(root, file))) throw new Error('Run npm.cmd run setup, then npm.cmd --prefix shared run build.');
-    }
-    return 'Installed';
-  });
-  await check('Android SDK, JDK, bundletool', () => {
-    const tooling = resolveNativeReleaseDeviceTooling(env);
-    if (!tooling.bundletoolJar || !fs.existsSync(tooling.bundletoolJar)) throw new Error('Set BUNDLETOOL_JAR to the official bundletool all-in-one JAR.');
-    const result = spawnSync(tooling.java, ['-version'], { env, encoding: 'utf8', windowsHide: true });
-    if (result.error || result.status !== 0 || !/version "17[."]/.test(result.stderr)) {
-      throw new Error('Set JAVA_HOME to JDK 17, matching the reviewed release toolchain.');
-    }
-    const requiredPaths = ['platforms/android-36/android.jar', 'ndk/27.1.12297006/source.properties'];
-    for (const required of requiredPaths) {
-      if (!fs.existsSync(path.join(tooling.sdkRoot, required))) throw new Error(`Install Android SDK component for ${required}.`);
-    }
-    const cmake = process.platform === 'win32' ? inspectWindowsCmake(tooling, env) : null;
-    return { sdk: tooling.sdkRoot, java: tooling.javaHome, javaVersion: result.stderr.trim(), cmake };
-  });
+  checks.push(inspectNativeHostDependencies(root), inspectNativeEasDependency(root));
+  checks.push(...(dependencies.inspectToolchain ?? inspectNativeToolchain)(env));
   await check('private backend compatibility', async () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'shared/release.json'), 'utf8'));
     const response = await (dependencies.fetchImpl ?? fetch)(`${INTERNAL_SERVER_URL}/api/v1/client-config`, {
@@ -327,11 +319,12 @@ export async function internalReleaseDoctor(root = ROOT, environment = process.e
 }
 
 const HELP = `Local phone + Wear internal releases (never production or signed native tags).
-  npm run release:native:internal -- doctor
-  npm run release:native:internal -- prepare --bump patch|minor|major
-  npm run release:native:internal -- build --credentials-file ABSOLUTE_EXTERNAL_FILE
-  npm run release:native:internal -- submit --service-account-file ABSOLUTE_EXTERNAL_FILE --confirm-play-console-clean
-  npm run release:native:internal -- status --service-account-file ABSOLUTE_EXTERNAL_FILE
+  npm run native:configure -- --credentials-file ABSOLUTE_EXTERNAL_FILE --service-account-file ABSOLUTE_EXTERNAL_FILE
+  npm run native:doctor
+  npm run native:version -- --bump patch|minor|major
+  npm run native:build
+  npm run native:submit
+  npm run native:status
 Backend: ${INTERNAL_SERVER_URL}; Expo channel: ${INTERNAL_CHANNEL}.
 Commit all source/version changes before build. Keep credentials outside the repository.`;
 
@@ -344,16 +337,14 @@ export async function runLocalInternalCli(argv, options = {}) {
   if (command === 'prepare') return prepareLocalInternalNativeRelease({ root, bump: values['--bump'] });
   await assertReleaseConfiguration(root);
   if (command === 'build') {
+    requireExternalFile(root, values['--credentials-file'], 'credentials.json');
     const clean = nativeReleaseCredentialFreeEnvironment(localInternalEnvironment(environment));
     const tooling = resolveNativeReleaseDeviceTooling(clean);
     if (!tooling.bundletoolJar) throw new Error('Set BUNDLETOOL_JAR before building.');
     return buildLocalInternalRelease({ root, credentialsFile: values['--credentials-file'], environment: nativeReleaseToolEnvironment(clean, tooling) });
   }
-  const sourceCommit = readNativeReleaseBuildSource(root);
-  const env = nativeReleaseCredentialFreeEnvironment(localInternalEnvironment(environment));
-  const plan = createLocalInternalPlan(root, sourceCommit);
-  const record = verifyCandidate(root, plan, env);
-  verifyLocalRecord(root, record);
+  const record = await verifyLocalInternalArtifacts({ root, environment });
+  const { plan } = record;
   const serviceAccountFile = requireExternalFile(root, values['--service-account-file'], 'Play testing service account');
   const accessToken = await resolveGooglePlayAccessToken({ serviceAccountFile, environment: {} });
   const publisher = createGooglePlayPublisher({ applicationId: plan.applicationId, accessToken });
