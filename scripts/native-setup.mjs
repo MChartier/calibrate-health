@@ -192,6 +192,17 @@ function java17Available(javaHome, environment, capture) {
   } catch { return false; }
 }
 
+function inspectNativeGit(environment, capture) {
+  try {
+    const version = capture('git', ['--version'], environment);
+    if (/^git version \d+\.\d+\.\d+(?:[.\s]|$)/.test(version)) {
+      return { name: 'Git', ok: true, detail: version };
+    }
+  } catch { /* Report setup guidance without exposing tool stderr. */ }
+  return { name: 'Git', ok: false,
+    detail: 'Install Git for Windows and ensure git is on PATH. Reopen the terminal and rerun npm run native:setup.' };
+}
+
 function easInstallState(root) {
   const directory = path.join(root, 'tools/eas-cli');
   const hash = createHash('sha256');
@@ -265,6 +276,8 @@ export async function setupNative(argv = [], options = {}) {
   const download = options.download ?? downloadNativeTool;
   const hostCheck = options.hostCheck ?? inspectNativeHostDependencies;
   const easCheck = options.easCheck ?? inspectNativeEasDependency;
+  const gitCheck = inspectNativeGit(environment, capture);
+  if (!args.check && !gitCheck.ok) throw new Error(gitCheck.detail);
 
   if (!args.check) {
     const managedJava = path.join(environment.LOCALAPPDATA, 'Programs', 'Eclipse Adoptium', NATIVE_TOOL_DOWNLOADS.java.root);
@@ -311,7 +324,7 @@ export async function setupNative(argv = [], options = {}) {
       (options.ensureEas ?? ensureNativeEasDependency)(root, npmCli, environment, run, log);
     }
   }
-  const checks = inspect(environment);
+  const checks = [gitCheck, ...inspect(environment)];
   if (!args.skipDeps) checks.push(hostCheck(root), easCheck(root));
   const ok = checks.every((check) => check.ok);
   const values = Object.fromEntries(NATIVE_ENVIRONMENT_KEYS.map((key) => [key, environment[key]]));

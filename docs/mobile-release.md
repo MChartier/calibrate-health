@@ -88,6 +88,7 @@ On Windows x64, with Node 22.14.0+ and Git installed:
 npm.cmd run native:setup
 ```
 
+Setup checks that Git runs from `PATH` before installing tools; install Git separately if it is missing.
 Setup installs missing, checksum-pinned JDK 17, Android command-line tools, bundletool, and the SDK
 platform/build-tools, platform-tools, NDK, and CMake required by the repository. It installs host
 dependencies, builds shared code, and installs the locked EAS CLI for OTA. It reuses current installs

@@ -41,6 +41,7 @@ function setupFixture(t) {
     readUserEnvironment: () => saved,
     saveUserEnvironment: (values) => { events.push(['save']); saved = values; },
     capture: (command) => {
+      if (command === 'git') return 'git version 2.50.1.windows.1';
       if (!fs.existsSync(command)) throw new Error('Not installed');
       return command.endsWith('javac.exe') ? 'javac 17.0.20.1' : 'openjdk 17.0.20.1 2026-08-18';
     },
@@ -123,6 +124,47 @@ test('check lists missing tools and dependencies without installs, environment w
   assert.ok(result.checks.some((check) => check.name === 'Host dependencies' && !check.ok));
   assert.deepEqual(events, []);
   assert.deepEqual(fs.readdirSync(root), before);
+});
+
+test('setup and check require runnable Git even when all other prerequisites are installed', async (t) => {
+  const { root, options, events } = setupFixture(t);
+  const logs = [];
+  options.log = (message) => logs.push(message);
+  options.hostCheck = () => ({ name: 'Host dependencies', ok: true, detail: 'Installed' });
+  options.environment.npm_execpath = path.join(root, 'npm-cli.js');
+  write(options.environment.npm_execpath);
+  await setupNative([], options);
+  const capture = options.capture;
+  for (const failure of ['missing', 'nonzero', 'invalid-output']) {
+    options.capture = (command, args, environment) => {
+      if (command !== 'git') return capture(command, args, environment);
+      assert.deepEqual(args, ['--version']);
+      assert.equal(environment.PATH, options.environment.PATH);
+      assert.equal(environment.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
+      if (failure === 'invalid-output') return 'unexpected-sentinel';
+      throw Object.assign(new Error('unexpected-sentinel'), failure === 'missing' ? { code: 'ENOENT' } : { status: 1 });
+    };
+    for (const args of [[], ['--skip-deps'], ['--check'], ['--check', '--skip-deps']]) {
+      events.length = 0;
+      logs.length = 0;
+      if (args.includes('--check')) {
+        const result = await setupNative(args, options);
+        assert.equal(result.ok, false);
+        assert.deepEqual(result.checks.filter((check) => !check.ok).map((check) => check.name), ['Git']);
+        assert.match(result.checks.find((check) => check.name === 'Git').detail, /Install Git.*PATH/);
+      } else {
+        await assert.rejects(setupNative(args, options), /Install Git.*PATH/);
+      }
+      assert.deepEqual(events, [], 'Unavailable Git must not trigger installs or settings writes');
+      assert.doesNotMatch(logs.join('\n'), /Local prerequisites are ready|unexpected-sentinel/);
+    }
+  }
+  options.capture = capture;
+  const ready = await setupNative(['--check'], options);
+  assert.equal(ready.ok, true);
+  assert.deepEqual(ready.checks.find((check) => check.name === 'Git'), {
+    name: 'Git', ok: true, detail: 'git version 2.50.1.windows.1'
+  });
 });
 
 test('tool installation failure never persists partial settings or runs dependency setup', async (t) => {
