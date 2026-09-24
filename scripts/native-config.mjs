@@ -95,17 +95,19 @@ function runEasCredentials(root, args, directory, environment) {
   if (result.error || result.status !== 0) throw new Error('EAS credential configuration did not complete. Saved native settings are unchanged.');
 }
 
-function runEasPlayCredentials(root, directory, environment) {
-  const result = spawnSync(process.execPath, [path.join(root, 'scripts/native-eas-credentials.mjs'), directory], {
+function runEasDownload(root, directory, environment, downloadPlay) {
+  const args = [path.join(root, 'scripts/native-eas-credentials.mjs'), directory];
+  if (!downloadPlay) args.push('--skip-play');
+  const result = spawnSync(process.execPath, args, {
     cwd: directory, env: environment, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8',
     windowsHide: true, timeout: 60_000
   });
   // Capture worker output so unexpected dependency diagnostics cannot expose credentials.
-  if (result.error || result.status !== 0) throw new Error('EAS Play credential download failed. Check the assigned key and Expo access, then retry native:configure. Saved settings are unchanged.');
+  if (result.error || result.status !== 0) throw new Error('EAS credential download failed. Check the default signing key, assigned Play key, and Expo access, then retry native:configure. Saved settings are unchanged.');
   let resultData;
   try { resultData = JSON.parse(result.stdout); } catch { /* Fail closed below. */ }
-  if (typeof resultData?.downloaded !== 'boolean') throw new Error('EAS Play credential download returned an invalid result. Saved settings are unchanged.');
-  return resultData.downloaded;
+  if (typeof resultData?.playDownloaded !== 'boolean') throw new Error('EAS credential download returned an invalid result. Saved settings are unchanged.');
+  return resultData;
 }
 
 function validatePlayFile(file) {
@@ -146,25 +148,25 @@ function downloadCredentials(root, parent, environment, options, downloadPlay) {
     const log = options.log ?? console.log;
     log('[native] EAS signing credentials for @calibrate-health/calibrate-health-app / ' + NATIVE_RELEASE_APPLICATION_ID + '.');
     run(root, ['credentials:configure-build', '--platform', 'android', '--profile', 'internal'], directory, easEnvironment);
-    log('[native] In EAS, choose internal, then credentials.json > Download credentials from EAS to credentials.json. After downloading, choose Go back, then Exit.');
-    run(root, ['credentials', '--platform', 'android'], directory, easEnvironment);
+    log('[native] Downloading the default Android signing key' + (downloadPlay ? ' and assigned Play key' : '') + ' from EAS.');
+    const result = (options.runEasDownload ?? runEasDownload)(root, directory, easEnvironment, downloadPlay);
+    if (typeof result?.playDownloaded !== 'boolean') throw new Error('EAS credential download returned an invalid result. Saved settings are unchanged.');
     const file = path.join(directory, 'credentials.json');
     let downloaded;
     try { downloaded = JSON.parse(fs.readFileSync(file, 'utf8')); }
-    catch { throw new Error('EAS did not download valid credentials.json. Rerun native:configure and choose Download credentials from EAS to credentials.json.'); }
+    catch { throw new Error('EAS did not download valid credentials.json. Check the default signing key and rerun native:configure.'); }
     const signing = downloaded?.android?.keystore;
     if (typeof signing?.keystorePath !== 'string' || !signing.keystorePath) throw new Error('EAS download is missing the Android keystore path.');
     signing.keystorePath = requireExternalFile(root, path.resolve(directory, signing.keystorePath), 'EAS upload keystore');
     signing.keyPassword ??= signing.keystorePassword;
-    // EAS writes relative paths; the local build worker requires an absolute external path.
+    // The local build worker requires an absolute external keystore path.
     writeJson('credentials.json', { android: { keystore: signing } });
     fs.chmodSync(file, 0o600);
     fs.chmodSync(signing.keystorePath, 0o600);
     loadLocalSigningEnvironment(root, file, {});
     let serviceAccountFile;
     if (downloadPlay) {
-      const downloaded = (options.runEasPlay ?? runEasPlayCredentials)(root, directory, easEnvironment);
-      if (downloaded) {
+      if (result.playDownloaded) {
         serviceAccountFile = requireExternalFile(root, path.join(directory, EAS_PLAY_CREDENTIAL_FILE), 'EAS Play service account');
         validatePlayFile(serviceAccountFile);
         fs.chmodSync(serviceAccountFile, 0o600);

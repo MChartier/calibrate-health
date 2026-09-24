@@ -5,7 +5,7 @@ import path from 'node:path';
 import { generateKeyPairSync } from 'node:crypto';
 import test from 'node:test';
 import { runNative } from './native.mjs';
-import { downloadEasPlayCredentials, EAS_PLAY_CREDENTIAL_FILE } from './native-eas-credentials.mjs';
+import { downloadEasCredentials, EAS_PLAY_CREDENTIAL_FILE } from './native-eas-credentials.mjs';
 import { configureNative, nativeConfigurationPath, parseNativeConfigureArguments,
   readNativeConfiguration, resolveNativeCredentialFile } from './native-config.mjs';
 
@@ -36,19 +36,17 @@ function fixture(t) {
       CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: 'signing-sentinel', GOOGLE_APPLICATION_CREDENTIALS: 'play-sentinel' },
     log: () => {},
     ensureEas: (_root, _npm, environment) => { calls.push(['ensure', environment]); },
-    runEasPlay: (_root, directory, environment) => {
-      calls.push(['play', directory, environment]);
-      fs.writeFileSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE), JSON.stringify(account));
-      return true;
+    runEasDownload: (_root, directory, environment, downloadPlay) => {
+      calls.push(['download', directory, environment, downloadPlay]);
+      const keystore = path.resolve(directory, signing.keystorePath);
+      fs.mkdirSync(path.dirname(keystore), { recursive: true });
+      fs.writeFileSync(keystore, 'fixture keystore');
+      fs.writeFileSync(path.join(directory, 'credentials.json'), JSON.stringify({ android: { keystore: signing } }));
+      if (downloadPlay) fs.writeFileSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE), JSON.stringify(account));
+      return { playDownloaded: downloadPlay };
     },
     runEas: (_root, args, directory, environment) => {
       calls.push([args, directory, environment]);
-      if (args[0] === 'credentials') {
-        const keystore = path.resolve(directory, signing.keystorePath);
-        fs.mkdirSync(path.dirname(keystore), { recursive: true });
-        fs.writeFileSync(keystore, 'fixture keystore');
-        fs.writeFileSync(path.join(directory, 'credentials.json'), JSON.stringify({ android: { keystore: signing } }));
-      }
     }
   };
   return { temporary, root, userDirectory, serviceAccountFile, signing, account, app, calls, options };
@@ -65,11 +63,13 @@ test('configure accepts an optional Play file and rejects manual signing-file op
   assert.throws(() => nativeConfigurationPath({}, 'win32'), /LOCALAPPDATA/);
 });
 
-test('configure uses EAS for the exact app, normalizes downloads, and saves only paths', (t) => {
+test('configure sets up the exact app and downloads automatically without opening the credential menu', (t) => {
   const f = fixture(t);
   const result = configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
   assert.deepEqual(f.calls[1][0], ['credentials:configure-build', '--platform', 'android', '--profile', 'internal']);
-  assert.deepEqual(f.calls[2][0], ['credentials', '--platform', 'android']);
+  assert.equal(f.calls[2][0], 'download');
+  assert.equal(f.calls[2][3], false);
+  assert.equal(f.calls.length, 3);
   const directory = path.dirname(result.credentialsFile);
   assert.equal(f.calls[1][1], directory);
   assert.equal(f.calls[2][1], directory);
@@ -100,9 +100,9 @@ test('configure refreshes the assigned EAS Play key and preserves previous snaps
   const first = configureNative({}, f.options);
   assert.equal(JSON.parse(fs.readFileSync(first.credentialsFile)).android.keystore.keyPassword, f.signing.keystorePassword);
   assert.equal(JSON.parse(fs.readFileSync(first.serviceAccountFile)).private_key, privateKey);
-  assert.equal(f.calls[3][2].EXPO_TOKEN, 'expo-sentinel');
-  assert.equal(f.calls[3][2].GOOGLE_APPLICATION_CREDENTIALS, undefined);
-  assert.equal(f.calls[3][2].CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
+  assert.equal(f.calls[2][2].EXPO_TOKEN, 'expo-sentinel');
+  assert.equal(f.calls[2][2].GOOGLE_APPLICATION_CREDENTIALS, undefined);
+  assert.equal(f.calls[2][2].CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
   configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
   const refreshed = configureNative({}, f.options);
   assert.notEqual(first.credentialsFile, refreshed.credentialsFile);
@@ -120,7 +120,9 @@ test('an unassigned EAS Play key configures builds and clears stale submission s
   const f = fixture(t);
   const first = configureNative({}, f.options);
   const messages = [];
-  const refreshed = configureNative({}, { ...f.options, runEasPlay: () => false, log: (message) => messages.push(message) });
+  const refreshed = configureNative({}, { ...f.options,
+    runEasDownload: (root, directory, environment) => f.options.runEasDownload(root, directory, environment, false),
+    log: (message) => messages.push(message) });
   assert.equal(refreshed.serviceAccountFile, undefined);
   assert.equal(readNativeConfiguration(f.options).config.serviceAccountFile, undefined);
   assert.match(messages.at(-1), /No Play submission key is assigned/);
@@ -134,13 +136,13 @@ test('failed or invalid EAS Play downloads preserve the complete previous config
   const before = fs.readFileSync(first.configurationFile, 'utf8');
   const parent = path.dirname(first.configurationFile);
   const directories = fs.readdirSync(parent);
-  for (const runEasPlay of [
+  for (const runEasDownload of [
     () => { throw new Error('EAS unavailable'); },
-    () => true,
-    (_root, directory) => { fs.writeFileSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE), 'secret-sentinel{'); return true; },
-    (_root, directory) => { fs.writeFileSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE), JSON.stringify({ ...f.account, private_key: 'secret-sentinel' })); return true; }
+    () => ({ playDownloaded: true }),
+    (...args) => { const result = f.options.runEasDownload(...args); fs.writeFileSync(path.join(args[1], EAS_PLAY_CREDENTIAL_FILE), 'secret-sentinel{'); return result; },
+    (...args) => { const result = f.options.runEasDownload(...args); fs.writeFileSync(path.join(args[1], EAS_PLAY_CREDENTIAL_FILE), JSON.stringify({ ...f.account, private_key: 'secret-sentinel' })); return result; }
   ]) {
-    assert.throws(() => configureNative({}, { ...f.options, runEasPlay }), (error) => {
+    assert.throws(() => configureNative({}, { ...f.options, runEasDownload }), (error) => {
       assert.doesNotMatch(error.message, /secret-sentinel/);
       return true;
     });
@@ -172,12 +174,15 @@ test('cancelled, missing, or invalid downloads preserve prior credentials and re
   const directory = path.dirname(initial.configurationFile);
   const before = fs.readFileSync(initial.configurationFile, 'utf8');
   const files = fs.readdirSync(directory);
-  for (const runEas of [
-    () => { throw new Error('Cancelled'); }, () => {},
-    (_root, _args, output) => fs.writeFileSync(path.join(output, 'credentials.json'), 'private-sentinel{'),
-    (_root, _args, output) => fs.writeFileSync(path.join(output, 'credentials.json'), '{}')
+  for (const override of [
+    { runEas: () => { throw new Error('Cancelled'); } },
+    { runEasDownload: () => ({ playDownloaded: false }) },
+    ...['private-sentinel{', '{}'].map((contents) => ({ runEasDownload: (_root, output) => {
+      fs.writeFileSync(path.join(output, 'credentials.json'), contents);
+      return { playDownloaded: false };
+    } }))
   ]) {
-    assert.throws(() => configureNative({}, { ...f.options, runEas }), (error) => {
+    assert.throws(() => configureNative({}, { ...f.options, ...override }), (error) => {
       assert.doesNotMatch(error.message, /private-sentinel/);
       return true;
     });
@@ -262,41 +267,56 @@ test('EAS configure, setup, bare build and submit compose without repeated file 
 
 function easResponse(f, assigned = { keyJson: JSON.stringify(f.account) }) {
   return { data: { app: { byId: { id: f.app.expo.extra.eas.projectId, androidAppCredentials: [{
-    applicationIdentifier: f.app.expo.android.package, googleServiceAccountKeyForSubmissions: assigned
+    applicationIdentifier: f.app.expo.android.package, googleServiceAccountKeyForSubmissions: assigned,
+    androidAppBuildCredentialsList: [{ isDefault: true, androidKeystore: {
+      keystore: Buffer.from('fixture keystore').toString('base64'), keystorePassword: f.signing.keystorePassword,
+      keyAlias: f.signing.keyAlias, keyPassword: f.signing.keyPassword
+    } }]
   }] } } } };
 }
 
-test('EAS download queries only the exact app submission key and writes it outside the checkout', async (t) => {
+function stagingDirectory(f) {
+  const directory = fs.mkdtempSync(path.join(f.userDirectory, 'eas-android-'));
+  fs.writeFileSync(path.join(directory, 'app.json'), JSON.stringify(f.app));
+  return directory;
+}
+
+test('EAS downloads the default keystore and assigned Play key for the exact app into external files', async (t) => {
   const f = fixture(t);
-  const configured = configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
-  const directory = path.dirname(configured.credentialsFile);
-  const downloaded = await downloadEasPlayCredentials({ root: f.root, directory, query: async (document, variables) => {
-    assert.deepEqual(variables, { projectId: f.app.expo.extra.eas.projectId, applicationIdentifier: f.app.expo.android.package });
+  const directory = stagingDirectory(f);
+  const response = easResponse(f);
+  response.data.app.byId.androidAppCredentials[0].androidAppBuildCredentialsList.unshift({ isDefault: false, androidKeystore: {} });
+  const result = await downloadEasCredentials({ root: f.root, directory, query: async (document, variables) => {
+    assert.deepEqual(variables, { projectId: f.app.expo.extra.eas.projectId, applicationIdentifier: f.app.expo.android.package, downloadPlay: true });
     assert.match(document, /googleServiceAccountKeyForSubmissions/);
-    assert.doesNotMatch(document, /googleServiceAccountKeyForFcmV1|androidKeystore/);
-    return easResponse(f);
+    assert.match(document, /androidAppBuildCredentialsList/);
+    assert.doesNotMatch(document, /googleServiceAccountKeyForFcmV1/);
+    return response;
   } });
-  assert.equal(downloaded, true);
+  assert.deepEqual(result, { playDownloaded: true });
   const file = path.join(directory, EAS_PLAY_CREDENTIAL_FILE);
   assert.deepEqual(JSON.parse(fs.readFileSync(file)), f.account);
+  const signing = JSON.parse(fs.readFileSync(path.join(directory, 'credentials.json'))).android.keystore;
+  assert.equal(signing.keyAlias, f.signing.keyAlias);
+  assert.equal(signing.keystorePath, path.join(directory, 'credentials/android/keystore.jks'));
+  assert.equal(fs.readFileSync(signing.keystorePath, 'utf8'), 'fixture keystore');
   if (process.platform !== 'win32') assert.equal(fs.statSync(file).mode & 0o777, 0o600);
-  await assert.rejects(downloadEasPlayCredentials({ root: f.root, directory, query: async () => easResponse(f) }), /EEXIST/);
+  await assert.rejects(downloadEasCredentials({ root: f.root, directory, query: async () => easResponse(f) }), /EEXIST/);
 });
 
 test('EAS download handles no assigned Play key without choosing an unrelated key', async (t) => {
   const f = fixture(t);
-  const configured = configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
-  const directory = path.dirname(configured.credentialsFile);
+  const directory = stagingDirectory(f);
   const response = easResponse(f, null);
   response.data.app.byId.androidAppCredentials[0].googleServiceAccountKeyForFcmV1 = { keyJson: JSON.stringify(f.account) };
-  assert.equal(await downloadEasPlayCredentials({ root: f.root, directory, query: async () => response }), false);
+  assert.deepEqual(await downloadEasCredentials({ root: f.root, directory, query: async () => response }), { playDownloaded: false });
+  assert.ok(fs.existsSync(path.join(directory, 'credentials.json')));
   assert.equal(fs.existsSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE)), false);
 });
 
 test('EAS download rejects wrong identities, ambiguous responses, API errors, and invalid secrets without disclosure', async (t) => {
   const f = fixture(t);
-  const configured = configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
-  const directory = path.dirname(configured.credentialsFile);
+  const directory = stagingDirectory(f);
   const wrongProject = easResponse(f);
   wrongProject.data.app.byId.id = 'wrong-project';
   const wrongApp = easResponse(f);
@@ -307,11 +327,46 @@ test('EAS download rejects wrong identities, ambiguous responses, API errors, an
     easResponse(f, {}), easResponse(f, { keyJson: 'private-sentinel{' }),
     easResponse(f, { keyJson: JSON.stringify({ ...f.account, token_uri: 'https://private-sentinel/token' }) }),
     easResponse(f, { keyJson: JSON.stringify({ ...f.account, private_key: 'private-sentinel' }) })]) {
-    await assert.rejects(downloadEasPlayCredentials({ root: f.root, directory, query: async () => response }), (error) => {
+    await assert.rejects(downloadEasCredentials({ root: f.root, directory, query: async () => response }), (error) => {
       assert.doesNotMatch(error.message, /private-sentinel/);
       return true;
     });
     assert.equal(fs.existsSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE)), false);
+    assert.equal(fs.existsSync(path.join(directory, 'credentials.json')), false);
   }
-  await assert.rejects(downloadEasPlayCredentials({ root: f.root, directory, query: async () => { throw new Error('private-sentinel'); } }), /lookup failed/);
+  await assert.rejects(downloadEasCredentials({ root: f.root, directory, query: async () => { throw new Error('private-sentinel'); } }), /lookup failed/);
+});
+
+test('EAS skips the Play secret for a local override and defaults a missing key password', async (t) => {
+  const f = fixture(t);
+  const directory = stagingDirectory(f);
+  const response = easResponse(f, { keyJson: 'must not read this invalid key' });
+  response.data.app.byId.androidAppCredentials[0].androidAppBuildCredentialsList[0].androidKeystore.keyPassword = null;
+  const result = await downloadEasCredentials({ root: f.root, directory, downloadPlay: false, query: async (document, variables) => {
+    assert.equal(variables.downloadPlay, false);
+    assert.match(document, /googleServiceAccountKeyForSubmissions @include\(if: \$downloadPlay\)/);
+    return response;
+  } });
+  assert.deepEqual(result, { playDownloaded: false });
+  assert.equal(fs.existsSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE)), false);
+  const signing = JSON.parse(fs.readFileSync(path.join(directory, 'credentials.json'))).android.keystore;
+  assert.equal(signing.keyPassword, f.signing.keystorePassword);
+});
+
+test('EAS requires a single default keystore and rejects malformed signing data before writing credentials', async (t) => {
+  const f = fixture(t);
+  const directory = stagingDirectory(f);
+  const valid = easResponse(f).data.app.byId.androidAppCredentials[0].androidAppBuildCredentialsList[0];
+  for (const builds of [undefined, [], [{ ...valid, isDefault: false }], [valid, valid], [{ isDefault: true, androidKeystore: null }],
+    ...[{ keystore: '' }, { keystore: 'private-sentinel!' }, { keyAlias: null }, { keystorePassword: null }, { keyPassword: '' }]
+      .map((invalid) => [{ ...valid, androidKeystore: { ...valid.androidKeystore, ...invalid } }])]) {
+    const response = easResponse(f);
+    response.data.app.byId.androidAppCredentials[0].androidAppBuildCredentialsList = builds;
+    await assert.rejects(downloadEasCredentials({ root: f.root, directory, query: async () => response }), (error) => {
+      assert.doesNotMatch(error.message, /private-sentinel/);
+      return true;
+    });
+    assert.equal(fs.existsSync(path.join(directory, 'credentials.json')), false);
+    assert.equal(fs.existsSync(path.join(directory, EAS_PLAY_CREDENTIAL_FILE)), false);
+  }
 });

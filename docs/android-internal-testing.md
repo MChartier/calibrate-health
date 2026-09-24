@@ -23,10 +23,10 @@ npm.cmd run native:configure
 ```
 
 Sign into the linked Expo project when prompted. On the first run, accept EAS's new Android keystore
-generation prompt; later runs reuse the app's existing default key. In the credential manager choose
-**credentials.json**, then **Download credentials from EAS to credentials.json**, then return and exit.
-The wrapper validates the download and configures its external location for both phone and Wear builds.
-See [the configuration flow](mobile-release.md#configure-eas-credentials-once) for exact menu steps and paths.
+generation prompt; later runs reuse the app's existing default key. Signing and assigned Play credentials
+download automatically, and the command exits without any credential menus. The wrapper validates the
+download and configures its external location for both phone and Wear builds.
+See [the configuration flow](mobile-release.md#configure-eas-credentials-once) for details and paths.
 
 Never commit the downloaded JSON/keystore, service-account JSON, or passwords. Keep a protected backup.
 The local build ignores inherited `CALIBRATE_ANDROID_*` signing variables. Expo prebuild finishes before

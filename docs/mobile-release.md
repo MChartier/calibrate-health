@@ -62,25 +62,22 @@ test suites or establish device behavior. Run the relevant application checks be
 
 ## Configure EAS credentials once
 
-`native:configure` installs/reuses the locked EAS CLI, then runs `eas credentials:configure-build`
-and `eas credentials --platform android` for `net.darkmachines.healthtracker` in the linked
-`@calibrate-health/calibrate-health-app` project. Sign in to Expo when prompted, or supply `EXPO_TOKEN`.
-It requires network access but can run before Android SDK setup. EAS creates a key if the app has none;
-later runs reuse the existing default key.
-
-In the EAS menu, choose **credentials.json: Upload/Download credentials between EAS servers and your
-local json**, then **Download credentials from EAS to credentials.json**. Select the existing default
-build credentials if prompted. After downloading, press a key to continue, choose **Go back**, then **Exit**.
-Do not choose a new keystore for routine downloads. This is Expo's
-[supported credential sync flow](https://docs.expo.dev/app-signing/syncing-credentials/).
+`native:configure` downloads both credentials and exits automatically. There are no credential menus,
+download selections, or manual exit steps. It installs/reuses the locked EAS CLI and runs
+`eas credentials:configure-build --platform android --profile internal` for first-time setup and
+authentication. Sign in to Expo if prompted, or supply `EXPO_TOKEN`. If the app has no signing key,
+EAS prompts to create one; later runs reuse the existing default key without input.
+The wrapper then downloads the default keystore directly for `net.darkmachines.healthtracker` in
+`@calibrate-health/calibrate-health-app`. It requires network access but can run before Android SDK setup.
 
 For API submission, first create the Google service-account JSON key and grant its Play Console permissions
 following [Play onboarding](android-internal-testing.md#play-console-onboarding). In the EAS dashboard,
 open this project's **Credentials > Android > net.darkmachines.healthtracker** and assign the key under
 **Google Service Account Key for Play Store Submissions**. The FCM/push key is a separate assignment.
-After the signing download, configure automatically retrieves this assigned Play key using your Expo login.
-This uses EAS's internal GraphQL credential API through the locked CLI's authentication; standard
-`credentials.json` sync does not include the Play key. Keep this adapter verified when upgrading EAS CLI.
+Configure retrieves this assigned Play key together with the default signing key using your Expo login.
+The automatic download uses EAS's internal GraphQL credential API through the locked CLI's authentication.
+It writes the Expo-format signing JSON and keystore locally without opening the interactive credential manager.
+Keep this adapter verified when upgrading EAS CLI.
 EAS stores the key; `native:submit` still uses our local Play API publisher, without EAS Submit.
 
 The wrapper downloads into a fresh directory under `%LOCALAPPDATA%\calibrate-health\eas-android-*`,

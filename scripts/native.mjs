@@ -52,9 +52,8 @@ function help(action) {
       'No install, OTA publish, or separate status command is required between build and submit.'
     );
     if (action === 'configure') lines.push(
-      'Runs the locked EAS credential tools to set up/download the key for net.darkmachines.healthtracker.',
-      'Choose credentials.json > Download credentials from EAS to credentials.json, then exit EAS.',
-      'Also downloads the Play submission key assigned to this app in EAS using your Expo login.',
+      'Automatically downloads the default Android signing key and assigned Play key for net.darkmachines.healthtracker.',
+      'No credential menus or manual exit. EAS prompts only for login or first-time signing-key setup when needed.',
       'Keeps the downloaded credentials outside the repository and saves their paths across checkouts.',
       'Requires Expo authentication and network access, but no Android SDK. An unassigned Play key permits build/install only.',
       '--service-account-file FILE uses a local Play key instead of downloading it from EAS for this configuration.'

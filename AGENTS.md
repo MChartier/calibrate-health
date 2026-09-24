@@ -304,8 +304,9 @@ UI code style:
   `native:configure` and `native:setup` are the only supporting root commands; `native:setup -- --check`
   checks prerequisites without changes, and submit includes upload readback. Keep diagnostic and version-maintenance
   workers under `scripts/` rather than adding root aliases.
-  Configure uses the locked EAS credential CLI to set up/download the remote Android key for the exact linked
-  project and `net.darkmachines.healthtracker`. Run it in an external credentials workspace, validate the download,
+  Configure uses the locked EAS CLI for authentication/first-time setup, then automatically downloads the
+  default Android signing key and assigned Play key for the exact linked project and `net.darkmachines.healthtracker`.
+  Do not open the interactive credential manager or require menu navigation/exit. Run in an external credentials workspace, validate the download,
   and save only absolute paths in the user's machine settings. Admit Expo authentication only to EAS, not dependency
   installation. Download only the Play submission key assigned to this exact app through EAS's internal
   credential API using the locked CLI authentication. Keep that adapter verified when upgrading EAS.
