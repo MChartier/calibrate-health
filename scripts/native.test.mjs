@@ -62,12 +62,12 @@ test('invalid actions and options fail before any side effects or authentication
   assert.deepEqual(calls, []);
 });
 
-test('configure saves credential paths before any SDK setup and with inherited secrets scrubbed', async () => {
+test('configure admits only Expo authentication before SDK setup', async () => {
   const { options, calls } = fixture();
-  await runNative(['configure', '--credentials-file', 'signing.json', '--service-account-file', 'play.json'], options);
+  await runNative(['configure', '--service-account-file', 'play.json'], options);
   assert.deepEqual(calls.map(([name]) => name), ['configure']);
-  assert.deepEqual(calls[0][1], { credentialsFile: 'signing.json', serviceAccountFile: 'play.json' });
-  assert.equal(calls[0][2].environment.EXPO_TOKEN, undefined);
+  assert.deepEqual(calls[0][1], { serviceAccountFile: 'play.json' });
+  assert.equal(calls[0][2].environment.EXPO_TOKEN, 'expo-secret');
   assert.equal(calls[0][2].environment.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
 });
 

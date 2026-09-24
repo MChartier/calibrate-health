@@ -319,7 +319,7 @@ async function internalReleaseDoctor(root = ROOT, environment = process.env, dep
 }
 
 const HELP = `Local phone + Wear internal releases (never production or signed native tags).
-  npm run native:configure -- --credentials-file ABSOLUTE_EXTERNAL_FILE --service-account-file ABSOLUTE_EXTERNAL_FILE
+  npm run native:configure -- --service-account-file ABSOLUTE_EXTERNAL_FILE
   npm run native:setup
   npm run native:build
   npm run native:submit

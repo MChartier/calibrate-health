@@ -43,7 +43,7 @@ npm --prefix mobile test
 ```
 
 CI prebuilds and compiles both Android and iOS so native config drift is caught before release work.
-For local Android releases, save external signing and Play JSON paths with `npm run native:configure -- --credentials-file <signing-json> --service-account-file <play-json>`,
+For local Android releases, download EAS-managed signing credentials and configure Play access with `npm run native:configure -- --service-account-file <play-json>`,
 run `npm run native:setup`, then
 `npm run native:build` from the repository root. This builds signed phone
 and Wear APKs and AABs with one certificate. Use `npm run native:install` for local devices,

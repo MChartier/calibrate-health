@@ -16,34 +16,22 @@ checkout. Enroll both form factors in the same Play App Signing identity. With G
 key, the upload key signs AAB submissions; Play signs the APKs installed on devices with its separate key.
 Use Play for subsequent updates rather than installing an upload-key APK over a Play-installed app.
 
-Generate an upload key with JDK keytool if one does not already exist. Let keytool prompt for passwords:
+Let EAS manage the upload key for `net.darkmachines.healthtracker`:
 
 ```powershell
-& "$env:JAVA_HOME\bin\keytool.exe" -genkeypair -v -storetype PKCS12 `
-  -keystore 'C:\secure\healthtracker\upload.p12' -alias healthtracker-upload `
-  -keyalg RSA -keysize 4096 -validity 10000
+npm.cmd run native:configure
 ```
 
-Create an external `credentials.json` in [Expo's Android format](https://docs.expo.dev/app-signing/local-credentials/):
+Sign into the linked Expo project when prompted. On the first run, accept EAS's new Android keystore
+generation prompt; later runs reuse the app's existing default key. In the credential manager choose
+**credentials.json**, then **Download credentials from EAS to credentials.json**, then return and exit.
+The wrapper validates the download and configures its external location for both phone and Wear builds.
+See [the configuration flow](mobile-release.md#configure-eas-signing-once) for exact menu steps and paths.
 
-```json
-{
-  "android": {
-    "keystore": {
-      "keystorePath": "C:\\secure\\healthtracker\\upload.p12",
-      "keystorePassword": "FROM_YOUR_PASSWORD_MANAGER",
-      "keyAlias": "healthtracker-upload",
-      "keyPassword": "FROM_YOUR_PASSWORD_MANAGER"
-    }
-  }
-}
-```
-
-Use an absolute keystore path and restrict the directory to your Windows account. Never commit this file,
-the keystore, service-account JSON, or passwords. The command rejects credentials and keystores located inside
-the checkout, including symlinks resolving inside it. The local command ignores inherited `CALIBRATE_ANDROID_*`
-signing variables. Expo prebuild finishes before
-the wrapper reads the credentials and supplies them to Gradle.
+Never commit the downloaded JSON/keystore, service-account JSON, or passwords. Keep a protected backup.
+The local build ignores inherited `CALIBRATE_ANDROID_*` signing variables. Expo prebuild finishes before
+the wrapper reads the downloaded credentials and supplies them to Gradle. If this package already has
+Play uploads, retain its registered upload key; generating a replacement is a separate key-rotation operation.
 
 ## Play Console onboarding
 
@@ -72,10 +60,10 @@ from the old package automatically.
 
 ## First upload and later updates
 
-Save the completed credential-file paths for this machine, then prepare the tools:
+Download EAS signing credentials and save the Play file location for this machine, then prepare the tools:
 
 ```powershell
-npm.cmd run native:configure -- --credentials-file C:\secure\healthtracker\credentials.json --service-account-file C:\secure\healthtracker\play-testing.json
+npm.cmd run native:configure -- --service-account-file C:\secure\healthtracker\play-testing.json
 npm.cmd run native:setup
 ```
 

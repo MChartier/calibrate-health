@@ -304,8 +304,10 @@ UI code style:
   `native:configure` and `native:setup` are the only supporting root commands; `native:setup -- --check`
   checks prerequisites without changes, and submit includes upload readback. Keep diagnostic and version-maintenance
   workers under `scripts/` rather than adding root aliases.
-  Configure validates external signing/Play JSON locally and saves only absolute file paths under the user's
-  configuration directory, outside the repository and shared across checkouts. Build/submit use these
+  Configure uses the locked EAS credential CLI to set up/download the remote Android key for the exact linked
+  project and `net.darkmachines.healthtracker`. Run it in an external credentials workspace, validate the download,
+  and save only absolute paths in the user's machine settings. Admit Expo authentication only to EAS, not dependency
+  installation. Keep the optional Play service-account file local. Build/submit use these
   paths by default; explicit file flags override them for one run. Keep credential contents out of saved settings.
   The public submit command supplies Console-coordination acknowledgement implicitly, with a reminder but no
   confirmation flag or prompt. Preserve the protected CI publisher and its independent credential boundaries.

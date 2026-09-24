@@ -14,7 +14,7 @@ Phone and Wear packages are built together. Build once, then choose how to distr
 `native:install` and `native:submit` verify and reuse the last build; neither rebuilds it.
 Use `npm.cmd run` to list scripts and `npm.cmd run <script> -- --help` for options.
 There is no separate local prebuild or signing stage to run.
-The only supporting root commands are `native:configure` for credential-file locations and
+The only supporting root commands are `native:configure` for EAS signing credentials and Play access, and
 `native:setup` for tools/dependencies (`--check` checks them without making changes).
 
 The local profile is fixed: application ID `net.darkmachines.healthtracker`, server
@@ -25,10 +25,10 @@ separate [protected GitHub store workflow](native-store-release.md).
 
 ## Shortest native release sequence
 
-With your external signing/Play JSON files ready, configure their locations once on this machine:
+Configure EAS-managed Android signing and your external Play service-account file once on this machine:
 
 ```powershell
-npm.cmd run native:configure -- --credentials-file C:\secure\healthtracker\credentials.json --service-account-file C:\secure\healthtracker\play-testing.json
+npm.cmd run native:configure -- --service-account-file C:\secure\healthtracker\play-testing.json
 npm.cmd run native:setup
 ```
 
@@ -60,21 +60,35 @@ credentials. The first Play release follows the [Console onboarding and manual-u
 Build verification covers package integrity and configuration; it does not run the full application
 test suites or establish device behavior. Run the relevant application checks before releasing.
 
-## Configure credential files once
+## Configure EAS signing once
 
-`native:configure` validates the external Expo-format signing JSON and referenced keystore, and the
-Play service-account JSON/key locally. It needs Node and the files, so it can run before SDK setup.
-It does not authenticate to Google or verify remote Play permissions.
+`native:configure` installs/reuses the locked EAS CLI, then runs `eas credentials:configure-build`
+and `eas credentials --platform android` for `net.darkmachines.healthtracker` in the linked
+`@calibrate-health/calibrate-health-app` project. Sign in to Expo when prompted, or supply `EXPO_TOKEN`.
+It requires network access but can run before Android SDK setup. EAS creates a key if the app has none;
+later runs reuse the existing default key.
 
-On Windows, it saves only absolute file paths in `%LOCALAPPDATA%\calibrate-health\native.json`.
-Passwords and private keys stay in the original files. The settings are outside the repository and
-shared by this Windows user across checkouts/worktrees. On other hosts, the equivalent settings live
-under `$XDG_CONFIG_HOME/calibrate-health/native.json` or `~/.config/calibrate-health/native.json`.
+In the EAS menu, choose **credentials.json: Upload/Download credentials between EAS servers and your
+local json**, then **Download credentials from EAS to credentials.json**. Select the existing default
+build credentials if prompted. After downloading, press a key to continue, choose **Go back**, then **Exit**.
+Do not choose a new keystore for routine downloads. This is Expo's
+[supported credential sync flow](https://docs.expo.dev/app-signing/syncing-credentials/).
 
-Run `npm.cmd run native:configure` without options to inspect the saved paths. Re-run it with either
-file option to replace that path while preserving the other. Signing-only configuration is sufficient
-for building packages for manual upload or installation; configure the service account before API
-submission. Invalid credential data leaves the previous configuration untouched.
+The wrapper downloads into a fresh directory under `%LOCALAPPDATA%\calibrate-health\eas-android-*`,
+validates the result, normalizes the keystore path, and saves only absolute file paths in
+`%LOCALAPPDATA%\calibrate-health\native.json`. Passwords and the private key stay in the external
+download. Settings are shared by this user across checkouts/worktrees. Other hosts use
+`$XDG_CONFIG_HOME/calibrate-health` or `~/.config/calibrate-health`.
+EAS runs in a minimal external credentials workspace for the same project/package, so generated files
+and downloads cannot enter the checkout. Its no-version-control warning applies only to that workspace;
+native builds still require a clean committed checkout.
+
+Run `npm.cmd run native:configure` without options to download signing credentials for manual builds
+or installation, or to refresh the local copy while preserving your configured Play file. Add
+`--service-account-file <play-json>` when configuring API submission. That file is validated locally;
+configure does not upload it to EAS, authenticate to Google, or verify Play permissions.
+Cancelled/invalid downloads leave the previous configuration and credential snapshot intact. Successful
+refreshes retain prior snapshots; protect this directory like any other signing-key backup.
 
 For a single run, `native:build -- --credentials-file <file>` and
 `native:submit -- --service-account-file <file>` override the saved paths without changing them.
@@ -103,9 +117,9 @@ environment. Native commands read these saved paths automatically; an explicit c
 takes precedence. Open a new terminal before using the tools directly. Automatic tool installation
 currently supports Windows x64.
 
-Create or retain your signing key and external Expo-format `credentials.json` following
-[upload signing and Play onboarding](android-internal-testing.md). Keep the JSON and keystore outside
-the checkout, with backups. Replace example paths below with real files.
+Run `native:configure` to obtain the EAS-managed signing key following
+[upload signing and Play onboarding](android-internal-testing.md). Keep downloaded credentials outside
+the checkout, with protected backups.
 
 ## Build packages
 
@@ -118,7 +132,7 @@ npm.cmd run native:build
 
 This command prepares the native project without signing credentials, then loads the external key for
 Gradle, builds phone and Wear, and independently verifies all four artifacts. Inherited
-`CALIBRATE_ANDROID_*` signing variables are ignored by this local entry point; the configured file
+`CALIBRATE_ANDROID_*` signing variables are ignored by this local entry point; the EAS-downloaded file
 (or explicit override) is the credential source. You do not need to clear or export signing variables
 between stages. Build does not open the configured Play credential.
 

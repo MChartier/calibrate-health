@@ -3,14 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { generateKeyPairSync } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { runNative } from './native.mjs';
-import {
-  configureNative, nativeConfigurationPath, parseNativeConfigureArguments,
-  readNativeConfiguration, resolveNativeCredentialFile
-} from './native-config.mjs';
+import { configureNative, nativeConfigurationPath, parseNativeConfigureArguments,
+  readNativeConfiguration, resolveNativeCredentialFile } from './native-config.mjs';
 
 const { privateKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
@@ -22,113 +18,154 @@ function fixture(t) {
   t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
   const root = path.join(temporary, 'checkout');
   const userDirectory = path.join(temporary, 'user settings');
-  fs.mkdirSync(root);
+  fs.mkdirSync(path.join(root, 'mobile'), { recursive: true });
   fs.mkdirSync(userDirectory);
-  const credentialsFile = path.join(temporary, 'signing data.json');
+  const app = { expo: { name: 'Calibrate', owner: 'calibrate-health', slug: 'calibrate-health-app',
+    android: { package: 'net.darkmachines.healthtracker' },
+    extra: { eas: { projectId: 'fda8f8c5-e646-47ac-82fb-35003c9cbec7' } }, plugins: ['must-not-run'] } };
+  fs.writeFileSync(path.join(root, 'mobile/app.json'), JSON.stringify(app));
   const serviceAccountFile = path.join(temporary, 'play data.json');
-  const keystorePath = path.join(temporary, 'upload.p12');
-  fs.writeFileSync(keystorePath, 'test keystore');
-  const signing = { android: { keystore: {
-    keystorePath, keystorePassword: 'private-store-sentinel', keyAlias: 'upload', keyPassword: 'private-key-sentinel'
-  } } };
+  const signing = { keystorePath: 'credentials/android/keystore.jks',
+    keystorePassword: 'private-store-sentinel', keyAlias: 'upload', keyPassword: 'private-key-sentinel' };
   const account = { type: 'service_account', client_email: 'test@example.test', private_key: privateKey };
-  fs.writeFileSync(credentialsFile, JSON.stringify(signing));
   fs.writeFileSync(serviceAccountFile, JSON.stringify(account));
-  const options = { root, platform: 'win32', environment: { LOCALAPPDATA: userDirectory } };
-  return { temporary, root, userDirectory, credentialsFile, serviceAccountFile, keystorePath, signing, account, options };
+  const calls = [];
+  const options = {
+    root, platform: 'win32', environment: { LOCALAPPDATA: userDirectory, EXPO_TOKEN: 'expo-sentinel',
+      CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: 'signing-sentinel', GOOGLE_APPLICATION_CREDENTIALS: 'play-sentinel' },
+    log: () => {},
+    ensureEas: (_root, _npm, environment) => { calls.push(['ensure', environment]); },
+    runEas: (_root, args, directory, environment) => {
+      calls.push([args, directory, environment]);
+      if (args[0] === 'credentials') {
+        const keystore = path.resolve(directory, signing.keystorePath);
+        fs.mkdirSync(path.dirname(keystore), { recursive: true });
+        fs.writeFileSync(keystore, 'fixture keystore');
+        fs.writeFileSync(path.join(directory, 'credentials.json'), JSON.stringify({ android: { keystore: signing } }));
+      }
+    }
+  };
+  return { temporary, root, userDirectory, serviceAccountFile, signing, account, app, calls, options };
 }
 
-test('configuration accepts either path, rejects malformed arguments, and requires an absolute settings root', () => {
+test('configure accepts an optional Play file and rejects manual signing-file options', () => {
   assert.deepEqual(parseNativeConfigureArguments([]), {});
-  assert.deepEqual(parseNativeConfigureArguments(['--credentials-file', 'signing.json']), { credentialsFile: 'signing.json' });
+  assert.deepEqual(parseNativeConfigureArguments(['--service-account-file', 'play.json']), { serviceAccountFile: 'play.json' });
   for (const args of [
-    ['--credentials-file'], ['--service-account-file', '--credentials-file', 'a'],
-    ['--credentials-file', 'a', '--credentials-file', 'b'], ['constructor', 'a'], ['--', 'service-account-file', 'a']
+    ['--credentials-file', 'signing.json'], ['--service-account-file'],
+    ['--service-account-file', 'a', '--service-account-file', 'b'], ['constructor', 'a'], ['--', 'service-account-file', 'a']
   ]) assert.throws(() => parseNativeConfigureArguments(args));
   assert.throws(() => nativeConfigurationPath({ LOCALAPPDATA: 'relative' }, 'win32'), /absolute/);
   assert.throws(() => nativeConfigurationPath({}, 'win32'), /LOCALAPPDATA/);
 });
 
-test('configure validates both assets without SDK/network setup, persists only paths, and shares them across checkouts', (t) => {
+test('configure uses EAS for the exact app, normalizes downloads, and saves only paths', (t) => {
   const f = fixture(t);
-  const result = configureNative({ credentialsFile: f.credentialsFile, serviceAccountFile: f.serviceAccountFile }, f.options);
-  const expected = {
-    schemaVersion: 1, credentialsFile: fs.realpathSync(f.credentialsFile), serviceAccountFile: fs.realpathSync(f.serviceAccountFile)
-  };
-  assert.deepEqual(JSON.parse(fs.readFileSync(result.configurationFile, 'utf8')), expected);
-  assert.deepEqual(Object.keys(result).sort(), ['configurationFile', 'credentialsFile', 'schemaVersion', 'serviceAccountFile']);
+  const result = configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
+  assert.deepEqual(f.calls[1][0], ['credentials:configure-build', '--platform', 'android', '--profile', 'internal']);
+  assert.deepEqual(f.calls[2][0], ['credentials', '--platform', 'android']);
+  const directory = path.dirname(result.credentialsFile);
+  assert.equal(f.calls[1][1], directory);
+  assert.equal(f.calls[2][1], directory);
+  const project = JSON.parse(fs.readFileSync(path.join(directory, 'app.json'))).expo;
+  assert.equal(project.android.package, 'net.darkmachines.healthtracker');
+  assert.equal(project.extra.eas.projectId, f.app.expo.extra.eas.projectId);
+  assert.equal(project.plugins, undefined);
+  assert.equal(f.calls[0][1].EXPO_TOKEN, undefined);
+  assert.equal(f.calls[1][2].EXPO_TOKEN, 'expo-sentinel');
+  assert.equal(f.calls[1][2].EAS_PROJECT_ROOT, directory);
+  for (const call of f.calls.slice(1)) {
+    assert.equal(call[2].CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
+    assert.equal(call[2].GOOGLE_APPLICATION_CREDENTIALS, undefined);
+  }
+  const credentials = JSON.parse(fs.readFileSync(result.credentialsFile)).android.keystore;
+  assert.equal(credentials.keystorePath, path.join(directory, 'credentials/android/keystore.jks'));
+  const saved = fs.readFileSync(result.configurationFile, 'utf8');
+  assert.equal(saved.includes('sentinel'), false);
+  assert.equal(saved.includes('PRIVATE KEY'), false);
+  assert.deepEqual(Object.keys(JSON.parse(saved)).sort(), ['credentialsFile', 'schemaVersion', 'serviceAccountFile']);
   assert.equal(JSON.stringify(result).includes('sentinel'), false);
-  assert.equal(fs.readFileSync(result.configurationFile, 'utf8').includes('PRIVATE KEY'), false);
-  const secondRoot = path.join(f.temporary, 'another checkout');
-  fs.mkdirSync(secondRoot);
-  const second = { ...f.options, root: secondRoot };
-  assert.equal(resolveNativeCredentialFile('credentialsFile', undefined, second), expected.credentialsFile);
-  assert.equal(resolveNativeCredentialFile('serviceAccountFile', undefined, second), expected.serviceAccountFile);
-  assert.deepEqual(configureNative({}, second), result);
-  assert.deepEqual(fs.readdirSync(path.dirname(result.configurationFile)), ['native.json']);
+  assert.equal(fs.existsSync(path.join(f.root, 'mobile/credentials.json')), false);
 });
 
-test('partial configuration supports build-only use and rotation preserves the other file', (t) => {
+test('signing-only configuration works and a refresh preserves existing Play settings and credential snapshots', (t) => {
   const f = fixture(t);
-  configureNative({ credentialsFile: f.credentialsFile }, f.options);
-  assert.equal(resolveNativeCredentialFile('credentialsFile', undefined, f.options), fs.realpathSync(f.credentialsFile));
+  delete f.signing.keyPassword;
+  const first = configureNative({}, f.options);
+  assert.equal(JSON.parse(fs.readFileSync(first.credentialsFile)).android.keystore.keyPassword, f.signing.keystorePassword);
   assert.throws(() => resolveNativeCredentialFile('serviceAccountFile', undefined, f.options), /native:configure.*--service-account-file/);
   configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
-  const replacement = path.join(f.temporary, 'replacement signing.json');
-  fs.copyFileSync(f.credentialsFile, replacement);
-  configureNative({ credentialsFile: replacement }, f.options);
-  const { config } = readNativeConfiguration(f.options);
-  assert.equal(config.credentialsFile, fs.realpathSync(replacement));
-  assert.equal(config.serviceAccountFile, fs.realpathSync(f.serviceAccountFile));
+  const refreshed = configureNative({}, f.options);
+  assert.notEqual(first.credentialsFile, refreshed.credentialsFile);
+  assert.ok(fs.existsSync(first.credentialsFile));
+  assert.equal(refreshed.serviceAccountFile, fs.realpathSync(f.serviceAccountFile));
+  const secondRoot = path.join(f.temporary, 'another checkout');
+  fs.mkdirSync(secondRoot);
+  assert.equal(resolveNativeCredentialFile('credentialsFile', undefined, { ...f.options, root: secondRoot }), refreshed.credentialsFile);
 });
 
-test('overrides do not change saved paths and build resolution never reads signing contents or the Play credential', (t) => {
+test('invalid Play data fails before EAS authentication without changing settings or leaking secrets', (t) => {
   const f = fixture(t);
-  configureNative({ credentialsFile: f.credentialsFile, serviceAccountFile: f.serviceAccountFile }, f.options);
-  const replacement = path.join(f.temporary, 'once.json');
-  fs.writeFileSync(replacement, 'not loaded by path resolution');
-  assert.equal(resolveNativeCredentialFile('credentialsFile', replacement, f.options), fs.realpathSync(replacement));
-  fs.rmSync(f.serviceAccountFile);
-  fs.rmSync(f.keystorePath);
-  fs.writeFileSync(f.credentialsFile, 'secrets are not parsed until the consuming build stage');
-  assert.equal(resolveNativeCredentialFile('credentialsFile', undefined, f.options), fs.realpathSync(f.credentialsFile));
-  assert.throws(() => resolveNativeCredentialFile('serviceAccountFile', undefined, f.options), /existing external file/);
-});
-
-test('invalid credential data never overwrites working configuration or prints credential contents', (t) => {
-  const f = fixture(t);
-  const initial = configureNative({ credentialsFile: f.credentialsFile, serviceAccountFile: f.serviceAccountFile }, f.options);
+  const initial = configureNative({}, f.options);
   const before = fs.readFileSync(initial.configurationFile, 'utf8');
-  for (const [file, content, values, pattern] of [
-    [f.credentialsFile, '{"password":"private-sentinel"', { credentialsFile: f.credentialsFile }, /Unable to read/],
-    [f.serviceAccountFile, JSON.stringify({ ...f.account, private_key: 'private-sentinel' }), { serviceAccountFile: f.serviceAccountFile }, /valid RSA signing key/],
-    [f.serviceAccountFile, JSON.stringify({ ...f.account, token_uri: 'https://wrong.example/token' }), { serviceAccountFile: f.serviceAccountFile }, /token_uri must be/]
-  ]) {
-    fs.writeFileSync(file, content);
-    assert.throws(() => configureNative(values, f.options), (error) => {
-      assert.match(error.message, pattern);
-      assert.equal(error.message.includes('private-sentinel'), false);
+  f.calls.length = 0;
+  for (const content of ['private-sentinel{', JSON.stringify({ ...f.account, private_key: 'private-sentinel' }),
+    JSON.stringify({ ...f.account, token_uri: 'https://wrong.example/token' })]) {
+    fs.writeFileSync(f.serviceAccountFile, content);
+    assert.throws(() => configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options), (error) => {
+      assert.doesNotMatch(error.message, /private-sentinel/);
       return true;
     });
+    assert.deepEqual(f.calls, []);
     assert.equal(fs.readFileSync(initial.configurationFile, 'utf8'), before);
   }
 });
 
-test('credentials, keystore, and machine settings cannot be stored in the current checkout', (t) => {
+test('cancelled, missing, or invalid downloads preserve prior credentials and remove only the failed attempt', (t) => {
   const f = fixture(t);
-  const internal = path.join(f.root, 'credentials.json');
-  fs.copyFileSync(f.credentialsFile, internal);
-  assert.throws(() => configureNative({ credentialsFile: internal }, f.options), /outside the repository/);
-  f.signing.android.keystore.keystorePath = internal;
-  fs.writeFileSync(f.credentialsFile, JSON.stringify(f.signing));
-  assert.throws(() => configureNative({ credentialsFile: f.credentialsFile }, f.options), /outside the repository/);
-  assert.throws(() => configureNative({}, { ...f.options, environment: { LOCALAPPDATA: f.root } }), /outside the repository/);
-  const link = path.join(f.userDirectory, 'calibrate-health');
-  fs.symlinkSync(f.root, link, process.platform === 'win32' ? 'junction' : 'dir');
-  assert.throws(() => readNativeConfiguration(f.options), /outside the repository/);
+  const initial = configureNative({}, f.options);
+  const directory = path.dirname(initial.configurationFile);
+  const before = fs.readFileSync(initial.configurationFile, 'utf8');
+  const files = fs.readdirSync(directory);
+  for (const runEas of [
+    () => { throw new Error('Cancelled'); }, () => {},
+    (_root, _args, output) => fs.writeFileSync(path.join(output, 'credentials.json'), 'private-sentinel{'),
+    (_root, _args, output) => fs.writeFileSync(path.join(output, 'credentials.json'), '{}')
+  ]) {
+    assert.throws(() => configureNative({}, { ...f.options, runEas }), (error) => {
+      assert.doesNotMatch(error.message, /private-sentinel/);
+      return true;
+    });
+    assert.equal(fs.readFileSync(initial.configurationFile, 'utf8'), before);
+    assert.deepEqual(fs.readdirSync(directory), files);
+    assert.ok(fs.existsSync(initial.credentialsFile));
+  }
 });
 
-test('corrupt settings fail with an actionable error and can be replaced by configuring both files', (t) => {
+test('wrong EAS project or package is rejected before credential operations', (t) => {
+  const f = fixture(t);
+  for (const app of [
+    { ...f.app.expo, android: { package: 'old.package' } },
+    { ...f.app.expo, extra: { eas: { projectId: 'wrong-project' } } }
+  ]) {
+    fs.writeFileSync(path.join(f.root, 'mobile/app.json'), JSON.stringify({ expo: app }));
+    assert.throws(() => configureNative({}, f.options), /linked Calibrate EAS project/);
+    assert.deepEqual(f.calls, []);
+  }
+});
+
+test('settings and downloaded keystores cannot resolve inside the checkout', (t) => {
+  const f = fixture(t);
+  assert.throws(() => configureNative({}, { ...f.options, environment: { LOCALAPPDATA: f.root } }), /outside the repository/);
+  f.signing.keystorePath = path.join(f.root, 'invalid.jks');
+  assert.throws(() => configureNative({}, f.options), /outside the repository/);
+  const linkedUser = path.join(f.temporary, 'linked user');
+  fs.mkdirSync(linkedUser);
+  fs.symlinkSync(f.root, path.join(linkedUser, 'calibrate-health'), process.platform === 'win32' ? 'junction' : 'dir');
+  assert.throws(() => readNativeConfiguration({ ...f.options, environment: { LOCALAPPDATA: linkedUser } }), /outside the repository/);
+});
+
+test('corrupt settings can be replaced by syncing EAS with an explicit Play file', (t) => {
   const f = fixture(t);
   const file = nativeConfigurationPath(f.options.environment, 'win32');
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -136,51 +173,44 @@ test('corrupt settings fail with an actionable error and can be replaced by conf
     JSON.stringify({ schemaVersion: 1, unexpectedSecret: 'secret-sentinel' })]) {
     fs.writeFileSync(file, invalid);
     assert.throws(() => readNativeConfiguration(f.options), (error) => {
-      assert.match(error.message, /native:configure with both/);
-      assert.equal(error.message.includes('secret-sentinel'), false);
+      assert.match(error.message, /native:configure.*--service-account-file/);
+      assert.doesNotMatch(error.message, /secret-sentinel/);
       return true;
     });
-    assert.equal(resolveNativeCredentialFile('credentialsFile', f.credentialsFile, f.options), fs.realpathSync(f.credentialsFile));
   }
-  configureNative({ credentialsFile: f.credentialsFile, serviceAccountFile: f.serviceAccountFile }, f.options);
-  assert.equal(readNativeConfiguration(f.options).config.credentialsFile, fs.realpathSync(f.credentialsFile));
+  const result = configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
+  assert.equal(readNativeConfiguration(f.options).config.credentialsFile, result.credentialsFile);
 });
 
-test('the CLI configures and reads saved paths in separate processes without Android tools', (t) => {
+test('build resolves the EAS path without reading signing contents or the Play credential', (t) => {
   const f = fixture(t);
-  const script = fileURLToPath(new URL('./native.mjs', import.meta.url));
-  const environment = { ...process.env, LOCALAPPDATA: f.userDirectory, XDG_CONFIG_HOME: f.userDirectory, JAVA_HOME: 'missing-sdk' };
-  const execute = (args) => JSON.parse(execFileSync(process.execPath, [script, 'configure', ...args], {
-    env: environment, encoding: 'utf8', windowsHide: true
-  }));
-  const configured = execute(['--credentials-file', f.credentialsFile, '--service-account-file', f.serviceAccountFile]);
-  assert.deepEqual(execute([]), configured);
-  assert.equal(configured.credentialsFile, fs.realpathSync(f.credentialsFile));
-  assert.equal(configured.serviceAccountFile, fs.realpathSync(f.serviceAccountFile));
+  const result = configureNative({ serviceAccountFile: f.serviceAccountFile }, f.options);
+  fs.rmSync(f.serviceAccountFile);
+  fs.writeFileSync(result.credentialsFile, 'not parsed until after credential-free prebuild');
+  assert.equal(resolveNativeCredentialFile('credentialsFile', undefined, f.options), result.credentialsFile);
+  assert.throws(() => resolveNativeCredentialFile('serviceAccountFile', undefined, f.options), /existing external file/);
+  const override = path.join(f.temporary, 'override.json');
+  fs.writeFileSync(override, 'metadata only');
+  assert.equal(resolveNativeCredentialFile('credentialsFile', override, f.options), fs.realpathSync(override));
+  assert.equal(readNativeConfiguration(f.options).config.credentialsFile, result.credentialsFile);
 });
 
-test('configure, setup, bare build, and bare submit compose without passing credentials between commands', async (t) => {
+test('EAS configure, setup, bare build and submit compose without repeated file arguments', async (t) => {
   const f = fixture(t);
   const events = [];
-  const options = {
-    ...f.options, readUserEnvironment: () => ({}), log: () => {},
-    setup: (_args, { environment }) => {
-      assert.equal(environment.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
-      events.push('setup');
-    },
+  const options = { ...f.options, readUserEnvironment: () => ({}),
+    configure: (values, request) => configureNative(values, { ...f.options, ...request }),
+    setup: () => events.push('setup'),
     internal: (args, { environment }) => {
+      assert.equal(environment.EXPO_TOKEN, undefined);
       assert.equal(environment.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, undefined);
-      assert.equal(environment.GOOGLE_APPLICATION_CREDENTIALS, undefined);
       events.push(args);
     }
   };
-  await runNative(['configure', '--credentials-file', f.credentialsFile, '--service-account-file', f.serviceAccountFile], options);
+  const configured = await runNative(['configure', '--service-account-file', f.serviceAccountFile], options);
   await runNative(['setup'], options);
   await runNative(['build'], options);
   await runNative(['submit'], options);
-  assert.deepEqual(events, [
-    'setup',
-    ['build', '--credentials-file', fs.realpathSync(f.credentialsFile)],
-    ['submit', '--service-account-file', fs.realpathSync(f.serviceAccountFile), '--confirm-play-console-clean']
-  ]);
+  assert.deepEqual(events, ['setup', ['build', '--credentials-file', configured.credentialsFile],
+    ['submit', '--service-account-file', fs.realpathSync(f.serviceAccountFile), '--confirm-play-console-clean']]);
 });

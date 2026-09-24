@@ -17,7 +17,7 @@ const ACTIONS = {
   ota: 'Publish compatible phone JavaScript/assets through Expo.',
   install: 'Install and verify the last build on a local phone and watch.',
   submit: 'Upload the last verified AABs through Play API to qa and wear:qa.',
-  configure: 'Save external credential-file paths for this user on this machine.',
+  configure: 'Download EAS Android signing credentials and configure local release access.',
   setup: 'Install/check Windows native tools and repository dependencies.'
 };
 const EXAMPLES = {
@@ -25,7 +25,7 @@ const EXAMPLES = {
   ota: '--dry-run --message "Describe this update"',
   install: '[--phone-serial SERIAL] [--watch-serial SERIAL] [--no-launch] [--replace-incompatible]',
   submit: '',
-  configure: '--credentials-file C:\\secure\\healthtracker\\credentials.json --service-account-file C:\\secure\\healthtracker\\play-testing.json',
+  configure: '[--service-account-file C:\\secure\\healthtracker\\play-testing.json]',
   setup: '[--check] [--skip-deps] [--accept-licenses]'
 };
 
@@ -52,9 +52,10 @@ function help(action) {
       'No install, OTA publish, or separate status command is required between build and submit.'
     );
     if (action === 'configure') lines.push(
-      'Validates files locally and saves only absolute paths outside the repository, shared across checkouts.',
-      'Either option can be set on its own. With no options, shows the saved paths.',
-      'No Android SDK or remote authentication is required.'
+      'Runs the locked EAS credential tools to set up/download the key for net.darkmachines.healthtracker.',
+      'Choose credentials.json > Download credentials from EAS to credentials.json, then exit EAS.',
+      'Keeps the downloaded credentials outside the repository and saves their paths across checkouts.',
+      'Requires Expo authentication and network access, but no Android SDK. The Play file is optional.'
     );
     if (action === 'ota') lines.push(
       'Options: --message TEXT, --dry-run, --non-interactive, --baseline FILE, --channel NAME, --environment NAME.',
@@ -120,6 +121,7 @@ export async function runNative(argv = [], options = {}) {
   // The local entry point admits credentials only at their consuming stage.
   // Keep the stricter credential-free contract on the protected CI workers.
   const environment = nativeSetupEnvironment(inherited);
+  if (['configure', 'ota'].includes(action) && inherited.EXPO_TOKEN) environment.EXPO_TOKEN = inherited.EXPO_TOKEN;
   const configurationOptions = { root, environment, platform: options.platform ?? process.platform };
   if (action === 'configure') return (options.configure ?? configureNative)(config, configurationOptions);
   let internalArgs = [action, ...args];
@@ -130,7 +132,6 @@ export async function runNative(argv = [], options = {}) {
     internalArgs = [action, flag, file];
     if (action === 'submit') internalArgs.push('--confirm-play-console-clean');
   }
-  if (action === 'ota' && inherited.EXPO_TOKEN) environment.EXPO_TOKEN = inherited.EXPO_TOKEN;
   if (action === 'setup') return (options.setup ?? setupNative)(args, { root, environment });
   if (['build', 'install', 'submit'].includes(action) &&
       (options.platform ?? process.platform) === 'win32') {
