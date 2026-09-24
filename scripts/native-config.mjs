@@ -8,6 +8,7 @@ import { NATIVE_RELEASE_APPLICATION_ID } from './native-release-evidence.mjs';
 import { ensureNativeEasDependency, nativeSetupEnvironment } from './native-setup.mjs';
 import { resolveLockedEasCliInvocation } from './native-ota-update.mjs';
 import { createGoogleServiceAccountAssertion } from './native-play-release.mjs';
+import { EAS_PLAY_CREDENTIAL_FILE } from './native-eas-credentials.mjs';
 
 const FILE_OPTIONS = {
   '--credentials-file': 'credentialsFile',
@@ -64,11 +65,11 @@ export function readNativeConfiguration({ root, environment = process.env, platf
   }
   let config;
   try { config = JSON.parse(contents); }
-  catch { throw new Error('Invalid native machine configuration JSON. Run native:configure -- --service-account-file <play-json> to replace it.'); }
+  catch { throw new Error('Invalid native machine configuration JSON. Run npm run native:configure to replace it.'); }
   if (config?.schemaVersion !== 1 || Object.keys(config).some((key) => !CONFIG_FIELDS.includes(key)) ||
       Object.values(FILE_OPTIONS).some((field) => Object.hasOwn(config, field) &&
         (typeof config[field] !== 'string' || !path.isAbsolute(config[field])))) {
-    throw new Error('Invalid native machine configuration. Run native:configure -- --service-account-file <play-json> to replace it.');
+    throw new Error('Invalid native machine configuration. Run npm run native:configure to replace it.');
   }
   return { file, config };
 }
@@ -94,6 +95,27 @@ function runEasCredentials(root, args, directory, environment) {
   if (result.error || result.status !== 0) throw new Error('EAS credential configuration did not complete. Saved native settings are unchanged.');
 }
 
+function runEasPlayCredentials(root, directory, environment) {
+  const result = spawnSync(process.execPath, [path.join(root, 'scripts/native-eas-credentials.mjs'), directory], {
+    cwd: directory, env: environment, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8',
+    windowsHide: true, timeout: 60_000
+  });
+  // Capture worker output so unexpected dependency diagnostics cannot expose credentials.
+  if (result.error || result.status !== 0) throw new Error('EAS Play credential download failed. Check the assigned key and Expo access, then retry native:configure. Saved settings are unchanged.');
+  let resultData;
+  try { resultData = JSON.parse(result.stdout); } catch { /* Fail closed below. */ }
+  if (typeof resultData?.downloaded !== 'boolean') throw new Error('EAS Play credential download returned an invalid result. Saved settings are unchanged.');
+  return resultData.downloaded;
+}
+
+function validatePlayFile(file) {
+  let credentials;
+  try { credentials = JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch { throw new Error('Google Play service-account file is missing or invalid JSON.'); }
+  // Validate without exchanging a token or calling Play.
+  createGoogleServiceAccountAssertion(credentials);
+}
+
 function removeCredentialAttempt(parent, directory) {
   const relative = path.relative(fs.realpathSync(parent), fs.realpathSync(directory));
   if (path.dirname(relative) !== '.' || !relative.startsWith('eas-android-')) {
@@ -102,7 +124,7 @@ function removeCredentialAttempt(parent, directory) {
   fs.rmSync(directory, { recursive: true, force: true });
 }
 
-function downloadSigningCredentials(root, parent, environment, options) {
+function downloadCredentials(root, parent, environment, options, downloadPlay) {
   const project = credentialProject(root);
   const safe = nativeSetupEnvironment(environment);
   const npmCli = environment.npm_execpath || path.join(path.dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
@@ -139,7 +161,19 @@ function downloadSigningCredentials(root, parent, environment, options) {
     fs.chmodSync(file, 0o600);
     fs.chmodSync(signing.keystorePath, 0o600);
     loadLocalSigningEnvironment(root, file, {});
-    return { file, directory };
+    let serviceAccountFile;
+    if (downloadPlay) {
+      const downloaded = (options.runEasPlay ?? runEasPlayCredentials)(root, directory, easEnvironment);
+      if (downloaded) {
+        serviceAccountFile = requireExternalFile(root, path.join(directory, EAS_PLAY_CREDENTIAL_FILE), 'EAS Play service account');
+        validatePlayFile(serviceAccountFile);
+        fs.chmodSync(serviceAccountFile, 0o600);
+        log('[native] Downloaded the assigned EAS Play service-account key. Play permissions are checked when submitting.');
+      } else {
+        log('[native] No Play submission key is assigned in EAS for ' + NATIVE_RELEASE_APPLICATION_ID + '. Build/install are configured. Assign a Play key in EAS and rerun native:configure before API submission.');
+      }
+    }
+    return { file, directory, serviceAccountFile };
   } catch (error) {
     removeCredentialAttempt(parent, directory);
     throw error;
@@ -148,40 +182,34 @@ function downloadSigningCredentials(root, parent, environment, options) {
 
 export function configureNative(values, options) {
   const { root, environment = process.env, platform = process.platform } = options;
-  // Signing is refreshed from EAS, so an explicit Play path replaces all saved fields.
-  const stored = values.serviceAccountFile
-    ? { file: externalConfigurationPath(root, environment, platform), config: { schemaVersion: 1 } }
-    : readNativeConfiguration({ root, environment, platform });
-  const config = { ...stored.config };
+  const configurationFile = externalConfigurationPath(root, environment, platform);
+  // Refresh from the current EAS assignments; never silently retain a removed or rotated Play key.
+  const config = { schemaVersion: 1 };
   if (values.serviceAccountFile) {
     config.serviceAccountFile = requireExternalFile(root, values.serviceAccountFile, 'Play testing service account');
-    let credentials;
-    try { credentials = JSON.parse(fs.readFileSync(config.serviceAccountFile, 'utf8')); }
-    catch { throw new Error('Google Play service-account file is missing or invalid JSON.'); }
-    // Exercise the publisher's key/JSON validation locally without exchanging a token or calling Play.
-    createGoogleServiceAccountAssertion(credentials);
+    validatePlayFile(config.serviceAccountFile);
   }
 
-  const directory = path.dirname(stored.file);
-  const downloaded = downloadSigningCredentials(root, directory, environment, options);
+  const directory = path.dirname(configurationFile);
+  const downloaded = downloadCredentials(root, directory, environment, options, !values.serviceAccountFile);
   config.credentialsFile = downloaded.file;
+  if (downloaded.serviceAccountFile) config.serviceAccountFile = downloaded.serviceAccountFile;
   const temporary = path.join(directory, '.native-config-' + randomUUID() + '.tmp');
   try {
     fs.writeFileSync(temporary, JSON.stringify(config, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
-    fs.renameSync(temporary, stored.file);
+    fs.renameSync(temporary, configurationFile);
   } catch (error) {
     removeCredentialAttempt(directory, downloaded.directory);
     throw error;
   } finally { fs.rmSync(temporary, { force: true }); }
-  return { configurationFile: stored.file, ...config };
+  return { configurationFile, ...config };
 }
 
 export function resolveNativeCredentialFile(field, override, options) {
   const file = override || readNativeConfiguration(options).config[field];
-  const option = Object.keys(FILE_OPTIONS).find((key) => FILE_OPTIONS[key] === field);
   if (!file) throw new Error(field === 'credentialsFile'
     ? 'No EAS signing credentials configured. Run npm run native:configure to download them.'
-    : 'No local ' + option + ' configured. Run npm run native:configure -- ' + option + ' <file>.');
+    : 'No Play service-account key configured. Assign it to the app in EAS and run npm run native:configure, or supply --service-account-file <file>.');
   // Resolve/inspect only the path here. The consuming worker controls when secret contents are loaded.
   return requireExternalFile(options.root, file, field === 'credentialsFile' ? 'credentials.json' : 'Play testing service account');
 }

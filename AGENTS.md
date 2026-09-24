@@ -307,7 +307,11 @@ UI code style:
   Configure uses the locked EAS credential CLI to set up/download the remote Android key for the exact linked
   project and `net.darkmachines.healthtracker`. Run it in an external credentials workspace, validate the download,
   and save only absolute paths in the user's machine settings. Admit Expo authentication only to EAS, not dependency
-  installation. Keep the optional Play service-account file local. Build/submit use these
+  installation. Download only the Play submission key assigned to this exact app through EAS's internal
+  credential API using the locked CLI authentication. Keep that adapter verified when upgrading EAS.
+  Refresh signing and Play paths atomically; a failed download preserves the previous configuration.
+  An unassigned Play key permits build/install but clears stale submission settings. Explicit local Play files
+  remain an optional override; configure never uploads them or authenticates to Google. Build/submit use these
   paths by default; explicit file flags override them for one run. Keep credential contents out of saved settings.
   The public submit command supplies Console-coordination acknowledgement implicitly, with a reminder but no
   confirmation flag or prompt. Preserve the protected CI publisher and its independent credential boundaries.

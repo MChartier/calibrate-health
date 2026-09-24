@@ -127,8 +127,8 @@ The normal lifecycle is:
   starting Docker.
 - `npm run native:setup`: install and verify the Windows Android build toolchain
   plus host dependencies. See [native setup](docs/mobile-release.md#set-up-once).
-- `npm run native:configure -- --service-account-file <play-json>`:
-  download EAS-managed Android signing credentials and save the external Play file path so build and submit need no repeated arguments.
+- `npm run native:configure`:
+  download EAS-managed Android signing and the assigned Play service-account key so build and submit need no repeated arguments.
 - `npm run dev`: prepare and run the full stack with seeded-user auto-login.
 - `npm run dev:manual-auth`: run the same stack with auto-login disabled.
 - `npm run dev:expo`: run the native Expo dev-client bundler on the host

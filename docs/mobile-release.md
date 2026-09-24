@@ -25,10 +25,10 @@ separate [protected GitHub store workflow](native-store-release.md).
 
 ## Shortest native release sequence
 
-Configure EAS-managed Android signing and your external Play service-account file once on this machine:
+Assign your Google Play service-account key in EAS, then download signing and Play credentials once on this machine:
 
 ```powershell
-npm.cmd run native:configure -- --service-account-file C:\secure\healthtracker\play-testing.json
+npm.cmd run native:configure
 npm.cmd run native:setup
 ```
 
@@ -60,7 +60,7 @@ credentials. The first Play release follows the [Console onboarding and manual-u
 Build verification covers package integrity and configuration; it does not run the full application
 test suites or establish device behavior. Run the relevant application checks before releasing.
 
-## Configure EAS signing once
+## Configure EAS credentials once
 
 `native:configure` installs/reuses the locked EAS CLI, then runs `eas credentials:configure-build`
 and `eas credentials --platform android` for `net.darkmachines.healthtracker` in the linked
@@ -74,6 +74,15 @@ build credentials if prompted. After downloading, press a key to continue, choos
 Do not choose a new keystore for routine downloads. This is Expo's
 [supported credential sync flow](https://docs.expo.dev/app-signing/syncing-credentials/).
 
+For API submission, first create the Google service-account JSON key and grant its Play Console permissions
+following [Play onboarding](android-internal-testing.md#play-console-onboarding). In the EAS dashboard,
+open this project's **Credentials > Android > net.darkmachines.healthtracker** and assign the key under
+**Google Service Account Key for Play Store Submissions**. The FCM/push key is a separate assignment.
+After the signing download, configure automatically retrieves this assigned Play key using your Expo login.
+This uses EAS's internal GraphQL credential API through the locked CLI's authentication; standard
+`credentials.json` sync does not include the Play key. Keep this adapter verified when upgrading EAS CLI.
+EAS stores the key; `native:submit` still uses our local Play API publisher, without EAS Submit.
+
 The wrapper downloads into a fresh directory under `%LOCALAPPDATA%\calibrate-health\eas-android-*`,
 validates the result, normalizes the keystore path, and saves only absolute file paths in
 `%LOCALAPPDATA%\calibrate-health\native.json`. Passwords and the private key stay in the external
@@ -83,10 +92,13 @@ EAS runs in a minimal external credentials workspace for the same project/packag
 and downloads cannot enter the checkout. Its no-version-control warning applies only to that workspace;
 native builds still require a clean committed checkout.
 
-Run `npm.cmd run native:configure` without options to download signing credentials for manual builds
-or installation, or to refresh the local copy while preserving your configured Play file. Add
-`--service-account-file <play-json>` when configuring API submission. That file is validated locally;
-configure does not upload it to EAS, authenticate to Google, or verify Play permissions.
+Run `npm.cmd run native:configure` again to refresh both local credentials after rotation or on a new machine.
+If EAS has no assigned Play key, configure succeeds for build/install and clears any previously saved Play
+path; assign the key and rerun configure before submission. It never chooses an unrelated account or FCM key.
+`--service-account-file <play-json>` remains an optional local override for this configuration, skipping the
+EAS Play download. A later configure without that flag returns to the current EAS assignment.
+Both downloaded and explicit Play files are validated locally; configure does not upload a Play key,
+authenticate to Google, or verify Play permissions. It does not generate a Google service-account key.
 Cancelled/invalid downloads leave the previous configuration and credential snapshot intact. Successful
 refreshes retain prior snapshots; protect this directory like any other signing-key backup.
 

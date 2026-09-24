@@ -26,7 +26,7 @@ Sign into the linked Expo project when prompted. On the first run, accept EAS's 
 generation prompt; later runs reuse the app's existing default key. In the credential manager choose
 **credentials.json**, then **Download credentials from EAS to credentials.json**, then return and exit.
 The wrapper validates the download and configures its external location for both phone and Wear builds.
-See [the configuration flow](mobile-release.md#configure-eas-signing-once) for exact menu steps and paths.
+See [the configuration flow](mobile-release.md#configure-eas-credentials-once) for exact menu steps and paths.
 
 Never commit the downloaded JSON/keystore, service-account JSON, or passwords. Keep a protected backup.
 The local build ignores inherited `CALIBRATE_ANDROID_*` signing variables. Expo prebuild finishes before
@@ -51,7 +51,14 @@ Play uploads, retain its registered upload key; generating a replacement is a se
 6. For command-line submissions, create a Google Cloud project/service account and enable **Google Play Android
    Developer API**. In Play Console **Users and permissions**, invite the service-account email with access only to
    this app and permissions **View app information (read-only)** and **Release apps to testing tracks**. Do not grant
-   production release permission. Download its JSON key to an external protected file.
+   production release permission. Download its JSON key to an external protected file. In EAS project
+   **Credentials > Android > net.darkmachines.healthtracker**, upload and assign it as the **Google Service
+   Account Key for Play Store Submissions**. Configure retrieves that assignment, not the FCM/push key.
+
+If Google blocks key creation with `iam.disableServiceAccountKeyCreation` or
+`iam.managed.disableServiceAccountKeyCreation`, the project Owner role cannot override that organization
+policy. An Organization Policy Administrator must allow key creation for this project. See
+[Google's policy troubleshooting](https://docs.cloud.google.com/iam/docs/troubleshoot-org-policies).
 
 Internal testing is the intended distribution mechanism, not Managed Google Play enterprise/private-app
 registration. A full public listing and public production rollout are deferred. Google may show a temporary
@@ -60,10 +67,10 @@ from the old package automatically.
 
 ## First upload and later updates
 
-Download EAS signing credentials and save the Play file location for this machine, then prepare the tools:
+Download the EAS signing and assigned Play credentials for this machine, then prepare the tools:
 
 ```powershell
-npm.cmd run native:configure -- --service-account-file C:\secure\healthtracker\play-testing.json
+npm.cmd run native:configure
 npm.cmd run native:setup
 ```
 
