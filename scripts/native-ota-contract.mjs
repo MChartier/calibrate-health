@@ -234,7 +234,7 @@ export function readNativeOtaBaseline(root, baselinePath = null) {
     baseline = JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (error) {
     if (error?.code === 'ENOENT') {
-      throw new Error('OTA baseline is missing. Build and install an OTA-enabled release with release:native:devices first.');
+      throw new Error('OTA baseline is missing. Run npm run native:build, then npm run native:install before publishing OTA.');
     }
     throw new Error(`Unable to read OTA baseline: ${error.message}`);
   }

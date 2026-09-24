@@ -98,7 +98,7 @@ test('OTA commands invoke the checked-in locked EAS CLI through Node on every pl
   });
   assert.throws(
     () => resolveLockedEasCliInvocation(root, ['update'], { fileExists: () => false }),
-    /npm ci --prefix tools\/eas-cli --include=dev/
+    /npm run native:setup/
   );
 });
 

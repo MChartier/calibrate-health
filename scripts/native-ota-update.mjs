@@ -47,7 +47,7 @@ export function parseNativeOtaArgs(argv) {
   return values;
 }
 
-export function createNativeOtaRunner() {
+function createNativeOtaRunner() {
   return function runCommand(request) {
     const invocation = { command: request.command, args: request.args ?? [] };
     const result = spawnSync(invocation.command, invocation.args, {
@@ -86,7 +86,7 @@ export function resolveLockedEasCliInvocation(root, args, options = {}) {
   if (!fileExists(entryPoint)) {
     throw new Error(
       'The checked-in EAS CLI tool is not installed. From the repository root, run ' +
-      '`npm ci --prefix tools/eas-cli --include=dev --no-audit --fund=false` and retry.'
+      '`npm run native:setup` and retry.'
     );
   }
   return { command: nodeExecutable, args: [entryPoint, ...args], entryPoint };
@@ -167,7 +167,7 @@ export function validateEasUpdateEnvironment(values, baseline, environmentName) 
   }
 }
 
-export function verifyEasUpdateEnvironment({ root, baseline, publish, runner, environment }) {
+function verifyEasUpdateEnvironment({ root, baseline, publish, runner, environment }) {
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-eas-environment-'));
   const environmentFile = path.join(temporaryDirectory, '.env');
   try {
@@ -201,7 +201,7 @@ function defaultMessage(runner, root) {
 }
 
 function printHelp() {
-  process.stdout.write(`Usage: npm run release:native:ota -- [options]
+  process.stdout.write(`Usage: npm run ota:publish -- [options]
 
 Publish an Android JavaScript/assets update to the channel embedded in the last local release build.
 
@@ -218,7 +218,7 @@ Native module/configuration and Wear OS changes cannot be delivered by Expo OTA.
 `);
 }
 
-export function validateNativeOtaState({ root, baseline, runner, environment = process.env }) {
+function validateNativeOtaState({ root, baseline, runner, environment = process.env }) {
   const mobilePackage = JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'package.json'), 'utf8'));
   if (!mobilePackage.dependencies?.['expo-updates']) {
     throw new Error('mobile/package.json does not include expo-updates. A new native build is required.');

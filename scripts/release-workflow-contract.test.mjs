@@ -215,16 +215,15 @@ test('credentialed release workflows pin external actions and the EAS CLI immuta
   assert.doesNotMatch(releaseEasSources, /eas-cli@latest/i);
   assert.doesNotMatch(releaseEasSources, /^\s*npx(?:\.cmd)?\b[^\r\n]*\beas(?:-cli)?\b/gmi);
   const mobileReleaseDocs = readFileSync(
-    path.join(repositoryRoot, 'docs', 'mobile-release.md'),
+    path.join(repositoryRoot, 'docs', 'native-store-release.md'),
     'utf8'
   );
-  assert.match(
-    mobileReleaseDocs,
-    /npm\.cmd ci --prefix tools\/eas-cli --include=dev --no-audit --fund=false/
-  );
-  assert.match(mobileReleaseDocs, /\.\.\\tools\\eas-cli\\node_modules\\\.bin\\eas\.cmd login/);
-  assert.match(mobileReleaseDocs, /\.\.\\tools\\eas-cli\\node_modules\\\.bin\\eas\.cmd project:info/);
-  assert.doesNotMatch(mobileReleaseDocs, /^\s*eas(?:\.cmd)?\s+(?:login|project:info)\b/gm);
+  const localNativeDocs = readFileSync(path.join(repositoryRoot, 'docs', 'mobile-release.md'), 'utf8');
+  assert.match(localNativeDocs, /npm\.cmd run native:setup/);
+  assert.match(localNativeDocs, /locked EAS CLI/);
+  assert.match(localNativeDocs, /\.\.\\tools\\eas-cli\\node_modules\\\.bin\\eas\.cmd login/);
+  assert.match(localNativeDocs, /\.\.\\tools\\eas-cli\\node_modules\\\.bin\\eas\.cmd project:info/);
+  assert.doesNotMatch(localNativeDocs, /^\s*eas(?:\.cmd)?\s+(?:login|project:info)\b/gm);
   assert.match(publishRelease, /workflow_call:[\s\S]*secrets:[\s\S]*EXPO_TOKEN/);
   assert.doesNotMatch(publishRelease, /publish_ota:[\s\S]*secrets: inherit/);
   assert.doesNotMatch(cutRelease, /uses: \.\/\.github\/workflows\/publish-release\.yml[\s\S]*secrets: inherit/);
@@ -1488,7 +1487,7 @@ test('Expo OTA separates source export from clean environment-scoped publication
   const workflow = readWorkflow('expo-ota-update.yml');
   const publishReleaseWorkflow = readWorkflow('publish-release.yml');
   const mobileReleaseRunbook = readFileSync(
-    path.join(repositoryRoot, 'docs', 'mobile-release.md'),
+    path.join(repositoryRoot, 'docs', 'native-store-release.md'),
     'utf8'
   );
   const agentGuide = readFileSync(path.join(repositoryRoot, 'AGENTS.md'), 'utf8');
@@ -1689,7 +1688,7 @@ test('Expo OTA separates source export from clean environment-scoped publication
 test('native Android store releases build one paired candidate and promote it without rebuilding', () => {
   const workflow = readWorkflow('native-release.yml');
   const mobileReleaseRunbook = readFileSync(
-    path.join(repositoryRoot, 'docs', 'mobile-release.md'),
+    path.join(repositoryRoot, 'docs', 'native-store-release.md'),
     'utf8'
   );
   const validate = workflowJobBlock(workflow, 'validate-source');
@@ -2015,14 +2014,12 @@ test('native Android store releases build one paired candidate and promote it wi
     'the credential-free phone project must be prepared exactly once'
   );
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
-  assert.equal(
-    packageConfig.scripts['prepare:native:release'],
-    'node scripts/native-release-build.mjs prepare'
-  );
-  assert.equal(
-    packageConfig.scripts['build:native:release'],
-    'node scripts/native-release-build.mjs build-prepared'
-  );
+  assert.equal(packageConfig.scripts['native:build'], 'node scripts/native.mjs build');
+  assert.equal(packageConfig.scripts['native:submit'], 'node scripts/native.mjs submit');
+  assert.equal(packageConfig.scripts['ota:publish'], 'node scripts/native.mjs ota');
+  assert.equal(packageConfig.scripts.native, undefined);
+  assert.equal(packageConfig.scripts['prepare:native:release'], undefined);
+  assert.equal(packageConfig.scripts['build:native:release'], undefined);
   assert.match(packageConfig.scripts['test:native-release'], /native-play-receipt\.test\.mjs/);
 
   assert.match(attester, /needs: \[validate-source, build-internal\]/);

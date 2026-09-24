@@ -43,9 +43,11 @@ npm --prefix mobile test
 ```
 
 CI prebuilds and compiles both Android and iOS so native config drift is caught before release work.
-For local release validation, provide the four shared `CALIBRATE_ANDROID_SIGNING_*` values documented in
-`docs/mobile-release.md`, then run `npm run build:native:release` from the repository root. It performs a clean phone
-prebuild and produces signed phone and Wear APKs and AABs with one certificate; local development does not need to
-wait for the remote CI build. An OTA-enabled phone build also requires a linked EAS project ID (or the
-`EXPO_PUBLIC_EAS_PROJECT_ID` override); after installing that build, publish compatible JavaScript/assets changes
-with `npm run release:native:ota`. Wear changes always require another signed native build.
+For local Android releases, download EAS-managed signing and assigned Play credentials with `npm run native:configure`,
+run `npm run native:setup`, then
+`npm run native:build` from the repository root. This builds signed phone
+and Wear APKs and AABs with one certificate. Use `npm run native:install` for local devices,
+`npm run native:submit` for Play internal
+testing, or upload the AABs manually. After installing a build, publish compatible phone JavaScript/assets with
+`npm run ota:publish`. Wear changes require a new native build. See the [local native guide](../docs/mobile-release.md)
+for credentials, versioning, output paths, and OTA dry runs.

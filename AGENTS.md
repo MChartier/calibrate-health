@@ -84,6 +84,7 @@ Primary workflows:
 
 - Codex setup: `node .codex/local-environment.setup.mjs`
 - Host dependency setup: `npm run setup`
+- Windows Android build setup: `npm run native:setup` (add `-- --check` for a read-only prerequisite check)
 - Prepare the worktree stack: `npm run dev:setup`
 - Local dev server: `npm run dev`
 - Native Expo dev-client bundler: `npm run dev:expo` (with the Compose stack
@@ -291,19 +292,42 @@ UI code style:
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
 - Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are
-  globally unique: phone uses the odd lane and Wear uses the even lane. Use `release:native:prepare` for a paired
+  globally unique: phone uses the odd lane and Wear uses the even lane. Use `node scripts/release-config.mjs prepare-native --bump patch` for a paired
   store version only after its current manifest tag is verified as a signed annotated tag against the reviewed public
   keys in `.github/native-release-tag-allowed-signers`, the exact tag name and target SHA, the exact published `origin`
   tag, and `origin/master` ancestry; local-only, lightweight, unsigned, wrong-key, or wrong-target tags are not release
   evidence. Merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
   uploads phone/Wear to Play internal tracks, and promotes those exact codes through closed testing before the
   protected production operation.
-- Local operator-controlled Play testing uses `release:native:internal` (doctor, prepare, build, submit, status).
-  Its explicitly separate preparation can allocate a native version without a published tag. The local path uses
+- Local Android package operations use `native:build`, `native:install`, and `native:submit`.
+  Phone JavaScript/assets updates use `ota:publish`. Run these scripts through `npm run <script> -- <options>`.
+  `native:configure` and `native:setup` are the only supporting root commands; `native:setup -- --check`
+  checks prerequisites without changes, and submit includes upload readback. Keep diagnostic and version-maintenance
+  workers under `scripts/` rather than adding root aliases.
+  Configure uses the locked EAS CLI for authentication/first-time setup, then automatically downloads the
+  default Android signing key and assigned Play key for the exact linked project and `net.darkmachines.healthtracker`.
+  Do not open the interactive credential manager or require menu navigation/exit. Run in an external credentials workspace, validate the download,
+  and save only absolute paths in the user's machine settings. Admit Expo authentication only to EAS, not dependency
+  installation. Download only the Play submission key assigned to this exact app through EAS's internal
+  credential API using the locked CLI authentication. Keep that adapter verified when upgrading EAS.
+  Refresh signing and Play paths atomically; a failed download preserves the previous configuration.
+  An unassigned Play key permits build/install but clears stale submission settings. Explicit local Play files
+  remain an optional override; configure never uploads them or authenticates to Google. Build/submit use these
+  paths by default; explicit file flags override them for one run. Keep credential contents out of saved settings.
+  The public submit command supplies Console-coordination acknowledgement implicitly, with a reminder but no
+  confirmation flag or prompt. Preserve the protected CI publisher and its independent credential boundaries.
+  The existing `node scripts/native-internal-release.mjs prepare --bump patch` helper can allocate a native version
+  without a published tag. The local path uses
   `net.darkmachines.healthtracker`, the private WireGuard origin, Expo channel `internal`, and only `qa`/`wear:qa`.
-  It loads external Expo-format signing credentials after credential-free prebuild, verifies both final bundles,
+  The local entry point strips inherited signing/Play credentials, loads external Expo-format signing credentials
+  only after credential-free prebuild, verifies all four artifacts,
   and records local provenance. It never creates authoritative `native-v*` tags or adopts uploads into the protected
-  workflow. Follow `docs/android-internal-testing.md`; the server/web version stays unchanged. A later protected
+  workflow. Install and submit verify and reuse the retained build without rebuilding.
+  After tool/credential/Play onboarding and committing unused version codes, build followed by submit is sufficient
+  for the local internal-track release. Build owns prebuild/signing/verification; submit owns upload and readback.
+  Install and OTA publication are optional separate operations, not prerequisites to submit.
+  Follow `docs/mobile-release.md` for local commands, `docs/android-internal-testing.md` for onboarding, and
+  `docs/native-store-release.md` for protected releases; the server/web version stays unchanged. A later protected
   release requires a fresh higher pair and the existing GitHub attestation path.
 - Before protected-workflow Play upload, a separate source-free job with the workflow's only native Play OIDC/attestation-write scope
   attests canonical repository/app/source/tag/version and phone/watch track/code/AAB-hash receipt bytes. The Play

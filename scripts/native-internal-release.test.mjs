@@ -7,7 +7,7 @@ import {
   buildLocalInternalRelease, configureLocalInternalToolchain, createLocalInternalPlan, inspectWindowsCmake, INTERNAL_CHANNEL, INTERNAL_PROJECT_ID,
   INTERNAL_SERVER_URL, LOCAL_RECORD_PATH, loadLocalSigningEnvironment, localInternalEnvironment,
   parseBundleResourceValue, parseLocalInternalArgs, requireExternalFile, validateInternalBundleManifest,
-  validateLocalInternalBaseline, verifyLocalRecord
+  validateLocalInternalBaseline, verifyLocalRecord, verifyLocalInternalArtifacts
 } from './native-internal-release.mjs';
 
 const COMMIT = 'a'.repeat(40);
@@ -157,6 +157,28 @@ test('failed preparation never reads signing and invalidates any previous local 
     loadSigning: () => assert.fail('must not read credentials')
   }), /prebuild failed/);
   assert.equal(fs.existsSync(path.join(root, LOCAL_RECORD_PATH)), false);
+});
+
+test('retained local artifacts must match clean source, actual metadata, and recorded hashes before reuse', async (t) => {
+  const { root, baseline } = fixture(t);
+  let source = COMMIT;
+  let verification = { artifacts: [{ sha256: 'a'.repeat(64) }] };
+  const dependencies = {
+    checkConfiguration: async () => {},
+    readSource: () => source,
+    runStage: () => {}, configureToolchain: () => {}, loadSigning: (_root, _file, env) => env,
+    verifyArtifacts: () => verification, readBaseline: () => ({ baseline }),
+    tooling: {}, inspectConfiguration: () => ({ inspected: true })
+  };
+  const request = { root, environment: {}, credentialsFile: 'external.json' };
+  await buildLocalInternalRelease(request, dependencies);
+  assert.equal((await verifyLocalInternalArtifacts(request, dependencies)).plan.sourceCommit, COMMIT);
+  verification = { artifacts: [{ sha256: 'b'.repeat(64) }] };
+  await assert.rejects(verifyLocalInternalArtifacts(request, dependencies), /artifacts or build configuration changed/);
+  source = 'b'.repeat(40);
+  await assert.rejects(verifyLocalInternalArtifacts(request, dependencies), /baseline must match/);
+  dependencies.readSource = () => { throw new Error('Dirty checkout'); };
+  await assert.rejects(verifyLocalInternalArtifacts(request, dependencies), /Dirty checkout/);
 });
 
 test('an already-admitted signing environment cannot enter preparation', async (t) => {
