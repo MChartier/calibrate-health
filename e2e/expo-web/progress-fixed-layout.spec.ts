@@ -111,7 +111,7 @@ test('outdated Trend scrolls its recovery action and Plan check only when they d
     }],
   });
   await installPlanCheck(page);
-  await page.setViewportSize({ width: 390, height: 740 });
+  await page.setViewportSize({ width: 390, height: 700 });
   await page.goto('/progress');
   await hideTransientPwaNotices(page);
   const scroller = page.getByTestId('fixed-page-scroll');
@@ -120,8 +120,8 @@ test('outdated Trend scrolls its recovery action and Plan check only when they d
   const summary = page.getByTestId('plan-check-summary');
   await expect(page.getByTestId('trend-preview-heading')).toContainText('Estimate out of date');
   for (const { width, height, shouldScroll } of [
-    { width: 390, height: 740, shouldScroll: true },
-    { width: 320, height: 800, shouldScroll: true },
+    { width: 390, height: 700, shouldScroll: true },
+    { width: 320, height: 760, shouldScroll: true },
     { width: 390, height: 800, shouldScroll: false },
   ]) {
     await page.setViewportSize({ width, height });

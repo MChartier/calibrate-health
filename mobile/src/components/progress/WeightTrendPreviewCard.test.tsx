@@ -111,7 +111,7 @@ describe('WeightTrendPreviewCard', () => {
             flex: 1,
             minHeight: 188
         });
-        expect(screen.getByLabelText('Open full weight trend')).toHaveStyle({ paddingVertical: 0 });
+        expect(screen.getByLabelText('Open full weight trend')).toHaveStyle({ paddingTop: 16, paddingBottom: 4 });
         expect(screen.getByLabelText('Four-week underlying weight trend with scale readings and 95% estimated range'))
             .toHaveProp('height', 188);
     });

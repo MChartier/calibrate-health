@@ -150,8 +150,8 @@ export function PlanCheckSummaryView(props: PlanCheckSummaryViewProps) {
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
-        // Reserves one compact footer in normal layouts without clipping expanded text.
-        root: { minHeight: 154, paddingVertical: theme.spacing.lg, gap: theme.spacing.sm, justifyContent: 'center' },
+        // Keep the heading close to the rule and let wrapped or enlarged copy grow naturally.
+        root: { paddingVertical: theme.spacing.lg },
         content: { gap: theme.spacing.sm },
         heading: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
         headingCopy: { flex: 1, minWidth: 0, gap: theme.spacing.xs },

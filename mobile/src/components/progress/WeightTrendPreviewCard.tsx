@@ -138,7 +138,12 @@ export const WeightTrendPreviewCard: React.FC<WeightTrendPreviewCardProps> = ({ 
     );
     const Slot = trendState.kind === ASYNC_RESOURCE_STATES.ERROR ? FixedPageColumn : View;
     return (
-        <Slot style={[styles.flexSlot, { minHeight: minimumHeight }, expanded && styles.expanded]}>
+        <Slot style={[
+            styles.flexSlot,
+            { minHeight: minimumHeight },
+            trendState.kind === ASYNC_RESOURCE_STATES.ERROR && styles.errorSlot,
+            expanded && styles.expanded
+        ]}>
             {axisProbe}
             <AsyncStateBoundary
                 state={trendState}
@@ -243,13 +248,15 @@ function TrendTarget({ onPress, children }: { onPress: () => void; children: Rea
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-    flexSlot: { width: '100%', flex: 1, minHeight: 0, paddingTop: spacing.lg, paddingBottom: spacing.xs },
+    flexSlot: { width: '100%', flex: 1, minHeight: 0 },
+    errorSlot: { paddingTop: spacing.lg, paddingBottom: spacing.xs },
     expanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
     boundaryContent: { flex: 1, minHeight: 0, gap: spacing.sm },
     heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     headingCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
     expandIcon: { width: theme.interaction.minimumTouchTarget, height: theme.interaction.minimumTouchTarget, alignItems: 'center', justifyContent: 'center' },
-    chartAction: { flex: 1, minHeight: MIN_PREVIEW_HEIGHT, paddingVertical: 0 },
+    // Include the space up to both page rules in the expansion target.
+    chartAction: { flex: 1, minHeight: MIN_PREVIEW_HEIGHT, paddingTop: spacing.lg, paddingBottom: spacing.xs },
     hovered: { backgroundColor: theme.colors.surfaceHovered },
     pressed: { backgroundColor: theme.colors.surfacePressed },
     focusVisible: { outlineWidth: theme.interaction.focusRingWidth, outlineColor: theme.colors.focusRing, outlineStyle: 'solid' },
