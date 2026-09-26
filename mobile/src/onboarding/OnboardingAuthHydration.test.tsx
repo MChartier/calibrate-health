@@ -3,7 +3,14 @@ import { render } from '@testing-library/react-native';
 import OnboardingScreen from '../../app/onboarding';
 import { useAuth } from '../auth/AuthContext';
 
-jest.mock('../auth/AuthContext', () => ({ useAuth: jest.fn() }));
+jest.mock('@react-native-async-storage/async-storage', () => ({
+    __esModule: true,
+    default: {
+        getItem: jest.fn(async () => null),
+        setItem: jest.fn(async () => undefined),
+        removeItem: jest.fn(async () => undefined)
+    }
+}));jest.mock('../auth/AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'onboarding-operation-id') }));
 jest.mock('../offline/provider', () => ({
     useOfflineOutbox: () => ({
@@ -11,12 +18,6 @@ jest.mock('../offline/provider', () => ({
         mutations: [],
         retryFailed: jest.fn()
     })
-}));
-jest.mock('../components/HealthConnectOnboardingStep', () => ({
-    HealthConnectOnboardingStep: () => null
-}));
-jest.mock('../components/WearPairingCard', () => ({
-    WearPairingCard: () => null
 }));
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('@tanstack/react-query', () => ({

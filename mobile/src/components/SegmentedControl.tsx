@@ -1,18 +1,23 @@
 import React from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View, type ViewProps } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, Platform, Pressable, StyleSheet, useWindowDimensions, View, type ViewProps } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
+import type { FocusableFormControl } from './FormField';
 import { useFocusVisible } from './useFocusVisible';
 import { type AppTheme, useAppTheme } from '../theme';
 
 type SegmentedOption<T extends string> = {
     value: T;
     label: string;
+    icon?: React.ComponentProps<typeof Ionicons>['name'];
 };
 
 type SegmentedControlProps<T extends string> = Omit<ViewProps, 'accessibilityLabel'> & {
     accessibilityLabel: string;
     options: ReadonlyArray<SegmentedOption<T>>;
-    value: T;
+    value: T | null;
+    disabled?: boolean;
+    controlRef?: React.RefObject<FocusableFormControl | null>;
     onChange: (value: T) => void;
 };
 
@@ -33,6 +38,7 @@ function getKey(event: KeyboardLikeEvent) {
 function SegmentedOptionButton<T extends string>({
     option,
     selected,
+    disabled,
     stacked,
     tabIndex,
     onPress,
@@ -41,6 +47,7 @@ function SegmentedOptionButton<T extends string>({
 }: {
     option: SegmentedOption<T>;
     selected: boolean;
+    disabled: boolean;
     stacked: boolean;
     tabIndex: 0 | -1;
     onPress: () => void;
@@ -57,7 +64,8 @@ function SegmentedOptionButton<T extends string>({
             aria-checked={selected}
             accessibilityLabel={option.label}
             accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
+            accessibilityState={{ checked: selected, disabled }}
+            disabled={disabled}
             onBlur={handleBlur}
             onFocus={handleFocus}
             onPress={onPress}
@@ -66,15 +74,18 @@ function SegmentedOptionButton<T extends string>({
             {...({ onKeyDown } as object)}
             style={({ pressed }) => [
                 styles.segment,
+                option.icon && styles.segmentWithIcon,
                 stacked && styles.segmentStacked,
                 selected && styles.segmentSelected,
                 pressed && !selected && styles.segmentPressed,
                 focusVisible && styles.segmentFocused
             ]}
         >
+            {option.icon && <Ionicons name={option.icon} size={theme.typography.styles.label.lineHeight}
+                color={selected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant}
+                accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden />}
             <AppText
                 style={selected ? styles.labelSelected : styles.label}
-                numberOfLines={stacked ? 1 : 2}
             >
                 {option.label}
             </AppText>
@@ -89,7 +100,9 @@ export function SegmentedControl<T extends string>({
     accessibilityLabel,
     options,
     value,
+    disabled = false,
     onChange,
+    controlRef,
     style,
     ...props
 }: SegmentedControlProps<T>) {
@@ -97,19 +110,35 @@ export function SegmentedControl<T extends string>({
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     const { width, fontScale } = useWindowDimensions();
     const optionRefs = React.useRef<Array<FocusableOption | null>>([]);
-    const stacked = options.length >= 3 && (width < 360 || fontScale >= 1.5);
+    const compactMultipleChoices = options.length >= 3 && width < 360;
+    const enlargedLabels = fontScale >= 1.5 && (options.length >= 3 || options.some((option) => option.icon));
+    const stacked = compactMultipleChoices || enlargedLabels;
     const selectedIndex = options.findIndex((option) => option.value === value);
     const tabStopIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    React.useEffect(() => {
+        if (!controlRef) return;
+        controlRef.current = { focus: () => focusOption(tabStopIndex) };
+        return () => { controlRef.current = null; };
+    }, [controlRef, disabled, tabStopIndex]);
+
+    function focusOption(index: number) {
+        if (disabled) return;
+        const element = optionRefs.current[index];
+        element?.focus?.();
+        if (Platform.OS === 'web' || !element) return;
+        const handle = findNodeHandle(element as View);
+        if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+    }
 
     function selectAndFocus(index: number) {
         const option = options[index];
         if (!option) return;
         onChange(option.value);
-        optionRefs.current[index]?.focus?.();
+        focusOption(index);
     }
 
     function handleKeyDown(event: KeyboardLikeEvent, index: number) {
-        if (options.length === 0) return;
+        if (disabled || options.length === 0) return;
         const key = getKey(event);
         let nextIndex: number | undefined;
         if (key === 'Home') nextIndex = 0;
@@ -126,6 +155,8 @@ export function SegmentedControl<T extends string>({
             {...props}
             accessibilityLabel={accessibilityLabel}
             accessibilityRole="radiogroup"
+            accessibilityState={{ ...props.accessibilityState, disabled }}
+            aria-disabled={disabled}
             aria-label={accessibilityLabel}
             aria-orientation={stacked ? 'vertical' : 'horizontal'}
             role="radiogroup"
@@ -136,8 +167,9 @@ export function SegmentedControl<T extends string>({
                     key={option.value}
                     option={option}
                     selected={option.value === value}
+                    disabled={disabled}
                     stacked={stacked}
-                    tabIndex={index === tabStopIndex ? 0 : -1}
+                    tabIndex={!disabled && index === tabStopIndex ? 0 : -1}
                     onPress={() => onChange(option.value)}
                     onKeyDown={(event) => handleKeyDown(event, index)}
                     setRef={(nextRef) => { optionRefs.current[index] = nextRef; }}
@@ -149,10 +181,9 @@ export function SegmentedControl<T extends string>({
 
 function createStyles(theme: AppTheme) {
     const labelBase = {
-        fontSize: theme.typography.small,
-        lineHeight: 19,
-        fontWeight: '600',
-        textAlign: 'center'
+        ...theme.typography.styles.label,
+        textAlign: 'center',
+        flexShrink: 1
     } as const;
 
     return StyleSheet.create({
@@ -179,6 +210,10 @@ function createStyles(theme: AppTheme) {
             justifyContent: 'center',
             paddingHorizontal: theme.spacing.sm,
             paddingVertical: theme.spacing.xs
+        },
+        segmentWithIcon: {
+            flexDirection: 'row',
+            gap: theme.spacing.sm
         },
         segmentStacked: {
             flex: 0,

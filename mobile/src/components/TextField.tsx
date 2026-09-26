@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { StyleSheet, TextInput, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { type AppTheme, useAppTheme } from '../theme';
 import { FormField, type FocusableFormControl } from './FormField';
 
@@ -12,6 +12,7 @@ type TextFieldProps = TextInputProps & {
     focusError?: boolean;
     controlRef?: React.RefObject<FocusableFormControl | null>;
     containerStyle?: StyleProp<ViewStyle>;
+    trailingAccessory?: React.ReactNode;
 };
 
 /** Text input compatibility wrapper backed by the shared accessible field contract. */
@@ -24,6 +25,7 @@ export const TextField: React.FC<TextFieldProps> = ({
     focusError = false,
     controlRef,
     containerStyle,
+    trailingAccessory,
     style,
     onBlur,
     onFocus,
@@ -49,8 +51,8 @@ export const TextField: React.FC<TextFieldProps> = ({
             controlRef={controlRef ?? internalRef}
             containerStyle={containerStyle}
         >
-            {(controlProps) => (
-                <TextInput
+            {(controlProps) => {
+                const input = <TextInput
                     {...controlProps}
                     {...props}
                     ref={(nextRef) => {
@@ -72,15 +74,19 @@ export const TextField: React.FC<TextFieldProps> = ({
                     }}
                     placeholderTextColor={placeholderTextColor ?? theme.colors.onSurfaceVariant}
                     selectionColor={selectionColor ?? theme.colors.primary}
-                    style={[styles.input, isFocused && styles.inputFocused, errorText && styles.inputError, style]}
-                />
-            )}
+                    style={[styles.input, Boolean(trailingAccessory) && styles.inputWithAccessory, isFocused && styles.inputFocused, errorText && styles.inputError, style]}
+                />;
+                if (!trailingAccessory) return input;
+                return <View style={styles.inputRow}>{input}{trailingAccessory}</View>;
+            }}
         </FormField>
     );
 };
 
 function createStyles(theme: AppTheme) {
     return StyleSheet.create({
+        inputRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+        inputWithAccessory: { flex: 1, minWidth: 0 },
         input: {
             minHeight: theme.interaction.minimumTouchTarget,
             borderRadius: theme.radius.md,
@@ -90,9 +96,7 @@ function createStyles(theme: AppTheme) {
             paddingHorizontal: theme.spacing.md,
             paddingVertical: theme.spacing.sm,
             color: theme.colors.onSurface,
-            fontSize: theme.typography.body,
-            lineHeight: theme.typography.styles.body.lineHeight,
-            fontWeight: '500'
+            ...theme.typography.styles.input
         },
         inputFocused: {
             borderColor: theme.colors.focusRing,

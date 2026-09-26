@@ -39,12 +39,10 @@ describe('browser-native feature boundaries', () => {
         await expect(result.current.retryRegistration()).resolves.toBeUndefined();
     });
 
-    it('renders intentional Wear guidance outside embedded native-only settings', () => {
+    it('renders intentional Wear guidance without initializing the native bridge', () => {
         const standalone = render(<WearPairingCard />);
         expect(standalone.getByText('Wear OS')).toBeTruthy();
         expect(standalone.getByText(/Android app/i)).toBeTruthy();
 
-        const embedded = render(<WearPairingCard embedded />);
-        expect(embedded.toJSON()).toBeNull();
     });
 });

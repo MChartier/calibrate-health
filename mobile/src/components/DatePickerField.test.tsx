@@ -1,8 +1,22 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { Platform } from 'react-native';
+import * as ReactNative from 'react-native';
+import type { FocusableFormControl } from './FormField';
 import { DatePickerField } from './DatePickerField';
 
-jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+
+const mockNativeDateElement = { focus: jest.fn() };
+jest.mock('react-native/Libraries/Components/Pressable/Pressable', () => {
+    const ReactActual = require('react');
+    const { View } = require('react-native');
+    return {
+        __esModule: true,
+        default: ReactActual.forwardRef((props: Record<string, any>, ref: unknown) => {
+            ReactActual.useImperativeHandle(ref, () => mockNativeDateElement);
+            return <View {...props} accessible style={typeof props.style === 'function' ? props.style({ pressed: false }) : props.style} />;
+        })
+    };
+});jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('@react-native-community/datetimepicker', () => {
     const { View } = require('react-native');
     return (props: Record<string, unknown>) => <View {...props} testID="native-date-picker" />;
@@ -64,4 +78,32 @@ it.each(['set', 'dismissed'])('preserves Android dialog behavior for %s', (type)
     } else {
         expect(onChangeDate).not.toHaveBeenCalled();
     }
+});
+
+it('announces its selected value and keeps enlarged date text untruncated', () => {
+    const screen = render(
+        <DatePickerField label="date of birth" value="1990-06-15" onChangeDate={jest.fn()} errorText="Review your date of birth." />
+    );
+    const button = screen.getByRole('button', { name: 'Choose date of birth' });
+    expect(button.props.accessibilityValue).toEqual({ text: 'Jun 15, 1990' });
+    expect(button.props['aria-invalid']).toBe(true);
+    expect(button.props.accessibilityHint).toBe('Review your date of birth.');
+    expect(screen.getByText('Jun 15, 1990').props.numberOfLines).toBeUndefined();
+    expect(screen.getByRole('alert')).toHaveTextContent('Review your date of birth.');
+});
+
+it.each(['android', 'ios'] as const)('moves %s accessibility focus to the date button without opening its picker', (platform) => {
+    jest.replaceProperty(Platform, 'OS', platform);
+    const findHandle = jest.spyOn(require('react-native'), 'findNodeHandle').mockReturnValue(73);
+    const accessibilityFocus = jest.spyOn(ReactNative.AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(jest.fn());
+    const controlRef: { current: FocusableFormControl | null } = { current: null };
+    const screen = render(
+        <DatePickerField label="date of birth" value="" onChangeDate={jest.fn()} controlRef={controlRef} />
+    );
+    mockNativeDateElement.focus.mockClear();
+    controlRef.current!.focus();
+    expect(mockNativeDateElement.focus).toHaveBeenCalledTimes(1);
+    expect(findHandle).toHaveBeenCalledWith(mockNativeDateElement);
+    expect(accessibilityFocus).toHaveBeenCalledWith(73);
+    expect(screen.queryByTestId('native-date-picker')).toBeNull();
 });

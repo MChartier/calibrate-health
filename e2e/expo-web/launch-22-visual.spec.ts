@@ -1,10 +1,12 @@
 import { applyTwoHundredPercentText } from './text-scaling';
 import { existsSync } from 'node:fs';
+import { mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, TestInfo } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { installSavedFoodsFixture } from './saved-foods.fixture';
 import { PLAN_CHECK_RECOMMENDATION_STATUS } from './plan-check.fixture';
+import { fillOnboardingDetails, goalPaceOption, installOnboardingAccount } from './onboarding.fixture';
 
 const SCREENSHOT_OPTIONS = {
   animations: 'disabled',
@@ -23,7 +25,6 @@ const EDITORIAL_ROUTES = [
   { name: 'progress', path: '/progress', ready: 'Snapshot' },
   { name: 'settings', path: '/settings', ready: 'Browse settings' },
   { name: 'login', path: '/login', ready: 'Sign in' },
-  { name: 'onboarding', path: '/onboarding', ready: 'Build your daily target' },
   { name: 'saved-foods', path: '/my-foods', ready: null },
 ] as const;
 
@@ -150,6 +151,134 @@ for (const scheme of ['light', 'dark'] as const) {
     // Show the populated editing rows rather than the searchable source list above them.
     await sheet.getByRole('button', { name: 'Save recipe', exact: true }).scrollIntoViewIfNeeded();
     await expectViewportScreenshot(page, `editorial-recipe-${scheme}.png`);
+  });
+}
+
+// Each step has a reviewed viewport baseline, including compact screens and alternative display modes.
+for (const scheme of ['light', 'dark'] as const) {
+  test(`onboarding three steps in ${scheme}`, async ({ page, ux }, testInfo) => {
+    runOn(testInfo, EDITORIAL_PROJECTS);
+    await page.emulateMedia({ colorScheme: scheme });
+    await ux.install('populated');
+    await installOnboardingAccount(page);
+    await page.goto('/onboarding');
+    await captureOnboardingSteps(page, scheme);
+  });
+}
+
+for (const displayMode of ['enlarged-text', 'forced-colors'] as const) {
+  test(`onboarding three steps with ${displayMode}`, async ({ page, ux }, testInfo) => {
+    runOn(testInfo, ['ux-phone-320', 'ux-desktop-1440']);
+    await page.emulateMedia({ colorScheme: 'light', forcedColors: displayMode === 'forced-colors' ? 'active' : 'none' });
+    await ux.install('populated');
+    await installOnboardingAccount(page);
+    await page.goto('/onboarding');
+    await expect(page.getByRole('heading', { name: 'About you', exact: true })).toBeVisible();
+    if (displayMode === 'enlarged-text') await applyTwoHundredPercentText(page);
+    await captureOnboardingSteps(page, displayMode);
+  });
+}
+
+test('onboarding imperial measurements with enlarged text', async ({ page, ux }, testInfo) => {
+  runOn(testInfo, ['ux-phone-320', 'ux-phone-390', 'ux-desktop-1440']);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await ux.install('populated');
+  await installOnboardingAccount(page, {}, { locale: 'en-US' });
+  await page.goto('/onboarding');
+  await expect(page.getByRole('heading', { name: 'About you', exact: true })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Current weight (lb)', exact: true }).fill('194.4');
+  await page.getByRole('textbox', { name: 'Feet', exact: true }).fill('5');
+  await page.getByRole('textbox', { name: 'Inches', exact: true }).fill('11');
+  await page.getByLabel('Date of birth', { exact: true }).fill('1985-05-12');
+  await page.getByRole('radio', { name: 'Male', exact: true }).click();
+  await applyTwoHundredPercentText(page);
+  await captureOnboardingViewport(page, 'onboarding-imperial-enlarged-text.png');
+  await page.getByRole('textbox', { name: 'Feet', exact: true }).scrollIntoViewIfNeeded();
+  await page.getByRole('textbox', { name: 'Inches', exact: true }).scrollIntoViewIfNeeded();
+  await captureOnboardingPosition(page, 'onboarding-imperial-height-enlarged-text.png');
+  for (const label of ['Feet', 'Inches']) {
+    const geometry = await page.getByRole('textbox', { name: label, exact: true }).evaluate(element => {
+      const computed = getComputedStyle(element);
+      const context = document.createElement('canvas').getContext('2d')!;
+      context.font = computed.font;
+      return {
+        actual: element.getBoundingClientRect().width,
+        minimum: context.measureText('88').width + Number.parseFloat(computed.paddingLeft)
+          + Number.parseFloat(computed.paddingRight) + Number.parseFloat(computed.borderLeftWidth)
+          + Number.parseFloat(computed.borderRightWidth),
+        fontSize: Number.parseFloat(computed.fontSize),
+      };
+    });
+    expect(geometry.fontSize).toBeGreaterThanOrEqual(28);
+    expect(geometry.actual, label + ' must display two enlarged digits and its padding').toBeGreaterThanOrEqual(geometry.minimum);
+  }
+});
+
+async function captureOnboardingSteps(page: Page, appearance: string) {
+  await fillOnboardingDetails(page);
+  await page.getByRole('heading', { name: 'About you', exact: true }).scrollIntoViewIfNeeded();
+  await captureOnboardingViewport(page, `onboarding-about-you-${appearance}.png`);
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Activity', exact: true })).toBeVisible();
+  await captureOnboardingViewport(page, `onboarding-activity-${appearance}.png`);
+  await page.getByRole('radiogroup', { name: 'Activity level', exact: true })
+    .getByRole('radio', { name: 'Lightly active', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your plan', exact: true })).toBeVisible();
+  await page.getByRole('radio', { name: 'Lose', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Target weight (kg)', exact: true }).fill('82');
+  await goalPaceOption(page, 500).click();
+  await expect(page.getByRole('button', { name: 'Start tracking', exact: true })).toBeEnabled();
+  await page.getByRole('heading', { name: 'Your plan', exact: true }).scrollIntoViewIfNeeded();
+  await captureOnboardingViewport(page, `onboarding-plan-${appearance}.png`);
+}
+
+async function scrollOnboarding(page: Page, position: 'top' | 'bottom') {
+  return page.getByTestId('onboarding-root').evaluate((root, destination) => {
+    const scroller = Array.from(root.querySelectorAll<HTMLElement>('*')).find(element =>
+      element.clientHeight > 0
+      && element.scrollHeight > element.clientHeight + 1
+      && ['auto', 'scroll'].includes(getComputedStyle(element).overflowY));
+    if (!scroller) return false;
+    scroller.scrollTop = destination === 'top' ? 0 : scroller.scrollHeight;
+    return true;
+  }, position);
+}
+
+async function captureOnboardingViewport(page: Page, filename: string) {
+  await page.evaluate(() => document.fonts.ready);
+  if (filename.includes('enlarged-text')) {
+    await expect.poll(() => page.getByTestId('onboarding-root').evaluate(root =>
+      Math.max(0, ...Array.from(root.querySelectorAll<HTMLElement>('*'))
+        .filter(element => ['auto', 'scroll'].includes(getComputedStyle(element).overflowY))
+        .map(element => element.clientHeight)))).toBeGreaterThanOrEqual(240);
+  }
+  const overflows = await scrollOnboarding(page, 'top');
+  if (!overflows && process.env.CALIBRATE_CAPTURE_EVIDENCE === '1') {
+    const staleBottom = filename.replace('.png', `-bottom-${page.viewportSize()!.width}.png`);
+    await rm(path.resolve('.codex-screenshots/onboarding-review', staleBottom), { force: true });
+  }
+  await captureOnboardingPosition(page, filename);
+  if (overflows) {
+    await scrollOnboarding(page, 'bottom');
+    await captureOnboardingPosition(page, filename.replace('.png', '-bottom.png'));
+    await scrollOnboarding(page, 'top');
+  }
+}
+
+async function captureOnboardingPosition(page: Page, filename: string) {
+  if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') {
+    await expectViewportScreenshot(page, filename);
+    return;
+  }
+  await page.mouse.move(0, 0);
+  await settleVisualPage(page);
+  await expectNoHorizontalOverflow(page);
+  const evidenceDirectory = path.resolve('.codex-screenshots/onboarding-review');
+  await mkdir(evidenceDirectory, { recursive: true });
+  await page.screenshot({
+    path: path.join(evidenceDirectory, filename.replace('.png', `-${page.viewportSize()!.width}.png`)),
+    animations: 'disabled', caret: 'hide', fullPage: false, scale: 'css',
   });
 }
 

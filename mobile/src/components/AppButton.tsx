@@ -14,6 +14,7 @@ import { useFocusVisible } from './useFocusVisible';
 
 type AppButtonProps = Omit<PressableProps, 'android_ripple'> & {
     title: string;
+    buttonRef?: React.Ref<View>;
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
     leftIcon?: React.ReactNode;
     rightIcon?: React.ReactNode;
@@ -24,6 +25,7 @@ type AppButtonProps = Omit<PressableProps, 'android_ripple'> & {
 
 export const AppButton: React.FC<AppButtonProps> = ({
     title,
+    buttonRef,
     variant = 'primary',
     leftIcon,
     rightIcon,
@@ -64,6 +66,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
 
     return <Pressable
         {...props}
+        ref={buttonRef}
         disabled={inactive}
         accessibilityLabel={accessibilityLabel ?? renderedTitle}
         accessibilityRole={accessibilityRole ?? 'button'}

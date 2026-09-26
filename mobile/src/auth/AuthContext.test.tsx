@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockGetClientConfig = jest.fn();
 const mockRefreshMobile = jest.fn();
+const mockLoginMobile = jest.fn();
+const mockLogoutMobile = jest.fn(async () => undefined);
 
 jest.mock('@calibrate/api-client', () => {
     class ApiError extends Error {
@@ -20,6 +22,8 @@ jest.mock('@calibrate/api-client', () => {
         CalibrateApiClient: class {
             getClientConfig = (...args: unknown[]) => mockGetClientConfig(...args);
             refreshMobile = (...args: unknown[]) => mockRefreshMobile(...args);
+            loginMobile = (...args: unknown[]) => mockLoginMobile(...args);
+            logoutMobile = () => mockLogoutMobile();
         }
     };
 });
@@ -59,7 +63,15 @@ jest.mock('./devAutoLogin', () => ({
     shouldDevAutoLogin: () => false
 }));
 
-import { writeStoredTokens } from './storage';
+jest.mock('../onboarding/draftStorage', () => ({ clearOnboardingDraft: jest.fn(async () => undefined) }));
+jest.mock('../config/server', () => ({
+    ...jest.requireActual('../config/server'),
+    testCalibrateServerConnection: jest.fn()
+}));
+
+import { writeStoredTokens, clearStoredTokens } from './storage';
+import { clearOnboardingDraft } from '../onboarding/draftStorage';
+import { testCalibrateServerConnection } from '../config/server';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const mockWriteStoredTokens = jest.mocked(writeStoredTokens);
@@ -135,5 +147,68 @@ describe('AuthProvider client/server compatibility recovery', () => {
         expect(result.current.user).toBeNull();
         expect(mockRefreshMobile).not.toHaveBeenCalled();
         expect(mockWriteStoredTokens).not.toHaveBeenCalled();
+    });
+});
+
+const AUTH_PAYLOAD = {
+    access_token: 'access', refresh_token: 'refresh', user: { id: 7, email: 'person@example.com' }
+};
+function renderAuth() {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+        <QueryClientProvider client={queryClient}><AuthProvider>{children}</AuthProvider></QueryClientProvider>
+    );
+    return renderHook(() => useAuth(), { wrapper });
+}
+
+describe('native onboarding draft cleanup', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetClientConfig.mockReset().mockResolvedValue({ server_version: '1.2.0' });
+        mockRefreshMobile.mockReset().mockResolvedValue(AUTH_PAYLOAD);
+        mockLoginMobile.mockReset().mockResolvedValue(AUTH_PAYLOAD);
+        jest.mocked(testCalibrateServerConnection).mockResolvedValue({
+            ok: true, url: 'https://health.example', config: {} as never, message: 'Connected'
+        });
+    });
+
+    it.each(['logout', 'clearLocalSession'] as const)('clears the captured account draft on %s', async (method) => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await act(async () => result.current[method]());
+        expect(clearOnboardingDraft).toHaveBeenCalledWith('https://health.example', 7);
+        expect(clearStoredTokens).toHaveBeenCalled();
+        expect(result.current.user).toBeNull();
+    });
+
+    it('preserves a same-account session and clears the former account on replacement', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await act(async () => { await result.current.login('person@example.com', 'password', 'https://health.example'); });
+        expect(clearOnboardingDraft).not.toHaveBeenCalled();
+        mockLoginMobile.mockResolvedValue({ ...AUTH_PAYLOAD, user: { id: 8, email: 'another@example.com' } });
+        await act(async () => { await result.current.login('another@example.com', 'password', 'https://health.example'); });
+        expect(clearOnboardingDraft).toHaveBeenCalledWith('https://health.example', 7);
+        expect(result.current.user?.id).toBe(8);
+    });
+
+    it('preserves the draft after a failed server probe and clears it for a confirmed switch', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        jest.mocked(testCalibrateServerConnection).mockResolvedValueOnce({ ok: false, url: null, code: 'unreachable', message: 'Offline' });
+        await act(async () => { await result.current.setServerUrl('https://other.example'); });
+        expect(clearOnboardingDraft).not.toHaveBeenCalled();
+        jest.mocked(testCalibrateServerConnection).mockResolvedValueOnce({ ok: true, url: 'https://other.example', config: {} as never, message: 'Connected' });
+        await act(async () => { await result.current.setServerUrl('https://other.example'); });
+        expect(clearOnboardingDraft).toHaveBeenCalledWith('https://health.example', 7);
+        expect(result.current.serverUrl).toBe('https://other.example');
+    });
+
+    it('does not clear saved progress for a transient startup network failure', async () => {
+        mockGetClientConfig.mockRejectedValueOnce(new Error('Network unavailable'));
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(clearOnboardingDraft).not.toHaveBeenCalled();
+        expect(clearStoredTokens).not.toHaveBeenCalled();
     });
 });

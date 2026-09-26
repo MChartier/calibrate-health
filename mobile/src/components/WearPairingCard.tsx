@@ -18,7 +18,7 @@ import { AppText } from './AppText';
 import { SectionHeader } from './SectionHeader';
 
 /** Phone-owned discovery and one-time credential relay for the signed Calibrate watch app. */
-export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {}) {
+export function WearPairingCard() {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const { api, serverUrl, user } = useAuth();
@@ -123,15 +123,15 @@ export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {
 
     const content = (
         <>
-            {!embedded && <SectionHeader
+            <SectionHeader
                 title="Galaxy Watch"
                 description="Pair the signed Wear OS companion without copying your phone session or password."
-            />}
+            />
             <View accessibilityLiveRegion="polite" style={styles.statusPanel}>
                 <AppText style={styles.status}>{status}</AppText>
-                {!embedded && <AppText variant="caption">
+                <AppText variant="caption">
                     Selected server: {serverUrl}. Changing the phone server never retargets an already-paired watch.
-                </AppText>}
+                </AppText>
             </View>
             {pairing && (
                 <AppText variant="caption">
@@ -151,13 +151,10 @@ export function WearPairingCard({ embedded = false }: { embedded?: boolean } = {
         </>
     );
 
-    return embedded ? <View style={styles.embedded}>{content}</View> : <AppSection>{content}</AppSection>;
+    return <AppSection>{content}</AppSection>;
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-    embedded: {
-        gap: spacing.md
-    },
     statusPanel: {
         gap: spacing.xs,
         padding: spacing.md,

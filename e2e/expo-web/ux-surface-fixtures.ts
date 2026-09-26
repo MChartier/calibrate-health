@@ -3,6 +3,7 @@ import { expect } from './fixtures';
 import { ROUTE_IDS } from '../../mobile/src/navigation/routeRegistry';
 import type { UxLocatorContract } from './ux-matrix';
 import { PLAN_CHECK_RECOMMENDATION_STATUS } from './plan-check.fixture';
+import { installOnboardingAccount } from './onboarding.fixture';
 
 const RESUME_CONFIRMATION_DUE_PAUSE_RESPONSE = {
   pause: {
@@ -108,10 +109,6 @@ export async function installAccessibilityApiExtensions(
   }
 
   if (routeId === 'onboarding') {
-    await page.route('**/api/v1/onboarding/draft', (route) => fulfillJson(route, {
-      draft: null,
-      recovered_from_legacy: false,
-      onboarding_completed_at: null,
-    }));
+    await installOnboardingAccount(page);
   }
 }
