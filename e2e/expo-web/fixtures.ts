@@ -573,13 +573,6 @@ async function installAuthenticatedApi(
         },
       });
     }
-    if (pathname === '/api/v1/onboarding/draft') {
-      return fulfillJson(route, {
-        draft: null,
-        recovered_from_legacy: false,
-        onboarding_completed_at: null,
-      });
-    }
     if (pathname === '/api/v1/user/profile') return fulfillJson(route, caloriePlan.profile);
     if (pathname === '/api/v1/user/connected-apps') {
       return fulfillJson(route, { connections: [] });

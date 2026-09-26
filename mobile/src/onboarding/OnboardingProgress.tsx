@@ -1,93 +1,31 @@
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../components/AppText';
 import { radius, spacing, useAppTheme } from '../theme';
-import { isPostCompletionStep, type OnboardingStep } from './steps';
+import { ONBOARDING_STEPS } from './steps';
 
-type OnboardingProgressProps = {
-    steps: OnboardingStep[];
-    activeIndex: number;
-};
+const PROGRESS_TRACK_HEIGHT = 4; // A quiet progress cue leaves the page heading in focus.
 
-const PROGRESS_TRACK_HEIGHT = 8; // Keeps the bar legible without competing with the current-step label.
-
-/** Compact continuous progress indicator for the focused onboarding sequence. */
-export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
-    steps,
-    activeIndex
-}) => {
+export function OnboardingProgress({ activeIndex }: { activeIndex: number }) {
     const { colors } = useAppTheme();
-    const activeStep = steps[activeIndex];
-    const isOptional = activeStep ? isPostCompletionStep(activeStep.key) : false;
-    const totalSteps = Math.max(steps.length, 1);
-    const currentStep = Math.min(Math.max(activeIndex + 1, 1), totalSteps);
-    const progressPercent = (currentStep / totalSteps) * 100;
-    const progressText = `Step ${currentStep} of ${totalSteps}`;
-
+    const current = Math.min(Math.max(activeIndex + 1, 1), ONBOARDING_STEPS.length);
+    const text = `Step ${current} of ${ONBOARDING_STEPS.length}`;
     return (
         <View style={styles.root}>
-            <View style={styles.summary}>
-                <AppText variant="label">{progressText}</AppText>
-                {isOptional && (
-                    <View style={[styles.optionalPill, { backgroundColor: colors.primaryContainer }]}>
-                        <AppText variant="caption" style={[styles.optionalText, { color: colors.onPrimaryContainer }]}>Optional next step</AppText>
-                    </View>
-                )}
-            </View>
-            <View
-                accessible
-                accessibilityRole="progressbar"
-                accessibilityLabel="Onboarding progress"
-                accessibilityValue={{
-                    min: 1,
-                    max: totalSteps,
-                    now: currentStep,
-                    text: progressText
-                }}
-                style={[styles.track, { backgroundColor: colors.outlineVariant }]}
-            >
-                <View
-                    style={[
-                        styles.fill,
-                        {
-                            backgroundColor: colors.primary,
-                            width: `${progressPercent}%`
-                        }
-                    ]}
-                />
+            <AppText variant="caption">{text}</AppText>
+            <View accessible accessibilityRole="progressbar" accessibilityLabel="Onboarding progress"
+                accessibilityValue={{ min: 1, max: ONBOARDING_STEPS.length, now: current, text }}
+                style={styles.track}>
+                {ONBOARDING_STEPS.map((step, index) => (
+                    <View key={step.key} style={[styles.segment, {
+                        backgroundColor: index < current ? colors.primary : colors.outlineVariant
+                    }]} />
+                ))}
             </View>
         </View>
     );
-};
-
+}
 const styles = StyleSheet.create({
-    root: {
-        gap: spacing.xs
-    },
-    summary: {
-        minHeight: 24,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: spacing.sm
-    },
-    optionalPill: {
-        borderRadius: radius.pill,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs
-    },
-    optionalText: {
-        fontWeight: '600'
-    },
-    track: {
-        width: '100%',
-        height: PROGRESS_TRACK_HEIGHT,
-        borderRadius: radius.pill,
-        overflow: 'hidden'
-    },
-    fill: {
-        height: '100%',
-        borderRadius: radius.pill
-    }
+    root: { gap: spacing.sm },
+    track: { flexDirection: 'row', gap: spacing.sm },
+    segment: { flex: 1, height: PROGRESS_TRACK_HEIGHT, borderRadius: radius.pill }
 });

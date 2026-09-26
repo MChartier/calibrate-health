@@ -1,6 +1,7 @@
 import type { Page, TestInfo } from '@playwright/test';
 import { ROUTE_IDS, ROUTE_REGISTRY } from '../../mobile/src/navigation/routeRegistry';
 import { expect, hideTransientPwaNotices, test } from './fixtures';
+import { fillOnboardingDetails, goalPaceOption, installOnboardingAccount } from './onboarding.fixture';
 import { installAccessibilityApiExtensions, locatorForContract, waitForReadySurface } from './ux-surface-fixtures';
 import {
   attachAccessibilitySummary,
@@ -226,3 +227,25 @@ test.describe('Launch 22 accessibility gate probes', () => {
     });
   });
 });
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`onboarding all steps have no blocking accessibility findings in ${scheme}`, async ({ page, ux }, testInfo) => {
+    runOnlyInSemanticProject(testInfo);
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await ux.install('populated');
+    await installOnboardingAccount(page);
+    await page.goto('/onboarding');
+    await fillOnboardingDetails(page);
+    await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: `onboarding-details-${scheme}` });
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Activity', exact: true })).toBeVisible();
+    await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: `onboarding-activity-${scheme}` });
+    await page.getByRole('radiogroup', { name: 'Activity level', exact: true })
+      .getByRole('radio', { name: 'Lightly active', exact: true }).click();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await page.getByRole('radio', { name: 'Lose', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Target weight (kg)', exact: true }).fill('82');
+    await goalPaceOption(page, 500).click();
+    await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: `onboarding-plan-${scheme}` });
+  });
+}

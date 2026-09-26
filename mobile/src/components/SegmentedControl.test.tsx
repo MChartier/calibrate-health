@@ -4,6 +4,8 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { SegmentedControl } from './SegmentedControl';
 import { themes } from '../theme';
 
+jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+
 const OPTIONS = [
     { value: 'quick', label: 'Quick' },
     { value: 'search', label: 'Search' },
@@ -90,7 +92,20 @@ describe('SegmentedControl', () => {
             expect.objectContaining({ flexDirection: 'column' })
         );
         for (const label of OPTIONS.map((option) => option.label)) {
-            expect(getByText(label)).toHaveProp('numberOfLines', 1);
+            expect(getByText(label).props.numberOfLines).toBeUndefined();
         }
     });
-});
+
+    it('keeps a saving form inert for pointer and keyboard input', () => {
+        const onChange = jest.fn();
+        const screen = render(
+            <SegmentedControl accessibilityLabel="Goal direction" options={OPTIONS} value="quick" onChange={onChange} disabled />
+        );
+        const radios = screen.getAllByRole('radio');
+        expect(radios.map((radio) => radio.props.tabIndex)).toEqual([-1, -1, -1]);
+        for (const radio of radios) expect(radio).toBeDisabled();
+        fireEvent.press(screen.getByRole('radio', { name: 'Search' }));
+        fireEvent(radios[0], 'keyDown', { key: 'ArrowRight', preventDefault: jest.fn() });
+        expect(onChange).not.toHaveBeenCalled();
+        expect(screen.getByRole('radio', { name: 'Quick' }).props.accessibilityState.checked).toBe(true);
+    });});
