@@ -87,7 +87,8 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   Paused tracking uses **Resume tracking** in the same action area. Keep incomplete/backfill and error
   recovery available without restoring a separate day-status card.
 - Paused days replace the balance and food preview with a spacious pause message and a prominent
-  pause symbol. Keep the date toolbar, weight entry, and action dock available. Today's message says
+  pause symbol. Keep the date toolbar available, with weight entry below the pause message and directly
+  above the action dock so the available actions stay together at the bottom. Today's message says
   **Tracking paused** and explains that food logging, targets, and reminders are on pause. Past days
   say **Tracking was paused**, explain that this is not a zero-calorie day, and retain **Edit day** for
   backfill. Weight logging is always available. Retained food entries do not restore the normal

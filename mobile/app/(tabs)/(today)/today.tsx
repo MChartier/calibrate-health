@@ -206,8 +206,8 @@ export default function TodayScreen() {
                 suppressStaleNotice
             >
                 {isPaused ? <PausedDayBody expanded={expanded}>
-                    <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
                     <PausedDayMessage isToday={isToday} />
+                    <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
                 </PausedDayBody> : <>
                     <ExpansionRegion id="weight" order={1}>
                         <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
