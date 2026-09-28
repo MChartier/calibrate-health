@@ -6,6 +6,10 @@ const mockApi = { scanNutritionLabel: jest.fn(), createMyFood: jest.fn() };
 const mockChoose = jest.fn();
 const mockRelease = jest.fn();
 let mockOnline = true;
+let mockScanningEnabled = true;
+jest.mock('../serverSettings/useServerSettings', () => ({
+    useServerSettings: () => ({ nutritionLabelScanning: mockScanningEnabled })
+}));
 
 jest.mock('expo-router', () => ({
     router: { replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
@@ -35,11 +39,23 @@ function showScreen() {
 beforeEach(() => {
     jest.clearAllMocks();
     mockOnline = true;
+    mockScanningEnabled = true;
     mockChoose.mockResolvedValue({ uri: 'file:///label.jpg', upload: { uri: 'file:///label.jpg', name: 'label.jpg', type: 'image/jpeg' } });
     mockApi.scanNutritionLabel.mockResolvedValue(draft);
     mockApi.createMyFood.mockImplementation(async (payload) => ({ id: 9, ...payload }));
 });
 afterEach(cleanup);
+
+test('disabled scanning cannot open a picker through a direct link and keeps manual entry available', () => {
+    mockScanningEnabled = false;
+    const screen = showScreen();
+    expect(screen.queryByText('Choose photo')).toBeNull();
+    expect(screen.queryByText('Take photo')).toBeNull();
+    expect(screen.getByText(/scanning is unavailable/)).toBeTruthy();
+    expect(screen.getByLabelText(/Food title/)).toBeTruthy();
+    expect(mockChoose).not.toHaveBeenCalled();
+    expect(mockApi.scanNutritionLabel).not.toHaveBeenCalled();
+});
 
 test('scan produces an editable draft and only saves after a title and explicit save', async () => {
     const screen = showScreen();

@@ -4,6 +4,7 @@ import { rateLimit } from 'express-rate-limit';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 import { MAX_LABEL_IMAGE_BYTES, scanNutritionLabel } from '../services/nutritionLabelScan';
 import { isHttpError } from './myFoodsUtils';
+import { getServerFeatures } from '../services/serverSettings';
 
 const router = express.Router();
 const SCAN_RATE_WINDOW_MS = 60_000;
@@ -13,7 +14,15 @@ const upload = multer({
 }).single('image');
 
 router.use(requireAuthenticatedUser);
-router.post('/scan', rateLimit({
+router.post('/scan', async (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  // Check before buffering an upload or starting OCR, including for older clients.
+  if (!(await getServerFeatures()).nutrition_label_scanning) {
+    res.status(403).json({ message: 'Nutrition label scanning is disabled on this server.', code: 'FEATURE_DISABLED' });
+    return;
+  }
+  next();
+}, rateLimit({
   windowMs: SCAN_RATE_WINDOW_MS,
   limit: 6,
   keyGenerator: (req) => String(getAuthenticatedUser(req).id),

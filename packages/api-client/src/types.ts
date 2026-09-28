@@ -564,6 +564,15 @@ export type WatchMutationResponse =
     | { type: 'metric.upsert'; metric: { id: number; local_date: string; weight_grams: number; revision: string } }
     | { type: 'food_day.set_complete'; food_day: WatchFoodDayMutation };
 
+export type ServerFeatures = {
+    nutrition_label_scanning: boolean;
+};
+
+export type ServerSettingsResponse = {
+    features: ServerFeatures;
+    is_admin: boolean;
+};
+
 export type ClientConfigResponse = {
     api_version: number;
     api_versions: {

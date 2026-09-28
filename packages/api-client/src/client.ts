@@ -15,6 +15,8 @@ import type {
     ConnectedAppSummary,
     CreateMyFoodPayload,
     NutritionLabelDraft,
+    ServerFeatures,
+    ServerSettingsResponse,
     CreateRecipeFromFoodLogsPayload,
     FoodLogCopyPayload,
     FoodLogCopyResponse,
@@ -431,6 +433,16 @@ export class CalibrateApiClient {
 
     getClientConfig(options: Pick<RequestInit, 'cache'> = {}): Promise<ClientConfigResponse> {
         return this.request<ClientConfigResponse>('/api/client-config', { ...options, auth: false });
+    }
+
+    getServerSettings(signal?: AbortSignal): Promise<ServerSettingsResponse> {
+        return this.request<ServerSettingsResponse>('/api/server-settings', { cache: 'no-store', signal });
+    }
+
+    updateServerSettings(features: ServerFeatures): Promise<ServerSettingsResponse> {
+        return this.request<ServerSettingsResponse>('/api/server-settings', {
+            method: 'PATCH', cache: 'no-store', json: { features }
+        });
     }
 
     reportClientDiagnostic(input: ClientDiagnosticInput): Promise<ClientDiagnosticResponse> {

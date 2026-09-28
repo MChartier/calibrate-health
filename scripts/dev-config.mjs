@@ -322,6 +322,7 @@ export async function resolveDevConfig({
     MCP_PUBLIC_URL:
       readUserValue("MCP_PUBLIC_URL") || `http://localhost:${ports.backendPort}/mcp`,
     FOOD_DATA_PROVIDER: foodDataProvider,
+    ADMIN_EMAILS: readUserValue("ADMIN_EMAILS") || "",
     WEIGHT_TREND_MODEL: readUserValue("WEIGHT_TREND_MODEL") || "v2",
     FATSECRET_CLIENT_ID: fatsecretClientId,
     FATSECRET_CLIENT_SECRET: fatsecretClientSecret,

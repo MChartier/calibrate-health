@@ -8,6 +8,13 @@ test('scan endpoint authenticates, validates uploads, and aborts work on disconn
   const servicePath = require.resolve('../src/services/nutritionLabelScan');
   const routePath = require.resolve('../src/routes/nutritionLabels');
   const previous = require.cache[servicePath];
+  const settingsPath = require.resolve('../src/services/serverSettings');
+  const previousSettings = require.cache[settingsPath];
+  let scanningEnabled = true;
+  const settingsStub = new Module(settingsPath);
+  settingsStub.exports = { getServerFeatures: async () => ({ nutrition_label_scanning: scanningEnabled }) };
+  settingsStub.loaded = true;
+  require.cache[settingsPath] = settingsStub;
   const calls = [];
   let holdScan = false;
   let scanStarted;
@@ -32,6 +39,8 @@ test('scan endpoint authenticates, validates uploads, and aborts work on disconn
   require.cache[servicePath] = stub;
   delete require.cache[routePath];
   const router = require('../src/routes/nutritionLabels').default;
+  if (previousSettings) require.cache[settingsPath] = previousSettings;
+  else delete require.cache[settingsPath];
   if (previous) require.cache[servicePath] = previous;
   else delete require.cache[servicePath];
 
@@ -55,6 +64,13 @@ test('scan endpoint authenticates, validates uploads, and aborts work on disconn
     let response = await fetch(url, { method: 'POST', body: upload() });
     assert.equal(response.status, 401);
     assert.equal(calls.length, 0);
+    scanningEnabled = false;
+    response = await fetch(url, { method: 'POST', headers: { 'x-test-user': '1' }, body: upload(33) });
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal((await response.json()).code, 'FEATURE_DISABLED');
+    assert.equal(calls.length, 0);
+    scanningEnabled = true;
     response = await fetch(url, { method: 'POST', headers: { 'x-test-user': '1' }, body: upload() });
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('cache-control'), 'no-store');

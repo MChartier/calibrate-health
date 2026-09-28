@@ -7,6 +7,7 @@ import { MEAL_PERIODS, type MealPeriod } from '@calibrate/shared';
 import type { FoodSearchResponse } from '@calibrate/api-client';
 import { ASYNC_RESOURCE_STATES, isNeverEmpty } from '../asyncState/resolveAsyncState';
 import { useAuth } from '../auth/AuthContext';
+import { useServerSettings } from '../serverSettings/useServerSettings';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { AppButton } from '../components/AppButton';
 import { AppSection } from '../components/AppSection';
@@ -79,6 +80,7 @@ function getInitialMode(resume: BarcodeResumeContext): BarcodeMode {
 }
 
 export default function BarcodeScreen() {
+    const { nutritionLabelScanning } = useServerSettings();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const routeParams = useLocalSearchParams<BarcodeWorkflowRouteParams>();
@@ -515,7 +517,7 @@ export default function BarcodeScreen() {
                             }
                             : undefined}
                     />
-                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
+                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={nutritionLabelScanning ? scanNutritionLabel : undefined} />
                     <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
                 </AppSection>
             </Screen>
@@ -569,7 +571,7 @@ export default function BarcodeScreen() {
                     )}
                     {permissionAction}
                     <AppButton title="Enter barcode" variant="secondary" onPress={() => setMode('manual-barcode')} />
-                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
+                    <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={nutritionLabelScanning ? scanNutritionLabel : undefined} />
                     <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
                 </AppSection>
             </Screen>
@@ -601,7 +603,7 @@ export default function BarcodeScreen() {
                             {scanError ?? 'Camera ready. Center an EAN or UPC barcode in the frame.'}
                         </AppText>
                         <AppButton title="Enter barcode" variant="secondary" onPress={() => setMode('manual-barcode')} />
-                        <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={scanNutritionLabel} />
+                        <BarcodeRecoveryActions onSearchFoods={searchFoods} onAddManually={openManualFood} onScanLabel={nutritionLabelScanning ? scanNutritionLabel : undefined} />
                         <AppButton title="Back to log" variant="ghost" onPress={navigateToReturn} />
                     </AppSection>
                 </View>
@@ -701,7 +703,7 @@ export default function BarcodeScreen() {
                 {lookupState.kind === BARCODE_LOOKUP_STATES.AUTH_REQUIRED && (
                     <AppButton title="Sign in again" onPress={() => void clearLocalSession()} />
                 )}
-                <AppButton title="Scan nutrition label" variant="secondary" disabled={logFood.isPending || lookup.isPending} onPress={scanNutritionLabel} />
+                {nutritionLabelScanning && <AppButton title="Scan nutrition label" variant="secondary" disabled={logFood.isPending || lookup.isPending} onPress={scanNutritionLabel} />}
                 {lookupFailed && (
                     <BarcodeRecoveryActions
                         disabled={logFood.isPending}

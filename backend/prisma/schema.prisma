@@ -647,6 +647,12 @@ model RecipeIngredient {
   @@index([recipe_id])
 }
 
+model ServerSettings {
+  id                               Int      @id @default(1)
+  nutrition_label_scanning_enabled Boolean  @default(false)
+  updated_at                       DateTime @updatedAt
+}
+
 model SessionStore {
   /// Backing table for express-session; kept in the Prisma schema so db push and migrations create it.
   sid    String   @id @db.Text

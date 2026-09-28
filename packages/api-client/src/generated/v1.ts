@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/v1/server-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read instance-wide feature switches and current administrator eligibility. Responses must not be cached. */
+        get: operations["getServerSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Update instance-wide feature switches. Requires a verified account whose current email appears in ADMIN_EMAILS. */
+        patch: operations["updateServerSettings"];
+        trace?: never;
+    };
     "/api/v1/client-config": {
         parameters: {
             query?: never;
@@ -539,7 +557,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Read an English nutrition-label photo into an unsaved draft for user review. Photos are processed locally and not retained. Saving requires a separate saved-food request. */
+        /** @description Read an English nutrition-label photo into an unsaved draft for user review. Requires the server's nutrition_label_scanning switch, which defaults to disabled. Photos are processed locally and not retained. Saving requires a separate saved-food request. */
         post: operations["scanNutritionLabel"];
         delete?: never;
         options?: never;
@@ -1834,6 +1852,14 @@ export interface components {
             receipt: components["schemas"]["OnboardingCompleteReceipt"];
             user: components["schemas"]["UserClientPayload"];
         };
+        ServerFeatures: {
+            /** @default false */
+            nutrition_label_scanning: boolean;
+        };
+        ServerSettingsResponse: {
+            features: components["schemas"]["ServerFeatures"];
+            is_admin: boolean;
+        };
         NutritionLabelDraft: {
             calories_per_serving: number | null;
             serving_size_quantity: number | null;
@@ -2538,6 +2564,68 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getServerSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server settings for an authenticated account. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerSettingsResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateServerSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    features: components["schemas"]["ServerFeatures"];
+                };
+            };
+        };
+        responses: {
+            /** @description Persisted server settings. Changes apply immediately to new scan requests. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerSettingsResponse"];
+                };
+            };
+            /** @description Invalid or unknown feature settings. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Verified server administrator access required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getClientConfig: {
         parameters: {
             query?: never;
@@ -3883,6 +3971,13 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /** @description Nutrition label scanning is disabled on this server. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Photo exceeds the upload limit. */
             413: {
                 headers: {

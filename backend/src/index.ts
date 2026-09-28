@@ -16,6 +16,7 @@ import { configureFrontendStaticAssets } from './frontendStatic';
 import { isAuthenticatedUser } from './middleware/authenticatedUser';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
+import serverSettingsRoutes from './routes/serverSettings';
 import clientDiagnosticsRoutes from './routes/clientDiagnostics';
 import devRoutes from './routes/dev';
 import devTestRoutes from './routes/devTest';
@@ -297,6 +298,7 @@ const bootstrap = async (): Promise<void> => {
   });
 
   apiRouter.use('/client-config', clientConfigRoutes);
+  apiRouter.use('/server-settings', serverSettingsRoutes);
   apiRouter.use('/client-diagnostics', clientDiagnosticsRoutes);
   apiRouter.use('/goals', goalRoutes);
   apiRouter.use('/metrics', metricRoutes);

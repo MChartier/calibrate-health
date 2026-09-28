@@ -38,6 +38,25 @@ digest and Git commit.
 For Caddy, `CADDYFILE=./Caddyfile.prod` is the normal setting. Use `./Caddyfile.staging` only after setting a real
 `BASIC_AUTH_USER` and Caddy password hash.
 
+### Server administration
+
+Set `ADMIN_EMAILS=operator@example.com,other-admin@example.com` in the deployment environment and
+recreate the app container. Entries are trimmed and matched case-insensitively against the signed-in
+account's current, verified email. An empty allowlist grants nobody admin access; registration alone
+does not grant access. Removing an address takes effect after restarting with the new environment.
+
+Admins can open **Settings > Server administration** in the web or mobile client. Feature switches
+are stored in this instance's Postgres database and survive app restarts. Changes apply without a
+restart to everyone connected to that server, including other admins. Nutrition label scanning starts
+disabled. Disabling it blocks new scan requests immediately, including requests from older clients;
+scans already running may finish. Current clients refresh controls when relevant screens mount,
+on foregrounding or browser focus, and on reconnect. Unavailable settings disable scanner controls; existing saved
+foods and manual food entry remain available. Each self-hosted instance controls its own settings.
+
+For local development, set `ADMIN_EMAILS` in the root `.env` (for example, explicitly allow the verified
+seeded account `test@calibratehealth.app`) and rerun `npm run dev:setup` and `npm run dev`.
+Admin addresses are server-only configuration and are never returned by the settings API.
+
 ### Email verification and password recovery
 
 Self-hosted deployments must keep `CALIBRATE_HOSTED_SERVICE=false`; email delivery defaults to

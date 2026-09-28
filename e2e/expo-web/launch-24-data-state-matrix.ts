@@ -404,6 +404,21 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
     staleText: "Couldn't refresh selected-day activity",
     terminalEmptyText: 'No imported activity for this day',
   }),
+  routeCase('server-admin', {
+    resource: {
+      pathname: '/api/v1/server-settings',
+      content: { is_admin: true, features: { nutrition_label_scanning: true } },
+      empty: { is_admin: true, features: { nutrition_label_scanning: false } },
+    },
+    loading: { kind: 'text', value: 'Loading server settings...' },
+    content: { kind: 'text', value: 'Manage settings for the connected Calibrate server.' },
+    contentVisibleWhileLoading: true,
+    empty: { kind: 'text', value: 'Manage settings for the connected Calibrate server.' },
+    errorText: 'Server settings could not be loaded.',
+    errorActionText: 'Try again',
+    staleText: 'Server settings could not be loaded.',
+    offlineText: 'Connect to the server to manage its settings.',
+  }),
   routeCase('my-foods', {
     resource: {
       pathname: '/api/v1/my-foods/library',

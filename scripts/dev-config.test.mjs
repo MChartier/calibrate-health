@@ -62,6 +62,7 @@ test("generated worktree configuration is isolated, persistent, and secret-safe"
         "FATSECRET_CLIENT_SECRET=secret",
         "WEB_PUSH_SUBJECT=mailto:test@example.com",
         "WEIGHT_TREND_MODEL=v1",
+        "ADMIN_EMAILS=operator@example.com,second@example.com",
         "",
       ].join("\n")
     );
@@ -74,6 +75,7 @@ test("generated worktree configuration is isolated, persistent, and secret-safe"
     });
     assert.equal(first.FOOD_DATA_PROVIDER, "fatsecret");
     assert.equal(first.WEIGHT_TREND_MODEL, "v1");
+    assert.equal(first.ADMIN_EMAILS, "operator@example.com,second@example.com");
     assert.equal(first.WEB_PUSH_SUBJECT, "mailto:test@example.com");
     assert.equal(first.SESSION_COOKIE_NAME, `cal.${first.WORKTREE_HASH}.sid`);
     assert.match(first.hostDatabaseUrl, new RegExp(`127\\.0\\.0\\.1:${first.POSTGRES_PORT}`));

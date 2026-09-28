@@ -6,6 +6,43 @@ info:
 servers:
   - url: /
 paths:
+  /api/v1/server-settings:
+    get:
+      operationId: getServerSettings
+      description: Read instance-wide feature switches and current administrator eligibility. Responses must not be cached.
+      responses:
+        '200':
+          description: Server settings for an authenticated account.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServerSettingsResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      operationId: updateServerSettings
+      description: Update instance-wide feature switches. Requires a verified account whose current email appears in ADMIN_EMAILS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [features]
+              properties:
+                features: { $ref: '#/components/schemas/ServerFeatures' }
+      responses:
+        '200':
+          description: Persisted server settings. Changes apply immediately to new scan requests.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServerSettingsResponse' }
+        '400':
+          description: Invalid or unknown feature settings.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Verified server administrator access required.
   /api/v1/client-config:
     get:
       operationId: getClientConfig
@@ -881,7 +918,7 @@ paths:
   /api/v1/nutrition-labels/scan:
     post:
       operationId: scanNutritionLabel
-      description: Read an English nutrition-label photo into an unsaved draft for user review. Photos are processed locally and not retained. Saving requires a separate saved-food request.
+      description: Read an English nutrition-label photo into an unsaved draft for user review. Requires the server's nutrition_label_scanning switch, which defaults to disabled. Photos are processed locally and not retained. Saving requires a separate saved-food request.
       requestBody:
         required: true
         content:
@@ -909,6 +946,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '413':
           description: Photo exceeds the upload limit.
+        '403':
+          description: Nutrition label scanning is disabled on this server.
         '429':
           description: Too many scans for this user.
         '503':
@@ -2665,6 +2704,18 @@ components:
       properties:
         receipt: { $ref: '#/components/schemas/OnboardingCompleteReceipt' }
         user: { $ref: '#/components/schemas/UserClientPayload' }
+    ServerFeatures:
+      type: object
+      additionalProperties: false
+      required: [nutrition_label_scanning]
+      properties:
+        nutrition_label_scanning: { type: boolean, default: false }
+    ServerSettingsResponse:
+      type: object
+      required: [features, is_admin]
+      properties:
+        features: { $ref: '#/components/schemas/ServerFeatures' }
+        is_admin: { type: boolean }
     NutritionLabelDraft:
       type: object
       required: [calories_per_serving, serving_size_quantity, serving_unit_label, serving_text, warnings]

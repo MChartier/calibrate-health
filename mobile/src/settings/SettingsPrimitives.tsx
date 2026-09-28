@@ -9,12 +9,14 @@ type PreferenceSwitchProps = {
     label: string;
     value: boolean;
     onValueChange: (value: boolean) => void;
+    disabled?: boolean;
 };
 
 export const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({
     label,
     value,
-    onValueChange
+    onValueChange,
+    disabled = false
 }) => {
     const { colors, interaction } = useAppTheme();
     const { focusVisible, handleFocus, handleBlur } = useFocusVisible();
@@ -24,7 +26,8 @@ export const PreferenceSwitch: React.FC<PreferenceSwitchProps> = ({
             aria-checked={value}
             accessibilityLabel={label}
             accessibilityRole="switch"
-            accessibilityState={{ checked: value }}
+            accessibilityState={{ checked: value, disabled }}
+            disabled={disabled}
             onPress={() => onValueChange(!value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
