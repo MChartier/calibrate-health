@@ -195,6 +195,12 @@ async function stubAuthenticatedApi(page: Page, options: AuthenticatedApiOptions
     const url = new URL(route.request().url());
     const pathname = url.pathname;
     if (pathname === '/auth/me') return fulfillJson(route, { user: AUTHENTICATED_USER });
+    if (pathname === '/api/v1/server-settings' && route.request().method() === 'GET') {
+      return fulfillJson(route, {
+        is_admin: false,
+        features: { nutrition_label_scanning: false },
+      });
+    }
     if (pathname === '/api/v1/client-diagnostics' && route.request().method() === 'POST') {
       return route.fulfill({ status: 204 });
     }
