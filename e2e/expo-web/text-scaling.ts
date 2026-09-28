@@ -8,7 +8,8 @@ export async function applyTwoHundredPercentText(page: Page) {
     document.head.append(rule);
     function scale(element: Element) {
       if (element.hasAttribute('data-ux-large-text')) return;
-      if (!Array.from(element.childNodes).some(node => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()))) return;
+      const isTextInput = element.matches('input:not([type=checkbox]):not([type=radio]), textarea');
+      if (!isTextInput && !Array.from(element.childNodes).some(node => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()))) return;
       const computed = getComputedStyle(element);
       const fontSize = Number.parseFloat(computed.fontSize);
       const lineHeight = Number.parseFloat(computed.lineHeight);

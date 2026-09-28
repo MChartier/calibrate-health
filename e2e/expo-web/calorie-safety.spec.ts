@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page, TestInfo } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { advanceOnboardingToPlan, goalPaceOption, installOnboardingAccount } from './onboarding.fixture';
 
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
@@ -44,48 +45,28 @@ async function captureEvidence(
   await page.screenshot({ path: screenshotPath, fullPage: false });
 }
 
-async function advanceAtomicOnboardingToPace(page: Page) {
-  await expect(page.getByText('Choose your weight goal', { exact: true })).toBeVisible();
-  await page.getByRole('textbox', { name: 'Current', exact: true }).fill('88.2');
-  await page.getByRole('textbox', { name: 'Target', exact: true }).fill('82');
-  await page.getByRole('button', { name: 'Next: About you', exact: true }).click();
-  await expect(page.getByText('Tell us the basics', { exact: true })).toBeVisible();
-  await page.getByLabel('Date of birth', { exact: true }).fill('1985-05-12');
-  await page.getByRole('button', { name: 'Male', exact: true }).click();
-  await page.getByRole('button', { name: 'Next: Calorie burn', exact: true }).click();
-  await expect(page.getByText('Estimate calorie burn', { exact: true })).toBeVisible();
-  await page.getByRole('textbox', { name: 'Height', exact: true }).fill('180');
-  await page.getByRole('button', { name: 'Next: Pace', exact: true }).click();
-  await expect(page.getByText('Choose a safe plan', { exact: true })).toBeVisible();
-}
 test('server-unavailable options expose disabled semantics and safe reason copy', async ({ page, ux }, testInfo) => {
   await ux.install('populated', { caloriePlanFixture: 'selected-options-unavailable' });
+  await installOnboardingAccount(page);
   await page.goto('/onboarding');
-  await advanceAtomicOnboardingToPace(page);
+  await advanceOnboardingToPlan(page);
+  await page.getByRole('radiogroup', { name: 'Goal direction', exact: true })
+    .getByRole('radio', { name: 'Lose', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Target weight (kg)', exact: true }).fill('82');
 
-  const selector = page.getByRole('combobox', { name: 'Select daily calorie change', exact: true });
-  await expect(selector).toContainText('Choose an available pace');
-  await expect(page.getByRole('button', { name: 'Review setup', exact: true })).toBeDisabled();
-  await selector.click();
-
-  const optionsDialog = page.getByRole('dialog', { name: 'Select daily calorie change', exact: true });
-  const options = page.getByRole('listbox', { name: 'Select daily calorie change options', exact: true });
-  const unsafeOption = options.getByRole('option', { name: '500 kcal/day deficit', exact: true });
-  await expect(optionsDialog).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start tracking', exact: true })).toBeDisabled();
+  const unsafeOption = goalPaceOption(page, 500);
+  await expect(unsafeOption).toBeVisible();
   await expect(unsafeOption).toBeDisabled();
   await expect(unsafeOption).toContainText(
     'This choice would put the daily target below the server-calculated safety minimum.',
   );
-
   await expectNoHorizontalOverflow(page);
   await captureEvidence(page, testInfo, {
     'desktop-chrome': 'plan-options-desktop.png',
-  }, async () => {
-    await page.getByRole('button', { name: 'Close select daily calorie change', exact: true }).click();
-    await expect(optionsDialog).toHaveCount(0);
-    await selector.click();
-    await expect(optionsDialog).toBeVisible();
   });
+  await goalPaceOption(page, 250).click();
+  await expect(page.getByRole('button', { name: 'Start tracking', exact: true })).toBeEnabled();
 });
 
 test('reviewed plans keep history while suppressing target, projection, and calibration', async ({ page, ux }, testInfo) => {

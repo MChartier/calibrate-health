@@ -18,6 +18,7 @@ import { cleanupBrowserPushBeforeSessionChange } from '../notifications/browserP
 import { restoreBrowserDevelopmentSession } from './devAutoLogin';
 import { clearBrowserUserScopedCaches } from '../pwa/cacheIsolation.web';
 import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
+import { clearOnboardingDraft } from '../onboarding/draftStorage';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -55,12 +56,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [authError, setAuthError] = useState<string | null>(null);
     const [serverConnection, setServerConnection] = useState<ServerConnectionState>(INITIAL_SERVER_CONNECTION_STATE);
     const requestId = useRef(0);
+    const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
+
+    const acceptUser = useCallback(async (nextUser: UserClientPayload) => {
+        const previousScope = accountScopeRef.current;
+        const nextScope = { serverUrl, userId: nextUser.id };
+        accountScopeRef.current = nextScope;
+        if (previousScope && previousScope.userId !== nextUser.id) {
+            await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
+        }
+        if (accountScopeRef.current === nextScope) setUser(nextUser);
+    }, [serverUrl]);
 
     const clearSession = useCallback(async () => {
+        const scope = accountScopeRef.current;
+        accountScopeRef.current = null;
+        const draftCleanup = scope ? clearOnboardingDraft(scope.serverUrl, scope.userId) : Promise.resolve();
         setUser(null);
         setAuthError(null);
         queryClient.clear();
-        await clearBrowserUserScopedCaches();
+        await Promise.all([clearBrowserUserScopedCaches(), draftCleanup]);
     }, [queryClient]);
 
     const clearSessionWithBrowserCleanup = useCallback(async () => {
@@ -77,8 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         let active = true;
         setIsLoading(true);
-        void restoreBrowserDevelopmentSession(api, serverUrl).then(({ user: nextUser }) => {
-            if (active) setUser(nextUser);
+        void restoreBrowserDevelopmentSession(api, serverUrl).then(async ({ user: nextUser }) => {
+            if (active) await acceptUser(nextUser);
         }).catch((error: unknown) => {
             if (!active || (error instanceof ApiError && error.status === 401)) return;
             setAuthError(getSessionRestoreErrorMessage(error));
@@ -86,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (active) setIsLoading(false);
         });
         return () => { active = false; };
-    }, [api, serverUrl]);
+    }, [acceptUser, api, serverUrl]);
 
     const probeCurrentServer = useCallback(async (): Promise<ServerConnectionResult> => {
         const currentRequest = requestId.current + 1;
@@ -127,9 +142,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!payload) return false;
         queryClient.clear();
         await clearBrowserUserScopedCaches();
-        setUser(payload.user);
+        await acceptUser(payload.user);
         return true;
-    }, [confirmCurrentServer, queryClient, serverUrl]);
+    }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 
     const register = useCallback(async (
         email: string,
@@ -162,9 +177,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!payload) return false;
         queryClient.clear();
         await clearBrowserUserScopedCaches();
-        setUser(payload.user);
+        await acceptUser(payload.user);
         return true;
-    }, [confirmCurrentServer, queryClient, serverUrl]);
+    }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 
     const logout = useCallback(async () => {
         try {

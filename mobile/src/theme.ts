@@ -1,4 +1,4 @@
-import { type ColorSchemeName } from 'react-native';
+import { Platform, type ColorSchemeName } from 'react-native';
 import { useSystemColorScheme } from './hooks/useSystemColorScheme';
 import {
     calibrateDesignTokens,
@@ -71,6 +71,11 @@ export const radius = {
 
 export const typeScale = calibrateDesignTokens.typography;
 
+// Raw browser inputs need the same explicit system stack used by React Native Web controls.
+const INPUT_FONT_FAMILY = Platform.OS === 'web'
+    ? '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif'
+    : undefined;
+
 export const typography = {
     // Numeric aliases preserve existing StyleSheet call sites while new shared
     // components consume the complete, line-height-safe styles below.
@@ -81,7 +86,10 @@ export const typography = {
     small: typeScale.label.fontSize,
     caption: typeScale.caption.fontSize,
     metric: typeScale.metric.fontSize,
-    styles: typeScale
+    styles: {
+        ...typeScale,
+        input: { ...typeScale.body, letterSpacing: 0, fontFamily: INPUT_FONT_FAMILY, fontWeight: '500' as const }
+    }
 };
 
 export const interaction = { ...calibrateDesignTokens.interaction };

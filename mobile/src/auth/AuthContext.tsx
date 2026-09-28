@@ -42,6 +42,7 @@ import {
 } from '../account/accountDeletionNotice';
 import { DEV_TEST_EMAIL, DEV_TEST_PASSWORD, shouldDevAutoLogin } from './devAutoLogin';
 import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
+import { clearOnboardingDraft } from '../onboarding/draftStorage';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -88,8 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const accessTokenRef = useRef<string | null>(null);
     const refreshTokenRef = useRef<string | null>(null);
     const serverTestRequestRef = useRef(0);
+    const serverUrlRef = useRef('');
+    const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
 
     const clearSession = useCallback(async () => {
+        const scope = accountScopeRef.current;
+        accountScopeRef.current = null;
+        const draftCleanup = scope ? clearOnboardingDraft(scope.serverUrl, scope.userId) : Promise.resolve();
         setUser(null);
         setAccessToken(null);
         setRefreshToken(null);
@@ -97,8 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshTokenRef.current = null;
         setClientUpgradeRequired(null);
         setClientServerIncompatibility(null);
-        await clearStoredTokens();
         queryClient.clear();
+        await Promise.all([clearStoredTokens(), draftCleanup]);
     }, [queryClient]);
 
     const handleClientUpgradeRequired = useCallback((requirement: ClientUpgradeRequirement) => {
@@ -111,6 +117,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         access_token: string;
         refresh_token: string;
     }) => {
+        const previousScope = accountScopeRef.current;
+        const nextScope = { serverUrl: serverUrlRef.current, userId: payload.user.id };
+        accountScopeRef.current = nextScope;
+        if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== serverUrlRef.current)) {
+            await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
+        }
+        if (accountScopeRef.current !== nextScope) return;
         setUser(payload.user);
         setAccessToken(payload.access_token);
         setRefreshToken(payload.refresh_token);
@@ -202,6 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 ]);
                 if (!isMounted) return;
 
+                serverUrlRef.current = storedServerUrl;
                 setServerUrlState(storedServerUrl);
                 setDeviceId(nextDeviceId);
                 setAccountDeletionCleanupNotice(storedCleanupNotice);
@@ -347,6 +361,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return result;
         }
 
+        serverUrlRef.current = result.url;
         setServerUrlState(result.url);
         setAuthError(null);
         return result;

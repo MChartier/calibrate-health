@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import React, { useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, findNodeHandle, Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AppText } from './AppText';
+import { FormField } from './FormField';
 import { AppButton } from './AppButton';
 import { radius, spacing, useAppTheme, type AppTheme } from '../theme';
 import { dateOnlyToLocalDate, formatDateOnlyForDisplay, localDateToDateOnly } from '../utils/dates';
@@ -17,6 +18,8 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
     onChangeDate,
     placeholder = 'Choose date',
     helperText,
+    errorText,
+    controlRef,
     minimumDate,
     maximumDate,
     fallbackDate,
@@ -25,7 +28,19 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const [isFocused, setIsFocused] = useState(false);
     const [pickerDate, setPickerDate] = useState<Date | null>(null);
+    const fieldRef = useRef<View | null>(null);
+
+    useImperativeHandle(controlRef, () => ({
+        focus: () => {
+            const element = fieldRef.current;
+            element?.focus();
+            if (Platform.OS === 'web' || !element) return;
+            const handle = findNodeHandle(element);
+            if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+        }
+    }), []);
 
     function openPicker() {
         const initialDate = value || fallbackDate || maximumDate || localDateToDateOnly(new Date());
@@ -54,23 +69,31 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
 
     return (
         <View {...props} style={[styles.group, style]}>
-            <AppText variant="label">{label}</AppText>
+            <FormField label={label} helperText={helperText} errorText={errorText} controlRef={controlRef}>
+            {(field) => (
             <Pressable
+                {...field}
+                ref={fieldRef}
                 accessibilityRole="button"
                 accessibilityLabel={`Choose ${label}`}
+                accessibilityLabelledBy={undefined}
+                aria-labelledby={undefined}
+                accessibilityValue={{ text: value ? formatDateOnlyForDisplay(value) : 'Not set' }}
                 onPress={openPicker}
-                style={({ pressed }) => [styles.field, pressed && styles.pressed]}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                style={({ pressed }) => [styles.field, pressed && styles.pressed, isFocused && styles.fieldFocused, errorText && styles.fieldError]}
             >
                 <AppText
                     variant="body"
-                    numberOfLines={1}
-                    style={!value && styles.placeholder}
+                    style={[styles.value, !value && styles.placeholder]}
                 >
                     {value ? formatDateOnlyForDisplay(value) : placeholder}
                 </AppText>
-                <Ionicons name="calendar-outline" size={18} color={theme.colors.primary} />
+                <Ionicons name="calendar-outline" size={18} color={theme.colors.onSurfaceVariant} />
             </Pressable>
-            {helperText && <AppText variant="caption">{helperText}</AppText>}
+            )}
+            </FormField>
             {pickerDate && (
                 <View style={styles.pickerContainer}>
                     <DateTimePicker
@@ -98,17 +121,21 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         gap: spacing.sm
     },
     field: {
-        minHeight: 48,
+        minHeight: theme.interaction.minimumTouchTarget,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: spacing.md,
         borderRadius: radius.md,
         borderWidth: theme.stroke.control,
-        borderColor: theme.colors.outlineVariant,
+        borderColor: theme.colors.outline,
         backgroundColor: theme.colors.surfaceContainerLow,
-        paddingHorizontal: spacing.md
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm
     },
+    value: { flex: 1, ...theme.typography.styles.input },
+    fieldFocused: { borderColor: theme.colors.focusRing, borderWidth: theme.interaction.focusRingWidth, backgroundColor: theme.colors.surface },
+    fieldError: { borderColor: theme.colors.danger },
     placeholder: {
         color: theme.colors.onSurfaceVariant
     },
@@ -123,7 +150,6 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
         flex: 1
     },
     pressed: {
-        borderColor: theme.colors.primary,
         backgroundColor: theme.colors.surface
     }
 });

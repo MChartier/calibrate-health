@@ -8,7 +8,6 @@ import {
 } from '@calibrate/shared';
 import { spacing } from '../../theme';
 import {
-    ACTIVITY_OPTIONS,
     HEIGHT_UNIT_OPTIONS,
     SEX_OPTIONS
 } from '../../utils/profileOptions';
@@ -18,6 +17,7 @@ import { DatePickerField } from '../DatePickerField';
 import { NumberStepperField } from '../NumberStepperField';
 import { SegmentedControl } from '../SegmentedControl';
 import { TimeZonePickerField } from '../TimeZonePickerField';
+import { ActivityLevelSelector } from './ActivityLevelSelector';
 
 type ProfileIdentityFieldsProps = {
     dateOfBirth: string;
@@ -93,17 +93,7 @@ export const ProfileEnergyFields: React.FC<ProfileEnergyFieldsProps> = ({
     onTimezoneChange
 }) => (
     <>
-        <AppText variant="label">Activity level</AppText>
-        <View style={styles.chips}>
-            {ACTIVITY_OPTIONS.map((option) => (
-                <AppChip
-                    key={option.value}
-                    label={option.label}
-                    selected={activityLevel === option.value}
-                    onPress={() => onActivityLevelChange(option.value)}
-                />
-            ))}
-        </View>
+        <ActivityLevelSelector value={activityLevel} onChange={onActivityLevelChange} />
         {onHeightUnitChange && (
             <>
                 <AppText variant="label">Height unit</AppText>
