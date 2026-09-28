@@ -407,9 +407,9 @@ test('under, at, over, empty, and paused days use the three exact truthful statu
   options.foodDayStatus = 'PAUSED';
   await page.reload();
 
-  await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
-    'Daily balance. Tracking paused. 0 calories logged.',
-  );
+  await expect(page.getByLabel(/^Daily balance\./)).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Tracking paused', exact: true })).toBeVisible();
+  await expect(page.getByTestId('today-food-preview')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
   await expect(page.getByTestId('today-action-dock').getByRole('button', { name: 'Day completed', exact: true })).toHaveCount(0);
   await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);

@@ -539,38 +539,27 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expectNoHorizontalOverflow(page);
 });
 
-test('paused days omit calorie progress and only preview food when entries exist', async ({ page }) => {
+test('paused days show a dedicated pause view with or without logged food', async ({ page }) => {
   const options: AuthenticatedApiOptions = {
     foodDayStatus: 'PAUSED',
     foodEntries: [...DEFAULT_FOOD_ENTRIES],
   };
   await stubAuthenticatedApi(page, options);
-  await page.goto('/today');
 
-  await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
-    'Daily balance. Tracking paused. 360 calories logged.',
-  );
-  await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
-  await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toHaveAccessibleName(
-    'Food log. 1 food. Breakfast, 360 kcal. Morning Snack, No entries. Lunch, No entries. Afternoon Snack, No entries. Dinner, No entries. Evening Snack, No entries. View full log',
-  );
-  await expect(page.getByTestId('today-food-preview').getByTestId('food-preview-meal-BREAKFAST').getByText(
-    '360 kcal',
-    { exact: true },
-  )).toBeVisible();
+  for (const foodEntries of [DEFAULT_FOOD_ENTRIES, []]) {
+    options.foodEntries = [...foodEntries];
+    await page.goto('/today');
 
-  options.foodEntries = [];
-  await page.reload();
-
-  await expect(page.getByLabel(/^Daily balance\./)).toHaveAccessibleName(
-    'Daily balance. Tracking paused. 0 calories logged.',
-  );
-  await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeVisible();
-  await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /Food log.*View full log/ })).toBeVisible();
-  await expect(page.getByTestId('today-food-preview').getByTestId(/^food-preview-meal-/)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Add food', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Tracking paused', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeEnabled();
+    await expect(page.getByTestId('today-weight-card-press-layer')).toBeEnabled();
+    await expect(page.getByTestId('today-weight-card-press-layer')).toBeInViewport();
+    await expect(page.getByLabel(/^Daily balance\./)).toHaveCount(0);
+    await expect(page.getByTestId('calorie-gauge-progress')).toHaveCount(0);
+    await expect(page.getByTestId('today-food-preview')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+  }
 });
 
 test('weight logging keeps the progress result visible and hands off a reached goal', async ({ page }) => {

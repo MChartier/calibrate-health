@@ -59,7 +59,8 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
 - The open balance region uses the page background: ring left, quiet divider, balance copy right.
   A full-width horizontal rule separates the balance from the weight and Food log content below.
   Do not show the goal number; it remains in Progress's Snapshot. Incomplete, paused, or unavailable
-  comparisons retain a neutral ring and the same metric space with status and logged calories.
+  comparisons retain a neutral ring and the same metric space with status and logged calories, except
+  paused days, which use the dedicated pause layout below.
 - Place the full-width weight control immediately below the balance, above food. It begins with
   **Weigh in** and an inviting supporting label, then becomes a measurement with **Logged today** or
   queued-sync status. Never use "No weigh-in yet" as its principal content. Use the existing scale
@@ -85,6 +86,13 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   days retain **Edit day**. Keep the paired action heights stable at 320px.
   Paused tracking uses **Resume tracking** in the same action area. Keep incomplete/backfill and error
   recovery available without restoring a separate day-status card.
+- Paused days replace the balance and food preview with a spacious pause message and a prominent
+  pause symbol. Keep the date toolbar available, with weight entry below the pause message and directly
+  above the action dock so the available actions stay together at the bottom. Today's message says
+  **Tracking paused** and explains that food logging, targets, and reminders are on pause. Past days
+  say **Tracking was paused**, explain that this is not a zero-calorie day, and retain **Edit day** for
+  backfill. Weight logging is always available. Retained food entries do not restore the normal
+  calorie/meal preview while paused. Let the message scroll on short screens and at enlarged text sizes.
 
 ### Progress
 

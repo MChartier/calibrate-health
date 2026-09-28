@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams, usePathname, type Href } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { MealPeriod } from '@calibrate/shared';
@@ -14,6 +14,7 @@ import { ExpansionRegion } from '../../../src/components/PageExpansion';
 import { DayStatusCard, useFoodDayStatus } from '../../../src/components/FoodTrackingStatus';
 import { SkeletonBlock } from '../../../src/components/SkeletonBlock';
 import { TodayFoodPreview } from '../../../src/today/TodayFoodPreview';
+import { PausedDayMessage } from '../../../src/today/PausedDayMessage';
 import { TodayWeightCard } from '../../../src/components/TodayWeightCard';
 import { WeightEntrySheet } from '../../../src/components/WeightEntrySheet';
 import { useAuth } from '../../../src/auth/AuthContext';
@@ -51,11 +52,19 @@ export default function TodayScreen() {
     const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const canAddFood = foodDayQuery.data?.status === 'OPEN';
+    const isPaused = foodDayQuery.data?.status === 'PAUSED';
     const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
     const isOnline = useOnlineStatus();
     const hasPendingWeightChange = usePendingWeightMutation();
 
-    const dashboardQueries = [profileQuery, foodQuery, foodDayQuery, metricsQuery] as const;
+    useEffect(() => {
+        if (isPaused) setIsFoodExpanded(false);
+    }, [isPaused]);
+
+    // A paused day does not need food or calorie-plan data to explain its state.
+    const dashboardQueries = isPaused
+        ? [foodDayQuery, metricsQuery] as const
+        : [profileQuery, foodQuery, foodDayQuery, metricsQuery] as const;
     const failedDashboardQueries = dashboardQueries.filter((query) => query.isError);
     const dashboardHasFailedResource = hasTodayDashboardFailure(dashboardQueries);
     const dashboardState = resolveTodayDashboardState(dashboardQueries, isOnline);
@@ -122,7 +131,6 @@ export default function TodayScreen() {
     const selectedDateMetric = (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === selectedDate) ?? null;
     const isToday = selectedDate === getTodayDate(user?.timezone);
     const dayStatus = foodDayQuery.data;
-    const isPaused = dayStatus?.status === 'PAUSED';
     const showCalorieComparison = shouldShowCalorieComparison({
         status: dayStatus?.status,
         isToday,
@@ -150,10 +158,10 @@ export default function TodayScreen() {
             minBodyHeight={TODAY_BODY_MIN_HEIGHT}
             containedBody={dashboardState.kind !== ASYNC_RESOURCE_STATES.ERROR}
             expansion={{
-                id: isFoodExpanded ? 'food' : null,
+                id: isFoodExpanded && !isPaused ? 'food' : null,
                 title: 'Food log',
                 onClose: () => setIsFoodExpanded(false),
-                onRestore: id => setIsFoodExpanded(id === 'food'),
+                onRestore: id => setIsFoodExpanded(id === 'food' && !isPaused),
                 focused: getActiveTabRoute(pathname) === 'today',
                 renderContent: () => <React.Suspense fallback={<TodayContentLoading />}>
                     <FoodLogContent key={selectedDate} embedded />
@@ -166,7 +174,7 @@ export default function TodayScreen() {
                     style={styles.dateNavigation}
                     pickerFooter={(closePicker) => <DayStatusCard date={selectedDate} isToday={isToday} presentation="controls" onActionComplete={closePicker} />}
                 />}
-            context={<>
+            context={!isPaused && <>
                 <CalorieBalanceCard
                     totalCalories={calories}
                     targetCalories={!contentLoading && !foodIsUnavailable && showCalorieComparison ? target : null}
@@ -197,12 +205,17 @@ export default function TodayScreen() {
                 retrying={failedDashboardQueries.some((query) => query.isFetching)}
                 suppressStaleNotice
             >
-                <ExpansionRegion id="weight" order={1}>
+                {isPaused ? <PausedDayBody expanded={expanded}>
+                    <PausedDayMessage isToday={isToday} />
                     <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
-                </ExpansionRegion>
-                <ExpansionRegion id="food" order={2} style={[styles.body, expanded && styles.bodyExpanded]}>
-                    <TodayFoodPreview entries={entries} expanded={expanded} onPress={() => setIsFoodExpanded(true)} />
-                </ExpansionRegion>
+                </PausedDayBody> : <>
+                    <ExpansionRegion id="weight" order={1}>
+                        <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
+                    </ExpansionRegion>
+                    <ExpansionRegion id="food" order={2} style={[styles.body, expanded && styles.bodyExpanded]}>
+                        <TodayFoodPreview entries={entries} expanded={expanded} onPress={() => setIsFoodExpanded(true)} />
+                    </ExpansionRegion>
+                </>}
             </AsyncStateBoundary>}
         </FixedPage>
             <AddFoodSheet
@@ -223,6 +236,13 @@ export default function TodayScreen() {
 
 const TODAY_BODY_MIN_HEIGHT = 184; // Reserves the weight row and a usable food pane before falling back to page scrolling.
 
+function PausedDayBody({ expanded, children }: React.PropsWithChildren<{ expanded: boolean }>) {
+    if (expanded) return <View>{children}</View>;
+    return <ScrollView style={styles.body} contentContainerStyle={styles.pausedBody}>
+        {children}
+    </ScrollView>;
+}
+
 function TodayContentLoading() {
     return <FixedPageColumn testID="log-content-loading" style={styles.body}>
         <View style={styles.loadingWeight}><SkeletonBlock width="40%" height={24} /><SkeletonBlock width="28%" height={16} /></View>
@@ -233,6 +253,7 @@ function TodayContentLoading() {
 const styles = StyleSheet.create({
     body: { flex: 1, minHeight: 0, gap: 0 },
     bodyExpanded: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+    pausedBody: { flexGrow: 1 },
     dateNavigation: { paddingTop: spacing.xs, paddingBottom: spacing.sm },
     planAction: { paddingBottom: spacing.md, gap: spacing.sm },
     loadingActions: { flexDirection: 'row', paddingVertical: spacing.md, gap: spacing.sm },
