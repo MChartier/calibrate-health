@@ -2,13 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CalibrateApiClient, ApiError } from '../src/client.ts';
 import type { ServerUser } from '../src/types.ts';
-import type { components } from '../src/generated/v1.ts';
 
 const user: ServerUser = {
     id: 7, email: 'member@example.com', role: 'member',
     created_at: '2026-01-01T00:00:00.000Z', email_verified: true
 };
-const contractUser: components['schemas']['ServerUser'] = user;
 
 test('admin directory encodes bounded search parameters and sends authenticated no-store requests', async () => {
     const requests: Array<{ url: string; init: RequestInit | undefined }> = [];
@@ -18,7 +16,7 @@ test('admin directory encodes bounded search parameters and sends authenticated 
         getAccessToken: async () => 'test-token',
         fetchImpl: (async (url, init) => {
             requests.push({ url: String(url), init });
-            return new Response(JSON.stringify({ users: [contractUser], next_cursor: 7 }), { status: 200 });
+            return new Response(JSON.stringify({ users: [user], next_cursor: 7 }), { status: 200 });
         }) as typeof fetch
     });
     const page = await client.getServerUsers({ search: 'member+test@example.com', cursor: 2, limit: 25 }, controller.signal);

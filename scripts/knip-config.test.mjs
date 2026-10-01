@@ -39,6 +39,9 @@ test('dynamic workflow, plugin, scenario, and Playwright entry points stay disco
     'plugins/withSharedAndroidSigning.js',
   ]);
   assert.deepEqual(knipConfig.workspaces.shared.entry, ['calibrationScenarios.ts']);
+  assert.ok(knipConfig.workspaces.backend.entry.includes('src/{index,scripts/grantServerAdmin}.ts!'));
+  assert.equal(JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'backend/package.json'), 'utf8')).scripts['admin:grant'],
+    'ts-node src/scripts/grantServerAdmin.ts');
 });
 
 test('Knip keeps blocking rules and generated/config boundaries explicit', () => {

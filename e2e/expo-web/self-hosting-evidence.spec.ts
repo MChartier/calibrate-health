@@ -122,10 +122,9 @@ test('capture user roles and confirmation evidence', async ({ page, ux }, testIn
   const fixture = await installAdministrator(page, ux);
   await page.goto('/server-admin');
   const roles = page.getByRole('heading', { name: 'Users and roles', exact: true });
-  await roles.scrollIntoViewIfNeeded();
   const promote = page.getByRole('button', { name: 'Make administrator: member@example.invalid', exact: true });
   await expect(promote).toBeEnabled();
-  await promote.scrollIntoViewIfNeeded();
+  await roles.evaluate((element) => element.scrollIntoView({ block: 'start', inline: 'nearest' }));
   await capture(page, testInfo, 'users-and-roles');
 
   await promote.click();
