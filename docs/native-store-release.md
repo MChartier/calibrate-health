@@ -78,7 +78,7 @@ the server/web release and Expo OTA workflows and has four explicit operations:
    gate.
 
 The signed annotated tag is the authoritative native-release attestation. Upload/recovery, both promotion operations,
-**Publish prepared release**, and origin-authoritative `prepare-native` all verify the tag object's signature
+**Release server** (`resume`), and origin-authoritative `prepare-native` all verify the tag object's signature
 with verifier code pinned to the reviewed workflow SHA and the allowed-signers trust set freshly checked out from the
 exact current protected `master` commit, plus the exact tag name and exact peeled target SHA. Each run records that
 trust-set commit, so rerunning an older workflow cannot restore a key revoked on current `master`.
@@ -279,7 +279,7 @@ package/runtime behavior they exercise.
 
 ## Publish OTA updates from GitHub Actions
 
-The `Publish Expo OTA Update` workflow is reusable by **Cut release** and also retains a manual recovery dispatch.
+The `Publish Expo OTA Update` workflow is reused by **Release server** for new releases and `resume` and also retains a manual recovery dispatch.
 It is never triggered by an ordinary `master` push. Before GitHub opens the first environment approval, a preflight
 with no Expo, environment, or publisher credential requires an exact full source commit on current protected
 `master`, verifies the exact published signed annotated `native-vMAJOR.MINOR.PATCH` tag and its direct target with
@@ -300,12 +300,12 @@ self-host deployment, then proceeds through the same protected workflow boundary
 reserves a native tag that has not yet been created by a successful Play internal upload,
 or its signed annotated tag does not verify with the workflow-SHA-pinned verifier against the allowlist fetched from
 current protected `master`, exact name, and exact target, or its tagged build has a different app version/native fingerprint, the independent server/image release
-succeeds and reports OTA as skipped. Rerun **Publish prepared release** only when that
+succeeds and reports OTA as skipped. Use **Release server** with `resume` only when that
 prepared commit already records the compatible protected tag. Otherwise use this workflow's manual dispatch from the
 exact compatible native source.
 
 The already-published `v0.35.0` release is the one-time migration case: its immutable manifest names legacy
-`v0.13.2`, whose installed native baseline is incompatible, so replaying **Publish prepared release** cannot repair
+`v0.13.2`, whose installed native baseline is incompatible, so using `resume` cannot repair
 its OTA stage. After this PR merges, call the exact merge commit `C`, run **Native Android Store Release >
 upload-internal** from `C`, and let Play acceptance create `native-v0.2.6` at `C`. The Play build already contains
 the current 0.35.0 bundle. If a corresponding EAS publication is still wanted, manually run **Publish Expo OTA

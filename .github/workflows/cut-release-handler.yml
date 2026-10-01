@@ -1,9 +1,9 @@
-name: Handle cut release request
+name: Handle server release request
 
 on:
   workflow_run:
     workflows:
-      - Cut release
+      - Release server
     types:
       - completed
     branches:
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   verify_request:
-    name: Verify protected cut request
+    name: Verify protected server release request
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -31,6 +31,11 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
+      operation: ${{ steps.verify.outputs.operation }}
+      release_commit: ${{ steps.verify.outputs.release_commit }}
+      release_branch: ${{ steps.verify.outputs.release_branch }}
+      release_tag: ${{ steps.verify.outputs.release_tag }}
+      publish_latest: ${{ steps.verify.outputs.publish_latest }}
       bump: ${{ steps.verify.outputs.bump }}
       source_sha: ${{ steps.verify.outputs.source_sha }}
 
@@ -75,15 +80,15 @@ jobs:
           --handler-ref "${{ github.ref }}"
           --handler-sha "${{ job.workflow_sha }}"
 
-      - name: Download exact cut request artifact
+      - name: Download exact server release request artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: cut-release-request
+          name: server-release-request
           path: ${{ runner.temp }}/calibrate-release-request
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      - name: Verify bound cut request
+      - name: Verify bound server release request
         id: verify
         shell: bash
         env:
@@ -97,7 +102,7 @@ jobs:
           set -euo pipefail
           node .release-tooling/scripts/release-request.mjs verify \
             --artifact-directory "${RUNNER_TEMP}/calibrate-release-request" \
-            --operation cut-release \
+            --operation server-release \
             --repository "${REQUEST_REPOSITORY}" \
             --repository-id "${REQUEST_REPOSITORY_ID}" \
             --run-id "${REQUEST_RUN_ID}" \
@@ -107,9 +112,10 @@ jobs:
             --github-output "${GITHUB_OUTPUT}"
           echo "source_sha=${REQUEST_HEAD_SHA}" >> "${GITHUB_OUTPUT}"
 
-  run_release:
+  cut_release:
     name: Run protected cut release
     needs: verify_request
+    if: needs.verify_request.outputs.operation == 'cut-release'
     # Nested artifact jobs cannot request scopes omitted by a reusable-workflow caller.
     permissions:
       actions: read
@@ -124,3 +130,36 @@ jobs:
     with:
       bump: ${{ needs.verify_request.outputs.bump }}
       source_sha: ${{ needs.verify_request.outputs.source_sha }}
+
+  resume_release:
+    name: Run protected prepared release
+    needs: verify_request
+    if: needs.verify_request.outputs.operation == 'publish-prepared-release'
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/publish-release.yml
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    with:
+      release_branch: ${{ needs.verify_request.outputs.release_branch }}
+      release_commit: ${{ needs.verify_request.outputs.release_commit }}
+
+  recover_image:
+    name: Run protected image publication
+    needs: verify_request
+    if: needs.verify_request.outputs.operation == 'build-release-image'
+    permissions:
+      actions: read
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/container.yml
+    with:
+      publish_latest: ${{ fromJSON(needs.verify_request.outputs.publish_latest || 'false') }}
+      release_commit: ${{ needs.verify_request.outputs.release_commit }}
+      release_tag: ${{ needs.verify_request.outputs.release_tag }}

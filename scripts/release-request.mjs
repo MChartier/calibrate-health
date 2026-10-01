@@ -16,11 +16,7 @@ const TOP_LEVEL_KEYS = Object.freeze([
   'request_run_id',
   'schema_version'
 ]);
-const OPERATION_INPUT_KEYS = Object.freeze({
-  'cut-release': ['bump'],
-  'publish-prepared-release': ['release_branch', 'release_commit'],
-  'build-release-image': ['publish_latest', 'release_commit', 'release_tag']
-});
+const SERVER_INPUT_KEYS = Object.freeze(['operation', 'publish_latest', 'release_commit', 'release_tag']);
 
 function exactKeys(value, expected, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -47,24 +43,36 @@ function requireEqual(actual, expected, label) {
 }
 
 function validateInputs(operation, inputs) {
-  const keys = OPERATION_INPUT_KEYS[operation];
-  if (!keys) throw new Error(`Unsupported release request operation: ${operation}.`);
-  exactKeys(inputs, keys, 'release request inputs');
-  if (operation === 'cut-release') {
-    if (!['patch', 'minor', 'major'].includes(inputs.bump)) {
-      throw new Error('Cut release bump must be patch, minor, or major.');
-    }
-  } else if (operation === 'publish-prepared-release') {
-    requireString(inputs.release_commit, 'release_commit', /^[0-9a-f]{40}$/);
-    requireString(inputs.release_branch, 'release_branch', /^release\/v[0-9]+\.[0-9]+\.[0-9]+$/);
-  } else {
-    requireString(inputs.release_commit, 'release_commit', /^[0-9a-f]{40}$/);
-    requireString(inputs.release_tag, 'release_tag', /^v[0-9]+\.[0-9]+\.[0-9]+$/);
-    if (typeof inputs.publish_latest !== 'boolean') {
-      throw new Error('publish_latest must be a JSON boolean.');
-    }
+  if (operation !== 'server-release') throw new Error(`Unsupported release request operation: ${operation}.`);
+  exactKeys(inputs, SERVER_INPUT_KEYS, 'release request inputs');
+  if (typeof inputs.publish_latest !== 'boolean') {
+    throw new Error('publish_latest must be a JSON boolean.');
   }
-  return inputs;
+  if (['patch', 'minor', 'major'].includes(inputs.operation)) {
+    if (inputs.release_commit !== '' || inputs.release_tag !== '' || inputs.publish_latest) {
+      throw new Error('New releases require empty recovery fields and publish_latest false.');
+    }
+    return { operation: 'cut-release', bump: inputs.operation };
+  }
+  if (!['resume', 'image-only'].includes(inputs.operation)) {
+    throw new Error('Server release operation must be patch, minor, major, resume, or image-only.');
+  }
+  requireString(inputs.release_commit, 'release_commit', /^[0-9a-f]{40}$/);
+  requireString(inputs.release_tag, 'release_tag', /^v[0-9]+\.[0-9]+\.[0-9]+$/);
+  if (inputs.operation === 'resume') {
+    if (inputs.publish_latest) throw new Error('publish_latest is only an option for image-only recovery.');
+    return {
+      operation: 'publish-prepared-release',
+      release_commit: inputs.release_commit,
+      release_branch: `release/${inputs.release_tag}`
+    };
+  }
+  return {
+    operation: 'build-release-image',
+    release_commit: inputs.release_commit,
+    release_tag: inputs.release_tag,
+    publish_latest: inputs.publish_latest
+  };
 }
 
 export function verifyReleaseRequest(request, expected) {
