@@ -1916,7 +1916,7 @@ export interface components {
             /** @constant */
             platform?: "web";
             /** @enum {unknown} */
-            version?: "0.36.0" | "0.35.0";
+            version?: "0.37.0" | "0.36.0";
         } | {
             /** @constant */
             platform?: "android_phone";
