@@ -98,17 +98,13 @@ cannot be adopted and requires a fresh higher version-code pair.
 
 ## Explicit server/web releases
 
-Ordinary feature and fix PRs must not change `server.version` or its package, diagnostic, OpenAPI, generated-client,
-or lockfile mirrors. Merge the desired changes to `master`, then run **Cut release** from the GitHub Actions page and
-choose the semantic component to advance:
+Use [Release and deploy](deployment.md) for the operator steps and recovery chooser. Ordinary feature and fix PRs
+must not change `server.version` or its mirrors; the new-release operation owns that version-only change.
 
-- `patch` for compatible fixes: `X.Y.Z` to `X.Y.(Z+1)`.
-- `minor` for compatible features: `X.Y.Z` to `X.(Y+1).0`.
-- `major` for breaking server, API, or deployment contracts: `X.Y.Z` to `(X+1).0.0`.
-
-The three manual Actions entries are read-only request workflows. They upload a small request bound to the exact
-successful `master` run; a `workflow_run` handler loaded from default `master` revalidates that request before calling
-the reusable worker. Use the existing repository configuration:
+The **Release server** manual Action is a read-only request workflow. Its `workflow_run` handler loaded from current
+protected `master` verifies the exact run, artifact, and operation before calling one of the existing isolated
+workers. New releases, prepared-release recovery, and image-only recovery share this entrypoint; each selected
+worker retains its own token permissions. Use the existing repository configuration:
 
 1. Enable **Allow GitHub Actions to create and approve pull requests** in the repository's Actions settings.
    The default workflow token can remain read-only; each publishing job declares its required permissions.
@@ -147,7 +143,8 @@ image/OTA recovery window, and review removals or explicit revocations as releas
 revisions, off-master revisions, changed unlisted revisions, and explicitly revoked revisions fail closed.
 
 GitHub certificates distinguish the reusable signer (`container.yml`) from the top-level build configuration
-(`cut-release-handler.yml`, `publish-release-handler.yml`, or `container-handler.yml`). Both must name this repository
+(`cut-release-handler.yml`). The verifier also retains `publish-release-handler.yml` and `container-handler.yml`
+for receipts issued before those duplicate handlers were removed. Both certificate identities must name this repository
 at the same exact protected-master revision, and the caller must use `workflow_run`. Treating the two workflow paths
 as identical rejects valid receipts and prevents recovery after the initial image push.
 
@@ -161,7 +158,7 @@ fresh build/attestation/publication rather than trusting the registry bytes.
 Server candidate publication, validated PR merge, tag creation, and GHCR publication run automatically. No new server
 publication environment approvals are required. If validation or finalization fails before merging, read-only
 inspection first proves the candidate PR/branch still belong to the action; cleanup closes and deletes only that exact
-unmerged candidate. **Publish prepared release** and **Build Release Image** also run without a server environment gate.
+unmerged candidate. The `resume` and `image-only` operations also run without a server environment gate.
 
 The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
 `release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It verifies the candidate parent and identity,
@@ -177,7 +174,7 @@ honors branch protection and locks the head, but does not offer a base-SHA compa
 checks the actual merged parents, tree, and current `master` again before allowing tag/image publication. A concurrent
 base change in that small window stops publication even if GitHub already merged the PR; inspect the failed run before
 starting recovery. No direct push or ruleset bypass is used to merge `master`.
-**Publish prepared release** verifies that the exact candidate is now an ancestor of `master`, creates or verifies its
+The prepared-release worker (`resume`) verifies that the exact candidate is now an ancestor of `master`, creates or verifies its
 annotated tag, and calls the reusable GHCR image workflow with `publish_latest: true`. It is called directly rather
 than relying on
 token-generated push or PR events, whose workflow behavior is restricted by
@@ -188,8 +185,7 @@ match the prepared source. Internal environment resolution and publication use `
 one approval in the existing `production` environment gates production environment resolution, export, and publication.
 The four credential stages remain separate from source export. The repository `EXPO_TOKEN` is project-wide, so this
 approval controls workflow sequencing rather than providing a channel-scoped credential boundary. A missing, unattested, or
-incompatible native tag skips OTA without failing the independent server/image release. Rerun **Publish prepared
-release** only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
+incompatible native tag skips OTA without failing the independent server/image release. Use `resume` only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
 manual OTA workflow with an exact source that descends from the installed native baseline. Neither OTA path waits for
 or triggers self-host deployment.
 
@@ -204,28 +200,11 @@ current public-channel promotion control. A future automated gate may require an
 for the release owner's declared server rollout, but independent self-hosts still require the runtime guard. The
 optional deployment job verifies only its configured target; CI must not poll independent private servers to gate OTA.
 
-The preparation command is also available for isolated release tooling tests:
-
-```powershell
-npm.cmd run release:prepare -- --bump patch
-```
-
-It updates `shared/release.json`, root/backend package manifests and lockfiles, the two-version web diagnostics
-window, the OpenAPI enum, and its generated TypeScript union as one validated batch. Do not run it in an ordinary
-feature worktree and commit the result manually.
-
-Recovery is deliberately state-specific:
-
-- Before merge, failed validation or `master` drift deletes only the unchanged action-owned candidate branch. Fix the
-  failure on `master` and rerun **Cut release**.
-- If a post-merge tag or image stage failed, rerun **Publish prepared release** with the release commit and branch
-  shown in the action summary. Its OTA stage is also replayable when that prepared manifest already records a
-  compatible protected native tag. A historical release whose recorded native baseline is incompatible requires the explicit
-  exact-source manual OTA path in `docs/native-store-release.md`; do not relax source ancestry or fingerprint checks.
-  Tag creation is idempotent, and a manifest ahead of the latest tag blocks another version bump until this is
-  resolved.
-- **Build Release Image** remains available for an image-only rebuild. Moving `latest` is allowed only for the highest
-  stable tag; use **Publish prepared release** when the ordered image and OTA stages must also resume.
+Recovery is deliberately state-specific. Follow the [recovery chooser](deployment.md#recovery-without-a-new-version):
+new requests after pre-merge failure, `resume` for the current prepared release, `image-only` for an existing tag's
+image, and the standalone OTA/deployment actions when only that destination needs retrying. `resume` restores
+`latest` and downstream stages; `image-only` leaves `latest` unchanged unless explicitly selected and never starts
+OTA or host deployment. Neither mode changes the selected release version.
 
 The reusable image workflow still prevents rebuilding an older tag from executing historical deployment jobs. The
 version and source-SHA image identities are write-once. Only a registry config digest with the exact verified receipt
@@ -237,7 +216,7 @@ Compose stack into [deployment over WireGuard](../deploy/self-hosted/README.md),
 **Deploy self-hosted server** retries a published digest without rebuilding or republishing OTA. No GitHub Release
 object or generated changelog is created.
 
-**Cut release** owns exact-candidate metadata validation plus the production container build and startup smoke.
+The new-release worker owns exact-candidate metadata validation plus the production container build and startup smoke.
 Affected pull-request and scheduled workflows own the broader test, dependency, vulnerability, and migration gates.
 The local `release:check:container` command covers the encrypted backup/restore smoke, dependency policy, canonical
 version checks, and the static release-acceptance policy; `release:check:production` adds strict dependency policy.

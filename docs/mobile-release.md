@@ -1,64 +1,27 @@
-# Local native builds and releases
+# Local Android and Expo releases
 
-Run local release commands from the repository root. `native:*` handles Android packages;
-`ota:publish` publishes compatible phone JavaScript/assets through Expo.
-Phone and Wear packages are built together. Build once, then choose how to distribute the outputs:
+Start with the [deployment guide](deployment.md) to choose server, native, OTA, or protected production publication.
+This reference covers the local internal profile. Run commands from the repository root; examples use Windows
+PowerShell's `npm.cmd` (`npm` on other hosts).
 
-| Scenario | Command | Result |
-| --- | --- | --- |
-| Build for manual upload or installation | `npm.cmd run native:build` | Signed phone + Wear APKs and AABs |
-| Release an Expo OTA update | `npm.cmd run ota:publish -- --message "Describe the update"` | Phone JavaScript/assets published to the baseline's Expo channel |
-| Install the last build to local devices | `npm.cmd run native:install` | Existing APKs installed and verified on a phone and watch |
-| Submit the last build through Play API | `npm.cmd run native:submit` | Existing AABs uploaded to phone/Wear internal tracks |
+| Goal | Command |
+| --- | --- |
+| Build and submit phone + Wear to Play internal | `npm.cmd run native:release` |
+| Build only for device testing/manual upload | `npm.cmd run native:build` |
+| Install retained APKs on phone + watch | `npm.cmd run native:install` |
+| Submit a tested build or retry an upload | `npm.cmd run native:release -- --skip-build` |
+| Publish compatible phone JavaScript/assets | `npm.cmd run ota:publish -- --message "Describe the update"` |
 
-`native:install` and `native:submit` verify and reuse the last build; neither rebuilds it.
-Use `npm.cmd run` to list scripts and `npm.cmd run <script> -- --help` for options.
-There is no separate local prebuild or signing stage to run.
-The only supporting root commands are `native:configure` for EAS signing credentials and Play access, and
-`native:setup` for tools/dependencies (`--check` checks them without making changes).
+Configure credentials and tools once with `native:configure` and `native:setup`. A release requires a clean committed
+candidate with unused native version codes. Build/sign/verify/upload/readback are included in `native:release`;
+there are no manual intermediate stages. Installation and OTA are optional separate operations. Run applicable
+application tests before distribution; artifact verification is not a device-behavior test.
 
-The local profile is fixed: application ID `net.darkmachines.healthtracker`, server
+The fixed local profile uses application ID `net.darkmachines.healthtracker`, server
 `https://calibratehealth.darkmachines.net`, Expo project `@calibrate-health/calibrate-health-app`
 (`fda8f8c5-e646-47ac-82fb-35003c9cbec7`), channel `internal`, and Play tracks `qa` / `wear:qa`.
-Devices need WireGuard access to the backend. Public production builds and promotions use the
-separate [protected GitHub store workflow](native-store-release.md).
-
-## Shortest native release sequence
-
-Assign your Google Play service-account key in EAS, then download signing and Play credentials once on this machine:
-
-```powershell
-npm.cmd run native:configure
-npm.cmd run native:setup
-```
-
-After Play Console/API onboarding, a clean committed candidate with unused version codes can be
-built and submitted with just:
-
-```powershell
-npm.cmd run native:build
-npm.cmd run native:submit
-```
-
-Submission proceeds without a confirmation flag or prompt. Coordinate other Console/API writers:
-Play commits can include unrelated pending changes for the same application. The command prints
-a reminder, but does not claim it can detect all concurrent Console changes.
-Keep the same clean source commit and all build outputs between build and submit.
-
-`native:build` includes credential-free prebuild, signing, phone/Wear APK and AAB compilation, and
-artifact/provenance verification. `native:submit` re-verifies those outputs, uploads both AABs,
-commits the internal-track release, and reads it back. No manual preparation, signing, verification,
-or status command is needed between them. `native:install` is optional local device testing;
-`ota:publish` is a separate release of JavaScript/assets and is not part of native submission.
-
-For a new release whose existing version codes have already been uploaded, first
-[update the native version metadata](#native-version-metadata) and commit it with the intended source
-changes. Then use the two commands above. `native:build` never allocates or commits a version automatically.
-
-Setup installs tools and dependencies; it does not create signing keys, Expo/Play accounts, or API
-credentials. The first Play release follows the [Console onboarding and manual-upload procedure](android-internal-testing.md).
-Build verification covers package integrity and configuration; it does not run the full application
-test suites or establish device behavior. Run the relevant application checks before releasing.
+Devices need WireGuard. Public releases/promotions use the [protected store workflow](native-store-release.md).
+For first-upload Console/account setup, follow [Play onboarding](android-internal-testing.md).
 
 ## Configure EAS credentials once
 
@@ -78,7 +41,7 @@ Configure retrieves this assigned Play key together with the default signing key
 The automatic download uses EAS's internal GraphQL credential API through the locked CLI's authentication.
 It writes the Expo-format signing JSON and keystore locally without opening the interactive credential manager.
 Keep this adapter verified when upgrading EAS CLI.
-EAS stores the key; `native:submit` still uses our local Play API publisher, without EAS Submit.
+EAS stores the key; native release submission uses our local Play API publisher, without EAS Submit.
 
 The wrapper downloads into a fresh directory under `%LOCALAPPDATA%\calibrate-health\eas-android-*`,
 validates the result, normalizes the keystore path, and saves only absolute file paths in
@@ -100,7 +63,7 @@ Cancelled/invalid downloads leave the previous configuration and credential snap
 refreshes retain prior snapshots; protect this directory like any other signing-key backup.
 
 For a single run, `native:build -- --credentials-file <file>` and
-`native:submit -- --service-account-file <file>` override the saved paths without changing them.
+`native:release -- --service-account-file <file>` override the saved paths without changing them.
 Setup, installation, and OTA publication do not load these configured credential files.
 
 ## Set up once
@@ -209,23 +172,33 @@ local data. Play App Signing may use a different distribution key from your uplo
 Play-installed app may not accept a locally signed APK in place. Use Play-distributed updates for
 those installations. See [signing migration](native-store-release.md#first-play-installation-and-signing-migration).
 
-## Submit through Play API
+## Release through Play API
 
-After Console onboarding and a successful build:
+After Console onboarding, commit the intended source and unused native version codes, then:
 
 ```powershell
-npm.cmd run native:submit
+npm.cmd run native:release
 ```
 
-The command uses the configured service-account file with access to this Play app. Submission
-implicitly supplies the internal worker's Console-coordination acknowledgement. No flag or prompt is
-required. Check Publishing overview and coordinate other Console/API writers before submitting:
-Play commits can include pending changes for the same application.
+The command resolves both configured credential paths before building, runs the same `native:build` worker,
+then re-verifies and submits its AABs. Signing and Play credentials are opened only in their separate consuming
+stages. A failed build stops before upload. It never installs to devices, publishes OTA, or promotes to closed/production.
 
-Submission uploads only the verified phone/Wear AABs to `qa` and `wear:qa`, then reads back their
-versions and hashes as part of the same command. No separate status step is required.
-Submission does not promote to closed testing or production. Enroll testers through the Console
-opt-in links and install/update both form factors through Play.
+Check Publishing overview and coordinate other Console/API writers before starting: Play commits can include
+pending changes for the same application. Submission supplies the internal worker's Console-coordination
+acknowledgement; there is no confirmation flag or prompt.
+
+If you already built/tested the packages, or submission failed after a successful build:
+
+```powershell
+npm.cmd run native:release -- --skip-build
+```
+
+Keep the same clean source and all retained outputs. This verifies the existing artifacts before Play authentication,
+uploads phone/Wear to `qa` / `wear:qa`, and reads back versions and hashes. No separate status command is needed.
+It rejects stale/changed artifacts rather than rebuilding or re-signing them. `--skip-build` needs only the Play
+credential; `--credentials-file` is rejected in that mode. Enroll testers through Console opt-in links and update
+both form factors through Play.
 
 ## Publish OTA through Expo
 
@@ -260,19 +233,10 @@ whose public project/origin values are checked. Preserve the existing linked Exp
 A successful publish proves the update is available through Expo. Devices still need to download it
 and fully close/reopen the phone app to apply it. The Wear app is unchanged.
 
-## Command migration and maintainer tools
+## Maintainer tools
 
-| Previous root script | Supported replacement |
-| --- | --- |
-| `setup:native` | `npm.cmd run native:setup` |
-| `prepare:native:release` + `build:native:release` | `npm.cmd run native:build` |
-| `release:native:internal build / submit` | `native:build`, `native:submit` |
-| `release:native:internal doctor / status` | Prerequisite checks: `native:setup -- --check`; upload readback is included in `native:submit`. Existing diagnostic workers remain available directly under `scripts/`. |
-| `release:native:internal prepare` | [Native version metadata](#native-version-metadata) |
-| `release:native:devices` | `npm.cmd run native:build`, then `npm.cmd run native:install` |
-| `release:native:ota` | `npm.cmd run ota:publish` |
-| `release:native:prepare` / `release:native:play` | [Protected store maintainer guide](native-store-release.md) |
-| `release:native:evidence` | [Commit-specific physical validation](physical-galaxy-validation.md) |
+`native:submit` is replaced by `native:release -- --skip-build`. Use plain `native:release` when building and submitting
+together. See `npm.cmd run <script> -- --help` for options.
 
-The old root aliases are removed. Node workers under `scripts/` remain for isolated CI stages and
-specialist evidence/recovery procedures. They are not additional steps in the local workflow.
+Node workers under `scripts/` remain for isolated CI stages, version maintenance, and specialist recovery/physical
+validation. They are not additional steps in the local release workflow.

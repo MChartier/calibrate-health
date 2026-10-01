@@ -47,7 +47,8 @@ For local Android releases, download EAS-managed signing and assigned Play crede
 run `npm run native:setup`, then
 `npm run native:build` from the repository root. This builds signed phone
 and Wear APKs and AABs with one certificate. Use `npm run native:install` for local devices,
-`npm run native:submit` for Play internal
+`npm run native:release -- --skip-build` to submit those packages to Play internal
 testing, or upload the AABs manually. After installing a build, publish compatible phone JavaScript/assets with
-`npm run ota:publish`. Wear changes require a new native build. See the [local native guide](../docs/mobile-release.md)
+`npm run ota:publish`. Wear changes require a new native build. For build and submission together, use `npm run native:release`. Start with the [deployment guide](../docs/deployment.md)
+or see the [local native guide](../docs/mobile-release.md)
 for credentials, versioning, output paths, and OTA dry runs.

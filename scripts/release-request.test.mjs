@@ -4,10 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { verifyReleaseRequest, verifyReleaseRequestArtifact } from './release-request.mjs';
+import { runReleaseRequestCli, verifyReleaseRequest, verifyReleaseRequestArtifact } from './release-request.mjs';
 
 const context = Object.freeze({
-  operation: 'publish-prepared-release',
+  operation: 'server-release',
   repository: 'MChartier/calibrate-health',
   repositoryId: '123456',
   runId: '987654',
@@ -27,8 +27,10 @@ function request(overrides = {}) {
     head_branch: context.headBranch,
     head_sha: context.headSha,
     inputs: {
-      release_branch: 'release/v0.35.0',
-      release_commit: 'b'.repeat(40)
+      operation: 'resume',
+      release_tag: 'v0.35.0',
+      release_commit: 'b'.repeat(40),
+      publish_latest: false
     },
     ...overrides
   };
@@ -41,41 +43,46 @@ function artifact(t, value = request()) {
   return directory;
 }
 
-test('release requests accept only exact operation-specific primitive inputs', () => {
+test('server request normalizes the five selections into exact worker-specific inputs', () => {
   assert.deepEqual(verifyReleaseRequest(request(), context), {
+    operation: 'publish-prepared-release',
     release_branch: 'release/v0.35.0',
     release_commit: 'b'.repeat(40)
   });
-  assert.deepEqual(verifyReleaseRequest(request({
-    operation: 'cut-release',
-    inputs: { bump: 'minor' }
-  }), { ...context, operation: 'cut-release' }), { bump: 'minor' });
-  assert.deepEqual(verifyReleaseRequest(request({
-    operation: 'build-release-image',
-    inputs: {
-      publish_latest: false,
-      release_commit: 'c'.repeat(40),
-      release_tag: 'v0.35.0'
-    }
-  }), { ...context, operation: 'build-release-image' }), {
-    publish_latest: false,
-    release_commit: 'c'.repeat(40),
-    release_tag: 'v0.35.0'
-  });
+  for (const operation of ['patch', 'minor', 'major']) {
+    assert.deepEqual(verifyReleaseRequest(request({
+      inputs: { operation, release_commit: '', release_tag: '', publish_latest: false }
+    }), context), { operation: 'cut-release', bump: operation });
+  }
+  for (const publish_latest of [false, true]) {
+    assert.deepEqual(verifyReleaseRequest(request({
+      inputs: { ...request().inputs, operation: 'image-only', publish_latest }
+    }), context), {
+      operation: 'build-release-image', publish_latest, release_commit: 'b'.repeat(40), release_tag: 'v0.35.0'
+    });
+  }
 });
 
-test('release requests reject extra top-level or input fields and malformed values', () => {
+test('server requests reject extra fields, invalid selections, and ignored recovery options', () => {
   assert.throws(() => verifyReleaseRequest({ ...request(), extra: true }, context), /contain exactly/);
-  assert.throws(() => verifyReleaseRequest(request({
-    inputs: { ...request().inputs, extra: true }
-  }), context), /inputs must contain exactly/);
-  assert.throws(() => verifyReleaseRequest(request({
-    inputs: { ...request().inputs, release_commit: 'HEAD' }
-  }), context), /release_commit is malformed/);
-  assert.throws(() => verifyReleaseRequest(request({
-    operation: 'build-release-image',
-    inputs: { publish_latest: 'false', release_commit: 'c'.repeat(40), release_tag: 'v0.35.0' }
-  }), { ...context, operation: 'build-release-image' }), /JSON boolean/);
+  const invalidInputs = [
+    { ...request().inputs, extra: true },
+    { ...request().inputs, release_commit: 'HEAD' },
+    { ...request().inputs, release_tag: 'latest' },
+    { ...request().inputs, publish_latest: 'false' },
+    { ...request().inputs, operation: 'deploy' },
+    { ...request().inputs, publish_latest: true },
+    { ...request().inputs, operation: 'patch' },
+    { operation: 'minor', release_commit: '', release_tag: '', publish_latest: true },
+    { operation: 'major', release_commit: '', release_tag: null, publish_latest: false },
+    { operation: 'image-only', release_commit: '', release_tag: '', publish_latest: false }
+  ];
+  for (const inputs of invalidInputs) {
+    assert.throws(() => verifyReleaseRequest(request({ inputs }), context));
+  }
+  assert.throws(() => verifyReleaseRequest(request({ operation: 'build-release-image' }), {
+    ...context, operation: 'build-release-image'
+  }), /Unsupported release request operation/);
 });
 
 test('release requests bind repository, run, attempt, ref, SHA, and operation to the trigger', () => {
@@ -97,7 +104,7 @@ test('release request artifacts reject missing, extra, nested, oversized, and ma
   t.after(() => fs.rmSync(missing, { recursive: true, force: true }));
   assert.throws(() => verifyReleaseRequestArtifact({ artifactDirectory: missing, ...context }), /exactly one regular/);
   const directory = artifact(t);
-  assert.deepEqual(verifyReleaseRequestArtifact({ artifactDirectory: directory, ...context }), request().inputs);
+  assert.deepEqual(verifyReleaseRequestArtifact({ artifactDirectory: directory, ...context }), verifyReleaseRequest(request(), context));
   fs.writeFileSync(path.join(directory, 'extra.json'), '{}');
   assert.throws(() => verifyReleaseRequestArtifact({ artifactDirectory: directory, ...context }), /exactly one regular/);
   fs.rmSync(path.join(directory, 'extra.json'));
@@ -122,4 +129,31 @@ test('release request artifacts reject symbolic links when supported', (t) => {
     throw error;
   }
   assert.throws(() => verifyReleaseRequestArtifact({ artifactDirectory: directory, ...context }), /exactly one regular/);
+});
+
+test('request CLI writes only validated worker routing and primitive inputs', (t) => {
+  for (const operation of ['patch', 'minor', 'major', 'resume', 'image-only']) {
+    const value = request({ inputs: ['resume', 'image-only'].includes(operation)
+      ? { ...request().inputs, operation }
+      : { operation, release_commit: '', release_tag: '', publish_latest: false }
+    });
+    const directory = artifact(t, value);
+    const output = `${directory}-output`;
+    t.after(() => fs.rmSync(output, { force: true }));
+    const args = [
+      'verify', '--artifact-directory', directory, '--operation', context.operation,
+      '--repository', context.repository, '--repository-id', context.repositoryId,
+      '--run-id', context.runId, '--run-attempt', context.runAttempt,
+      '--head-branch', context.headBranch, '--head-sha', context.headSha, '--github-output', output
+    ];
+    runReleaseRequestCli(args);
+    const expected = Object.entries(verifyReleaseRequest(value, context))
+      .map(([key, value]) => `${key}=${value}\n`).join('');
+    assert.equal(fs.readFileSync(output, 'utf8'), expected);
+    fs.rmSync(output);
+    value.inputs.release_commit = 'HEAD\noperation=cut-release';
+    fs.writeFileSync(path.join(directory, 'request.json'), JSON.stringify(value));
+    assert.throws(() => runReleaseRequestCli(args));
+    assert.equal(fs.existsSync(output), false, 'Invalid input must not emit even partial routing outputs');
+  }
 });

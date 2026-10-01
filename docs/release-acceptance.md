@@ -47,7 +47,7 @@ review aid and does not authorize or record an external launch.
 
 ## Cut server/web release
 
-After the desired changes land on `master`, **Cut release** creates and validates an exact version-only server/web
+After the desired changes land on `master`, **Release server** creates and validates an exact version-only server/web
 candidate. It verifies the candidate identity, parent commit, synchronized release configuration, and exact set of
 generated version mirrors. It then builds the production image, starts it against Postgres, and verifies readiness and
 the served web application.

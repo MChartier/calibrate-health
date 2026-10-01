@@ -100,7 +100,7 @@ jobs:
           SOURCE_SHA="$(git --no-replace-objects rev-parse --verify 'HEAD^{commit}')"
           REMOTE_MASTER_SHA="$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')"
           if [[ "${SOURCE_SHA}" != "${REQUESTED_SOURCE_SHA}" || "${SOURCE_SHA}" != "${REMOTE_MASTER_SHA}" ]]; then
-            echo "The request source is not the exact current protected master commit. Dispatch a new Cut release request." >&2
+            echo "The request source is not the exact current protected master commit. Dispatch a new Release server request with the intended bump." >&2
             exit 1
           fi
           if [[ -n "$(git status --porcelain)" ]]; then
@@ -400,7 +400,7 @@ jobs:
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
             jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"
           if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then
-            echo "Protected master advanced before repository writes; start a new Cut release run." >&2
+            echo "Protected master advanced before repository writes; start a new Release server request." >&2
             exit 1
           fi
 
@@ -419,7 +419,7 @@ jobs:
           REMOTE_MASTER="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             ls-remote --heads origin refs/heads/master | awk '{print $1}')"
           if [[ "${REMOTE_MASTER}" != "${SOURCE_SHA}" ]]; then
-            echo "Protected master advanced before candidate publication. Rerun Cut release." >&2
+            echo "Protected master advanced before candidate publication. Dispatch Release server again with the intended bump." >&2
             exit 1
           fi
           if [[ -n "$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
@@ -612,7 +612,7 @@ jobs:
             '+refs/heads/master:refs/remotes/origin/master' \
             "+refs/heads/${RELEASE_BRANCH}:refs/remotes/origin/${RELEASE_BRANCH}"
           if [[ "$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')" != "${SOURCE_SHA}" ]]; then
-            echo "Protected master advanced after release validation. Rerun Cut release." >&2
+            echo "Protected master advanced after release validation. Dispatch Release server again with the intended bump." >&2
             exit 1
           fi
           if [[ "$(git --no-replace-objects rev-parse --verify "refs/remotes/origin/${RELEASE_BRANCH}^{commit}")" != "${RELEASE_SHA}" ]]; then
@@ -642,7 +642,7 @@ jobs:
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
             jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"
           if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then
-            echo "Protected master advanced before repository writes; start a new Cut release run." >&2
+            echo "Protected master advanced before repository writes; start a new Release server request." >&2
             exit 1
           fi
 
@@ -723,7 +723,7 @@ jobs:
           REMOTE_BRANCH="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             ls-remote --heads origin "refs/heads/${RELEASE_BRANCH}" | awk '{print $1}')"
           if [[ "${REMOTE_MASTER}" != "${SOURCE_SHA}" || "${REMOTE_BRANCH}" != "${RELEASE_SHA}" ]]; then
-            echo "Master or the release branch moved before the release merge. Rerun Cut release." >&2
+            echo "Master or the release branch moved before the release merge. Dispatch Release server again with the intended bump." >&2
             exit 1
           fi
 
@@ -742,7 +742,7 @@ jobs:
 
           MERGE_SHA="$(git --no-replace-objects rev-parse --verify "${MERGE_REF}^{commit}")"
           if [[ "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^1")" != "${SOURCE_SHA}" ]]; then
-            echo "Release PR base moved from validated source ${SOURCE_SHA}; rerun Cut release." >&2
+            echo "Release PR base moved from validated source ${SOURCE_SHA}; dispatch Release server again with the intended bump." >&2
             exit 1
           fi
           if [[ "$(git --no-replace-objects rev-parse --verify "${MERGE_SHA}^2")" != "${RELEASE_SHA}" ]]; then
@@ -759,7 +759,7 @@ jobs:
           REMOTE_MASTER="$(git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             ls-remote --heads origin refs/heads/master | awk '{print $1}')"
           if [[ "${REMOTE_MASTER}" != "${SOURCE_SHA}" ]]; then
-            echo "Master advanced before the release merge. Rerun Cut release." >&2
+            echo "Master advanced before the release merge. Dispatch Release server again with the intended bump." >&2
             exit 1
           fi
           MERGE_RESPONSE="$(curl --fail --silent --show-error --request PUT \
@@ -806,7 +806,7 @@ jobs:
             echo "- Release PR: ${PR_URL}"
             echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`; publish OTA internal when the native tag is ready"
             echo
-            echo "If tag or image publishing fails, rerun Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`. OTA resumes only when that prepared manifest already records a compatible protected native tag; otherwise use the release runbook's manual OTA path."
+            echo "If tag or image publishing fails, run Release server with operation resume, release_commit \`${RELEASE_SHA}\` and release_tag \`${{ needs.prepare.outputs.release_tag }}\`. OTA resumes only when that prepared manifest already records a compatible protected native tag; otherwise use the release runbook's manual OTA path."
           } >> "${GITHUB_STEP_SUMMARY}"
 
   inspect_cleanup:
@@ -846,7 +846,7 @@ jobs:
             '+refs/heads/master:refs/remotes/origin/master'
           if git --no-replace-objects cat-file -e "${RELEASE_SHA}^{commit}" 2>/dev/null && \
             git --no-replace-objects merge-base --is-ancestor "${RELEASE_SHA}" refs/remotes/origin/master; then
-            echo "Release commit is already on master; preserve it for Publish prepared release."
+            echo "Release commit is already on master; preserve it for Release server operation resume."
             echo "needs_write=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
@@ -914,7 +914,7 @@ jobs:
             '+refs/heads/master:refs/remotes/origin/master'
           if git --no-replace-objects cat-file -e "${RELEASE_SHA}^{commit}" 2>/dev/null && \
             git --no-replace-objects merge-base --is-ancestor "${RELEASE_SHA}" refs/remotes/origin/master; then
-            echo "Release commit is already on master; preserve it for Publish prepared release."
+            echo "Release commit is already on master; preserve it for Release server operation resume."
             echo "needs_write=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
@@ -945,7 +945,7 @@ jobs:
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |
             jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"
           if [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then
-            echo "Protected master advanced before repository writes; start a new Cut release run." >&2
+            echo "Protected master advanced before repository writes; start a new Release server request." >&2
             exit 1
           fi
 

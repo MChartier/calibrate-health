@@ -24,7 +24,7 @@ minimum supported client version remains an explicit compatibility decision docu
 
 ## Consequences
 
-- Ordinary feature PRs do not change the server version; **Cut release** creates the synchronized version-only PR.
+- Ordinary feature PRs do not change the server version; **Release server** creates the synchronized version-only PR.
 - A tag cannot silently select a different release identity.
 - Merges without a version change do not publish an image.
 - Physical phone/watch validation is an optional owner diagnostic, not a repository release prerequisite.

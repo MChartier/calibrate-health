@@ -15,7 +15,7 @@ need an explicit preparation step that can own the synchronized version commit w
 ## Decision
 
 Ordinary feature and fix PRs leave the stable server version unchanged. After changes land on `master`, an operator
-runs **Cut release** and chooses a strict `patch`, `minor`, or `major` increment. The workflow requires the manifest to
+runs **Release server** and chooses a strict `patch`, `minor`, or `major` increment. The workflow requires the manifest to
 match the highest stable tag, prepares all server/web mirrors on `release/vMAJOR.MINOR.PATCH`, and validates that exact
 commit. Validation covers candidate identity, synchronized release configuration, the exact generated mirror set, and
 a production-image startup and served-Web smoke. Affected pull-request and scheduled workflows own the broader unit,
@@ -63,3 +63,5 @@ job verifies only its configured target; independent installations retain the ru
   release.
 - Protected production approval controls public promotion, while independently managed self-hosts remain protected
   by the runtime directional contract-version guard.
+
+The current operator interface and recovery modes are documented in [Release and deploy](../deployment.md).
