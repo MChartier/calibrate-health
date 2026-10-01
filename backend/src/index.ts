@@ -53,6 +53,7 @@ import {
 import { startReminderScheduler } from './services/reminderScheduler';
 import { createCalibrateMcpHttpApp, isCalibrateMcpPath } from './mcp/server';
 import { checkDatabaseReadiness } from './services/readiness';
+import { initializeServerAccess } from './services/serverAccess';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
@@ -327,6 +328,9 @@ const bootstrap = async (): Promise<void> => {
   app.use(['/api/v1', '/api', '/auth'], apiRouteNotFoundHandler);
   configureFrontendStaticAssets(app, isProductionOrStaging);
   app.use(apiRequestErrorHandler);
+
+  // Finish the one-time legacy role import before any replica accepts registrations.
+  await initializeServerAccess();
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

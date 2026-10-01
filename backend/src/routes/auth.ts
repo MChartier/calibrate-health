@@ -2,6 +2,7 @@ import express from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
+import { cleanupFailedRegistration, createRegisteredUser } from '../services/serverAccess';
 import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
 import {
     serializeUserForClient,
@@ -138,29 +139,28 @@ router.post('/register', async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
-        const newUser = await prisma.user.create({
-            data: {
-                email,
-                password_hash,
-                email_verified_at: verificationRequired ? null : new Date(),
-                legal_acceptances: emailConfig.hostedRequired ? {
-                    create: {
-                        terms_version: CURRENT_TERMS_VERSION,
-                        privacy_version: CURRENT_PRIVACY_VERSION
-                    }
-                } : undefined
-            },
-            select: USER_CLIENT_SELECT
+        const newUser = await createRegisteredUser({
+            email,
+            password_hash,
+            email_verified_at: verificationRequired ? null : new Date(),
+            legal_acceptances: emailConfig.hostedRequired ? {
+                create: {
+                    terms_version: CURRENT_TERMS_VERSION,
+                    privacy_version: CURRENT_PRIVACY_VERSION
+                }
+            } : undefined
         });
 
         if (verificationRequired) {
             const delivered = await sendEmailVerification(newUser.id);
             if (!delivered) {
-                await prisma.user.delete({ where: { id: newUser.id } });
+                const removed = await cleanupFailedRegistration(newUser.id);
                 return res.status(503).json({
-                    message: 'Account email delivery is temporarily unavailable.',
-                    code: 'EMAIL_DELIVERY_UNAVAILABLE',
-                    retryable: true
+                    message: removed
+                        ? 'Account email delivery is temporarily unavailable.'
+                        : 'Account created, but verification email could not be sent. Sign in and resend verification.',
+                    code: removed ? 'EMAIL_DELIVERY_UNAVAILABLE' : 'ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE',
+                    retryable: removed
                 });
             }
         }
@@ -228,29 +228,28 @@ router.post('/mobile/register', async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
-        const newUser = await prisma.user.create({
-            data: {
-                email,
-                password_hash,
-                email_verified_at: verificationRequired ? null : new Date(),
-                legal_acceptances: emailConfig.hostedRequired ? {
-                    create: {
-                        terms_version: CURRENT_TERMS_VERSION,
-                        privacy_version: CURRENT_PRIVACY_VERSION
-                    }
-                } : undefined
-            },
-            select: USER_CLIENT_SELECT
+        const newUser = await createRegisteredUser({
+            email,
+            password_hash,
+            email_verified_at: verificationRequired ? null : new Date(),
+            legal_acceptances: emailConfig.hostedRequired ? {
+                create: {
+                    terms_version: CURRENT_TERMS_VERSION,
+                    privacy_version: CURRENT_PRIVACY_VERSION
+                }
+            } : undefined
         });
 
         if (verificationRequired) {
             const delivered = await sendEmailVerification(newUser.id);
             if (!delivered) {
-                await prisma.user.delete({ where: { id: newUser.id } });
+                const removed = await cleanupFailedRegistration(newUser.id);
                 return res.status(503).json({
-                    message: 'Account email delivery is temporarily unavailable.',
-                    code: 'EMAIL_DELIVERY_UNAVAILABLE',
-                    retryable: true
+                    message: removed
+                        ? 'Account email delivery is temporarily unavailable.'
+                        : 'Account created, but verification email could not be sent. Sign in and resend verification.',
+                    code: removed ? 'EMAIL_DELIVERY_UNAVAILABLE' : 'ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE',
+                    retryable: removed
                 });
             }
         }

@@ -20,7 +20,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     patch:
       operationId: updateServerSettings
-      description: Update instance-wide feature switches. Requires an existing account explicitly approved by the operator through ADMIN_USER_IDS and a completed account verification status.
+      description: Update instance-wide feature switches. Requires a verified account with a persisted administrator role. Authorization is rechecked in the mutation transaction.
       requestBody:
         required: true
         content:
@@ -43,6 +43,72 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: Verified server administrator access required.
+  /api/v1/server-settings/users:
+    get:
+      operationId: getServerUsers
+      description: Administrator-only account directory. Reads current persisted roles; never returns profiles, health data, passwords, or session credentials. Responses must not be cached.
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string, maxLength: 254 }
+          description: Case-insensitive email substring.
+        - in: query
+          name: cursor
+          schema: { type: integer, minimum: 1, maximum: 2147483647 }
+          description: Last account id from the previous page.
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        '200':
+          description: Bounded account page in ascending id order.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServerUsersResponse' }
+        '400':
+          description: Invalid search or pagination parameters.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Verified administrator access required (ADMIN_REQUIRED).
+  /api/v1/server-settings/users/{id}/role:
+    patch:
+      operationId: updateServerUserRole
+      description: Persist an existing account's role. Concurrent changes are serialized; removing an administrator requires another verified administrator. Current sessions observe the change on their next administrator request.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 2147483647 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [role]
+              properties:
+                role: { $ref: '#/components/schemas/ServerUserRole' }
+      responses:
+        '200':
+          description: Updated account role.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServerUserRoleResponse' }
+        '400':
+          description: Invalid role or account id.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Verified administrator access required (ADMIN_REQUIRED).
+        '404':
+          description: Account does not exist (USER_NOT_FOUND).
+        '409':
+          description: Another verified administrator is required (LAST_ADMIN_REQUIRED), or the target must verify its email before promotion (EMAIL_VERIFICATION_REQUIRED).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/client-config:
     get:
       operationId: getClientConfig
@@ -270,7 +336,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
         '503':
-          description: Hosted registration is unavailable because email delivery is not configured.
+          description: Email delivery is unavailable. ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE means the account was retained; sign in and resend verification instead of registering again. EMAIL_DELIVERY_UNAVAILABLE means registration can be retried after delivery is restored.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
@@ -430,7 +496,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
         '503':
-          description: Hosted registration is unavailable because email delivery is not configured.
+          description: Email delivery is unavailable. ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE means the account was retained; sign in and resend verification instead of registering again. EMAIL_DELIVERY_UNAVAILABLE means registration can be retried after delivery is restored.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
@@ -1440,6 +1506,11 @@ paths:
                 $ref: '#/components/schemas/ApiError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Another verified administrator must be added before deleting an administrator account (LAST_ADMIN_REQUIRED).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
 components:
   securitySchemes:
     mobileBearer:
@@ -2716,6 +2787,35 @@ components:
       properties:
         features: { $ref: '#/components/schemas/ServerFeatures' }
         is_admin: { type: boolean }
+    ServerUserRole:
+      type: string
+      enum: [admin, member]
+    ServerUser:
+      type: object
+      additionalProperties: false
+      required: [id, email, role, created_at, email_verified]
+      properties:
+        id: { type: integer, minimum: 1 }
+        email: { type: string, format: email }
+        role: { $ref: '#/components/schemas/ServerUserRole' }
+        created_at: { type: string, format: date-time }
+        email_verified: { type: boolean }
+    ServerUsersResponse:
+      type: object
+      additionalProperties: false
+      required: [users, next_cursor]
+      properties:
+        users:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/ServerUser' }
+        next_cursor: { type: integer, nullable: true, minimum: 1 }
+    ServerUserRoleResponse:
+      type: object
+      additionalProperties: false
+      required: [user]
+      properties:
+        user: { $ref: '#/components/schemas/ServerUser' }
     NutritionLabelDraft:
       type: object
       required: [calories_per_serving, serving_size_quantity, serving_unit_label, serving_text, warnings]
