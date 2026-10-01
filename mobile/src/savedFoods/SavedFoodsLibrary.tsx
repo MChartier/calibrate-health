@@ -5,6 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MyFoodSummary } from '@calibrate/api-client';
 import { useAuth } from '../auth/AuthContext';
+import { useServerSettings } from '../serverSettings/useServerSettings';
 import { AppButton } from '../components/AppButton';
 import { AppChip } from '../components/AppChip';
 import { AppIconButton } from '../components/AppIconButton';
@@ -50,6 +51,7 @@ export function SavedFoodsLibrary({
     const isNarrow = width < NARROW_LIBRARY_BREAKPOINT;
     const stackCreateActions = fontScale >= 1.3;
     const { api } = useAuth();
+    const { nutritionLabelScanning } = useServerSettings();
     const queryClient = useQueryClient();
     const isOnline = useOnlineStatus();
     const [searchText, setSearchText] = useState('');
@@ -116,7 +118,7 @@ export function SavedFoodsLibrary({
                         style={isNarrow ? styles.creationAction : undefined}
                     />
                 </View>
-                <AppButton title="Scan label" variant="ghost" onPress={() => router.push('/nutrition-label')} style={isNarrow ? styles.narrowAction : undefined} />
+                {nutritionLabelScanning && <AppButton title="Scan label" variant="ghost" onPress={() => router.push('/nutrition-label')} style={isNarrow ? styles.narrowAction : undefined} />}
             </View>
         </View>
     );

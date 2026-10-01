@@ -118,3 +118,49 @@ test('equivalent resolved SMTP settings reuse one transport', async () => {
     nodemailer.createTransport = originalCreateTransport;
   }
 });
+
+test('installed Nodemailer composes verification and recovery messages without sending email', async () => {
+  const nodemailer = require('nodemailer');
+  const originalCreateTransport = nodemailer.createTransport;
+  const messages = [];
+  const transport = originalCreateTransport({ streamTransport: true, buffer: true, newline: 'unix' });
+  nodemailer.createTransport = () => ({
+    sendMail: async (options) => {
+      const message = await transport.sendMail(options);
+      messages.push(message);
+      return message;
+    }
+  });
+  const config = {
+    mode: 'smtp',
+    hostedRequired: false,
+    publicAppOrigin: 'https://app.example.test',
+    host: 'smtp.example.test',
+    port: 587,
+    secure: false,
+    username: null,
+    password: null,
+    from: 'Calibrate <no-reply@example.test>'
+  };
+
+  resetAccountEmailTransportForTests();
+  try {
+    for (const [kind, route, subject] of [
+      ['email_verification', 'verify-email', 'Verify your Calibrate email'],
+      ['password_reset', 'reset-password', 'Reset your Calibrate password']
+    ]) {
+      assert.equal(await deliverAccountEmail({
+        kind, recipient: 'member@example.test', token: 'test-token'
+      }, config), true);
+      const message = messages.at(-1);
+      assert.deepEqual(message.envelope, { from: 'no-reply@example.test', to: ['member@example.test'] });
+      const text = message.message.toString('utf8');
+      assert.ok(text.includes(`Subject: ${subject}`));
+      assert.ok(text.includes(`https://app.example.test/${route}#token=test-token`));
+    }
+  } finally {
+    resetAccountEmailTransportForTests();
+    nodemailer.createTransport = originalCreateTransport;
+    transport.close();
+  }
+});

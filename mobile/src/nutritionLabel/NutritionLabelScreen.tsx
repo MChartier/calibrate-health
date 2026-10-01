@@ -4,6 +4,7 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { ApiError, type NutritionLabelDraft } from '@calibrate/api-client';
 import { useAuth } from '../auth/AuthContext';
+import { useServerSettings } from '../serverSettings/useServerSettings';
 import { AppButton } from '../components/AppButton';
 import { AppSection } from '../components/AppSection';
 import { AppNotice } from '../components/AppNotice';
@@ -27,6 +28,7 @@ const LABEL_PREVIEW_HEIGHT = 260;
 function scanErrorMessage(error: unknown): string {
     if (error instanceof LabelImageError) return error.message;
     if (error instanceof ApiError) {
+        if (error.status === 403) return 'Nutrition label scanning is disabled or unavailable for this account.';
         if (error.status === 413) return 'Choose a photo smaller than 8 MB.';
         if (error.status === 400) return 'Choose a clear JPEG, PNG, or WebP photo under 25 megapixels.';
         if (error.status === 503) return 'The label scanner is busy. Try again shortly.';
@@ -36,6 +38,7 @@ function scanErrorMessage(error: unknown): string {
 }
 
 export default function NutritionLabelScreen() {
+    const { nutritionLabelScanning } = useServerSettings();
     const theme = useAppTheme();
     const { api, user, isLoading } = useAuth();
     const queryClient = useQueryClient();
@@ -58,6 +61,10 @@ export default function NutritionLabelScreen() {
     const validationError = validateLabelFood(fields);
 
     useEffect(() => {
+        if (!nutritionLabelScanning) cancelScan();
+    }, [nutritionLabelScanning]);
+
+    useEffect(() => {
         mounted.current = true;
         return () => {
             mounted.current = false;
@@ -72,12 +79,13 @@ export default function NutritionLabelScreen() {
     }
 
     async function scan(source: LabelImageSource) {
-        if (busyRef.current || !isOnline) return;
+        if (busyRef.current || !isOnline || !nutritionLabelScanning) return;
         busyRef.current = true;
         const scanId = ++scanSequence.current;
         let selected: LabelImage | null = null;
         try {
             if (hasDetails && !await confirmDiscardChanges()) return;
+            if (!mounted.current || scanId !== scanSequence.current) return;
             // Call the browser picker before an await unless an existing draft needs confirmation.
             const pendingImage = chooseLabelImage(source);
             setScanning(true);
@@ -182,10 +190,11 @@ export default function NutritionLabelScreen() {
                         <AppText>Connect to the internet to scan or save. You can still edit the details.</AppText>
                     </AppNotice>
                 )}
-                <View style={styles.actions}>
+                {!nutritionLabelScanning && <AppNotice tone="warning"><AppText>Nutrition label scanning is unavailable on this server. You can enter food details manually below.</AppText></AppNotice>}
+                {nutritionLabelScanning && <View style={styles.actions}>
                     <AppButton title="Take photo" variant="secondary" disabled={busy || !isOnline} onPress={() => void scan('camera')} />
                     <AppButton title="Choose photo" variant="secondary" disabled={busy || !isOnline} onPress={() => void scan('library')} />
-                </View>
+                </View>}
                 {draft && !scanning && <AppText accessibilityLiveRegion="polite">Label read. Review the details below before saving.</AppText>}
                 {photo && <Image accessibilityLabel="Nutrition label photo" source={{ uri: photo.uri }} style={styles.photo} resizeMode="contain" />}
                 {scanning && (

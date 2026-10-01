@@ -6,6 +6,8 @@ import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { HEIGHT_UNITS, WEIGHT_UNITS } from '@calibrate/shared';
 import { AppButton } from '../../../src/components/AppButton';
+import { AppActionRow } from '../../../src/components/AppActionRow';
+import { useServerSettings } from '../../../src/serverSettings/useServerSettings';
 import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../../../src/components/AsyncStateBoundary';
@@ -72,6 +74,7 @@ const SETTINGS_CATEGORY_ROUTES = {
 } as const;
 
 export function SettingsScreen({ category }: { category?: SettingsCategoryId }) {
+    const serverSettings = useServerSettings();
     const router = useRouter();
     const {
         api, user, clearLocalSession, logout, persistAccountDeletionCleanupNotice,
@@ -398,6 +401,13 @@ export function SettingsScreen({ category }: { category?: SettingsCategoryId }) 
                         router.push(canonicalPathForRoute(SETTINGS_CATEGORY_ROUTES[nextCategory]) as Href);
                     }}
                 />
+            )}
+
+            {!category && serverSettings.isAdmin && (
+                <AppActionRow accessibilityLabel="Server administration" onPress={() => router.push('/server-admin')}>
+                    <AppText variant="label">Server administration</AppText>
+                    <AppText variant="muted">Manage experimental features for everyone on this server.</AppText>
+                </AppActionRow>
             )}
 
             <SettingsDetailSheet

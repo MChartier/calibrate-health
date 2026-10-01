@@ -10,6 +10,9 @@ const draft = {
 
 test('photo upload is reviewed, titled, and saved with the printed serving size', async ({ page, ux }, testInfo) => {
     await ux.install('populated');
+    await page.route('**/api/v1/server-settings', (route) => route.fulfill({ json: {
+        is_admin: false, features: { nutrition_label_scanning: true }
+    } }));
     const saved: Record<string, unknown>[] = [];
     await page.route('**/api/v1/nutrition-labels/scan', async (route) => {
         expect(route.request().headers()['content-type']).toContain('multipart/form-data');
@@ -61,6 +64,9 @@ test('photo upload is reviewed, titled, and saved with the printed serving size'
 
 test('label scanning is reachable for both missing and incorrect barcode matches', async ({ page, ux }) => {
     await ux.install('populated');
+    await page.route('**/api/v1/server-settings', (route) => route.fulfill({ json: {
+        is_admin: false, features: { nutrition_label_scanning: true }
+    } }));
     let hasMatch = false;
     await page.route('**/api/v1/food/search?**', (route) => route.fulfill({ json: {
         items: hasMatch ? [{

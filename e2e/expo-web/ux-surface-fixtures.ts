@@ -45,6 +45,11 @@ export async function installAccessibilityApiExtensions(
   routeId: (typeof ROUTE_IDS)[number],
   surfaceId: string,
 ) {
+  if (routeId === 'server-admin') {
+    await page.route('**/api/v1/server-settings', (route) => fulfillJson(route, {
+      is_admin: true, features: { nutrition_label_scanning: false }
+    }));
+  }
   const sessions = [
     {
       id: 'browser_current',

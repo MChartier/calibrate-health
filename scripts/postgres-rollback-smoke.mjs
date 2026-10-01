@@ -34,9 +34,9 @@ export const ROLLBACK_BASE = Object.freeze({
 });
 
 export const ROLLBACK_CANDIDATE = Object.freeze({
-  migrationCount: 44,
-  lastMigration: '0040_ios_native_support',
-  ledgerSha256: 'e5bba71403b8013f98965e23a66a1ce08b690524847133c98877a86d8b963e13',
+  migrationCount: 45,
+  lastMigration: '0041_server_settings',
+  ledgerSha256: '8823a76dda39bf70814f95643dab14bd657d9baca3ce6d1c0d3debe42f13be86',
 });
 
 export const ROLLBACK_RESULT_PATH = path.join(
@@ -987,10 +987,10 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
   const newTables = await queryRows(client, `SELECT "table_name" FROM information_schema.tables
     WHERE "table_schema" = $1 AND "table_name" = ANY($2::text[]) ORDER BY "table_name"`, [
     schemaName,
-    ['AccountActionToken', 'LegalAcceptance'],
+    ['AccountActionToken', 'LegalAcceptance', 'ServerSettings'],
   ]);
   assert.deepEqual(newTables.map((row) => row.table_name), [
-    'AccountActionToken', 'LegalAcceptance',
+    'AccountActionToken', 'LegalAcceptance', 'ServerSettings',
   ]);
   const indexRows = await queryRows(client, `SELECT "indexname" FROM pg_catalog.pg_indexes
     WHERE "schemaname" = $1 AND "indexname" = 'MyFood_user_id_is_pinned_normalized_name_id_idx'`,

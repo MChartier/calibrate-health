@@ -557,6 +557,10 @@ async function installAuthenticatedApi(
         : resourceFixture.content;
       return fulfillJson(route, resolveResourceFixtureBody(body, url));
     }
+    if (pathname === '/api/v1/server-settings') return fulfillJson(route, {
+      // Exercise the complete existing feature surface; server-admin.spec covers the default-off state.
+      is_admin: false, features: { nutrition_label_scanning: true }
+    });
     if (pathname === '/api/v1/client-diagnostics' && route.request().method() === 'POST') {
       return route.fulfill({ status: 204 });
     }
