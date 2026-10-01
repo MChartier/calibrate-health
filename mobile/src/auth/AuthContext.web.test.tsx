@@ -2,12 +2,14 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+const mockClientOptions: Array<{ onUnauthorized?: () => Promise<void> | void }> = [];
 const mockLoginBrowser = jest.fn();
 const mockLogoutBrowser = jest.fn(async () => undefined);
 const mockRestoreSession = jest.fn();
 jest.mock('@calibrate/api-client', () => ({
     ApiError: class extends Error { status = 401; },
     CalibrateApiClient: class {
+        constructor(options: typeof mockClientOptions[number]) { mockClientOptions.push(options); }
         loginBrowser = (...args: unknown[]) => mockLoginBrowser(...args);
         logoutBrowser = () => mockLogoutBrowser();
     }
@@ -78,4 +80,16 @@ describe('browser onboarding draft cleanup', () => {
         expect(result.current.user).toBeNull();
         expect(clearBrowserUserScopedCaches).toHaveBeenCalled();
     });
+    it('a stale browser unauthorized response cannot clear a newer session', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        const oldClient = mockClientOptions.filter((options) => options.onUnauthorized).at(-1)!;
+        await act(async () => result.current.clearLocalSession());
+        mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
+        await act(async () => { await result.current.login('new@example.com', 'secret', 'https://health.example'); });
+        await act(async () => oldClient.onUnauthorized!());
+        expect(result.current.user?.id).toBe(8);
+        expect(mockRestoreSession).toHaveBeenCalledTimes(1);
+    });
+
 });

@@ -239,7 +239,7 @@ export function SettingsCategoryPage({
             <SettingsSection
                 testID="settings-section-app"
                 title="App"
-                description="Product information, diagnostics, connections, and software updates."
+                description="Product information, diagnostics, and software updates."
                 style={{
                     borderTopWidth: StyleSheet.hairlineWidth,
                     borderTopColor: colors.outlineVariant,
@@ -256,8 +256,8 @@ export function SettingsCategoryPage({
                 <SettingsRow
                     testID="settings-advanced"
                     icon="options-outline"
-                    label="Advanced settings"
-                    supportingText="Connection, diagnostics, and software updates"
+                    label="App diagnostics & updates"
+                    supportingText="Version details, recovery information, and software updates"
                     showDivider={false}
                     onPress={() => onOpenPage('advanced')}
                 />

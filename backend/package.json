@@ -13,6 +13,7 @@
     "predb:seed": "npm run prisma:generate",
     "db:seed": "ts-node --transpile-only prisma/seed.ts",
     "db:studio": "prisma studio",
+    "admin:grant": "ts-node src/scripts/grantServerAdmin.ts",
     "prisma:generate": "prisma generate",
     "start": "node dist/backend/src/index.js",
     "start:prod": "bash scripts/start-prod.sh",

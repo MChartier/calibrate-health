@@ -71,6 +71,7 @@ export function getSafeActionErrorMessage(error: unknown, fallback: string): str
     if (error instanceof ApiError) {
         if (error.status === 401) return 'Your session expired. Sign in again.';
         if (error.status === 403) return 'This account does not have permission to make that change.';
+        if (error.code === 'LAST_ADMIN_REQUIRED') return 'Make another verified member an administrator in Server administration before deleting this account.';
         if (error.status === 409) return 'That information changed. Refresh it and try again.';
         if (error.status === 422 || error.status === 400) return fallback;
         if (error.status === 429) return 'Too many requests were sent. Try again shortly.';
@@ -81,6 +82,9 @@ export function getSafeActionErrorMessage(error: unknown, fallback: string): str
 export function getAuthActionErrorMessage(error: unknown, action: 'sign in' | 'create account'): string {
     if (looksLikeConnectivityFailure(error)) return 'Check your connection and try again.';
     if (error instanceof ApiError) {
+        if (action === 'create account' && error.code === 'ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE') {
+            return 'Your account was created, but the verification email could not be sent. Sign in with your new account and resend verification after your server operator restores email delivery.';
+        }
         if (action === 'sign in' && error.status === 401) return 'Email or password is incorrect.';
         if (action === 'create account' && error.status === 409) {
             return 'An account with this email already exists.';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
@@ -13,6 +13,7 @@ import { SectionHeader } from '../../src/components/SectionHeader';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/auth/AuthContext';
 import { accountDeletionCleanupGuidance } from '../../src/account/accountDeletionNotice';
+import { HOSTED_SERVER_URL, normalizeServerUrl } from '../../src/config/server';
 import { readAuthServerDraft } from '../../src/auth/authServerDraft';
 import { spacing, useAppTheme } from '../../src/theme';
 import { getAuthActionErrorMessage } from '../../src/errors/presentation';
@@ -30,14 +31,45 @@ export default function LoginScreen() {
     const routedServerDraft = canSelectServer ? readAuthServerDraft(params.serverUrl) : null;
     const [serverInput, setServerInput] = useState(routedServerDraft ?? serverUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const submittingRef = useRef(false);
+    const [isChoosingServer, setIsChoosingServer] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const previousRouteDraft = useRef(routedServerDraft);
+    const previousServerUrl = useRef(serverUrl);
+    const locallySelectedServer = useRef(false);
     useEffect(() => {
+        const routeChanged = previousRouteDraft.current !== routedServerDraft;
+        const savedServerChanged = previousServerUrl.current !== serverUrl;
+        previousRouteDraft.current = routedServerDraft;
+        previousServerUrl.current = serverUrl;
+        // A switch can mount auth before provider persistence finishes. Follow that update,
+        // but don't replace an intentional local choice with an older route parameter.
+        if (!routeChanged && !(savedServerChanged && !routedServerDraft && !locallySelectedServer.current)) return;
+        locallySelectedServer.current = false;
         setServerInput(routedServerDraft ?? serverUrl);
+        setEmail('');
+        setPassword('');
+        setError(null);
     }, [routedServerDraft, serverUrl]);
 
+    async function confirmServer(candidate: string): Promise<boolean> {
+        if (!await testServerUrl(candidate)) return false;
+        const normalized = normalizeServerUrl(candidate);
+        if (!normalized) return false;
+        if (normalized !== normalizeServerUrl(serverInput)) {
+            setEmail('');
+            setPassword('');
+            setError(null);
+        }
+        locallySelectedServer.current = true;
+        setServerInput(normalized);
+        return true;
+    }
+
     async function handleLogin() {
-        if (accountDeletionCleanupNotice) return;
+        if (accountDeletionCleanupNotice || submittingRef.current || isChoosingServer) return;
+        submittingRef.current = true;
         setIsSubmitting(true);
         setError(null);
         try {
@@ -45,6 +77,7 @@ export default function LoginScreen() {
         } catch (err) {
             setError(getAuthActionErrorMessage(err, 'sign in'));
         } finally {
+            submittingRef.current = false;
             setIsSubmitting(false);
         }
     }
@@ -69,6 +102,23 @@ export default function LoginScreen() {
 
             <AppSection>
                 <SectionHeader title="Sign in" description="Use your Calibrate account." />
+                {canSelectServer && (
+                    <ServerUrlControl
+                        value={serverInput}
+                        connection={serverConnection}
+                        onTestConnection={testServerUrl}
+                        onConfirmServer={confirmServer}
+                        onEditingChange={setIsChoosingServer}
+                        disabled={isSubmitting}
+                    />
+                )}
+                {!canSelectServer && normalizeServerUrl(serverInput) !== HOSTED_SERVER_URL && (
+                    <View style={{ gap: spacing.xs }}>
+                        <AppText variant="label">Self-hosted server</AppText>
+                        <AppText variant="caption" selectable>{serverInput}</AppText>
+                        <AppText variant="caption">Use your account on this server. Your server operator provides support.</AppText>
+                    </View>
+                )}
                 <TextField
                     label="Email"
                     autoCapitalize="none"
@@ -91,23 +141,15 @@ export default function LoginScreen() {
                     onChangeText={setPassword}
                     onSubmitEditing={() => void handleLogin()}
                 />
-                <Link href="/forgot-password" asChild>
+                <Link href={canSelectServer ? { pathname: '/forgot-password', params: { serverUrl: serverInput } } : '/forgot-password'} asChild>
                     <Pressable accessibilityRole="link" style={styles.inlineLinkTarget}>
                         <AppText style={[styles.link, { color: colors.primary }]}>Forgot password?</AppText>
                     </Pressable>
                 </Link>
-                {canSelectServer && (
-                    <ServerUrlControl
-                        value={serverInput}
-                        onChangeText={setServerInput}
-                        connection={serverConnection}
-                        onTestConnection={testServerUrl}
-                    />
-                )}
                 {(error || authError) && <AppText accessibilityRole="alert" style={{ color: colors.danger }}>{error ?? authError}</AppText>}
                 <AppButton
                     title={isSubmitting ? 'Signing in...' : 'Sign in'}
-                    disabled={isSubmitting || Boolean(accountDeletionCleanupNotice)}
+                    disabled={isSubmitting || isChoosingServer || Boolean(accountDeletionCleanupNotice)}
                     onPress={() => void handleLogin()}
                 />
             </AppSection>

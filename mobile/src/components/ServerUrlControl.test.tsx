@@ -1,124 +1,85 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { BottomSheetModal } from './BottomSheetModal';
 import { ServerUrlControl } from './ServerUrlControl';
-import { HOSTED_SERVER_URL, type ServerConnectionState } from '../config/server';
+import { HOSTED_SERVER_URL, INITIAL_SERVER_CONNECTION_STATE } from '../config/server';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }) }));
+jest.mock('../hooks/useReducedMotionPreference', () => ({ useReducedMotionPreference: () => true }));
 
-const idleConnection: ServerConnectionState = {
-    status: 'idle',
-    testedInput: null,
-    testedUrl: null,
-    message: 'Test the connection before signing in.'
-};
+function setup(overrides: Partial<React.ComponentProps<typeof ServerUrlControl>> = {}) {
+    const props = {
+        value: HOSTED_SERVER_URL,
+        connection: INITIAL_SERVER_CONNECTION_STATE,
+        onTestConnection: jest.fn(async () => true),
+        onConfirmServer: jest.fn(async () => true),
+        onEditingChange: jest.fn(),
+        ...overrides
+    };
+    return { ...render(<ServerUrlControl {...props} />), props };
+}
 
-describe('ServerUrlControl', () => {
-    it('keeps hosted connection details behind a generic Advanced disclosure', () => {
-        const view = render(
-            <ServerUrlControl
-                value={HOSTED_SERVER_URL}
-                onChangeText={jest.fn()}
-                connection={idleConnection}
-                onTestConnection={jest.fn(async () => true)}
-            />
-        );
+test('managed hosting needs no URL entry and self-hosting is discoverable', () => {
+    const screen = setup();
+    expect(screen.getByText('Managed hosting. No server setup needed.')).toBeTruthy();
+    expect(screen.queryByLabelText('Server URL')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Use a self-hosted server' }));
+    expect(screen.getByLabelText('Server URL')).toHaveProp('value', '');
+    expect(screen.getByRole('radio', { name: 'Self-hosted server' })).toHaveProp('accessibilityState', { checked: true, disabled: false });
+});
 
-        expect(view.getByText('Advanced')).toBeTruthy();
-        expect(view.queryByText(HOSTED_SERVER_URL)).toBeNull();
-        expect(view.queryByLabelText('Server URL')).toBeNull();
-        expect(view.queryByText(idleConnection.message)).toBeNull();
-        expect(view.getByLabelText('Show advanced connection options')).toHaveProp(
-            'accessibilityState',
-            { expanded: false }
-        );
-        fireEvent.press(view.getByLabelText('Show advanced connection options'));
-        expect(view.queryByText('Self-hosted service')).toBeNull();
-        expect(view.queryByText(/operator is responsible/)).toBeNull();
-    });
+test('testing and canceling a draft never changes the selected service', async () => {
+    const screen = setup();
+    fireEvent.press(screen.getByText('Use a self-hosted server'));
+    fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://self.example');
+    fireEvent.press(screen.getByText('Test connection'));
+    await waitFor(() => expect(screen.props.onTestConnection).toHaveBeenCalledWith('https://self.example'));
+    fireEvent.press(screen.getByText('Cancel'));
+    expect(screen.props.onConfirmServer).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText('Use a self-hosted server'));
+    expect(screen.getByLabelText('Server URL')).toHaveProp('value', '');
+});
 
-    it('expands self-hosted controls and invokes an explicit connection test', () => {
-        const onTestConnection = jest.fn(async () => true);
-        const view = render(
-            <ServerUrlControl
-                value="http://10.0.2.2:3000"
-                onChangeText={jest.fn()}
-                connection={idleConnection}
-                onTestConnection={onTestConnection}
-            />
-        );
+test('a failed confirmation stays in the chooser and allows retry', async () => {
+    const onConfirmServer = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const screen = setup({ value: 'https://self.example', onConfirmServer });
+    expect(screen.getByText('https://self.example')).toBeTruthy();
+    fireEvent.press(screen.getByText('Change service'));
+    fireEvent.press(screen.getByText('Use this service'));
+    await waitFor(() => expect(onConfirmServer).toHaveBeenCalledTimes(1));
+    await screen.findByText('Could not confirm this service. Check the address and connection details, then try again.');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Use this service' })).not.toBeDisabled());
+    fireEvent.press(screen.getByText('Use this service'));
+    await waitFor(() => expect(onConfirmServer).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.UNSAFE_getByType(BottomSheetModal).props.visible).toBe(false));
+});
 
-        fireEvent.press(view.getByLabelText('Show advanced connection options'));
-        fireEvent.press(view.getByLabelText('Test Calibrate server connection'));
+test('returning to managed hosting is explicit and explains sign-out before switching', async () => {
+    const screen = setup({ value: 'https://self.example', switchingAccount: true });
+    fireEvent.press(screen.getByText('Change service'));
+    fireEvent.press(screen.getByRole('radio', { name: 'Calibrate' }));
+    expect(screen.getByText(/Switching signs you out/)).toBeTruthy();
+    expect(screen.getByText(HOSTED_SERVER_URL)).toBeTruthy();
+    fireEvent.press(screen.getByText('Switch service and sign out'));
+    await waitFor(() => expect(screen.props.onConfirmServer).toHaveBeenCalledWith(HOSTED_SERVER_URL));
+});
 
-        expect(view.getByLabelText('Server URL')).toHaveProp('keyboardType', 'url');
-        expect(
-            view.getByText('Release builds require HTTPS. Local HTTP is limited to development builds.')
-        ).toBeTruthy();
-        expect(view.getByText(
-            /operator is responsible for privacy, security, availability, backups, and support/
-        )).toBeTruthy();
-        expect(onTestConnection).toHaveBeenCalledWith('http://10.0.2.2:3000');
-    });
+test('does not replay confirmation for repeated presses or allow a changing destination in flight', async () => {
+    let finish!: (success: boolean) => void;
+    const screen = setup({ value: 'https://self.example', onConfirmServer: jest.fn(() => new Promise<boolean>((resolve) => { finish = resolve; })) });
+    fireEvent.press(screen.getByText('Change service'));
+    fireEvent.press(screen.getByText('Use this service'));
+    fireEvent.press(screen.getByText('Checking service...'));
+    expect(screen.props.onConfirmServer).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Server URL')).toHaveProp('editable', false);
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await act(async () => finish(true));
+});
 
-    it('announces the confirmed compatibility result for the current candidate', () => {
-        const connected: ServerConnectionState = {
-            status: 'connected',
-            testedInput: 'https://self-hosted.example',
-            testedUrl: 'https://self-hosted.example',
-            message: 'Connected to Calibrate 1.2.3 (API v1).'
-        };
-        const view = render(
-            <ServerUrlControl
-                value="https://self-hosted.example/path"
-                onChangeText={jest.fn()}
-                connection={connected}
-                onTestConnection={jest.fn(async () => true)}
-            />
-        );
-
-        fireEvent.press(view.getByLabelText('Show advanced connection options'));
-
-        expect(view.getByLabelText(connected.message)).toHaveProp('accessibilityLiveRegion', 'polite');
-        expect(view.getByText(connected.message)).toBeTruthy();
-    });
-
-    it('does not show a stale success after the candidate changes and can restore hosted service', () => {
-        const onChangeText = jest.fn();
-        const connected: ServerConnectionState = {
-            status: 'connected',
-            testedInput: 'https://old.example',
-            testedUrl: 'https://old.example',
-            message: 'Connected to Calibrate 1.2.3 (API v1).'
-        };
-        const view = render(
-            <ServerUrlControl
-                value="https://new.example"
-                onChangeText={onChangeText}
-                connection={connected}
-                onTestConnection={jest.fn(async () => true)}
-            />
-        );
-
-        expect(view.getByText('Self-hosted service selected')).toBeTruthy();
-        expect(view.queryByText(connected.message)).toBeNull();
-
-        fireEvent.press(view.getByLabelText('Show advanced connection options'));
-        expect(view.getByText('Test this address before continuing.')).toBeTruthy();
-        fireEvent.press(view.getByLabelText('Use Calibrate hosted service'));
-        expect(onChangeText).toHaveBeenCalledWith(HOSTED_SERVER_URL);
-    });
-
-    it('renders the editor directly inside an existing Advanced surface', () => {
-        const view = render(
-            <ServerUrlControl
-                presentation="editor"
-                value="https://self-hosted.example"
-                onChangeText={jest.fn()}
-                connection={idleConnection}
-                onTestConnection={jest.fn(async () => true)}
-            />
-        );
-
-        expect(view.queryByText('Advanced')).toBeNull();
-        expect(view.getByLabelText('Server URL')).toBeTruthy();
-    });
+test('never shows success from a different candidate', () => {
+    const screen = setup({ value: 'https://new.example', connection: {
+        status: 'connected', testedInput: 'https://old.example', testedUrl: 'https://old.example', message: 'Old connection succeeded'
+    } });
+    fireEvent.press(screen.getByText('Change service'));
+    expect(screen.queryByText('Old connection succeeded')).toBeNull();
 });

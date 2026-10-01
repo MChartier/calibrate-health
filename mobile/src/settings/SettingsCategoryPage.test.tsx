@@ -196,7 +196,7 @@ describe('SettingsCategoryPage', () => {
         fireEvent.press(screen.getByRole('button', { name: 'Terms of service' }));
         fireEvent.press(screen.getByRole('button', { name: 'Open-source licenses' }));
         fireEvent.press(screen.getByRole('button', { name: 'About Calibrate' }));
-        fireEvent.press(screen.getByRole('button', { name: 'Advanced settings' }));
+        fireEvent.press(screen.getByRole('button', { name: 'App diagnostics & updates' }));
 
         expect(callbacks.onOpenProductLink.mock.calls).toEqual([
             ['support'],

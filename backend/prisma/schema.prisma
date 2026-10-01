@@ -106,9 +106,21 @@ enum CaloriePlanReviewStatus {
   REQUIRES_REVIEW
 }
 
+enum ServerRole {
+  admin
+  member
+}
+
+model ServerAccessState {
+  id                             Int       @id @default(1)
+  first_user_bootstrap_available  Boolean   @default(false)
+  legacy_admin_imported_at        DateTime?
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
+  server_role   ServerRole @default(member)
   password_hash     String
   created_at        DateTime  @default(now())
   email_verified_at DateTime?

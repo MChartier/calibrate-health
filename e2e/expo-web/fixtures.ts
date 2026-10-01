@@ -457,7 +457,21 @@ function formatFailureContext(page: Page, testInfo: TestInfo, diagnostics: Fixtu
   ].join(' ');
 }
 
+const CLIENT_CONFIG_FIXTURE = {
+  api_version: 1,
+  api_versions: { current: 'v1', supported: ['v1'], legacy_alias: '/api', legacy_deprecation: 'Supported' },
+  server_version: '1.0.0',
+  hosted_origin: 'https://calibratehealth.app',
+  min_supported_mobile_version: '0.0.1',
+  min_supported_wear_version: '0.0.1',
+  capabilities: {
+    self_hosted_server_url: true, native_push: false, web_push: false,
+    health_connect_activity: true, wear_os_ready: true,
+  },
+};
+
 async function installSignedOutApi(page: Page): Promise<void> {
+  await page.route('**/api/v1/client-config', (route) => fulfillJson(route, CLIENT_CONFIG_FIXTURE));
   expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 401 });
   await page.route('**/auth/me', (route) => fulfillApiError(route, 401, 'NOT_AUTHENTICATED', 'Not authenticated'));
 }
@@ -519,17 +533,7 @@ async function installAuthenticatedApi(
     const pathname = url.pathname;
     if (pathname === '/auth/me') return fulfillJson(route, { user: AUTHENTICATED_USER });
     if (pathname === '/api/v1/client-config') {
-      return fulfillJson(route, {
-        api_version: 1,
-        server_version: '1.0.0',
-        capabilities: {
-          self_hosted_server_url: true,
-          native_push: false,
-          web_push: false,
-          health_connect_activity: true,
-          wear_os_ready: true,
-        },
-      });
+      return fulfillJson(route, CLIENT_CONFIG_FIXTURE);
     }
     const resourceFixture = options.apiResources?.find((resource) => (
       pathname === resource.pathname

@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const { USER_CLIENT_SELECT } = require('../src/utils/userSerialization');
 const crypto = require('node:crypto');
 const { diagnosticsRegistry } = require('../src/observability');
 
@@ -24,8 +25,10 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
     require.resolve('../src/services/mobileSessionCredentials'),
     require.resolve('../src/services/wearPairing')
   ];
+  const serverAccessPath = require.resolve('../src/services/serverAccess');
   const authPath = require.resolve('../src/routes/auth');
 
+  const previousServerAccessModule = require.cache[serverAccessPath];
   const previousDbModule = require.cache[dbPath];
   const previousPassportModule = require.cache[passportPath];
   const previousBcryptModule = require.cache[bcryptPath];
@@ -37,11 +40,21 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   delete require.cache[mobileAuthPath];
   mobileAuthDependencyPaths.forEach((path) => delete require.cache[path]);
 
+  stubModule(serverAccessPath, {
+    createRegisteredUser: (data) => prismaStub.user.create({ data, select: USER_CLIENT_SELECT }),
+    cleanupFailedRegistration: async (userId) => {
+      await prismaStub.user.delete({ where: { id: userId } });
+      return true;
+    }
+  });
   stubModule(dbPath, prismaStub);
   stubModule(passportPath, passportStub);
   stubModule(bcryptPath, bcryptStub);
 
   const loaded = require('../src/routes/auth');
+
+  if (previousServerAccessModule) require.cache[serverAccessPath] = previousServerAccessModule;
+  else delete require.cache[serverAccessPath];
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];

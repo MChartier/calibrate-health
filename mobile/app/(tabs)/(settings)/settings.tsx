@@ -6,7 +6,6 @@ import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { HEIGHT_UNITS, WEIGHT_UNITS } from '@calibrate/shared';
 import { AppButton } from '../../../src/components/AppButton';
-import { AppActionRow } from '../../../src/components/AppActionRow';
 import { useServerSettings } from '../../../src/serverSettings/useServerSettings';
 import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
@@ -386,6 +385,10 @@ export function SettingsScreen({ category }: { category?: SettingsCategoryId }) 
                 />
             ) : (
                 <SettingsHome
+                    serverUrl={serverUrl}
+                    isServerAdmin={serverSettings.isAdmin}
+                    onOpenService={() => router.push('/service')}
+                    onOpenAdmin={() => router.push('/server-admin')}
                     email={user?.email}
                     profileImageUrl={user?.profile_image_url}
                     goalSummary={goalSummary}
@@ -401,13 +404,6 @@ export function SettingsScreen({ category }: { category?: SettingsCategoryId }) 
                         router.push(canonicalPathForRoute(SETTINGS_CATEGORY_ROUTES[nextCategory]) as Href);
                     }}
                 />
-            )}
-
-            {!category && serverSettings.isAdmin && (
-                <AppActionRow accessibilityLabel="Server administration" onPress={() => router.push('/server-admin')}>
-                    <AppText variant="label">Server administration</AppText>
-                    <AppText variant="muted">Manage experimental features for everyone on this server.</AppText>
-                </AppActionRow>
             )}
 
             <SettingsDetailSheet

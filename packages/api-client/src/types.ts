@@ -573,6 +573,30 @@ export type ServerSettingsResponse = {
     is_admin: boolean;
 };
 
+export type ServerUserRole = 'admin' | 'member';
+
+/** Minimal administrator-only account directory; no profile or credential data. */
+export type ServerUser = {
+    id: number;
+    email: string;
+    role: ServerUserRole;
+    created_at: string;
+    email_verified: boolean;
+};
+
+export type ServerUsersQuery = {
+    search?: string;
+    cursor?: number;
+    limit?: number;
+};
+
+export type ServerUsersResponse = {
+    users: ServerUser[];
+    next_cursor: number | null;
+};
+
+export type ServerUserRoleResponse = { user: ServerUser };
+
 export type ClientConfigResponse = {
     api_version: number;
     api_versions: {

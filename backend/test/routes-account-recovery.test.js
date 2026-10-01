@@ -13,6 +13,7 @@ function loadRouter({ prismaStub, accountTokensStub }) {
   const paths = {
     database: require.resolve('../src/config/database'),
     tokens: require.resolve('../src/services/accountTokens'),
+    serverAccess: require.resolve('../src/services/serverAccess'),
     passport: require.resolve('passport'),
     bcrypt: require.resolve('bcryptjs'),
     auth: require.resolve('../src/routes/auth')
@@ -21,6 +22,10 @@ function loadRouter({ prismaStub, accountTokensStub }) {
   delete require.cache[paths.auth];
   stubModule(paths.database, prismaStub);
   stubModule(paths.tokens, accountTokensStub);
+  stubModule(paths.serverAccess, {
+    createRegisteredUser: async () => { throw new Error('Recovery must not create a user'); },
+    cleanupFailedRegistration: async () => { throw new Error('Recovery must not delete a user'); }
+  });
   stubModule(paths.passport, { authenticate: () => () => {} });
   stubModule(paths.bcrypt, { genSalt: async () => 'salt', hash: async () => 'hash' });
   const loaded = require('../src/routes/auth');

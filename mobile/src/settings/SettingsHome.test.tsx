@@ -23,6 +23,10 @@ describe('SettingsHome', () => {
         const onOpenCategory = jest.fn();
         const screen = render(
             <SettingsHome
+                serverUrl="https://calibratehealth.app"
+                isServerAdmin={false}
+                onOpenService={jest.fn()}
+                onOpenAdmin={jest.fn()}
                 email="person@example.invalid"
                 goalSummary="Maintain weight"
                 weightUnit={WEIGHT_UNITS.KG}
@@ -46,6 +50,7 @@ describe('SettingsHome', () => {
 
         const categoryButtons = screen.getAllByRole('button');
         expect(categoryButtons.map((button) => button.props.accessibilityLabel)).toEqual([
+            'Service & hosting',
             'Profile & preferences, kg | cm',
             'Security & access, 3 sessions',
             'Connections, 1 assistant',
@@ -57,7 +62,7 @@ describe('SettingsHome', () => {
         expect(screen.getByText('Activity, health data, companion devices, and assistants')).toBeTruthy();
         expect(screen.getByText('Saved foods, imports, offline changes, export, and deletion')).toBeTruthy();
         expect(screen.getByText(
-            'Support, legal documents, product information, and advanced controls'
+            'Support, legal documents, app information, and updates'
         )).toBeTruthy();
 
         categoryButtons.forEach((button) => fireEvent.press(button));
@@ -74,6 +79,10 @@ describe('SettingsHome', () => {
         const onOpenCategory = jest.fn();
         const screen = render(
             <SettingsHome
+                serverUrl="https://calibratehealth.app"
+                isServerAdmin={false}
+                onOpenService={jest.fn()}
+                onOpenAdmin={jest.fn()}
                 email="native@example.invalid"
                 goalSummary="Lose 1 lb per week"
                 weightUnit={WEIGHT_UNITS.LB}
@@ -95,6 +104,7 @@ describe('SettingsHome', () => {
 
         const categoryButtons = screen.getAllByRole('button');
         expect(categoryButtons.map((button) => button.props.accessibilityLabel)).toEqual([
+            'Service & hosting',
             'Profile & preferences, lb | ft/in',
             'Security & access, 1 session',
             'Connections, 2 assistants',
@@ -111,4 +121,23 @@ describe('SettingsHome', () => {
             ['help']
         ]);
     });
+    it('makes the current self-hosted service and role-appropriate admin entry discoverable', () => {
+        const onOpenService = jest.fn();
+        const onOpenAdmin = jest.fn();
+        const props = {
+            serverUrl: 'https://self.example', isServerAdmin: false, onOpenService, onOpenAdmin,
+            goalSummary: 'Maintain weight', weightUnit: WEIGHT_UNITS.KG, heightUnit: HEIGHT_UNITS.CM,
+            isOutboxReady: true, failedMutationCount: 0, pendingMutationCount: 0, isWeb: false,
+            onOpenCategory: jest.fn()
+        };
+        const screen = render(<SettingsHome {...props} />);
+        expect(screen.getByText('Self-hosted | https://self.example')).toBeTruthy();
+        expect(screen.queryByText('Server administration')).toBeNull();
+        fireEvent.press(screen.getByText('Service & hosting'));
+        expect(onOpenService).toHaveBeenCalledTimes(1);
+        screen.rerender(<SettingsHome {...props} isServerAdmin />);
+        fireEvent.press(screen.getByText('Server administration'));
+        expect(onOpenAdmin).toHaveBeenCalledTimes(1);
+    });
+
 });
