@@ -62,7 +62,8 @@ test("generated worktree configuration is isolated, persistent, and secret-safe"
         "FATSECRET_CLIENT_SECRET=secret",
         "WEB_PUSH_SUBJECT=mailto:test@example.com",
         "WEIGHT_TREND_MODEL=v1",
-        "ADMIN_EMAILS=operator@example.com,second@example.com",
+        "ADMIN_USER_IDS=7,12",
+        "ADMIN_EMAILS=operator@example.com",
         "",
       ].join("\n")
     );
@@ -75,7 +76,8 @@ test("generated worktree configuration is isolated, persistent, and secret-safe"
     });
     assert.equal(first.FOOD_DATA_PROVIDER, "fatsecret");
     assert.equal(first.WEIGHT_TREND_MODEL, "v1");
-    assert.equal(first.ADMIN_EMAILS, "operator@example.com,second@example.com");
+    assert.equal(first.ADMIN_USER_IDS, "7,12");
+    assert.equal(first.ADMIN_EMAILS, undefined);
     assert.equal(first.WEB_PUSH_SUBJECT, "mailto:test@example.com");
     assert.equal(first.SESSION_COOKIE_NAME, `cal.${first.WORKTREE_HASH}.sid`);
     assert.match(first.hostDatabaseUrl, new RegExp(`127\\.0\\.0\\.1:${first.POSTGRES_PORT}`));
@@ -97,6 +99,7 @@ test("generated worktree configuration is isolated, persistent, and secret-safe"
 
     const generated = fs.readFileSync(path.join(temporaryDirectory, ".dev.env"), "utf8");
     assert.doesNotMatch(generated, /GITHUB_TOKEN|CALIBRATE_GH_PAT/);
+    assert.doesNotMatch(generated, /ADMIN_EMAILS/);
   } finally {
     fs.rmSync(temporaryDirectory, { recursive: true, force: true });
   }

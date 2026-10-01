@@ -40,10 +40,16 @@ For Caddy, `CADDYFILE=./Caddyfile.prod` is the normal setting. Use `./Caddyfile.
 
 ### Server administration
 
-Set `ADMIN_EMAILS=operator@example.com,other-admin@example.com` in the deployment environment and
-recreate the app container. Entries are trimmed and matched case-insensitively against the signed-in
-account's current, verified email. An empty allowlist grants nobody admin access; registration alone
-does not grant access. Removing an address takes effect after restarting with the new environment.
+First create the administrator's account and confirm that the intended operator controls it. While
+signed into that account in a browser, open `/api/v1/auth/me` on the same server and read `user.id`.
+Set `ADMIN_USER_IDS` to that existing account ID, or a comma-separated list of confirmed account IDs,
+then recreate the app container. Do not reserve future IDs or select an account solely by its claimed
+email address: with `EMAIL_DELIVERY_MODE=disabled`, registration marks email verified without proving
+mailbox ownership. If email verification is required, the account must also complete that step.
+
+Entries are trimmed positive decimal IDs. An empty allowlist grants nobody admin access;
+`ADMIN_EMAILS` no longer grants access. Removing an ID takes effect after restarting with the new
+environment. Account deletion or removal of its verification status revokes access immediately.
 
 Admins can open **Settings > Server administration** in the web or mobile client. Feature switches
 are stored in this instance's Postgres database and survive app restarts. Changes apply without a
@@ -53,9 +59,9 @@ scans already running may finish. Current clients refresh controls when relevant
 on foregrounding or browser focus, and on reconnect. Unavailable settings disable scanner controls; existing saved
 foods and manual food entry remain available. Each self-hosted instance controls its own settings.
 
-For local development, set `ADMIN_EMAILS` in the root `.env` (for example, explicitly allow the verified
-seeded account `test@calibratehealth.app`) and rerun `npm run dev:setup` and `npm run dev`.
-Admin addresses are server-only configuration and are never returned by the settings API.
+For local development, sign into the seeded account `test@calibratehealth.app`, read its `user.id`
+from `/api/v1/auth/me`, and set `ADMIN_USER_IDS` in the root `.env`. Rerun `npm run dev:setup` and
+`npm run dev`. The admin allowlist is server-only configuration and is never returned by the settings API.
 
 ### Email verification and password recovery
 

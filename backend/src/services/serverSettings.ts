@@ -18,12 +18,13 @@ export async function updateServerFeatures(nutritionLabelScanning: boolean) {
 }
 
 export async function isServerAdmin(userId: number): Promise<boolean> {
-  const allowedEmails = new Set((process.env.ADMIN_EMAILS ?? '').split(',')
-    .map((email) => email.trim().toLowerCase()).filter(Boolean));
-  if (allowedEmails.size === 0) return false;
-  // Read current identity from the database for every request, never from client claims.
+  // Operators bind grants to existing accounts; disabled email delivery can auto-verify emails.
+  const allowedUserIds = new Set((process.env.ADMIN_USER_IDS ?? '').split(',')
+    .map((id) => id.trim()).filter((id) => /^[1-9]\d*$/.test(id)));
+  if (!allowedUserIds.has(String(userId))) return false;
+  // Recheck account existence and verification status for every request.
   const user = await prisma.user.findUnique({
-    where: { id: userId }, select: { email: true, email_verified_at: true }
+    where: { id: userId }, select: { email_verified_at: true }
   });
-  return Boolean(user?.email_verified_at && allowedEmails.has(user.email.trim().toLowerCase()));
+  return Boolean(user?.email_verified_at);
 }

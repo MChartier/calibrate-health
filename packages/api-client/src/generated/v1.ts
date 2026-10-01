@@ -18,7 +18,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** @description Update instance-wide feature switches. Requires a verified account whose current email appears in ADMIN_EMAILS. */
+        /** @description Update instance-wide feature switches. Requires an existing account explicitly approved by the operator through ADMIN_USER_IDS and a completed account verification status. */
         patch: operations["updateServerSettings"];
         trace?: never;
     };
