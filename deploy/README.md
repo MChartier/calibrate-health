@@ -40,28 +40,64 @@ For Caddy, `CADDYFILE=./Caddyfile.prod` is the normal setting. Use `./Caddyfile.
 
 ### Server administration
 
-First create the administrator's account and confirm that the intended operator controls it. While
-signed into that account in a browser, open `/api/v1/auth/me` on the same server and read `user.id`.
-Set `ADMIN_USER_IDS` to that existing account ID, or a comma-separated list of confirmed account IDs,
-then recreate the app container. Do not reserve future IDs or select an account solely by its claimed
-email address: with `EMAIL_DELIVERY_MODE=disabled`, registration marks email verified without proving
-mailbox ownership. If email verification is required, the account must also complete that step.
+On a **new, empty self-hosted server**, the first account created through web or mobile registration
+becomes an administrator automatically. Keep initial access private until the intended operator has
+registered. Later accounts are members. `CALIBRATE_HOSTED_SERVICE=true` disables first-user administrator
+setup in every environment, including development; the official managed service must explicitly provision
+its operators. Self-hosting defaults to an absent or `false` flag; unknown nonempty values fail closed.
 
-Entries are trimmed positive decimal IDs. An empty allowlist grants nobody admin access;
-`ADMIN_EMAILS` no longer grants access. Removing an ID takes effect after restarting with the new
-environment. Account deletion or removal of its verification status revokes access immediately.
+Administrators open **Settings > Calibrate service > Server administration** to search accounts by email,
+promote verified members, and remove administrator access. Roles and feature switches live in this
+instance's Postgres database, survive restarts, and apply to existing sessions on their next administrator
+request. The directory exposes only account ID, email, role, creation time, and verification status; it
+does not expose other users' health data or credentials. Removing or deleting an administrator requires
+another verified administrator, so a concurrent change cannot remove the last usable administrator.
 
-Admins can open **Settings > Server administration** in the web or mobile client. Feature switches
-are stored in this instance's Postgres database and survive app restarts. Changes apply without a
-restart to everyone connected to that server, including other admins. Nutrition label scanning starts
-disabled. Disabling it blocks new scan requests immediately, including requests from older clients;
-scans already running may finish. Current clients refresh controls when relevant screens mount,
-on foregrounding or browser focus, and on reconnect. Unavailable settings disable scanner controls; existing saved
-foods and manual food entry remain available. Each self-hosted instance controls its own settings.
+With `EMAIL_DELIVERY_MODE=disabled`, registration marks email verified without proving mailbox ownership.
+Before promoting somebody, confirm that they control the intended account. With SMTP enabled, complete
+email verification before using administrator controls. If initial verification delivery fails, the
+first owner's account and role are retained: sign in and resend verification after fixing delivery.
+It has no administrator access before verification, and another signup cannot claim its place.
 
-For local development, sign into the seeded account `test@calibratehealth.app`, read its `user.id`
-from `/api/v1/auth/me`, and set `ADMIN_USER_IDS` in the root `.env`. Rerun `npm run dev:setup` and
-`npm run dev`. The admin allowlist is server-only configuration and is never returned by the settings API.
+**Existing installations:** migration `0042_persistent_server_roles` does not automatically promote any
+existing member or the next person who registers. On the first startup after applying it, existing
+`ADMIN_USER_IDS` entries are imported once into persisted roles. Only existing accounts with valid,
+positive decimal IDs are matched; missing accounts and invalid values are ignored permanently. Existing
+unverified grants still require verification before use. The import is marked complete even when the
+variable is empty. Remove the variable after upgrading: changing it or restarting later cannot add back
+revoked roles or grant a future account access. `ADMIN_EMAILS` does not grant access.
+
+**Recovery and managed provisioning:** if an existing installation has no administrator, confirm ownership
+of an existing verified account and use the operator command against that exact database. This is also
+the explicit initial provisioning path for the managed service. It never creates an account or reserves
+a future grant. In the running app container (replace the Compose file selection with your deployment's):
+
+```sh
+docker compose --env-file .env -f docker-compose.yml exec app \
+  node dist/backend/src/scripts/grantServerAdmin.js --email existing@example.com
+```
+
+The container supplies its configured `DATABASE_URL` or `DB_*` settings; no database password belongs in
+the command. Apply migrations before running recovery. For an operator's source checkout with installed
+backend dependencies and a generated Prisma client, run from the repository root:
+
+```sh
+npm --prefix backend run admin:grant -- --email existing@example.com
+```
+
+That host command reads the process environment or `backend/.env`, not the repository's root `.env`.
+Provide the intended `DATABASE_URL` (including `schema` and `sslmode`) or the same `DB_HOST`, `DB_PORT`,
+`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SCHEMA`, and `DB_SSLMODE` settings used by that server. For the local
+seeded account `test@calibratehealth.app`, point those settings at the current worktree's database and run
+the same command. If legacy accounts differ only by email case, the email lookup fails without granting
+any role. Confirm the intended existing account's ID and use `--id 7` instead of `--email ...` for this
+exceptional recovery. Subsequent changes belong in Settings; normal administration needs no environment edits.
+
+Nutrition label scanning starts disabled. Disabling it blocks new scan requests immediately, including
+requests from older clients; scans already running may finish. Current clients refresh controls when
+relevant screens mount, on foregrounding or browser focus, and on reconnect. Unavailable settings disable
+scanner controls; existing saved foods and manual food entry remain available. Each self-hosted instance
+controls its own settings.
 
 ### Email verification and password recovery
 

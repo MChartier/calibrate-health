@@ -2,6 +2,7 @@ import { Image, StyleSheet, View } from 'react-native';
 import { HEIGHT_UNITS, WEIGHT_UNITS, type HeightUnit, type WeightUnit } from '@calibrate/shared';
 import { AppText } from '../components/AppText';
 import { SettingsRow, SettingsSection } from '../components/settings/SettingsList';
+import { HOSTED_SERVER_URL, normalizeServerUrl } from '../config/server';
 import { MOBILE_CLIENT_IDENTITY } from '../config/nativeClient';
 import { spacing, useAppTheme } from '../theme';
 import { ASYNC_RESOURCE_STATES, type AsyncResourceState } from '../asyncState/resolveAsyncState';
@@ -54,6 +55,10 @@ type SettingsHomeProps = {
     failedMutationCount: number;
     pendingMutationCount: number;
     isWeb: boolean;
+    serverUrl: string;
+    isServerAdmin: boolean;
+    onOpenService: () => void;
+    onOpenAdmin: () => void;
     onOpenCategory: (category: SettingsCategoryId) => void;
 };
 
@@ -118,6 +123,10 @@ export function SettingsHome({
     failedMutationCount,
     pendingMutationCount,
     isWeb,
+    serverUrl,
+    isServerAdmin,
+    onOpenService,
+    onOpenAdmin,
     onOpenCategory
 }: SettingsHomeProps) {
     const { colors } = useAppTheme();
@@ -149,6 +158,15 @@ export function SettingsHome({
                     email={email}
                     profileImageUrl={profileImageUrl}
                     goalSummary={goalSummary}
+                />
+                <SettingsRow
+                    icon="cloud-outline"
+                    label="Service & hosting"
+                    supportingText={normalizeServerUrl(serverUrl) === HOSTED_SERVER_URL
+                        ? 'Calibrate managed hosting'
+                        : `Self-hosted | ${serverUrl}`}
+                    showDivider={false}
+                    onPress={onOpenService}
                 />
             </SettingsSection>
 
@@ -198,12 +216,23 @@ export function SettingsHome({
                     testID="settings-open-help"
                     icon="help-circle-outline"
                     label="Help & app"
-                    supportingText="Support, legal documents, product information, and advanced controls"
+                    supportingText="Support, legal documents, app information, and updates"
                     value={isWeb ? undefined : `v${MOBILE_CLIENT_IDENTITY.version}`}
                     showDivider={false}
                     onPress={() => onOpenCategory('help')}
                 />
             </SettingsSection>
+            {isServerAdmin && (
+                <SettingsSection title="Administration" description="Manage the service for everyone using it." testID="settings-section-administration">
+                    <SettingsRow
+                        icon="server-outline"
+                        label="Server administration"
+                        supportingText="Server overview, capabilities, and shared features"
+                        showDivider={false}
+                        onPress={onOpenAdmin}
+                    />
+                </SettingsSection>
+            )}
         </View>
     );
 }

@@ -73,5 +73,17 @@ in production and is the only origin used to construct verification and reset li
 - `INVALID_LEGAL_ACCEPTANCE`: registration did not include explicit acceptance.
 - `INVALID_LEGAL_VERSION`: submitted Terms or Privacy versions are not current.
 - `INVALID_OR_EXPIRED_TOKEN`: token is missing, expired, consumed, or bound to another purpose.
-- `EMAIL_DELIVERY_UNAVAILABLE`: the hosted service cannot safely complete an email-dependent
-  operation.
+- `EMAIL_DELIVERY_UNAVAILABLE`: registration cannot safely complete an email-dependent operation;
+  retry after delivery is restored.
+- `ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE`: the account was created and retained after delivery
+  failed (including the first self-hosted administrator). Sign in and resend verification rather than
+  repeating registration. The unverified account has no effective administrator access.
+- `LAST_ADMIN_REQUIRED`: promote another verified administrator before demoting or deleting an
+  administrator. The role/account and current session remain unchanged when this guard rejects a request.
+
+## Server roles
+
+Server administrators manage persisted `admin`/`member` roles in Settings. The first registered account
+on a new, empty self-hosted server becomes the administrator; managed hosting never claims a first-user
+administrator. See [server administration](../deploy/README.md#server-administration) for one-time legacy
+role migration, verification requirements, and the operator recovery command for existing installations.

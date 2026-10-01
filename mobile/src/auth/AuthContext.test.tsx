@@ -2,6 +2,10 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+const mockClientOptions: Array<{
+    baseUrl: string; getAccessToken?: () => string | null; refreshAccessToken?: () => Promise<boolean> | boolean;
+    onUnauthorized?: () => Promise<void> | void;
+}> = [];
 const mockGetClientConfig = jest.fn();
 const mockRefreshMobile = jest.fn();
 const mockLoginMobile = jest.fn();
@@ -20,6 +24,7 @@ jest.mock('@calibrate/api-client', () => {
     return {
         ApiError,
         CalibrateApiClient: class {
+            constructor(options: typeof mockClientOptions[number]) { mockClientOptions.push(options); }
             getClientConfig = (...args: unknown[]) => mockGetClientConfig(...args);
             refreshMobile = (...args: unknown[]) => mockRefreshMobile(...args);
             loginMobile = (...args: unknown[]) => mockLoginMobile(...args);
@@ -211,4 +216,46 @@ describe('native onboarding draft cleanup', () => {
         expect(clearOnboardingDraft).not.toHaveBeenCalled();
         expect(clearStoredTokens).not.toHaveBeenCalled();
     });
+    it('old API callbacks cannot read or refresh another account or sign it out', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        const oldClient = mockClientOptions.filter((options) => options.getAccessToken).at(-1)!;
+        expect(oldClient.getAccessToken!()).toBe('access');
+        await act(async () => result.current.clearLocalSession());
+        mockLoginMobile.mockResolvedValue({ ...AUTH_PAYLOAD, access_token: 'new-access', refresh_token: 'new-refresh', user: { id: 8, email: 'new@example.com' } });
+        await act(async () => { await result.current.login('new@example.com', 'secret', 'https://health.example'); });
+        const calls = mockRefreshMobile.mock.calls.length;
+        expect(oldClient.getAccessToken!()).toBeNull();
+        await expect(Promise.resolve(oldClient.refreshAccessToken!())).resolves.toBe(false);
+        expect(mockRefreshMobile).toHaveBeenCalledTimes(calls);
+        await act(async () => oldClient.onUnauthorized!());
+        expect(result.current.user?.id).toBe(8);
+        expect(result.current.accessToken).toBe('new-access');
+    });
+
+    it('an already running refresh cannot restore its account after logout and sign-in', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        const oldClient = mockClientOptions.filter((options) => options.getAccessToken).at(-1)!;
+        let finish!: (payload: typeof AUTH_PAYLOAD) => void;
+        mockRefreshMobile.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+        const pending = Promise.resolve(oldClient.refreshAccessToken!());
+        await act(async () => result.current.clearLocalSession());
+        mockLoginMobile.mockResolvedValue({ ...AUTH_PAYLOAD, access_token: 'new-access', user: { id: 8, email: 'new@example.com' } });
+        await act(async () => { await result.current.login('new@example.com', 'secret', 'https://health.example'); });
+        await act(async () => { finish(AUTH_PAYLOAD); await expect(pending).resolves.toBe(false); });
+        expect(result.current.user?.id).toBe(8);
+        expect(result.current.accessToken).toBe('new-access');
+        expect(mockWriteStoredTokens).toHaveBeenLastCalledWith({ accessToken: 'new-access', refreshToken: 'refresh' });
+    });
+
+    it('normal same-session token refresh remains available', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        const client = mockClientOptions.filter((options) => options.getAccessToken).at(-1)!;
+        mockRefreshMobile.mockResolvedValueOnce({ ...AUTH_PAYLOAD, access_token: 'rotated-access' });
+        await act(async () => { await expect(client.refreshAccessToken!()).resolves.toBe(true); });
+        expect(client.getAccessToken!()).toBe('rotated-access');
+    });
+
 });

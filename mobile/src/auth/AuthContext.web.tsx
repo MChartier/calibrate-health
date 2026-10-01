@@ -57,18 +57,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [serverConnection, setServerConnection] = useState<ServerConnectionState>(INITIAL_SERVER_CONNECTION_STATE);
     const requestId = useRef(0);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
+    const sessionEpochRef = useRef(0);
+    const [sessionEpoch, setSessionEpoch] = useState(0);
+    const advanceSessionEpoch = useCallback(() => {
+        sessionEpochRef.current += 1;
+        setSessionEpoch(sessionEpochRef.current);
+    }, []);
 
-    const acceptUser = useCallback(async (nextUser: UserClientPayload) => {
+    const acceptUser = useCallback(async (nextUser: UserClientPayload, newSession = false) => {
         const previousScope = accountScopeRef.current;
         const nextScope = { serverUrl, userId: nextUser.id };
+        if (newSession || !previousScope || previousScope.userId !== nextUser.id) advanceSessionEpoch();
         accountScopeRef.current = nextScope;
         if (previousScope && previousScope.userId !== nextUser.id) {
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
         }
         if (accountScopeRef.current === nextScope) setUser(nextUser);
-    }, [serverUrl]);
+    }, [advanceSessionEpoch, serverUrl]);
 
     const clearSession = useCallback(async () => {
+        advanceSessionEpoch();
         const scope = accountScopeRef.current;
         accountScopeRef.current = null;
         const draftCleanup = scope ? clearOnboardingDraft(scope.serverUrl, scope.userId) : Promise.resolve();
@@ -76,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAuthError(null);
         queryClient.clear();
         await Promise.all([clearBrowserUserScopedCaches(), draftCleanup]);
-    }, [queryClient]);
+    }, [advanceSessionEpoch, queryClient]);
 
     const clearSessionWithBrowserCleanup = useCallback(async () => {
         await cleanupBrowserPushBeforeSessionChange();
@@ -86,13 +94,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const api = useMemo(() => new CalibrateApiClient({
         baseUrl: serverUrl,
         requestCredentials: 'include',
-        onUnauthorized: clearSession
-    }), [clearSession, serverUrl]);
+        onUnauthorized: () => {
+            if (sessionEpochRef.current === sessionEpoch) return clearSession();
+        }
+    }), [clearSession, serverUrl, sessionEpoch]);
 
     useEffect(() => {
         let active = true;
         setIsLoading(true);
-        void restoreBrowserDevelopmentSession(api, serverUrl).then(async ({ user: nextUser }) => {
+        // Restoration has its own client so changing session epochs does not restart hydration.
+        const restoreApi = new CalibrateApiClient({ baseUrl: serverUrl, requestCredentials: 'include' });
+        void restoreBrowserDevelopmentSession(restoreApi, serverUrl).then(async ({ user: nextUser }) => {
             if (active) await acceptUser(nextUser);
         }).catch((error: unknown) => {
             if (!active || (error instanceof ApiError && error.status === 401)) return;
@@ -101,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (active) setIsLoading(false);
         });
         return () => { active = false; };
-    }, [acceptUser, api, serverUrl]);
+    }, [acceptUser, serverUrl]);
 
     const probeCurrentServer = useCallback(async (): Promise<ServerConnectionResult> => {
         const currentRequest = requestId.current + 1;
@@ -142,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!payload) return false;
         queryClient.clear();
         await clearBrowserUserScopedCaches();
-        await acceptUser(payload.user);
+        await acceptUser(payload.user, true);
         return true;
     }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 
@@ -177,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!payload) return false;
         queryClient.clear();
         await clearBrowserUserScopedCaches();
-        await acceptUser(payload.user);
+        await acceptUser(payload.user, true);
         return true;
     }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 

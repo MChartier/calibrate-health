@@ -17,6 +17,10 @@ import type {
     NutritionLabelDraft,
     ServerFeatures,
     ServerSettingsResponse,
+    ServerUsersQuery,
+    ServerUsersResponse,
+    ServerUserRole,
+    ServerUserRoleResponse,
     CreateRecipeFromFoodLogsPayload,
     FoodLogCopyPayload,
     FoodLogCopyResponse,
@@ -296,6 +300,14 @@ export class CalibrateApiClient {
     }
 
     private async request<T>(path: string, options: RequestOptions = {}, allowRefresh = true): Promise<T> {
+        const assertNotAborted = () => {
+            if (options.signal?.aborted) {
+                const error = new Error('The request was aborted.');
+                error.name = 'AbortError';
+                throw error;
+            }
+        };
+        assertNotAborted();
         const requestRefreshGeneration = this.refreshGeneration;
         const {
             auth = true,
@@ -317,6 +329,7 @@ export class CalibrateApiClient {
 
         if (auth && this.getAccessToken) {
             const token = await this.getAccessToken();
+            assertNotAborted();
             if (token) {
                 headers.set('authorization', `Bearer ${token}`);
             }
@@ -368,6 +381,7 @@ export class CalibrateApiClient {
         }
 
         const text = await response.text();
+        assertNotAborted();
         let body: unknown = null;
         if (text.length > 0) {
             try {
@@ -397,11 +411,13 @@ export class CalibrateApiClient {
                     return this.request<T>(path, options, false);
                 }
                 const refreshed = await this.refreshAccessTokenOnce();
+                assertNotAborted();
                 if (refreshed) {
                     return this.request<T>(path, options, false);
                 }
             }
             if (response.status === 401 && auth) {
+                assertNotAborted();
                 await this.onUnauthorized?.();
             }
             const parsedError: ParsedApiError = parseApiError(body, response.headers.get('x-request-id'));
@@ -439,9 +455,24 @@ export class CalibrateApiClient {
         return this.request<ServerSettingsResponse>('/api/server-settings', { cache: 'no-store', signal });
     }
 
-    updateServerSettings(features: ServerFeatures): Promise<ServerSettingsResponse> {
+    updateServerSettings(features: ServerFeatures, signal?: AbortSignal): Promise<ServerSettingsResponse> {
         return this.request<ServerSettingsResponse>('/api/server-settings', {
-            method: 'PATCH', cache: 'no-store', json: { features }
+            method: 'PATCH', cache: 'no-store', json: { features }, signal
+        });
+    }
+
+    getServerUsers(query: ServerUsersQuery = {}, signal?: AbortSignal): Promise<ServerUsersResponse> {
+        const params = new URLSearchParams();
+        if (query.search !== undefined) params.set('search', query.search);
+        if (query.cursor !== undefined) params.set('cursor', String(query.cursor));
+        if (query.limit !== undefined) params.set('limit', String(query.limit));
+        const suffix = params.size ? `?${params.toString()}` : '';
+        return this.request<ServerUsersResponse>(`/api/server-settings/users${suffix}`, { cache: 'no-store', signal });
+    }
+
+    updateServerUserRole(userId: number, role: ServerUserRole, signal?: AbortSignal): Promise<ServerUserRoleResponse> {
+        return this.request<ServerUserRoleResponse>(`/api/server-settings/users/${userId}/role`, {
+            method: 'PATCH', cache: 'no-store', json: { role }, signal
         });
     }
 
