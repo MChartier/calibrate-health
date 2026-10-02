@@ -183,7 +183,7 @@ jobs:
           --repository "${GITHUB_REPOSITORY}"
           --tag "${NATIVE_TAG}"
 
-      - name: Validate upload dependency and release policy
+      - name: Validate upload release policy
         if: inputs.operation == 'upload-internal'
         run: npm run release:check
 

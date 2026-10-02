@@ -11,8 +11,8 @@ commit, a receipt ledger, or a second external-launch approval step.
 
 ## Automatic pull-request checks
 
-Automatic checks are path-targeted. A change runs only the builds, tests, type checks, dependency checks, database
-checks, and container checks that can catch a regression on an affected surface.
+Automatic checks are path-targeted. A change runs only the builds, tests, type checks, database checks, and
+container checks that can catch a regression on an affected surface.
 
 The Builds workflow provides these focused checks:
 
@@ -24,12 +24,24 @@ The Builds workflow provides these focused checks:
 - Phone packaging only for native packaging inputs, and Wear build/JVM tests only for Wear inputs.
 
 Database populated-upgrade checks run for database-relevant changes. Pull requests run the encrypted rollback
-rehearsal when Prisma migrations or the rollback workflow/harness change. Production dependency audits and
-production-image scanning remain automatic for affected inputs and on their scheduled maintenance runs. **Cut
-release** does not replay those already-completed checks against its generated version-only candidate.
+rehearsal when Prisma migrations or the rollback workflow/harness change. Production-image build/startup/web smoke
+and OS-vulnerability checks remain automatic for affected inputs. Full image scans, including package libraries,
+run on the existing Monday 14:15 UTC schedule or manual dispatch. **Cut release** does not replay the PR checks
+against its generated version-only candidate.
 
 Generated version-only `release/v*` pull requests still validate synchronized release configuration, but suppress
 unrelated web, phone, and Wear build fan-out.
+
+## Dependency maintenance
+
+**Dependency Audit** checks root/mobile production dependencies, backend production dependencies, and the locked
+EAS CLI every Monday at 13:30 UTC. Run it manually with `workflow_dispatch` when investigating or upgrading packages.
+It audits the lockfiles without installing dependencies, reports high/critical findings through the workflow logs
+and failed jobs, and lets all three workspaces finish even if one reports findings.
+
+Application-package advisories do not run on pull requests, pushes to `master`, or merges; container OS checks
+remain. Release configuration checks also do not enforce package advisories or expiring exceptions. Review maintenance findings and apply compatible upgrades in
+focused follow-up pull requests; an unresolved advisory does not block unrelated changes or release cuts.
 
 ## Explicit extended validation
 
@@ -41,8 +53,8 @@ lowercase Git SHA of the package baseline.
 These suites are diagnostics, not standing PR or release gates. Manual UX and native emulator runs keep short-lived
 diagnostic artifacts for seven days to help investigate a failure; those artifacts are not release receipts.
 
-The manual **Optional Release Confidence** workflow checks an exact candidate commit's release mirrors, strict
-production dependency policy, deploy contracts, generated API contract, and clean worktree. It is an owner-discretion
+The manual **Optional Release Confidence** workflow checks an exact candidate commit's release mirrors, root/mobile
+production dependency audit, deploy contracts, generated API contract, and clean worktree. It is an owner-discretion
 review aid and does not authorize or record an external launch.
 
 ## Cut server/web release
@@ -52,8 +64,8 @@ candidate. It verifies the candidate identity, parent commit, synchronized relea
 generated version mirrors. It then builds the production image, starts it against Postgres, and verifies readiness and
 the served web application.
 
-Affected pull requests already own unit and integration tests, generated API and deploy contracts, dependency checks,
-database upgrade/rollback rehearsal, and vulnerability scanning. The release cut deliberately does not rerun them.
+Affected pull requests already own unit and integration tests, generated API and deploy contracts,
+database upgrade/rollback rehearsal, and production-image scanning. The release cut deliberately does not rerun them.
 Successful metadata and container smoke validation opens and atomically merges the version-only PR before the prepared
 release is tagged and its image is published. The same release commit is then published to the Expo internal channel
 without waiting for self-host deployment when its manifest's native-build tag exists. A reserved but unpublished

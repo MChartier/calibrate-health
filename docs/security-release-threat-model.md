@@ -35,47 +35,22 @@ authorize a read, update, delete, undo, or association.
   notification, and Health Connect state is not shown or replayed.
 - Review lock-screen previews and export sharing on the Galaxy Watch Ultra and phone used for dogfood.
 
-## Dependency advisory resolution
+## Dependency review
 
-As of 2026-08-09, the backend production graph reports no findings with Nodemailer locked at
-`9.0.5`. Version 9.0.1 was the first release to resolve every published Nodemailer advisory,
-including [`GHSA-p6gq-j5cr-w38f`](https://github.com/advisories/GHSA-p6gq-j5cr-w38f). Coverage runs on `c8@12`,
-and compatible patched releases remain pinned for the production and Prisma dependency edges. API
-contract generation, backend coverage, and the full test suite exercise those overrides.
+Audit results belong to the exact lockfiles and scan date. Use fresh results rather than counts
+from an earlier PR or release:
 
-As of 2026-08-15, the root/mobile production audit reports 15 high package entries, all transitive effects
-of two `image-size@1.2.1` findings reached through Metro 0.84.4:
-[`GHSA-w3rx-r6r6-pgpr`](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr) and
-[`GHSA-5p2g-fcmc-qvqq`](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq). Both advisories affect
-every published `image-size` release through 2.0.2, and neither has a patched release. Metro uses
-this parser only while bundling repository-owned assets; deployed web, Android, Wear, and backend
-artifacts do not execute it. The production audit therefore permits only those two advisory IDs at
-the exact `node_modules/image-size@1.2.1` path through 2026-08-22. The checker fails closed for any
-other high/critical advisory, version, or path. Container publication honors the active exception because the
-affected Metro parser is absent from the published server image; external production launch remains strict and
-rejects the exception even before expiry.
+```sh
+npm audit --omit=dev --audit-level=high
+npm --prefix backend audit --omit=dev --audit-level=high
+npm run audit:eas-cli:high
+```
 
-Beyond the production finding above, the root/mobile full audit reports 23 additional high package
-entries, all from the same development-only path to
-[`GHSA-mh99-v99m-4gvg`](https://github.com/advisories/GHSA-mh99-v99m-4gvg):
-React Native 0.86's Jest preset pins Babel/Jest 29, which reaches `brace-expansion@1.1.16` through
-`test-exclude@6` and `minimatch@3`. These packages only discover and instrument repository-owned
-test files; none are bundled into the server, web client, Android app, or Wear app. A forced
-`brace-expansion@5.0.8` resolution is not compatible: v5's CommonJS export is an object while
-`minimatch@3` calls the dependency as a function, causing test discovery to fail. Keep this finding
-visible until the React Native preset moves to a compatible Jest/tooling graph rather than masking
-it with an invalid lockfile override.
+The [Dependency Audit workflow](../.github/workflows/dependency-audit.yml) defines the automated
+workspace and severity checks. Review the affected dependency path and runtime exposure when
+triaging a finding; this document grants no advisory exception.
 
-The backend development graph has the same constraint on a separate OpenAPI-only edge:
-`openapi-typescript@7.13.0` depends on Redocly `1.34.17`, which pins `minimatch@5.1.9`.
-That minimatch release requires the callable `brace-expansion@2` API, while the only version
-currently accepted by the advisory scanner is the incompatible object-exporting v5 release.
-Keep Redocly on `brace-expansion@2.1.2` until its consumer upgrades to picomatch or another
-compatible implementation. A backend regression test executes a brace-bearing pattern through
-Redocly's exact minimatch dependency, and the dependency remains development-only.
-
-The separate UUID advisory is fully resolved. The root graph pins the `xcode@3.0.1` edge to patched
-`uuid@11.1.1`, and a release test executes xcode's actual `generateUuid()` path. Android prebuild,
-bundle export, mobile typecheck/tests, and both production dependency audits must remain green.
-The advisory scanner inspects every root or nested UUID copy so a future Expo/config-plugin update
-cannot silently reintroduce an affected version.
+Inspect full root/backend audits when changing development tooling too. Trace each finding to
+its actual runtime or build-time consumer before choosing a fix. Do not force an incompatible
+major override merely to clear an audit: preserve the relevant import/build behavior, including
+[the xcode UUID compatibility test](../scripts/xcode-uuid-compatibility.test.mjs).

@@ -35,6 +35,14 @@ test('repository plan encodes the lean single-user pre-release policy', () => {
   assert.ok(result.manual.length > 0);
 });
 
+test('dependency audits are maintenance checks rather than pull-request requirements', () => {
+  const audit = repositoryPlan.automaticRequirements.find((item) => item.id === 'dependency-audit');
+
+  assert.equal(audit.trigger, 'schedule-and-manual');
+  assert.deepEqual(audit.workflowPaths, ['.github/workflows/dependency-audit.yml']);
+  assert.deepEqual(audit.jobIds, ['production-audit']);
+});
+
 test('plan rejects retired blocking, receipt, and evidence contracts', () => {
   const plan = clonePlan();
   plan.candidateContract = { source: 'pull-request-head' };

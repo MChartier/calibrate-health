@@ -690,7 +690,7 @@ jobs:
               '',
               '- exact candidate identity and synchronized release mirrors',
               '- production image build, readiness, and served-Web smoke',
-              '- full tests, dependency scans, and migration checks already completed on affected pull requests',
+              '- full tests, production-image scans, and migration checks already completed on affected pull requests',
               '',
               'Cut release validated this exact candidate before creating the PR. After merge it will publish the image and start the gated OTA rollout when the native tag is ready.',
             ].join('\n');

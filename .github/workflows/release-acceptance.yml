@@ -61,7 +61,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${CANDIDATE_COMMIT}"
           node scripts/release-config.mjs check
-          node scripts/dependency-advisory-exceptions.mjs --strict
+          npm run audit:production
           npm run test:deploy
           npm run api:contract:check
           git diff --exit-code
@@ -76,6 +76,6 @@ jobs:
             echo "## Optional release confidence"
             echo
             echo "- Candidate: \`${CANDIDATE_COMMIT}\`"
-            echo "- Release mirrors, production dependency policy, deploy contracts, and generated API contract passed."
+            echo "- Release mirrors, root/mobile production dependency audit, deploy contracts, and generated API contract passed."
             echo "- External release remains an owner decision; this workflow does not create an evidence commit or receipt ledger."
           } >> "${GITHUB_STEP_SUMMARY}"

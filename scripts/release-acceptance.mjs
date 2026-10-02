@@ -42,7 +42,7 @@ const MANUAL_FIELDS = Object.freeze([
 const AUTOMATIC_TRIGGERS = new Set([
   'affected-pull-request',
   'migration-change',
-  'affected-pull-request-and-schedule',
+  'schedule-and-manual',
   'affected-pull-request-and-release',
   'release',
 ]);
