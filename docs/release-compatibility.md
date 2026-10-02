@@ -167,8 +167,10 @@ The action requires the checked manifest version to equal the highest stable tag
 `release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It verifies the candidate parent and identity,
 synchronized release configuration, and exact eight-file mirror set. It also builds and starts the production image,
 then checks readiness and the served web application. Unit and integration tests, generated API and deploy contracts,
-dependency checks, vulnerability scanning, and database upgrade/rollback rehearsal remain targeted pull-request or
-scheduled checks and are not replayed for the version-only candidate. If `master` advances while validation runs, the
+production-image smoke/OS scanning, and database upgrade/rollback rehearsal remain targeted pull-request or scheduled
+checks and are not replayed for the version-only candidate. Package dependency audits run only during weekly or
+manual maintenance and do not gate a release cut. Full container scans include package libraries only during
+scheduled/manual maintenance; PR scans retain OS-vulnerability checks. If `master` advances while validation runs, the
 candidate is not merged; rerun the action so the later change is part of a newly validated candidate.
 
 After validation, the action creates a version-only release PR and verifies the parents and tree of GitHub's proposed
@@ -238,9 +240,10 @@ Compose stack into [deployment over WireGuard](../deploy/self-hosted/README.md),
 object or generated changelog is created.
 
 **Cut release** owns exact-candidate metadata validation plus the production container build and startup smoke.
-Affected pull-request and scheduled workflows own the broader test, dependency, vulnerability, and migration gates.
-The local `release:check:container` command covers the encrypted backup/restore smoke, dependency policy, canonical
-version checks, and the static release-acceptance policy; `release:check:production` adds strict dependency policy.
+Affected pull-request and scheduled workflows own the broader test, production-image, and migration gates. Package
+dependency audits run weekly or manually, independently of pull requests and releases. The local
+`release:check:container` and `release:check:production` commands cover the encrypted backup/restore smoke, canonical
+version checks, and the static release-acceptance policy without package-advisory gates.
 Physical Android/Wear, store-console, and distributed-upgrade checks remain available when the owner considers them
 useful for a native distribution, but do not block publishing an independent server/web image.
 

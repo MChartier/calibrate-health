@@ -19,8 +19,8 @@ runs **Cut release** and chooses a strict `patch`, `minor`, or `major` increment
 match the highest stable tag, prepares all server/web mirrors on `release/vMAJOR.MINOR.PATCH`, and validates that exact
 commit. Validation covers candidate identity, synchronized release configuration, the exact generated mirror set, and
 a production-image startup and served-Web smoke. Affected pull-request and scheduled workflows own the broader unit,
-integration, API/deploy, dependency, vulnerability, and database checks; the version-only release candidate does not
-replay them.
+integration, API/deploy, production-image, and database checks; package audits run separately as scheduled/manual
+maintenance. The version-only release candidate does not replay them.
 
 The candidate is merged through an action-created version-only PR only when `master` still points to the source commit
 selected at dispatch. The workflow verifies and pushes the exact GitHub-generated PR merge commit without force; the

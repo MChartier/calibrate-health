@@ -53,9 +53,9 @@
     },
     {
       "id": "dependency-audit",
-      "title": "Audit affected production dependencies",
+      "title": "Review dependency findings during scheduled or manual maintenance",
       "releaseScopes": ["server-web", "ota", "native"],
-      "trigger": "affected-pull-request-and-schedule",
+      "trigger": "schedule-and-manual",
       "workflowPaths": [".github/workflows/dependency-audit.yml"],
       "jobIds": ["production-audit"]
     },
