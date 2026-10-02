@@ -1,9 +1,8 @@
-# First hosted release scope
+# Product scope
 
-This document records product-completeness decisions for the first hosted consumer release.
-The official service is the routine default; Advanced self-hosting remains supported without
-expanding the launch beyond the food, weight, and observational activity workflows required for
-daily personal use.
+These product boundaries apply to the hosted service and Advanced self-hosting: calorie-first
+food logging, weight tracking, and observational activity. Release and validation procedures are
+in [the documentation index](README.md).
 
 ## Deployment and server selection
 
@@ -14,7 +13,7 @@ default to the official service and expose a custom self-hosted origin only unde
 
 ## Nutrition
 
-The first release remains calorie-first. Manual foods, provider foods, recipes, and food-log entries
+The product remains calorie-first. Manual foods, provider foods, recipes, and food-log entries
 must preserve immutable calorie and serving snapshots, but macronutrient goals and protein,
 carbohydrate, and fat snapshots are not release requirements. Macros should be added only as one
 coherent schema/API/web/Android/Wear migration rather than as provider-only fields that make manual
@@ -22,12 +21,13 @@ and imported entries inconsistent.
 
 ## Activity and calorie targets
 
-Health Connect and watch activity are observational inputs in the first release. They populate
+Health Connect and watch activity are observational inputs. They populate
 activity records, daily summaries, and calories-out context, but they do not automatically raise or
-lower the configured calorie target. The target continues to use profile TDEE and the signed goal
-deficit. This avoids double-counting exercise already represented by the profile activity multiplier.
+lower the configured calorie target. The baseline target uses profile TDEE and the signed goal
+deficit. A user-approved [Plan check adjustment](calibration-insights.md) may add a bounded correction
+without changing that TDEE or goal rate. Activity is not added again to the profile activity multiplier.
 
-Activity-driven calorie-target adjustment is outside this release. Any future proposal must
+Activity-driven calorie-target adjustment is outside the supported scope. Any future proposal must
 explain the calculation, define how the baseline multiplier changes, and preserve the unadjusted
 target for auditability.
 
@@ -39,9 +39,9 @@ Imported food logs follow the same immutable calorie snapshot and timezone-local
 entries. Account export is the portable application-data escape path; encrypted Postgres backups are
 the disaster-recovery mechanism.
 
-## Launch clients and language
+## Clients and language
 
-The first release is English-only across Web/PWA, Android, iOS, and Wear OS. Stored language
+The interface is English-only across Web/PWA, Android, iOS, and Wear OS. Stored language
 preference data does not mean those clients are translated. Additional languages require every
 workflow, permission rationale, Tile, and notification string to have equivalent translations.
 Release notes and store metadata must state the English-only boundary.

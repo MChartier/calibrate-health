@@ -3,7 +3,9 @@
 Codex runs on the host, while the live application uses a worktree-scoped
 Docker Compose stack. The setup hook installs host dependencies so tests,
 builds, linting, and Prisma commands use the same checkout that Codex edits.
-It does not start Docker containers.
+It does not start Docker containers. Create disposable worktrees through Codex;
+the setup hook and Compose launcher target the current checkout, with no
+preallocated worktree names or branches.
 
 Use the repo-owned setup script manually when needed:
 

@@ -33,14 +33,16 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 
 ## Docs
 
+Start with the [documentation index](docs/README.md) for product, development, validation, and operator guides.
+
 - Weight trend model: `docs/weight-trend-model.md`
 - MCP, OAuth, and the Codex plugin: `docs/mcp.md`
 - Deployment (Compose self-hosting): `deploy/README.md`
 - Expo web dev/build/PWA: `docs/expo-web.md`
 - Expo Android client: `mobile/README.md`
-- First hosted release scope: `docs/release-scope.md`
+- Product scope: [docs/release-scope.md](docs/release-scope.md)
 - Android/Wear Play and health release worksheet: `docs/play-console-health-release-checklist.md`
-- Current release-candidate notes: `docs/releases/0.12.0-native-0.1.0-wear-0.2.0.md`
+- Current versions: [shared/release.json](shared/release.json); historical evidence: [release records](docs/releases/)
 - Security model and release threat review: `docs/security.md`, `docs/security-release-threat-model.md`
 - Architecture decisions: `docs/architecture/`
 

@@ -1,7 +1,5 @@
 import { normalizeSearchedFoodItem, type SearchedFoodItem } from '../food/serving';
-import { getBarcodeLookupFailure } from './state';
 
-const BARCODE_DUPLICATE_WINDOW_MS = 1_200;
 const FATSECRET_URL = 'https://www.fatsecret.com';
 const UPC_E_NUMBER_SYSTEMS = new Set(['0', '1']);
 
@@ -22,28 +20,12 @@ export type BarcodeNormalizationResult =
           message: string;
       };
 
-export type CameraPermissionState = 'checking' | 'granted' | 'request' | 'settings';
-
-export type BarcodeScanDecision =
-    | { kind: 'accepted'; barcode: string }
-    | { kind: 'duplicate' }
-    | { kind: 'invalid'; message: string };
-
 export type BarcodeRequestDecision =
     | ({ kind: 'accepted' } & NormalizedBarcode)
     | { kind: 'duplicate' }
     | { kind: 'invalid'; message: string };
 
 export type BarcodeOperationDecision = 'accepted' | 'duplicate';
-
-export type BarcodeLookupStatus =
-    | 'idle'
-    | 'searching'
-    | 'result'
-    | 'no-result'
-    | 'offline'
-    | 'auth-required'
-    | 'error';
 
 export type ProviderAttribution = {
     text: string;
@@ -71,15 +53,6 @@ export function resolveBarcodeFoodCandidates(
             barcode: snapshotBarcode
         }];
     });
-}
-
-/** Decide whether the current platform can prompt again or must hand control to settings. */
-export function getCameraPermissionState(
-    permission: { granted: boolean; canAskAgain: boolean } | null
-): CameraPermissionState {
-    if (!permission) return 'checking';
-    if (permission.granted) return 'granted';
-    return permission.canAskAgain ? 'request' : 'settings';
 }
 
 function normalizeFormatHint(value?: BarcodeFormatHint): BarcodeFormat | null {
@@ -212,65 +185,10 @@ export function normalizeBarcodeInput(
     return { ok: true, ...normalized };
 }
 
-/** Compatibility helper returning the normalized provider lookup value. */
+/** Return the normalized provider lookup value. */
 export function normalizeBarcode(value: unknown, formatHint?: BarcodeFormatHint): string | null {
     const result = normalizeBarcodeInput(value, formatHint);
     return result.ok ? result.barcode : null;
-}
-
-/** Canonical GTIN key makes UPC-A and its zero-prefixed EAN-13 representation equivalent. */
-export function getBarcodeCanonicalKey(value: unknown, formatHint?: BarcodeFormatHint): string | null {
-    const result = normalizeBarcodeInput(value, formatHint);
-    return result.ok ? result.canonicalKey : null;
-}
-
-/**
- * Synchronously locks after an accepted scan so repeated native camera callbacks cannot launch
- * duplicate provider requests before React has committed the next render.
- */
-export class BarcodeScanGate {
-    private locked = false;
-    private lastRawValue: string | null = null;
-    private lastEventAt = Number.NEGATIVE_INFINITY;
-
-    constructor(
-        private readonly now: () => number = Date.now,
-        private readonly duplicateWindowMs = BARCODE_DUPLICATE_WINDOW_MS
-    ) {}
-
-    accept(rawValue: unknown, formatHint?: BarcodeFormatHint): BarcodeScanDecision {
-        const normalized = normalizeBarcodeInput(rawValue, formatHint);
-        const comparableValue = normalized.ok
-            ? normalized.canonicalKey
-            : typeof rawValue === 'string'
-                ? rawValue.trim().replace(/[\s-]+/g, '')
-                : '';
-        const eventAt = this.now();
-        if (
-            comparableValue.length > 0
-            && comparableValue === this.lastRawValue
-            && eventAt - this.lastEventAt < this.duplicateWindowMs
-        ) {
-            return { kind: 'duplicate' };
-        }
-
-        this.lastRawValue = comparableValue;
-        this.lastEventAt = eventAt;
-        if (this.locked) return { kind: 'duplicate' };
-
-        if (!normalized.ok) {
-            return { kind: 'invalid', message: normalized.message };
-        }
-
-        this.locked = true;
-        return { kind: 'accepted', barcode: normalized.barcode };
-    }
-
-    reset(): void {
-        this.locked = false;
-        this.lastRawValue = null;
-        this.lastEventAt = Number.NEGATIVE_INFINITY;
-    }
 }
 
 /** Prevent duplicate provider requests before mutation state has propagated through React. */
@@ -320,41 +238,6 @@ export class BarcodeSubmissionGate {
     reset(): void {
         this.locked = false;
     }
-}
-
-export function getBarcodeLookupStatus(options: {
-    hasBarcode: boolean;
-    isPending: boolean;
-    isSuccess: boolean;
-    hasResult: boolean;
-    hasError: boolean;
-    isOnline?: boolean;
-    error?: unknown;
-}): BarcodeLookupStatus {
-    if (!options.hasBarcode) return 'idle';
-    if (options.hasResult) return 'result';
-    if (options.isOnline === false) return 'offline';
-    if (options.isPending) return 'searching';
-    if (options.hasError) {
-        const failure = getBarcodeLookupFailure(options.error);
-        if (failure.kind === 'offline') return 'offline';
-        if (failure.kind === 'authentication') return 'auth-required';
-        return 'error';
-    }
-    if (options.isSuccess) return 'no-result';
-    return 'idle';
-}
-
-/** Convert transport/provider failures into actionable copy without exposing raw gateway responses. */
-export function getBarcodeLookupErrorMessage(error: unknown): string {
-    const failure = getBarcodeLookupFailure(error);
-    if (failure.kind === 'offline') {
-        return 'Could not reach your Calibrate server. Check your connection and try again.';
-    }
-    if (failure.kind === 'unknown') {
-        return 'Barcode lookup failed. Try again or scan a different barcode.';
-    }
-    return failure.message;
 }
 
 function boundedProviderText(value?: string | null): string | null {

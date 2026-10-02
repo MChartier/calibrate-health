@@ -1,4 +1,4 @@
-import type { TrendMetricEntry, TrendMetricsResponse, WeightTrendSummary } from '@calibrate/api-client';
+import type { TrendMetricEntry, WeightTrendSummary } from '@calibrate/api-client';
 import type { WeightUnit } from '@calibrate/shared';
 import { formatWeight } from '../utils/format';
 
@@ -15,18 +15,6 @@ export type WeightTrendSnapshot = {
     weight: number;
     lower: number;
     upper: number;
-};
-
-export type ShortTermVariationPresentation = {
-    value: string;
-    explanation: string;
-};
-
-export type WeeklyPacePresentation = {
-    value: string;
-    range: string;
-    evidence: string;
-    freshnessNote: string | null;
 };
 
 export function isVisibleWeightTrendPoint(metric: TrendMetricEntry): boolean {
@@ -76,68 +64,6 @@ export function getLatestWeightTrendSnapshot(
 
 export function formatEstimatedTrendRange(snapshot: WeightTrendSnapshot, unit: WeightUnit | undefined): string {
     return `${formatWeight(snapshot.lower, unit)} - ${formatWeight(snapshot.upper, unit)}`;
-}
-
-export function getShortTermVariationPresentation(
-    response: TrendMetricsResponse | undefined,
-    unit: WeightUnit | undefined
-): ShortTermVariationPresentation | null {
-    const variation = response?.meta.trend_summary?.short_term_variation;
-    if (
-        !variation ||
-        !Number.isFinite(variation.standard_deviation) ||
-        !Number.isFinite(variation.central_80_half_width)
-    ) {
-        return null;
-    }
-
-    const halfWidth = formatWeight(Math.max(0, variation.central_80_half_width), unit);
-    return {
-        value: `About 80% within +/- ${halfWidth}`,
-        explanation: 'Hydration, meals, timing, and scale noise can shift individual readings.'
-    };
-}
-
-function formatSignedWeeklyRate(value: number, unit: WeightUnit | undefined): string {
-    const sign = value > 0 ? '+' : value < 0 ? '-' : '';
-    return `${sign}${formatWeight(Math.abs(value), unit)}/week`;
-}
-
-export function getWeeklyPacePresentation(
-    summary: WeightTrendSummary | undefined,
-    unit: WeightUnit | undefined
-): WeeklyPacePresentation | null {
-    const rate = summary?.weekly_rate;
-    const freshness = summary?.freshness ?? (summary?.status === 'stale' ? 'stale' : 'current');
-    if (
-        !rate ||
-        freshness === 'outdated' ||
-        !Number.isFinite(rate.estimate) ||
-        !Number.isFinite(rate.lower) ||
-        !Number.isFinite(rate.upper)
-    ) {
-        return null;
-    }
-
-    const steadyThreshold = unit === 'LB'
-        ? MIN_DISPLAY_CHANGE_KG * POUNDS_PER_KILOGRAM
-        : MIN_DISPLAY_CHANGE_KG;
-    let value = 'Steady';
-    if (Math.abs(rate.estimate) >= steadyThreshold) {
-        value = `${rate.estimate > 0 ? 'Up' : 'Down'} ${formatWeight(Math.abs(rate.estimate), unit)}/week`;
-    }
-
-    const pointLabel = rate.point_count === 1 ? 'weigh-in' : 'weigh-ins';
-    const dayLabel = rate.span_days === 1 ? 'day' : 'days';
-    const evidencePrefix = rate.evidence === 'sufficient' ? 'Based on' : 'Provisional estimate from';
-    return {
-        value,
-        range: `${formatSignedWeeklyRate(rate.lower, unit)} to ${formatSignedWeeklyRate(rate.upper, unit)}`,
-        evidence: `${evidencePrefix} ${rate.point_count} ${pointLabel} across ${rate.span_days} ${dayLabel}.`,
-        freshnessNote: freshness === 'stale'
-            ? 'This pace is based on an older weigh-in. Log a current weight to refresh it.'
-            : null
-    };
 }
 
 /**

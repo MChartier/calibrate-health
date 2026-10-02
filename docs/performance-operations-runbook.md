@@ -71,11 +71,26 @@ Normal authentication rejections, provider empty results, and expected sync conf
 
 ## Performance budget diagnostics
 
-`quality/performance-budgets.json` is the reviewed diagnostic baseline. `node scripts/performance-budgets.mjs` measures exact level-9 gzip bytes for every safe hashed JavaScript file reachable from representative Expo route HTML, including named deferred chunks, and rejects growth above 5% when invoked. Expo route HTML can share one deferred graph; in that case each route value is deliberately the conservative total reachable graph, not a claim of route-specific chunk ownership. Because gzip output is runtime-dependent, use Node `24.14.0`, V8 `13.6.233.17-node.41`, zlib `1.3.1-e00f703`, `win32`, `x64` when comparing or updating this baseline.
+[quality/performance-budgets.json](../quality/performance-budgets.json) owns the diagnostic limits,
+baselines, and required runtime identities:
 
-API serialization and trend recompute use fixed fixtures, warmups, and the median of repeated same-process measurements. Their normalized median ratios reject regression above 10% when invoked. Use Node `24.14.0`, V8 `13.6.233.17-node.41`, `win32`, `x64` for comparable results. These bundle and backend measurements do not run automatically in GitHub Actions and do not gate pull requests or releases. Run them when investigating a concrete performance concern; they do not replace database, network, device, or production latency monitoring.
+- `npm run performance:bundle` checks level-9 gzip size of the full safe hashed-JavaScript graph
+  reachable from representative route HTML, including deferred chunks. Shared route graphs are
+  conservative totals, not measurements of route-specific chunk ownership.
+- `npm --prefix backend run performance:regression` checks normalized median serialization and
+  trend-recompute timings using fixed fixtures, warmups, and same-process repetitions.
 
-Baseline changes require a reviewed reference, one owner role above, date, and rationale. From a Windows x64 shell where `node -p "JSON.stringify({node:process.versions.node,v8:process.versions.v8,zlib:process.versions.zlib,platform:process.platform,arch:process.arch})"` matches the manifest's pinned identities, run:
+These are opt-in diagnostics, not automatic PR or release gates, and do not replace device, database,
+network, or production measurements. Compare Node/V8/platform/architecture (plus zlib for bundles)
+with the manifest's `benchmark_runtime` and `bundle_runtime`; the checker rejects mismatched runtimes.
+Print the local identity with:
+
+```sh
+node -p "JSON.stringify({node:process.versions.node,v8:process.versions.v8,zlib:process.versions.zlib,platform:process.platform,arch:process.arch})"
+```
+
+To accept an intentional baseline change, use the matching Windows x64 runtime and provide a reviewed
+reference, owner role, date, and rationale:
 
 ```powershell
 npm.cmd --prefix backend run performance:regression -- --update-baseline --review-reference=issue-301 --owner-role=release_engineer --reviewed-on=YYYY-MM-DD --rationale="Why this measured change is accepted"

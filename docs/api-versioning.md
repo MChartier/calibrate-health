@@ -1,6 +1,6 @@
 # API compatibility policy
 
-`/api/v1` is the current stable resource API for web, Android, and future Wear OS clients. The
+`/api/v1` is the current stable resource API for web, Android, iOS, and Wear OS clients. The
 unversioned `/api` mount remains a compatibility alias while existing clients migrate; it has no
 sunset date until a released client no longer depends on it. Native authentication remains under
 `/auth/mobile/*` and follows the v1 contract documented in `docs/openapi/v1.yaml`.

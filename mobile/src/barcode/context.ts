@@ -124,13 +124,3 @@ export function parseBarcodeResumeContext(
         ...(barcode ? { barcode } : {})
     };
 }
-
-/** Build a purpose-bound barcode return path suitable for auth and other temporary detours. */
-export function getBarcodeResumePath(resume: BarcodeResumeContext): string {
-    const params = serializeBarcodeWorkflowContext(resume, resume);
-    const query = Object.entries(params)
-        .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-        .join('&');
-    return `/barcode?${query}`;
-}
