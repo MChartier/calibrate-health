@@ -288,7 +288,9 @@ UI code style:
   read-only exact-ref inspection and must not remove a merged or moved candidate. Job isolation is not an external
   credential boundary against a user who can edit or rerun write-enabled workflows.
 - **Cut release** revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
-  workflows own full tests, dependency and vulnerability checks, and database upgrade/rollback validation.
+  workflows own full tests, production-image scanning, and database upgrade/rollback validation. Package dependency
+  audits run only during weekly/manual maintenance; do not add them or expiring advisory exceptions to PR or release gates.
+  Keep container OS-vulnerability checks on PRs; scan package libraries in the scheduled/manual full image scans.
 - If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
   generated release branch.
 - Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are

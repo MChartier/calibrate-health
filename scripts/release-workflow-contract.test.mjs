@@ -1873,7 +1873,7 @@ test('native Android store releases build one paired candidate and promote it wi
   assert.match(validate, /--allowed-signers-file \.release-trust\/\.github\/native-release-tag-allowed-signers/);
   assert.match(
     validate,
-    /Validate upload dependency and release policy[\s\S]*if: inputs\.operation == 'upload-internal'[\s\S]*npm run release:check/
+    /Validate upload release policy[\s\S]*if: inputs\.operation == 'upload-internal'[\s\S]*npm run release:check/
   );
   assert.match(
     validate,
@@ -2440,55 +2440,54 @@ test('database rollback binds a full candidate SHA for pull requests and manual 
   }
 });
 
-test('dependency audit selects changed lockfile workspaces and preserves scheduled coverage', () => {
+test('dependency audit runs all workspaces only during scheduled or manual maintenance', () => {
   const workflow = readWorkflow('dependency-audit.yml');
-  const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
-  const changes = workflowJobBlock(workflow, 'changes');
-  const rootPaths = workflowPathFilterBlock(changes, 'root');
-  const backendPaths = workflowPathFilterBlock(changes, 'backend');
   const audit = workflowJobBlock(workflow, 'production-audit');
+  const triggers = workflow.match(/^on:\n([\s\S]*?)(?=^\S)/m)?.[1];
 
-  assert.match(workflow, /workflow_dispatch:/);
-  assert.match(workflow, /schedule:/);
-  assert.match(changes, /pull-requests: read/);
-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
-  assert.match(changes, /github\.event_name != 'pull_request'/);
-  assert.match(rootPaths, /- '\.github\/workflows\/dependency-audit\.yml'/);
-  assert.match(backendPaths, /- '\.github\/workflows\/dependency-audit\.yml'/);
-  assert.match(rootPaths, /- 'package\.json'/);
-  assert.match(rootPaths, /- 'package-lock\.json'/);
-  assert.match(rootPaths, /scripts\/dependency-advisory-exceptions\.mjs/);
-  assert.match(rootPaths, /scripts\/release-config\.mjs/);
-  assert.match(rootPaths, /tools\/eas-cli\/package\.json/);
-  assert.match(rootPaths, /tools\/eas-cli\/package-lock\.json/);
-  assert.match(backendPaths, /- 'backend\/package\.json'/);
-  assert.match(backendPaths, /- 'backend\/package-lock\.json'/);
-  assert.equal(pathFilterMatches(changes, 'root', '.github/workflows/dependency-audit.yml'), true);
-  assert.equal(pathFilterMatches(changes, 'backend', '.github/workflows/dependency-audit.yml'), true);
-  assert.match(audit, /needs: changes/);
-  assert.match(audit, /if: needs\.changes\.outputs\.has_audit == 'true'/);
-  assert.match(audit, /matrix: \$\{\{ fromJSON\(needs\.changes\.outputs\.audit_matrix\) \}\}/);
-  assert.match(workflow, /"workspace":"Locked EAS CLI"/);
-  assert.match(workflow, /if: matrix\.evidence == 'backend'/);
-  assert.match(workflow, /npm audit --omit=dev --audit-level=high/);
-  assert.match(workflow, /if: matrix\.evidence == 'root'/);
-  assert.match(workflow, /npm run audit:production/);
-  assert.match(workflow, /if: matrix\.evidence == 'eas-cli'/);
-  assert.match(workflow, /npm audit --package-lock-only --audit-level=high/);
-  assert.doesNotMatch(workflow, /Install locked EAS CLI dependency graph/);
+  assert.ok(triggers);
+  assert.deepEqual(
+    [...triggers.matchAll(/^  ([a-z_]+):/gm)].map(([, event]) => event).sort(),
+    ['schedule', 'workflow_dispatch']
+  );
+  assert.match(triggers, /cron: '30 13 \* \* 1'/);
+  assert.doesNotMatch(workflow, /pull_request|merge_group|\n  changes:|paths-filter|needs:/);
+  assert.deepEqual(workflowPermissions(workflow, 0), { contents: 'read' });
+  assert.match(audit, /fail-fast: false/);
+  assert.match(audit, /workspace: Root and Mobile\n\s+directory: \.\n\s+node: '22\.13\.0'\n\s+audit_args: '--omit=dev'/);
+  assert.match(audit, /workspace: Backend\n\s+directory: backend\n\s+node: '20'\n\s+audit_args: '--omit=dev'/);
+  assert.match(audit, /workspace: Locked EAS CLI\n\s+directory: tools\/eas-cli\n\s+node: '22\.14\.0'\n\s+audit_args: ''/);
+  assert.match(audit, /npm audit --package-lock-only --audit-level=high \$\{\{ matrix\.audit_args \}\}/);
+  assert.match(audit, /working-directory: \$\{\{ matrix\.directory \}\}/);
+  assert.doesNotMatch(audit, /npm ci|continue-on-error|\|\| true|dependency-advisory-exceptions/);
   assert.match(
     audit,
-    /actions\/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4\.4\.0[\s\S]*persist-credentials: false/
+    /actions\/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4\.4\.0[\s\S]*ref: \$\{\{ github\.sha \}\}[\s\S]*persist-credentials: false/
   );
   assert.match(audit, /actions\/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\.4\.0/);
-  assert.match(workflow, /npm run audit:exceptions:check/);
-  assert.match(packageConfig.scripts['audit:production'], /dependency-advisory-exceptions\.mjs --audit-production/);
+});
+
+test('release configuration and PR workflows do not gate merges on package advisories', () => {
+  const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
+  for (const [name, command] of Object.entries(packageConfig.scripts)) {
+    if (!name.startsWith('release:check')) continue;
+    assert.doesNotMatch(command, /audit|dependency-advisory/, `${name} must only validate release configuration`);
+  }
+  for (const file of readdirSync(workflowsDirectory).filter((name) => /\.ya?ml$/.test(name))) {
+    const workflow = readWorkflow(file);
+    if (!/^  (?:pull_request|pull_request_target|push|merge_group):/m.test(workflow)) continue;
+    assert.doesNotMatch(
+      workflow,
+      /npm(?:\.cmd)?(?: --prefix \S+)? audit\b|npm(?:\.cmd)? run audit:|dependency-advisory-exceptions/,
+      `${file} must keep package audits in scheduled/manual maintenance`
+    );
+  }
+  assert.equal(packageConfig.scripts['audit:production'], 'npm audit --package-lock-only --omit=dev --audit-level=high');
   assert.equal(
     packageConfig.scripts['audit:eas-cli:high'],
     'npm audit --prefix tools/eas-cli --package-lock-only --audit-level=high'
   );
-  assert.match(packageConfig.scripts['audit:exceptions:check'], /dependency-advisory-exceptions\.mjs/);
-  assert.doesNotMatch(workflow, /release-acceptance\.mjs hosted-result|upload-artifact|retention-days:/);
+  assert.equal(packageConfig.scripts['audit:exceptions:check'], undefined);
 });
 
 test('container scan targets production-image inputs while preserving scheduled coverage', () => {
@@ -2521,6 +2520,11 @@ test('container scan targets production-image inputs while preserving scheduled 
   assert.match(scan, /npm run test:container:web -- http:\/\/127\.0\.0\.1:3000/);
   assert.match(scan, /uses: aquasecurity\/trivy-action@[0-9a-f]{40}/);
   assert.match(scan, /severity: HIGH,CRITICAL/);
+  assert.ok(scan.includes(
+    "vuln-type: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'os,library' || 'os' }}"
+  ), 'only scheduled/manual scans may gate on package libraries; PR/push/merge scans keep OS checks');
+  assert.match(scan, /ignore-unfixed: false/);
+  assert.match(scan, /exit-code: '1'/);
   assert.doesNotMatch(imagePaths, /release-acceptance/);
   assert.doesNotMatch(workflow, /release-acceptance\.mjs hosted-result|upload-artifact|retention-days:/);
 });
@@ -2596,7 +2600,6 @@ test('all pull-request workflow checkouts freeze exact candidate C', () => {
     'tests.yml',
     'lint.yml',
     'database-upgrade.yml',
-    'dependency-audit.yml',
     'container-scan.yml'
   ]) {
     const workflow = readWorkflow(name);
@@ -2701,7 +2704,7 @@ test('Optional Release Confidence is a manual owner-discretion exact-candidate c
   assert.match(owner, /ref: \$\{\{ inputs\.candidate_commit \}\}/);
   assert.match(owner, /test "\$\(git rev-parse HEAD\)" = "\$\{CANDIDATE_COMMIT\}"/);
   assert.match(owner, /node scripts\/release-config\.mjs check/);
-  assert.match(owner, /node scripts\/dependency-advisory-exceptions\.mjs --strict/);
+  assert.match(owner, /npm run audit:production/);
   assert.match(owner, /npm run test:deploy/);
   assert.match(owner, /npm run api:contract:check/);
   assert.match(owner, /git diff --exit-code/);

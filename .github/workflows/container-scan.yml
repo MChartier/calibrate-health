@@ -113,6 +113,8 @@ jobs:
           image-ref: calibrate:security-scan
           format: table
           scanners: vuln
+          # Package advisories are maintenance findings; PRs still check the base OS.
+          vuln-type: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'os,library' || 'os' }}
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '1'
