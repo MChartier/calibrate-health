@@ -69,6 +69,57 @@ describe('fixed client operation diagnostics', () => {
         }));
     });
 
+    it('deduplicates query failures without request IDs by timestamp and emits only fixed tuples', async () => {
+        const firstError = { message: 'synthetic private health payload' };
+        const secondError = { message: 'synthetic private food payload' };
+        const expectedDiagnostic = {
+            event: 'operation_failure',
+            operation: 'notification_history_page',
+            route: 'notifications',
+            outcome: 'failure',
+            duration_bucket: 'not_applicable'
+        };
+        const { rerender } = renderHook(
+            (props: { error: unknown; errorUpdatedAt: number }) => useClientQueryFailureDiagnostic({
+                operation: 'notification_history_page',
+                isError: true,
+                error: props.error,
+                errorUpdatedAt: props.errorUpdatedAt
+            }),
+            { initialProps: { error: firstError, errorUpdatedAt: 100 } }
+        );
+
+        await waitFor(() => expect(mockReportClientDiagnostic).toHaveBeenCalledTimes(1));
+        rerender({ error: firstError, errorUpdatedAt: 100 });
+        expect(mockReportClientDiagnostic).toHaveBeenCalledTimes(1);
+        // A new error object must still deduplicate the same timestamp occurrence.
+        rerender({ error: { ...firstError }, errorUpdatedAt: 100 });
+        expect(mockReportClientDiagnostic).toHaveBeenCalledTimes(1);
+
+        rerender({ error: secondError, errorUpdatedAt: 200 });
+        await waitFor(() => expect(mockReportClientDiagnostic).toHaveBeenCalledTimes(2));
+        expect(mockReportClientDiagnostic.mock.calls).toStrictEqual([
+            [expectedDiagnostic],
+            [expectedDiagnostic]
+        ]);
+        expect(JSON.stringify(mockReportClientDiagnostic.mock.calls)).not.toContain(firstError.message);
+        expect(JSON.stringify(mockReportClientDiagnostic.mock.calls)).not.toContain(secondError.message);
+    });
+
+    it.each([
+        { isError: false, errorUpdatedAt: 100 },
+        { isError: true, errorUpdatedAt: 0 },
+        { isError: true, errorUpdatedAt: -1 }
+    ])('does not report a no-ID query state with isError=$isError and timestamp=$errorUpdatedAt', (props) => {
+        renderHook(() => useClientQueryFailureDiagnostic({
+            operation: 'notification_history_page',
+            error: { message: 'synthetic private payload' },
+            ...props
+        }));
+
+        expect(mockReportClientDiagnostic).not.toHaveBeenCalled();
+    });
+
     it('reports each degraded trend response once by data transition', async () => {
         const { rerender } = renderHook(
             (props: { degraded: boolean; dataUpdatedAt: number }) =>
