@@ -10,7 +10,7 @@ const renderer = require('react-test-renderer') as {
     }; unmount: () => void };
 };
 jest.mock('./GuardedTabButton', () => ({
-    GuardedTabButton: (props: object) => React.createElement('guarded-link', props)
+    GuardedTabButton: (props: object) => require('react').createElement('guarded-link', props)
 }));
 jest.mock('expo-router/build/react-navigation/native', () => ({
     CommonActions: { navigate: (route: object) => ({ type: 'NAVIGATE', payload: route }) }
