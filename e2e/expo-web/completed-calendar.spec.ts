@@ -1,5 +1,3 @@
-import { mkdir } from 'node:fs/promises';
-import path from 'node:path';
 import { expect, test, expectApiFailure, hideTransientPwaNotices, type AuthenticatedApiOptions } from './fixtures';
 import { calibrateDesignTokens } from '../../shared/designTokens';
 import { applyTwoHundredPercentText } from './text-scaling';
@@ -58,11 +56,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Choose date', exact: true }).click();
     await expect(page.getByTestId('calendar-day-2026-07-09')).toHaveAccessibleName(/completed, below target, at or above maintenance, selected$/);
     await page.evaluate(() => document.fonts.ready);
-    const evidenceDir = process.env.CALIBRATE_CALENDAR_EVIDENCE_DIR;
-    const screenshot = evidenceDir ? path.resolve(evidenceDir, `${testInfo.project.name}-${colorScheme}.png`) : testInfo.outputPath(`calendar-${colorScheme}.png`);
-    await mkdir(path.dirname(screenshot), { recursive: true });
-    await page.screenshot({ path: screenshot });
-    await testInfo.attach('Completed calendar', { path: screenshot, contentType: 'image/png' });
     await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: 'completed-calendar' });
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog', { name: 'Calendar' })).toHaveCount(0);
@@ -70,7 +63,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
   });
 }
 
-test('calendar refresh, uncached month failure, retry, and completion reopening stay honest', async ({ page, ux }, testInfo) => {
+test('calendar refresh, uncached month failure, retry, and completion reopening stay honest', async ({ page, ux }) => {
   test.skip(test.info().project.name !== 'desktop-chrome');
   const options: AuthenticatedApiOptions = { foodDayStatus: 'COMPLETE', foodEntriesByDate: { '2026-07-21': [{ id: 31, meal_period: 'BREAKFAST', name: 'Synthetic daily intake', calories: 2000 }] } };
   await ux.install('populated', options);
@@ -109,20 +102,17 @@ test('calendar refresh, uncached month failure, retry, and completion reopening 
   await page.getByTestId('today-food-preview').click();
   await page.getByRole('button', { name: 'Edit Synthetic daily intake', exact: true }).click();
   await page.getByRole('textbox', { name: 'Calories', exact: true }).fill('2501');
-  await page.screenshot({ path: testInfo.outputPath('calendar-food-edit.png') });
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('1 food | 2,501 kcal', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Collapse Food log', exact: true }).click();
   await page.getByRole('button', { name: 'Complete day', exact: true }).click();
   await page.getByRole('button', { name: 'Choose date', exact: true }).click();
   await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(/completed, above maintenance/);
-  await page.screenshot({ path: testInfo.outputPath('calendar-recompleted-after-edit.png') });
   expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/range', status: 503 });
   fail = true;
   await page.getByRole('button', { name: 'Previous month', exact: true }).click();
   await expect(page.getByText("Can't load tracking history", { exact: true })).toBeVisible({ timeout: 20000 });
   await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveCount(0);
-  await page.screenshot({ path: testInfo.outputPath('calendar-request-failure.png') });
   fail = false;
   await page.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect(page.getByTestId('calendar-day-2026-06-21')).toBeVisible();
@@ -143,9 +133,7 @@ test('calendar remains usable with enlarged text on a small browser viewport', a
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   const dialog = page.getByRole('dialog', { name: 'Calendar' });
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath('calendar-large-text-legend.png') });
   await page.getByTestId('calendar-day-2026-07-12').scrollIntoViewIfNeeded();
-  await page.screenshot({ path: testInfo.outputPath('calendar-large-text-days.png') });
   await page.getByTestId('calendar-day-2026-07-12').click();
   await expect(dialog).toHaveCount(0);
 });
