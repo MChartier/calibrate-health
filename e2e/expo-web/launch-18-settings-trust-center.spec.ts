@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Route, TestInfo } from '@playwright/test';
-import { expect, expectApiFailure, test } from './fixtures';
+import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtures';
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-18');
 const CURRENT_SESSION_ID = 'browser_11111111-1111-4111-8111-111111111111';
@@ -468,6 +468,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
 
   if (project === 'android-phone-chrome') {
     await page.goto('/today');
+    await hideTransientPwaNotices(page);
     await page.getByRole('button', { name: 'Account & settings' }).click();
     await expect(page).toHaveURL((url) => url.pathname === '/settings');
     await page.getByTestId('settings-open-connections').click();
