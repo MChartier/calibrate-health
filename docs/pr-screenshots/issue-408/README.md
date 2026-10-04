@@ -2,7 +2,7 @@
 
 ## Scenario and observations
 
-Captured from the actual **Today > Choose a day** flow in Chrome on Windows, using the production Expo web build and synthetic API fixtures. These are browser screenshots at responsive viewports, **not Android emulator or device screenshots**. No personal tracking data was used. Source revision: `0043e03cf0b911ff419060cec269e7e0f9a72dc5`; base: `29fb444ae4389ca81f3437d24685ed9badc43410`. Later evidence-only commits do not alter the exercised application code.
+Captured from the actual **Today > Choose a day** flow in Chrome on Windows, using the production Expo web build and synthetic API fixtures. These are browser screenshots at responsive viewports, **not Android emulator or device screenshots**. No personal tracking data was used. Source revision: `e134ba917f29053560eae88289510a774699aa9d`; base: `29fb444ae4389ca81f3437d24685ed9badc43410`. Later evidence-only commits do not alter the exercised application code.
 
 The [executable browser scenario](../../../e2e/expo-web/completed-calendar.spec.ts) opens Today, opens the calendar, verifies every boundary's color, letter and accessible label, selects July 9, then reopens the calendar. July 9's selection border remains visible around its yellow completed badge. The same month deliberately contains loss, gain, maintenance, and unknown-history days, proving that classification uses each row's plan rather than one current goal.
 
@@ -42,6 +42,10 @@ The recovery scenario reopened today's completed day through **Day completed**, 
 - Snapshot policy is intentionally first completion, not a full intraday planning audit. Subsequent same-day plan changes do not rewrite it. Existing historical days will initially show neutral completion. This is the bounded alternative to a planning-history rewrite.
 - Migration `0043_food_day_comparison` leaves legacy rows null. Ordinal 0042 is already proposed by independent PR #402. Shared schema/OpenAPI/client files overlap #402 only by file; this branch has no parent PR.
 
+## Automated review disposition
+
+The configured Codex review proposed deriving band direction from signed `daily_deficit` when an accepted correction crosses maintenance. Issue #408 explicitly defines inversion by saved `T > M`, so that proposed mathematical change was not applied. For a positive deficit of 250 and accepted correction of 300, the captured target remains 50 above maintenance and the requested inverted bands apply. Backend capture and client classification regressions pass this case. The legend now describes target/maintenance ordering directly, so it does not misidentify a signed weight-loss goal as gain. All screenshots were recaptured and inspected after that wording correction.
+
 ## Executed validation
 
 | Command | Observed result |
@@ -49,8 +53,8 @@ The recovery scenario reopened today's completed day through **Day completed**, 
 | `node .codex/local-environment.setup.mjs` | Host dependencies, Playwright Chromium, Prisma generation, worktree configuration passed |
 | `npm.cmd run lint` | Backend, shared, API-client, and Expo TypeScript checks passed |
 | `npm.cmd --prefix mobile run typecheck` | Passed |
-| `npm.cmd --prefix backend test` | 708 tests passed on final implementation |
-| `npm.cmd --prefix mobile test -- --runInBand` | 212 suites / 1069 tests passed; subsequent current calendar tests 29/29 passed |
+| `npm.cmd --prefix backend test` | 708 tests passed; subsequent calibrated-crossing service tests 6/6 passed |
+| `npm.cmd --prefix mobile test -- --runInBand` | 212 suites / 1069 tests passed; subsequent current calendar tests 30/30 passed |
 | `npm.cmd --prefix packages/api-client test` | 68 tests passed, including old-server/no-snapshot compatibility |
 | `npm.cmd --prefix backend run build` | Passed |
 | `npm.cmd run api:contract:check` | Generated contract matches committed OpenAPI |
