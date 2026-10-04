@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "description": "Unedited screenshots captured from real production Expo web builds of the exact baseline and implementation sources.",
+  "source_revisions": {
+    "before": "29fb444ae4389ca81f3437d24685ed9badc43410",
+    "after": "3d2b4959b6592cfeb3dcf60dc2ca818e219eacc5"
+  },
+  "fixture": {
+    "file": "fixture.json",
+    "sha256": "3b5c54a83e9832cd800125fd81398df44ee9fe70bdb8adb5e56c6681b2efdbde",
+    "identical_response_bytes_for_both_sources": true,
+    "baseline_ignores_additive_comparison_fields": true
+  },
+  "capture_harness": {
+    "file": "capture.spec.ts",
+    "sha256": "19c3628de1179ecd7b7d1768a4437e5be449aff80e03f9c4772e7ea780392925",
+    "identical_in_both_worktrees": true
+  },
+  "shared_tooling": {
+    "fixtures_git_blob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+    "playwright_config_git_blob": "c16c90dd0c0764608361d631b664bf350d1155a5"
+  },
+  "source_validation": "Both git tracked trees were unchanged during builds and captures. Only an untracked copy of the archived capture harness was present; it was removed afterward.",
+  "screenshots": [
+    {
+      "stage": "before",
+      "project": "desktop-chrome",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "color_scheme": "light",
+      "browser": "Chrome browser (not emulator/device)",
+      "browser_version": "154.0.8037.95",
+      "source_revision": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "selected_date": "2026-07-09",
+      "displayed_month": "2026-07",
+      "frozen_now": "2026-07-21T19:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "locale": "en-US",
+      "reduced_motion": "reduce",
+      "device_scale_factor": 1,
+      "captured_at_utc": "2026-10-04T04:18:52.421Z",
+      "file": "before-desktop-light.png",
+      "sha256": "6cd2879d63449177de6b99e3ec2091603a805d1e610da970b9cac858b599f628"
+    },
+    {
+      "stage": "before",
+      "project": "android-phone-chrome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "color_scheme": "dark",
+      "browser": "Chrome browser (not emulator/device)",
+      "browser_version": "154.0.8037.95",
+      "source_revision": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "selected_date": "2026-07-09",
+      "displayed_month": "2026-07",
+      "frozen_now": "2026-07-21T19:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "locale": "en-US",
+      "reduced_motion": "reduce",
+      "device_scale_factor": 1,
+      "captured_at_utc": "2026-10-04T04:18:52.406Z",
+      "file": "before-phone-dark.png",
+      "sha256": "649dfa75a8208ea295b5345b6be8c93515a09b5f018f5b38d991f13e67811b2b"
+    },
+    {
+      "stage": "after",
+      "project": "desktop-chrome",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "color_scheme": "light",
+      "browser": "Chrome browser (not emulator/device)",
+      "browser_version": "154.0.8037.95",
+      "source_revision": "3d2b4959b6592cfeb3dcf60dc2ca818e219eacc5",
+      "selected_date": "2026-07-09",
+      "displayed_month": "2026-07",
+      "frozen_now": "2026-07-21T19:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "locale": "en-US",
+      "reduced_motion": "reduce",
+      "device_scale_factor": 1,
+      "captured_at_utc": "2026-10-04T04:18:41.549Z",
+      "file": "after-desktop-light.png",
+      "sha256": "a8c6ab998c2e2e06f0c2bff8e1e4e87174bfab3635ae8c808739c31a6708a023"
+    },
+    {
+      "stage": "after",
+      "project": "android-phone-chrome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "color_scheme": "dark",
+      "browser": "Chrome browser (not emulator/device)",
+      "browser_version": "154.0.8037.95",
+      "source_revision": "3d2b4959b6592cfeb3dcf60dc2ca818e219eacc5",
+      "selected_date": "2026-07-09",
+      "displayed_month": "2026-07",
+      "frozen_now": "2026-07-21T19:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "locale": "en-US",
+      "reduced_motion": "reduce",
+      "device_scale_factor": 1,
+      "captured_at_utc": "2026-10-04T04:18:41.541Z",
+      "file": "after-phone-dark.png",
+      "sha256": "c9ce426527df28a7a524eb804bbe55185949ba04c593def879dcf5bf55bbedad"
+    }
+  ],
+  "production_exports": {
+    "before": {
+      "source_revision": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "index_html_sha256": "a3d1f090d9153a04258ee5c3af705ae71a0c9c633dd7faf3ffc0172f25d8e6b8",
+      "web_bundles": [
+        {
+          "file": "ImagePicker-6bed1add26ff2575dcd44cb9beed99ad.js",
+          "sha256": "b9ac6498a161642341c3ec822651c0ae36b48c145267d8b958e8f2e17fc9208f"
+        },
+        {
+          "file": "index-0f5597099a9a163ac3a8559cfae54f55.js",
+          "sha256": "529432be232093846a4b342dad42a6130551cc749690a63c1ec4dea11721f906"
+        },
+        {
+          "file": "index-7a10450d7ec4bc69cfd3b82716e36495.js",
+          "sha256": "af5ceb99120ada8b56606af84ef127e2a7f8eefa93af6b627d6f02e28e6e3708"
+        },
+        {
+          "file": "index-a60acebe9b38f370a5113b3aaeb22150.js",
+          "sha256": "d3c0fe98b2681f3bfb7c91821e23ca86fde28714d66b6450c41549b1aa0de640"
+        },
+        {
+          "file": "index-b5fcaf1d086eec901124239b92043a36.js",
+          "sha256": "92bfdc43e19228893d00bdb0943ca82ff2500d66f88c919096be6658f917ceba"
+        },
+        {
+          "file": "ProgressExpansionContent-d8893b57bba7a95c6860da7289f7da92.js",
+          "sha256": "7a32116ab7c45bdfc5f7360a8a672be65ca04ef37f0f649659e124857016c31e"
+        }
+      ]
+    },
+    "after": {
+      "source_revision": "3d2b4959b6592cfeb3dcf60dc2ca818e219eacc5",
+      "index_html_sha256": "2389e68b29b5cb4f1239e98754ab19d0b4b35984c697bf5364ce275b80a2ab53",
+      "web_bundles": [
+        {
+          "file": "ImagePicker-ab7947619bfdcef295f8f7e523b1ae9a.js",
+          "sha256": "83ffef43983a2d2485535fbdda1f6998626695963bcb2e945a4e716e4403421b"
+        },
+        {
+          "file": "index-2ebb769ec8c209d412ea62ca45c04cef.js",
+          "sha256": "e245e9809d6ee66dfd571e3fd5be5b56901210903bcc2d5ec9a7bbbfb8c1580b"
+        },
+        {
+          "file": "index-38628f1ae77e85ba1a071d60e1393330.js",
+          "sha256": "8cf90fef7afb3b8b117121cdf412510d01aebd4fd6ee6893c130b9590774e94f"
+        },
+        {
+          "file": "index-d55755fee1dc0e51eaf53e28a8f3a819.js",
+          "sha256": "3f252097908d21fb39b94c0ed8f6b6ef22e26cfbe8833c5a9c567a411853476e"
+        },
+        {
+          "file": "index-d8ae54473bc4a1052e1f7ddb5fcbc7ec.js",
+          "sha256": "bea9c9cb357cbc8c15a7eb86f262a93eb74d5ccae8aff20cf293329f87b1c077"
+        },
+        {
+          "file": "ProgressExpansionContent-55b6a5d4a3f0cb75717ade0bf217660d.js",
+          "sha256": "91852973f8d050743755971dfbfe536aa20503e9ea01fd3f0e17c3b0083e03ab"
+        }
+      ]
+    }
+  }
+}
