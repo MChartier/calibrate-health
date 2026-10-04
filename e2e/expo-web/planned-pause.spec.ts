@@ -76,7 +76,9 @@ async function capture(page: Page, info: TestInfo, name: string) {
         expect(sha256(bytes)).toBe(sha256(built));
         servedScripts.push({ url, sha256: sha256(bytes) });
     }
-    await writeFile(path.join(directory, stem + '.json'), JSON.stringify({ capturedAtUtc: new Date().toISOString(), sourceCommit: process.env.CALIBRATE_PAUSE_SOURCE_SHA, baseline: before,
+    const harness = await Promise.all(['e2e/expo-web/planned-pause.spec.ts', 'e2e/expo-web/fixtures.ts', 'e2e/expo-web/text-scaling.ts', 'playwright.expo-web.config.ts'].map(async file => ({ path: file, sha256: sha256(await readFile(file)) })));
+    const display = await page.evaluate(() => ({ scale: devicePixelRatio, dark: matchMedia('(prefers-color-scheme: dark)').matches, locale: navigator.language, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
+    await writeFile(path.join(directory, stem + '.json'), JSON.stringify({ capturedAtUtc: new Date().toISOString(), sourceCommit: process.env.CALIBRATE_PAUSE_SOURCE_SHA, baseline: before, harness, display,
         route: page.url(), viewport: page.viewportSize(), browser: page.context().browser()?.version(), project: info.project.name, fixture: 'planned-pause.spec.ts + fixtures.ts', frozenClock: '2026-07-21T19:00:00Z + deterministic 16ms steps', normalization: 'hideTransientPwaNotices suppresses unrelated PWA notices identically; no compared UI modified', image: path.basename(imagePath), imageSha256: sha256(await readFile(imagePath)), servedScripts }, null, 2) + '\n');
 }
 
@@ -231,9 +233,22 @@ test('offline cached plan and accepted queued resume converge after real browser
     await activateFixtureOffline(page);
     await expect(page.getByText('Offline - showing saved pause plan.', { exact: true })).toBeVisible();
     await capture(page, info, 'offline-saved-plan');
+    await page.context().setOffline(false);
+    await expect(page.getByText('Offline - showing saved pause plan.', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
     expect(state.active).toBe(true);
     await expect.poll(() => state.resumeAttempts).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => new Promise<number>((resolve, reject) => {
+        const request = indexedDB.open('calibrate-offline');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            const db = request.result;
+            const records = db.transaction('queued_mutations', 'readonly').objectStore('queued_mutations').getAll();
+            records.onsuccess = () => { resolve(records.result.filter(record => record.operation === 'food-tracking-pause.resume').length); db.close(); };
+            records.onerror = () => { reject(records.error); db.close(); };
+        };
+    }))).toBe(1);
+    await activateFixtureOffline(page);
     state.queueResume = false;
     await page.context().setOffline(false);
     await expect.poll(() => state.active).toBe(false);
