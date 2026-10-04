@@ -14,6 +14,10 @@
       "sha256": "7ee49c1665853d77e05878e7834cce2ff83fc4bf3094a14ad6037210002c4301"
     },
     {
+      "file": "calendar-food-edit.png",
+      "sha256": "a29524c53b37ad10fcfdd499bb6828bc0c58476de1a9b2518a466327ac381dc3"
+    },
+    {
       "file": "calendar-large-text-days.png",
       "sha256": "50375e4c22753128d852dff0597178d33ecd60d1b1a019c9772ec3bc95ea38c1"
     },
@@ -22,8 +26,12 @@
       "sha256": "3035af427c34ab27304b3952f4df5cf8fb1abb6d7eddcec430ce5b945d37f720"
     },
     {
+      "file": "calendar-recompleted-after-edit.png",
+      "sha256": "a6c99a475e3f7e692b56587790992e3c4f050fb13b88d895a95fda84f0cc9aa7"
+    },
+    {
       "file": "calendar-request-failure.png",
-      "sha256": "856a9e5a1328070b8335ef4f74bb8486e9053c338fdacf34775550e6239215b2"
+      "sha256": "e4563edc98e40f9245cd181824e618cd02a22fc042d2419851f180bd51d1416b"
     },
     {
       "file": "compact-phone-chrome-dark.png",
@@ -49,5 +57,6 @@
       "file": "tablet-chrome-light.png",
       "sha256": "3a31111068ec133ecd6e8358b127c13fbdabbe8e44c60d5d775194ccce753a2b"
     }
-  ]
+  ],
+  "extended_scenario_revision": "12fe1e26ae1c1125ab2621d9f811cfd794e2d788"
 }

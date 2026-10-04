@@ -32,7 +32,7 @@ All eight standard captures were visually inspected for date/legend readability,
 
 Additional inspected evidence: [200% text, dates](calendar-large-text-days.png), [200% text, legend](calendar-large-text-legend.png), [uncached month request failure](calendar-request-failure.png). The request-failure capture shows the existing network error UI, not a red completed-day outcome.
 
-The recovery scenario reopened today's completed day through **Day completed**, observed its in-progress calendar state, changed the synthetic server intake from 2000 to 2501 while open, then used **Complete day** and observed the refreshed orange completed badge. That change is a server fixture edit, not a claim of exercising the food editor UI. A failed June request showed Retry without leaking July's classifications; Retry recovered June, and returning to July restored the correct completed state. Component tests also exercised cached refresh failure and offline stale notices. Keyboard Escape closed the calendar and restored focus to Choose date. Axe found no critical/serious WCAG A/AA findings in the changed calendar flow.
+The recovery scenario reopened today's completed day through **Day completed**, observed its in-progress calendar state, expanded Food log, opened Edit Synthetic daily intake, changed Calories from 2000 to 2501, saved, and collapsed Food log, then used **Complete day** and observed the refreshed orange completed badge. The [food editor](calendar-food-edit.png) and [recompleted calendar](calendar-recompleted-after-edit.png) are inspected captures from that real UI round trip against synthetic API persistence. A failed June request showed Retry without leaking July's classifications; Retry recovered June, and returning to July restored the correct completed state. Component tests also exercised cached refresh failure and offline stale notices. Keyboard Escape closed the calendar and restored focus to Choose date. Axe found no critical/serious WCAG A/AA findings in the changed calendar flow.
 
 ## Historical contract and tradeoffs
 
@@ -57,12 +57,13 @@ The recovery scenario reopened today's completed day through **Day completed**, 
 | `npm.cmd run test:web:e2e -- e2e/expo-web/completed-calendar.spec.ts --workers=2` | Production web build passed; 10 applicable browser scenarios passed, 6 project-specific skips |
 | `npm.cmd run test:ux` | 252 accessibility/visual scenarios passed, 79 configured skips; no baseline updates |
 | `npm.cmd run test:expo-web:release` | 16 checks passed |
+| `npm.cmd run test:db:rollback:unit` | 14 checks passed after updating the exact candidate ledger and asserting legacy comparison columns stay null |
 | `git diff --check` | Passed |
 
 Full backend tests include actual HTTP-route handlers with synthetic persistence stubs, local year/day boundary capture, unsafe plans, accepted calibration, invalid timezone, unchanged snapshots after goal/profile changes, known zero intake, reopened/edited totals, and the canonical watch mutation regressions. They do not establish a live Postgres transaction result.
 
 ## Remaining verification limits
 
-The local Compose/Postgres run is blocked: `npm.cmd run dev:setup` waited in Docker Desktop startup; separate bounded `docker info` and `docker desktop status` probes timed out. Docker CLI version and WSL status respond. No shared service was restarted and no other worktree stack was changed. Live database migration/upgrade checks are left to current-head CI and independent QA. Native emulator/physical-device execution and a live food-editor-to-calendar round trip remain unexecuted. Independent QA and human readiness belong to the coordinator.
+The local Compose/Postgres run is blocked: `npm.cmd run dev:setup` waited in Docker Desktop startup; separate bounded `docker info` and `docker desktop status` probes timed out. Docker CLI version and WSL status respond. No shared service was restarted and no other worktree stack was changed. Live database migration/upgrade checks are left to current-head CI and independent QA. Native emulator/physical-device execution and a live-Postgres food-editor round trip remain unexecuted; the actual browser editor round trip passed against synthetic API fixtures. Independent QA and human readiness belong to the coordinator.
 
 [Manifest](manifest.json) records source/base and SHA-256 for each genuine screenshot. CI and configured automated-review status belong to the PR's current-head record, not a frozen claim here.
