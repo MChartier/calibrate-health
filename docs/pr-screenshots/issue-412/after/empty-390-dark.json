@@ -1,0 +1,31 @@
+{
+  "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+  "side": "after",
+  "state": "empty",
+  "requestedRoute": "/today",
+  "observedRoute": "/today",
+  "capturedAtUtc": "2026-10-04T08:14:14.403Z",
+  "browser": "154.0.8037.95",
+  "platform": "win32",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "scale": 1,
+  "theme": "dark",
+  "reducedMotion": "reduce",
+  "frozenNow": "2026-07-21T19:00:00.000Z",
+  "fixture": "notification-reminders.fixture.ts + fixtures.ts",
+  "normalization": "Service workers blocked; shared transient PWA notice suppression; neutral pointer; unedited viewport pixels.",
+  "image": "after/empty-390-dark.png",
+  "sha256": "6b2e83aed5018abf8a340bc3378c1a389d5c633af4e299b367617cd063d73ff1",
+  "servedAssets": [
+    {
+      "path": "/_expo/static/js/web/index-7c36bf56e63639ba6abf3d881218ebf3.js",
+      "sha256": "b41c0932c6fdb5e43152bdc2fd58bcb8610c837f50bc6eee38dd77e565a93361"
+    }
+  ],
+  "listViews": [
+    "active"
+  ]
+}

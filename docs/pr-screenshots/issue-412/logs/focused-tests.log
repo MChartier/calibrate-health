@@ -1,0 +1,17 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand --runTestsByPath src/components/NotificationsDrawer.test.tsx src/components/NotificationCard.test.tsx src/notifications/query.test.ts src/notifications/presentation.test.ts src/navigation/routeRegistry.test.ts src/navigation/routeMetadata.test.ts src/components/legal/PublicLegalPage.test.tsx src/settings/PreferencesSettingsScreen.test.tsx src/diagnostics/operationDiagnostics.test.tsx
+PASS src/components/NotificationsDrawer.test.tsx (8.855 s)
+PASS src/settings/PreferencesSettingsScreen.test.tsx
+PASS src/navigation/routeRegistry.test.ts
+PASS src/diagnostics/operationDiagnostics.test.tsx
+PASS src/components/legal/PublicLegalPage.test.tsx
+PASS src/navigation/routeMetadata.test.ts
+PASS src/components/NotificationCard.test.tsx
+PASS src/notifications/query.test.ts
+PASS src/notifications/presentation.test.ts
+
+Test Suites: 9 passed, 9 total
+Tests:       51 passed, 51 total
+Snapshots:   0 total
+Time:        11.983 s
+Ran all test suites within paths "src/components/NotificationsDrawer.test.tsx", "src/components/NotificationCard.test.tsx", "src/notifications/query.test.ts", "src/notifications/presentation.test.ts", "src/navigation/routeRegistry.test.ts", "src/navigation/routeMetadata.test.ts", "src/components/legal/PublicLegalPage.test.tsx", "src/settings/PreferencesSettingsScreen.test.tsx", "src/diagnostics/operationDiagnostics.test.tsx".

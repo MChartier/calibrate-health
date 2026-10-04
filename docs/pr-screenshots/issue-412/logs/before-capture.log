@@ -1,0 +1,27 @@
+npm notice run cal-io@0.37.0 test:web:e2e
+npm notice run node scripts/expo-web-playwright.mjs --project=desktop-chrome --workers=1 --output=.codex-screenshots/before-evidence e2e/expo-web/notification-history-evidence.spec.ts
+
+Running 9 tests using 1 worker
+
+(node:1244) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison empty-1440-light (1.1s)
+
+  ok 2 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison populated-1440-light (907ms)
+
+  ok 3 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison error-1440-light (7.8s)
+
+  ok 4 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison recovered-1440-light (8.0s)
+
+  ok 5 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison legacy-1440-light (958ms)
+
+  ok 6 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison preferences-1440-light (1.4s)
+
+  ok 7 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison legal-1440-light (884ms)
+
+  ok 8 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison empty-390-dark (1.1s)
+
+  ok 9 [desktop-chrome] ΓÇ║ e2e\expo-web\notification-history-evidence.spec.ts:28:7 ΓÇ║ notification comparison populated-390-dark (1.2s)
+
+  9 passed (25.0s)

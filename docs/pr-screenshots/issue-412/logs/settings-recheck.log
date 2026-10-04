@@ -1,0 +1,12 @@
+npm notice run cal-io@0.37.0 test:web:e2e
+npm notice run node scripts/expo-web-playwright.mjs --project=android-phone-chrome --workers=1 --output=.codex-screenshots/settings-recheck e2e/expo-web/launch-18-settings-trust-center.spec.ts
+
+Running 2 tests using 1 worker
+
+(node:46260) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [android-phone-chrome] ΓÇ║ e2e\expo-web\launch-18-settings-trust-center.spec.ts:300:5 ΓÇ║ settings trust center preserves hierarchy, session control, reminder truth, and safe navigation (1.9s)
+  -  2 [android-phone-chrome] ΓÇ║ e2e\expo-web\launch-18-settings-trust-center.spec.ts:550:5 ΓÇ║ settings screenshot evidence
+
+  1 skipped
+  1 passed (3.5s)

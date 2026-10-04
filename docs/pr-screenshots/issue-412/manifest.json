@@ -1,0 +1,473 @@
+{
+  "schemaVersion": 1,
+  "issue": 412,
+  "createdAtUtc": "2026-10-04T08:23:00.793Z",
+  "ownerTask": "01a105d0-2544-70b1-813c-cf8460fd70c6",
+  "host": "MCHARTIER_ZBOOK",
+  "execution": "Native Windows 10.0.26200 x64; reviewed escalation following prelaunch sandbox ACL error",
+  "branch": "mchartier/remove-notification-history",
+  "base": "29fb444ae4389ca81f3437d24685ed9badc43410",
+  "parent": null,
+  "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+  "tools": {
+    "node": "24.19.0",
+    "npm": "12.0.1",
+    "browser": "Chromium 154.0.8037.95",
+    "platform": "win32"
+  },
+  "fixtures": "Synthetic deterministic authenticated/account/API fixtures only; no private user screenshots or account records.",
+  "matching": "Both sides use the exact harness and fixture identities below. Same viewport, scale, theme, reduced motion, clock and data per pair. Baseline history is the actual old UI. No generated or reconstructed pixels.",
+  "normalization": "Service workers blocked; shared helper suppresses unrelated transient PWA notices; neutral pointer. Unedited viewport captures, no crop or compositing. Published text logs redact private paths, normalize line endings and trim trailing whitespace only.",
+  "captureCommand": "Set CALIBRATE_EXPO_WEB_BASE_URL to the loopback server for SOURCE_CHECKOUT; set ISSUE412_CAPTURE_SIDE=before|after, ISSUE412_CAPTURE_SOURCE to the full source SHA and ISSUE412_CAPTURE_CHECKOUT=SOURCE_CHECKOUT. From the harness checkout run: npm.cmd run test:web:e2e -- --project=desktop-chrome --workers=1 --output=.codex-screenshots/SIDE-evidence e2e/expo-web/notification-history-evidence.spec.ts",
+  "serverCommand": "From each source checkout: node scripts/expo-web-static-server.mjs --port 44121 (before) or --port 44122 (after); serves production mobile/dist on 127.0.0.1",
+  "bindings": "Capture verifies source HEAD and clean tracked mobile/shared/packages; every served JS/CSS body SHA256 equals the selected export on disk. Per-image records bind source, served asset, route, time and image. This manifest binds the exact harness, fixtures, build inventories and logs. The subsequent evidence commit is documentation only.",
+  "harness": [
+    {
+      "path": "e2e/expo-web/notification-history-evidence.spec.ts",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "cab747ef0ced221f3decba829e3df7a8c4f3d34e",
+      "gitContentSha256": "da33ca7a56c7d4a4fe94e4f3958427756dbed005c22b8d691cc65463de5cd4cb",
+      "checkedOutSha256": "da33ca7a56c7d4a4fe94e4f3958427756dbed005c22b8d691cc65463de5cd4cb"
+    },
+    {
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "ae68419031e01711d482b1be42d039f0abb0bbd9",
+      "gitContentSha256": "9d405b0c5990e659d4599385c5eb3f13f30d3c5a1d2cf9585d4b17abd14cb823",
+      "checkedOutSha256": "9d405b0c5990e659d4599385c5eb3f13f30d3c5a1d2cf9585d4b17abd14cb823"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "gitContentSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+      "checkedOutSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "path": "playwright.expo-web.config.ts",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "gitContentSha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1",
+      "checkedOutSha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "path": "scripts/expo-web-playwright.mjs",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "0bceee976edb3cd55239fb72663843d229d62ff1",
+      "gitContentSha256": "ee53457b5ec22a4d521a09574839fb12a448aaa9f3f5c52ed0859002f9d39cfc",
+      "checkedOutSha256": "ee53457b5ec22a4d521a09574839fb12a448aaa9f3f5c52ed0859002f9d39cfc"
+    },
+    {
+      "path": "scripts/expo-web-build.mjs",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "gitContentSha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad",
+      "checkedOutSha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "path": "scripts/expo-web-static-server.mjs",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "gitContentSha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607",
+      "checkedOutSha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "path": "package-lock.json",
+      "commit": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "gitContentSha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8",
+      "checkedOutSha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    }
+  ],
+  "builds": [
+    {
+      "side": "before",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "command": "npm.cmd run build:expo-web",
+      "log": "logs/before-build.log",
+      "exportInventory": "before/export-inventory.json",
+      "exportInventorySha256": "6c64daef7723fd8f874d5202d653e6db187690d83fd43c1a1b2bba0e178f488f",
+      "fileCount": 174
+    },
+    {
+      "side": "after",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "command": "npm.cmd run build:expo-web",
+      "log": "logs/after-build.log",
+      "exportInventory": "after/export-inventory.json",
+      "exportInventorySha256": "ab632f0eacc45d4bd26b43f41862a38085e7cbec13d885fa59cc14f142f4437e",
+      "fileCount": 174
+    }
+  ],
+  "captures": [
+    {
+      "record": "before/empty-1440-light.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "empty",
+      "image": "before/empty-1440-light.png",
+      "imageSha256": "8afbafedfefedf1682658aa648d8299526205991b032a3a729925c41320ba6f4"
+    },
+    {
+      "record": "before/empty-390-dark.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "empty",
+      "image": "before/empty-390-dark.png",
+      "imageSha256": "b8b27f8482e75ad7743d065463125d24427e43a779ce9673cc418d97ec6b49a1"
+    },
+    {
+      "record": "before/error-1440-light.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "error",
+      "image": "before/error-1440-light.png",
+      "imageSha256": "69cfae98908287fbc9ce9af76829d0f250c82b45a67118367152354a8b671770"
+    },
+    {
+      "record": "before/legacy-1440-light.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "legacy",
+      "image": "before/legacy-1440-light.png",
+      "imageSha256": "fcb0e781b420065257861b2ccb612c708753a54884162bea3233ae4738b17238"
+    },
+    {
+      "record": "before/legal-1440-light.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "legal",
+      "image": "before/legal-1440-light.png",
+      "imageSha256": "698d87ebaed7fae1714b0e78015827e16df00cccded065197210685072cbf901"
+    },
+    {
+      "record": "before/populated-1440-light.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "populated",
+      "image": "before/populated-1440-light.png",
+      "imageSha256": "f8846e39d58bb8506787df794e445cad0b1359c49df494b9fef4a9791b3a064f"
+    },
+    {
+      "record": "before/populated-390-dark.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "populated",
+      "image": "before/populated-390-dark.png",
+      "imageSha256": "70d1b46b7e0c62b2f6b23f187dfffe246f03e7b3984d0b00f4a5be8c67426d6f"
+    },
+    {
+      "record": "before/preferences-1440-light.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "preferences",
+      "image": "before/preferences-1440-light.png",
+      "imageSha256": "f3b010c4ed8005f54183fae19aa35ca42fa78169750f3ee87e135e1d965dcb2e"
+    },
+    {
+      "record": "before/recovered-1440-light.json",
+      "source": "29fb444ae4389ca81f3437d24685ed9badc43410",
+      "state": "recovered",
+      "image": "before/recovered-1440-light.png",
+      "imageSha256": "f8846e39d58bb8506787df794e445cad0b1359c49df494b9fef4a9791b3a064f"
+    },
+    {
+      "record": "after/empty-1440-light.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "empty",
+      "image": "after/empty-1440-light.png",
+      "imageSha256": "d20fb32e70a6ac09c757baa2ceab0bfa92166b6e7c22b632f990a60fc80d6fa0"
+    },
+    {
+      "record": "after/empty-390-dark.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "empty",
+      "image": "after/empty-390-dark.png",
+      "imageSha256": "6b2e83aed5018abf8a340bc3378c1a389d5c633af4e299b367617cd063d73ff1"
+    },
+    {
+      "record": "after/error-1440-light.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "error",
+      "image": "after/error-1440-light.png",
+      "imageSha256": "ea368c07c1ac2afccf98aad898daa88820ec0d1d5c3b51855816ee901b47a212"
+    },
+    {
+      "record": "after/legacy-1440-light.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "legacy",
+      "image": "after/legacy-1440-light.png",
+      "imageSha256": "c1be1137a6149f0ee6b606b381e16480a28280924180a7168ded0999a9fac2fb"
+    },
+    {
+      "record": "after/legal-1440-light.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "legal",
+      "image": "after/legal-1440-light.png",
+      "imageSha256": "115c316f6205efc04a507eb1b8862ed1a8caa738278bc3bc152b0214d5528628"
+    },
+    {
+      "record": "after/populated-1440-light.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "populated",
+      "image": "after/populated-1440-light.png",
+      "imageSha256": "6f345ca6bd0852559f3b2b95c9b2eb869228fdb8345744c389785c11fafced37"
+    },
+    {
+      "record": "after/populated-390-dark.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "populated",
+      "image": "after/populated-390-dark.png",
+      "imageSha256": "70d1b46b7e0c62b2f6b23f187dfffe246f03e7b3984d0b00f4a5be8c67426d6f"
+    },
+    {
+      "record": "after/preferences-1440-light.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "preferences",
+      "image": "after/preferences-1440-light.png",
+      "imageSha256": "f3b010c4ed8005f54183fae19aa35ca42fa78169750f3ee87e135e1d965dcb2e"
+    },
+    {
+      "record": "after/recovered-1440-light.json",
+      "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+      "state": "recovered",
+      "image": "after/recovered-1440-light.png",
+      "imageSha256": "6f345ca6bd0852559f3b2b95c9b2eb869228fdb8345744c389785c11fafced37"
+    }
+  ],
+  "pixelInspection": {
+    "date": "2026-10-04",
+    "all18OriginalImagesInspected": true,
+    "observations": "History footer absent in empty, populated, failed and recovered panels; five active cards/actions/count retained; desktop cards use the vertical space left by removing the footer, with no card style change. Mobile populated content remains scrollable. Preferences controls match. Legal shortcut removed. Legacy before shows genuine history and after shows Today."
+  },
+  "results": {
+    "mobile": "211 suites / 1052 tests passed",
+    "focusedMobile": "9 suites / 51 tests passed",
+    "typecheck": "all four surfaces passed",
+    "deadCode": "configuration checks, knip and production knip passed",
+    "webRelease": "16 passed",
+    "ux": "250 passed / 79 configured skips",
+    "focusedBrowser": "92 passed across four configured viewport projects",
+    "phoneRoutes": "10 passed",
+    "phoneSettings": "1 passed / 1 opt-in evidence skip",
+    "captures": "9 before + 9 after passed",
+    "broadDataMatrix": "86 passed / 5 failed; the same 5 Today failures reproduced on unchanged baseline (1 passed / 5 failed for Today subset)"
+  },
+  "limitations": [
+    "The broad Today matrix has stale loading/content/empty/stale/offline selectors (food-preview-entry-31 and Start today's food log). These failures reproduce on baseline; not fixed in this bounded removal.",
+    "A previous-day food reminder from Today creates duplicate Add food dialogs on baseline too. The focused test proves local-date/action routing, not single-modal correctness; this PR does not modify that path.",
+    "Initial broad browser runs exposed hydration-race assertions, phone timeouts and a transient PWA update banner. Final focused tests wait for hydrated page state; phone routes passed with one worker and 120-second timeout; Settings uses the established PWA-notice suppression. Raw phone recheck log includes the pre-fix failure, and settings-recheck is the passing final rerun.",
+    "API, SSE, permission and push-tap behavior uses synthetic browser fixtures or existing Jest mocks. No physical device, emulator, real push delivery or release installation is claimed.",
+    "Hosted aggregate CI, configured Codex review and rendered GitHub PR inspection occur after publication; their exact-head records belong in the PR/task checkpoint. Fresh independent QA remains separate."
+  ],
+  "artifacts": [
+    {
+      "path": "after/empty-1440-light.json",
+      "sha256": "b523d26073c750d382bd99f898d13d22431db24a59f2a60502a06ef45271cd3e"
+    },
+    {
+      "path": "after/empty-1440-light.png",
+      "sha256": "d20fb32e70a6ac09c757baa2ceab0bfa92166b6e7c22b632f990a60fc80d6fa0"
+    },
+    {
+      "path": "after/empty-390-dark.json",
+      "sha256": "06b44ee380e68d3099a3dba68a8de9a50421226c67245044110eb6fb286860af"
+    },
+    {
+      "path": "after/empty-390-dark.png",
+      "sha256": "6b2e83aed5018abf8a340bc3378c1a389d5c633af4e299b367617cd063d73ff1"
+    },
+    {
+      "path": "after/error-1440-light.json",
+      "sha256": "310867f4efda6dc6b43360ddfe2d1b875244fbad6ff3f69a4ca4d22729ea140c"
+    },
+    {
+      "path": "after/error-1440-light.png",
+      "sha256": "ea368c07c1ac2afccf98aad898daa88820ec0d1d5c3b51855816ee901b47a212"
+    },
+    {
+      "path": "after/export-inventory.json",
+      "sha256": "ab632f0eacc45d4bd26b43f41862a38085e7cbec13d885fa59cc14f142f4437e"
+    },
+    {
+      "path": "after/legacy-1440-light.json",
+      "sha256": "7c91e530c26a4646c6bc027105d7d27088b29c561998bfa72a035cf9000d8fd0"
+    },
+    {
+      "path": "after/legacy-1440-light.png",
+      "sha256": "c1be1137a6149f0ee6b606b381e16480a28280924180a7168ded0999a9fac2fb"
+    },
+    {
+      "path": "after/legal-1440-light.json",
+      "sha256": "f45b1b021128e7254dc2fda722aad21ae844a9628233599a0870cd16ba0a889b"
+    },
+    {
+      "path": "after/legal-1440-light.png",
+      "sha256": "115c316f6205efc04a507eb1b8862ed1a8caa738278bc3bc152b0214d5528628"
+    },
+    {
+      "path": "after/populated-1440-light.json",
+      "sha256": "419fa0f80ce05f01e1605c3130ec16037bfa04ffe51a3018cdc8d77e239d4d92"
+    },
+    {
+      "path": "after/populated-1440-light.png",
+      "sha256": "6f345ca6bd0852559f3b2b95c9b2eb869228fdb8345744c389785c11fafced37"
+    },
+    {
+      "path": "after/populated-390-dark.json",
+      "sha256": "db5a06b4433f4bff4e26f2f03eb59779b1cb9fa8ab524e8160fe32aac75bca76"
+    },
+    {
+      "path": "after/populated-390-dark.png",
+      "sha256": "70d1b46b7e0c62b2f6b23f187dfffe246f03e7b3984d0b00f4a5be8c67426d6f"
+    },
+    {
+      "path": "after/preferences-1440-light.json",
+      "sha256": "7059b5211cf4b5338f359a206c232dec30fedbe572f0cc813456f38e61ba5a91"
+    },
+    {
+      "path": "after/preferences-1440-light.png",
+      "sha256": "f3b010c4ed8005f54183fae19aa35ca42fa78169750f3ee87e135e1d965dcb2e"
+    },
+    {
+      "path": "after/recovered-1440-light.json",
+      "sha256": "cb66b1bd082ca453950023eea010796bf10ca5285ce44de7b16b27d6dd8373df"
+    },
+    {
+      "path": "after/recovered-1440-light.png",
+      "sha256": "6f345ca6bd0852559f3b2b95c9b2eb869228fdb8345744c389785c11fafced37"
+    },
+    {
+      "path": "before/empty-1440-light.json",
+      "sha256": "37069ecac8e47fff08b7b37faaf2084cc114bb8bb2b18bd7989e58324ea2a597"
+    },
+    {
+      "path": "before/empty-1440-light.png",
+      "sha256": "8afbafedfefedf1682658aa648d8299526205991b032a3a729925c41320ba6f4"
+    },
+    {
+      "path": "before/empty-390-dark.json",
+      "sha256": "67ffe469751724e4890afc0a5ea4fc7fc08ab1dd6e52a65c9414752f2532d683"
+    },
+    {
+      "path": "before/empty-390-dark.png",
+      "sha256": "b8b27f8482e75ad7743d065463125d24427e43a779ce9673cc418d97ec6b49a1"
+    },
+    {
+      "path": "before/error-1440-light.json",
+      "sha256": "c2e71e59c06486e52e18aadf9dbf320d15cc9874012eb4826b30ae5c2e3351c1"
+    },
+    {
+      "path": "before/error-1440-light.png",
+      "sha256": "69cfae98908287fbc9ce9af76829d0f250c82b45a67118367152354a8b671770"
+    },
+    {
+      "path": "before/export-inventory.json",
+      "sha256": "6c64daef7723fd8f874d5202d653e6db187690d83fd43c1a1b2bba0e178f488f"
+    },
+    {
+      "path": "before/legacy-1440-light.json",
+      "sha256": "2ecd4f27e4b72a88bc1e99e54f52abf8d89d4cd1c0863153f2ceca052ea6a32a"
+    },
+    {
+      "path": "before/legacy-1440-light.png",
+      "sha256": "fcb0e781b420065257861b2ccb612c708753a54884162bea3233ae4738b17238"
+    },
+    {
+      "path": "before/legal-1440-light.json",
+      "sha256": "f05af21848468f28fc5ac342a0af8fa767f25f01bb67145561ff99dd54ac838e"
+    },
+    {
+      "path": "before/legal-1440-light.png",
+      "sha256": "698d87ebaed7fae1714b0e78015827e16df00cccded065197210685072cbf901"
+    },
+    {
+      "path": "before/populated-1440-light.json",
+      "sha256": "5fc720d6793a6cb13f99566475475667702482f588928da468e846b409e39f60"
+    },
+    {
+      "path": "before/populated-1440-light.png",
+      "sha256": "f8846e39d58bb8506787df794e445cad0b1359c49df494b9fef4a9791b3a064f"
+    },
+    {
+      "path": "before/populated-390-dark.json",
+      "sha256": "06379906f4eb01dfadc20770be1d90ee1fe1332bdaeb49080cfe102f72ff63d7"
+    },
+    {
+      "path": "before/populated-390-dark.png",
+      "sha256": "70d1b46b7e0c62b2f6b23f187dfffe246f03e7b3984d0b00f4a5be8c67426d6f"
+    },
+    {
+      "path": "before/preferences-1440-light.json",
+      "sha256": "5788b550c93b7b84de0615c757a7ba10567c9b722fa10434fd9416997cb1e53a"
+    },
+    {
+      "path": "before/preferences-1440-light.png",
+      "sha256": "f3b010c4ed8005f54183fae19aa35ca42fa78169750f3ee87e135e1d965dcb2e"
+    },
+    {
+      "path": "before/recovered-1440-light.json",
+      "sha256": "8cce27a1e54c2851a0b5a335256bd3f79f5d05b5ffe03ae2fc555f64ebdfef08"
+    },
+    {
+      "path": "before/recovered-1440-light.png",
+      "sha256": "f8846e39d58bb8506787df794e445cad0b1359c49df494b9fef4a9791b3a064f"
+    },
+    {
+      "path": "logs/after-build.log",
+      "sha256": "4344cbc38866d2b8c45162a143e2d2d436ebe8750920b17b2c9465a45ad89929"
+    },
+    {
+      "path": "logs/after-capture.log",
+      "sha256": "c55432057b2155a4be7f7e93ffe724ba20e696a9d7bf223808cf0804f9dab823"
+    },
+    {
+      "path": "logs/baseline-food-diagnostic.log",
+      "sha256": "6cce3303c67d60ba585725c2d590b077d1d9b73667b06c78808b981f407399d6"
+    },
+    {
+      "path": "logs/baseline-today-matrix.log",
+      "sha256": "ff6046f1995b4c4885479839e43e4a118c96300bff8b46326abf103679d9f7c6"
+    },
+    {
+      "path": "logs/before-build.log",
+      "sha256": "02ce2593c4e1205842dfbb859dfb056b5cbdc44b9277554a7eb360fc9d680361"
+    },
+    {
+      "path": "logs/before-capture.log",
+      "sha256": "4d1106034650592e46a84587bc2e5d17f1e62a55fcba856cd4a800b7b18ba3f1"
+    },
+    {
+      "path": "logs/browser-android-recheck.log",
+      "sha256": "f61bad57be980f859886577ac231614ed78ababd1b0f808b45f339dfc5468426"
+    },
+    {
+      "path": "logs/browser-final-behavior.log",
+      "sha256": "dbcc7724624011bc64b8be67970b6b4c88633460bdb09c8d7c720a3213f3fdff"
+    },
+    {
+      "path": "logs/data-matrix.log",
+      "sha256": "80530eeeb6823d23d5e6819256290cc4296565289a60a29e34e4f2ee487b2d9f"
+    },
+    {
+      "path": "logs/dead-code.log",
+      "sha256": "ad5eddac3b156ca2e82d735371e129f794a2066c70aa8b14b6181663479aff85"
+    },
+    {
+      "path": "logs/focused-tests.log",
+      "sha256": "c87149a58c162859880ee8bd5cf55362e5e14601a1b7909625996452ed2f25ec"
+    },
+    {
+      "path": "logs/lint.log",
+      "sha256": "12a12f46260829dac9720fd8e9ba8faaaaa8e4321ffd95df70ba808c93daf930"
+    },
+    {
+      "path": "logs/mobile-tests.log",
+      "sha256": "e9c367fa9ac45fad10cf89c3f04e0187fde5afc0cc12537555baf64a0f172ab8"
+    },
+    {
+      "path": "logs/settings-recheck.log",
+      "sha256": "0d1162a3107a508c83414e6417ae81eb925ebdb586c5452e0de60fc82da1d67a"
+    },
+    {
+      "path": "logs/ux.log",
+      "sha256": "75eab5298352d3bee88a73dcef9790acb98c2406f7f55dde7385b016d8cdd878"
+    },
+    {
+      "path": "logs/web-release.log",
+      "sha256": "a454c626d457d7c8541d10f42ff9e2c8fe3d9236af9f9f664bec6c22fd65beda"
+    }
+  ]
+}

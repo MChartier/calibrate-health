@@ -1,0 +1,314 @@
+npm notice run cal-io@0.37.0 test:web:e2e
+npm notice run node scripts/expo-web-playwright.mjs --project=desktop-chrome --workers=2 --output=.codex-screenshots/data-matrix e2e/expo-web/launch-24-data-state-matrix.spec.ts
+
+Running 91 tests using 2 workers
+
+(node:47700) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:24128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:108:7 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ partitions all canonical routes into data-backed and reviewed-static sets exactly once (391ms)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ legal-update renders a truthful loading state (709ms)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ legal-update renders a truthful content state (609ms)
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ legal-update renders a truthful empty state (595ms)
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ legal-update renders a truthful error state (7.9s)
+  ok  7 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ legal-update renders a truthful offline state (671ms)
+  ok  6 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ legal-update renders a truthful stale state (8.3s)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=none
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=none
+  x   9 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful content state (10.6s)
+  x   8 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful loading state (10.8s)
+(node:34388) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:46976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 11 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful error state (8.1s)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=none
+  x  10 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful empty state (10.6s)
+(node:14168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=none
+  x  12 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful stale state (10.6s)
+(node:26160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 14 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ progress renders a truthful loading state (817ms)
+  ok 15 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ progress renders a truthful content state (624ms)
+  ok 16 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ progress renders a truthful empty state (666ms)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=none
+  x  13 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful offline state (10.6s)
+(node:42856) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 17 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ progress renders a truthful error state (7.9s)
+  ok 19 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ progress renders a truthful offline state (691ms)
+  ok 20 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ plan-check renders a truthful loading state (620ms)
+  ok 18 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ progress renders a truthful stale state (8.3s)
+  ok 21 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ plan-check renders a truthful content state (628ms)
+  ok 22 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ plan-check renders a truthful empty state (740ms)
+  ok 23 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ plan-check renders a truthful error state (8.1s)
+  ok 25 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ plan-check renders a truthful offline state (689ms)
+  ok 24 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ plan-check renders a truthful stale state (8.3s)
+  ok 26 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings renders a truthful loading state (758ms)
+  ok 27 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings renders a truthful content state (772ms)
+  ok 28 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings renders a truthful empty state (767ms)
+  ok 29 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings renders a truthful error state (7.9s)
+  ok 31 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings renders a truthful offline state (702ms)
+  ok 30 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings renders a truthful stale state (8.3s)
+  ok 32 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings-profile renders a truthful loading state (739ms)
+  ok 33 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings-profile renders a truthful content state (707ms)
+  ok 34 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings-profile renders a truthful empty state (713ms)
+  ok 35 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings-profile renders a truthful error state (8.0s)
+  ok 37 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings-profile renders a truthful offline state (697ms)
+  ok 36 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ settings-profile renders a truthful stale state (8.3s)
+  ok 38 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ devices renders a truthful loading state (720ms)
+  ok 39 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ devices renders a truthful content state (764ms)
+  ok 40 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ devices renders a truthful empty state (760ms)
+  ok 41 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ devices renders a truthful error state (8.0s)
+  ok 43 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ devices renders a truthful offline state (693ms)
+  ok 42 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ devices renders a truthful stale state (8.3s)
+  ok 44 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ connected-apps renders a truthful loading state (762ms)
+  ok 45 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ connected-apps renders a truthful content state (756ms)
+  ok 46 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ connected-apps renders a truthful empty state (769ms)
+  ok 47 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ connected-apps renders a truthful error state (8.0s)
+  ok 49 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ connected-apps renders a truthful offline state (675ms)
+  ok 48 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ connected-apps renders a truthful stale state (8.3s)
+  ok 50 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ food-log renders a truthful loading state (752ms)
+  ok 51 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ food-log renders a truthful content state (791ms)
+  ok 52 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ food-log renders a truthful empty state (754ms)
+  ok 53 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ food-log renders a truthful error state (8.0s)
+  ok 55 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ food-log renders a truthful offline state (707ms)
+  ok 54 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ food-log renders a truthful stale state (8.3s)
+  ok 56 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight-trend renders a truthful loading state (758ms)
+  ok 57 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight-trend renders a truthful content state (738ms)
+  ok 58 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight-trend renders a truthful empty state (709ms)
+  ok 59 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight-trend renders a truthful error state (7.9s)
+  ok 61 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight-trend renders a truthful offline state (704ms)
+  ok 60 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight-trend renders a truthful stale state (8.3s)
+  ok 62 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ activity renders a truthful loading state (744ms)
+  ok 63 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ activity renders a truthful content state (756ms)
+  ok 64 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ activity renders a truthful empty state (737ms)
+  ok 65 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ activity renders a truthful error state (8.0s)
+  ok 67 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ activity renders a truthful offline state (693ms)
+  ok 66 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ activity renders a truthful stale state (8.3s)
+  ok 69 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ server-admin renders a truthful content state (704ms)
+  ok 68 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ server-admin renders a truthful loading state (771ms)
+  ok 70 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ server-admin renders a truthful empty state (674ms)
+  ok 71 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ server-admin renders a truthful error state (765ms)
+  ok 72 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ server-admin renders a truthful stale state (816ms)
+  ok 73 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ server-admin renders a truthful offline state (799ms)
+  ok 74 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ my-foods renders a truthful loading state (767ms)
+  ok 75 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ my-foods renders a truthful content state (753ms)
+  ok 76 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ my-foods renders a truthful empty state (714ms)
+  ok 77 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ my-foods renders a truthful error state (8.0s)
+  ok 79 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ my-foods renders a truthful offline state (691ms)
+  ok 78 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ my-foods renders a truthful stale state (8.3s)
+  ok 80 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight renders a truthful loading state (736ms)
+  ok 81 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight renders a truthful content state (741ms)
+  ok 82 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight renders a truthful empty state (754ms)
+  ok 83 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight renders a truthful error state (8.1s)
+  ok 85 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight renders a truthful offline state (682ms)
+  ok 84 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ weight renders a truthful stale state (8.3s)
+  ok 87 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ barcode renders a truthful content state (619ms)
+  ok 86 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ barcode renders a truthful loading state (630ms)
+  ok 88 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ barcode renders a truthful empty state (608ms)
+  ok 89 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ barcode renders a truthful error state (7.9s)
+  ok 91 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ barcode renders a truthful offline state (697ms)
+  ok 90 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ barcode renders a truthful stale state (8.2s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful loading state
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('food-preview-entry-31').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for getByTestId('food-preview-entry-31').first()
+
+
+      57 |
+      58 | async function expectSurface(page: Page, surface: SurfaceExpectation): Promise<void> {
+    > 59 |   await expect(surfaceLocator(page, surface)).toBeVisible();
+         |                                               ^
+      60 | }
+      61 |
+      62 | async function installRouteSetup(page: Page, setup: Launch24DataRouteCase['setup']): Promise<void> {
+        at expectSurface (<CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:59:47)
+        at <CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:147:17
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-face2-rs-a-truthful-loading-state-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\data-matrix\launch-24-data-state-matri-face2-rs-a-truthful-loading-state-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-face2-rs-a-truthful-loading-state-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\data-matrix\launch-24-data-state-matri-face2-rs-a-truthful-loading-state-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  2) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful content state
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('food-preview-entry-31').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for getByTestId('food-preview-entry-31').first()
+
+
+      57 |
+      58 | async function expectSurface(page: Page, surface: SurfaceExpectation): Promise<void> {
+    > 59 |   await expect(surfaceLocator(page, surface)).toBeVisible();
+         |                                               ^
+      60 | }
+      61 |
+      62 | async function installRouteSetup(page: Page, setup: Launch24DataRouteCase['setup']): Promise<void> {
+        at expectSurface (<CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:59:47)
+        at <CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:152:17
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-464e1-rs-a-truthful-content-state-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\data-matrix\launch-24-data-state-matri-464e1-rs-a-truthful-content-state-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-464e1-rs-a-truthful-content-state-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\data-matrix\launch-24-data-state-matri-464e1-rs-a-truthful-content-state-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  3) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful empty state
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Start today\'s food log', { exact: true }).first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for getByText('Start today\'s food log', { exact: true }).first()
+
+
+      57 |
+      58 | async function expectSurface(page: Page, surface: SurfaceExpectation): Promise<void> {
+    > 59 |   await expect(surfaceLocator(page, surface)).toBeVisible();
+         |                                               ^
+      60 | }
+      61 |
+      62 | async function installRouteSetup(page: Page, setup: Launch24DataRouteCase['setup']): Promise<void> {
+        at expectSurface (<CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:59:47)
+        at <CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:157:17
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-90966-ders-a-truthful-empty-state-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\data-matrix\launch-24-data-state-matri-90966-ders-a-truthful-empty-state-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-90966-ders-a-truthful-empty-state-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\data-matrix\launch-24-data-state-matri-90966-ders-a-truthful-empty-state-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  4) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful stale state
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('food-preview-entry-31').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for getByTestId('food-preview-entry-31').first()
+
+
+      57 |
+      58 | async function expectSurface(page: Page, surface: SurfaceExpectation): Promise<void> {
+    > 59 |   await expect(surfaceLocator(page, surface)).toBeVisible();
+         |                                               ^
+      60 | }
+      61 |
+      62 | async function installRouteSetup(page: Page, setup: Launch24DataRouteCase['setup']): Promise<void> {
+        at expectSurface (<CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:59:47)
+        at <CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:179:15
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-92f83-ders-a-truthful-stale-state-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\data-matrix\launch-24-data-state-matri-92f83-ders-a-truthful-stale-state-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-92f83-ders-a-truthful-stale-state-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\data-matrix\launch-24-data-state-matri-92f83-ders-a-truthful-stale-state-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  5) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful offline state
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('food-preview-entry-31').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for getByTestId('food-preview-entry-31').first()
+
+
+      57 |
+      58 | async function expectSurface(page: Page, surface: SurfaceExpectation): Promise<void> {
+    > 59 |   await expect(surfaceLocator(page, surface)).toBeVisible();
+         |                                               ^
+      60 | }
+      61 |
+      62 | async function installRouteSetup(page: Page, setup: Launch24DataRouteCase['setup']): Promise<void> {
+        at expectSurface (<CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:59:47)
+        at <CURRENT_CHECKOUT>\e2e\expo-web\launch-24-data-state-matrix.spec.ts:179:15
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-fd489-rs-a-truthful-offline-state-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\data-matrix\launch-24-data-state-matri-fd489-rs-a-truthful-offline-state-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\data-matrix\launch-24-data-state-matri-fd489-rs-a-truthful-offline-state-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\data-matrix\launch-24-data-state-matri-fd489-rs-a-truthful-offline-state-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  5 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful loading state
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful content state
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful empty state
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful stale state
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-24-data-state-matrix.spec.ts:127:11 ΓÇ║ Launch 24 exported-web data-state coverage ΓÇ║ today renders a truthful offline state
+  86 passed (3.2m)

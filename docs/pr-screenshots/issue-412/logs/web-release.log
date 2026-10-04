@@ -1,0 +1,26 @@
+npm notice run cal-io@0.37.0 test:expo-web:release
+npm notice run node --test scripts/expo-web-release.test.mjs scripts/expo-web-static-server.test.mjs
+Γ£ö accepts a clean Expo web static artifact (37.8602ms)
+Γ£ö accepts Metro deferred bundles referenced by the HTML entry bundle (39.3543ms)
+Γ£ö rejects missing HTML-linked assets (30.3015ms)
+Γ£ö does not mistake extensionless application links for static assets (41.4499ms)
+Γ£ö rejects a root document title that differs from centralized landing metadata (35.4002ms)
+Γ£ö rejects duplicate descriptions and Apple-specific installed-app claims (44.8292ms)
+Γ£ö rejects stale hashed entry bundles left by an earlier export (32.8082ms)
+Γ£ö service-worker enhancement is stable, scoped, and changes with artifact content (52.2943ms)
+Γ£ö rejects a release artifact missing required PWA files (29.6263ms)
+Γ£ö rejects a service worker that can intercept backend traffic (33.1729ms)
+Γ£ö accepts Expo Router static-route exports without legacy metadata (46.7542ms)
+Γ£ö resolves files and extensionless routes through the SPA shell (9.0084ms)
+Γ£ö prefers a generated static route over the SPA fallback (9.1447ms)
+Γ£ö uses the generated not-found document for unknown static routes (8.8517ms)
+Γ£ö does not let SPA fallback mask backend, missing static, or traversal requests (6.4026ms)
+Γ£ö serves deep links with fallback and production cache headers (57.0751ms)
+Γä╣ tests 16
+Γä╣ suites 0
+Γä╣ pass 16
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 526.3801

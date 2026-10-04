@@ -1,0 +1,367 @@
+npm notice run cal-io@0.37.0 test:ux
+npm notice run node scripts/ux-gates.mjs all
+
+Running 329 tests using 4 workers
+
+(node:30684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11312) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19676) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   4 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:30:7 ΓÇ║ Launch 22 accessibility coverage contracts ΓÇ║ declares every canonical route exactly once (272ms)
+  ok   5 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:44:7 ΓÇ║ Launch 22 accessibility coverage contracts ΓÇ║ declares unique, authenticated overlay entry points (174ms)
+  ok   6 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:88:7 ΓÇ║ Launch 22 accessibility coverage contracts ΓÇ║ declares query-driven overlays as automatic entry points (136ms)
+  ok   1 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in light (830ms)
+  ok   3 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in light (894ms)
+  ok   2 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in light (1.2s)
+  ok   8 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in light (717ms)
+  ok   9 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in light (725ms)
+  ok   7 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ root has no critical or serious WCAG A/AA findings (1.0s)
+  ok  10 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in light (547ms)
+  ok  11 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in light (729ms)
+  ok  13 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ login has no critical or serious WCAG A/AA findings (975ms)
+  ok  14 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in light (1.3s)
+  ok  15 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in dark (906ms)
+  ok  12 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in light (1.9s)
+  ok  16 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ register has no critical or serious WCAG A/AA findings (908ms)
+  ok  17 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in dark (819ms)
+  ok  18 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in dark (699ms)
+  ok  19 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in dark (764ms)
+  ok  22 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in dark (541ms)
+  ok  20 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ forgot-password has no critical or serious WCAG A/AA findings (939ms)
+  ok  21 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in dark (728ms)
+  ok  23 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in dark (691ms)
+  ok  25 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ reset-password has no critical or serious WCAG A/AA findings (926ms)
+  ok  26 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in dark (1.2s)
+  ok  28 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ verify-email has no critical or serious WCAG A/AA findings (825ms)
+  ok  24 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in dark (1.9s)
+  ok  27 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in light (1.6s)
+  ok  30 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ legal-update has no critical or serious WCAG A/AA findings (945ms)
+  ok  29 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in dark (1.6s)
+  ok  31 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with enlarged-text (1.7s)
+  ok  33 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ terms has no critical or serious WCAG A/AA findings (921ms)
+  ok  32 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with forced-colors (1.6s)
+  -   37 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:344:5 ΓÇ║ empty Today remains legible in dark mode on phone and desktop
+  ok  34 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:182:5 ΓÇ║ onboarding imperial measurements with enlarged text (1.1s)
+  -   38 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:354:5 ΓÇ║ Today loading skeleton preserves compact-phone structure
+  -   39 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:372:5 ΓÇ║ Today terminal error stays distinct from empty content on tablet
+  -   40 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:386:5 ΓÇ║ stale Food Log retains cached data and degraded labeling in dark mode
+  ok  35 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:335:5 ΓÇ║ populated Today remains stable in light mode at every release viewport (700ms)
+  -   42 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:420:5 ΓÇ║ Progress uses the shell-owned cached-data notice while offline
+  -   43 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:436:5 ΓÇ║ paused Today is explicit without implying a calorie target on tablet
+  -   44 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:447:5 ΓÇ║ Settings remains understandable with forced colors
+  ok  36 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ support has no critical or serious WCAG A/AA findings (897ms)
+  -   46 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:479:5 ΓÇ║ password reset exposes a visibly disabled submission state
+  -   48 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:490:5 ΓÇ║ Settings export exposes a stable busy and disabled submission state
+  -   49 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:542:5 ΓÇ║ normal visual runs reject a missing baseline without recreating it
+  -   50 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:565:5 ΓÇ║ visual threshold contract rejects a 24px spacing shift above 0.2%
+  ok  41 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:400:5 ΓÇ║ offline Today keeps cached content and stale labeling on the smallest phone (994ms)
+  ok  45 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:462:5 ΓÇ║ Today tolerates 200% text at the smallest release viewport (847ms)
+(node:37964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  47 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ privacy has no critical or serious WCAG A/AA findings (1.1s)
+(node:33832) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23460) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  52 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ account-deletion has no critical or serious WCAG A/AA findings (1.0s)
+  ok  53 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in light (913ms)
+  ok  51 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in light (1.1s)
+  ok  54 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in light (906ms)
+  ok  58 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in light (561ms)
+  ok  56 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in light (729ms)
+  ok  57 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in light (695ms)
+  ok  55 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ health-connect-privacy has no critical or serious WCAG A/AA findings (940ms)
+  ok  59 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in light (718ms)
+  ok  62 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ onboarding has no critical or serious WCAG A/AA findings (1.1s)
+  ok  61 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in light (1.4s)
+  ok  63 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in dark (1.0s)
+  ok  60 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in light (2.0s)
+  ok  65 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in dark (791ms)
+  ok  64 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ today has no critical or serious WCAG A/AA findings (1.4s)
+  ok  66 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in dark (788ms)
+  ok  67 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in dark (824ms)
+  ok  68 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in dark (797ms)
+  ok  70 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in dark (638ms)
+  ok  71 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in dark (847ms)
+  ok  69 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ progress has no critical or serious WCAG A/AA findings (1.4s)
+  ok  73 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in dark (1.5s)
+  ok  72 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in dark (2.1s)
+  ok  75 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings has no critical or serious WCAG A/AA findings (1.2s)
+  ok  74 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in light (1.6s)
+  -   77 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with enlarged-text
+  -   79 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with forced-colors
+  ok  81 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:335:5 ΓÇ║ populated Today remains stable in light mode at every release viewport (811ms)
+  ok  76 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in dark (1.6s)
+  ok  78 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-profile has no critical or serious WCAG A/AA findings (1.3s)
+  ok  80 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:182:5 ΓÇ║ onboarding imperial measurements with enlarged text (1.2s)
+  -   85 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:372:5 ΓÇ║ Today terminal error stays distinct from empty content on tablet
+  -   86 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:386:5 ΓÇ║ stale Food Log retains cached data and degraded labeling in dark mode
+  -   87 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:400:5 ΓÇ║ offline Today keeps cached content and stale labeling on the smallest phone
+  ok  82 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:344:5 ΓÇ║ empty Today remains legible in dark mode on phone and desktop (768ms)
+  -   88 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:420:5 ΓÇ║ Progress uses the shell-owned cached-data notice while offline
+  -   90 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:447:5 ΓÇ║ Settings remains understandable with forced colors
+  -   89 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:436:5 ΓÇ║ paused Today is explicit without implying a calorie target on tablet
+  ok  83 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:354:5 ΓÇ║ Today loading skeleton preserves compact-phone structure (851ms)
+  -   93 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:490:5 ΓÇ║ Settings export exposes a stable busy and disabled submission state
+  -   92 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:462:5 ΓÇ║ Today tolerates 200% text at the smallest release viewport
+  -   95 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:565:5 ΓÇ║ visual threshold contract rejects a 24px spacing shift above 0.2%
+  -   94 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:542:5 ΓÇ║ normal visual runs reject a missing baseline without recreating it
+  ok  84 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-security has no critical or serious WCAG A/AA findings (1.1s)
+  ok  91 [ux-phone-390] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:479:5 ΓÇ║ password reset exposes a visibly disabled submission state (530ms)
+(node:35376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31532) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:17088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  96 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-connections has no critical or serious WCAG A/AA findings (1.2s)
+  ok  97 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in light (949ms)
+  ok  98 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in light (1.1s)
+  ok  99 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in light (940ms)
+  ok 103 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in light (615ms)
+  ok 101 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in light (853ms)
+  ok 100 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-data has no critical or serious WCAG A/AA findings (1.3s)
+  ok 102 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in light (775ms)
+  ok 104 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in light (803ms)
+  ok 106 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-help has no critical or serious WCAG A/AA findings (1.2s)
+  ok 107 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in light (1.5s)
+  ok 108 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in dark (933ms)
+  ok 105 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in light (2.1s)
+  ok 110 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in dark (813ms)
+  ok 109 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ profile-details has no critical or serious WCAG A/AA findings (1.2s)
+  ok 111 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in dark (785ms)
+  ok 112 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in dark (784ms)
+  ok 115 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in dark (643ms)
+  ok 113 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in dark (841ms)
+  ok 116 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in dark (887ms)
+  ok 114 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ preferences has no critical or serious WCAG A/AA findings (1.5s)
+  ok 118 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in dark (1.6s)
+  ok 120 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ health-connect has no critical or serious WCAG A/AA findings (1.2s)
+  ok 117 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in dark (2.3s)
+  -  123 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with enlarged-text
+  ok 119 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in light (1.8s)
+  -  124 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with forced-colors
+  -  125 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:182:5 ΓÇ║ onboarding imperial measurements with enlarged text
+  -  127 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:344:5 ΓÇ║ empty Today remains legible in dark mode on phone and desktop
+  -  128 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:354:5 ΓÇ║ Today loading skeleton preserves compact-phone structure
+  ok 122 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ watch has no critical or serious WCAG A/AA findings (1.2s)
+  ok 126 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:335:5 ΓÇ║ populated Today remains stable in light mode at every release viewport (819ms)
+  -  131 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:386:5 ΓÇ║ stale Food Log retains cached data and degraded labeling in dark mode
+  ok 121 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in dark (1.9s)
+  -  132 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:400:5 ΓÇ║ offline Today keeps cached content and stale labeling on the smallest phone
+  -  133 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:420:5 ΓÇ║ Progress uses the shell-owned cached-data notice while offline
+  -  135 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:447:5 ΓÇ║ Settings remains understandable with forced colors
+  -  136 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:462:5 ΓÇ║ Today tolerates 200% text at the smallest release viewport
+  -  137 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:479:5 ΓÇ║ password reset exposes a visibly disabled submission state
+  -  138 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:490:5 ΓÇ║ Settings export exposes a stable busy and disabled submission state
+  ok 130 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ devices has no critical or serious WCAG A/AA findings (1.2s)
+  ok 134 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:436:5 ΓÇ║ paused Today is explicit without implying a calorie target on tablet (789ms)
+  -  139 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:542:5 ΓÇ║ normal visual runs reject a missing baseline without recreating it
+  -  141 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:565:5 ΓÇ║ visual threshold contract rejects a 24px spacing shift above 0.2%
+(node:42988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32140) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 140 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ connected-apps has no critical or serious WCAG A/AA findings (1.1s)
+  ok 142 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:30:7 ΓÇ║ Launch 22 accessibility coverage contracts ΓÇ║ declares every canonical route exactly once (195ms)
+  -  143 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in light
+  -  146 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in light
+  ok 145 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:44:7 ΓÇ║ Launch 22 accessibility coverage contracts ΓÇ║ declares unique, authenticated overlay entry points (145ms)
+  -  147 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in light
+  ok 148 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:88:7 ΓÇ║ Launch 22 accessibility coverage contracts ΓÇ║ declares query-driven overlays as automatic entry points (108ms)
+  -  149 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in light
+  -  151 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in light
+  -  152 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in light
+  -  153 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in light
+  -  154 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in light
+  -  155 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in light
+  -  156 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in dark
+  ok 144 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ food-log has no critical or serious WCAG A/AA findings (1.2s)
+  ok 150 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ root has no critical or serious WCAG A/AA findings (973ms)
+  -  157 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in dark
+  -  160 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in dark
+  -  161 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in dark
+  -  162 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in dark
+  -  163 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in dark
+  -  164 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in dark
+  -  165 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in dark
+  ok 159 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ login has no critical or serious WCAG A/AA findings (952ms)
+  -  166 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in dark
+  -  168 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in light
+  ok 158 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ weight-trend has no critical or serious WCAG A/AA findings (1.2s)
+  -  169 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in dark
+  -  171 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with enlarged-text
+  -  172 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with forced-colors
+  -  173 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:182:5 ΓÇ║ onboarding imperial measurements with enlarged text
+  ok 167 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ register has no critical or serious WCAG A/AA findings (956ms)
+  ok 170 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ plan-check has no critical or serious WCAG A/AA findings (1.1s)
+  ok 174 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:335:5 ΓÇ║ populated Today remains stable in light mode at every release viewport (768ms)
+  ok 175 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ forgot-password has no critical or serious WCAG A/AA findings (898ms)
+  ok 177 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:344:5 ΓÇ║ empty Today remains legible in dark mode on phone and desktop (768ms)
+  -  179 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:354:5 ΓÇ║ Today loading skeleton preserves compact-phone structure
+  ok 176 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ activity has no critical or serious WCAG A/AA findings (1.1s)
+  -  180 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:372:5 ΓÇ║ Today terminal error stays distinct from empty content on tablet
+  -  182 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:386:5 ΓÇ║ stale Food Log retains cached data and degraded labeling in dark mode
+  ok 178 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ reset-password has no critical or serious WCAG A/AA findings (921ms)
+  -  183 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:400:5 ΓÇ║ offline Today keeps cached content and stale labeling on the smallest phone
+  ok 129 [ux-tablet-820] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:372:5 ΓÇ║ Today terminal error stays distinct from empty content on tablet (8.1s)
+  ok 181 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ my-foods has no critical or serious WCAG A/AA findings (1.2s)
+  ok 184 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ verify-email has no critical or serious WCAG A/AA findings (965ms)
+(node:13824) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 185 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:420:5 ΓÇ║ Progress uses the shell-owned cached-data notice while offline (1.1s)
+  -  188 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:436:5 ΓÇ║ paused Today is explicit without implying a calorie target on tablet
+  -  190 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:462:5 ΓÇ║ Today tolerates 200% text at the smallest release viewport
+  -  191 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:479:5 ΓÇ║ password reset exposes a visibly disabled submission state
+  ok 189 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:447:5 ΓÇ║ Settings remains understandable with forced colors (772ms)
+  ok 187 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ legal-update has no critical or serious WCAG A/AA findings (1.0s)
+  ok 186 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ about has no critical or serious WCAG A/AA findings (1.2s)
+  ok 193 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:542:5 ΓÇ║ normal visual runs reject a missing baseline without recreating it (497ms)
+  ok 192 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:490:5 ΓÇ║ Settings export exposes a stable busy and disabled submission state (1.3s)
+  ok 194 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ terms has no critical or serious WCAG A/AA findings (1.0s)
+  ok 195 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ advanced has no critical or serious WCAG A/AA findings (1.2s)
+(node:5028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 196 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:565:5 ΓÇ║ visual threshold contract rejects a 24px spacing shift above 0.2% (1.3s)
+  ok 197 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ support has no critical or serious WCAG A/AA findings (926ms)
+(node:40536) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 198 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ server-admin has no critical or serious WCAG A/AA findings (1.2s)
+  ok 199 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in light (1.1s)
+  ok 200 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ privacy has no critical or serious WCAG A/AA findings (1.1s)
+  ok 201 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in light (1.1s)
+  ok 202 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ weight has no critical or serious WCAG A/AA findings (1.3s)
+  ok 203 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in light (954ms)
+  ok 204 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ account-deletion has no critical or serious WCAG A/AA findings (1.1s)
+  ok 205 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in light (948ms)
+  ok 207 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in light (877ms)
+  ok 206 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ nutrition-label has no critical or serious WCAG A/AA findings (1.1s)
+  ok 208 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ health-connect-privacy has no critical or serious WCAG A/AA findings (1.1s)
+  ok 209 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in light (697ms)
+  ok 210 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in light (1.0s)
+  ok 211 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ barcode has no critical or serious WCAG A/AA findings (1.2s)
+  ok 212 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ onboarding has no critical or serious WCAG A/AA findings (1.3s)
+  ok 214 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in light (1.7s)
+  ok 215 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ add-food has no critical or serious WCAG A/AA findings (1.6s)
+  ok 213 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in light (2.5s)
+  ok 216 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ today has no critical or serious WCAG A/AA findings (1.6s)
+  ok 217 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:32:7 ΓÇ║ plan check comparison and recommendation in dark (1.3s)
+  ok 219 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial today in dark (1.1s)
+  ok 218 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ weight-entry has no critical or serious WCAG A/AA findings (1.6s)
+  ok 220 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ progress has no critical or serious WCAG A/AA findings (1.6s)
+  ok 222 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial progress in dark (951ms)
+  ok 221 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial food-log in dark (1.0s)
+  ok 226 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial login in dark (727ms)
+  ok 225 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial settings in dark (925ms)
+  ok 224 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings has no critical or serious WCAG A/AA findings (1.5s)
+  ok 223 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ historical-calendar has no critical or serious WCAG A/AA findings (2.1s)
+  ok 227 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:73:9 ΓÇ║ editorial saved-foods in dark (1.0s)
+  ok 229 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-profile has no critical or serious WCAG A/AA findings (1.3s)
+  ok 230 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ goal-editor has no critical or serious WCAG A/AA findings (1.4s)
+  ok 228 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:119:7 ΓÇ║ editorial food search and amount confirmation in dark (2.4s)
+  ok 231 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:139:7 ΓÇ║ editorial long recipe in dark (1.6s)
+  ok 232 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-security has no critical or serious WCAG A/AA findings (1.3s)
+  ok 233 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ goal-daily-calorie-options has no critical or serious WCAG A/AA findings (1.6s)
+  ok 234 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in light (1.9s)
+  ok 236 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-connections has no critical or serious WCAG A/AA findings (1.4s)
+  ok 235 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:159:7 ΓÇ║ onboarding three steps in dark (2.1s)
+  ok 237 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ plan-check-adjustment-review has no critical or serious WCAG A/AA findings (1.8s)
+  ok 239 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-data has no critical or serious WCAG A/AA findings (1.4s)
+  ok 240 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with forced-colors (2.1s)
+  ok 238 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:170:7 ΓÇ║ onboarding three steps with enlarged-text (2.6s)
+  ok 241 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ notifications-drawer has no critical or serious WCAG A/AA findings (1.6s)
+  ok 242 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ settings-help has no critical or serious WCAG A/AA findings (1.5s)
+  ok 244 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:335:5 ΓÇ║ populated Today remains stable in light mode at every release viewport (995ms)
+  -  247 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:344:5 ΓÇ║ empty Today remains legible in dark mode on phone and desktop
+  -  248 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:354:5 ΓÇ║ Today loading skeleton preserves compact-phone structure
+  ok 243 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:182:5 ΓÇ║ onboarding imperial measurements with enlarged text (1.6s)
+  -  249 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:372:5 ΓÇ║ Today terminal error stays distinct from empty content on tablet
+  -  251 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:400:5 ΓÇ║ offline Today keeps cached content and stale labeling on the smallest phone
+  -  252 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:420:5 ΓÇ║ Progress uses the shell-owned cached-data notice while offline
+  ok 245 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ profile-time-zone-options has no critical or serious WCAG A/AA findings (1.6s)
+  -  253 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:436:5 ΓÇ║ paused Today is explicit without implying a calorie target on tablet
+  ok 246 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ profile-details has no critical or serious WCAG A/AA findings (1.5s)
+  -  255 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:447:5 ΓÇ║ Settings remains understandable with forced colors
+  -  257 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:462:5 ΓÇ║ Today tolerates 200% text at the smallest release viewport
+  -  258 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:479:5 ΓÇ║ password reset exposes a visibly disabled submission state
+  -  259 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:490:5 ΓÇ║ Settings export exposes a stable busy and disabled submission state
+  -  260 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:542:5 ΓÇ║ normal visual runs reject a missing baseline without recreating it
+  -  261 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:565:5 ΓÇ║ visual threshold contract rejects a 24px spacing shift above 0.2%
+  ok 254 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ profile-photo has no critical or serious WCAG A/AA findings (1.2s)
+  ok 256 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ preferences has no critical or serious WCAG A/AA findings (1.3s)
+  ok 262 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ password has no critical or serious WCAG A/AA findings (1.2s)
+  ok 263 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ health-connect has no critical or serious WCAG A/AA findings (1.1s)
+  ok 264 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ import has no critical or serious WCAG A/AA findings (1.1s)
+  ok 265 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ watch has no critical or serious WCAG A/AA findings (1.1s)
+  ok 266 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ offline has no critical or serious WCAG A/AA findings (1.1s)
+  ok 267 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ devices has no critical or serious WCAG A/AA findings (1.2s)
+  ok 268 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ saved-food-new-food has no critical or serious WCAG A/AA findings (1.3s)
+  ok 269 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ connected-apps has no critical or serious WCAG A/AA findings (1.2s)
+  ok 270 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ saved-food-new-recipe has no critical or serious WCAG A/AA findings (1.3s)
+  ok 271 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ food-log has no critical or serious WCAG A/AA findings (1.5s)
+  ok 250 [ux-desktop-1440] ΓÇ║ e2e\expo-web\launch-22-visual.spec.ts:386:5 ΓÇ║ stale Food Log retains cached data and degraded labeling in dark mode (8.5s)
+  ok 272 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-edit has no critical or serious WCAG A/AA findings (1.4s)
+  ok 273 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ weight-trend has no critical or serious WCAG A/AA findings (1.3s)
+  ok 274 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-copy-day has no critical or serious WCAG A/AA findings (1.3s)
+  ok 275 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ plan-check has no critical or serious WCAG A/AA findings (1.3s)
+  ok 276 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-copy-meal has no critical or serious WCAG A/AA findings (1.2s)
+  ok 277 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ activity has no critical or serious WCAG A/AA findings (1.2s)
+  ok 278 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-copy-meal-destination has no critical or serious WCAG A/AA findings (1.3s)
+  ok 279 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ my-foods has no critical or serious WCAG A/AA findings (1.1s)
+  ok 280 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-save-recipe has no critical or serious WCAG A/AA findings (999ms)
+  ok 281 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ about has no critical or serious WCAG A/AA findings (993ms)
+  ok 283 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ advanced has no critical or serious WCAG A/AA findings (978ms)
+  ok 282 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ pause-tracking has no critical or serious WCAG A/AA findings (1.3s)
+  ok 284 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ server-admin has no critical or serious WCAG A/AA findings (992ms)
+  ok 285 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ resume-tracking-prompt has no critical or serious WCAG A/AA findings (958ms)
+  ok 286 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ weight has no critical or serious WCAG A/AA findings (1.0s)
+  ok 287 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ session-revoke-confirmation has no critical or serious WCAG A/AA findings (990ms)
+  ok 288 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ nutrition-label has no critical or serious WCAG A/AA findings (1.0s)
+  ok 289 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ session-revoke-others-confirmation has no critical or serious WCAG A/AA findings (1.2s)
+  ok 290 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:101:9 ΓÇ║ Launch 22 canonical route accessibility ΓÇ║ barcode has no critical or serious WCAG A/AA findings (1.1s)
+  ok 291 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ connected-app-revoke-confirmation has no critical or serious WCAG A/AA findings (1.1s)
+  ok 292 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ add-food has no critical or serious WCAG A/AA findings (1.4s)
+  ok 293 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ account-export has no critical or serious WCAG A/AA findings (1.2s)
+  ok 295 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ delete-account has no critical or serious WCAG A/AA findings (1.1s)
+  ok 294 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ weight-entry has no critical or serious WCAG A/AA findings (1.3s)
+  ok 296 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:156:7 ΓÇ║ Launch 22 accessibility gate probes ΓÇ║ detects an unnamed button (872ms)
+  ok 297 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ historical-calendar has no critical or serious WCAG A/AA findings (1.6s)
+  ok 298 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:176:7 ΓÇ║ Launch 22 accessibility gate probes ΓÇ║ detects insufficient text contrast (982ms)
+  ok 300 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:206:7 ΓÇ║ Launch 22 accessibility gate probes ΓÇ║ detects positive tabindex focus-order overrides (1.0s)
+  ok 299 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ goal-editor has no critical or serious WCAG A/AA findings (1.3s)
+  ok 302 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ goal-daily-calorie-options has no critical or serious WCAG A/AA findings (1.4s)
+  ok 301 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:232:7 ΓÇ║ onboarding all steps have no blocking accessibility findings in light (2.4s)
+  ok 303 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ plan-check-adjustment-review has no critical or serious WCAG A/AA findings (1.6s)
+  ok 305 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ notifications-drawer has no critical or serious WCAG A/AA findings (1.2s)
+  ok 304 [ux-phone-320] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:232:7 ΓÇ║ onboarding all steps have no blocking accessibility findings in dark (2.1s)
+  ok 306 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ profile-time-zone-options has no critical or serious WCAG A/AA findings (1.2s)
+  ok 307 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ profile-photo has no critical or serious WCAG A/AA findings (853ms)
+  ok 308 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ password has no critical or serious WCAG A/AA findings (858ms)
+  ok 309 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ import has no critical or serious WCAG A/AA findings (842ms)
+  ok 310 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ offline has no critical or serious WCAG A/AA findings (800ms)
+  ok 311 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ saved-food-new-food has no critical or serious WCAG A/AA findings (955ms)
+  ok 312 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ saved-food-new-recipe has no critical or serious WCAG A/AA findings (890ms)
+  ok 313 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-edit has no critical or serious WCAG A/AA findings (896ms)
+  ok 314 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-copy-day has no critical or serious WCAG A/AA findings (872ms)
+  ok 315 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-copy-meal has no critical or serious WCAG A/AA findings (850ms)
+  ok 316 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-copy-meal-destination has no critical or serious WCAG A/AA findings (951ms)
+  ok 317 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ food-log-save-recipe has no critical or serious WCAG A/AA findings (897ms)
+  ok 318 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ pause-tracking has no critical or serious WCAG A/AA findings (1.1s)
+  ok 319 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ resume-tracking-prompt has no critical or serious WCAG A/AA findings (808ms)
+  ok 320 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ session-revoke-confirmation has no critical or serious WCAG A/AA findings (863ms)
+  ok 321 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ session-revoke-others-confirmation has no critical or serious WCAG A/AA findings (939ms)
+  ok 322 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ connected-app-revoke-confirmation has no critical or serious WCAG A/AA findings (916ms)
+  ok 323 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ account-export has no critical or serious WCAG A/AA findings (937ms)
+  ok 324 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:119:9 ΓÇ║ Launch 22 open overlay accessibility ΓÇ║ delete-account has no critical or serious WCAG A/AA findings (979ms)
+  ok 325 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:156:7 ΓÇ║ Launch 22 accessibility gate probes ΓÇ║ detects an unnamed button (789ms)
+  ok 326 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:176:7 ΓÇ║ Launch 22 accessibility gate probes ΓÇ║ detects insufficient text contrast (850ms)
+  ok 327 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:206:7 ΓÇ║ Launch 22 accessibility gate probes ΓÇ║ detects positive tabindex focus-order overrides (831ms)
+  ok 328 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:232:7 ΓÇ║ onboarding all steps have no blocking accessibility findings in light (1.7s)
+  ok 329 [ux-desktop-1024] ΓÇ║ e2e\expo-web\launch-22-accessibility.spec.ts:232:7 ΓÇ║ onboarding all steps have no blocking accessibility findings in dark (1.7s)
+
+  79 skipped
+  250 passed (1.8m)
