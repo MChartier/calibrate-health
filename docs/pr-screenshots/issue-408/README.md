@@ -1,6 +1,10 @@
 # Issue 408: completed-day comparison evidence
 
-## Scenario and observations
+## Matched before/after correction
+
+The [new matched comparison pairs](before-after/README.md) show actual baseline source `29fb444ae4389ca81f3437d24685ed9badc43410` beside implementation source `3d2b4959b6592cfeb3dcf60dc2ca818e219eacc5`, using identical fixtures and selected state. Four freshly captured and inspected full-viewport images cover desktop light and phone-sized browser dark. Their [manifest](before-after/manifest.json) supplies original hashes, source revisions, capture settings and build provenance. These pairs are visibly embedded in the PR to satisfy the user's blocking before/after amendment to pr-review-v2. Product source is unchanged; renewed independent evidence/communication QA is required.
+
+## Original after-state scenarios and observations
 
 Captured from the actual **Today > Choose a day** flow in Chrome on Windows, using the production Expo web build and synthetic API fixtures. These are browser screenshots at responsive viewports, **not Android emulator or device screenshots**. No personal tracking data was used. Source revision: `e134ba917f29053560eae88289510a774699aa9d`; base: `29fb444ae4389ca81f3437d24685ed9badc43410`. Subsequent export-only changes do not alter the exercised calendar UI and are covered separately below.
 
