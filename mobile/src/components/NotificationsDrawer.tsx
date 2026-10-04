@@ -31,6 +31,7 @@ type NotificationsDrawerProps = {
     unreadCount: number | null;
     state: AsyncResourceState;
     isBusy: boolean;
+    isOpening?: boolean;
     actionError?: unknown;
     onClose: () => void;
     onOpenNotification: (notification: InAppNotification) => void;
@@ -45,6 +46,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     unreadCount,
     state,
     isBusy,
+    isOpening = false,
     actionError,
     onClose,
     onOpenNotification,
@@ -62,11 +64,12 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const drawerProgress = useRef(new Animated.Value(1)).current;
     const panelRef = useRef<View>(null);
+    const requestClose = () => { if (!isOpening) onClose(); };
 
     useModalFocusManagement({
         visible: shouldRender && visible,
         containerRef: panelRef,
-        onEscape: onClose
+        onEscape: requestClose
     });
 
     useEffect(() => {
@@ -120,7 +123,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
             animationType="none"
             presentationStyle="overFullScreen"
             statusBarTranslucent
-            onRequestClose={onClose}
+            onRequestClose={requestClose}
             supportedOrientations={SUPPORTED_MODAL_ORIENTATIONS}
         >
             <View style={styles.root}>
@@ -130,7 +133,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     focusable={false}
                     importantForAccessibility="no-hide-descendants"
                     aria-hidden
-                    onPress={onClose}
+                    onPress={requestClose}
                     style={StyleSheet.absoluteFill}
                 >
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
@@ -143,6 +146,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     aria-label="Notifications"
                     aria-modal
                     role="dialog"
+                    tabIndex={-1}
                     style={[
                         styles.panel,
                         {
@@ -162,12 +166,14 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             <AppText variant="caption">
                                 {unreadCount === null ? 'Unread count unavailable' : `${unreadCount} unread`}
                             </AppText>
+                            {isOpening && <AppText variant="caption" accessibilityLiveRegion="polite">Opening reminder...</AppText>}
                         </View>
                         <AppIconButton
                             icon="close"
                             accessibilityLabel="Close notifications"
                             variant="ghost"
-                            onPress={onClose}
+                            onPress={requestClose}
+                            busy={isOpening}
                         />
                     </View>
 

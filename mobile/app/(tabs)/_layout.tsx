@@ -433,6 +433,7 @@ export default function TabsLayout() {
                         unreadCount={unreadCount}
                         state={notificationsState}
                         isBusy={dismissNotification.isPending || openNotification.isPending}
+                        isOpening={openNotification.isPending}
                         actionError={dismissNotification.error ?? openNotification.error}
                         onClose={() => setIsNotificationDrawerOpen(false)}
                         onOpenNotification={(notification) => requestGuardedNavigation(() => {

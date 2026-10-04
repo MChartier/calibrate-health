@@ -177,6 +177,22 @@ describe('NotificationsDrawer', () => {
         expect(screen.queryByTestId('view-all-notifications')).toBeNull();
     });
 
+    it('keeps the editor behind the modal while opening and restores dismissal after failure', () => {
+        const { props, screen } = renderDrawer({ isOpening: true, isBusy: true });
+        expect(screen.getByText('Opening reminder...')).toBeTruthy();
+        expect(screen.getByLabelText('Close notifications').props.accessibilityState.disabled).toBe(true);
+        fireEvent.press(screen.getByLabelText('Close notifications'));
+        act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());
+        fireEvent.press(screen.getByTestId('notifications-drawer-backdrop', { includeHiddenElements: true }));
+        expect(props.onClose).not.toHaveBeenCalled();
+        screen.rerender(<NotificationsDrawer {...props} isOpening={false} isBusy={false} actionError={new Error('failed')} />);
+        expect(screen.queryByText('Opening reminder...')).toBeNull();
+        fireEvent.press(screen.getByLabelText('Close notifications'));
+        act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());
+        fireEvent.press(screen.getByTestId('notifications-drawer-backdrop', { includeHiddenElements: true }));
+        expect(props.onClose).toHaveBeenCalledTimes(3);
+    });
+
     it('closes through native Back and backdrop without opening another route', () => {
         const { props, screen } = renderDrawer();
         act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());

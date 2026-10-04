@@ -211,6 +211,14 @@ test('a failed reminder read preserves the dirty Preferences draft and permits a
   await click;
   const open = panel.getByTestId('notification-open-123');
   await expect(open).toBeDisabled();
+  await expect(panel.getByRole('button', { name: 'Close notifications' })).toBeDisabled();
+  await expect(panel.getByText('Opening reminder...', { exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByTestId('notifications-drawer-backdrop').click({ position: { x: 1, y: 1 } });
+  await expect(panel).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect.poll(() => panel.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+  await expect(time).toHaveValue('08:30');
   await open.dispatchEvent('click');
   await expect.poll(() => fixture.actionRequests).toBe(1);
   await expect.poll(() => fixture.releaseAction !== null).toBe(true);
