@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 9;
+export const ACCOUNT_EXPORT_VERSION = 10;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. User-visible account, tracking, and derived plan history is exported.

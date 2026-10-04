@@ -147,7 +147,7 @@ export type OnboardingCompleteResponse = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 9;
+    version: 10;
     exported_at: string;
     account: {
         id: number;
@@ -338,7 +338,7 @@ export type AccountExport = {
         id: number;
         source_goal_id: number;
         recommendation_id: number | null;
-        configured_daily_deficit?: number | null;
+        configured_daily_deficit: number | null;
         target_adjustment_kcal: number;
         calorie_plan_review_status: 'CLEAR' | 'REQUIRES_REVIEW';
         calorie_plan_review_reason: string | null;

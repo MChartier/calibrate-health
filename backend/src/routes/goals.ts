@@ -178,6 +178,12 @@ router.post('/', async (req, res) => {
                 retryable: err.code === 'OPERATION_IN_PROGRESS'
             });
         }
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') {
+            return res.status(409).json({
+                message: 'Your plan changed during saving. Review the current goal and try again.',
+                code: 'GOAL_PLAN_CHANGED', retryable: true
+            });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });

@@ -7,11 +7,11 @@ import { fileURLToPath } from 'node:url';
 import { databaseUrlForSchema, migrateDeploy } from './postgres-populated-upgrade-smoke.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const backend = path.join(root, 'backend');
-const require = createRequire(path.join(backend, 'package.json'));
+const backendRequire = createRequire(path.join(backend, 'package.json'));
 const schema = 'calibrate_upgrade_smoke_goal_pace_' + crypto.randomBytes(8).toString('hex');
 const rawUrl = process.env.DATABASE_URL;
 assert.ok(rawUrl, 'DATABASE_URL is required; only a newly allocated smoke schema is modified.');
-const { Client } = require('pg');
+const { Client } = backendRequire('pg');
 const admin = new Client({ connectionString: rawUrl });
 let disconnectDatabase;
 await admin.connect();
@@ -21,11 +21,11 @@ try {
     const url = databaseUrlForSchema(rawUrl, schema);
     migrateDeploy(url, path.join(backend, 'prisma/schema.prisma'));
     process.env.DATABASE_URL = url;
-    require('ts-node').register({ project: path.join(backend, 'tsconfig.json'), transpileOnly: true, compilerOptions: { module: 'commonjs' } });
-    const database = require('./src/config/database');
+    backendRequire('ts-node').register({ project: path.join(backend, 'tsconfig.json'), transpileOnly: true, compilerOptions: { module: 'commonjs' } });
+    const database = backendRequire('./src/config/database');
     disconnectDatabase = database.disconnectDatabase;
     const db = database.default;
-    const router = require('./src/routes/goals').default;
+    const router = backendRequire('./src/routes/goals').default;
     const user = await db.user.create({ data: { email: 'pace-smoke@calibrate.invalid', password_hash: 'synthetic-only', timezone: 'UTC',
             date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' } });
     const goal = await db.goal.create({ data: { user_id: user.id, start_weight_grams: 90000, target_weight_grams: 75000,
