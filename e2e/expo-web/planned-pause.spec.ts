@@ -93,6 +93,9 @@ for (const theme of ['light', 'dark'] as const) {
         await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
         for (const [date, label] of [['16', 'at or below target'], ['17', 'at or below maintenance'], ['18', 'above maintenance'], ['19', 'comparison unavailable']]) await expect(page.getByTestId(`calendar-day-2026-07-${date}`)).toHaveAccessibleName(new RegExp(label));
         await expect(page.getByTestId('calendar-day-2026-07-22')).toBeDisabled();
+        await page.getByTestId('calendar-day-2026-07-22').dispatchEvent('click');
+        await page.getByTestId('calendar-day-2026-07-22').dispatchEvent('keydown', { key: 'Enter' });
+        await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(/selected/);
         if (!before) await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned tracking pause/);
         await capture(page, info, `calendar-${theme}`);
         if (before) { await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled(); return; }
@@ -223,6 +226,36 @@ test('matched failed resume and recovery retains the actual pause until success'
     await calendar(page);
     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
     await capture(page, info, 'matched-recovered-calendar');
+});
+
+test('due and overdue plans remain paused with no invented future interval', async ({ page, ux }, info) => {
+    test.skip(before);
+    const state = await install(page, ux, today); await open(page);
+    await page.keyboard.press('Escape');
+    await expect(page.getByText('Expected to resume today (Jul 21, 2026). Tracking is still paused.')).toBeVisible();
+    await calendar(page); await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
+    await page.keyboard.press('Escape');
+    state.target = '2026-07-20'; await page.reload(); await hideTransientPwaNotices(page);
+    await expect(page.getByRole('button', { name: 'Extend pause', exact: true })).toBeVisible(); await page.keyboard.press('Escape');
+    await expect(page.getByText('Expected resume date has passed (Jul 20, 2026). Tracking is still paused.')).toBeVisible();
+    await capture(page, info, 'overdue-today');
+    await calendar(page); await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
+    await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled();
+});
+
+test('cached read failure keeps the saved plan visibly stale and reopening recovers it', async ({ page, ux }, info) => {
+    test.skip(before);
+    const state = await install(page, ux); await open(page);
+    await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
+    state.failRead = true; expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/pause', status: 503 });
+    await calendar(page);
+    await expect(page.getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
+    await capture(page, info, 'stale-plan');
+    state.failRead = false; state.target = '2026-07-23';
+    await page.getByRole('button', { name: 'Close date picker', exact: true }).click(); await calendar(page);
+    await expect(page.getByText('Could not refresh the saved pause plan.')).toHaveCount(0);
+    await expect(page.getByTestId('calendar-day-2026-07-23')).not.toHaveAccessibleName(/planned/);
 });
 
 test('offline cached plan and accepted queued resume converge after real browser outbox replay', async ({ page, ux }, info) => {
