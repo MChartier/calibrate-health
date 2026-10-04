@@ -63,8 +63,9 @@ for (const { state, width, height, theme } of states) {
         await page.getByTestId('settings-food-reminder-time').fill('08:30');
         await page.getByRole('button', { name: 'Open notifications, 20 unread', exact: true }).click();
         const confirmation = page.waitForEvent('dialog');
-        await page.getByTestId('notification-open-123').click();
+        const guardedClick = page.getByTestId('notification-open-123').click();
         await (await confirmation).dismiss();
+        await guardedClick;
         const panel = page.getByTestId('notifications-drawer-panel');
         await expect(page).toHaveURL((url) => url.pathname === '/preferences');
         await expect(panel.getByTestId('notification-card-123')).toHaveCount(captureSide === 'before' ? 0 : 1);

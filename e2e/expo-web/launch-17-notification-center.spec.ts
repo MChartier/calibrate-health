@@ -209,11 +209,12 @@ test('Preferences retains browser permission recovery and guarded reminder navig
   await page.getByTestId('settings-food-reminder-time').fill('08:30');
   await page.getByTestId('notifications-button').click();
   const confirmation = page.waitForEvent('dialog');
-  await page.getByTestId('notification-open-123').click();
+  const canceledClick = page.getByTestId('notification-open-123').click();
   const guard = await confirmation;
   expect(guard.type()).toBe('confirm');
   expect(guard.message()).toContain('Discard changes?');
   await guard.dismiss();
+  await canceledClick;
   await expect(page).toHaveURL((url) => url.pathname === '/preferences');
   expect(fixture.actionRequests).toBe(0);
   const panel = page.getByTestId('notifications-drawer-panel');
@@ -223,11 +224,12 @@ test('Preferences retains browser permission recovery and guarded reminder navig
   await expect(page.getByTestId('settings-food-reminder-time')).toHaveValue('08:30');
   await page.getByTestId('notifications-button').click();
   const acceptedConfirmation = page.waitForEvent('dialog');
-  await panel.getByTestId('notification-open-123').click();
+  const acceptedClick = panel.getByTestId('notification-open-123').click();
   await (await acceptedConfirmation).accept();
+  await acceptedClick;
   await expect(page).toHaveURL((url) => url.pathname === '/weight');
   expect(fixture.actionRequests).toBe(1);
   await expect(panel).toHaveCount(0);
-  await expect(page.getByTestId('notifications-badge')).toHaveText('19');
+  await expect(page.getByRole('button', { name: 'Open notifications, 19 unread', exact: true }).getByTestId('notifications-badge')).toHaveText('19');
   expect(fixture.listViews.every((view) => view === 'active')).toBe(true);
 });
