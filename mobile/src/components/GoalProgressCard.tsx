@@ -26,7 +26,6 @@ type GoalProgressCardProps = ViewProps & {
     targetCalories?: number | null;
     weightChangePending?: boolean;
     onEditGoal?: () => void;
-    onAdjustPace?: () => void;
     onSetNextGoal?: () => void;
 };
 
@@ -67,7 +66,6 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     targetCalories,
     weightChangePending = false,
     onEditGoal,
-    onAdjustPace,
     onSetNextGoal,
     style,
     ...props
@@ -129,8 +127,6 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
         goalAction = null;
     } else if (hasReachedGoal && onSetNextGoal) {
         goalAction = <GoalActionButton label="Set next goal" onPress={onSetNextGoal} theme={theme} />;
-    } else if (onAdjustPace && !isMaintenance && planIsAvailable) {
-        goalAction = <GoalActionButton label="Adjust pace" onPress={onAdjustPace} theme={theme} />;
     } else if (onEditGoal) {
         goalAction = (
             <GoalActionButton
@@ -239,7 +235,6 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                     : describeGoalPlan(goal)}
             </AppText>}
             {progressDetails}
-            {onAdjustPace && onEditGoal && !hasReachedGoal && !isMaintenance && planIsAvailable && <GoalActionButton label="Set a new goal" onPress={onEditGoal} theme={theme} />}
             {!weightChangePending && typeof targetCalories === 'number' && (
                 <AppText variant="muted" style={styles.supporting}>Current target: {Math.round(targetCalories).toLocaleString()} kcal/day</AppText>
             )}

@@ -62,10 +62,15 @@ test('matched actual source goal pace comparison', async ({ page, ux }, testInfo
   await hideTransientPwaNotices(page);
   await expect(page.getByText('33% complete')).toBeVisible();
   await expect(page.getByText('Current target: 2,100 kcal/day')).toBeVisible();
+  const initialSnapshot = await page.getByTestId('progress-snapshot-card').boundingBox();
+  const initialActions = await page.getByTestId('progress-snapshot-card').getByRole('button').allTextContents();
   await capture('initial');
-  await page.getByRole('button', { name: stage === 'before' ? 'Edit goal' : 'Adjust pace', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
   await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
   await page.getByRole('option', { name: new RegExp('250 kcal/day deficit') }).click();
+  await expect(page.getByRole('combobox', { name: 'Select daily calorie change' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('combobox', { name: 'Select daily calorie change' })).toContainText('250 kcal/day deficit');
+  if (stage === 'after') await expect(page.getByText(/Started 2026-01-01/)).toBeVisible();
   await capture('editor');
   await page.getByRole('button', { name: stage === 'before' ? 'Save goal' : 'Save pace', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -78,7 +83,7 @@ test('matched actual source goal pace comparison', async ({ page, ux }, testInfo
   await writeFile(path.join(dir, prefix + '.json'), JSON.stringify({
     stage, source: process.env.CALIBRATE_PACE_COMPARE_SOURCE,
     captured_at: new Date().toISOString(), browser: page.context().browser()?.version(),
-    viewport: page.viewportSize(), colorScheme, creates, writes, goal,
+    viewport: page.viewportSize(), colorScheme, creates, writes, goal, initialSnapshot, initialActions,
     normalization: 'Shared hideTransientPwaNotices suppresses unrelated transient notices only.'
   }, null, 2) + '\n');
 });

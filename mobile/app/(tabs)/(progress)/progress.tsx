@@ -266,6 +266,15 @@ export default function ProgressScreen() {
         return goalQuery.data ? formatWeightInput(goalQuery.data.start_weight) : '';
     }
 
+    function editCurrentGoal() {
+        const currentGoal = goalQuery.data;
+        if (currentGoal?.plan_status === 'available' && currentGoal.daily_deficit !== 0) {
+            setPaceGoal(currentGoal);
+            return;
+        }
+        openGoalEditor();
+    }
+
     function openGoalEditor() {
         const currentGoal = goalQuery.data;
         const nextStartWeight = getDefaultStartWeight();
@@ -389,8 +398,7 @@ export default function ProgressScreen() {
                             metrics={metricsQuery.data}
                             goal={goalQuery.data}
                             user={user}
-                            onEditGoal={openGoalEditor}
-                            onAdjustPace={() => setPaceGoal(goalQuery.data ?? null)}
+                            onEditGoal={editCurrentGoal}
                             onSetNextGoal={openNextGoalEditor}
                             weightChangePending={hasPendingWeightChange}
                             targetCalories={!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available'
@@ -415,7 +423,14 @@ export default function ProgressScreen() {
                 />}
             </FixedPage>
 
-            {paceGoal && <GoalPaceSheet goal={paceGoal} onClose={() => setPaceGoal(null)} />}
+            {paceGoal && <GoalPaceSheet
+                goal={paceGoal}
+                onClose={() => setPaceGoal(null)}
+                onStartNewGoal={() => {
+                    setPaceGoal(null);
+                    openGoalEditor();
+                }}
+            />}
             <BottomSheetModal
                 visible={isGoalEditorOpen}
                 accessibilityLabel="Set a new goal"
