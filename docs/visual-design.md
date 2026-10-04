@@ -102,7 +102,7 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
 ### Progress
 
 Keep the compact Snapshot on the page background, with paired weight/date metrics, goal progress, current
-target, direct Adjust pace access for an active loss/gain goal, and a separate Set a new goal action. Trend's heading, decorative fullscreen icon, and graph form one
+target and one Edit goal action. For an active loss/gain goal, Edit goal contains the pace controls and an intentional Set a new goal action. Trend's heading, decorative fullscreen icon, and graph form one
 full-width tap target with a shared hover/focus treatment. Trend fills the middle and expands in place
 when tapped. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.
 A full-width horizontal rule separates Snapshot from Trend, matching the rule above Plan check.

@@ -17,9 +17,10 @@ import { formatWeight } from '../utils/format';
 import { getLocalDateForTimestamp } from '../utils/dates';
 import { spacing } from '../theme';
 /** Mounted per editor session so cancellation never carries a draft into another goal. */
-export function GoalPaceSheet({ goal, onClose }: {
+export function GoalPaceSheet({ goal, onClose, onStartNewGoal }: {
     goal: GoalEntry;
     onClose: () => void;
+    onStartNewGoal: () => void;
 }) {
     const { api, user } = useAuth();
     const client = useQueryClient();
@@ -95,13 +96,17 @@ export function GoalPaceSheet({ goal, onClose }: {
         if (!save.isPending && (!dirty || await confirmDiscardChanges()))
             onClose();
     }
+    async function startNewGoal() {
+        if (!save.isPending && (!dirty || await confirmDiscardChanges()))
+            onStartNewGoal();
+    }
     function submit() {
         if (!canSave || submitting.current || save.isPending)
             return;
         submitting.current = true;
         save.mutate();
     }
-    return <BottomSheetModal visible title="Adjust daily calorie change" accessibilityLabel="Adjust daily calorie change" description="Keep your existing goal, starting weight, start date and progress." showCloseButton dismissDisabled={save.isPending} isDirty={dirty} confirmDismiss={confirmDiscardChanges} onRequestClose={onClose}>
+    return <BottomSheetModal visible title="Edit goal" accessibilityLabel="Edit goal" description="Keep your existing goal, starting weight, start date and progress." showCloseButton dismissDisabled={save.isPending} isDirty={dirty} confirmDismiss={confirmDiscardChanges} onRequestClose={onClose}>
         <View style={{ gap: spacing.md }}>
             <AppText>Start {formatWeight(goal.start_weight, user?.weight_unit)} | Goal {formatWeight(goal.target_weight, user?.weight_unit)} | Started {getLocalDateForTimestamp(goal.created_at, user?.timezone)}</AppText>
             <AppText variant="muted">Changes apply today. Completed days keep their saved comparison. Accepted calibration corrections remain in place and are checked for safety.</AppText>
@@ -126,6 +131,8 @@ export function GoalPaceSheet({ goal, onClose }: {
                 <AppButton title="Save pace" onPress={submit} disabled={!canSave} busy={save.isPending} busyLabel="Saving pace..."/>
             </>}
             <AppButton title="Cancel" variant="secondary" disabled={save.isPending} onPress={() => void close()}/>
+            <AppText variant="muted">Want a different target? Start a new goal with your current weight and a new start date.</AppText>
+            <AppButton title="Set a new goal" variant="secondary" disabled={save.isPending} onPress={() => void startNewGoal()}/>
         </View>
     </BottomSheetModal>;
 }
