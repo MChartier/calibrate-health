@@ -6,7 +6,7 @@ import path from 'node:path';
 
 const [root, output, label] = process.argv.slice(2);
 if (!root || !output || !['before', 'after'].includes(label)) throw new Error('Usage: node build.mjs CHECKOUT OUTPUT before|after');
-if (os.hostname() !== 'MCHARTIER_ZBOOK') throw new Error('This evidence run requires MCHARTIER_ZBOOK');
+if (os.hostname().toUpperCase() !== 'MCHARTIER_ZBOOK') throw new Error('This evidence run requires MCHARTIER_ZBOOK');
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 const sourceCommit = git('rev-parse', 'HEAD');
 git('diff', '--exit-code'); git('diff', '--cached', '--exit-code');
