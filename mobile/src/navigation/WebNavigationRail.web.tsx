@@ -1,5 +1,5 @@
 import React from 'react';
-import { CommonActions } from 'expo-router/build/react-navigation/native';
+import { router } from 'expo-router';
 import { GuardedTabButton } from './GuardedTabButton';
 import { canonicalPathForRoute } from './routeRegistry';
 import { radius, spacing, useAppTheme } from '../theme';
@@ -57,6 +57,13 @@ export function WebNavigationRail({ state, descriptors, navigation, insets, onWi
                     const focused = state.routes[state.index].key === route.key;
                     const { options } = descriptors[route.key];
                     const color = focused ? colors.onPrimaryContainer : colors.muted;
+                    const navigate = () => {
+                        const tabEvent = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                        if (!focused && !tabEvent.defaultPrevented) {
+                            // Canonical link routing preserves browser history when leaving a retained editor.
+                            router.navigate(canonicalPathForRoute(routeId));
+                        }
+                    };
                     return (
                         <GuardedTabButton
                             key={route.key}
@@ -64,12 +71,10 @@ export function WebNavigationRail({ state, descriptors, navigation, insets, onWi
                             role="tab"
                             aria-label={label}
                             aria-selected={focused}
+                            onGuardedNavigate={navigate}
                             onPress={(event) => {
-                                const tabEvent = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                                 event.preventDefault();
-                                if (!focused && !tabEvent.defaultPrevented) {
-                                    navigation.dispatch({ ...CommonActions.navigate(route), target: state.key });
-                                }
+                                navigate();
                             }}
                             onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
                             style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: ITEM_MIN_HEIGHT,

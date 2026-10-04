@@ -122,9 +122,14 @@ test('rail links, keyboard, history, resizing and enlarged text', async ({ page,
   for (const width of [1023, 1024, 820, 390, 320, 1440]) {
     await page.setViewportSize({ width, height: 844 });
     await expect(progress).toBeVisible();
-    const bounds = (await progress.boundingBox())!;
-    if (width < 1024) expect(bounds.y).toBeGreaterThan(700);
-    else expect(bounds.x).toBeLessThan(176);
+    // A breakpoint replaces the tab host; wait for the destination geometry, not the outgoing node.
+    await expect.poll(async () => {
+      const bounds = await progress.boundingBox();
+      if (!bounds) return false;
+      if (width < 1024) return bounds.y > 700;
+      return bounds.x < 176;
+    }).toBe(true);
+    await expect(progress).toHaveAttribute('aria-selected', 'true');
     await capture(page, `responsive-${width}-light`);
   }
   await page.setViewportSize({ width: 1024, height: 480 });

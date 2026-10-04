@@ -4,8 +4,8 @@ import type { BottomTabBarButtonProps } from 'expo-router/build/react-navigation
 import { interceptGuardedNavigation } from './guardedNavigation';
 
 /** Preserve Expo's canonical tab links while guarding retained-editor departures. */
-export function GuardedTabButton({ href, children, style, onPress, ref, ...props }:
-    Omit<BottomTabBarButtonProps, 'href'> & { href: Href }) {
+export function GuardedTabButton({ href, children, style, onPress, onGuardedNavigate, ref, ...props }:
+    Omit<BottomTabBarButtonProps, 'href'> & { href: Href; onGuardedNavigate?: () => void }) {
     // Expo's tab props use Pressable types; Link forwards them to its platform host.
     const linkProps = props as React.ComponentProps<typeof Link>;
     return (
@@ -21,7 +21,8 @@ export function GuardedTabButton({ href, children, style, onPress, ref, ...props
                     && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
                         || (event.button != null && event.button !== 0)
                         || ![undefined, null, '', 'self'].includes(event.currentTarget.target))) return;
-                if (interceptGuardedNavigation(() => router.navigate(href), () => event.preventDefault())) return;
+                // Custom navigators can replay their cancellable tab event after confirmation.
+                if (interceptGuardedNavigation(onGuardedNavigate ?? (() => router.navigate(href)), () => event.preventDefault())) return;
                 onPress?.(event);
             }}
         >
