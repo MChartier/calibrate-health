@@ -8,6 +8,7 @@
   "parent": null,
   "instructions": "README.md; retained capture.config.ts and capture.spec.ts; each PNG JSON binds loaded scripts and image bytes",
   "normalization": "Shared synthetic frozen-clock fixture and transient PWA notice suppression; no image editing",
+  "textEncoding": "UTF-8, LF (Git-normalized text; execution on Windows can use CRLF). PNG bytes are unchanged.",
   "files": [
     {
       "path": "docs/evidence/issue-413/README.md",
@@ -56,18 +57,18 @@
     },
     {
       "path": "docs/evidence/issue-413/after-build.log",
-      "sha256": "80c65f56ed0f072820d73e00967a3aa41157eff351e0b141369aa1784c5298c0",
-      "bytes": 4741
+      "sha256": "be32164cca48c57ba37cab04df5877d1da322984a1f1b31ed2df7feaa8cfc295",
+      "bytes": 4586
     },
     {
       "path": "docs/evidence/issue-413/baseline-build.log",
-      "sha256": "d58901d909b5030e35e08c9417c560e3133587813dc20df65544c1163660837f",
-      "bytes": 4929
+      "sha256": "a72baa545fc6e45e529dc81fe89a8cb1d8a79382f57a44b138c954acfce568d9",
+      "bytes": 4774
     },
     {
       "path": "docs/evidence/issue-413/baseline-regression.log",
-      "sha256": "610e6c5f3d5beb28675b71a21b78f02852ca95c0421033826889de9e4e710a63",
-      "bytes": 4479
+      "sha256": "72a56db3ba1935609583376bdd703ff3d51a793881376afcd40158dc0debbb8f",
+      "bytes": 4428
     },
     {
       "path": "docs/evidence/issue-413/before-1440-dark.png",
@@ -121,8 +122,8 @@
     },
     {
       "path": "docs/evidence/issue-413/paused-flows.log",
-      "sha256": "7ede390a9b4710f9c5dc5e0803db60089571160d0d3d1727e313a201d1ea9acf",
-      "bytes": 4043
+      "sha256": "242016db7685d68eb543aa7097bbbd8d7b3bfc1c8b8be6fc921b2cd5aa9142dd",
+      "bytes": 4001
     },
     {
       "path": "docs/evidence/issue-413/pixel-diff.cjs",
@@ -136,8 +137,8 @@
     },
     {
       "path": "docs/evidence/issue-413/seal.cjs",
-      "sha256": "e2cedd54c859d57d80103bafacd562d07fd9f10668f6c12b7c3f3dcd9046dfd6",
-      "bytes": 1743
+      "sha256": "4a67fc6b6ae1ad82d783d44ccc76e07d9ceda5e5de7f75f8480ffa99205c5689",
+      "bytes": 1980
     },
     {
       "path": "e2e/expo-web/fixtures.ts",

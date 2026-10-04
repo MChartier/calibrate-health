@@ -2,7 +2,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '../../..');
-const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+const bytes = file => file.endsWith('.png') ? fs.readFileSync(file) : Buffer.from(fs.readFileSync(file, 'utf8').replaceAll('\r\n', '\n'));
+const digest = file => crypto.createHash('sha256').update(bytes(file)).digest('hex');
 const relative = file => path.relative(root, file).replaceAll('\\', '/');
 const sources = ['e2e/expo-web/fixtures.ts', 'e2e/expo-web/text-scaling.ts',
   'e2e/expo-web/ux-a11y.ts', 'e2e/expo-web/today-paused.spec.ts',
@@ -18,7 +19,8 @@ const manifest = {
   capturedAfterSha: '7bc5c17b62785e7ef8abe048f5069320edc9fdc5', parent: null,
   instructions: 'README.md; retained capture.config.ts and capture.spec.ts; each PNG JSON binds loaded scripts and image bytes',
   normalization: 'Shared synthetic frozen-clock fixture and transient PWA notice suppression; no image editing',
-  files: files.map(file => ({ path: relative(file), sha256: digest(file), bytes: fs.statSync(file).size })),
+  textEncoding: 'UTF-8, LF (Git-normalized text; execution on Windows can use CRLF). PNG bytes are unchanged.',
+  files: files.map(file => ({ path: relative(file), sha256: digest(file), bytes: bytes(file).length })),
 };
 fs.writeFileSync(path.join(__dirname, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 console.log('manifest.json SHA-256:', digest(path.join(__dirname, 'manifest.json')));
