@@ -102,6 +102,50 @@ try {
     assert.notEqual(newGoal.body.id, goal.id);
     assert.equal((await call('patch', '/:id/pace', payload)).statusCode, 409);
     assert.equal(await db.bodyMetric.count({ where: { user_id: user.id } }), 1);
+    // A RepeatableRead profile read begun behind pace must fail recoverably, then
+    // succeed in a fresh transaction. Observe the real transactional read to force it.
+    const profilePreview = await call('get', '/pace-options');
+    const unchangedTimezone = (await db.user.findUnique({ where: { id: user.id } })).timezone;
+    let unlockPace, heldPace, profileRead;
+    const unlock = new Promise(resolve => { unlockPace = resolve; });
+    const held = new Promise(resolve => { heldPace = resolve; });
+    const read = new Promise(resolve => { profileRead = resolve; });
+    let holdNextGuard = true;
+    planningLock.lockCaloriePlanningInputs = async (...args) => {
+        await originalLock(...args);
+        if (holdNextGuard) { holdNextGuard = false; heldPace(); await unlock; }
+    };
+    const profileRacePace = call('patch', '/:id/pace', {
+        daily_deficit: 500, expected_plan_version: profilePreview.body.expected_plan_version
+    }, crypto.randomUUID(), router, newGoal.body.id);
+    const originalTransaction = db.$transaction;
+    try {
+        await Promise.race([held, profileRacePace.then(result => { throw new Error('pace ended before guard: ' + JSON.stringify(result)); })]);
+        db.$transaction = (callback, options) => originalTransaction.call(db, async tx => {
+            const observedUser = new Proxy(tx.user, { get(target, key) {
+                if (key !== 'findUnique') return target[key];
+                return async args => { const result = await target.findUnique(args); profileRead(); return result; };
+            } });
+            return callback(new Proxy(tx, { get(target, key) { return key === 'user' ? observedUser : target[key]; } }));
+        }, options);
+        const profile = call('patch', '/profile', { timezone: 'UTC' }, crypto.randomUUID(), userRouter);
+        await Promise.race([read, profile.then(result => { throw new Error('profile ended before read: ' + JSON.stringify(result)); })]);
+        unlockPace();
+        assert.equal((await profileRacePace).statusCode, 200);
+        const rejectedProfile = await profile;
+        assert.equal(rejectedProfile.statusCode, 409);
+        assert.equal(rejectedProfile.body.code, 'PROFILE_PLAN_CHANGED');
+        assert.equal(rejectedProfile.body.retryable, true);
+        assert.equal((await db.user.findUnique({ where: { id: user.id } })).timezone, unchangedTimezone);
+    } finally {
+        unlockPace();
+        db.$transaction = originalTransaction;
+        planningLock.lockCaloriePlanningInputs = originalLock;
+    }
+    assert.equal((await call('patch', '/profile', { timezone: 'UTC' }, crypto.randomUUID(), userRouter)).statusCode, 200);
+    assert.equal((await db.user.findUnique({ where: { id: user.id } })).timezone, 'UTC');
+    console.log('[goal-pace-smoke] PASS: pace-first profile conflict returns retryable409, rolls back, and succeeds on fresh retry.');
+
     // Reverse the order: an accepted pace must be visible to a later weight
     // writer's sticky safety check, even when its metric write already started.
     const currentPreview = await call('get', '/pace-options');

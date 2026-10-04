@@ -175,6 +175,11 @@ paths:
               schema: { $ref: '#/components/schemas/ApiError' }
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Concurrent profile or calorie-plan change. No profile fields were saved; refresh and retry.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
   /api/v1/user/preferences:
     patch:
       operationId: updateUserPreferences
