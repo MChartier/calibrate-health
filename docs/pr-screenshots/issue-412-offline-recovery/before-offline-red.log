@@ -1,0 +1,50 @@
+npm notice run cal-io@0.37.0 npx
+npm notice run playwright test --config=playwright.expo-web.config.ts --project=desktop-chrome --workers=1 --grep an offline reminder open e2e/expo-web/launch-17-notification-center.spec.ts
+
+Running 1 test using 1 worker
+
+(node:38976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/preferences viewport=1440x1000 project=desktop-chrome last_failed_request=none
+  x  1 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ an offline reminder open settles without trapping the editor and can recover online (11.2s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ an offline reminder open settles without trapping the editor and can recover online 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('notifications-drawer-panel').getByText('Unable to update that notification. Try again.')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for getByTestId('notifications-drawer-panel').getByText('Unable to update that notification. Try again.')
+
+
+      210 |   await (await confirmation).accept();
+      211 |   await click;
+    > 212 |   await expect(panel.getByText('Unable to update that notification. Try again.')).toBeVisible();
+          |                                                                                   ^
+      213 |   await expect(panel.getByRole('button', { name: 'Close notifications' })).toBeEnabled();
+      214 |   await expect(panel.getByTestId('notification-card-123')).toBeVisible();
+      215 |   await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
+        at <worktree>\e2e\expo-web\launch-17-notification-center.spec.ts:212:83
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-d99a8-itor-and-can-recover-online-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-d99a8-itor-and-can-recover-online-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-d99a8-itor-and-can-recover-online-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-d99a8-itor-and-can-recover-online-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  1 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ an offline reminder open settles without trapping the editor and can recover online 
