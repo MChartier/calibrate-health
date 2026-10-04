@@ -101,13 +101,7 @@ export async function installNotificationApi(page: Page, empty = false): Promise
 
     if (pathname === '/api/v1/notifications/in-app/read-all' && method === 'PATCH') {
       fixture.readAllRequests += 1;
-      let updatedCount = 0;
-      fixture.history = fixture.history.map((item) => {
-        if (item.read_at) return item;
-        updatedCount += 1;
-        return { ...item, read_at: '2026-07-21T19:05:00.000Z' };
-      });
-      return fulfillJson(route, { ok: true, updated_count: updatedCount });
+      return fulfillJson(route, { message: 'The active reminder client must not mark all history read.' }, 400);
     }
 
     const itemMatch = pathname.match(/^\/api\/v1\/notifications\/in-app\/(\d+)\/(read|dismiss)$/);
@@ -155,15 +149,7 @@ export async function installNotificationApi(page: Page, empty = false): Promise
     }
 
     if (view === 'history') {
-      const cursor = url.searchParams.get('cursor');
-      const cursorId = cursor?.startsWith('after-') ? Number(cursor.slice('after-'.length)) : null;
-      const eligible = cursorId ? fixture.history.filter(({ id }) => id < cursorId) : fixture.history;
-      const pageItems = eligible.slice(0, 20);
-      return fulfillJson(route, {
-        notifications: pageItems,
-        unread_count: active.length,
-        next_cursor: eligible.length > pageItems.length ? `after-${pageItems.at(-1)!.id}` : null,
-      });
+      return fulfillJson(route, { message: 'The active reminder client must not request history.' }, 400);
     }
 
     return route.fallback();
