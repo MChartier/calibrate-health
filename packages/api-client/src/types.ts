@@ -338,6 +338,7 @@ export type AccountExport = {
         id: number;
         source_goal_id: number;
         recommendation_id: number | null;
+        configured_daily_deficit?: number | null;
         target_adjustment_kcal: number;
         calorie_plan_review_status: 'CLEAR' | 'REQUIRES_REVIEW';
         calorie_plan_review_reason: string | null;
@@ -778,6 +779,13 @@ export type CalibrationStatusResponse = {
     scheduledChange: ScheduledCalibrationChange | null;
     planStatus?: CaloriePlanStatus;
     planReasonCode?: CaloriePlanReasonCode | null;
+};
+
+export type GoalPaceRequest = { daily_deficit: number; expected_plan_version: string };
+export type GoalPaceOptions = CaloriePlanOptionsResponse & {
+    goal: GoalEntry;
+    expected_plan_version: string;
+    effective_local_date: string;
 };
 
 export type GoalEntry = {

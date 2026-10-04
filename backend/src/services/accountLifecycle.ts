@@ -270,6 +270,7 @@ export type AccountExport = {
     id: number;
     source_goal_id: number;
     recommendation_id: number | null;
+    configured_daily_deficit: number | null;
     target_adjustment_kcal: number;
     calorie_plan_review_status: string;
     calorie_plan_review_reason: string | null;
@@ -502,6 +503,7 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       id: revision.id,
       source_goal_id: revision.source_goal_id,
       recommendation_id: revision.recommendation_id,
+      configured_daily_deficit: revision.configured_daily_deficit ?? null,
       target_adjustment_kcal: revision.target_adjustment_kcal,
       calorie_plan_review_status: revision.calorie_plan_review_status,
       calorie_plan_review_reason: revision.calorie_plan_review_reason,

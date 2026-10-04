@@ -122,6 +122,38 @@ export interface paths {
         patch: operations["updateUserPreferences"];
         trace?: never;
     };
+    "/api/v1/goals/pace-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getGoalPaceOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{id}/pace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["adjustGoalPace"];
+        trace?: never;
+    };
     "/api/v1/goals": {
         parameters: {
             query?: never;
@@ -1009,6 +1041,22 @@ export interface components {
             /** Format: date */
             projected_end_date: string | null;
             reason_code: components["schemas"]["CaloriePlanReasonCode"] | null;
+        };
+        GoalPaceRequest: {
+            /** @enum {integer} */
+            daily_deficit: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
+            expected_plan_version: string;
+        };
+        GoalPaceOptions: {
+            goal: components["schemas"]["GoalEntry"];
+            expected_plan_version: string;
+            /** Format: date */
+            effective_local_date: string;
+            eligibility: components["schemas"]["CalorieEligibility"];
+            bmr: number | null;
+            tdee: number | null;
+            minimumDailyCalorieTarget: number | null;
+            planOptions: components["schemas"]["CaloriePlanOption"][];
         };
         GoalEntry: {
             id: number;
@@ -2886,6 +2934,77 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApiError"];
                 };
+            };
+        };
+    };
+    getGoalPaceOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authoritative current pace, dated plan version and safety options including calibration corrections. Never cached. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalPaceOptions"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description No current goal. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adjustGoalPace: {
+        parameters: {
+            query?: never;
+            header: {
+                "x-client-operation-id": string;
+            };
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalPaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Same goal and baseline with new pace, effective today. Saved completed-day comparisons remain unchanged. Same-day latest revision wins. Identical operation retries replay their receipt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalEntry"];
+                };
+            };
+            /** @description Invalid, unsafe, unavailable or direction-changing pace. No domain mutation. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Stale goal or plan version, concurrent mutation, or reused operation ID. Refresh before saving a new operation. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

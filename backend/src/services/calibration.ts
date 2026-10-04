@@ -387,7 +387,12 @@ async function buildCalibrationStatusSnapshot(
         };
     }
     const goalStartDate = formatDateToLocalDateString(goal.created_at, user.timezone);
-    const revisionStartDate = currentPlan ? toDateKey(currentPlan.effectiveLocalDate) : goalStartDate;
+    // A manual pace change can occur after logging/completion; start new calibration evidence with the next full day.
+    const revisionStartDate = currentPlan
+        ? toDateKey(planning.effectiveRevision?.configured_daily_deficit != null
+            ? addUtcDays(currentPlan.effectiveLocalDate, 1)
+            : currentPlan.effectiveLocalDate)
+        : goalStartDate;
     const planStartDate = goalStartDate > revisionStartDate ? goalStartDate : revisionStartDate;
     const foodDays = buildFoodEvidence({ logs, completionDays, planStartDate, asOfDate: asOfDateKey });
     const latestPausedDate = foodDays

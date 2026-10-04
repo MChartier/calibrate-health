@@ -228,6 +228,7 @@ const exportRow = {
     user_id: 7,
     source_goal_id: 2,
     recommendation_id: 4,
+    configured_daily_deficit: 250,
     target_adjustment_kcal: -125,
     calorie_plan_review_status: 'REQUIRES_REVIEW',
     calorie_plan_review_reason: 'PLAN_REVISION_UNSAFE',
@@ -280,6 +281,7 @@ test('account export returns canonical versioned tracking data without credentia
   assert.equal(result.calibration_recommendations[0].input_fingerprint, undefined);
   assert.equal(result.calorie_plan_revisions[0].effective_local_date, '2025-01-05');
   assert.equal(result.calorie_plan_revisions[0].source_goal_id, 2);
+  assert.equal(JSON.parse(JSON.stringify(result)).calorie_plan_revisions[0].configured_daily_deficit, 250);
   assert.equal(result.goals[0].calorie_plan_review_reason, 'HISTORICAL_PLAN_REQUIRES_REVIEW');
   assert.equal(result.calorie_plan_revisions[0].calorie_plan_review_status, 'REQUIRES_REVIEW');
   assert.equal(result.calorie_plan_revisions[0].calorie_plan_review_reason, 'PLAN_REVISION_UNSAFE');
