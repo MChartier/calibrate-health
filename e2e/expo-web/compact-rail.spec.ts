@@ -174,6 +174,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await notifications.click();
     await expect(page.getByRole('dialog', { name: 'Notifications', exact: true })).toBeVisible();
     await expect(page.getByText('Time to weigh in', { exact: true })).toBeVisible();
+    // Capture the fully open drawer rather than an intermediate JS-animation frame.
+    await expect.poll(() => page.getByTestId('notifications-drawer-panel').evaluate(panel =>
+      new DOMMatrixReadOnly(getComputedStyle(panel).transform).m41)).toBe(0);
     await capture(page, `notification-overlay-${scheme}`);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
