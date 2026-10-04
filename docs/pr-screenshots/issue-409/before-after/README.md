@@ -20,7 +20,7 @@ These unedited PNGs show real Chrome on Windows serving production Expo web expo
 | --- | --- |
 | ![Before phone-sized browser](before-android-phone-chrome-dark-saved.png) | ![After phone-sized browser](after-android-phone-chrome-dark-saved.png) |
 
-Both show target2350 after selecting250. The saved response confirms the old POST creates goal8 with July21 start and85kg baseline; the new PATCH retains goal7, January1 start,90kg baseline, target75 and stored target-date intent. Initial and editor originals are also retained: the new editor visibly states the original date and preservation policy.
+Both show target2350 after selecting250. The saved response confirms the old POST creates goal8 with July21 start and85kg baseline; the new PATCH retains goal7, January1 start,90kg baseline, target75 and stored target-date intent. Initial and editor originals are also retained. The desktop comparison editor capture has its daily-change selector expanded, which hides the start date and preservation copy. The [full draft editor](../desktop-chrome-light-draft.png) visibly shows `Start 90 kg | Goal 75 kg | Started 2026-01-01` and the preservation policy. Its SHA-256 is `ab13fe6d9bd55218b8e76e3ceb9e26e1efdfa067144bea725595213fe0bbf133`.
 
 ## Capture steps and results
 
@@ -29,4 +29,4 @@ Both show target2350 after selecting250. The saved response confirms the old POS
 3. From the child checkout run the common Playwright harness against each loopback URL via `CALIBRATE_EXPO_WEB_BASE_URL`. Set `CALIBRATE_PACE_COMPARE_STAGE=before` or `after`, `CALIBRATE_PACE_COMPARE_SOURCE` to the matching full source SHA, and `CALIBRATE_PACE_COMPARE_DIR` to an output directory. Run `npx.cmd playwright test --config playwright.expo-web.config.ts e2e/expo-web/goal-pace-comparison.spec.ts --project=desktop-chrome --project=android-phone-chrome --workers=2`.
 4. Before2/2 and after2/2 tests passed. Both production builds passed. Inspect the actual initial/editor/saved pixels, archive readbacks, and hash the originals. These images were inspected for the changed baseline/progress and responsive editor; CI/backend tests provide persistence evidence separately.
 
-The PR embeds the matched saved-state pairs near its Summary/Test plan. Independent QA must inspect both actual pixels and the rendered PR; it remains pending at publication.
+The PR embeds the matched saved-state pairs near its Summary/Test plan. Independent QA inspected the pixels and rendered PR and verified product behavior and the matched pairs. [The latest advisory](https://github.com/MChartier/calibrate-health/pull/415#issuecomment-5977169855) requests this presentation correction; Subsequent verdicts and readiness status are recorded in the PR discussion.

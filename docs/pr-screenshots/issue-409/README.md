@@ -12,7 +12,7 @@ The sibling PNGs are actual Chrome on Windows rendering the current Expo web app
 
 All eight light/dark flows at 320, 390, 820 and 1440 px passed. `e2e/expo-web/goal-pace.spec.ts` exercises adjustment, cancel/discard, a simulated lost response after commit, retry with the same operation ID and one write, reload/reopen, Escape focus restoration, historical saved target, and separate explicit new goal. The 320px light scenario also reaches Save/Close at 200% text. Axe checks the changed editor. The API fixtures demonstrate UI behavior; backend and real Postgres checks separately establish persistence and safety.
 
-Screenshots follow `before / draft / retry / after / historical-balance / new-goal / new-goal-saved`. Representative desktop-light and compact-dark states, tablet/phone drafts, historical balance and enlarged controls were visually inspected. The matched originals were inspected for visible 85 versus 90 kg baseline, 0% versus 33%, target2350, original start in the new editor, theme, wrapping and reachable actions.
+Screenshots follow `before / draft / retry / after / historical-balance / new-goal / new-goal-saved`. Representative desktop-light and compact-dark states, tablet/phone drafts, historical balance and enlarged controls were visually inspected. The matched originals were inspected for visible 85 versus 90 kg baseline, 0% versus 33%, target2350, original start in the full draft editor, theme, wrapping and reachable actions.
 
 ## Persistence and history policy
 
@@ -24,7 +24,7 @@ Run the repository setup, `npm.cmd --prefix mobile run build:web`, then `npx.cmd
 
 Local live Postgres and native emulator/device execution remain unexecuted. Docker was unresponsive; a repository status command attempted Desktop startup and was interrupted, with no subsequent shared-service recovery. The Database Upgrade CI workflow runs an isolated-schema real Postgres route smoke plus populated upgrade and rollback. Exact-head CI and configured review results are recorded on the PR, not inferred from browser fixtures.
 
-Stack: parent PR #410, pinned `230c31f120d27811228ed566f7dbb0ff6106288a`; base branch `mchartier/completed-calendar-bands`; child `mchartier/goal-pace-continuity`. Review parent first, then #409. Execution workflow-v3 remains pinned `f0919b184b6344d6279178b2388190936ca432a9`. The coordinator explicitly adopted [pr-review-v3](https://github.com/MChartier/agentic-workflow/blob/4142ea04082346002639af6cfb1e62fc3cedcd2d/standards/pr-review.md), which was read in full; its definition is still a draft PR. Independent QA is pending; this evidence is not a human-ready verdict.
+Stack: parent PR #410, pinned `230c31f120d27811228ed566f7dbb0ff6106288a`; base branch `mchartier/completed-calendar-bands`; child `mchartier/goal-pace-continuity`. Review parent first, then #409. Execution workflow-v3 remains pinned `f0919b184b6344d6279178b2388190936ca432a9`. The coordinator explicitly adopted [pr-review-v3](https://github.com/MChartier/agentic-workflow/blob/97e5583c8355f3673aad0835c0ce3ca1486aeb8b/standards/pr-review.md), which was read in full; its definition is still a draft PR. Independent QA verified product behavior and matched evidence; [the latest advisory](https://github.com/MChartier/calibrate-health/pull/415#issuecomment-5977169855) requests a presentation-only evidence-pointer correction. See the PR discussion for subsequent verdicts and readiness; this evidence is not a human-ready verdict.
 
 ## Review follow-up
 
