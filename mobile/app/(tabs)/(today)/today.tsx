@@ -31,11 +31,12 @@ import { getMetricDate } from '../../../src/utils/metrics';
 import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
 import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../src/today/dashboardState';
 import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
-import { spacing } from '../../../src/theme';
+import { spacing, useAppTheme } from '../../../src/theme';
 
 const FoodLogContent = React.lazy(() => import('../../../src/food/FoodLogContent'));
 
 export default function TodayScreen() {
+    const theme = useAppTheme();
     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
     const pathname = usePathname();
     const { api, user } = useAuth();
@@ -207,7 +208,7 @@ export default function TodayScreen() {
             >
                 {isPaused ? <PausedDayBody expanded={expanded}>
                     <PausedDayMessage isToday={isToday} />
-                    <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
+                    <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.outline }} />
                 </PausedDayBody> : <>
                     <ExpansionRegion id="weight" order={1}>
                         <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
