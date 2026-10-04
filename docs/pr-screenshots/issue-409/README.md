@@ -1,30 +1,27 @@
-# Issue 409 implementation checkpoint
+# Issue 409: goal pace continuity evidence
 
-Status: paused at the coordinator's request while parent PR #410 receives an evidence correction. This is a recoverable implementation checkpoint, not a QA-ready verdict or completed PR handoff.
+The actual pre-change Progress editor creates a replacement goal when changing pace. The new **Adjust pace** action keeps the existing goal; **Set a new goal** remains an intentional reset. These captures use synthetic data only, with no supplied personal screenshot.
 
-Branch: mchartier/goal-pace-continuity. Parent: #410, mchartier/completed-calendar-bands, pinned head 3d2b4959b6592cfeb3dcf60dc2ca818e219eacc5. Review order: #410 then #409. Workflow-v3 / pr-review-v2 pinned f0919b184b6344d6279178b2388190936ca432a9 was read and acknowledged.
+## Genuine source comparison
 
-## Observed behavior
+[Matched source evidence and provenance](before-after/README.md) compares actual separately built sources: before `230c31f120d27811228ed566f7dbb0ff6106288a` and after `4cf0867c97d5e94944b3036bf789f00ebd4bf825`. Four matched capture tests passed across desktop light and phone-sized browser dark. Both sources start with goal 7, January 1 start, 90 kg baseline, 75 kg target, current 85 kg, 500 kcal/day deficit and 33% progress. The old editor's save changes identity/start/baseline and yields 0%; the new editor preserves them and yields 33%. Both update the fixture calorie target to 2350 and projected date to May 25, 2027. Response readbacks and screenshot hashes are archived.
 
-The screenshots are actual Chrome on Windows rendering the Expo web app with synthetic API fixtures. The names android-phone-chrome and compact-phone-chrome describe browser viewport projects; no Android emulator or device execution is claimed. No supplied personal screenshot is included.
+## Behavioral flow evidence
 
-All eight light/dark flows at 320, 390, 820 and 1440 px passed. A synthetic goal started at 90 kg on January 1, 2026, targets 75 kg and has current weight 85 kg. Saving a change from 500 to 250 kcal/day kept the same identity, baseline and 33% progress, changed the displayed target from 2100 to 2350 kcal/day and changed the fixture projection from December 22, 2026 to May 25, 2027. Reopening and browser reload retained the change. The separate Set a new goal flow created identity 8 with starting weight 85 kg and 0% progress.
+The sibling PNGs are actual Chrome on Windows rendering the current Expo web app with synthetic API fixtures. Project names containing android-phone describe browser viewports, **not Android emulator/device execution**. Names ending `before` mean initial state of the current implementation's flow; only the separate `before-after/` directory contains pre-change source captures.
 
-Cancel/discard made no request. A simulated 503 after commit retained the draft; retry used the identical operation ID and produced only one effective write. Escape restored focus. Axe found no blocking changed-flow violations. A past completed day retained its saved 2100 target after the adjustment. The 320px light flow also exercised 200% text and reached Save/Close controls.
+All eight light/dark flows at 320, 390, 820 and 1440 px passed. `e2e/expo-web/goal-pace.spec.ts` exercises adjustment, cancel/discard, a simulated lost response after commit, retry with the same operation ID and one write, reload/reopen, Escape focus restoration, historical saved target, and separate explicit new goal. The 320px light scenario also reaches Save/Close at 200% text. Axe checks the changed editor. The API fixtures demonstrate UI behavior; backend and real Postgres checks separately establish persistence and safety.
 
-Screenshots: before / draft / retry / after / historical-balance / new-goal / new-goal-saved correspond to those successive states. Representative desktop-light and compact-dark captures, plus tablet-light and phone-dark draft captures, were inspected. The latest historical-balance and enlarged-text captures still need pixel inspection after this hold.
+Screenshots follow `before / draft / retry / after / historical-balance / new-goal / new-goal-saved`. Representative desktop-light and compact-dark states, tablet/phone drafts, historical balance and enlarged controls were visually inspected. The matched originals were inspected for visible 85 versus 90 kg baseline, 0% versus 33%, target2350, original start in the new editor, theme, wrapping and reachable actions.
 
-## Persistence contract
+## Persistence and history policy
 
-A nullable configured_daily_deficit on CaloriePlanRevision distinguishes manual pace changes from calibration corrections. Goal's original scalar remains the legacy baseline; the shared planning resolver applies the latest effective dated manual pace. Same-day revisions order by ID, changes apply today, and first-completion comparison snapshots remain unchanged. Older/imported unknown targets stay unknown. Calibration starts fresh evidence on the next full local day after a manual change; accepted corrections remain stored and prospective safety is rechecked. Serializable mutations, expected-plan fingerprints and operation receipts protect retries/stale editors. Portable export includes the additive pace field. Release versions are unchanged.
+Nullable `configured_daily_deficit` on `CaloriePlanRevision` distinguishes manual pace from calibration. The original Goal scalar remains the legacy baseline; the shared resolver applies the latest effective manual pace. Changes apply on the user's current local date, same-day ties use revision ID, and completed days retain their first-completion comparison snapshot. Older unknown targets stay unknown. A manual change starts calibration evidence on the next full local day. Historical and scheduled calibration records remain stored; all prospective correction combinations are safety checked and pending recommendations become stale. Serializable mutations, expected-plan fingerprints and operation receipts protect retry/concurrency. Export includes the additive field. Release versions remain unchanged.
 
-## Executed checks and pending work
+## Reproduction and limitations
 
-- Full existing backend suite: 710 passed before final focused additions; affected goal/history/calibration/export suites subsequently passed 25 tests.
-- Full Expo suite: 213 suites / 1076 tests passed before the final historical Today helper; that helper's 15 tests subsequently passed.
-- API client suite: 69 passed. All TypeScript surfaces, backend build, Expo web production build, 16 web release checks, 14 rollback-ledger helper checks and diff hygiene passed.
-- Current browser scenario source: e2e/expo-web/goal-pace.spec.ts. Reproduce with npm --prefix mobile run build:web, then npx playwright test --config playwright.expo-web.config.ts goal-pace.spec.ts.
-- Local live Postgres and native emulator/device checks remain unexecuted. The repository dev:status command unexpectedly attempted Docker Desktop startup and was interrupted; no further shared-service recovery was attempted.
-- An isolated-schema real Postgres smoke is added to the existing Database Upgrade workflow for continuity, replay, simultaneous stale-editor rejection, snapshot preservation and intentional new-goal identity. It is not yet executed. Populated upgrade/rollback exact-head CI, configured Codex review/fixes, final evidence reconciliation and draft PR publication remain pending.
+Run the repository setup, `npm.cmd --prefix mobile run build:web`, then `npx.cmd playwright test --config playwright.expo-web.config.ts e2e/expo-web/goal-pace.spec.ts`. Set `CALIBRATE_PACE_EVIDENCE_DIR` to save the complete flow PNGs. Matched capture instructions are in the linked directory.
 
-Resume only after coordinator release; do not rebase/reset this checkpoint or modify the parent owner's worktree.
+Local live Postgres and native emulator/device execution remain unexecuted. Docker was unresponsive; a repository status command attempted Desktop startup and was interrupted, with no subsequent shared-service recovery. The Database Upgrade CI workflow runs an isolated-schema real Postgres route smoke plus populated upgrade and rollback. Exact-head CI and configured review results are recorded on the PR, not inferred from browser fixtures.
+
+Stack: parent PR #410, pinned `230c31f120d27811228ed566f7dbb0ff6106288a`; base branch `mchartier/completed-calendar-bands`; child `mchartier/goal-pace-continuity`. Review parent first, then #409. Runtime workflow-v3/pr-review-v2 remains pinned `f0919b184b6344d6279178b2388190936ca432a9`, supplemented by the user's explicit blocking matched-before/after amendment. Independent QA is pending; this evidence is not a human-ready verdict.

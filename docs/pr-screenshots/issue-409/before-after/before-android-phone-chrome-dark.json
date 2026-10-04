@@ -1,0 +1,29 @@
+{
+  "stage": "before",
+  "source": "230c31f120d27811228ed566f7dbb0ff6106288a",
+  "captured_at": "2026-10-04T05:03:36.735Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "colorScheme": "dark",
+  "creates": 1,
+  "writes": 0,
+  "goal": {
+    "id": 8,
+    "start_weight": 85,
+    "target_weight": 75,
+    "target_date": "2027-02-01T00:00:00Z",
+    "created_at": "2026-07-21T19:00:00Z",
+    "daily_deficit": 250,
+    "plan_status": "available",
+    "plan_reason_code": null,
+    "projection": {
+      "status": "projected",
+      "projected_end_date": "2027-05-25",
+      "reason_code": null
+    }
+  },
+  "normalization": "Shared hideTransientPwaNotices suppresses unrelated transient notices only."
+}
