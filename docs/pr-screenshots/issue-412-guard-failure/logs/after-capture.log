@@ -1,0 +1,10 @@
+npm notice run cal-io@0.37.0 npx
+npm notice run playwright test --config=<task>\pr417-guard-capture.config.cjs
+
+Running 1 test using 1 worker
+
+(node:17364) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 <task>\pr417-guard-capture.spec.ts:9:1 ΓÇ║ actual failed reminder read after accepted discard (1.0s)
+
+  1 passed (2.1s)

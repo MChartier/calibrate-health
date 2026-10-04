@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-04T22:30:59.961Z",
+  "pullRequest": 417,
+  "finding": "discussion_r4179499463",
+  "owner": "MChartier",
+  "task": "01a105d0-2544-70b1-813c-cf8460fd70c6",
+  "retention": {
+    "ref": "refs/heads/evidence/pr417-guard-recovery-4dcad2c",
+    "purpose": "Affected failed-open guard comparison outside product merge diff",
+    "lifetime": "Lifetime of reviews and receipts; never rewrite/delete/merge"
+  },
+  "originalEvidence": {
+    "commit": "736a86caa519ec929a5fda79d42793c8ff915a6f",
+    "manifestSha256": "ff7873d8acc89f224a757cd2f0392e2ba879c89baf78ec448da86d829ef9dbf5"
+  },
+  "base": "29fb444ae4389ca81f3437d24685ed9badc43410",
+  "before": "979ea130c7ac4f513fbee62b7ff030d1b1bf2fad",
+  "after": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+  "sourceTrees": {
+    "before": "00e9052c35b651ad20da771f71154cc5afd5b680",
+    "after": "57c69b147c4245d7bd3a128c22db60bb449db1c0"
+  },
+  "environment": {
+    "host": "mchartier_zbook",
+    "platform": "win32",
+    "node": "v24.19.0",
+    "npm": "12.0.1"
+  },
+  "buildCommand": "npm.cmd run build:expo-web",
+  "builds": [
+    {
+      "source": "979ea130c7ac4f513fbee62b7ff030d1b1bf2fad",
+      "log": "logs/before-build.log",
+      "inventory": "before-export-inventory.json",
+      "files": 174
+    },
+    {
+      "source": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "log": "logs/after-build.log",
+      "inventory": "after-export-inventory.json",
+      "files": 174
+    }
+  ],
+  "captures": [
+    {
+      "record": "before-capture.json",
+      "scenario": "dirty Preferences 08:30; accept discard; read fails 503; close drawer",
+      "side": "before",
+      "source": "979ea130c7ac4f513fbee62b7ff030d1b1bf2fad",
+      "harnessSource": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "checkedAtUtc": "2026-10-04T22:29:12.507Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "colorScheme": "light",
+      "deviceScaleFactor": 1,
+      "reducedMotion": "reduce",
+      "syntheticClock": "2026-07-21T19:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "locale": "en-US",
+      "originalValue": "09:00",
+      "editedValue": "08:30",
+      "observedValue": "09:00",
+      "expectedValue": "09:00",
+      "requests": 1,
+      "unreadCount": 20,
+      "route": "/preferences",
+      "image": "before-failed-open-1440-light.png",
+      "imageSha256": "c9a65ae267b8d381459f7c218813cd4738e89a9d647952f0f190e166da3acc94",
+      "pendingImage": "before-pending-open-1440-light.png",
+      "pendingImageSha256": "9b6a668ee08f903641278b179bd7bf4e1bec35ba0313f68e189770416b77a5e0",
+      "pendingValue": "09:00",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-b993556c759fd897ff3ee791d6b1951a.js",
+          "sha256": "fcc764c1240b8c91eedb2ab0480063dbeff8a9e3aa4e1b3af3e4318ac7151efa"
+        }
+      ],
+      "captureHarnessSha256": "bab9bd27d6ed0c2f72657d321eed62f67d3527487de2756faba26812b384fae3",
+      "configSha256": "ed9ff358a78dab96ec160a4c70069574613557f10b7ba43ecf2acf6a4f4c78a4"
+    },
+    {
+      "record": "after-capture.json",
+      "scenario": "dirty Preferences 08:30; accept discard; read fails 503; close drawer",
+      "side": "after",
+      "source": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "harnessSource": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "checkedAtUtc": "2026-10-04T22:29:15.668Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "colorScheme": "light",
+      "deviceScaleFactor": 1,
+      "reducedMotion": "reduce",
+      "syntheticClock": "2026-07-21T19:00:00.000Z",
+      "timezone": "America/Los_Angeles",
+      "locale": "en-US",
+      "originalValue": "09:00",
+      "editedValue": "08:30",
+      "observedValue": "08:30",
+      "expectedValue": "08:30",
+      "requests": 1,
+      "unreadCount": 20,
+      "route": "/preferences",
+      "image": "after-failed-open-1440-light.png",
+      "imageSha256": "7ebe69d49d71109e4770f1f3a8c4e4265305a386f96ece6803a499e91359cf44",
+      "pendingImage": "after-pending-open-1440-light.png",
+      "pendingImageSha256": "d2404d3c3abc13d0517bdf584da930e45d6b6a417bf50b3f0d6d739ab2863cd5",
+      "pendingValue": "08:30",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-1aef7f727921f2a54d372e41effdc87a.js",
+          "sha256": "229e85deb778235b7ed029612132e530ef6d481e249aa971a69d604dbd91aa54"
+        }
+      ],
+      "captureHarnessSha256": "bab9bd27d6ed0c2f72657d321eed62f67d3527487de2756faba26812b384fae3",
+      "configSha256": "ed9ff358a78dab96ec160a4c70069574613557f10b7ba43ecf2acf6a4f4c78a4"
+    }
+  ],
+  "sourceHarness": [
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "7befd57041f7b009a7a02c7766db4487becd4529",
+      "sha256": "3e2918013a1d63c9edf2d4c77ab9c44f2e3fede02498f9c33574346f39573ca5"
+    },
+    {
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "8e009836117387ab2adbf386d4c3224454d321b4",
+      "sha256": "1944b9ed1a7577f5665c462b2df0b1f44413fdf4f66c0191debd107cebb00ecb"
+    },
+    {
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "d9f19bf7a8c87478dbff0b23bb1942b60b8053da",
+      "sha256": "175ab54a6b685d6b656e96d71440166a2d3ea744cab38ec5d5c36ce91e51d79d"
+    },
+    {
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "491b1544b30d6810a5f2aaf873eff7a5045cecff",
+      "sha256": "a0e87b389bf5294dd9bff724a36fcf7603c8ffc01639a1c1f81ece3dbdbd29e7"
+    },
+    {
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "e95a7f2b36ffcbdc4f3deb4c7a81d50fe8f732e0",
+      "sha256": "155cabd4c5b2d1b03c518a3c5cdef50287d032f6d80742aee2cc4bd96c170781"
+    },
+    {
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "6e9dc1fab1b4647fb19717a26f15350f95dcce02",
+      "sha256": "5f9450457d2aedb8601a3be5854acc26713d6f4890ba977c0a4b79ac99286a18"
+    },
+    {
+      "path": "scripts/expo-web-build.mjs",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "path": "scripts/expo-web-static-server.mjs",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "path": "package-lock.json",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    },
+    {
+      "path": "playwright.expo-web.config.ts",
+      "commit": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    }
+  ],
+  "logs": [
+    {
+      "path": "logs/before-build.log",
+      "rawSha256": "9828458a1f573e921ed67dd45d3112ace57222de7f20ace554cfedf8bd34eaf3",
+      "publishedSha256": "89b0f5a6eb5b568068df16f189843ad5e33e905b757ae64f6390470732edb03f",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/after-build.log",
+      "rawSha256": "6c145f93612f5f99fd6d3d84fa46019a3fede43256978a90a55d69d45842a6a6",
+      "publishedSha256": "7c7a70a9a72a624db364bd8aece0402a07627c91d31a8a25b23083d792ccc259",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/red-regression.log",
+      "rawSha256": "011239a43e65342e213268c82e1a91fd36833487116d93f723198a0dd26d4750",
+      "publishedSha256": "935d67f6c76de47da4d72512b78af1d24618827b4a0209e1477ad56611375a7e",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/final-browser.log",
+      "rawSha256": "b9df9049f50b79431976c76c2b8dd0a253de8295b80235e8f8ff82d2158b8159",
+      "publishedSha256": "839de83ec37699bc243096f058cf7b513a00ec78299adb818882dbc32358f34c",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/red-pending-edit.log",
+      "rawSha256": "a29f740d8f1bf8fc003df9e9ebff27910c40028e7e170b2d4e68d86eb5568af7",
+      "publishedSha256": "fee3eb891a2f8849ed6aefc18ec781b8829bc636f1da675dd44dbf7e3fd20679",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/final-editors.log",
+      "rawSha256": "3a0ccb749a909d684138990b464ca587fdd0f609542d5585ea7d829e02d52b3e",
+      "publishedSha256": "778c43ee3a38c2e89d7affc24bc3b905b8263bae53f0437e2b218522f5a5bf74",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/focused-jest.log",
+      "rawSha256": "e503826bd8d09ee123560626da8a8cf6f0619f3c8a5c3ccb3ed0f8e7119a3464",
+      "publishedSha256": "d743e1ecf4481695272b3d1871795d643c3f22dca5502a727f7076e08981c005",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/lint.log",
+      "rawSha256": "45c4078f561d09c236e8e56b9255b0545c2be44c3e3964071a0b42463d90d39a",
+      "publishedSha256": "543c4c4039d87e113aa496b42c5f7f1ac12202e406f97aa13a8d45d3314da5b1",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/dead-code.log",
+      "rawSha256": "e6f1b6054a1fd383e74a5da15d8cabfe13cdf21a49da7794de984a91647d5fa5",
+      "publishedSha256": "cef49560d4bb727fd44617d0623d65b2e6c34c279c18a53151c6f15c72ed4a16",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/before-capture.log",
+      "rawSha256": "efe307ee8c22e13a8c68cad623eb1e0854f47e6763bbd12d1459315c762d6e71",
+      "publishedSha256": "e5856d90a68369f11965b8d42e0efc46e033f95a4ea41c7f30b048c6a967b159",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    },
+    {
+      "path": "logs/after-capture.log",
+      "rawSha256": "11d934000a8281d5ed19f1127adedeb58beec272170dc0ef29b54fb6756c222f",
+      "publishedSha256": "8b89c0cdbbca89f28d183641e70cba5635e8bfc8a0582f25bd886e4fe84a308d",
+      "redaction": "Local path prefixes redacted and CRLF normalized to LF; source lines, values and test results unchanged."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "before-failed-open-1440-light.png",
+      "bytes": 57766,
+      "sha256": "c9a65ae267b8d381459f7c218813cd4738e89a9d647952f0f190e166da3acc94",
+      "gitBlob": "dd94004f7970c069cbf81c545089cc0328305b2a"
+    },
+    {
+      "path": "before-pending-open-1440-light.png",
+      "bytes": 89080,
+      "sha256": "9b6a668ee08f903641278b179bd7bf4e1bec35ba0313f68e189770416b77a5e0",
+      "gitBlob": "a3eb08e9cd51186a720c9cd0239cdd424a288533"
+    },
+    {
+      "path": "before-capture.json",
+      "bytes": 1442,
+      "sha256": "4c1e3d2e2b03cb4ac1b0b83b0136d4bdd83d604a3c6bce26e41530bd0ced9329",
+      "gitBlob": "b6f79f54f1de931218929f498a9bc769ac99d234"
+    },
+    {
+      "path": "after-failed-open-1440-light.png",
+      "bytes": 57783,
+      "sha256": "7ebe69d49d71109e4770f1f3a8c4e4265305a386f96ece6803a499e91359cf44",
+      "gitBlob": "ad88c37c12573bedcb93cf8704aebf00cca418eb"
+    },
+    {
+      "path": "after-pending-open-1440-light.png",
+      "bytes": 90190,
+      "sha256": "d2404d3c3abc13d0517bdf584da930e45d6b6a417bf50b3f0d6d739ab2863cd5",
+      "gitBlob": "a410b544ec09561bd63aa29088b73790883e3e8b"
+    },
+    {
+      "path": "after-capture.json",
+      "bytes": 1439,
+      "sha256": "219753698e6e88e79c01065edd454ffd0c40745049a9c3b9eca92c62471e24af",
+      "gitBlob": "b25cbab91bee8fc963b4f0c6a291fa011fd7ed7c"
+    },
+    {
+      "path": "harness/pr417-guard-capture.spec.ts",
+      "bytes": 5146,
+      "sha256": "bab9bd27d6ed0c2f72657d321eed62f67d3527487de2756faba26812b384fae3",
+      "gitBlob": "1bf200e038b70ba61f8eda46c2798a9bd40431d6"
+    },
+    {
+      "path": "harness/pr417-guard-capture.config.cjs",
+      "bytes": 643,
+      "sha256": "ed9ff358a78dab96ec160a4c70069574613557f10b7ba43ecf2acf6a4f4c78a4",
+      "gitBlob": "5cd6d1872a415212eaf5d4f9dfdf6932c5767d36"
+    },
+    {
+      "path": "harness/pr417-guard-before-server.cjs",
+      "bytes": 632,
+      "sha256": "8e1576e4c9fee26c2b62112f14b1b3db9db6c7de9a3c2f573dafa4a53fb2a32f",
+      "gitBlob": "0c8c9aa7dd78edde76cfbd952a8a1bf82dbb6ec8"
+    },
+    {
+      "path": "before-export-inventory.json",
+      "bytes": 29436,
+      "sha256": "5f59e76166345e9cd69362bc99c132a81e9a9892eaa34a27b260bf6ce594fd63",
+      "gitBlob": "0f14cc45cee0166d3af3e823d0154bcef529032f"
+    },
+    {
+      "path": "after-export-inventory.json",
+      "bytes": 29436,
+      "sha256": "8a049415c1e83020748e35a85a0ee16cbd4a6551d70b7e1eca2d1963e3111e2b",
+      "gitBlob": "d1ef270f8775ac5efaf5c855a44b289fae8ca405"
+    },
+    {
+      "path": "logs/before-build.log",
+      "bytes": 4531,
+      "sha256": "89b0f5a6eb5b568068df16f189843ad5e33e905b757ae64f6390470732edb03f",
+      "gitBlob": "37c1dcace4f328f614287bcdffaf77918df707a0"
+    },
+    {
+      "path": "logs/after-build.log",
+      "bytes": 4865,
+      "sha256": "7c7a70a9a72a624db364bd8aece0402a07627c91d31a8a25b23083d792ccc259",
+      "gitBlob": "1d134d38e5b0a4f195730cc12de9993280b4541d"
+    },
+    {
+      "path": "logs/red-regression.log",
+      "bytes": 5115,
+      "sha256": "935d67f6c76de47da4d72512b78af1d24618827b4a0209e1477ad56611375a7e",
+      "gitBlob": "cb95b4142785766e925313eb09eb73e9ddc812a7"
+    },
+    {
+      "path": "logs/final-browser.log",
+      "bytes": 18522,
+      "sha256": "839de83ec37699bc243096f058cf7b513a00ec78299adb818882dbc32358f34c",
+      "gitBlob": "d6e1fb260485fd79d637509c086d962af5c57fe3"
+    },
+    {
+      "path": "logs/red-pending-edit.log",
+      "bytes": 5013,
+      "sha256": "fee3eb891a2f8849ed6aefc18ec781b8829bc636f1da675dd44dbf7e3fd20679",
+      "gitBlob": "b5e9f02a99b1981d6c98dd9cbf20782e91c38ac4"
+    },
+    {
+      "path": "logs/final-editors.log",
+      "bytes": 8668,
+      "sha256": "778c43ee3a38c2e89d7affc24bc3b905b8263bae53f0437e2b218522f5a5bf74",
+      "gitBlob": "a432a9ce4963110580b14aaba5adb5340edad507"
+    },
+    {
+      "path": "logs/focused-jest.log",
+      "bytes": 1102,
+      "sha256": "d743e1ecf4481695272b3d1871795d643c3f22dca5502a727f7076e08981c005",
+      "gitBlob": "29f4d511c713f4150b74f0c195bec0d1bf7b86e7"
+    },
+    {
+      "path": "logs/lint.log",
+      "bytes": 1420,
+      "sha256": "543c4c4039d87e113aa496b42c5f7f1ac12202e406f97aa13a8d45d3314da5b1",
+      "gitBlob": "e605378bb0bda5e54063bf8d3c8a4cecbedb6c9b"
+    },
+    {
+      "path": "logs/dead-code.log",
+      "bytes": 848,
+      "sha256": "cef49560d4bb727fd44617d0623d65b2e6c34c279c18a53151c6f15c72ed4a16",
+      "gitBlob": "3afffa52f0c8dcb5298e2b3cde6a30029de5c701"
+    },
+    {
+      "path": "logs/before-capture.log",
+      "bytes": 439,
+      "sha256": "e5856d90a68369f11965b8d42e0efc46e033f95a4ea41c7f30b048c6a967b159",
+      "gitBlob": "0836fa5b47103c69153ff9a469a8a3ed919aa7c3"
+    },
+    {
+      "path": "logs/after-capture.log",
+      "bytes": 438,
+      "sha256": "8b89c0cdbbca89f28d183641e70cba5635e8bfc8a0582f25bd886e4fe84a308d",
+      "gitBlob": "3d6f77679be59c26de1ed549a06a059f6fe9675f"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2182,
+      "sha256": "3fcaad363bd114b2eee199d8726db84c7a994690ecfcd2825a8e58716a14a06a",
+      "gitBlob": "09fad609ac1e8a1a479b9821b8227dfefba7e98e"
+    }
+  ]
+}

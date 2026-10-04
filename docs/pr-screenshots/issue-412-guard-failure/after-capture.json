@@ -1,0 +1,39 @@
+{
+  "scenario": "dirty Preferences 08:30; accept discard; read fails 503; close drawer",
+  "side": "after",
+  "source": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+  "harnessSource": "4dcad2c771e48381d1ae28cdfef482c97928e36d",
+  "checkedAtUtc": "2026-10-04T22:29:15.668Z",
+  "browser": "154.0.8037.95",
+  "host": "mchartier_zbook",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "colorScheme": "light",
+  "deviceScaleFactor": 1,
+  "reducedMotion": "reduce",
+  "syntheticClock": "2026-07-21T19:00:00.000Z",
+  "timezone": "America/Los_Angeles",
+  "locale": "en-US",
+  "originalValue": "09:00",
+  "editedValue": "08:30",
+  "observedValue": "08:30",
+  "expectedValue": "08:30",
+  "requests": 1,
+  "unreadCount": 20,
+  "route": "/preferences",
+  "image": "after-failed-open-1440-light.png",
+  "imageSha256": "7ebe69d49d71109e4770f1f3a8c4e4265305a386f96ece6803a499e91359cf44",
+  "pendingImage": "after-pending-open-1440-light.png",
+  "pendingImageSha256": "d2404d3c3abc13d0517bdf584da930e45d6b6a417bf50b3f0d6d739ab2863cd5",
+  "pendingValue": "08:30",
+  "servedAssets": [
+    {
+      "path": "_expo/static/js/web/index-1aef7f727921f2a54d372e41effdc87a.js",
+      "sha256": "229e85deb778235b7ed029612132e530ef6d481e249aa971a69d604dbd91aa54"
+    }
+  ],
+  "captureHarnessSha256": "bab9bd27d6ed0c2f72657d321eed62f67d3527487de2756faba26812b384fae3",
+  "configSha256": "ed9ff358a78dab96ec160a4c70069574613557f10b7ba43ecf2acf6a4f4c78a4"
+}

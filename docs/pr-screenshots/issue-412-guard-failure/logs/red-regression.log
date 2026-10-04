@@ -1,0 +1,52 @@
+npm notice run cal-io@0.37.0 npx
+npm notice run playwright test --config=playwright.expo-web.config.ts --project=desktop-chrome --workers=1 --grep a failed reminder read preserves e2e/expo-web/launch-17-notification-center.spec.ts
+
+Running 1 test using 1 worker
+
+(node:38188) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/preferences viewport=1440x1000 project=desktop-chrome last_failed_request=PATCH /api/v1/notifications/in-app/123/read (503)
+  x  1 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ a failed reminder read preserves the dirty Preferences draft and permits a guarded retry (11.0s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ a failed reminder read preserves the dirty Preferences draft and permits a guarded retry 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  getByTestId('settings-food-reminder-time')
+    Expected: "08:30"
+    Received: "09:00"
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toHaveValue" with timeout 10000ms
+      - waiting for getByTestId('settings-food-reminder-time')
+        23 ├ù locator resolved to <input rows="1" dir="auto" maxlength="5" value="09:00" autocorrect="on" autocomplete="on" spellcheck="true" placeholder="09:00" aria-invalid="false" autocapitalize="none" aria-required="false" virtualkeyboardpolicy="auto" id="form-field-_r_0_-control" aria-label="Food reminder time" aria-labelledby="form-field-_r_0_-label" data-testid="settings-food-reminder-time" aria-describedby="form-field-_r_0_-helper" class="css-11aywtz r-6taxm2 r-9j3s6g r-1r2rb8h r-1q9bdsx r-rs99b7 r-1qar9k r-187pbxx r-ubezar rΓÇª/>
+           - unexpected value "09:00"
+
+
+      221 |   await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+      222 |   await panel.getByRole('button', { name: 'Close notifications' }).click();
+    > 223 |   await expect(time).toHaveValue('08:30');
+          |                      ^
+      224 |
+      225 |   await page.getByTestId('notifications-button').click();
+      226 |   const canceledConfirmation = page.waitForEvent('dialog');
+        at <worktree>\e2e\expo-web\launch-17-notification-center.spec.ts:223:22
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b004e-and-permits-a-guarded-retry-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b004e-and-permits-a-guarded-retry-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b004e-and-permits-a-guarded-retry-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b004e-and-permits-a-guarded-retry-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  1 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ a failed reminder read preserves the dirty Preferences draft and permits a guarded retry 
