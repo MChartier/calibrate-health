@@ -289,7 +289,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     ))}
                         </View>
 
-                        <AppText variant="caption">Target met means at/below target for loss or maintenance, and at/above target for gain. Beyond maintenance means above it for loss, below it for gain.</AppText>
+                        <AppText variant="caption">When target is at/below maintenance, target met means at/below target and beyond means above maintenance. When target is above maintenance, target met means at/above target and beyond means below maintenance.</AppText>
                         <View style={styles.legend}>
                             {Object.entries(COMPLETED_MARKERS).map(([marker, complete]) => (
                                 <LegendItem key={marker} label={complete.label} marker={marker as FoodDayCalendarMarker} theme={theme} styles={styles} />

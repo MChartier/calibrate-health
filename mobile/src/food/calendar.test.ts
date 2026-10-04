@@ -3,6 +3,7 @@ import {
     getCalendarMonthRange,
     getCalendarWeeks,
     getFoodDayCalendarMarker,
+    getFoodDayCalendarLabel,
     shiftMonth
 } from './calendar';
 
@@ -60,6 +61,14 @@ function completed(consumed: number, target = 2000, maintenance = 2500): FoodLog
 }
 
 describe('completed calorie comparisons', () => {
+    it('follows saved adjusted target ordering even when calibration crosses maintenance', () => {
+        // A +250 deficit with +300 accepted correction yields target 2550 at maintenance 2500.
+        const capturedDay = completed(2499, 2550, 2500);
+        expect(getFoodDayCalendarMarker(capturedDay, '2026-07-18')).toBe('complete-beyond');
+        expect(getFoodDayCalendarLabel(capturedDay, '2026-07-18')).toBe('completed, below maintenance');
+        expect(getFoodDayCalendarMarker(completed(2500, 2550, 2500), '2026-07-18')).toBe('complete-between');
+        expect(getFoodDayCalendarMarker(completed(2550, 2550, 2500), '2026-07-18')).toBe('complete-target');
+    });
     it.each([[0, 'target'], [1999, 'target'], [2000, 'target'], [2001, 'between'], [2499, 'between'], [2500, 'between'], [2501, 'beyond']])('loss: %i kcal is %s', (calories, band) => {
         expect(getFoodDayCalendarMarker(completed(Number(calories)), '2026-07-18')).toBe('complete-' + band);
     });

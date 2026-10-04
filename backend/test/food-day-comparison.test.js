@@ -66,3 +66,13 @@ test('an invalid timezone leaves completion intact and comparison unavailable', 
   assert.equal(await captureFoodDayComparison(db,day,now),day);
   assert.equal(day.status,'COMPLETE'); assert.equal(foodDayCalorieComparison(day,0),null);
 });
+
+test('retains adjusted target ordering when a positive-deficit plan crosses maintenance', async () => {
+  const {db,day,goal} = fixture();
+  goal.daily_deficit = 250;
+  db.caloriePlanRevision.findFirst = async () => ({ id: 3, target_adjustment_kcal: 300, calorie_plan_review_status: 'CLEAR', effective_local_date: day.local_date });
+  await captureFoodDayComparison(db,day,now);
+  assert.equal(goal.daily_deficit,250);
+  assert.equal(day.comparison_target_kcal - day.comparison_maintenance_kcal,50);
+  assert.ok(foodDayCalorieComparison(day,day.comparison_maintenance_kcal - 1));
+});

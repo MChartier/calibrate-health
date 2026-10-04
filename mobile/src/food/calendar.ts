@@ -21,6 +21,7 @@ export function getFoodDayCalendarMarker(
             !Number.isSafeInteger(target) || target <= 0 ||
             !Number.isSafeInteger(maintenance) || maintenance <= 0 ||
             typeof captured !== 'string' || !Number.isFinite(Date.parse(captured))) return 'complete-unavailable';
+        // Issue #408 follows the saved target ordering, including accepted corrections that cross maintenance.
         if (target > maintenance) {
             if (consumed >= target) return 'complete-target';
             return consumed >= maintenance ? 'complete-between' : 'complete-beyond';
@@ -39,13 +40,13 @@ export function getFoodDayCalendarMarker(
 
 export function getFoodDayCalendarLabel(day: FoodLogDay | undefined, today: string): string {
     const marker = getFoodDayCalendarMarker(day, today);
-    const gain = (day?.calorie_comparison?.target_kcal ?? 0) > (day?.calorie_comparison?.maintenance_kcal ?? 0);
+    const targetAboveMaintenance = (day?.calorie_comparison?.target_kcal ?? 0) > (day?.calorie_comparison?.maintenance_kcal ?? 0);
     switch (marker) {
-        case 'complete-target': return gain ? 'completed, at or above target' : 'completed, at or below target';
-        case 'complete-between': return gain
+        case 'complete-target': return targetAboveMaintenance ? 'completed, at or above target' : 'completed, at or below target';
+        case 'complete-between': return targetAboveMaintenance
             ? 'completed, below target, at or above maintenance'
             : 'completed, above target, at or below maintenance';
-        case 'complete-beyond': return gain ? 'completed, below maintenance' : 'completed, above maintenance';
+        case 'complete-beyond': return targetAboveMaintenance ? 'completed, below maintenance' : 'completed, above maintenance';
         case 'complete-unavailable': return 'completed, comparison unavailable';
         case 'incomplete': return 'incomplete';
         case 'not-started': return 'not started';
