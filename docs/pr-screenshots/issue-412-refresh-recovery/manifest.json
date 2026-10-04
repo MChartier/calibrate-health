@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-04T23:22:20.890Z",
+  "owner": "MChartier",
+  "task": "01a105d0-2544-70b1-813c-cf8460fd70c6",
+  "head": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+  "before": "3c743b4037dac05d1810f88a234f0b8fb250c42a",
+  "base": "29fb444ae4389ca81f3437d24685ed9badc43410",
+  "retention": {
+    "ref": "refs/heads/evidence/pr417-refresh-recovery-123bab9",
+    "purpose": "Current nonvisual paused-refresh recovery proof outside merge diff",
+    "lifetime": "Reviews and receipts; never rewrite/delete/merge"
+  },
+  "host": "mchartier_zbook",
+  "platform": "win32",
+  "node": "v24.19.0",
+  "sourceTree": "3700188145a1ad816ff6027417b93ba33de7b9dd",
+  "renderingDeltaAfterGuardCaptures": "None: only openNotification success completion and maintained E2E regression changed.",
+  "applicationDiff": "diff --git a/mobile/app/(tabs)/_layout.tsx b/mobile/app/(tabs)/_layout.tsx\nindex 5c8c1431..d8969081 100644\n--- a/mobile/app/(tabs)/_layout.tsx\n+++ b/mobile/app/(tabs)/_layout.tsx\n@@ -216,9 +216,9 @@ export default function TabsLayout() {\n             await api.markInAppNotificationRead(notification.id);\n             return notification;\n         },\n-        onSuccess: async (notification) => {\n+        onSuccess: (notification) => {\n             reconcileNotificationRead(queryClient, notification.id);\n-            await invalidateNotificationQueries(queryClient);\n+            void invalidateNotificationQueries(queryClient);\n         }\n     });\n     const requestAddFood = React.useCallback((input: AddFoodRequestInput = {}) => {\n",
+  "buildCommand": "npm.cmd run build:expo-web",
+  "exportInventory": "current-export-inventory.json",
+  "exportFiles": 174,
+  "sourceFiles": [
+    {
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "d8969081ee3d3df50bf178e07363c8c46e9030ff",
+      "sha256": "6103b2324e46bf69fd7f9a5ed5d26c6acd2e178b966fd47237549f286763ce65"
+    },
+    {
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "4ae3678cff38c7b34cd1d4bdbcc8fe3cb5bada1a",
+      "sha256": "deb20ad63260415c5f90bb82286f25c8bb9e11ca4e0f6ad58cfb38bd764df322"
+    },
+    {
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "7befd57041f7b009a7a02c7766db4487becd4529",
+      "sha256": "3e2918013a1d63c9edf2d4c77ab9c44f2e3fede02498f9c33574346f39573ca5"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "path": "playwright.expo-web.config.ts",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "path": "scripts/expo-web-build.mjs",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "path": "scripts/expo-web-static-server.mjs",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "path": "package-lock.json",
+      "commit": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    }
+  ],
+  "logs": [
+    {
+      "path": "before-paused-refresh-red.log",
+      "rawSha256": "e1c907bac087632823e928b0c99e350f836f5e077b13eaa8326ec46d95164c28",
+      "publishedSha256": "8e95bb28edc84a5237e77941ac6fd4f5a2a99e42b7731c630a3a1a12fe33ff50",
+      "redaction": "Local paths redacted; CRLF normalized to LF."
+    },
+    {
+      "path": "current-browser.log",
+      "rawSha256": "34fe637e9f3669ce868146540f33632b3a874a878b51869f72379f8d0e847419",
+      "publishedSha256": "8fcfd173c158f43c36715569b52e7fe2e57df4d4d98eacf97114dc890e6d3de0",
+      "redaction": "Local paths redacted; CRLF normalized to LF."
+    },
+    {
+      "path": "current-build.log",
+      "rawSha256": "03d5f8ef785ad09aac895eceb208786fffcd3385fd4fc95cc00d3e06ac10dc4c",
+      "publishedSha256": "5447a5ca5b260ef4b62f88ce5ceab02ecb9c402271ba1890432003e10cfbd8c8",
+      "redaction": "Local paths redacted; CRLF normalized to LF."
+    },
+    {
+      "path": "current-lint.log",
+      "rawSha256": "8bd615621e6251bf87f578c2b2f4ed1e55e62cd468fd56efb2fffb855a622a51",
+      "publishedSha256": "633af85bf68375acb782db7e83c699bc451779a68d5ae60a1be22107c4b50261",
+      "redaction": "Local paths redacted; CRLF normalized to LF."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "before-paused-refresh-red.log",
+      "bytes": 4198,
+      "sha256": "8e95bb28edc84a5237e77941ac6fd4f5a2a99e42b7731c630a3a1a12fe33ff50",
+      "gitBlob": "5893c7065e12c4f4fa88227e1112f66587588524"
+    },
+    {
+      "path": "current-browser.log",
+      "bytes": 19934,
+      "sha256": "8fcfd173c158f43c36715569b52e7fe2e57df4d4d98eacf97114dc890e6d3de0",
+      "gitBlob": "ca6cf8a01b2c89ee50aae8429faaacb2690d9f83"
+    },
+    {
+      "path": "current-build.log",
+      "bytes": 4531,
+      "sha256": "5447a5ca5b260ef4b62f88ce5ceab02ecb9c402271ba1890432003e10cfbd8c8",
+      "gitBlob": "abff527f89a2c6945611239ebc16f8df260f5ba8"
+    },
+    {
+      "path": "current-lint.log",
+      "bytes": 1420,
+      "sha256": "633af85bf68375acb782db7e83c699bc451779a68d5ae60a1be22107c4b50261",
+      "gitBlob": "e436b5b884268c424db5b65f07440701d90d9a7f"
+    },
+    {
+      "path": "current-export-inventory.json",
+      "bytes": 29436,
+      "sha256": "dd078ebcbb5b02ead9c26f79f79dd7dd6fd455aad3ed83deb63d83d0413b340c",
+      "gitBlob": "9663a879323d817f1b7f47e8d913cba78252e103"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2485,
+      "sha256": "a87d35667aca835fbb85a575ddbf1e16febc1a9962ea4f3e2d2c57412d2be9d4",
+      "gitBlob": "e3a59fa6049f3d9a3a50f0d15e8a4690f36ca7f3"
+    }
+  ],
+  "redHarnessSource": "1ae6ba519b648fff9cfb5352740d410f72853922",
+  "baselineBuildEvidence": {
+    "commit": "772dd261c6bcc3697bcd01a965497c74a9865e87",
+    "path": "docs/pr-screenshots/issue-412-offline-recovery/manifest.json",
+    "sha256": "32286736658a63162186db2059e34d501f9dfde8057542ff1f75a5e338623b7c"
+  },
+  "redHarness": {
+    "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+    "commit": "1ae6ba519b648fff9cfb5352740d410f72853922",
+    "gitBlob": "dfac797dc1b4548dbe72295197928b9606ba01ed",
+    "sha256": "d7eed3888a2c13526f391ffbfa76e9358ded9e0327f53d9479f27559d7660f18"
+  }
+}

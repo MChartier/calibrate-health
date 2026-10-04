@@ -1,0 +1,43 @@
+
+Running 1 test using 1 worker
+
+(node:12648) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/preferences viewport=1440x1000 project=desktop-chrome last_failed_request=GET /api/v1/notifications/in-app (503)
+  x  1 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:228:5 ΓÇ║ a successful reminder read navigates while its refresh is paused offline and recovers online (11.1s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:228:5 ΓÇ║ a successful reminder read navigates while its refresh is paused offline and recovers online 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected: predicate to succeed
+    Received: "http://127.0.0.1:44122/preferences"
+    Timeout:  10000ms
+
+
+      250 |   await expect.poll(() => refreshStarted).toBe(true);
+      251 |   await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false);
+    > 252 |   await expect(page).toHaveURL((url) => url.pathname === '/weight');
+          |                      ^
+      253 |   await expect(panel).toHaveCount(0);
+      254 |   expect(fixture.actionRequests).toBe(1);
+      255 |   expect(fixture.history.find(({ id }) => id === 123)?.read_at).not.toBeNull();
+        at <worktree>\e2e\expo-web\launch-17-notification-center.spec.ts:252:22
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b47f8-offline-and-recovers-online-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b47f8-offline-and-recovers-online-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b47f8-offline-and-recovers-online-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\launch-17-notification-cen-b47f8-offline-and-recovers-online-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  1 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:228:5 ΓÇ║ a successful reminder read navigates while its refresh is paused offline and recovers online 
