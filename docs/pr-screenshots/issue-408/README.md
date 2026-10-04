@@ -40,7 +40,7 @@ The recovery scenario reopened today's completed day through **Day completed**, 
 - Target is the existing whole-kcal policy result, including an accepted target correction. Maintenance is rounded once to whole kcal from profile-estimated TDEE. Intake sums stored integer food-log calories, including a real empty completed day as zero. No serving recalculation or activity-derived TDEE is introduced.
 - Legacy/imported days and days first completed retrospectively have no invented historical plan. Unavailable/requires-review planning remains unavailable even if current settings later become valid. Invalid comparison numbers and invalid timezones do not produce a band.
 - Snapshot policy is intentionally first completion, not a full intraday planning audit. Subsequent same-day plan changes do not rewrite it. Existing historical days will initially show neutral completion. This is the bounded alternative to a planning-history rewrite.
-- Migration `0043_food_day_comparison` leaves legacy rows null. Ordinal 0042 is already proposed by independent PR #402. Shared schema/OpenAPI/client files overlap #402 only by file; this branch has no parent PR.
+- Migration `0043_food_day_comparison` leaves legacy rows null. Ordinal 0042 is already proposed by independent PR #402. Shared schema/OpenAPI/client and account-lifecycle files overlap #402. Its account-lifecycle change guards deletion in a separate section and retains export v8; this change adds export v9 snapshots. This branch has no parent PR.
 
 ## Automated review disposition
 
