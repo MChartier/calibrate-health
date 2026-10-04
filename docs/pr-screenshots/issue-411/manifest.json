@@ -7,45 +7,65 @@
   "applicationSourceFiles": [
     {
       "path": "mobile/app/(tabs)/_layout.tsx",
-      "sha256": "5152f110c1f645f1b2fdb0b87ff33ff8349b7953ee590e587aa06f0d354d46e8"
+      "sha256": "5152f110c1f645f1b2fdb0b87ff33ff8349b7953ee590e587aa06f0d354d46e8",
+      "workingCopySha256": "5152f110c1f645f1b2fdb0b87ff33ff8349b7953ee590e587aa06f0d354d46e8",
+      "gitBlobSha": "5df1812b6a18e11cb04c68f95f274e289e0f490f"
     },
     {
       "path": "mobile/src/navigation/WebNavigationRail.web.tsx",
-      "sha256": "9246c77ae7c72bb930edabc020849578b4d9741f1320c0d2956399bb88991b02"
+      "sha256": "9246c77ae7c72bb930edabc020849578b4d9741f1320c0d2956399bb88991b02",
+      "workingCopySha256": "9246c77ae7c72bb930edabc020849578b4d9741f1320c0d2956399bb88991b02",
+      "gitBlobSha": "b5c3ee2ba4a7110932189200f538559ffed6bc6e"
     },
     {
       "path": "mobile/src/navigation/WebNavigationRail.tsx",
-      "sha256": "6a9cbd64cc4ee59a7dbefa27560f73c32ab0a7aff801a00e9037dff508d64063"
+      "sha256": "6a9cbd64cc4ee59a7dbefa27560f73c32ab0a7aff801a00e9037dff508d64063",
+      "workingCopySha256": "6a9cbd64cc4ee59a7dbefa27560f73c32ab0a7aff801a00e9037dff508d64063",
+      "gitBlobSha": "217f9f3e0107d531992a3e475d4bdf4a365db5d3"
     },
     {
       "path": "mobile/src/navigation/WebNavigationRail.types.ts",
-      "sha256": "c55e3678235d77a84f471b2190db419c7e20c1d27e69f0574572c5c19d87d412"
+      "sha256": "c55e3678235d77a84f471b2190db419c7e20c1d27e69f0574572c5c19d87d412",
+      "workingCopySha256": "c55e3678235d77a84f471b2190db419c7e20c1d27e69f0574572c5c19d87d412",
+      "gitBlobSha": "b2331a6764011f61b48bdf102ad7f350d4129ed0"
     }
   ],
   "harnessFiles": [
     {
       "path": "e2e/expo-web/compact-rail.spec.ts",
-      "sha256": "81caffab060615c0f2df56a76b095883f662c7d66a51d4251c51482466b8008f"
+      "sha256": "81caffab060615c0f2df56a76b095883f662c7d66a51d4251c51482466b8008f",
+      "workingCopySha256": "81caffab060615c0f2df56a76b095883f662c7d66a51d4251c51482466b8008f",
+      "gitBlobSha": "ad25411c25dfae35b3da1b521842ef998d98895d"
     },
     {
       "path": "e2e/expo-web/fixtures.ts",
-      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+      "workingCopySha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+      "gitBlobSha": "a02797264bc3427ced91af3caab3ec9ea57ae7a8"
     },
     {
       "path": "e2e/expo-web/text-scaling.ts",
-      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e"
+      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e",
+      "workingCopySha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e",
+      "gitBlobSha": "e614a9bbf2dc79c22cfcc872f7915b90250236c5"
     },
     {
       "path": "playwright.expo-web.config.ts",
-      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1",
+      "workingCopySha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1",
+      "gitBlobSha": "c16c90dd0c0764608361d631b664bf350d1155a5"
     },
     {
       "path": "scripts/expo-web-static-server.mjs",
-      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607",
+      "workingCopySha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607",
+      "gitBlobSha": "2b86cdb4238ea33ce1a80dc46d45700265dada26"
     },
     {
       "path": "scripts/expo-web-build.mjs",
-      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad",
+      "workingCopySha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad",
+      "gitBlobSha": "f437ae6934a50d40f095464ac4283d15b703aa59"
     }
   ],
   "normalization": "Shared synthetic API fixtures, frozen clock, reduced motion, blocked service workers, transient PWA notices hidden in both runs; text-200 states simulate enlarged text including icon glyphs. See README.md.",
@@ -432,11 +452,12 @@
     },
     {
       "path": "before-build.txt",
-      "sha256": "51d97c85938601b6f80a5303e8ae83c51968ca9f12930614cf02fe3c6d8ddef4"
+      "sha256": "1eb48f05763131ac08e7f4431663cb26d5698b9b69d9aa242593ba04e101e3c6"
     },
     {
       "path": "after-build.txt",
-      "sha256": "92163d58f4dda069b0d2065441af8e866c9fd1a52060500c1f90c050efaa08e7"
+      "sha256": "2165aa2fd736f7f3cd2c8450323a42855b5224542218ca07a18dea936ba8f20e"
     }
-  ]
+  ],
+  "digestEncoding": "Artifact and source sha256 values identify committed bytes. workingCopySha256 separately records Windows checkout bytes; Git normalizes tracked text to LF."
 }
