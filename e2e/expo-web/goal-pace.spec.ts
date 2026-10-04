@@ -1,5 +1,3 @@
-import { mkdir } from 'node:fs/promises';
-import path from 'node:path';
 import { test, expect, expectApiFailure, hideTransientPwaNotices } from './fixtures';
 import { applyTwoHundredPercentText } from './text-scaling';
 import { expectNoBlockingAccessibilityViolations } from './ux-a11y';
@@ -51,21 +49,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
             }
             return route.fulfill({ json: receipts.get(operation) });
         });
-        const screenshot = async (name: string) => {
-            await page.evaluate(() => document.fonts.ready);
-            const dir = process.env.CALIBRATE_PACE_EVIDENCE_DIR;
-            const file = dir ? path.resolve(dir, `${testInfo.project.name}-${colorScheme}-${name}.png`) : testInfo.outputPath(name + '.png');
-            await mkdir(path.dirname(file), { recursive: true });
-            await page.screenshot({ path: file });
-            await testInfo.attach(name, { path: file, contentType: 'image/png' });
-        };
         await page.goto('/progress');
         await hideTransientPwaNotices(page);
         await expect(page.getByText('33% complete')).toBeVisible();
         await expect(page.getByText('Current target: 2,100 kcal/day')).toBeVisible();
         await expect(page.getByTestId('progress-snapshot-card').getByRole('button')).toHaveCount(1);
         await expect(page.getByRole('button', { name: 'Set a new goal', exact: true })).toHaveCount(0);
-        await screenshot('before');
         await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
         const sheet = page.getByRole('dialog', { name: 'Edit goal' });
         await expect(sheet).toBeVisible();
@@ -73,7 +62,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
         await page.getByRole('option', { name: new RegExp("250 kcal/day deficit") }).click();
         await expect(page.getByText('New target: 2,350 kcal/day')).toBeVisible();
-        await screenshot('draft');
         await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: 'goal-pace' });
         page.once('dialog', dialog => dialog.accept());
         await page.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -84,14 +72,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await page.getByRole('option', { name: new RegExp("250 kcal/day deficit") }).click();
         await page.getByRole('button', { name: 'Save pace', exact: true }).click();
         await expect(page.getByRole('alert').filter({ hasText: /Unable|Synthetic/ })).toBeVisible();
-        await screenshot('retry');
         await page.getByRole('button', { name: 'Save pace', exact: true }).click();
         await expect(sheet).toHaveCount(0);
         expect(writes).toBe(1);
         expect(operations[0]).toBe(operations[1]);
         await expect(page.getByText('33% complete')).toBeVisible();
         await expect(page.getByText('Current target: 2,350 kcal/day')).toBeVisible();
-        await screenshot('after');
         await page.route('**/api/v1/food-days?date=*', route => route.fulfill({ json: {
                 date: new URL(route.request().url()).searchParams.get('date'), status: 'COMPLETE', origin: 'USER', source: 'STORED',
                 is_complete: true, is_representative: true, completed_at: '2026-07-20T20:00:00Z', updated_at: null,
@@ -100,7 +86,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await page.goto('/today?date=2026-07-20');
         await hideTransientPwaNotices(page);
         await expect(page.getByLabel(/Daily balance.*2,100 calorie target/)).toBeVisible();
-        await screenshot('historical-balance');
         await page.goto('/progress');
         await page.reload();
         await hideTransientPwaNotices(page);
@@ -113,7 +98,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await sheet.getByRole('button', { name: 'Retry plan check', exact: true }).click();
         await expect(page.getByRole('combobox', { name: 'Select daily calorie change' })).toContainText('500 kcal/day deficit');
         await expect(page.getByText('New target: 2,100 kcal/day')).toBeVisible();
-        await screenshot('manual-plan-refresh');
         expect(writes).toBe(1);
         await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
         await page.getByRole('option', { name: new RegExp('250 kcal/day deficit') }).click();
@@ -142,7 +126,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
         await sheet.getByRole('button', { name: 'Set a new goal', exact: true }).click();
         await expect(page.getByRole('dialog', { name: 'Set a new goal' })).toBeVisible();
-        await screenshot('new-goal');
         await page.getByRole('button', { name: 'Save goal', exact: true }).click();
         await expect(page.getByRole('dialog', { name: 'Set a new goal' })).toHaveCount(0);
         expect(creates).toBe(1);
@@ -150,13 +133,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
         expect(goal.start_weight).toBe(85);
         expect(goal.created_at).toContain('2026-07-21');
         await expect(page.getByText('0% complete')).toBeVisible();
-        await screenshot('new-goal-saved');
         if (testInfo.project.name === 'compact-phone-chrome' && colorScheme === 'light') {
             await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
             await applyTwoHundredPercentText(page);
             await page.getByRole('button', { name: 'Save pace', exact: true }).scrollIntoViewIfNeeded();
             await expect(page.getByRole('button', { name: 'Save pace', exact: true })).toBeVisible();
-            await screenshot('large-text-controls');
             await page.getByRole('button', { name: 'Close edit goal', exact: true }).click();
             await expect(sheet).toHaveCount(0);
         }
