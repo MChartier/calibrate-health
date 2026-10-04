@@ -1,7 +1,7 @@
 {
   "sources": {
     "before": "230c31f120d27811228ed566f7dbb0ff6106288a",
-    "after": "4cf0867c97d5e94944b3036bf789f00ebd4bf825"
+    "after": "f500688c379f7e57de273a943972d1e507f7de1d"
   },
   "fixture": "Same literal initial goal/profile/metrics and endpoint mutation model in e2e/expo-web/goal-pace-comparison.spec.ts; shared ux.install(populated) fixture unchanged at both source revisions.",
   "clock": "2026-07-21T19:00:00Z",
@@ -28,8 +28,8 @@
     {
       "file": "after-android-phone-chrome-dark.json",
       "stage": "after",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825",
-      "captured_at": "2026-10-04T05:04:12.166Z",
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d",
+      "captured_at": "2026-10-04T05:32:28.860Z",
       "browser": "154.0.8037.95",
       "viewport": {
         "width": 390,
@@ -58,8 +58,8 @@
     {
       "file": "after-desktop-chrome-light.json",
       "stage": "after",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825",
-      "captured_at": "2026-10-04T05:04:12.207Z",
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d",
+      "captured_at": "2026-10-04T05:32:28.881Z",
       "browser": "154.0.8037.95",
       "viewport": {
         "width": 1440,
@@ -150,32 +150,32 @@
     {
       "file": "after-android-phone-chrome-dark-editor.png",
       "sha256": "a12822ecc946f1247d686d3f61a52e25a4c53b7c21c29effc7811772e401d6d9",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825"
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d"
     },
     {
       "file": "after-android-phone-chrome-dark-initial.png",
       "sha256": "05b20c22287d13e2a500168cb47ba4f3f90c741e3c3ab6a05c62547179ef5a3c",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825"
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d"
     },
     {
       "file": "after-android-phone-chrome-dark-saved.png",
       "sha256": "36dc1b42d478b742a92dca0c8252908544cfb84c06bd99a8efb81a1dc7ad4d35",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825"
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d"
     },
     {
       "file": "after-desktop-chrome-light-editor.png",
-      "sha256": "ab13fe6d9bd55218b8e76e3ceb9e26e1efdfa067144bea725595213fe0bbf133",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825"
+      "sha256": "ff41cfb046f64edf1cd9feeff91bcc241ac237545fa5a81db1ca368fdb77776c",
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d"
     },
     {
       "file": "after-desktop-chrome-light-initial.png",
       "sha256": "b4eec48d26da6f50170e3ab67c37096eecd14d2709a0ccb231b7605a2b11f7a5",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825"
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d"
     },
     {
       "file": "after-desktop-chrome-light-saved.png",
       "sha256": "9211f30683548bb042041b065a1e20f1f0c640207885d4731c99667a0a616657",
-      "source": "4cf0867c97d5e94944b3036bf789f00ebd4bf825"
+      "source": "f500688c379f7e57de273a943972d1e507f7de1d"
     },
     {
       "file": "before-android-phone-chrome-dark-editor.png",
@@ -734,499 +734,499 @@
     "after": [
       {
         "file": "+not-found.html",
-        "sha256": "a8b475d20a7b90af88ba79c7e07807abfc4ce7091d57792f5e700f4cd4723cf5"
+        "sha256": "55c11567e9516053e4da1a505f2a1a1c8a1b79e31ad76a1523a258564deaee09"
       },
       {
         "file": "about.html",
-        "sha256": "38e39298f96122670db9ad6fbdac17a64afad50e56593920e11d87f9da23fd6e"
+        "sha256": "28da013089672827652fb360dd542db2d4c68d3c6dc2c95ae1703de1ac15f59b"
       },
       {
         "file": "account-deletion.html",
-        "sha256": "acbf58bd1fe2581d55febb97f0051a86883f33cdeb42eb131103e87021e2aab3"
+        "sha256": "b032bf9f2b9556b997b7bc216dbf4d5bd409f48fd09f20b23a872100325be98d"
       },
       {
         "file": "activity.html",
-        "sha256": "2512cccd0e4f5f55bc97f7a69fe8d9c41d110f50d71c40ef854e292b72a0c6e5"
+        "sha256": "f65a857517acc83efecd1648f4ab43204a98b7e137cac9c543f1d248d9acfae6"
       },
       {
         "file": "advanced.html",
-        "sha256": "65bf7ed86120c404093a648c843bdb658717584344a68e444cb9560304c1c3b2"
+        "sha256": "f07044625d300d440e6670978934cb818cd52049dab9dccc7d8eefeb048c5927"
       },
       {
         "file": "barcode.html",
-        "sha256": "f1f5a6fe425fc0f22da4836df4cfa6df0ca800855a878cbe5e03d36230f13976"
+        "sha256": "10969f5aa2bf21f8e5cdd0bc500e999242bcb33c735c3bc8f5aa8f5233143b47"
       },
       {
         "file": "connected-apps.html",
-        "sha256": "36a2e83dfe07803a8bcf8da12308c2efcdf5e66d841952d32747fb820fafcbad"
+        "sha256": "0b76752d7d6dc984ca64d9daa431f9e2ae0d2027c7838afedf5e2ef8aa57bc9c"
       },
       {
         "file": "connections.html",
-        "sha256": "804e07ff2e589674e4d9dadbee4d29c8121f00449af8b27e4171fa7dee89c9ea"
+        "sha256": "6d46cecffe35df9b99f641d2a1a66b85f99046bef0bc7dc1fed7d70cfd2e37e1"
       },
       {
         "file": "data.html",
-        "sha256": "ec64f8ab81a72c4aa94856d6f802804b378029a081819d56d7b637368e47e3bc"
+        "sha256": "5b76dcfee9dda9c58675e0271878d26721d77d56517982684a110c39c3aa2a34"
       },
       {
         "file": "devices.html",
-        "sha256": "7ccbfdfa9b244959783ab42bc27a3e24c85a706a579a2b22b0b7a8e97c196662"
+        "sha256": "2e475c58f1bdf0f670c7d6fdd43a2cea319ddc349f55e4a64defcc15abcfc0a3"
       },
       {
         "file": "food-log.html",
-        "sha256": "01baf09eb975f7fd13e3feccb2567ab3c512d3c564083c381745b3041c11eed1"
+        "sha256": "ac0a8112db9adf4d9c33bbc2b6ae41205ea3a4c04b4c401911b43bb9ac56ef75"
       },
       {
         "file": "forgot-password.html",
-        "sha256": "a8ee00f2d3a55a1d794e59fc5994d7c2e501e52e21ecef5943da9ffab5b33930"
+        "sha256": "1a5ecf444cd6b30b373bbb4fb92a67dbf1e0c953f2eb08e3c0f3fb3eb987efe2"
       },
       {
         "file": "goals.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "health-connect-privacy.html",
-        "sha256": "90da12ab4ddeb37b754a8737ae95ee8599a41a737e4f7bf0bf93dc99ed74dfe0"
+        "sha256": "62d6d93331ee13c3b889c5c7923e6121e8b7afac0844ae662d1296db2c6aac06"
       },
       {
         "file": "health-connect.html",
-        "sha256": "a7cb0d33aca13d8fd13848ec7c35a8baea5ca195e75b7058b617f1eb777e49aa"
+        "sha256": "41d81dcc19651c64c75f7e0b737890e14b47244d5e2f459fd5faee54957dccf6"
       },
       {
         "file": "help.html",
-        "sha256": "afa95921e3830f40938942cde51f1e0f2f25161eced3ea3fed8939e172aafa0e"
+        "sha256": "1cdba4d6ab1e47bcf192e3e88c9e1e7fcbcf56c7eb51c8bba3c352ce4cc9c230"
       },
       {
         "file": "index.html",
-        "sha256": "a910ce636d737825f39826838fa1b9b6df6826bec30c79e1681c6ede67949b82"
+        "sha256": "620cc60ae6f89283c2b397954d5f815b0063a9dccaf53d7c29656f72a2c47fea"
       },
       {
         "file": "legal-update.html",
-        "sha256": "8f9e6211a9705607f78c03af59e865f5b9f8fa151345ca9711ff5fc6ba2a520a"
+        "sha256": "ba11556201ea1a6b55511f8f62f437c1c7b5419f8660bd58ff38a18f891e0479"
       },
       {
         "file": "log.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "login.html",
-        "sha256": "8e80eaa0afe56aa2064374fe3ded37e56b5151934dea07bbac18793326ef8124"
+        "sha256": "f59429817b7c0aa1679f17a14a26c858c730504a748612a0ac86a66a3be58270"
       },
       {
         "file": "my-foods.html",
-        "sha256": "54e5f10ebecea5e1d3a885e81eb596006e59bebc75d223fb51f05eaeafe606d2"
+        "sha256": "9bfb117a702e10052901319940ef2c99499b0e570af5f4c1a93ea4a357e9afc1"
       },
       {
         "file": "notifications.html",
-        "sha256": "398d5c547121d62adead31fa45334d2babae7ecaa74f8b3e8715fa93b6614585"
+        "sha256": "eb258dcb6e0ca5711665c42902439e42d00d3253c4b354a9077d57483804868f"
       },
       {
         "file": "nutrition-label.html",
-        "sha256": "0d740c69d2dc366e38f4914c6ec765bdb39f459be210787f4a281accf1b73c07"
+        "sha256": "51932964c9f5ddeec8df95183c6483650d342593aef07b4d5c8ce3dadd4a7197"
       },
       {
         "file": "onboarding.html",
-        "sha256": "2c47f530e879dfbad7f5b28879e230cf1154756af675c3e8c69a79e3ebec1b19"
+        "sha256": "e5809fcb7f06e4b423df3466bf6f4d7b6635438cefcb14a500893b4ad7b54f80"
       },
       {
         "file": "plan-check.html",
-        "sha256": "98b2fce99edc0d8d971ebf750bbaf85fb6882547e3bb9915f949ed73cced5eb2"
+        "sha256": "5105447be5b8a9254a141f5d04151e73732ffd9ba214581fb86c754c9d71465a"
       },
       {
         "file": "preferences.html",
-        "sha256": "bf97ac96f604511880fc6fdd09a68b20614b9478efe43595c9b0bf0dbe0c6886"
+        "sha256": "52df908a00e9f8997be988bee4ccf44f2d8bd6a547659336eaa5f463b3f55c0f"
       },
       {
         "file": "privacy.html",
-        "sha256": "15b4afcfd36a749ebb6c5c78ee9aea205ba52b1e85b64aadd35a0ffdd3d22917"
+        "sha256": "ea536f0a36668f975fa0ef8c3e54056613178b4d6678809dcdcdc0499cd98b65"
       },
       {
         "file": "profile-details.html",
-        "sha256": "f0c6d0496ad4a9669e9f432968ae6fc427ff30d291afe11807c8da4adc088668"
+        "sha256": "ca891dfddd6f923661489f5d9a05583042ea1efb08a45cb082ab5b0bee31952b"
       },
       {
         "file": "profile.html",
-        "sha256": "8cc3274f8871866f9e37b4a6cb784bd44b3c68fefc9b4ecb0544f8f4e773504b"
+        "sha256": "95adaec90cf780fb9e298c1c810f1d83cddd515e92b8c5c75662bb95b4784409"
       },
       {
         "file": "progress.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "register.html",
-        "sha256": "d01357575aa76347ae18b344459f82cec229e67b14f845ac02f2e0e18a8bfa89"
+        "sha256": "2aa361de0220c68303905a1fb4755ae34b8cea02529bf9ce011b4979e67227bb"
       },
       {
         "file": "reset-password.html",
-        "sha256": "5606c7ea9c982d3a2353bb704345f4b4bd68cd1e2dfe861d565f04e2f05266f9"
+        "sha256": "6bde351c16f8615dba33d8af9c099a9f6f165dcd7e6ff65fdd8eec420a65bc25"
       },
       {
         "file": "security.html",
-        "sha256": "0a5b52184e52a1f11eb2b8d1b7bfe50b18e24e8afa4d1d7d35577f49b15720bb"
+        "sha256": "b2cc7367e37d3d5a5cb1549a72d5ca0f77286ed954792e71dd90571e8355123f"
       },
       {
         "file": "server-admin.html",
-        "sha256": "122de3ef61a71daed5bcc7a2d895f77d6452882c96ab698c1a1b90c8e0fb61f9"
+        "sha256": "ed9bd50806c804891c1f11b6b13756156b13278caf0e744f9ffda4f88bcb8086"
       },
       {
         "file": "settings.html",
-        "sha256": "5307d0098852cd1e83b9a10f25f0be920e6f8e6c10f044453901d772f9cbb748"
+        "sha256": "d57d2b54ba3dc7c29d5ad87f8a4a09004a754e4b9e5768a19b6141c159b53cbf"
       },
       {
         "file": "support.html",
-        "sha256": "eca0854d51d4e2f9a7e0c591a5a31b80b57fb043c6a5c460fc3372a1a37a0db8"
+        "sha256": "8034eabba99f650d17babf8803a109a42700043e420fa260b9953ed926ac8583"
       },
       {
         "file": "sw.js",
-        "sha256": "1b09385b1cfc6eee920485d2f211ad05531765c20b620e8dd75d4cfdb5d09cec"
+        "sha256": "473deab27735e4a54f49d5190fa8c2bab763639ef59c1e73ae72a25ebedba7dd"
       },
       {
         "file": "terms.html",
-        "sha256": "dae24d55f6f432d18c1962f171f12fcc8ecee29b4f4394f876e76e9629ef8a45"
+        "sha256": "fb2313b16c0257788600f59eb5b1600bc3f48e07cfab15efad90859a15fbca86"
       },
       {
         "file": "today.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "verify-email.html",
-        "sha256": "3c68eaa9150b69a81c17a418b162254a60f9313c4e3c70ce9505c017d022bbc4"
+        "sha256": "db20166e6983000444ae8d5aca9a90a2191bbd40fb8ea64f14eb73ae36393045"
       },
       {
         "file": "watch.html",
-        "sha256": "d02d090a42ce6812857cd6819746c3fd3237020da1206478c2a21dda45ccf582"
+        "sha256": "bd96a7e058fb0b0a0b422df4ec7ef93cb0357d66ec82082d6416f3de03042a2b"
       },
       {
         "file": "weight-trend.html",
-        "sha256": "0361ed8e86afb0ffcf375243baddd555b7cb81f3f4cb6c30888fbf2e09637321"
+        "sha256": "e31b69c6972362256dcad0bc2b3134156db851f3976e4c0fe7a78b9aa5266ef0"
       },
       {
         "file": "weight.html",
-        "sha256": "a24d13586046b8162c4ec9f935b2e9b6004ad1c5a4380985be70e409ceed972e"
+        "sha256": "5b0593363faf03faa9c5b2c85b010dd1a381a695590797fd8e9dd77b6c221d81"
       },
       {
         "file": "_sitemap.html",
-        "sha256": "4f002310a3df4606f8bf43a71ce32c71d59871e61e2056353ef524d913b34c94"
+        "sha256": "9b3bf154f59ba6cf67305fef37fe1f9ee78197fe4cefe1f5e8e6fd584dd1afa8"
       },
       {
         "file": "(auth)/login.html",
-        "sha256": "8e80eaa0afe56aa2064374fe3ded37e56b5151934dea07bbac18793326ef8124"
+        "sha256": "f59429817b7c0aa1679f17a14a26c858c730504a748612a0ac86a66a3be58270"
       },
       {
         "file": "(auth)/register.html",
-        "sha256": "d01357575aa76347ae18b344459f82cec229e67b14f845ac02f2e0e18a8bfa89"
+        "sha256": "2aa361de0220c68303905a1fb4755ae34b8cea02529bf9ce011b4979e67227bb"
       },
       {
         "file": "(progress)/goals.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "(progress)/plan-check.html",
-        "sha256": "98b2fce99edc0d8d971ebf750bbaf85fb6882547e3bb9915f949ed73cced5eb2"
+        "sha256": "5105447be5b8a9254a141f5d04151e73732ffd9ba214581fb86c754c9d71465a"
       },
       {
         "file": "(progress)/progress.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "(progress)/weight-trend.html",
-        "sha256": "0361ed8e86afb0ffcf375243baddd555b7cb81f3f4cb6c30888fbf2e09637321"
+        "sha256": "e31b69c6972362256dcad0bc2b3134156db851f3976e4c0fe7a78b9aa5266ef0"
       },
       {
         "file": "(progress)/weight.html",
-        "sha256": "a24d13586046b8162c4ec9f935b2e9b6004ad1c5a4380985be70e409ceed972e"
+        "sha256": "5b0593363faf03faa9c5b2c85b010dd1a381a695590797fd8e9dd77b6c221d81"
       },
       {
         "file": "(settings)/about.html",
-        "sha256": "38e39298f96122670db9ad6fbdac17a64afad50e56593920e11d87f9da23fd6e"
+        "sha256": "28da013089672827652fb360dd542db2d4c68d3c6dc2c95ae1703de1ac15f59b"
       },
       {
         "file": "(settings)/activity.html",
-        "sha256": "2512cccd0e4f5f55bc97f7a69fe8d9c41d110f50d71c40ef854e292b72a0c6e5"
+        "sha256": "f65a857517acc83efecd1648f4ab43204a98b7e137cac9c543f1d248d9acfae6"
       },
       {
         "file": "(settings)/advanced.html",
-        "sha256": "65bf7ed86120c404093a648c843bdb658717584344a68e444cb9560304c1c3b2"
+        "sha256": "f07044625d300d440e6670978934cb818cd52049dab9dccc7d8eefeb048c5927"
       },
       {
         "file": "(settings)/connected-apps.html",
-        "sha256": "36a2e83dfe07803a8bcf8da12308c2efcdf5e66d841952d32747fb820fafcbad"
+        "sha256": "0b76752d7d6dc984ca64d9daa431f9e2ae0d2027c7838afedf5e2ef8aa57bc9c"
       },
       {
         "file": "(settings)/connections.html",
-        "sha256": "804e07ff2e589674e4d9dadbee4d29c8121f00449af8b27e4171fa7dee89c9ea"
+        "sha256": "6d46cecffe35df9b99f641d2a1a66b85f99046bef0bc7dc1fed7d70cfd2e37e1"
       },
       {
         "file": "(settings)/data.html",
-        "sha256": "ec64f8ab81a72c4aa94856d6f802804b378029a081819d56d7b637368e47e3bc"
+        "sha256": "5b76dcfee9dda9c58675e0271878d26721d77d56517982684a110c39c3aa2a34"
       },
       {
         "file": "(settings)/devices.html",
-        "sha256": "7ccbfdfa9b244959783ab42bc27a3e24c85a706a579a2b22b0b7a8e97c196662"
+        "sha256": "2e475c58f1bdf0f670c7d6fdd43a2cea319ddc349f55e4a64defcc15abcfc0a3"
       },
       {
         "file": "(settings)/health-connect.html",
-        "sha256": "a7cb0d33aca13d8fd13848ec7c35a8baea5ca195e75b7058b617f1eb777e49aa"
+        "sha256": "41d81dcc19651c64c75f7e0b737890e14b47244d5e2f459fd5faee54957dccf6"
       },
       {
         "file": "(settings)/help.html",
-        "sha256": "afa95921e3830f40938942cde51f1e0f2f25161eced3ea3fed8939e172aafa0e"
+        "sha256": "1cdba4d6ab1e47bcf192e3e88c9e1e7fcbcf56c7eb51c8bba3c352ce4cc9c230"
       },
       {
         "file": "(settings)/my-foods.html",
-        "sha256": "54e5f10ebecea5e1d3a885e81eb596006e59bebc75d223fb51f05eaeafe606d2"
+        "sha256": "9bfb117a702e10052901319940ef2c99499b0e570af5f4c1a93ea4a357e9afc1"
       },
       {
         "file": "(settings)/preferences.html",
-        "sha256": "bf97ac96f604511880fc6fdd09a68b20614b9478efe43595c9b0bf0dbe0c6886"
+        "sha256": "52df908a00e9f8997be988bee4ccf44f2d8bd6a547659336eaa5f463b3f55c0f"
       },
       {
         "file": "(settings)/profile-details.html",
-        "sha256": "f0c6d0496ad4a9669e9f432968ae6fc427ff30d291afe11807c8da4adc088668"
+        "sha256": "ca891dfddd6f923661489f5d9a05583042ea1efb08a45cb082ab5b0bee31952b"
       },
       {
         "file": "(settings)/profile.html",
-        "sha256": "8cc3274f8871866f9e37b4a6cb784bd44b3c68fefc9b4ecb0544f8f4e773504b"
+        "sha256": "95adaec90cf780fb9e298c1c810f1d83cddd515e92b8c5c75662bb95b4784409"
       },
       {
         "file": "(settings)/security.html",
-        "sha256": "0a5b52184e52a1f11eb2b8d1b7bfe50b18e24e8afa4d1d7d35577f49b15720bb"
+        "sha256": "b2cc7367e37d3d5a5cb1549a72d5ca0f77286ed954792e71dd90571e8355123f"
       },
       {
         "file": "(settings)/server-admin.html",
-        "sha256": "122de3ef61a71daed5bcc7a2d895f77d6452882c96ab698c1a1b90c8e0fb61f9"
+        "sha256": "ed9bd50806c804891c1f11b6b13756156b13278caf0e744f9ffda4f88bcb8086"
       },
       {
         "file": "(settings)/settings.html",
-        "sha256": "5307d0098852cd1e83b9a10f25f0be920e6f8e6c10f044453901d772f9cbb748"
+        "sha256": "d57d2b54ba3dc7c29d5ad87f8a4a09004a754e4b9e5768a19b6141c159b53cbf"
       },
       {
         "file": "(settings)/watch.html",
-        "sha256": "d02d090a42ce6812857cd6819746c3fd3237020da1206478c2a21dda45ccf582"
+        "sha256": "bd96a7e058fb0b0a0b422df4ec7ef93cb0357d66ec82082d6416f3de03042a2b"
       },
       {
         "file": "(tabs)/about.html",
-        "sha256": "38e39298f96122670db9ad6fbdac17a64afad50e56593920e11d87f9da23fd6e"
+        "sha256": "28da013089672827652fb360dd542db2d4c68d3c6dc2c95ae1703de1ac15f59b"
       },
       {
         "file": "(tabs)/activity.html",
-        "sha256": "2512cccd0e4f5f55bc97f7a69fe8d9c41d110f50d71c40ef854e292b72a0c6e5"
+        "sha256": "f65a857517acc83efecd1648f4ab43204a98b7e137cac9c543f1d248d9acfae6"
       },
       {
         "file": "(tabs)/advanced.html",
-        "sha256": "65bf7ed86120c404093a648c843bdb658717584344a68e444cb9560304c1c3b2"
+        "sha256": "f07044625d300d440e6670978934cb818cd52049dab9dccc7d8eefeb048c5927"
       },
       {
         "file": "(tabs)/connected-apps.html",
-        "sha256": "36a2e83dfe07803a8bcf8da12308c2efcdf5e66d841952d32747fb820fafcbad"
+        "sha256": "0b76752d7d6dc984ca64d9daa431f9e2ae0d2027c7838afedf5e2ef8aa57bc9c"
       },
       {
         "file": "(tabs)/connections.html",
-        "sha256": "804e07ff2e589674e4d9dadbee4d29c8121f00449af8b27e4171fa7dee89c9ea"
+        "sha256": "6d46cecffe35df9b99f641d2a1a66b85f99046bef0bc7dc1fed7d70cfd2e37e1"
       },
       {
         "file": "(tabs)/data.html",
-        "sha256": "ec64f8ab81a72c4aa94856d6f802804b378029a081819d56d7b637368e47e3bc"
+        "sha256": "5b76dcfee9dda9c58675e0271878d26721d77d56517982684a110c39c3aa2a34"
       },
       {
         "file": "(tabs)/devices.html",
-        "sha256": "7ccbfdfa9b244959783ab42bc27a3e24c85a706a579a2b22b0b7a8e97c196662"
+        "sha256": "2e475c58f1bdf0f670c7d6fdd43a2cea319ddc349f55e4a64defcc15abcfc0a3"
       },
       {
         "file": "(tabs)/food-log.html",
-        "sha256": "01baf09eb975f7fd13e3feccb2567ab3c512d3c564083c381745b3041c11eed1"
+        "sha256": "ac0a8112db9adf4d9c33bbc2b6ae41205ea3a4c04b4c401911b43bb9ac56ef75"
       },
       {
         "file": "(tabs)/goals.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "(tabs)/health-connect.html",
-        "sha256": "a7cb0d33aca13d8fd13848ec7c35a8baea5ca195e75b7058b617f1eb777e49aa"
+        "sha256": "41d81dcc19651c64c75f7e0b737890e14b47244d5e2f459fd5faee54957dccf6"
       },
       {
         "file": "(tabs)/help.html",
-        "sha256": "afa95921e3830f40938942cde51f1e0f2f25161eced3ea3fed8939e172aafa0e"
+        "sha256": "1cdba4d6ab1e47bcf192e3e88c9e1e7fcbcf56c7eb51c8bba3c352ce4cc9c230"
       },
       {
         "file": "(tabs)/log.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "(tabs)/my-foods.html",
-        "sha256": "54e5f10ebecea5e1d3a885e81eb596006e59bebc75d223fb51f05eaeafe606d2"
+        "sha256": "9bfb117a702e10052901319940ef2c99499b0e570af5f4c1a93ea4a357e9afc1"
       },
       {
         "file": "(tabs)/notifications.html",
-        "sha256": "398d5c547121d62adead31fa45334d2babae7ecaa74f8b3e8715fa93b6614585"
+        "sha256": "eb258dcb6e0ca5711665c42902439e42d00d3253c4b354a9077d57483804868f"
       },
       {
         "file": "(tabs)/plan-check.html",
-        "sha256": "98b2fce99edc0d8d971ebf750bbaf85fb6882547e3bb9915f949ed73cced5eb2"
+        "sha256": "5105447be5b8a9254a141f5d04151e73732ffd9ba214581fb86c754c9d71465a"
       },
       {
         "file": "(tabs)/preferences.html",
-        "sha256": "bf97ac96f604511880fc6fdd09a68b20614b9478efe43595c9b0bf0dbe0c6886"
+        "sha256": "52df908a00e9f8997be988bee4ccf44f2d8bd6a547659336eaa5f463b3f55c0f"
       },
       {
         "file": "(tabs)/profile-details.html",
-        "sha256": "f0c6d0496ad4a9669e9f432968ae6fc427ff30d291afe11807c8da4adc088668"
+        "sha256": "ca891dfddd6f923661489f5d9a05583042ea1efb08a45cb082ab5b0bee31952b"
       },
       {
         "file": "(tabs)/profile.html",
-        "sha256": "8cc3274f8871866f9e37b4a6cb784bd44b3c68fefc9b4ecb0544f8f4e773504b"
+        "sha256": "95adaec90cf780fb9e298c1c810f1d83cddd515e92b8c5c75662bb95b4784409"
       },
       {
         "file": "(tabs)/progress.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "(tabs)/security.html",
-        "sha256": "0a5b52184e52a1f11eb2b8d1b7bfe50b18e24e8afa4d1d7d35577f49b15720bb"
+        "sha256": "b2cc7367e37d3d5a5cb1549a72d5ca0f77286ed954792e71dd90571e8355123f"
       },
       {
         "file": "(tabs)/server-admin.html",
-        "sha256": "122de3ef61a71daed5bcc7a2d895f77d6452882c96ab698c1a1b90c8e0fb61f9"
+        "sha256": "ed9bd50806c804891c1f11b6b13756156b13278caf0e744f9ffda4f88bcb8086"
       },
       {
         "file": "(tabs)/settings.html",
-        "sha256": "5307d0098852cd1e83b9a10f25f0be920e6f8e6c10f044453901d772f9cbb748"
+        "sha256": "d57d2b54ba3dc7c29d5ad87f8a4a09004a754e4b9e5768a19b6141c159b53cbf"
       },
       {
         "file": "(tabs)/today.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "(tabs)/watch.html",
-        "sha256": "d02d090a42ce6812857cd6819746c3fd3237020da1206478c2a21dda45ccf582"
+        "sha256": "bd96a7e058fb0b0a0b422df4ec7ef93cb0357d66ec82082d6416f3de03042a2b"
       },
       {
         "file": "(tabs)/weight-trend.html",
-        "sha256": "0361ed8e86afb0ffcf375243baddd555b7cb81f3f4cb6c30888fbf2e09637321"
+        "sha256": "e31b69c6972362256dcad0bc2b3134156db851f3976e4c0fe7a78b9aa5266ef0"
       },
       {
         "file": "(tabs)/weight.html",
-        "sha256": "a24d13586046b8162c4ec9f935b2e9b6004ad1c5a4380985be70e409ceed972e"
+        "sha256": "5b0593363faf03faa9c5b2c85b010dd1a381a695590797fd8e9dd77b6c221d81"
       },
       {
         "file": "(today)/food-log.html",
-        "sha256": "01baf09eb975f7fd13e3feccb2567ab3c512d3c564083c381745b3041c11eed1"
+        "sha256": "ac0a8112db9adf4d9c33bbc2b6ae41205ea3a4c04b4c401911b43bb9ac56ef75"
       },
       {
         "file": "(today)/log.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "(today)/notifications.html",
-        "sha256": "398d5c547121d62adead31fa45334d2babae7ecaa74f8b3e8715fa93b6614585"
+        "sha256": "eb258dcb6e0ca5711665c42902439e42d00d3253c4b354a9077d57483804868f"
       },
       {
         "file": "(today)/today.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "(tabs)/(progress)/goals.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "(tabs)/(progress)/plan-check.html",
-        "sha256": "98b2fce99edc0d8d971ebf750bbaf85fb6882547e3bb9915f949ed73cced5eb2"
+        "sha256": "5105447be5b8a9254a141f5d04151e73732ffd9ba214581fb86c754c9d71465a"
       },
       {
         "file": "(tabs)/(progress)/progress.html",
-        "sha256": "96f5ffaf6c9ded009c6a434ddab0d0c2ebe0256fa79c1cc81856d46e7a3a4de1"
+        "sha256": "65c594926b309c04c90d225f0ff2a03a1e41af6933859538dd418d15bf7bdae7"
       },
       {
         "file": "(tabs)/(progress)/weight-trend.html",
-        "sha256": "0361ed8e86afb0ffcf375243baddd555b7cb81f3f4cb6c30888fbf2e09637321"
+        "sha256": "e31b69c6972362256dcad0bc2b3134156db851f3976e4c0fe7a78b9aa5266ef0"
       },
       {
         "file": "(tabs)/(progress)/weight.html",
-        "sha256": "a24d13586046b8162c4ec9f935b2e9b6004ad1c5a4380985be70e409ceed972e"
+        "sha256": "5b0593363faf03faa9c5b2c85b010dd1a381a695590797fd8e9dd77b6c221d81"
       },
       {
         "file": "(tabs)/(settings)/about.html",
-        "sha256": "38e39298f96122670db9ad6fbdac17a64afad50e56593920e11d87f9da23fd6e"
+        "sha256": "28da013089672827652fb360dd542db2d4c68d3c6dc2c95ae1703de1ac15f59b"
       },
       {
         "file": "(tabs)/(settings)/activity.html",
-        "sha256": "2512cccd0e4f5f55bc97f7a69fe8d9c41d110f50d71c40ef854e292b72a0c6e5"
+        "sha256": "f65a857517acc83efecd1648f4ab43204a98b7e137cac9c543f1d248d9acfae6"
       },
       {
         "file": "(tabs)/(settings)/advanced.html",
-        "sha256": "65bf7ed86120c404093a648c843bdb658717584344a68e444cb9560304c1c3b2"
+        "sha256": "f07044625d300d440e6670978934cb818cd52049dab9dccc7d8eefeb048c5927"
       },
       {
         "file": "(tabs)/(settings)/connected-apps.html",
-        "sha256": "36a2e83dfe07803a8bcf8da12308c2efcdf5e66d841952d32747fb820fafcbad"
+        "sha256": "0b76752d7d6dc984ca64d9daa431f9e2ae0d2027c7838afedf5e2ef8aa57bc9c"
       },
       {
         "file": "(tabs)/(settings)/connections.html",
-        "sha256": "804e07ff2e589674e4d9dadbee4d29c8121f00449af8b27e4171fa7dee89c9ea"
+        "sha256": "6d46cecffe35df9b99f641d2a1a66b85f99046bef0bc7dc1fed7d70cfd2e37e1"
       },
       {
         "file": "(tabs)/(settings)/data.html",
-        "sha256": "ec64f8ab81a72c4aa94856d6f802804b378029a081819d56d7b637368e47e3bc"
+        "sha256": "5b76dcfee9dda9c58675e0271878d26721d77d56517982684a110c39c3aa2a34"
       },
       {
         "file": "(tabs)/(settings)/devices.html",
-        "sha256": "7ccbfdfa9b244959783ab42bc27a3e24c85a706a579a2b22b0b7a8e97c196662"
+        "sha256": "2e475c58f1bdf0f670c7d6fdd43a2cea319ddc349f55e4a64defcc15abcfc0a3"
       },
       {
         "file": "(tabs)/(settings)/health-connect.html",
-        "sha256": "a7cb0d33aca13d8fd13848ec7c35a8baea5ca195e75b7058b617f1eb777e49aa"
+        "sha256": "41d81dcc19651c64c75f7e0b737890e14b47244d5e2f459fd5faee54957dccf6"
       },
       {
         "file": "(tabs)/(settings)/help.html",
-        "sha256": "afa95921e3830f40938942cde51f1e0f2f25161eced3ea3fed8939e172aafa0e"
+        "sha256": "1cdba4d6ab1e47bcf192e3e88c9e1e7fcbcf56c7eb51c8bba3c352ce4cc9c230"
       },
       {
         "file": "(tabs)/(settings)/my-foods.html",
-        "sha256": "54e5f10ebecea5e1d3a885e81eb596006e59bebc75d223fb51f05eaeafe606d2"
+        "sha256": "9bfb117a702e10052901319940ef2c99499b0e570af5f4c1a93ea4a357e9afc1"
       },
       {
         "file": "(tabs)/(settings)/preferences.html",
-        "sha256": "bf97ac96f604511880fc6fdd09a68b20614b9478efe43595c9b0bf0dbe0c6886"
+        "sha256": "52df908a00e9f8997be988bee4ccf44f2d8bd6a547659336eaa5f463b3f55c0f"
       },
       {
         "file": "(tabs)/(settings)/profile-details.html",
-        "sha256": "f0c6d0496ad4a9669e9f432968ae6fc427ff30d291afe11807c8da4adc088668"
+        "sha256": "ca891dfddd6f923661489f5d9a05583042ea1efb08a45cb082ab5b0bee31952b"
       },
       {
         "file": "(tabs)/(settings)/profile.html",
-        "sha256": "8cc3274f8871866f9e37b4a6cb784bd44b3c68fefc9b4ecb0544f8f4e773504b"
+        "sha256": "95adaec90cf780fb9e298c1c810f1d83cddd515e92b8c5c75662bb95b4784409"
       },
       {
         "file": "(tabs)/(settings)/security.html",
-        "sha256": "0a5b52184e52a1f11eb2b8d1b7bfe50b18e24e8afa4d1d7d35577f49b15720bb"
+        "sha256": "b2cc7367e37d3d5a5cb1549a72d5ca0f77286ed954792e71dd90571e8355123f"
       },
       {
         "file": "(tabs)/(settings)/server-admin.html",
-        "sha256": "122de3ef61a71daed5bcc7a2d895f77d6452882c96ab698c1a1b90c8e0fb61f9"
+        "sha256": "ed9bd50806c804891c1f11b6b13756156b13278caf0e744f9ffda4f88bcb8086"
       },
       {
         "file": "(tabs)/(settings)/settings.html",
-        "sha256": "5307d0098852cd1e83b9a10f25f0be920e6f8e6c10f044453901d772f9cbb748"
+        "sha256": "d57d2b54ba3dc7c29d5ad87f8a4a09004a754e4b9e5768a19b6141c159b53cbf"
       },
       {
         "file": "(tabs)/(settings)/watch.html",
-        "sha256": "d02d090a42ce6812857cd6819746c3fd3237020da1206478c2a21dda45ccf582"
+        "sha256": "bd96a7e058fb0b0a0b422df4ec7ef93cb0357d66ec82082d6416f3de03042a2b"
       },
       {
         "file": "(tabs)/(today)/food-log.html",
-        "sha256": "01baf09eb975f7fd13e3feccb2567ab3c512d3c564083c381745b3041c11eed1"
+        "sha256": "ac0a8112db9adf4d9c33bbc2b6ae41205ea3a4c04b4c401911b43bb9ac56ef75"
       },
       {
         "file": "(tabs)/(today)/log.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "(tabs)/(today)/notifications.html",
-        "sha256": "398d5c547121d62adead31fa45334d2babae7ecaa74f8b3e8715fa93b6614585"
+        "sha256": "eb258dcb6e0ca5711665c42902439e42d00d3253c4b354a9077d57483804868f"
       },
       {
         "file": "(tabs)/(today)/today.html",
-        "sha256": "4dc14cb7f19dbb99826207f0e5e118e9c7c1736f054b6d7907e8d9f25031e500"
+        "sha256": "042dad22e1b737a884ba81c6655aa6372908ecbd4a74b7d7a56b38946d514640"
       },
       {
         "file": "_expo/static/js/web/ImagePicker-a2e3a3d696eeeb025f31c84861b87d72.js",
@@ -1245,13 +1245,19 @@
         "sha256": "5bb86a7ffbf20e0572447305e516fd45d8ca2483b59dae25809d9c4a5644efb9"
       },
       {
-        "file": "_expo/static/js/web/index-f4413b07d2a213b98eb7d9ede27b8c75.js",
-        "sha256": "a58f5ecda6f4fb2dc68c69e8da481251398debecc89e26382acf5c26bf461f8e"
+        "file": "_expo/static/js/web/index-eb6dc004aec80d9e468745d54688d6ee.js",
+        "sha256": "838d6570636a9b673ff64c1e443a1105831c5b26852f89a7486650b4e72752ef"
       },
       {
         "file": "_expo/static/js/web/ProgressExpansionContent-392287d38b0b8f6e918444dc175bbd79.js",
         "sha256": "4d8af7b2722d6722d75b8cf186a0d58c0ae04cdf99a48531ae1c662dc6148ebd"
       }
     ]
+  },
+  "previousProvenance": {
+    "url": "https://github.com/MChartier/calibrate-health/blob/4fe402573c6f3ae154ca2f82f9e95e61406573e4/docs/pr-screenshots/issue-409/before-after/manifest.json",
+    "commitSha": "4fe402573c6f3ae154ca2f82f9e95e61406573e4",
+    "sha256": "21f4c1b67c1eb4fe66fc032d4e6bde10d85e86f6f22e228abeb47281d1d1a44d",
+    "reason": "Preserved original record. Refreshed after captures following same-goal conflict initialization fix; identical baseline, shared fixture, harness, viewport and normalization."
   }
 }

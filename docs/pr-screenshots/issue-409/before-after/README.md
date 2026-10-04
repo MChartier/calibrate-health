@@ -3,7 +3,7 @@
 These unedited PNGs show real Chrome on Windows serving production Expo web exports from two exact revisions. The common capture harness supplies identical synthetic starting data and endpoint semantics to both builds. It clicks each revision's actual action. It does not hide new UI to manufacture a baseline or substitute final-state screenshots.
 
 - **Before:** `230c31f120d27811228ed566f7dbb0ff6106288a`, parent PR410, separately checked out and built without product edits.
-- **After:** `4cf0867c97d5e94944b3036bf789f00ebd4bf825`, child409 implementation with parent evidence integrated.
+- **After:** `f500688c379f7e57de273a943972d1e507f7de1d`, child409 implementation with parent evidence integrated.
 - [Manifest](manifest.json): PNG SHA256s, source revisions, browser version, viewport/theme, capture timestamps, final API readbacks, harness/shared-fixture hashes and exported HTML/JS hashes.
 - Harness: `e2e/expo-web/goal-pace-comparison.spec.ts`. Starting goal7 was created January1, start90/target75/current85 kg, deficit500; frozen clock July21 2026, America/Los_Angeles, en-US, reduced motion, scale1.
 - Normalization: the shared `hideTransientPwaNotices` helper suppresses unrelated transient notices on both builds. No comparison content is hidden or modified, and no image is edited. Trend data remains the same synthetic fixture in both builds; this is not a live personal account or native-device run.
