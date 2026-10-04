@@ -171,11 +171,13 @@ test('missing and non-object pace request bodies return structured 400 before mu
 });
 
 test('raw SQL serialization and deadlock conflicts return recoverable plan conflicts without a revision', async () => {
-    for (const code of ['40001', '40P01']) {
+    for (const meta of [{ code: '40001' }, { code: '40P01' },
+        { driverAdapterError: { cause: { originalCode: '40001', kind: 'TransactionWriteConflict' } } },
+        { driverAdapterError: { cause: { originalCode: '40P01', kind: 'postgres' } } }]) {
         const f = fixture();
         const preview = await f.call('get', '/pace-options');
         f.db.$executeRaw = async () => { throw new Prisma.PrismaClientKnownRequestError('concurrent writer', {
-            code: 'P2010', clientVersion: 'test', meta: { code }
+            code: 'P2010', clientVersion: 'test', meta
         }); };
         const result = await f.call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: preview.body.expected_plan_version });
         assert.equal(result.statusCode, 409);
