@@ -147,7 +147,7 @@ export type OnboardingCompleteResponse = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 7;
+    version: 9;
     exported_at: string;
     account: {
         id: number;
@@ -218,6 +218,9 @@ export type AccountExport = {
         origin: FoodLogDayOrigin;
         is_complete: boolean;
         completed_at: string | null;
+        comparison_target_kcal?: number | null;
+        comparison_maintenance_kcal?: number | null;
+        comparison_captured_at?: string | null;
         created_at: string;
         updated_at: string;
     }>;

@@ -1199,7 +1199,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 8;
+            version: 9;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -1313,6 +1313,10 @@ export interface components {
             is_complete: boolean;
             /** Format: date-time */
             completed_at: string | null;
+            comparison_target_kcal: number | null;
+            comparison_maintenance_kcal: number | null;
+            /** Format: date-time */
+            comparison_captured_at: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */

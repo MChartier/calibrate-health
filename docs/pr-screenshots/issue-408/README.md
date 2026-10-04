@@ -2,7 +2,7 @@
 
 ## Scenario and observations
 
-Captured from the actual **Today > Choose a day** flow in Chrome on Windows, using the production Expo web build and synthetic API fixtures. These are browser screenshots at responsive viewports, **not Android emulator or device screenshots**. No personal tracking data was used. Source revision: `e134ba917f29053560eae88289510a774699aa9d`; base: `29fb444ae4389ca81f3437d24685ed9badc43410`. Later evidence-only commits do not alter the exercised application code.
+Captured from the actual **Today > Choose a day** flow in Chrome on Windows, using the production Expo web build and synthetic API fixtures. These are browser screenshots at responsive viewports, **not Android emulator or device screenshots**. No personal tracking data was used. Source revision: `e134ba917f29053560eae88289510a774699aa9d`; base: `29fb444ae4389ca81f3437d24685ed9badc43410`. Subsequent export-only changes do not alter the exercised calendar UI and are covered separately below.
 
 The [executable browser scenario](../../../e2e/expo-web/completed-calendar.spec.ts) opens Today, opens the calendar, verifies every boundary's color, letter and accessible label, selects July 9, then reopens the calendar. July 9's selection border remains visible around its yellow completed badge. The same month deliberately contains loss, gain, maintenance, and unknown-history days, proving that classification uses each row's plan rather than one current goal.
 
@@ -46,6 +46,8 @@ The recovery scenario reopened today's completed day through **Day completed**, 
 
 The configured Codex review proposed deriving band direction from signed `daily_deficit` when an accepted correction crosses maintenance. Issue #408 explicitly defines inversion by saved `T > M`, so that proposed mathematical change was not applied. For a positive deficit of 250 and accepted correction of 300, the captured target remains 50 above maintenance and the requested inverted bands apply. Backend capture and client classification regressions pass this case. The legend now describes target/maintenance ordering directly, so it does not misidentify a signed weight-loss goal as gain. All screenshots were recaptured and inspected after that wording correction.
 
+A later Codex finding correctly identified that portable account exports omitted the new saved plan. Export format v9 now preserves target, maintenance, and capture timestamp in the serializer, public client type, OpenAPI, and generated contract. A JSON serialization regression verifies known snapshots, captured-but-unavailable snapshots, and legacy nulls on reopened days; API-client transport preserves the fields. The export-sharing suite remains green. This is an export-format revision only; server/web/native release versions stay unchanged. No account restore/import flow is claimed.
+
 ## Executed validation
 
 | Command | Observed result |
@@ -62,6 +64,8 @@ The configured Codex review proposed deriving band direction from signed `daily_
 | `npm.cmd run test:ux` | 252 accessibility/visual scenarios passed, 79 configured skips; no baseline updates |
 | `npm.cmd run test:expo-web:release` | 16 checks passed |
 | `npm.cmd run test:db:rollback:unit` | 14 checks passed after updating the exact candidate ledger and asserting legacy comparison columns stay null |
+| `node -r ts-node/register --test test/account-lifecycle.test.js test/food-day-comparison.test.js` (from backend) | 10 tests passed after export preservation fix |
+| `npm.cmd --prefix mobile test -- --runInBand accountData.test` | 16 export-sharing/deletion tests passed |
 | `git diff --check` | Passed |
 
 Full backend tests include actual HTTP-route handlers with synthetic persistence stubs, local year/day boundary capture, unsafe plans, accepted calibration, invalid timezone, unchanged snapshots after goal/profile changes, known zero intake, reopened/edited totals, and the canonical watch mutation regressions. They do not establish a live Postgres transaction result.
