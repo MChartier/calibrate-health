@@ -35,22 +35,22 @@ export function GoalPaceSheet({ goal, onClose }: {
         payload: GoalPaceRequest;
     } | null>(null);
     const submitting = useRef(false);
-    const initialized = useRef(false);
+    const [initialized, setInitialized] = useState(false);
     const [baseline, setBaseline] = useState(value);
     const preview = useQuery({ queryKey: ['goal-pace-options', goal.id], queryFn: () => api.getGoalPaceOptions(),
         staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: false, refetchOnReconnect: false, retry: false });
     useEffect(() => {
-        if (!initialized.current && preview.isSuccess && !preview.isFetching && preview.data.goal.id === goal.id) {
+        if (!initialized && preview.isSuccess && !preview.isFetching && preview.data.goal.id === goal.id) {
             const current = String(Math.abs(preview.data.goal.daily_deficit));
             setValue(current);
             setBaseline(current);
-            initialized.current = true;
+            setInitialized(true);
         }
-    }, [goal.id, preview.data, preview.isFetching, preview.isSuccess]);
+    }, [goal.id, initialized, preview.data, preview.isFetching, preview.isSuccess]);
     const deficit = Math.sign(goal.daily_deficit) * Number(value);
     const selected = preview.data?.planOptions.find(option => option.dailyDeficit === deficit);
     const fresh = online && preview.isSuccess && !preview.isFetching && preview.data.goal.id === goal.id;
-    const canSave = fresh && selected?.available === true && !pendingWeight && !saved;
+    const canSave = initialized && fresh && selected?.available === true && !pendingWeight && !saved;
     const dirty = !saved && value !== baseline;
     async function refreshViews() {
         try {
@@ -84,6 +84,8 @@ export function GoalPaceSheet({ goal, onClose }: {
         onError: error => {
             if (error instanceof ApiError && error.status === 409) {
                 ticket.current = null;
+                // A conflict requires reviewing the authoritative pace before another save.
+                setInitialized(false);
                 void preview.refetch();
             }
         },

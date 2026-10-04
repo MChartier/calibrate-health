@@ -101,3 +101,21 @@ test('stale goal conflict refreshes honestly and cannot silently save a replacem
     screen.unmount();
     screen.client.clear();
 });
+
+test('same-goal conflict presents the new authoritative pace before a second save', async () => {
+    const screen = setup();
+    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
+    mockApi.adjustGoalPace.mockRejectedValueOnce(new ApiError('Your plan changed.', 409, { code: 'GOAL_PLAN_CHANGED' }));
+    mockApi.getGoalPaceOptions.mockResolvedValue({ ...options, goal: { ...goal, daily_deficit: 750 },
+        expected_plan_version: 'b'.repeat(64), planOptions: [...options.planOptions, { dailyDeficit: 750, available: true, dailyCalorieTarget: 1850 }] });
+    fireEvent.press(screen.getByText('Choose 250'));
+    fireEvent.press(screen.getByText('Save pace'));
+    await screen.findByText('750');
+    expect(screen.queryByText('250')).toBeNull();
+    expect(screen.getByText('That information changed. Refresh it and try again.')).toBeTruthy();
+    fireEvent.press(screen.getByText('Save pace'));
+    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(2));
+    expect(mockApi.adjustGoalPace.mock.calls[1][1]).toEqual({ daily_deficit: 750, expected_plan_version: 'b'.repeat(64) });
+    screen.unmount();
+    screen.client.clear();
+});
