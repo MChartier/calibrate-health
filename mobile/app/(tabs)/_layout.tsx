@@ -216,9 +216,9 @@ export default function TabsLayout() {
             await api.markInAppNotificationRead(notification.id);
             return notification;
         },
-        onSuccess: async (notification) => {
+        onSuccess: (notification) => {
             reconcileNotificationRead(queryClient, notification.id);
-            await invalidateNotificationQueries(queryClient);
+            void invalidateNotificationQueries(queryClient);
         }
     });
     const requestAddFood = React.useCallback((input: AddFoodRequestInput = {}) => {

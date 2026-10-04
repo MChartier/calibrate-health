@@ -225,6 +225,46 @@ test('an offline reminder open settles without trapping the editor and can recov
   await expect(page).toHaveURL((url) => url.pathname === '/weight');
 });
 
+test('a successful reminder read navigates while its refresh is paused offline and recovers online', async ({ page, ux }) => {
+  await ux.install('populated');
+  const fixture = await installNotificationApi(page);
+  await page.goto('/preferences');
+  await hideTransientPwaNotices(page);
+  const time = page.getByTestId('settings-food-reminder-time');
+  const originalTime = await time.inputValue();
+  await time.fill('08:30');
+  await page.getByTestId('notifications-button').click();
+  const panel = page.getByTestId('notifications-drawer-panel');
+  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
+  expectApiFailure(page, { method: 'GET', pathname: '/api/v1/notifications/in-app', status: 503 });
+  let refreshStarted = false;
+  await page.route('**/api/v1/notifications/in-app?*', async (route) => {
+    refreshStarted = true;
+    await page.context().setOffline(true);
+    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: 'Refresh unavailable.' }) });
+  }, { times: 1 });
+  const confirmation = page.waitForEvent('dialog');
+  const click = panel.getByTestId('notification-open-123').click();
+  await (await confirmation).accept();
+  await click;
+  await expect.poll(() => refreshStarted).toBe(true);
+  await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false);
+  await expect(page).toHaveURL((url) => url.pathname === '/weight');
+  await expect(panel).toHaveCount(0);
+  expect(fixture.actionRequests).toBe(1);
+  expect(fixture.history.find(({ id }) => id === 123)?.read_at).not.toBeNull();
+  await expect(page.getByTestId('notifications-badge')).toHaveText('19');
+  await page.context().setOffline(false);
+  await page.getByTestId('notifications-button').click();
+  await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
+  await expect(panel.getByTestId('notification-card-123')).toHaveCount(0);
+  await expect(panel.getByText('19 unread', { exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: 'Close notifications' }).click();
+  await page.goBack();
+  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+  await expect(time).toHaveValue(originalTime);
+});
+
 test('a failed reminder read preserves the dirty Preferences draft and permits a guarded retry', async ({ page, ux }) => {
   await ux.install('populated');
   const fixture = await installNotificationApi(page);
