@@ -7,7 +7,7 @@ Running 1 test using 1 worker
   x  1 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light (10.8s)
 
 
-  1) [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light 
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light
 
     Error: expect(locator).toHaveCSS(expected) failed
 
@@ -48,4 +48,4 @@ Running 1 test using 1 worker
     ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   1 failed
-    [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light 
+    [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light

@@ -15,6 +15,7 @@ When Today is paused, the available weigh-in action lacks an upper boundary and 
 - Shared normalization: `hideTransientPwaNotices` suppresses unrelated transient PWA status/alert notices in both builds. The compared UI is unaltered; the mouse is moved to (0,0). No crop, redaction, compositing, or image editing was performed.
 - Every capture JSON records time, full source SHA, geometry, image SHA-256, browser version, and browser-loaded script SHA-256. The harness asserts each loaded script's response bytes equal the corresponding export file. This binds the running app to the separately built source, not just a checkout label.
 - `manifest.json` binds exact capture, harness, fixture, configuration, source, build-log and image bytes. Use its commit-addressed link and SHA-256 from the PR. Future evidence-only commits do not change captured app behavior; captured SHAs must not be relabeled as later heads.
+- Retained text uses Git-normalized LF. Log trailing whitespace and extra final blank lines are removed for diff hygiene; log content is otherwise unchanged. Original log bytes remain in the earlier evidence commit `573ad8712edbe82410417a152e1bf7e7a1005427`. Images are untouched.
 
 ## Observed behavior
 
@@ -36,6 +37,6 @@ The implementation uses shared React Native `StyleSheet.hairlineWidth`, theme ou
 - `npm.cmd run test:ux` on isolated port 44134: 252 passed, 79 project/scenario skips; no snapshot updates or threshold changes.
 - Paused browser suite: 10 passed, 2 skips (the short/200%-text scenario runs only under compact-phone); see `paused-flows.log`.
 - Matched capture harness: 4 baseline and 4 current captures passed.
-- `git diff --check`: passed.
+- `git diff --check 29fb444ae4389ca81f3437d24685ed9badc43410`: passed across the complete submitted change after log whitespace normalization (the earlier working-tree-only check did not cover committed logs).
 
 See the PR's latest QA/receipt discussion for current CI, engineering review and independent QA state. This evidence records executed author validation; it does not award readiness or authorize merge/release.
