@@ -34,9 +34,9 @@ export const ROLLBACK_BASE = Object.freeze({
 });
 
 export const ROLLBACK_CANDIDATE = Object.freeze({
-  migrationCount: 46,
-  lastMigration: '0043_food_day_comparison',
-  ledgerSha256: '1027392ee1b83a12d6be7aadba9bae3d4e6504ceb701508858478b335d91f7b1',
+  migrationCount: 47,
+  lastMigration: '0044_goal_pace_history',
+  ledgerSha256: '203890a6e9d7ddcad77e032b78dd3daaa3f1d247e7a126caa151c64789d3862e',
 });
 
 export const ROLLBACK_RESULT_PATH = path.join(
@@ -957,6 +957,7 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
     g."calorie_plan_review_reason" IS NULL AS "goal_review_reason_null",
     r."calorie_plan_review_status"::text = 'CLEAR' AS "revision_review_clear",
     r."calorie_plan_review_reason" IS NULL AS "revision_review_reason_null",
+    r."configured_daily_deficit" IS NULL AS "legacy_pace_inherits_goal",
     t."trend_rate_grams_per_day" IS NULL AS "trend_rate_null",
     t."trend_rate_std_grams_per_day" IS NULL AS "trend_rate_std_null",
     t."source_revision" IS NULL AS "source_revision_null",

@@ -530,3 +530,15 @@ test('calibration status returns Plan check assessments for maintenance and gain
     assert.equal(harness.captured.upserts.length, 0);
   }
 });
+
+
+test('manual pace changes exclude the mixed adjustment day and invalidate earlier calibration evidence', async () => {
+  const harness = createHarness({ currentPlan: { targetAdjustmentKcal: 0, effectiveLocalDate: new Date('2026-07-30Z') } });
+  harness.planningState.current.effectiveRevision.configured_daily_deficit = 250;
+  harness.planningState.current.goal.daily_deficit = 250;
+  const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00Z'));
+  assert.equal(status.evaluation.dataQuality.observationDays, 1);
+  assert.equal(status.recommendation, null);
+  assert.equal(status.evaluation.status, 'not_ready');
+  assert.equal(harness.planningState.current.goal.created_at.toISOString(), '2026-06-01T00:00:00.000Z');
+});

@@ -208,6 +208,48 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/goals/pace-options:
+    get:
+      operationId: getGoalPaceOptions
+      responses:
+        '200':
+          description: Authoritative current pace, dated plan version and safety options including calibration corrections. Never cached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GoalPaceOptions' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No current goal.
+  /api/v1/goals/{id}/pace:
+    patch:
+      operationId: adjustGoalPace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - name: x-client-operation-id
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GoalPaceRequest' }
+      responses:
+        '200':
+          description: Same goal and baseline with new pace, effective today. Saved completed-day comparisons remain unchanged. Same-day latest revision wins. Identical operation retries replay their receipt.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GoalEntry' }
+        '400':
+          description: Invalid, unsafe, unavailable or direction-changing pace. No domain mutation.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Stale goal or plan version, concurrent mutation, or reused operation ID. Refresh before saving a new operation.
   /api/v1/goals:
     get:
       operationId: getGoal
@@ -1687,6 +1729,28 @@ components:
         projected_end_date: { type: [string, 'null'], format: date }
         reason_code:
           oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
+    GoalPaceRequest:
+      type: object
+      additionalProperties: false
+      required: [daily_deficit, expected_plan_version]
+      properties:
+        daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
+        expected_plan_version: { type: string, pattern: '^[a-f0-9]{64}$' }
+    GoalPaceOptions:
+      type: object
+      additionalProperties: false
+      required: [goal, expected_plan_version, effective_local_date, eligibility, bmr, tdee, minimumDailyCalorieTarget, planOptions]
+      properties:
+        goal: { $ref: '#/components/schemas/GoalEntry' }
+        expected_plan_version: { type: string }
+        effective_local_date: { type: string, format: date }
+        eligibility: { $ref: '#/components/schemas/CalorieEligibility' }
+        bmr: { type: [number, 'null'] }
+        tdee: { type: [number, 'null'] }
+        minimumDailyCalorieTarget: { type: [integer, 'null'] }
+        planOptions:
+          type: array
+          items: { $ref: '#/components/schemas/CaloriePlanOption' }
     GoalEntry:
       type: object
       required: [id, user_id, start_weight, target_weight, target_date, daily_deficit, calorie_plan_review_status, calorie_plan_review_reason, created_at, plan_status, plan_reason_code, projection]
