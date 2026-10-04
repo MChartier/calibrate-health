@@ -1,0 +1,270 @@
+{
+  "badge_geometry": [
+    {
+      "id": "calendar-date-badge-2026-07-01",
+      "text": "1T",
+      "x": 178,
+      "y": 269.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-02",
+      "text": "2T",
+      "x": 229.140625,
+      "y": 269.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-03",
+      "text": "3T",
+      "x": 280.28125,
+      "y": 269.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-04",
+      "text": "4M",
+      "x": 331.421875,
+      "y": 269.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-05",
+      "text": "5M",
+      "x": 24.5625,
+      "y": 317.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-06",
+      "text": "6M",
+      "x": 75.71875,
+      "y": 317.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-07",
+      "text": "7B",
+      "x": 126.859375,
+      "y": 317.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-08",
+      "text": "8B",
+      "x": 178,
+      "y": 317.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-09",
+      "text": "9M",
+      "x": 229.140625,
+      "y": 317.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-10",
+      "text": "10M",
+      "x": 280.28125,
+      "y": 317.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-11",
+      "text": "11M",
+      "x": 331.421875,
+      "y": 317.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-12",
+      "text": "12T",
+      "x": 24.5625,
+      "y": 365.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-13",
+      "text": "13T",
+      "x": 75.71875,
+      "y": 365.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-14",
+      "text": "14T",
+      "x": 126.859375,
+      "y": 365.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-15",
+      "text": "15T",
+      "x": 178,
+      "y": 365.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-16",
+      "text": "16B",
+      "x": 229.140625,
+      "y": 365.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-17",
+      "text": "17?",
+      "x": 280.28125,
+      "y": 365.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-18",
+      "text": "18",
+      "x": 331.421875,
+      "y": 365.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-19",
+      "text": "19",
+      "x": 24.5625,
+      "y": 413.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-20",
+      "text": "20",
+      "x": 75.71875,
+      "y": 413.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-21",
+      "text": "21",
+      "x": 126.859375,
+      "y": 413.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-22",
+      "text": "22",
+      "x": 178,
+      "y": 413.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-23",
+      "text": "23",
+      "x": 229.140625,
+      "y": 413.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-24",
+      "text": "24",
+      "x": 280.28125,
+      "y": 413.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-25",
+      "text": "25",
+      "x": 331.421875,
+      "y": 413.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-26",
+      "text": "26",
+      "x": 24.5625,
+      "y": 461.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-27",
+      "text": "27",
+      "x": 75.71875,
+      "y": 461.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-28",
+      "text": "28",
+      "x": 126.859375,
+      "y": 461.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-29",
+      "text": "29",
+      "x": 178,
+      "y": 461.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-30",
+      "text": "30",
+      "x": 229.140625,
+      "y": 461.5,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-31",
+      "text": "31",
+      "x": 280.28125,
+      "y": 461.5,
+      "width": 34,
+      "height": 34
+    }
+  ],
+  "stage": "before",
+  "project": "android-phone-chrome",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "color_scheme": "dark",
+  "browser": "Chrome browser (not emulator/device)",
+  "browser_version": "154.0.8037.95",
+  "source_revision": "230c31f120d27811228ed566f7dbb0ff6106288a",
+  "selected_date": "2026-07-09",
+  "displayed_month": "2026-07",
+  "frozen_now": "2026-07-21T19:00:00.000Z",
+  "timezone": "America/Los_Angeles",
+  "locale": "en-US",
+  "reduced_motion": "reduce",
+  "device_scale_factor": 1,
+  "captured_at_utc": "2026-10-04T17:07:22.045Z"
+}
