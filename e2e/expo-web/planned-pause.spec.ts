@@ -233,7 +233,9 @@ test('matched failed resume and recovery retains the actual pause until success'
 test('due and overdue plans remain paused with no invented future interval', async ({ page, ux }, info) => {
     test.skip(before);
     const state = await install(page, ux, today); await open(page);
+    await expect(page.getByRole('button', { name: 'Extend pause', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Ready to resume tracking?' })).toHaveCount(0);
     await expect(page.getByText('Expected to resume today (Jul 21, 2026). Tracking is still paused.')).toBeVisible();
     await calendar(page); await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
     await page.keyboard.press('Escape');
