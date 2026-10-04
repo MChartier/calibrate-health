@@ -1,0 +1,317 @@
+{
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-21",
+  "days": [
+    {
+      "date": "2026-07-01",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 0,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-01T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-02",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 1999,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-02T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-03",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2000,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-03T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-04",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2001,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-04T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-05",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2499,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-05T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-06",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2500,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-06T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-07",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2501,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-07T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-08",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2499,
+        "target_kcal": 3000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-08T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-09",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2500,
+        "target_kcal": 3000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-09T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-10",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2501,
+        "target_kcal": 3000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-10T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-11",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2999,
+        "target_kcal": 3000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-11T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-12",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 3000,
+        "target_kcal": 3000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-12T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 3001,
+        "target_kcal": 3000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-13T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-14",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2499,
+        "target_kcal": 2500,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-14T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-15",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2500,
+        "target_kcal": 2500,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-15T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-16",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": {
+        "consumed_kcal": 2501,
+        "target_kcal": 2500,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-16T19:00:00Z"
+      }
+    },
+    {
+      "date": "2026-07-17",
+      "status": "COMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": true,
+      "is_representative": true,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": null
+    },
+    {
+      "date": "2026-07-18",
+      "status": "INCOMPLETE",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": false,
+      "is_representative": false,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": null
+    },
+    {
+      "date": "2026-07-19",
+      "status": "INCOMPLETE",
+      "source": "INFERRED_EMPTY",
+      "origin": "USER",
+      "is_complete": false,
+      "is_representative": false,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": null
+    },
+    {
+      "date": "2026-07-20",
+      "status": "PAUSED",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": false,
+      "is_representative": false,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": null
+    },
+    {
+      "date": "2026-07-21",
+      "status": "OPEN",
+      "source": "STORED",
+      "origin": "USER",
+      "is_complete": false,
+      "is_representative": false,
+      "completed_at": null,
+      "updated_at": null,
+      "calorie_comparison": null
+    }
+  ]
+}

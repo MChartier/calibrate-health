@@ -1,0 +1,79 @@
+{
+  "source_revision": "4f4dd88ddb965d65c7e0f2341f10172a3ba3bf56",
+  "command": "npm.cmd run test:web:e2e -- e2e/expo-web/completed-calendar.spec.ts --workers=2",
+  "result": "10 passed, 6 project-specific skips",
+  "browser": "Chrome browser on Windows; not emulator/device",
+  "normalization": "Synthetic API fixtures; frozen 2026-07-21 clock; hideTransientPwaNotices suppresses unrelated PWA notices",
+  "screenshots": [
+    {
+      "file": "android-phone-chrome-dark.png",
+      "captured_at_utc": "2026-10-04T17:02:45.066Z",
+      "sha256": "12704bcb9427afa6fe68b6bb35fa241f1d5888993a734c313607cea6317bc2a5"
+    },
+    {
+      "file": "android-phone-chrome-light.png",
+      "captured_at_utc": "2026-10-04T17:02:43.231Z",
+      "sha256": "26c3421a3c24ff9ee9c88b7902264eb302b8cfdbad4d00fa4ff8f137b3db628a"
+    },
+    {
+      "file": "calendar-food-edit.png",
+      "captured_at_utc": "2026-10-04T17:02:36.269Z",
+      "sha256": "e9ab66bdb7f6b6d10208905963e323bdbb21ee92769cb9083b4be93030a3c817"
+    },
+    {
+      "file": "calendar-large-text-days.png",
+      "captured_at_utc": "2026-10-04T17:02:50.192Z",
+      "sha256": "77455fb030069e71bd5fa0642af175b8f9ca032c8a43513b0c0163c827cd2cd5"
+    },
+    {
+      "file": "calendar-large-text-legend.png",
+      "captured_at_utc": "2026-10-04T17:02:50.152Z",
+      "sha256": "7bb94264ddc0041666ad0776123960823e48c0565d573e28ef6223a5c2580997"
+    },
+    {
+      "file": "calendar-recompleted-after-edit.png",
+      "captured_at_utc": "2026-10-04T17:02:36.679Z",
+      "sha256": "fa38dec6164d6266226625ad12695a163feb5b07d8452eeebe3e2402da2a43b9"
+    },
+    {
+      "file": "calendar-request-failure.png",
+      "captured_at_utc": "2026-10-04T17:02:44.176Z",
+      "sha256": "e4563edc98e40f9245cd181824e618cd02a22fc042d2419851f180bd51d1416b"
+    },
+    {
+      "file": "compact-phone-chrome-dark.png",
+      "captured_at_utc": "2026-10-04T17:02:48.371Z",
+      "sha256": "4710d29cb7dcecd04dfee718d8e1b39059f0626bbbe751e63bdedc3487671691"
+    },
+    {
+      "file": "compact-phone-chrome-light.png",
+      "captured_at_utc": "2026-10-04T17:02:48.455Z",
+      "sha256": "b0091413fe04edb169bb813b0eebc72bb0cfb1b74675969d5f0307cc3a9d603a"
+    },
+    {
+      "file": "desktop-chrome-dark.png",
+      "captured_at_utc": "2026-10-04T17:02:33.670Z",
+      "sha256": "2558707d49d95218ffb7e238fe32c0ccc83d406f16525984a9de081e59e26492"
+    },
+    {
+      "file": "desktop-chrome-light.png",
+      "captured_at_utc": "2026-10-04T17:02:33.651Z",
+      "sha256": "9679d1de39c8f43042c98e4520516aebaf181512df9e1dd1f5055c405acd79bc"
+    },
+    {
+      "file": "tablet-chrome-dark.png",
+      "captured_at_utc": "2026-10-04T17:02:39.643Z",
+      "sha256": "bd5e84ca5e7d2e83d5d17e497b46b8916f11b7abfd45a92ed3bdf46b8ada1d7d"
+    },
+    {
+      "file": "tablet-chrome-light.png",
+      "captured_at_utc": "2026-10-04T17:02:37.714Z",
+      "sha256": "39b42380040bd14f663a0361498efabb8505685e9ee1770913138a9828665d48"
+    }
+  ],
+  "browser_version": "154.0.8037.95",
+  "tooling_revision": "4f4dd88ddb965d65c7e0f2341f10172a3ba3bf56",
+  "fixture_and_steps": "e2e/expo-web/completed-calendar.spec.ts at 4f4dd88ddb965d65c7e0f2341f10172a3ba3bf56",
+  "project_configuration": "playwright.expo-web.config.ts at 4f4dd88ddb965d65c7e0f2341f10172a3ba3bf56",
+  "product_source_note": "Built from the exact working tree bytes committed as 4f4dd88d; matched comparison subsequently rebuilt from that clean tracked revision."
+}

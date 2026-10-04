@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodLogDaySource, FoodLogDayStatus } from '@calibrate/api-client';
@@ -196,7 +196,7 @@ describe('HistoricalDatePicker', () => {
     });
 });
 
-it('keeps a completion cue, a distinct letter, and factual accessible meaning in every band', async () => {
+it('keeps completed circles date-only with factual accessible meanings and an explanatory legend', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
     const comparisons = [
         { consumed_kcal: 2000, target_kcal: 2000, maintenance_kcal: 2500 },
@@ -214,7 +214,14 @@ it('keeps a completion cue, a distinct letter, and factual accessible meaning in
     expect(screen.getByLabelText(/Jul 13, 2026, completed, above maintenance/)).toBeTruthy();
     expect(screen.getByLabelText(/Jul 14, 2026, completed, below maintenance/)).toBeTruthy();
     expect(screen.getByText('Complete: comparison unavailable')).toBeTruthy();
-    expect(screen.getAllByText('T', { includeHiddenElements: true })).toHaveLength(4); // Date cue, legend, Tuesday, Thursday.
+    for (const number of [11, 12, 13, 14]) {
+        const badge = within(screen.getByTestId('calendar-date-badge-2026-07-' + number));
+        expect(badge.getByText(String(number))).toBeTruthy();
+        expect(badge.queryByText(/^[TMB?]$/, { includeHiddenElements: true })).toBeNull();
+    }
+    for (const label of ['Complete: target met', 'Complete: toward target from maintenance', 'Complete: beyond maintenance']) {
+        expect(screen.getByText(label)).toBeTruthy();
+    }
     expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style).backgroundColor).toBe(themes.light.colors.calendarBetween);
     expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-13').props.style).backgroundColor).toBe(themes.light.colors.calendarBeyond);
     screen.unmount(); queryClient.clear();

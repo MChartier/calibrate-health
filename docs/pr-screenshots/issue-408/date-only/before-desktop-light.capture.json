@@ -1,0 +1,270 @@
+{
+  "badge_geometry": [
+    {
+      "id": "calendar-date-badge-2026-07-01",
+      "text": "1T",
+      "x": 703,
+      "y": 383,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-02",
+      "text": "2T",
+      "x": 783,
+      "y": 383,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-03",
+      "text": "3T",
+      "x": 863,
+      "y": 383,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-04",
+      "text": "4M",
+      "x": 943,
+      "y": 383,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-05",
+      "text": "5M",
+      "x": 463,
+      "y": 431,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-06",
+      "text": "6M",
+      "x": 543,
+      "y": 431,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-07",
+      "text": "7B",
+      "x": 623,
+      "y": 431,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-08",
+      "text": "8B",
+      "x": 703,
+      "y": 431,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-09",
+      "text": "9M",
+      "x": 783,
+      "y": 431,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-10",
+      "text": "10M",
+      "x": 863,
+      "y": 431,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-11",
+      "text": "11M",
+      "x": 943,
+      "y": 431,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-12",
+      "text": "12T",
+      "x": 463,
+      "y": 479,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-13",
+      "text": "13T",
+      "x": 543,
+      "y": 479,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-14",
+      "text": "14T",
+      "x": 623,
+      "y": 479,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-15",
+      "text": "15T",
+      "x": 703,
+      "y": 479,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-16",
+      "text": "16B",
+      "x": 783,
+      "y": 479,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-17",
+      "text": "17?",
+      "x": 863,
+      "y": 479,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-18",
+      "text": "18",
+      "x": 943,
+      "y": 479,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-19",
+      "text": "19",
+      "x": 463,
+      "y": 527,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-20",
+      "text": "20",
+      "x": 543,
+      "y": 527,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-21",
+      "text": "21",
+      "x": 623,
+      "y": 527,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-22",
+      "text": "22",
+      "x": 703,
+      "y": 527,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-23",
+      "text": "23",
+      "x": 783,
+      "y": 527,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-24",
+      "text": "24",
+      "x": 863,
+      "y": 527,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-25",
+      "text": "25",
+      "x": 943,
+      "y": 527,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-26",
+      "text": "26",
+      "x": 463,
+      "y": 575,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-27",
+      "text": "27",
+      "x": 543,
+      "y": 575,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-28",
+      "text": "28",
+      "x": 623,
+      "y": 575,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-29",
+      "text": "29",
+      "x": 703,
+      "y": 575,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-30",
+      "text": "30",
+      "x": 783,
+      "y": 575,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "id": "calendar-date-badge-2026-07-31",
+      "text": "31",
+      "x": 863,
+      "y": 575,
+      "width": 34,
+      "height": 34
+    }
+  ],
+  "stage": "before",
+  "project": "desktop-chrome",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "color_scheme": "light",
+  "browser": "Chrome browser (not emulator/device)",
+  "browser_version": "154.0.8037.95",
+  "source_revision": "230c31f120d27811228ed566f7dbb0ff6106288a",
+  "selected_date": "2026-07-09",
+  "displayed_month": "2026-07",
+  "frozen_now": "2026-07-21T19:00:00.000Z",
+  "timezone": "America/Los_Angeles",
+  "locale": "en-US",
+  "reduced_motion": "reduce",
+  "device_scale_factor": 1,
+  "captured_at_utc": "2026-10-04T17:07:22.078Z"
+}
