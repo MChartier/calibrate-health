@@ -950,7 +950,16 @@ export type FoodLogDaySource =
     | 'DEFAULT'
     | 'BEFORE_TRACKING_START';
 
+export type FoodDayCalorieComparison = {
+    consumed_kcal: number;
+    target_kcal: number;
+    maintenance_kcal: number;
+    captured_at: string;
+};
+
 export type FoodLogDay = {
+    /** Optional for older servers; null means no trustworthy historical comparison. */
+    calorie_comparison?: FoodDayCalorieComparison | null;
     date: string;
     status: FoodLogDayStatus;
     origin: FoodLogDayOrigin | null;

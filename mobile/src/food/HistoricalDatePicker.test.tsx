@@ -106,16 +106,16 @@ describe('HistoricalDatePicker', () => {
 
         expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-11').props.style)).toEqual(
             expect.objectContaining({
-                width: 34,
-                height: 34,
+                minWidth: 34,
+                minHeight: 34,
                 borderRadius: 17,
-                backgroundColor: themes.light.colors.success
+                backgroundColor: themes.light.colors.surfaceContainerHigh
             })
         );
         expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style)).toEqual(
             expect.objectContaining({
-                width: 34,
-                height: 34,
+                minWidth: 34,
+                minHeight: 34,
                 borderWidth: 2,
                 borderColor: themes.light.colors.success
             })
@@ -194,4 +194,28 @@ describe('HistoricalDatePicker', () => {
         screen.unmount();
         queryClient.clear();
     });
+});
+
+it('keeps a completion cue, a distinct letter, and factual accessible meaning in every band', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    const comparisons = [
+        { consumed_kcal: 2000, target_kcal: 2000, maintenance_kcal: 2500 },
+        { consumed_kcal: 2500, target_kcal: 2000, maintenance_kcal: 2500 },
+        { consumed_kcal: 2501, target_kcal: 2000, maintenance_kcal: 2500 },
+        { consumed_kcal: 2499, target_kcal: 3000, maintenance_kcal: 2500 }
+    ];
+    mockGetFoodDays.mockResolvedValue({ ...RANGE_RESPONSE, days: comparisons.map((value, index) => ({
+        ...day('2026-07-' + (11 + index), 'COMPLETE', 'STORED'),
+        calorie_comparison: { ...value, captured_at: '2026-07-11T18:00:00Z' }
+    })) });
+    const screen = renderPicker(queryClient);
+    expect(await screen.findByLabelText(/Jul 11, 2026, completed, at or below target/)).toBeTruthy();
+    expect(screen.getByLabelText(/Jul 12, 2026, completed, above target, at or below maintenance/)).toBeTruthy();
+    expect(screen.getByLabelText(/Jul 13, 2026, completed, above maintenance/)).toBeTruthy();
+    expect(screen.getByLabelText(/Jul 14, 2026, completed, below maintenance/)).toBeTruthy();
+    expect(screen.getByText('Complete: comparison unavailable')).toBeTruthy();
+    expect(screen.getAllByText('T', { includeHiddenElements: true })).toHaveLength(4); // Date cue, legend, Tuesday, Thursday.
+    expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style).backgroundColor).toBe(themes.light.colors.calendarBetween);
+    expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-13').props.style).backgroundColor).toBe(themes.light.colors.calendarBeyond);
+    screen.unmount(); queryClient.clear();
 });

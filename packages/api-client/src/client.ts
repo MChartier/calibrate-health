@@ -224,7 +224,8 @@ const normalizeFoodLogDay = (day: FoodLogDayResponse): FoodLogDay => {
         is_representative: day.is_representative ?? status === 'COMPLETE',
         is_complete: status === 'COMPLETE',
         completed_at: day.completed_at ?? null,
-        updated_at: day.updated_at ?? null
+        updated_at: day.updated_at ?? null,
+        ...(day.calorie_comparison === undefined ? {} : { calorie_comparison: day.calorie_comparison })
     };
 };
 

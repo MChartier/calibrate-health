@@ -27,7 +27,7 @@ describe('food-day calendar', () => {
     it('maps canonical history into distinct calendar markers', () => {
         const today = '2026-07-18';
 
-        expect(getFoodDayCalendarMarker(day('2026-07-14', 'COMPLETE', 'STORED'), today)).toBe('complete');
+        expect(getFoodDayCalendarMarker(day('2026-07-14', 'COMPLETE', 'STORED'), today)).toBe('complete-unavailable');
         expect(getFoodDayCalendarMarker(day('2026-07-15', 'INCOMPLETE', 'STORED'), today)).toBe('incomplete');
         expect(getFoodDayCalendarMarker(day('2026-07-16', 'OPEN', 'DEFAULT'), today)).toBe('incomplete');
         expect(getFoodDayCalendarMarker(day('2026-07-17', 'INCOMPLETE', 'INFERRED_EMPTY'), today)).toBe('not-started');
@@ -49,5 +49,36 @@ describe('food-day calendar', () => {
             startDate: '2026-07-11',
             endDate: '2026-07-18'
         });
+    });
+});
+
+const captured = '2026-07-18T19:00:00.000Z';
+function completed(consumed: number, target = 2000, maintenance = 2500): FoodLogDay {
+    return { ...day('2026-07-18', 'COMPLETE', 'STORED'), calorie_comparison: {
+        consumed_kcal: consumed, target_kcal: target, maintenance_kcal: maintenance, captured_at: captured
+    } };
+}
+
+describe('completed calorie comparisons', () => {
+    it.each([[0, 'target'], [1999, 'target'], [2000, 'target'], [2001, 'between'], [2499, 'between'], [2500, 'between'], [2501, 'beyond']])('loss: %i kcal is %s', (calories, band) => {
+        expect(getFoodDayCalendarMarker(completed(Number(calories)), '2026-07-18')).toBe('complete-' + band);
+    });
+    it.each([[2499, 'beyond'], [2500, 'between'], [2501, 'between'], [2999, 'between'], [3000, 'target'], [3001, 'target']])('gain: %i kcal is %s', (calories, band) => {
+        expect(getFoodDayCalendarMarker(completed(Number(calories), 3000), '2026-07-18')).toBe('complete-' + band);
+    });
+    it.each([[2499, 'target'], [2500, 'target'], [2501, 'beyond']])('maintenance: %i kcal is %s', (calories, band) => {
+        expect(getFoodDayCalendarMarker(completed(Number(calories), 2500), '2026-07-18')).toBe('complete-' + band);
+    });
+    it.each([NaN, Infinity, -1, 1999.9])('does not round or guess invalid intake %s', (value) => {
+        expect(getFoodDayCalendarMarker(completed(value), '2026-07-18')).toBe('complete-unavailable');
+    });
+    it('ignores comparison fields on non-complete days and rejects malformed plans', () => {
+        expect(getFoodDayCalendarMarker({ ...completed(2000), status: 'PAUSED' }, '2026-07-18')).toBe('paused');
+        expect(getFoodDayCalendarMarker({ ...completed(2000), status: 'OPEN' }, '2026-07-19')).toBe('incomplete');
+        expect(getFoodDayCalendarMarker(completed(2000, 0), '2026-07-18')).toBe('complete-unavailable');
+        expect(getFoodDayCalendarMarker(completed(2000, 2000, NaN), '2026-07-18')).toBe('complete-unavailable');
+        const invalid = completed(2000);
+        invalid.calorie_comparison!.captured_at = 'unknown';
+        expect(getFoodDayCalendarMarker(invalid, '2026-07-18')).toBe('complete-unavailable');
     });
 });
