@@ -16,7 +16,7 @@ The rail can grow with enlarged text; measured width also positions the food-log
 ## Revisions and capture provenance
 
 - Baseline/base: `29fb444ae4389ca81f3437d24685ed9badc43410`, verified remote master.
-- Changed application and capture harness: `cd84f1caa0e3529f2bc3d83d7f0a9fcd92d73df1`.
+- Changed application and capture harness: `3aab5d673d9c9bb35986ff724ca4eac0ba81cbcc`.
 - The following evidence-only commit does not change application source. Captures identify the actual
   exported source above, not a later evidence commit. No parent PR or other worker's code was imported.
 - Separate Windows checkouts, Expo exports and loopback static servers were used. Both final exports
@@ -71,11 +71,11 @@ scrolling-page captures); none were cropped, redacted, painted, generated or rec
 Executed validation:
 
 - `npm.cmd run lint`: all TypeScript surfaces passed.
-- `npm.cmd --prefix mobile test -- --runInBand`: 213 suites / 1051 tests passed.
-- Focused rail/guard/layout/registry component run: 4 suites / 30 tests passed.
+- `npm.cmd --prefix mobile test -- --runInBand`: 213 suites / 1053 tests passed.
+- Focused rail/guard/layout/registry component run: 4 suites / 32 tests passed.
 - `npm.cmd run test:expo-web:release`: 16 passed; both final source exports passed.
 - Final focused browser capture suite: 11 passed per source, including forced-color feedback.
-- Existing desktop navigation/keyboard/permission run: 19 passed, 1 opt-in capture skipped.
+- Final desktop and phone-web navigation/keyboard/permission run: 38 passed, 2 opt-in captures skipped.
 - Broader rail/page-expansion/release-smoke browser matrix: 65 passed, 51 project-specific skips.
 - Final `npm.cmd run test:ux` without snapshot-update mode: 252 passed, 79 project-specific skips.
   This includes WCAG A/AA critical/serious gates and visual snapshots. All 22 changed desktop snapshot
@@ -88,6 +88,13 @@ runs are not counted as passes. Final screenshot pixels reviewed include Today 1
 1440 dark, food-log FAB dark, notification overlay dark, offline shell light, forced-color hover light,
 390px responsive and short enlarged-text pairs, plus keyboard focus. Normal light/dark variants and
 the 22 desktop UX snapshot updates were also inspected during implementation.
+
+Configured Codex review identified a guard continuation that bypassed the cancellable tab event.
+Two integration regressions reproduced it using the real GuardedTabButton. The rail now emits the
+same event before canonical Expo routing on ordinary and approved departures. Browser validation
+also caught retained-state dispatch adding an unwanted history entry; canonical routing fixes that
+without changing the existing mobile/native guard default. Final cancel/confirm/Back/re-arm scenarios
+pass on desktop and phone web. These intermediate failures were corrected, not suppressed.
 
 Current-head hosted CI, configured Codex review and rendered PR embeds are recorded on the PR after
 publication. Independent QA is assigned separately by the coordinator; this evidence is not its verdict.

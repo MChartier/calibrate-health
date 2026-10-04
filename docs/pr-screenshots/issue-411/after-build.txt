@@ -11,15 +11,13 @@ Expo Autolinking module resolution enabled
 Starting Metro Bundler
 
 Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
-| (node:30392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-╬╗ Bundled 1215ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1577 modules)
-Web Bundled 1549ms mobile\index.js (1840 modules)
+╬╗ Bundled 1154ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1852 modules)
+Web Bundled 1475ms mobile\index.js (1840 modules)
 
 ΓÇ║ web bundles (6):
 _expo/static/js/web/ImagePicker-6bed1add26ff2575dcd44cb9beed99ad.js (8.6KB)
 _expo/static/js/web/index-1c66e9aaf87c8190c72ec7445f407c52.js (59KB)
-_expo/static/js/web/index-4169f2c8d2825d5f91e09f4e2bbca74f.js (3.7MB)
+_expo/static/js/web/index-26f7fcc820830a8f6e72f540a3ff4023.js (3.7MB)
 _expo/static/js/web/index-7a10450d7ec4bc69cfd3b82716e36495.js (2.1KB)
 _expo/static/js/web/index-cbdbe7c96c52805337c1a278d362c339.js (45KB)
 _expo/static/js/web/ProgressExpansionContent-d8893b57bba7a95c6860da7289f7da92.js (587B)

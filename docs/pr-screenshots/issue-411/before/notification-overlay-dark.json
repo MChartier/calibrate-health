@@ -1,7 +1,7 @@
 {
   "sourceSha": "29fb444ae4389ca81f3437d24685ed9badc43410",
   "baseline": true,
-  "capturedAt": "2026-10-04T06:47:00.471Z",
+  "capturedAt": "2026-10-04T07:12:00.249Z",
   "browser": "154.0.8037.95",
   "viewport": {
     "width": 1440,
@@ -11,7 +11,7 @@
   "deviceScaleFactor": 1,
   "colorScheme": "dark",
   "filename": "notification-overlay-dark.png",
-  "sha256": "fecce2ac9dc8467b0b90aaf461654004b23da88b494537e226339e757338c97e",
+  "sha256": "98f8a6bc0474dea5458b6156d98c289c291e163244aff8dfb8be5aa6fce08359",
   "verifiedAssets": [
     {
       "path": "/_expo/static/js/web/index-a60acebe9b38f370a5113b3aaeb22150.js",
