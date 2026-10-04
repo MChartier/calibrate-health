@@ -1,0 +1,850 @@
+{
+  "sources": {
+    "before": "d8e55c105834093f889b2cff2a5c96d224cc6e80",
+    "after": "d53c322cf32f3de50833fe126e28220227cfb84e"
+  },
+  "parentPr": 410,
+  "childPr": 415,
+  "issue": 409,
+  "fixture": "Identical synthetic goal7, January1 start90kg, target75kg, current85kg, target-date2027-02-01, deficit500; matched calls select250. Trend fixture is synthetic and unchanged.",
+  "clock": "2026-07-21T19:00:00Z",
+  "timezone": "America/Los_Angeles",
+  "locale": "en-US",
+  "deviceScaleFactor": 1,
+  "reducedMotion": "reduce",
+  "runtime": "Production Expo web exports served to Chrome154.0.8037.95 on Windows. No native/device or local live database observations.",
+  "normalization": "Shared hideTransientPwaNotices suppresses unrelated transient PWA notices on both builds. No comparison content hidden and no pixel editing.",
+  "inputs": [
+    {
+      "file": "e2e/expo-web/goal-pace-comparison.spec.ts",
+      "commit": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "sha256": "cc042d8e3b070511c47c7372fb78f3baab2f1c8355e13eea8271e8d719439ff6"
+    },
+    {
+      "file": "e2e/expo-web/goal-pace.spec.ts",
+      "commit": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "sha256": "da438f506699aa6e61ec045b7678ecdb91fabda4b0e942f6ccd573f44892e841"
+    },
+    {
+      "file": "e2e/expo-web/fixtures.ts",
+      "commit": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "file": "e2e/expo-web/text-scaling.ts",
+      "commit": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e"
+    },
+    {
+      "file": "e2e/expo-web/ux-a11y.ts",
+      "commit": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "sha256": "33babe0c39c04dd979a9518896c9da00b7b747192c1b2e6c4baae94668ba7158"
+    },
+    {
+      "file": "playwright.expo-web.config.ts",
+      "commit": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    }
+  ],
+  "readbacks": [
+    {
+      "file": "after-android-phone-chrome-dark.json",
+      "stage": "after",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "captured_at": "2026-10-04T18:14:00.693Z",
+      "browser": "154.0.8037.95",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "colorScheme": "dark",
+      "creates": 0,
+      "writes": 1,
+      "goal": {
+        "id": 7,
+        "start_weight": 90,
+        "target_weight": 75,
+        "target_date": "2027-02-01T00:00:00Z",
+        "created_at": "2026-01-01T12:00:00Z",
+        "daily_deficit": 250,
+        "plan_status": "available",
+        "plan_reason_code": null,
+        "projection": {
+          "status": "projected",
+          "projected_end_date": "2027-05-25",
+          "reason_code": null
+        }
+      },
+      "initialSnapshot": {
+        "x": 16,
+        "y": 56,
+        "width": 358,
+        "height": 183
+      },
+      "initialActions": [
+        "Edit goal"
+      ],
+      "normalization": "Shared hideTransientPwaNotices suppresses unrelated transient notices only."
+    },
+    {
+      "file": "after-desktop-chrome-light.json",
+      "stage": "after",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e",
+      "captured_at": "2026-10-04T18:14:00.767Z",
+      "browser": "154.0.8037.95",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "colorScheme": "light",
+      "creates": 0,
+      "writes": 1,
+      "goal": {
+        "id": 7,
+        "start_weight": 90,
+        "target_weight": 75,
+        "target_date": "2027-02-01T00:00:00Z",
+        "created_at": "2026-01-01T12:00:00Z",
+        "daily_deficit": 250,
+        "plan_status": "available",
+        "plan_reason_code": null,
+        "projection": {
+          "status": "projected",
+          "projected_end_date": "2027-05-25",
+          "reason_code": null
+        }
+      },
+      "initialSnapshot": {
+        "x": 452,
+        "y": 56,
+        "width": 712,
+        "height": 183
+      },
+      "initialActions": [
+        "Edit goal"
+      ],
+      "normalization": "Shared hideTransientPwaNotices suppresses unrelated transient notices only."
+    },
+    {
+      "file": "before-android-phone-chrome-dark.json",
+      "stage": "before",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80",
+      "captured_at": "2026-10-04T18:14:02.795Z",
+      "browser": "154.0.8037.95",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "colorScheme": "dark",
+      "creates": 1,
+      "writes": 0,
+      "goal": {
+        "id": 8,
+        "start_weight": 85,
+        "target_weight": 75,
+        "target_date": "2027-02-01T00:00:00Z",
+        "created_at": "2026-07-21T19:00:00Z",
+        "daily_deficit": 250,
+        "plan_status": "available",
+        "plan_reason_code": null,
+        "projection": {
+          "status": "projected",
+          "projected_end_date": "2027-05-25",
+          "reason_code": null
+        }
+      },
+      "initialSnapshot": {
+        "x": 16,
+        "y": 56,
+        "width": 358,
+        "height": 183
+      },
+      "initialActions": [
+        "Edit goal"
+      ],
+      "normalization": "Shared hideTransientPwaNotices suppresses unrelated transient notices only."
+    },
+    {
+      "file": "before-desktop-chrome-light.json",
+      "stage": "before",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80",
+      "captured_at": "2026-10-04T18:14:02.761Z",
+      "browser": "154.0.8037.95",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "colorScheme": "light",
+      "creates": 1,
+      "writes": 0,
+      "goal": {
+        "id": 8,
+        "start_weight": 85,
+        "target_weight": 75,
+        "target_date": "2027-02-01T00:00:00Z",
+        "created_at": "2026-07-21T19:00:00Z",
+        "daily_deficit": 250,
+        "plan_status": "available",
+        "plan_reason_code": null,
+        "projection": {
+          "status": "projected",
+          "projected_end_date": "2027-05-25",
+          "reason_code": null
+        }
+      },
+      "initialSnapshot": {
+        "x": 452,
+        "y": 56,
+        "width": 712,
+        "height": 183
+      },
+      "initialActions": [
+        "Edit goal"
+      ],
+      "normalization": "Shared hideTransientPwaNotices suppresses unrelated transient notices only."
+    }
+  ],
+  "builds": {
+    "before": [
+      {
+        "file": "progress.html",
+        "sha256": "e055fe4f87625443558c8eeadb0b2fc763c47cdc09cbee106d77b9d5a7cfd4d1"
+      },
+      {
+        "file": "sw.js",
+        "sha256": "ddfbe25125fc324f95778ba3e5706f632944bdc8741827f0b59f1af4033e8f90"
+      },
+      {
+        "file": "_expo/static/js/web/ImagePicker-6bed1add26ff2575dcd44cb9beed99ad.js",
+        "sha256": "b9ac6498a161642341c3ec822651c0ae36b48c145267d8b958e8f2e17fc9208f"
+      },
+      {
+        "file": "_expo/static/js/web/index-0f5597099a9a163ac3a8559cfae54f55.js",
+        "sha256": "529432be232093846a4b342dad42a6130551cc749690a63c1ec4dea11721f906"
+      },
+      {
+        "file": "_expo/static/js/web/index-7a10450d7ec4bc69cfd3b82716e36495.js",
+        "sha256": "af5ceb99120ada8b56606af84ef127e2a7f8eefa93af6b627d6f02e28e6e3708"
+      },
+      {
+        "file": "_expo/static/js/web/index-7c83c8d14ef302d43f1131e9e7a2e006.js",
+        "sha256": "ba4aab38659f2232d83c38041d31b5aa49e1f92162ff8882d398000a89945ff1"
+      },
+      {
+        "file": "_expo/static/js/web/index-b5fcaf1d086eec901124239b92043a36.js",
+        "sha256": "92bfdc43e19228893d00bdb0943ca82ff2500d66f88c919096be6658f917ceba"
+      },
+      {
+        "file": "_expo/static/js/web/ProgressExpansionContent-d8893b57bba7a95c6860da7289f7da92.js",
+        "sha256": "7a32116ab7c45bdfc5f7360a8a672be65ca04ef37f0f649659e124857016c31e"
+      }
+    ],
+    "after": [
+      {
+        "file": "progress.html",
+        "sha256": "516aa221ce0b4efc2514e7bf59abc18c58f4f2743939411f00156fb9dd5d3f34"
+      },
+      {
+        "file": "sw.js",
+        "sha256": "195939687c74ddc336a0b45441da29a9baf8eaff18b373d5cf27b59e5751330e"
+      },
+      {
+        "file": "_expo/static/js/web/ImagePicker-a2e3a3d696eeeb025f31c84861b87d72.js",
+        "sha256": "d28bbdd1ec09fdb57f8a5e0a9b642ffd97ee1c1100eb36167b53788f422c8ca6"
+      },
+      {
+        "file": "_expo/static/js/web/index-2a821e6fc51925a758260cbee6bbcd85.js",
+        "sha256": "657c669f537a457e5eb4904685d4355fbaba332059a60e2dc88afa91a8180ac4"
+      },
+      {
+        "file": "_expo/static/js/web/index-30fe3e04a693e9655f6d1f932342fe88.js",
+        "sha256": "bfce56c26d344a437b8aa01d88ff073ccba6fc7941f66eda20fba7ce6d8175f4"
+      },
+      {
+        "file": "_expo/static/js/web/index-61bc9fdd59c4191f0ebcc50065968dc9.js",
+        "sha256": "245c01d0eb12245707986d174bf55605998d98ed184f6eb26d19c1bddd6f8337"
+      },
+      {
+        "file": "_expo/static/js/web/index-a90f25db9f97ef678405b84250ff4d95.js",
+        "sha256": "5bb86a7ffbf20e0572447305e516fd45d8ca2483b59dae25809d9c4a5644efb9"
+      },
+      {
+        "file": "_expo/static/js/web/ProgressExpansionContent-392287d38b0b8f6e918444dc175bbd79.js",
+        "sha256": "4d8af7b2722d6722d75b8cf186a0d58c0ae04cdf99a48531ae1c662dc6148ebd"
+      }
+    ]
+  },
+  "images": [
+    {
+      "file": "after-android-phone-chrome-dark-editor.png",
+      "sha256": "7f6a3a74a56aeef370ff4f14494e203b5e681c12032c063162cdce89d1449811",
+      "bytes": 45152,
+      "capturedAt": "2026-10-04T18:14:00.527Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "after-android-phone-chrome-dark-initial.png",
+      "sha256": "003244d6ea80cbaac96a75e9dc2cfcba94979888ba2af506dcbb8c6489489af0",
+      "bytes": 41881,
+      "capturedAt": "2026-10-04T18:14:00.043Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "after-android-phone-chrome-dark-saved.png",
+      "sha256": "9ec4585284b82e638884beea93fc80aa0ec7274bf1e4f07c290b40d8cbe7a40f",
+      "bytes": 40693,
+      "capturedAt": "2026-10-04T18:14:00.692Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "after-desktop-chrome-light-editor.png",
+      "sha256": "e87c322b5a29237ce53fe0ac734a704163b5c0858a2e6e726e840eb01ecef8dd",
+      "bytes": 74818,
+      "capturedAt": "2026-10-04T18:14:00.605Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "after-desktop-chrome-light-initial.png",
+      "sha256": "bf001b760d476a63265df9fa581b94b40aef18081ef68fd6fb16001e5d77029c",
+      "bytes": 58926,
+      "capturedAt": "2026-10-04T18:14:00.083Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "after-desktop-chrome-light-saved.png",
+      "sha256": "b2934068e4946a9ddd3e658030998e3e9b4f0eb7266f3caf2fd81049f371f5f5",
+      "bytes": 57820,
+      "capturedAt": "2026-10-04T18:14:00.765Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "before-android-phone-chrome-dark-editor.png",
+      "sha256": "4d41ecc3712a5f48b414c6c94a1b8f4dd0f4e2bf6841d95e6defc7ae3df57a74",
+      "bytes": 40366,
+      "capturedAt": "2026-10-04T18:14:02.628Z",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80"
+    },
+    {
+      "file": "before-android-phone-chrome-dark-initial.png",
+      "sha256": "003244d6ea80cbaac96a75e9dc2cfcba94979888ba2af506dcbb8c6489489af0",
+      "bytes": 41881,
+      "capturedAt": "2026-10-04T18:14:02.110Z",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80"
+    },
+    {
+      "file": "before-android-phone-chrome-dark-saved.png",
+      "sha256": "572976332a1d92792a17195b7620103c2394401a60426b381cbda5ac1eb986f2",
+      "bytes": 41924,
+      "capturedAt": "2026-10-04T18:14:02.793Z",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80"
+    },
+    {
+      "file": "before-desktop-chrome-light-editor.png",
+      "sha256": "7f23a63d22739247ce5b7f1995529a37d3dbf54869bfbb31ca0aea98b3e8f4d0",
+      "bytes": 67315,
+      "capturedAt": "2026-10-04T18:14:02.557Z",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80"
+    },
+    {
+      "file": "before-desktop-chrome-light-initial.png",
+      "sha256": "bf001b760d476a63265df9fa581b94b40aef18081ef68fd6fb16001e5d77029c",
+      "bytes": 58926,
+      "capturedAt": "2026-10-04T18:14:02.089Z",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80"
+    },
+    {
+      "file": "before-desktop-chrome-light-saved.png",
+      "sha256": "56f783bde4ae9c4ba3564b1592ca1d86151fcd14d1d39f6bfef77c690e307f9a",
+      "bytes": 57537,
+      "capturedAt": "2026-10-04T18:14:02.758Z",
+      "source": "d8e55c105834093f889b2cff2a5c96d224cc6e80"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-after.png",
+      "sha256": "0780163d5d53554b796256323b4e9bb2900fa526fd5d9188fe4f23b76357c300",
+      "bytes": 42023,
+      "capturedAt": "2026-10-04T18:14:11.345Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-before.png",
+      "sha256": "003244d6ea80cbaac96a75e9dc2cfcba94979888ba2af506dcbb8c6489489af0",
+      "bytes": 41881,
+      "capturedAt": "2026-10-04T18:14:09.663Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-draft.png",
+      "sha256": "7f6a3a74a56aeef370ff4f14494e203b5e681c12032c063162cdce89d1449811",
+      "bytes": 45152,
+      "capturedAt": "2026-10-04T18:14:10.069Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-historical-balance.png",
+      "sha256": "b59c0913a99efae907eefde2187eea59b205a3c04064985c402e6343113aeb89",
+      "bytes": 40361,
+      "capturedAt": "2026-10-04T18:14:11.789Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-manual-plan-refresh.png",
+      "sha256": "91aa1fee2286fb4ff1ebf895a575fd99d690ccc7370f691d12d1ead6a49d8d94",
+      "bytes": 45361,
+      "capturedAt": "2026-10-04T18:14:12.549Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-new-goal-saved.png",
+      "sha256": "572976332a1d92792a17195b7620103c2394401a60426b381cbda5ac1eb986f2",
+      "bytes": 41924,
+      "capturedAt": "2026-10-04T18:14:13.993Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-new-goal.png",
+      "sha256": "4d41ecc3712a5f48b414c6c94a1b8f4dd0f4e2bf6841d95e6defc7ae3df57a74",
+      "bytes": 40366,
+      "capturedAt": "2026-10-04T18:14:13.846Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-dark-retry.png",
+      "sha256": "30de2f0c6f5463eedd11d3c7d9f405c5d3eb8a146c83a91df1d4281d67fa4b1e",
+      "bytes": 43484,
+      "capturedAt": "2026-10-04T18:14:11.199Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-after.png",
+      "sha256": "c1b39da0ce81fd17629734c5e1557097919a7818c6eefde4f0bf4c36b9f723c7",
+      "bytes": 41868,
+      "capturedAt": "2026-10-04T18:14:11.105Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-before.png",
+      "sha256": "72e7de36a4a19c132b9d21d90770a604650147a588a6d1594886683fc4322f52",
+      "bytes": 41343,
+      "capturedAt": "2026-10-04T18:14:09.283Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-draft.png",
+      "sha256": "027e8fa10f5ac58694d9631c955c4657136f746412925e6fde83e5e50c41828c",
+      "bytes": 45703,
+      "capturedAt": "2026-10-04T18:14:09.817Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-historical-balance.png",
+      "sha256": "b2356e5aae72c152cf6b9e041aea8e10f184ef5b8183a97357c8528385a95da8",
+      "bytes": 40631,
+      "capturedAt": "2026-10-04T18:14:11.499Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-manual-plan-refresh.png",
+      "sha256": "95cae651cda62376fc9b8715f315092cf3ff7c7fa04a858cda6e07cc5affe932",
+      "bytes": 45933,
+      "capturedAt": "2026-10-04T18:14:12.254Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-new-goal-saved.png",
+      "sha256": "d90a481346c7076c876356a4f015e41817d11bf033780ecadad50f863762182b",
+      "bytes": 41406,
+      "capturedAt": "2026-10-04T18:14:13.627Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-new-goal.png",
+      "sha256": "1ce6ac56d62cfc526bb7fd2ca7fe1fc4c836b02b23fd6467a3ffa3bd95da7b02",
+      "bytes": 40805,
+      "capturedAt": "2026-10-04T18:14:13.501Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/android-phone-chrome-light-retry.png",
+      "sha256": "2ec0a4d373b0bdb27f703cf7d8e68f2f15d66a78d1b14a8d814a4de1d7c3e192",
+      "bytes": 43804,
+      "capturedAt": "2026-10-04T18:14:10.948Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-after.png",
+      "sha256": "eac5897089147d86026116801e628ccff944c7a3200fb6bfbd4699dc3ad88dab",
+      "bytes": 38094,
+      "capturedAt": "2026-10-04T18:14:12.582Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-before.png",
+      "sha256": "dd0a76eab698859a324aa4777291c6604920ffaaa64da8c6faa59886fd568f98",
+      "bytes": 37829,
+      "capturedAt": "2026-10-04T18:14:10.859Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-draft.png",
+      "sha256": "267d05f0ecbf4dc616afc32ffd562fae6147705f5933c226e57c34e010ab98ea",
+      "bytes": 36003,
+      "capturedAt": "2026-10-04T18:14:11.353Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-historical-balance.png",
+      "sha256": "fefc5209203937402f3f9fdfb810c2e3a4fe1da0e4cb53044d36dcc4131cebd5",
+      "bytes": 37586,
+      "capturedAt": "2026-10-04T18:14:12.984Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-manual-plan-refresh.png",
+      "sha256": "9a0ebccf211d0ffdffdcd49b90abb1a52e6a0ff6fb8bfbfeaae89a9ca5a03d46",
+      "bytes": 35997,
+      "capturedAt": "2026-10-04T18:14:13.700Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-new-goal-saved.png",
+      "sha256": "8e9365516f98ff855cf3cbd4e994e95417759339259c5dff6d943f3c289fcaa6",
+      "bytes": 37884,
+      "capturedAt": "2026-10-04T18:14:14.951Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-new-goal.png",
+      "sha256": "500001f61b4707c73abce63a236043f46e25f97dfd7a2a47b05547a7231eaedf",
+      "bytes": 26794,
+      "capturedAt": "2026-10-04T18:14:14.848Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-dark-retry.png",
+      "sha256": "abceed4393736993a10ac3f891acca51a91d4df7971be453159d9ba1cddae5ea",
+      "bytes": 35597,
+      "capturedAt": "2026-10-04T18:14:12.449Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-after.png",
+      "sha256": "c14eca8feb6278bdf977256f73d83e3907f3dbb356933988a5a83194c5279c84",
+      "bytes": 37645,
+      "capturedAt": "2026-10-04T18:14:11.918Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-before.png",
+      "sha256": "c631953975e4756514cb2313f9510c166a0c4e6e5488ccb1864dcd06fbfb0477",
+      "bytes": 37384,
+      "capturedAt": "2026-10-04T18:14:10.127Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-draft.png",
+      "sha256": "44dde5ba5f96672c5664979117a618271783e89a29e3bfc27121760c57b8aa21",
+      "bytes": 36268,
+      "capturedAt": "2026-10-04T18:14:10.649Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-historical-balance.png",
+      "sha256": "ff5c2bfa2dd9dd37b63c831bf254e435be7acdcdbbb022c39d0d8feca1cbfc61",
+      "bytes": 37652,
+      "capturedAt": "2026-10-04T18:14:12.353Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-large-text-controls.png",
+      "sha256": "58d27ba42c32adcb45694b8ba00bf7f0a1dbd5e6ff87d054742d837a127ae590",
+      "bytes": 48805,
+      "capturedAt": "2026-10-04T18:14:14.562Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-manual-plan-refresh.png",
+      "sha256": "fd55ca43d8f224e6941824e3ac31cec93cff108594a71fdf9a9b10385c76a49d",
+      "bytes": 36240,
+      "capturedAt": "2026-10-04T18:14:13.084Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-new-goal-saved.png",
+      "sha256": "f23d8af689fe0c7c60085f63be7530bcaae42d8d809eadc454d8690541498ea9",
+      "bytes": 37410,
+      "capturedAt": "2026-10-04T18:14:14.394Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-new-goal.png",
+      "sha256": "412ad46deae977d3f7f64b39a9b4b611afb3fde8b8396c0e3639f81c8e1a8c27",
+      "bytes": 27230,
+      "capturedAt": "2026-10-04T18:14:14.289Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/compact-phone-chrome-light-retry.png",
+      "sha256": "2427146397a47c0d18944f5eff9f3dfeac1a89a25eedd85af3f7f2c9578b2ed8",
+      "bytes": 36030,
+      "capturedAt": "2026-10-04T18:14:11.764Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-after.png",
+      "sha256": "65dcd00995b3209a0f36854034ddc3fa66859349ae8d8cf9c82b8cbe29e71442",
+      "bytes": 58099,
+      "capturedAt": "2026-10-04T18:14:04.405Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-before.png",
+      "sha256": "bc0758b4d3b4c94499f692998e68312ac9bebacaabcd553e8cbca8b5564a31cf",
+      "bytes": 58440,
+      "capturedAt": "2026-10-04T18:14:02.779Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-draft.png",
+      "sha256": "227093561deda7406487e9897a835149079e65180cae416f535d5737d909eb41",
+      "bytes": 72594,
+      "capturedAt": "2026-10-04T18:14:03.159Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-historical-balance.png",
+      "sha256": "c55fe6ef7eda76fd5ae4c6d85ca46c56afe404ab9474564e2c3fb1819d403b0d",
+      "bytes": 47108,
+      "capturedAt": "2026-10-04T18:14:04.866Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-manual-plan-refresh.png",
+      "sha256": "9b5a4d041a09fe964cfb08d3142967d7323472f60ac92c44ac3d4e8ff6d6e65b",
+      "bytes": 72745,
+      "capturedAt": "2026-10-04T18:14:05.615Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-new-goal-saved.png",
+      "sha256": "6a1fdb28ec03f992cb35dd152f35f85051c6ffcecf882ceb035904acc07ce4f1",
+      "bytes": 57875,
+      "capturedAt": "2026-10-04T18:14:07.038Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-new-goal.png",
+      "sha256": "54e6634b1ed4eb9f21612fdf8ef678d94da8f6263766c9c2af3a2b01bdb2a223",
+      "bytes": 65057,
+      "capturedAt": "2026-10-04T18:14:06.892Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-dark-retry.png",
+      "sha256": "28c17ae40cd97acf192cf1506113a90311cda6eec30dbe9b8f96a34c7f6c6d9d",
+      "bytes": 74482,
+      "capturedAt": "2026-10-04T18:14:04.238Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-after.png",
+      "sha256": "b2934068e4946a9ddd3e658030998e3e9b4f0eb7266f3caf2fd81049f371f5f5",
+      "bytes": 57820,
+      "capturedAt": "2026-10-04T18:14:04.556Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-before.png",
+      "sha256": "bf001b760d476a63265df9fa581b94b40aef18081ef68fd6fb16001e5d77029c",
+      "bytes": 58926,
+      "capturedAt": "2026-10-04T18:14:02.899Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-draft.png",
+      "sha256": "e87c322b5a29237ce53fe0ac734a704163b5c0858a2e6e726e840eb01ecef8dd",
+      "bytes": 74818,
+      "capturedAt": "2026-10-04T18:14:03.276Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-historical-balance.png",
+      "sha256": "250478489a210c0db1fac98193da2df5fcaa364929d2aa286aa62f1129926337",
+      "bytes": 47557,
+      "capturedAt": "2026-10-04T18:14:05.016Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-manual-plan-refresh.png",
+      "sha256": "4727c2eae695977462a8378bb857a62b7df3b0ffd49e142af81229749d0fdda4",
+      "bytes": 75039,
+      "capturedAt": "2026-10-04T18:14:05.731Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-new-goal-saved.png",
+      "sha256": "56f783bde4ae9c4ba3564b1592ca1d86151fcd14d1d39f6bfef77c690e307f9a",
+      "bytes": 57537,
+      "capturedAt": "2026-10-04T18:14:07.105Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-new-goal.png",
+      "sha256": "594343253c2c0fa906182c381520413bf5a0502d861cf0c32f58993396376124",
+      "bytes": 67313,
+      "capturedAt": "2026-10-04T18:14:06.940Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/desktop-chrome-light-retry.png",
+      "sha256": "5225a0dc78070deff0ebfeaf84eea2afd24ed5f35c3882955ea764c812fe22cf",
+      "bytes": 76526,
+      "capturedAt": "2026-10-04T18:14:04.387Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-after.png",
+      "sha256": "e6a0b35598771f145fc89acd64e0339cbe41aa115f9d5a58c3d870c0503d67d0",
+      "bytes": 57028,
+      "capturedAt": "2026-10-04T18:14:04.754Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-before.png",
+      "sha256": "a4a60c4c70a976623ebbf8e2f77285c5e683e8e6ca4eddc83a93aba5baa6c776",
+      "bytes": 57635,
+      "capturedAt": "2026-10-04T18:14:02.964Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-draft.png",
+      "sha256": "1c0c7cc9e8f6891cc3911cd7e6602c32399a2bec67826406a5a5eba9f4127565",
+      "bytes": 71527,
+      "capturedAt": "2026-10-04T18:14:03.483Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-historical-balance.png",
+      "sha256": "89a8a8688e52be3473bb0aa9af0c1d46078c834711f1f4711f5a0419c625612d",
+      "bytes": 44912,
+      "capturedAt": "2026-10-04T18:14:05.188Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-manual-plan-refresh.png",
+      "sha256": "9f3f80676558f9ef8c85f67f5b9f978d46ba4578af13840820a2e4933ef105de",
+      "bytes": 71751,
+      "capturedAt": "2026-10-04T18:14:05.900Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-new-goal-saved.png",
+      "sha256": "db0ee718b387c961849f31df735d768c6a96aac88dd6d6a6f8720e8b99a5d10f",
+      "bytes": 56817,
+      "capturedAt": "2026-10-04T18:14:07.249Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-new-goal.png",
+      "sha256": "089d046cc2c8108fc972d8f991b8229f0d12f755420dd8563a717ff9532040a2",
+      "bytes": 69074,
+      "capturedAt": "2026-10-04T18:14:07.134Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-dark-retry.png",
+      "sha256": "82217842b364423893452c4b4e00eaa7ff7a5b5ce5abfc687dce2e91930454f6",
+      "bytes": 74535,
+      "capturedAt": "2026-10-04T18:14:04.571Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-after.png",
+      "sha256": "588423891a9e6f84c944d4ed56e9dd8732b81f61daa3c00722ddfe2d22e0635d",
+      "bytes": 56353,
+      "capturedAt": "2026-10-04T18:14:04.379Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-before.png",
+      "sha256": "ec46210d031b2c56ef5064e66b36819e898bd26ce1086e049ba2da83d1872359",
+      "bytes": 57060,
+      "capturedAt": "2026-10-04T18:14:02.755Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-draft.png",
+      "sha256": "951cd74e95d21c88892387871c60257161990f82563983a7d4066f3ccddfa3f9",
+      "bytes": 73228,
+      "capturedAt": "2026-10-04T18:14:03.149Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-historical-balance.png",
+      "sha256": "83b2a60b9fc51f8565fdd009d7471fc0c7430142b04fa21f71caa2739aa4df13",
+      "bytes": 45291,
+      "capturedAt": "2026-10-04T18:14:04.837Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-manual-plan-refresh.png",
+      "sha256": "64f9df070b1570569b0df8ddf7203a1bf1b2b00bd773b3fce7ac118fbe8e4e63",
+      "bytes": 73423,
+      "capturedAt": "2026-10-04T18:14:05.592Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-new-goal-saved.png",
+      "sha256": "b015f5f0898e3460f330285a8cbd0d0130b3d15e5e4ab9a920669cbe9019a2f7",
+      "bytes": 56085,
+      "capturedAt": "2026-10-04T18:14:07.046Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-new-goal.png",
+      "sha256": "f498358e9780bc4aeaea13e4e43c936b95697a9d1ddcdbaf3444ddc73d80f133",
+      "bytes": 71327,
+      "capturedAt": "2026-10-04T18:14:06.881Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    },
+    {
+      "file": "behavior/tablet-chrome-light-retry.png",
+      "sha256": "1efc3fda42900f11bb420f2c17fc46842d0d510001221ea905e034056f0a302e",
+      "bytes": 76393,
+      "capturedAt": "2026-10-04T18:14:04.223Z",
+      "source": "d53c322cf32f3de50833fe126e28220227cfb84e"
+    }
+  ],
+  "validation": {
+    "matchedBefore": "2/2 passed",
+    "matchedAfter": "2/2 passed",
+    "browser": "8/8 passed; desktop1440/tablet820/phone390/compact320 in light/dark",
+    "component": "213 suites/1081 tests passed",
+    "typecheck": "All four TypeScript surfaces passed",
+    "browserScenarios": [
+      "One Edit goal action in Snapshot; no additional top-level new-goal row",
+      "500 to250 retains33percent/start90/dateJanuary1 and changes2100 to2350",
+      "Cancel/discard does not write; dirty transition to new goal can be declined",
+      "Synthetic503aftercommit retry reuses one operation and creates one revision",
+      "Escape and cancelling internal new-goal form restore Edit goal focus",
+      "Explicit new goal creates goal8 with start85/dateJuly21 and0percent",
+      "Completed prior day retains target2100",
+      "Axe no blocking violations;320px/200percent text Save and Close reachable",
+      "Manual plan refresh displays concurrent authoritative500 and new target2100 before another deliberate change; unchanged-version refresh retains unsaved draft in component regression"
+    ]
+  },
+  "priorEvidence": [
+    {
+      "commit": "8bdb0095103245f8d3e25181c92bbd0551352541",
+      "manifest": "docs/pr-screenshots/issue-409/edit-goal/manifest.json",
+      "sha256": "dee0f0ff23a708ae27c14775577aeec30e6e66d0b69913c75a0a4475db61e43f",
+      "preserved": true
+    },
+    {
+      "commit": "41cbe944430cbe3c498bf5b0546dd6906474f549",
+      "manifest": "docs/pr-screenshots/issue-409/before-after/manifest.json",
+      "sha256": "2e072f2a289ba65347a29192a176198bc552d1ead7e8e06e22af56d0e0dc4210",
+      "preserved": true
+    }
+  ]
+}
