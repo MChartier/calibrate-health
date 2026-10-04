@@ -1,0 +1,53 @@
+{
+  "sourceSha": "29fb444ae4389ca81f3437d24685ed9badc43410",
+  "baseline": true,
+  "capturedAt": "2026-10-04T06:47:01.323Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "url": "/today",
+  "deviceScaleFactor": 1,
+  "colorScheme": "dark",
+  "filename": "forced-hover-dark.png",
+  "sha256": "b0db16b0cd7199061f51bcd13dd3741f436f98f15f9fdd732b4d6a247c34fe57",
+  "verifiedAssets": [
+    {
+      "path": "/_expo/static/js/web/index-a60acebe9b38f370a5113b3aaeb22150.js",
+      "sha256": "d3c0fe98b2681f3bfb7c91821e23ca86fde28714d66b6450c41549b1aa0de640"
+    }
+  ],
+  "geometry": {
+    "rail": null,
+    "tabs": [
+      {
+        "label": "Today",
+        "href": "/today",
+        "selected": "true",
+        "x": 8,
+        "y": 20,
+        "width": 159,
+        "height": 44
+      },
+      {
+        "label": "Progress",
+        "href": "/progress",
+        "selected": "false",
+        "x": 8,
+        "y": 100,
+        "width": 159,
+        "height": 44
+      }
+    ],
+    "main": [
+      {
+        "x": 176,
+        "y": 118,
+        "width": 1264,
+        "height": 805
+      }
+    ],
+    "horizontalOverflow": 0
+  }
+}

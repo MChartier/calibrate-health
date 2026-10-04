@@ -1,0 +1,53 @@
+{
+  "sourceSha": "29fb444ae4389ca81f3437d24685ed9badc43410",
+  "baseline": true,
+  "capturedAt": "2026-10-04T06:47:00.642Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "url": "/food-log",
+  "deviceScaleFactor": 1,
+  "colorScheme": "dark",
+  "filename": "offline-shell-dark.png",
+  "sha256": "ac388c968fcea59e2d1297624c1ad30668cfefb10208d5afba3ce1e990605e4d",
+  "verifiedAssets": [
+    {
+      "path": "/_expo/static/js/web/index-a60acebe9b38f370a5113b3aaeb22150.js",
+      "sha256": "d3c0fe98b2681f3bfb7c91821e23ca86fde28714d66b6450c41549b1aa0de640"
+    }
+  ],
+  "geometry": {
+    "rail": null,
+    "tabs": [
+      {
+        "label": "Today",
+        "href": "/today",
+        "selected": "true",
+        "x": 8,
+        "y": 80,
+        "width": 159,
+        "height": 44
+      },
+      {
+        "label": "Progress",
+        "href": "/progress",
+        "selected": "false",
+        "x": 8,
+        "y": 160,
+        "width": 159,
+        "height": 44
+      }
+    ],
+    "main": [
+      {
+        "x": 176,
+        "y": 178,
+        "width": 1264,
+        "height": 822
+      }
+    ],
+    "horizontalOverflow": 0
+  }
+}

@@ -1,7 +1,7 @@
 {
   "sourceSha": "29fb444ae4389ca81f3437d24685ed9badc43410",
   "baseline": true,
-  "capturedAt": "2026-10-04T06:14:35.529Z",
+  "capturedAt": "2026-10-04T06:46:47.562Z",
   "browser": "154.0.8037.95",
   "viewport": {
     "width": 1024,
@@ -14,8 +14,8 @@
   "sha256": "56c26f6f907bb183b737df6e0fb8b6b0feb090cdf798374f0daf5d718d648727",
   "verifiedAssets": [
     {
-      "path": "/_expo/static/js/web/index-194df2e574fcfc6b193da089059c9cd4.js",
-      "sha256": "b7f8de5e0546a65b84e21726eaeddd06bf64af0893bff38d9ace8f9b15548fac"
+      "path": "/_expo/static/js/web/index-a60acebe9b38f370a5113b3aaeb22150.js",
+      "sha256": "d3c0fe98b2681f3bfb7c91821e23ca86fde28714d66b6450c41549b1aa0de640"
     }
   ],
   "geometry": {

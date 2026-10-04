@@ -11,20 +11,16 @@ Expo Autolinking module resolution enabled
 Starting Metro Bundler
 
 Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
-| (node:45392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:45392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-╬╗ Bundled 3122ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1581 modules)
-Web Bundled 3477ms mobile\index.js (1838 modules)
+╬╗ Bundled 1177ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1801 modules)
+Web Bundled 1510ms mobile\index.js (1838 modules)
 
 ΓÇ║ web bundles (6):
-_expo/static/js/web/ImagePicker-ab7947619bfdcef295f8f7e523b1ae9a.js (8.6KB)
-_expo/static/js/web/index-194df2e574fcfc6b193da089059c9cd4.js (3.7MB)
-_expo/static/js/web/index-2ebb769ec8c209d412ea62ca45c04cef.js (59KB)
-_expo/static/js/web/index-38628f1ae77e85ba1a071d60e1393330.js (45KB)
-_expo/static/js/web/index-d8ae54473bc4a1052e1f7ddb5fcbc7ec.js (2.1KB)
-_expo/static/js/web/ProgressExpansionContent-55b6a5d4a3f0cb75717ade0bf217660d.js (586B)
+_expo/static/js/web/ImagePicker-6bed1add26ff2575dcd44cb9beed99ad.js (8.6KB)
+_expo/static/js/web/index-0f5597099a9a163ac3a8559cfae54f55.js (45KB)
+_expo/static/js/web/index-7a10450d7ec4bc69cfd3b82716e36495.js (2.1KB)
+_expo/static/js/web/index-a60acebe9b38f370a5113b3aaeb22150.js (3.7MB)
+_expo/static/js/web/index-b5fcaf1d086eec901124239b92043a36.js (59KB)
+_expo/static/js/web/ProgressExpansionContent-d8893b57bba7a95c6860da7289f7da92.js (587B)
 
 ΓÇ║ Static routes (123):
 /log (25KB)

@@ -1,7 +1,7 @@
 {
-  "sourceSha": "f107804eb7572e5142b0a66d6d532ff08013d115",
+  "sourceSha": "cd84f1caa0e3529f2bc3d83d7f0a9fcd92d73df1",
   "baseline": false,
-  "capturedAt": "2026-10-04T06:14:48.453Z",
+  "capturedAt": "2026-10-04T06:46:48.151Z",
   "browser": "154.0.8037.95",
   "viewport": {
     "width": 820,
@@ -11,11 +11,11 @@
   "deviceScaleFactor": 1,
   "colorScheme": "light",
   "filename": "responsive-820-light.png",
-  "sha256": "d9d0ba190b8fdb601a7e197cc358473c70fa1aad4ef0799af87785d0c6802298",
+  "sha256": "32201614bde30bcf4c0c661552dcdf517163fa06718c7677dc78f36b0983a873",
   "verifiedAssets": [
     {
-      "path": "/_expo/static/js/web/index-ecdce0a86b08958f09f6cd292e8634f5.js",
-      "sha256": "eb2c92e3ceca18aafe201c9d7857bfce2d233ad1d6cd7a6488ba6df518618f43"
+      "path": "/_expo/static/js/web/index-4169f2c8d2825d5f91e09f4e2bbca74f.js",
+      "sha256": "19818428417ac421e63f3dbdeabc4c515e63c41a98e12ff1cade369a4d18a909"
     }
   ],
   "geometry": {
