@@ -213,9 +213,14 @@ it('browses the target month without requesting future history or enabling futur
     expect(screen.getByTestId('calendar-day-2027-01-02').props.accessibilityLabel).toMatch(/future date/);
     expect(screen.getByLabelText('Next month')).toBeDisabled();
     expect(mockGetFoodDays).toHaveBeenCalledTimes(1);
-    await act(async () => { queryClient.setQueryData(['mobile-food-tracking-pause'], { pause: { ...pause, expected_resume_on: null } }); });
+    mockGetPause.mockResolvedValue({ pause: { ...pause, expected_resume_on: null } });
+    await act(async () => {
+        await queryClient.cancelQueries({ queryKey: ['mobile-food-tracking-pause'] });
+        queryClient.setQueryData(['mobile-food-tracking-pause'], { pause: { ...pause, expected_resume_on: null } });
+    });
     await waitFor(() => expect(screen.getByTestId('calendar-day-2026-07-31').props.accessibilityLabel).toMatch(/planned tracking pause, until resumed/));
     expect(screen.getByLabelText('Next month')).toBeDisabled();
+    mockGetPause.mockResolvedValue({ pause: { ...pause, active: false } });
     await act(async () => { queryClient.setQueryData(['mobile-food-tracking-pause'], { pause: { ...pause, active: false } }); });
     await waitFor(() => expect(screen.getByTestId('calendar-day-2026-07-19').props.accessibilityLabel).not.toMatch(/planned/));
     screen.unmount(); queryClient.clear();

@@ -137,6 +137,41 @@ describe('food tracking day resolution', () => {
         act(() => Dimensions.set({ window: originalWindow }));
     });
 
+    it.each(['control', 'prompt'])('clears the plan through %s resume and ignores an older in-flight pause read', async surface => {
+        const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: 0 } } });
+        const key = ['mobile-food-tracking-pause'];
+        client.setQueryData(key, { pause: duePause });
+        let finishOldRead!: (value: unknown) => void;
+        mockApi.getFoodTrackingPause.mockImplementation(() => new Promise(resolve => { finishOldRead = resolve; }));
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('PAUSED'));
+        mockApi.resumeFoodTracking.mockResolvedValue({ pause: { ...duePause, active: false } });
+        const invalidate = jest.spyOn(client, 'invalidateQueries').mockResolvedValue();
+        void client.fetchQuery({ queryKey: key, queryFn: mockApi.getFoodTrackingPause }).catch(() => undefined);
+        const screen = render(<QueryClientProvider client={client}>{surface === 'control'
+            ? <DayStatusCard date="2026-07-23" isToday /> : <ResumeTrackingPrompt />}</QueryClientProvider>);
+        fireEvent.press(await screen.findByText('Resume tracking'));
+        await waitFor(() => expect(client.getQueryData(key)).toMatchObject({ pause: { active: false } }));
+        await act(async () => { finishOldRead({ pause: duePause }); });
+        expect(client.getQueryData(key)).toMatchObject({ pause: { active: false } });
+        expect(invalidate).toHaveBeenCalledWith({ queryKey: ['mobile-food-days'] });
+        expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
+        screen.unmount(); client.clear();
+    });
+
+    it('does not clear the prior plan when resume fails or durable queue storage rejects the attempt', async () => {
+        const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: 0 } } });
+        client.setQueryData(['mobile-food-tracking-pause'], { pause: duePause });
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('PAUSED'));
+        mockApi.resumeFoodTracking.mockRejectedValue(new TypeError('Offline'));
+        mockEnqueue.mockRejectedValueOnce(new Error('Storage unavailable'));
+        const screen = render(<QueryClientProvider client={client}><DayStatusCard date="2026-07-23" isToday /></QueryClientProvider>);
+        fireEvent.press(await screen.findByText('Resume tracking'));
+        expect(await screen.findByRole('alert')).toBeTruthy();
+        expect(client.getQueryData(['mobile-food-tracking-pause'])).toEqual({ pause: duePause });
+        expect(client.getQueryData(foodDayQueryKey('2026-07-23'))).toMatchObject({ status: 'PAUSED' });
+        screen.unmount(); client.clear();
+    });
+
     it('stacks completion and pause targets when native text is enlarged', async () => {
         act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 2 } }));
         mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));

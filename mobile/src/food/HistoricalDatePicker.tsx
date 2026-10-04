@@ -125,6 +125,9 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
     }, [selectedDate, visible]);
 
     const displayMonth = visibleMonth > lastBrowseMonth ? lastBrowseMonth : visibleMonth;
+    useEffect(() => {
+        if (visible) void pauseQuery.refetch();
+    }, [visible, displayMonth, pauseQuery.refetch]);
     const monthRange = getCalendarMonthRange(displayMonth, minDate, maxDate);
     const hasHistory = monthRange.startDate <= monthRange.endDate;
     const rangeQuery = useQuery({

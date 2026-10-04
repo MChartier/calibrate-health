@@ -26,11 +26,6 @@ export async function invalidateQueriesAfterOfflineReplay(
         operation === OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING ||
         operation === OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS
     );
-    if (replayedTrackingMutation) {
-        await Promise.all([foodTrackingPauseQueryKey, foodDayRangeQueryRoot, ['mobile-food-day']].map(queryKey =>
-            queryClient.invalidateQueries({ queryKey })
-        ));
-    }
     const replayedMetricMutation = result.replayedOperations.some((operation) =>
         operation === OFFLINE_MUTATION_OPERATIONS.ADD_METRIC ||
         operation === OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC
@@ -38,9 +33,10 @@ export async function invalidateQueriesAfterOfflineReplay(
     const replayedEvidenceMutation = result.replayedOperations.some(isCalibrationEvidenceMutationOperation);
     if (!replayedEvidenceMutation) return;
 
-    const queryKeys = replayedMetricMutation
-        ? METRIC_REPLAY_QUERY_KEYS
-        : [calibrationStatusQueryKey];
+    const queryKeys = [
+        ...(replayedMetricMutation ? METRIC_REPLAY_QUERY_KEYS : [calibrationStatusQueryKey]),
+        ...(replayedTrackingMutation ? [foodTrackingPauseQueryKey, foodDayRangeQueryRoot, ['mobile-food-day']] : [])
+    ];
     await Promise.all(queryKeys.map((queryKey) =>
         queryClient.invalidateQueries({ queryKey: [...queryKey] })
     ));
