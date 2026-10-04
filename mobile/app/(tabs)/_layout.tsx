@@ -211,6 +211,7 @@ export default function TabsLayout() {
         }
     });
     const openNotification = useMutation({
+        networkMode: 'always',
         mutationFn: async (notification: InAppNotification) => {
             await api.markInAppNotificationRead(notification.id);
             return notification;

@@ -192,6 +192,39 @@ for (const action of ['read', 'dismiss'] as const) {
   });
 }
 
+test('an offline reminder open settles without trapping the editor and can recover online', async ({ page, ux }) => {
+  await ux.install('populated');
+  const fixture = await installNotificationApi(page);
+  await page.goto('/preferences');
+  await hideTransientPwaNotices(page);
+  const time = page.getByTestId('settings-food-reminder-time');
+  await time.fill('08:30');
+  await page.getByTestId('notifications-button').click();
+  const panel = page.getByTestId('notifications-drawer-panel');
+  fixture.failActions = 1;
+  expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/notifications/in-app/123/read', status: 503 });
+  await page.context().setOffline(true);
+  await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false);
+  const confirmation = page.waitForEvent('dialog');
+  const click = panel.getByTestId('notification-open-123').click();
+  await (await confirmation).accept();
+  await click;
+  await expect(panel.getByText('Unable to update that notification. Try again.')).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Close notifications' })).toBeEnabled();
+  await expect(panel.getByTestId('notification-card-123')).toBeVisible();
+  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: 'Close notifications' }).click();
+  await expect(time).toHaveValue('08:30');
+  await page.context().setOffline(false);
+  fixture.failActions = 0;
+  await page.getByTestId('notifications-button').click();
+  const retryConfirmation = page.waitForEvent('dialog');
+  const retryClick = panel.getByTestId('notification-open-123').click();
+  await (await retryConfirmation).accept();
+  await retryClick;
+  await expect(page).toHaveURL((url) => url.pathname === '/weight');
+});
+
 test('a failed reminder read preserves the dirty Preferences draft and permits a guarded retry', async ({ page, ux }) => {
   await ux.install('populated');
   const fixture = await installNotificationApi(page);
