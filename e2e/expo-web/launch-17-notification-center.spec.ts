@@ -253,16 +253,15 @@ test('a successful reminder read navigates while its refresh is paused offline a
   await expect(panel).toHaveCount(0);
   expect(fixture.actionRequests).toBe(1);
   expect(fixture.history.find(({ id }) => id === 123)?.read_at).not.toBeNull();
-  await expect(page.getByTestId('notifications-badge')).toHaveText('19');
+  await page.goBack();
+  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+  await expect(time).toHaveValue(originalTime);
   await page.context().setOffline(false);
-  await page.getByTestId('notifications-button').click();
+  await page.getByRole('button', { name: 'Open notifications, 19 unread', exact: true }).click();
   await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
   await expect(panel.getByTestId('notification-card-123')).toHaveCount(0);
   await expect(panel.getByText('19 unread', { exact: true })).toBeVisible();
   await panel.getByRole('button', { name: 'Close notifications' }).click();
-  await page.goBack();
-  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
-  await expect(time).toHaveValue(originalTime);
 });
 
 test('a failed reminder read preserves the dirty Preferences draft and permits a guarded retry', async ({ page, ux }) => {
