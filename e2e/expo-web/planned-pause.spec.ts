@@ -88,6 +88,7 @@ for (const theme of ['light', 'dark'] as const) {
         await install(page, ux); await open(page);
         await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
         if (!before) await expect(page.getByText('Expected to resume Aug 3, 2026', { exact: true })).toBeVisible();
+        await expect(page.getByTestId('today-weight-card')).toBeInViewport({ ratio: 1 });
         await capture(page, info, `dated-today-${theme}`);
         await calendar(page);
         await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
