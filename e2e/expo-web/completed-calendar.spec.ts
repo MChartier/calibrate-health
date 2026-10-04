@@ -68,10 +68,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
 test('calendar refresh, uncached month failure, retry, and completion reopening stay honest', async ({ page, ux }, testInfo) => {
   test.skip(test.info().project.name !== 'desktop-chrome');
-  const options: AuthenticatedApiOptions = { foodDayStatus: 'COMPLETE' };
+  const options: AuthenticatedApiOptions = { foodDayStatus: 'COMPLETE', foodEntriesByDate: { '2026-07-21': [{ id: 31, meal_period: 'BREAKFAST', name: 'Synthetic daily intake', calories: 2000 }] } };
   await ux.install('populated', options);
   const days = history();
   days[20] = { ...row(21), calorie_comparison: { consumed_kcal: 2000, target_kcal: 2000, maintenance_kcal: 2500, captured_at: '2026-07-21T19:00:00Z' } };
+  await page.route('**/api/v1/food/31', async route => {
+    if (route.request().method() === 'PATCH') {
+      expect(options.foodDayStatus).toBe('OPEN');
+      days[20].calorie_comparison!.consumed_kcal = route.request().postDataJSON().calories;
+    }
+    await route.fallback();
+  });
   let fail = false;
   await page.route('**/api/v1/food-days/range?*', async route => {
     if (fail) return route.fulfill({ status: 503, json: { message: 'Synthetic unavailable history' } });
@@ -95,11 +102,17 @@ test('calendar refresh, uncached month failure, retry, and completion reopening 
   await page.getByRole('button', { name: 'Choose date', exact: true }).click();
   await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(/in progress/);
   await page.getByRole('button', { name: 'Close date picker' }).click();
-  // Server fixture models a food edit while the day is open; API persistence is covered separately.
-  days[20].calorie_comparison!.consumed_kcal = 2501;
+  await page.getByTestId('today-food-preview').click();
+  await page.getByRole('button', { name: 'Edit Synthetic daily intake', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Calories', exact: true }).fill('2501');
+  await page.screenshot({ path: testInfo.outputPath('calendar-food-edit.png') });
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('1 food | 2,501 kcal', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Collapse Food log', exact: true }).click();
   await page.getByRole('button', { name: 'Complete day', exact: true }).click();
   await page.getByRole('button', { name: 'Choose date', exact: true }).click();
   await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(/completed, above maintenance/);
+  await page.screenshot({ path: testInfo.outputPath('calendar-recompleted-after-edit.png') });
   expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/range', status: 503 });
   fail = true;
   await page.getByRole('button', { name: 'Previous month', exact: true }).click();
