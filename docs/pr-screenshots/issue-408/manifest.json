@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "source_revision": "0043e03cf0b911ff419060cec269e7e0f9a72dc5",
+  "base_revision": "29fb444ae4389ca81f3437d24685ed9badc43410",
+  "captured_on": "2026-10-04",
+  "environment": "Windows host; Chrome browser, production Expo web export, synthetic API fixtures; no emulator or physical-device claims",
+  "screenshots": [
+    {
+      "file": "android-phone-chrome-dark.png",
+      "sha256": "4801cad3b49a430eaa44b1c194a259af7b04ce89cdbf34c58e139a9f1d557088"
+    },
+    {
+      "file": "android-phone-chrome-light.png",
+      "sha256": "7ee49c1665853d77e05878e7834cce2ff83fc4bf3094a14ad6037210002c4301"
+    },
+    {
+      "file": "calendar-large-text-days.png",
+      "sha256": "50375e4c22753128d852dff0597178d33ecd60d1b1a019c9772ec3bc95ea38c1"
+    },
+    {
+      "file": "calendar-large-text-legend.png",
+      "sha256": "3035af427c34ab27304b3952f4df5cf8fb1abb6d7eddcec430ce5b945d37f720"
+    },
+    {
+      "file": "calendar-request-failure.png",
+      "sha256": "856a9e5a1328070b8335ef4f74bb8486e9053c338fdacf34775550e6239215b2"
+    },
+    {
+      "file": "compact-phone-chrome-dark.png",
+      "sha256": "13b401fc0a57ed27f7faa25f76f59326797c7d55f4aa5e61b2acb6abc9f856a8"
+    },
+    {
+      "file": "compact-phone-chrome-light.png",
+      "sha256": "fcbc11a2e0a220a5b5de81426dda239b363b1b91946664e0fc443eac1c2a2e31"
+    },
+    {
+      "file": "desktop-chrome-dark.png",
+      "sha256": "a57e2dcb6b06d34567eb567c30274e4132a372b6752767f009238640b4f91ee5"
+    },
+    {
+      "file": "desktop-chrome-light.png",
+      "sha256": "ee0a1dc74566b8c7f07cc07826fa1e143244c5801ab35a00f46d3eead492bd37"
+    },
+    {
+      "file": "tablet-chrome-dark.png",
+      "sha256": "7e02e52a17c1d4a63bb947fedc3c1c409ffee0e9605d22958e9033ce1277d08e"
+    },
+    {
+      "file": "tablet-chrome-light.png",
+      "sha256": "3a31111068ec133ecd6e8358b127c13fbdabbe8e44c60d5d775194ccce753a2b"
+    }
+  ]
+}
