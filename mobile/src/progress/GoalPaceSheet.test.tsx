@@ -137,3 +137,35 @@ test('starting a new goal confirms a dirty pace draft and never saves that draft
     screen.unmount();
     screen.client.clear();
 });
+
+test('manual plan refresh replaces a stale draft before enabling a save with the new version', async () => {
+    const screen = setup();
+    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
+    fireEvent.press(screen.getByText('Choose 250'));
+    mockApi.getGoalPaceOptions.mockResolvedValue({ ...options, goal: { ...goal, daily_deficit: 750 },
+        expected_plan_version: 'b'.repeat(64), planOptions: [...options.planOptions, { dailyDeficit: 750, available: true, dailyCalorieTarget: 1850 }] });
+    fireEvent.press(screen.getByText('Retry plan check'));
+    await screen.findByText('750');
+    expect(screen.queryByText('250')).toBeNull();
+    expect(mockApi.adjustGoalPace).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText('Save pace'));
+    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
+    expect(mockApi.adjustGoalPace.mock.calls[0][1]).toEqual({ daily_deficit: 750, expected_plan_version: 'b'.repeat(64) });
+    screen.unmount();
+    screen.client.clear();
+});
+
+test('manual refresh of an unchanged plan retains the unsaved draft', async () => {
+    const screen = setup();
+    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
+    fireEvent.press(screen.getByText('Choose 250'));
+    fireEvent.press(screen.getByText('Retry plan check'));
+    await waitFor(() => expect(mockApi.getGoalPaceOptions).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByText('Save pace')).toBeEnabled());
+    expect(screen.getByText('250')).toBeTruthy();
+    fireEvent.press(screen.getByText('Save pace'));
+    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
+    expect(mockApi.adjustGoalPace.mock.calls[0][1]).toEqual({ daily_deficit: 250, expected_plan_version: 'a'.repeat(64) });
+    screen.unmount();
+    screen.client.clear();
+});
