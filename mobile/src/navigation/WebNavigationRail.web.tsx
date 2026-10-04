@@ -45,6 +45,8 @@ export function WebNavigationRail({ state, descriptors, navigation, insets, onWi
                 [data-testid="web-navigation-rail"] a[aria-selected="true"]:active [data-rail-pill] { background: ${colors.outlineVariant}; }
                 @media (forced-colors: active) {
                     [data-testid="web-navigation-rail"] a[aria-selected="true"] [data-rail-pill] { outline: 2px solid Highlight; }
+                    [data-testid="web-navigation-rail"] a:hover [data-rail-pill] { outline: 2px dashed LinkText; }
+                    [data-testid="web-navigation-rail"] a:active [data-rail-pill] { outline: 3px double Highlight; }
                     [data-testid="web-navigation-rail"] a:focus-visible { outline-color: Highlight; }
                 }
             `}</style>

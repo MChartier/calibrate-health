@@ -117,6 +117,8 @@ test('rail links, keyboard, history, resizing and enlarged text', async ({ page,
   await popup.waitForURL(/\/today$/);
   await popup.close();
   await expect(page).toHaveURL(/\/progress$/);
+  // Keep pointer state matched when resizing moves controls beneath its previous position.
+  await page.mouse.move(0, 0);
   for (const width of [1023, 1024, 820, 390, 320, 1440]) {
     await page.setViewportSize({ width, height: 844 });
     await expect(progress).toBeVisible();
@@ -137,3 +139,69 @@ test('rail links, keyboard, history, resizing and enlarged text', async ({ page,
   await progress.focus();
   await capture(page, 'forced-colors-text-200');
 });
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`rail shell alignment, feedback, notifications and offline notice ${scheme}`, async ({ page, ux }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome');
+    await page.emulateMedia({ colorScheme: scheme });
+    const fixture = await ux.install('populated');
+    await page.route('**/api/v1/notifications/in-app**', route => route.fulfill({ json: {
+      notifications: [{ id: 1, type: 'LOG_WEIGHT_REMINDER', local_date: '2026-07-21',
+        title: 'Time to weigh in', body: 'Keep your trend current.', action_url: '/log?quickAdd=weight',
+        read_at: null, dismissed_at: null, created_at: '2026-07-21T12:00:00.000Z' }], unread_count: 1,
+    } }));
+    await page.goto('/food-log');
+    await hideTransientPwaNotices(page);
+    await expect(page.getByRole('heading', { name: 'Meals', exact: true })).toBeVisible();
+    const today = page.getByRole('tab', { name: /Today$/ });
+    await expect(today).toHaveAttribute('aria-selected', 'true');
+    const fab = page.getByRole('button', { name: 'Add food', exact: true });
+    const date = page.getByRole('toolbar', { name: 'Food log date' });
+    const fabBox = (await fab.boundingBox())!;
+    const dateBox = (await date.boundingBox())!;
+    expect(Math.abs(fabBox.x + fabBox.width - dateBox.x - dateBox.width)).toBeLessThanOrEqual(1);
+    await capture(page, `food-log-fab-${scheme}`);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Meals', exact: true })).toBeVisible();
+    await expect(today).toHaveAttribute('aria-selected', 'true');
+    const notifications = page.getByRole('button', { name: 'Open notifications, 1 unread', exact: true });
+    await expect(notifications).toBeVisible();
+    await notifications.click();
+    await expect(page.getByRole('dialog', { name: 'Notifications', exact: true })).toBeVisible();
+    await expect(page.getByText('Time to weigh in', { exact: true })).toBeVisible();
+    await capture(page, `notification-overlay-${scheme}`);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await fixture.activateOffline();
+    await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
+    await expect(today).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Account & settings', exact: true })).toBeVisible();
+    await capture(page, `offline-shell-${scheme}`);
+    await page.context().setOffline(false);
+    await hideTransientPwaNotices(page);
+    await page.goto('/today');
+    await hideTransientPwaNotices(page);
+    await expect(today).toHaveAttribute('aria-selected', 'true');
+    if (!baseline) {
+      const pill = today.locator('[data-rail-pill]');
+      const selectedBackground = await pill.evaluate(node => getComputedStyle(node).backgroundColor);
+      await today.hover();
+      expect(await pill.evaluate(node => getComputedStyle(node).boxShadow)).not.toBe('none');
+      await page.mouse.down();
+      expect(await pill.evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe(selectedBackground);
+      await page.mouse.up();
+    }
+    await page.getByRole('tab', { name: /Progress$/ }).hover();
+    await capture(page, `unselected-hover-${scheme}`);
+    await page.emulateMedia({ forcedColors: 'active' });
+    await today.hover();
+    if (!baseline) {
+      const pill = today.locator('[data-rail-pill]');
+      expect(await pill.evaluate(node => getComputedStyle(node).outlineStyle)).toBe('dashed');
+      await page.mouse.down();
+      expect(await pill.evaluate(node => getComputedStyle(node).outlineStyle)).toBe('double');
+      await page.mouse.up();
+    }
+    await capture(page, `forced-hover-${scheme}`);
+  });
+}
