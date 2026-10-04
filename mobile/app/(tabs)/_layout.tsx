@@ -441,10 +441,6 @@ export default function TabsLayout() {
                         onClose={() => setIsNotificationDrawerOpen(false)}
                         onOpenNotification={(notification) => openNotification.mutate(notification)}
                         onDismissNotification={(notification) => dismissNotification.mutate(notification)}
-                        onViewAll={() => requestGuardedNavigation(() => {
-                            setIsNotificationDrawerOpen(false);
-                            router.push(canonicalPathForRoute('notifications') as Href);
-                        })}
                         onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
                     />
                     <ResumeTrackingPrompt />

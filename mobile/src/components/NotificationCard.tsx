@@ -4,8 +4,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { InAppNotification } from '@calibrate/api-client';
 import {
     formatNotificationDate,
-    formatNotificationTimestamp,
-    getNotificationStateLabel,
     getNotificationText
 } from '../notifications/presentation';
 import { getNotificationAction } from '../notifications/workflow';
@@ -18,16 +16,14 @@ import { AppText } from './AppText';
 type NotificationCardProps = {
     notification: InAppNotification;
     isBusy?: boolean;
-    showHistoryState?: boolean;
     onOpen: (notification: InAppNotification) => void;
     onDismiss: (notification: InAppNotification) => void;
 };
 
-/** Shared reminder presentation for the lightweight drawer and deep-linkable route. */
+/** Presents an active reminder and its logging and dismissal actions. */
 export const NotificationCard: React.FC<NotificationCardProps> = ({
     notification,
     isBusy = false,
-    showHistoryState = false,
     onOpen,
     onDismiss
 }) => {
@@ -37,7 +33,6 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     const text = getNotificationText(notification);
     const isResolved = 'resolved_at' in notification && Boolean(notification.resolved_at);
     const isUnread = !notification.read_at && !notification.dismissed_at && !isResolved;
-    const stateLabel = getNotificationStateLabel(notification);
 
     return (
         <AppSection
@@ -60,9 +55,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                         {isUnread ? <View style={styles.unreadDot} /> : null}
                     </View>
                     <AppText variant="caption">
-                        {showHistoryState
-                            ? `${formatNotificationTimestamp(notification.created_at)} | ${stateLabel}`
-                            : formatNotificationDate(notification.local_date)}
+                        {formatNotificationDate(notification.local_date)}
                     </AppText>
                     <AppText variant="muted">{text.body}</AppText>
                 </View>

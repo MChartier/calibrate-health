@@ -16,6 +16,11 @@ the Android client; platform-specific behavior belongs behind `.web` and `.nativ
 Native-only features such as Health Connect and Wear transport must not evaluate native modules in the browser bundle.
 Browser routes should either use the web implementation or render intentional guidance.
 
+The app-bar bell opens up to five active reminders with the global unread count. Reminder schedules and delivery
+permission/recovery controls remain in Settings > Profile & preferences > Preferences. The retired `/notifications`
+history address replaces itself with `/today` after the normal account gates. This client simplification does not
+delete stored reminder records or remove history/read-all APIs used by compatible older clients.
+
 ## Development and validation
 
 - `npm run dev`: start the worktree-scoped backend, Expo web, and Postgres Compose services.

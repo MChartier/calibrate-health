@@ -33,7 +33,6 @@ function renderDrawer(overrides: Partial<React.ComponentProps<typeof Notificatio
         onClose: jest.fn(),
         onOpenNotification: jest.fn(),
         onDismissNotification: jest.fn(),
-        onViewAll: jest.fn(),
         onRetry: jest.fn(),
         ...overrides
     };
@@ -84,12 +83,17 @@ describe('NotificationsDrawer', () => {
         expect(props.onClose).toHaveBeenCalledTimes(1);
     });
 
-    it('provides a discoverable path to the full notification history', () => {
-        const { props, screen } = renderDrawer();
-
-        fireEvent.press(screen.getByRole('button', { name: 'View all notifications' }));
-
-        expect(props.onViewAll).toHaveBeenCalledTimes(1);
+    it.each([
+        ASYNC_RESOURCE_STATES.CONTENT,
+        ASYNC_RESOURCE_STATES.EMPTY,
+        ASYNC_RESOURCE_STATES.LOADING,
+        ASYNC_RESOURCE_STATES.ERROR,
+        ASYNC_RESOURCE_STATES.STALE,
+        ASYNC_RESOURCE_STATES.DEGRADED
+    ])('has no archive entry point in the %s state', (kind) => {
+        const { screen } = renderDrawer({ state: { kind, error: new Error('unavailable') } });
+        expect(screen.queryByRole('button', { name: 'View all notifications' })).toBeNull();
+        expect(screen.queryByTestId('view-all-notifications')).toBeNull();
     });
 
     it('exposes one modal dialog and keeps the decorative backdrop out of the accessibility tree', () => {
@@ -157,7 +161,7 @@ describe('NotificationsDrawer', () => {
         expect(screen.getByText('Time to weigh in')).toBeTruthy();
     });
 
-    it('limits the quick drawer to five items while keeping full history discoverable', () => {
+    it('limits the quick drawer to five items while keeping the global unread count', () => {
         const notifications = Array.from({ length: 7 }, (_, index) => ({
             ...NOTIFICATION,
             id: index + 1,
@@ -169,6 +173,14 @@ describe('NotificationsDrawer', () => {
         expect(screen.getByText('Reminder 1')).toBeTruthy();
         expect(screen.getByText('Reminder 5')).toBeTruthy();
         expect(screen.queryByText('Reminder 6')).toBeNull();
-        expect(screen.getByTestId('view-all-notifications')).toBeTruthy();
+        expect(screen.getByText('7 unread')).toBeTruthy();
+        expect(screen.queryByTestId('view-all-notifications')).toBeNull();
+    });
+
+    it('closes through native Back and backdrop without opening another route', () => {
+        const { props, screen } = renderDrawer();
+        act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());
+        fireEvent.press(screen.getByTestId('notifications-drawer-backdrop', { includeHiddenElements: true }));
+        expect(props.onClose).toHaveBeenCalledTimes(2);
     });
 });

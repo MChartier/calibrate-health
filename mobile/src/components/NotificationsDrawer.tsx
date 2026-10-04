@@ -4,7 +4,6 @@ import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SUPPORTED_MODAL_ORIENTATIONS } from '../layout/adaptiveLayout';
 import { AppSection } from './AppSection';
-import { AppButton } from './AppButton';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
 import { NotificationCard } from './NotificationCard';
@@ -36,7 +35,6 @@ type NotificationsDrawerProps = {
     onClose: () => void;
     onOpenNotification: (notification: InAppNotification) => void;
     onDismissNotification: (notification: InAppNotification) => void;
-    onViewAll: () => void;
     onRetry?: () => void;
 };
 
@@ -51,7 +49,6 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     onClose,
     onOpenNotification,
     onDismissNotification,
-    onViewAll,
     onRetry
 }) => {
     const theme = useAppTheme();
@@ -213,12 +210,6 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             </AppSection>
                         )}
 
-                        <AppButton
-                            testID="view-all-notifications"
-                            title="View all notifications"
-                            variant="secondary"
-                            onPress={onViewAll}
-                        />
                     </ScrollView>
                 </Animated.View>
             </View>
