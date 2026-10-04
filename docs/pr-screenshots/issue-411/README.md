@@ -16,8 +16,9 @@ The rail can grow with enlarged text; measured width also positions the food-log
 ## Revisions and capture provenance
 
 - Baseline/base: `29fb444ae4389ca81f3437d24685ed9badc43410`, verified remote master.
-- Changed application and capture harness: `3aab5d673d9c9bb35986ff724ca4eac0ba81cbcc`.
-- The following evidence-only commit does not change application source. Captures identify the actual
+- Changed application source: `3aab5d673d9c9bb35986ff724ca4eac0ba81cbcc`.
+- Final capture harness: `3a1ff138184b86719da2cead2a531839cc2d0f06`; its added assertion waits for the notification drawer transform to settle at zero on both builds.
+- Subsequent harness/evidence commits do not change application source. Captures identify the actual
   exported source above, not a later evidence commit. No parent PR or other worker's code was imported.
 - Separate Windows checkouts, Expo exports and loopback static servers were used. Both final exports
   were built after their source revisions existed, with no tracked application modifications. Only the
@@ -41,6 +42,7 @@ The rail can grow with enlarged text; measured width also positions the food-log
 Both runs use synthetic populated/empty API data, clock `2026-07-21T19:00:00.000Z`,
 `America/Los_Angeles`, `en-US`, reduced motion and device scale 1. The notification case adds the same
 synthetic reminder to both sources. Baseline mode skips new-rail assertions only; it never changes UI.
+The drawer is captured only after its existing animation fully opens; no animation or UI is replaced.
 Pointer position is normalized to (0,0) before the responsive sequence so moving controls do not
 acquire incidental hover. Rail, page, shell and account controls are never hidden.
 
