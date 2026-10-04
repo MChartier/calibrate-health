@@ -1,0 +1,39 @@
+{
+  "sourceSha": "29fb444ae4389ca81f3437d24685ed9badc43410",
+  "source": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-04\\task-4\\baseline",
+  "label": "before",
+  "route": "/today",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "deviceScaleFactor": 1,
+  "browser": "154.0.8037.95",
+  "platform": "win32",
+  "capturedAtUtc": "2026-10-04T18:40:01.872Z",
+  "frozenClock": "2026-07-21T19:00:00.000Z",
+  "locale": "en-US",
+  "timezoneId": "America/Los_Angeles",
+  "colorScheme": "light",
+  "fixture": "ux.install(paused, {foodDayStatus: PAUSED, foodEntries: []})",
+  "normalization": "Shared hideTransientPwaNotices suppresses unrelated PWA status/alert toasts; no compared UI hidden or altered. Mouse moved to (0,0). No image transformations.",
+  "geometry": {
+    "x": 176,
+    "y": 858,
+    "width": 1264,
+    "height": 65,
+    "topWidth": "0px",
+    "topColor": "rgb(0, 0, 0)",
+    "bottomWidth": "1px",
+    "bottomColor": "rgb(124, 129, 120)"
+  },
+  "scripts": [
+    {
+      "url": "http://127.0.0.1:44135/_expo/static/js/web/index-a60acebe9b38f370a5113b3aaeb22150.js",
+      "sha256": "d3c0fe98b2681f3bfb7c91821e23ca86fde28714d66b6450c41549b1aa0de640",
+      "sourceFile": "_expo/static/js/web/index-a60acebe9b38f370a5113b3aaeb22150.js"
+    }
+  ],
+  "image": "before-1440-light.png",
+  "imageSha256": "f582fa57123d369dc7b161e64014f1385eee3fd6e251ea57b2932f82bb32da48"
+}
