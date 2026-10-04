@@ -192,6 +192,57 @@ for (const action of ['read', 'dismiss'] as const) {
   });
 }
 
+test('a failed reminder read preserves the dirty Preferences draft and permits a guarded retry', async ({ page, ux }) => {
+  await ux.install('populated');
+  const fixture = await installNotificationApi(page);
+  await page.goto('/preferences');
+  await hideTransientPwaNotices(page);
+  const time = page.getByTestId('settings-food-reminder-time');
+  const originalTime = await time.inputValue();
+  await time.fill('08:30');
+  await page.getByTestId('notifications-button').click();
+  const panel = page.getByTestId('notifications-drawer-panel');
+  fixture.failActions = 1;
+  fixture.holdActions = true;
+  expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/notifications/in-app/123/read', status: 503 });
+  const confirmation = page.waitForEvent('dialog');
+  const click = panel.getByTestId('notification-open-123').click();
+  await (await confirmation).accept();
+  await click;
+  const open = panel.getByTestId('notification-open-123');
+  await expect(open).toBeDisabled();
+  await open.dispatchEvent('click');
+  await expect.poll(() => fixture.actionRequests).toBe(1);
+  await expect.poll(() => fixture.releaseAction !== null).toBe(true);
+  fixture.releaseAction!();
+  await expect(panel.getByText('Unable to update that notification. Try again.')).toBeVisible();
+  await expect(panel.getByTestId('notification-card-123')).toBeVisible();
+  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+  await panel.getByRole('button', { name: 'Close notifications' }).click();
+  await expect(time).toHaveValue('08:30');
+
+  await page.getByTestId('notifications-button').click();
+  const canceledConfirmation = page.waitForEvent('dialog');
+  const canceledClick = panel.getByTestId('notification-open-123').click();
+  await (await canceledConfirmation).dismiss();
+  await canceledClick;
+  expect(fixture.actionRequests).toBe(1);
+  fixture.holdActions = false;
+  const retryConfirmation = page.waitForEvent('dialog');
+  const retryClick = panel.getByTestId('notification-open-123').click();
+  await (await retryConfirmation).accept();
+  await retryClick;
+  await expect(page).toHaveURL((url) => url.pathname === '/weight');
+  expect(fixture.actionRequests).toBe(2);
+  await expect(page.getByRole('dialog', { name: 'Weight entry', exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+  await expect(time).toHaveValue(originalTime);
+  expect(fixture.readAllRequests).toBe(0);
+  expect(fixture.listViews.every((view) => view === 'active')).toBe(true);
+});
+
 test('Preferences retains browser permission recovery and guarded reminder navigation', async ({ page, ux }) => {
   await ux.install('populated');
   await installDeniedBrowserPermission(page);

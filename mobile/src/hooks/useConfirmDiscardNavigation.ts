@@ -4,7 +4,7 @@ import { useNavigation } from 'expo-router';
 import { useIsFocused, usePreventRemove } from 'expo-router/build/react-navigation/core';
 import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
 import { useBrowserDiscardNavigation } from './useBrowserDiscardNavigation';
-import { registerNavigationGuard } from '../navigation/guardedNavigation';
+import { registerNavigationGuard, type PrepareNavigation } from '../navigation/guardedNavigation';
 
 type Navigate = () => void;
 
@@ -42,19 +42,15 @@ export function useConfirmDiscardNavigation(
         if (!isFocused || (!isDirty && !isNavigationBlocked)) setNavigationAllowed(false);
     }, [isDirty, isFocused, isNavigationBlocked]);
 
-    const requestNavigation = useCallback(async (navigate: Navigate) => {
+    const requestNavigation = useCallback(async (navigate: Navigate, prepare?: PrepareNavigation) => {
         if (isNavigationBlocked || confirmationPendingRef.current) return;
-        if (!isDirty) {
-            allowNavigation(navigate);
-            return;
-        }
-
         confirmationPendingRef.current = true;
         try {
-            if (await confirmDiscardChanges()) {
-                discardRef.current?.();
-                allowNavigation(navigate);
-            }
+            if (isDirty && !await confirmDiscardChanges()) return;
+            // A failed prerequisite must leave both the editor and its guard intact.
+            if (prepare && !await prepare()) return;
+            if (isDirty) discardRef.current?.();
+            allowNavigation(navigate);
         } finally {
             confirmationPendingRef.current = false;
         }
