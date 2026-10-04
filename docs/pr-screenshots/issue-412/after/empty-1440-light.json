@@ -1,10 +1,10 @@
 {
-  "source": "f06036fe0daef046b20b21c24e0c51d9d8a501db",
+  "source": "f0220f0fc9a7827bdf2497492455205ad360d25e",
   "side": "after",
   "state": "empty",
   "requestedRoute": "/today",
   "observedRoute": "/today",
-  "capturedAtUtc": "2026-10-04T08:13:54.845Z",
+  "capturedAtUtc": "2026-10-04T08:38:05.895Z",
   "browser": "154.0.8037.95",
   "platform": "win32",
   "viewport": {
@@ -21,8 +21,8 @@
   "sha256": "d20fb32e70a6ac09c757baa2ceab0bfa92166b6e7c22b632f990a60fc80d6fa0",
   "servedAssets": [
     {
-      "path": "/_expo/static/js/web/index-7c36bf56e63639ba6abf3d881218ebf3.js",
-      "sha256": "b41c0932c6fdb5e43152bdc2fd58bcb8610c837f50bc6eee38dd77e565a93361"
+      "path": "/_expo/static/js/web/index-b993556c759fd897ff3ee791d6b1951a.js",
+      "sha256": "fcc764c1240b8c91eedb2ab0480063dbeff8a9e3aa4e1b3af3e4318ac7151efa"
     }
   ],
   "listViews": [

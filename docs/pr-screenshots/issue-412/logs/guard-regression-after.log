@@ -1,0 +1,19 @@
+npm notice run cal-io@0.37.0 test:web:e2e
+npm notice run node scripts/expo-web-playwright.mjs --workers=1 --output=.codex-screenshots/guard-dialog-check e2e/expo-web/launch-17-notification-center.spec.ts --grep Preferences retains
+
+Running 4 tests using 1 worker
+
+(node:34456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ Preferences retains browser permission recovery and guarded reminder navigation (1.7s)
+(node:27476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [tablet-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ Preferences retains browser permission recovery and guarded reminder navigation (1.8s)
+(node:31932) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [android-phone-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ Preferences retains browser permission recovery and guarded reminder navigation (1.8s)
+(node:14344) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [compact-phone-chrome] ΓÇ║ e2e\expo-web\launch-17-notification-center.spec.ts:195:5 ΓÇ║ Preferences retains browser permission recovery and guarded reminder navigation (1.7s)
+
+  4 passed (11.1s)

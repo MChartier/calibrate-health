@@ -13,16 +13,16 @@ Expo Autolinking module resolution enabled
 Starting Metro Bundler
 
 Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
-╬╗ Bundled 1200ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1687 modules)
-Web Bundled 1472ms mobile\index.js (1829 modules)
+╬╗ Bundled 1158ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1852 modules)
+Web Bundled 1478ms mobile\index.js (1837 modules)
 
 ΓÇ║ web bundles (6):
-_expo/static/js/web/ImagePicker-90eaf4f57984c38cbb7bebaaf3fb9b9d.js (8.6KB)
-_expo/static/js/web/index-1970d3d10e6962d6cfffe77fc0b3346e.js (2.1KB)
-_expo/static/js/web/index-513092a5dbf9f4498899adb3a9a36e94.js (45KB)
-_expo/static/js/web/index-5a2b2d8fc11f66125e2353ce4c8d7179.js (59KB)
-_expo/static/js/web/index-7c36bf56e63639ba6abf3d881218ebf3.js (3.7MB)
-_expo/static/js/web/ProgressExpansionContent-f8d38dec861b4a2c999ac1e59909cfb5.js (586B)
+_expo/static/js/web/ImagePicker-6bed1add26ff2575dcd44cb9beed99ad.js (8.6KB)
+_expo/static/js/web/index-1db02b18c612b0449cd3be2df0b61076.js (45KB)
+_expo/static/js/web/index-7a10450d7ec4bc69cfd3b82716e36495.js (2.1KB)
+_expo/static/js/web/index-b993556c759fd897ff3ee791d6b1951a.js (3.7MB)
+_expo/static/js/web/index-e56d7b0d76f824a08e3341165e410f1b.js (59KB)
+_expo/static/js/web/ProgressExpansionContent-d8893b57bba7a95c6860da7289f7da92.js (587B)
 
 ΓÇ║ Static routes (123):
 /log (25KB)
