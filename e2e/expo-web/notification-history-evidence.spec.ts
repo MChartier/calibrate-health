@@ -18,6 +18,7 @@ const states = [
   { state: 'legacy', width: 1440, height: 1000, theme: 'light' },
   { state: 'preferences', width: 1440, height: 1000, theme: 'light' },
   { state: 'legal', width: 1440, height: 1000, theme: 'light' },
+  { state: 'guard-cancelled', width: 1440, height: 1000, theme: 'light' },
   { state: 'empty', width: 390, height: 844, theme: 'dark' },
   { state: 'populated', width: 390, height: 844, theme: 'dark' },
 ] as const;
@@ -53,11 +54,23 @@ for (const { state, width, height, theme } of states) {
     const requestedRoute = state === 'legacy' ? '/notifications?cursor=old#history' : state === 'legal' ? '/privacy' : '/today';
     await page.goto(requestedRoute);
     await hideTransientPwaNotices(page);
-    if (state === 'preferences') {
+    if (state === 'preferences' || state === 'guard-cancelled') {
       await page.getByRole('button', { name: 'Account & settings', exact: true }).click();
       await page.getByTestId('settings-open-profile').click();
       await page.getByTestId('settings-open-preferences').click();
       await expect(page.getByTestId('settings-delivery-permission')).toBeVisible();
+      if (state === 'guard-cancelled') {
+        await page.getByTestId('settings-food-reminder-time').fill('08:30');
+        await page.getByRole('button', { name: 'Open notifications, 20 unread', exact: true }).click();
+        const confirmation = page.waitForEvent('dialog');
+        await page.getByTestId('notification-open-123').click();
+        await (await confirmation).dismiss();
+        const panel = page.getByTestId('notifications-drawer-panel');
+        await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+        await expect(panel.getByTestId('notification-card-123')).toHaveCount(captureSide === 'before' ? 0 : 1);
+        await expect(panel.getByText(captureSide === 'before' ? '19 unread' : '20 unread', { exact: true })).toBeVisible();
+        expect(fixture.actionRequests).toBe(captureSide === 'before' ? 1 : 0);
+      }
     } else if (state === 'legacy') {
       if (captureSide === 'before') await expect(page.getByTestId('notification-history-list')).toBeVisible();
       else {

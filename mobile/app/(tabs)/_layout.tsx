@@ -218,10 +218,8 @@ export default function TabsLayout() {
         onSuccess: async (notification) => {
             reconcileNotificationRead(queryClient, notification.id);
             await invalidateNotificationQueries(queryClient);
-            requestGuardedNavigation(() => {
-                setIsNotificationDrawerOpen(false);
-                router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
-            });
+            setIsNotificationDrawerOpen(false);
+            router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
         }
     });
     const requestAddFood = React.useCallback((input: AddFoodRequestInput = {}) => {
@@ -439,7 +437,7 @@ export default function TabsLayout() {
                         isBusy={dismissNotification.isPending || openNotification.isPending}
                         actionError={dismissNotification.error ?? openNotification.error}
                         onClose={() => setIsNotificationDrawerOpen(false)}
-                        onOpenNotification={(notification) => openNotification.mutate(notification)}
+                        onOpenNotification={(notification) => requestGuardedNavigation(() => openNotification.mutate(notification))}
                         onDismissNotification={(notification) => dismissNotification.mutate(notification)}
                         onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
                     />
