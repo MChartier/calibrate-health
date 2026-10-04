@@ -16,7 +16,7 @@ function fixture() {
         delete require.cache[require.resolve('../src/services/' + file)];
     delete require.cache[require.resolve('../src/routes/goals')];
     const router = require('../src/routes/goals').default, snapshot = require('../src/services/caloriePlanning').buildStoredCaloriePlanningSnapshot;
-    async function call(method, path, body = {}, operation = 'operation-001') {
+    async function call(method, path, body, operation = 'operation-001') {
         const res = { statusCode: 200, status(n) { this.statusCode = n; return this; }, set() { return this; }, json(body) { this.body = body; return this; } };
         await router.stack.find(l => l.route?.path === path && l.route.methods[method]).route.stack[0].handle({ user, params: { id: String(goal.id) }, body, headers: { 'x-client-operation-id': operation } }, res);
         return res;
@@ -156,4 +156,16 @@ test('new-goal serialization conflict is recoverable and retry keeps its operati
     assert.equal(saved.statusCode, 200);
     assert.deepEqual((await f.call('post', '/', payload, 'new-goal-retry')).body, saved.body);
     assert.equal(f.counts().creates, 1);
+});
+
+test('missing and non-object pace request bodies return structured 400 before mutation', async () => {
+    const f = fixture();
+    for (const body of [undefined, null, '', [], {}]) {
+        const result = await f.call('patch', '/:id/pace', body);
+        assert.equal(result.statusCode, 400);
+        assert.equal(result.body.code, 'CALORIE_PLAN_OPTION_UNAVAILABLE');
+        assert.equal(result.body.retryable, false);
+    }
+    assert.equal(f.revisions.length, 0);
+    assert.equal(f.events.length, 0);
 });
