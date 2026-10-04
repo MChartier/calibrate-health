@@ -11,7 +11,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         let goal = { id: 7, start_weight: 90, target_weight: 75, target_date: '2027-02-01T00:00:00Z',
             created_at: '2026-01-01T12:00:00Z', daily_deficit: 500, plan_status: 'available', plan_reason_code: null,
             projection: { status: 'projected', projected_end_date: '2026-12-22', reason_code: null } };
-        let writes = 0, creates = 0, loseResponse = true;
+        let writes = 0, creates = 0, externalChanges = 0, loseResponse = true;
         const receipts = new Map<string, typeof goal>();
         const operations: string[] = [];
         await page.route('**/api/v1/goals', async (route) => {
@@ -31,7 +31,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
                         eligibility: { status: 'eligible', reasonCode: null, ageYears: 41, localDate: '2026-07-21' } } } });
         });
         await page.route('**/api/v1/goals/pace-options', route => route.fulfill({ json: {
-                goal, expected_plan_version: String(writes).padStart(64, '0'), effective_local_date: '2026-07-21',
+                goal, expected_plan_version: String(writes + externalChanges).padStart(64, '0'), effective_local_date: '2026-07-21',
                 eligibility: { status: 'eligible', reasonCode: null, ageYears: 41, localDate: '2026-07-21' }, bmr: 2000, tdee: 2600, minimumDailyCalorieTarget: 2000,
                 planOptions: [250, 500, 750, 1000].map(dailyDeficit => ({ dailyDeficit, available: dailyDeficit <= 500,
                     dailyCalorieTarget: dailyDeficit <= 500 ? 2600 - dailyDeficit : null, reasonCode: dailyDeficit <= 500 ? null : 'TARGET_BELOW_MINIMUM' }))
@@ -108,6 +108,20 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
         await expect(page.getByRole('combobox', { name: 'Select daily calorie change' })).toContainText('250 kcal/day deficit');
         await expect(page.getByText(/Started 2026-01-01/)).toBeVisible();
+        goal = { ...goal, daily_deficit: 500 };
+        externalChanges++;
+        await sheet.getByRole('button', { name: 'Retry plan check', exact: true }).click();
+        await expect(page.getByRole('combobox', { name: 'Select daily calorie change' })).toContainText('500 kcal/day deficit');
+        await expect(page.getByText('New target: 2,100 kcal/day')).toBeVisible();
+        await screenshot('manual-plan-refresh');
+        expect(writes).toBe(1);
+        await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
+        await page.getByRole('option', { name: new RegExp('250 kcal/day deficit') }).click();
+        await page.getByRole('button', { name: 'Save pace', exact: true }).click();
+        await expect(sheet).toHaveCount(0);
+        expect(writes).toBe(2);
+        expect(operations[2]).not.toBe(operations[0]);
+        await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
         await page.keyboard.press('Escape');
         await expect(sheet).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Edit goal', exact: true })).toBeFocused();
@@ -118,7 +132,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await sheet.getByRole('button', { name: 'Set a new goal', exact: true }).click();
         await expect(sheet).toBeVisible();
         expect(creates).toBe(0);
-        expect(writes).toBe(1);
+        expect(writes).toBe(2);
         page.once('dialog', dialog => dialog.accept());
         await sheet.getByRole('button', { name: 'Set a new goal', exact: true }).click();
         await expect(page.getByRole('dialog', { name: 'Set a new goal' })).toBeVisible();
