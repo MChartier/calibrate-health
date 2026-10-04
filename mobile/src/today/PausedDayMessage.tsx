@@ -35,11 +35,10 @@ export function PausedDayMessage({ isToday }: { isToday: boolean }) {
             <View style={styles.symbol} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                 <Ionicons name="pause" size={PAUSE_GLYPH_SIZE} color={theme.colors.onPrimaryContainer} />
             </View>
-            <AppText variant="label" style={styles.eyebrow}>{isToday ? 'Taking a break' : 'A day on pause'}</AppText>
+            <AppText variant="label" style={[styles.eyebrow, styles.centered]}>{expectation ?? (isToday ? 'Taking a break' : 'A day on pause')}</AppText>
             <AppText accessibilityRole="header" aria-level={1} variant="title" style={styles.centered}>
                 {isToday ? 'Tracking paused' : 'Tracking was paused'}
             </AppText>
-            {expectation && <AppText variant="body" style={styles.centered}>{expectation}</AppText>}
             {metadataNotice && <AppText variant="caption" accessibilityLiveRegion="polite" style={styles.centered}>{metadataNotice}</AppText>}
             <AppText variant="body" style={styles.description}>
                 {isToday
