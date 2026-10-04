@@ -42,9 +42,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(day, `${consumed}/${target}/${maintenance}`).toHaveAccessibleName(new RegExp('completed, ' + label));
       const background = { target: colors.success, between: colors.calendarBetween, beyond: colors.calendarBeyond }[band];
       await expect(page.getByTestId(`calendar-date-badge-${date(index + 1)}`)).toHaveCSS('background-color', rgb(background));
-      await expect(day).toContainText({ target: 'T', between: 'M', beyond: 'B' }[band]);
+      await expect(page.getByTestId(`calendar-date-badge-${date(index + 1)}`)).toHaveText(String(index + 1));
     }
     await expect(page.getByTestId('calendar-day-2026-07-17')).toHaveAccessibleName(/completed, comparison unavailable/);
+    await expect(page.getByTestId('calendar-date-badge-2026-07-17')).toHaveText('17');
+    for (const label of ['Complete: target met', 'Complete: toward target from maintenance', 'Complete: beyond maintenance', 'Complete: comparison unavailable']) {
+      await expect(page.getByText(label, { exact: true })).toBeVisible();
+    }
     await expect(page.getByTestId('calendar-day-2026-07-18')).toHaveAccessibleName(/incomplete/);
     await expect(page.getByTestId('calendar-day-2026-07-19')).toHaveAccessibleName(/not started/);
     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);

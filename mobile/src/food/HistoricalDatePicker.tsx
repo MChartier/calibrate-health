@@ -35,7 +35,6 @@ const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
 const CALENDAR_DAY_HEIGHT = 48; // Keeps each compact calendar row physically tappable.
 const CALENDAR_STATUS_BADGE_SIZE = 34; // Makes the historical state the primary calendar-day silhouette.
 const CALENDAR_LEGEND_MARKER_SIZE = 10; // Keeps legend symbols proportional to their compact labels.
-const COMPLETION_CUE_SIZE = 10; // Keeps the completion check and band letter beneath the date.
 const CALENDAR_CONTENT_MAX_WIDTH = 560; // Prevents calendar cells from stretching across wide browser sheets.
 
 function formatMonth(monthKey: string): string {
@@ -45,12 +44,11 @@ function formatMonth(monthKey: string): string {
     );
 }
 
-// Letters accompany the check on completed dates, so each band remains distinct without color.
 const COMPLETED_MARKERS = {
-    'complete-target': { symbol: 'T', label: 'Complete: target met' },
-    'complete-between': { symbol: 'M', label: 'Complete: toward target from maintenance' },
-    'complete-beyond': { symbol: 'B', label: 'Complete: beyond maintenance' },
-    'complete-unavailable': { symbol: '?', label: 'Complete: comparison unavailable' }
+    'complete-target': { label: 'Complete: target met' },
+    'complete-between': { label: 'Complete: toward target from maintenance' },
+    'complete-beyond': { label: 'Complete: beyond maintenance' },
+    'complete-unavailable': { label: 'Complete: comparison unavailable' }
 } as const;
 
 function completedMarker(marker: FoodDayCalendarMarker) {
@@ -78,7 +76,7 @@ const CalendarMarker: React.FC<{
     const complete = completedMarker(marker);
     if (complete) {
         const colors = completedColors(marker, theme);
-        return <AppText variant="caption" style={[styles.completeMarker, colors]}>{complete.symbol}</AppText>;
+        return <View style={[styles.completeMarker, { backgroundColor: colors.backgroundColor }]} />;
     }
     if (marker === 'incomplete') return <View testID="calendar-marker-incomplete" style={styles.incompleteMarker} />;
     if (marker === 'not-started') return <View testID="calendar-marker-not-started" style={styles.notStartedMarker} />;
@@ -268,12 +266,6 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                             >
                                                 {Number(date.slice(-2))}
                                             </AppText>
-                                            {complete && (
-                                                <View style={styles.completionCue} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                                                    <Ionicons name="checkmark" size={COMPLETION_CUE_SIZE} color={colors.color} />
-                                                    <AppText variant="caption" style={[styles.completionSymbol, { color: colors.color }]}>{complete.symbol}</AppText>
-                                                </View>
-                                            )}
                                             {marker === 'paused' && (
                                                 <Ionicons
                                                     name="pause"
@@ -398,8 +390,7 @@ function createStyles(theme: AppTheme) {
             color: theme.colors.onPrimaryContainer
         },
         completeDayNumber: {
-            fontWeight: '800',
-            lineHeight: 18
+            fontWeight: '800'
         },
         incompleteDayNumber: {
             color: theme.colors.success,
@@ -418,13 +409,10 @@ function createStyles(theme: AppTheme) {
             height: CALENDAR_LEGEND_MARKER_SIZE
         },
         completeMarker: {
-            textAlign: 'center',
-            fontWeight: '800',
-            minWidth: theme.spacing.md,
-            borderRadius: theme.radius.sm
+            width: CALENDAR_LEGEND_MARKER_SIZE,
+            height: CALENDAR_LEGEND_MARKER_SIZE,
+            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2
         },
-        completionCue: { flexDirection: 'row', alignItems: 'center' },
-        completionSymbol: { fontSize: COMPLETION_CUE_SIZE, lineHeight: COMPLETION_CUE_SIZE, fontWeight: '800' },
         incompleteMarker: {
             width: CALENDAR_LEGEND_MARKER_SIZE,
             height: CALENDAR_LEGEND_MARKER_SIZE,
