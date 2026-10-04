@@ -1,0 +1,58 @@
+{
+  "sourceSha": "f107804eb7572e5142b0a66d6d532ff08013d115",
+  "baseline": false,
+  "capturedAt": "2026-10-04T06:14:48.860Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1024,
+    "height": 480
+  },
+  "url": "/progress",
+  "deviceScaleFactor": 1,
+  "colorScheme": "light",
+  "filename": "text-200-short-1024-light.png",
+  "sha256": "c0978abcc11a6f0bb2bf42688cd2a4fc2194d6f5236fe6cf657490640128c52c",
+  "verifiedAssets": [
+    {
+      "path": "/_expo/static/js/web/index-ecdce0a86b08958f09f6cd292e8634f5.js",
+      "sha256": "eb2c92e3ceca18aafe201c9d7857bfce2d233ad1d6cd7a6488ba6df518618f43"
+    }
+  ],
+  "geometry": {
+    "rail": {
+      "x": 0,
+      "y": 0,
+      "width": 118.609375,
+      "height": 480
+    },
+    "tabs": [
+      {
+        "label": "Today",
+        "href": "/today",
+        "selected": "false",
+        "x": 8,
+        "y": 8,
+        "width": 101.609375,
+        "height": 76
+      },
+      {
+        "label": "Progress",
+        "href": "/progress",
+        "selected": "true",
+        "x": 8,
+        "y": 88,
+        "width": 101.609375,
+        "height": 76
+      }
+    ],
+    "main": [
+      {
+        "x": 118.609375,
+        "y": 120,
+        "width": 905.390625,
+        "height": 360
+      }
+    ],
+    "horizontalOverflow": 0
+  }
+}

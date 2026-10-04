@@ -1,0 +1,53 @@
+{
+  "sourceSha": "f107804eb7572e5142b0a66d6d532ff08013d115",
+  "baseline": false,
+  "capturedAt": "2026-10-04T06:14:48.620Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 320,
+    "height": 844
+  },
+  "url": "/progress",
+  "deviceScaleFactor": 1,
+  "colorScheme": "light",
+  "filename": "responsive-320-light.png",
+  "sha256": "ca6ce20bb2dfead058b4db50e43f28c00abc402f2152b9cc8f3aba4d89d667e9",
+  "verifiedAssets": [
+    {
+      "path": "/_expo/static/js/web/index-ecdce0a86b08958f09f6cd292e8634f5.js",
+      "sha256": "eb2c92e3ceca18aafe201c9d7857bfce2d233ad1d6cd7a6488ba6df518618f43"
+    }
+  ],
+  "geometry": {
+    "rail": null,
+    "tabs": [
+      {
+        "label": "Today",
+        "href": "/today",
+        "selected": "false",
+        "x": 12,
+        "y": 781,
+        "width": 148,
+        "height": 61
+      },
+      {
+        "label": "Progress",
+        "href": "/progress",
+        "selected": "true",
+        "x": 160,
+        "y": 781,
+        "width": 148,
+        "height": 61
+      }
+    ],
+    "main": [
+      {
+        "x": 0,
+        "y": 56,
+        "width": 320,
+        "height": 577
+      }
+    ],
+    "horizontalOverflow": 0
+  }
+}
