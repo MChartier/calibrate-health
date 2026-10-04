@@ -1,3 +1,4 @@
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
 import express from 'express';
 import { Prisma } from '@prisma/client';
 import { goalWire, goalPaceOptions, goalPaceVersion } from '../services/goalPace';
@@ -91,6 +92,7 @@ router.post('/', async (req, res) => {
             transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                await lockCaloriePlanningInputs(tx, user.id);
                 const snapshot = await buildStoredCaloriePlanningSnapshot(tx, user.id);
                 if (!snapshot) return { status: 404, body: { message: 'User not found' } };
                 const evaluation = evaluateCaloriePlan({
@@ -218,6 +220,7 @@ router.patch('/:id/pace', async (req, res) => {
             requestPayload: { goal_id: goalId, daily_deficit: deficit, expected_plan_version: version },
             transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
             mutate: async (tx, claimedOperationId) => {
+                await lockCaloriePlanningInputs(tx, user.id);
                 const now = new Date();
                 const snapshot = await buildStoredCaloriePlanningSnapshot(tx, user.id, now);
                 if (!snapshot?.goal || snapshot.goal.id !== goalId || goalPaceVersion(snapshot) !== version) {

@@ -33,6 +33,7 @@ function loadWatchService({ prismaStub, recentItems = [] }) {
 }
 
 function loadWatchMutationService(tx) {
+  tx.$executeRaw ??= async () => 1;
   const dbPath = require.resolve('../src/config/database');
   const recentPath = require.resolve('../src/services/recentFoods');
   const operationsPath = require.resolve('../src/services/clientOperations');

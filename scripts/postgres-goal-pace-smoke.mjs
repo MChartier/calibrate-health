@@ -26,6 +26,9 @@ try {
     disconnectDatabase = database.disconnectDatabase;
     const db = database.default;
     const router = backendRequire('./src/routes/goals').default;
+    const metricsRouter = backendRequire('./src/routes/metrics').default;
+    const userRouter = backendRequire('./src/routes/user').default;
+    const planningLock = backendRequire('./src/services/caloriePlanningLock');
     const user = await db.user.create({ data: { email: 'pace-smoke@calibrate.invalid', password_hash: 'synthetic-only', timezone: 'UTC',
             date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' } });
     const goal = await db.goal.create({ data: { user_id: user.id, start_weight_grams: 90000, target_weight_grams: 75000,
@@ -34,10 +37,10 @@ try {
     await db.bodyMetric.create({ data: { user_id: user.id, date: today, weight_grams: 85000 } });
     const day = await db.foodLogDay.create({ data: { user_id: user.id, local_date: today, status: 'COMPLETE', origin: 'USER',
             comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: new Date() } });
-    async function call(method, routePath, body = {}, operation = crypto.randomUUID()) {
+    async function call(method, routePath, body = {}, operation = crypto.randomUUID(), targetRouter = router, goalId = goal.id) {
         const res = { statusCode: 200, status(n) { this.statusCode = n; return this; }, set() { return this; }, json(data) { this.body = data; return this; } };
-        const handler = router.stack.find(layer => layer.route?.path === routePath && layer.route.methods[method]).route.stack[0].handle;
-        await handler({ user, params: { id: String(goal.id) }, body, headers: { 'x-client-operation-id': operation } }, res);
+        const handler = targetRouter.stack.find(layer => layer.route?.path === routePath && layer.route.methods[method]).route.stack[0].handle;
+        await handler({ user, params: { id: String(goalId) }, body, headers: { 'x-client-operation-id': operation } }, res);
         return res;
     }
     const preview = await call('get', '/pace-options');
@@ -58,11 +61,82 @@ try {
     })));
     assert.deepEqual(race.map(result => result.statusCode).sort(), [200, 409]);
     assert.equal(await db.caloriePlanRevision.count({ where: { user_id: user.id } }), 2);
+    // Hold each real input writer after its shared guard, then start a pace save
+    // with the prior preview. Release the writer only after pace reaches its guard.
+    const originalLock = planningLock.lockCaloriePlanningInputs;
+    for (const kind of ['weight', 'timezone']) {
+        const prior = await call('get', '/pace-options');
+        const revisionCount = await db.caloriePlanRevision.count({ where: { user_id: user.id } });
+        let releaseWriter, writerLocked, paceEntered;
+        const release = new Promise(resolve => { releaseWriter = resolve; });
+        const locked = new Promise(resolve => { writerLocked = resolve; });
+        const entered = new Promise(resolve => { paceEntered = resolve; });
+        let calls = 0;
+        planningLock.lockCaloriePlanningInputs = async (...args) => {
+            const ordinal = ++calls;
+            if (ordinal === 2) paceEntered();
+            await originalLock(...args);
+            if (ordinal === 1) { writerLocked(); await release; }
+        };
+        const writer = kind === 'weight'
+            ? call('post', '/', { date: today.toISOString().slice(0, 10), weight: 84 }, crypto.randomUUID(), metricsRouter)
+            : call('patch', '/profile', { timezone: 'Pacific/Kiritimati' }, crypto.randomUUID(), userRouter);
+        try {
+            await Promise.race([locked, writer.then(result => { throw new Error(kind + " writer ended before guard: " + JSON.stringify(result)); })]);
+            const pace = call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: prior.body.expected_plan_version });
+            await Promise.race([entered, pace.then(result => { throw new Error("pace ended before guard: " + JSON.stringify(result)); })]);
+            releaseWriter();
+            assert.equal((await writer).statusCode, 200, kind + ' writer commits');
+            const conflict = await pace;
+            assert.equal(conflict.statusCode, 409, kind + ' change rejects the old pace snapshot');
+            assert.equal(conflict.body.code, 'GOAL_PLAN_CHANGED');
+            assert.equal(await db.caloriePlanRevision.count({ where: { user_id: user.id } }), revisionCount);
+            console.log('[goal-pace-smoke] PASS: overlapping ' + kind + ' route commits; stale pace returns409 with no revision.');
+        } finally {
+            releaseWriter();
+            planningLock.lockCaloriePlanningInputs = originalLock;
+        }
+    }
     const newGoal = await call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
     assert.equal(newGoal.statusCode, 200);
     assert.notEqual(newGoal.body.id, goal.id);
     assert.equal((await call('patch', '/:id/pace', payload)).statusCode, 409);
     assert.equal(await db.bodyMetric.count({ where: { user_id: user.id } }), 1);
+    // Reverse the order: an accepted pace must be visible to a later weight
+    // writer's sticky safety check, even when its metric write already started.
+    const currentPreview = await call('get', '/pace-options');
+    assert.equal(currentPreview.body.planOptions.find(option => option.dailyDeficit === 750).available, true);
+    let releasePace, paceLocked, weightEntered;
+    const paceRelease = new Promise(resolve => { releasePace = resolve; });
+    const paceLock = new Promise(resolve => { paceLocked = resolve; });
+    const weightAtGuard = new Promise(resolve => { weightEntered = resolve; });
+    let guardCalls = 0;
+    planningLock.lockCaloriePlanningInputs = async (...args) => {
+        const ordinal = ++guardCalls;
+        if (ordinal === 2) weightEntered();
+        await originalLock(...args);
+        if (ordinal === 1) { paceLocked(); await paceRelease; }
+    };
+    const winningPace = call('patch', '/:id/pace', {
+        daily_deficit: 750, expected_plan_version: currentPreview.body.expected_plan_version
+    }, crypto.randomUUID(), router, newGoal.body.id);
+    try {
+        await Promise.race([paceLock, winningPace.then(result => { throw new Error('pace ended before guard: ' + JSON.stringify(result)); })]);
+        const laterWeight = call('post', '/', { date: today.toISOString().slice(0, 10), weight: 25 }, crypto.randomUUID(), metricsRouter);
+        await Promise.race([weightAtGuard, laterWeight.then(result => { throw new Error('weight ended before guard: ' + JSON.stringify(result)); })]);
+        releasePace();
+        assert.equal((await winningPace).statusCode, 200);
+        assert.equal((await laterWeight).statusCode, 200);
+        const currentGoal = await db.goal.findUnique({ where: { id: newGoal.body.id } });
+        assert.equal(currentGoal.calorie_plan_review_status, 'REQUIRES_REVIEW');
+        const currentRevision = await db.caloriePlanRevision.findFirst({ where: { source_goal_id: newGoal.body.id }, orderBy: { id: 'desc' } });
+        assert.equal(currentRevision.configured_daily_deficit, 750);
+        assert.equal(currentRevision.calorie_plan_review_status, 'REQUIRES_REVIEW');
+        console.log('[goal-pace-smoke] PASS: pace-first overlap makes the later weight safety check review the accepted pace.');
+    } finally {
+        releasePace();
+        planningLock.lockCaloriePlanningInputs = originalLock;
+    }
     console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
 }
 finally {

@@ -126,6 +126,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     }))
   };
   const prisma = {
+    $executeRaw: async () => 1,
     user: { findUnique: async () => ({
       id: 7,
       timezone: 'UTC',

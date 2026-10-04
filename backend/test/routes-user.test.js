@@ -41,6 +41,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
   delete require.cache[mcpOAuthPath];
 
   const normalizedPrismaStub = {
+    $executeRaw: async () => 1,
     ...prismaStub,
     caloriePlanRevision: {
       findFirst: async () => null,
@@ -716,6 +717,7 @@ test('user route: PATCH /profile fails invalid legacy timezones closed and marks
     calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
   };
   const prismaStub = {
+    $executeRaw: async () => { assert.equal(inTransaction, true); return 1; },
     user: { findUnique: async () => storedUser, update: async ({ data }) => ({ ...storedUser, ...data }) },
     goal: {
       findFirst: async () => goal,
