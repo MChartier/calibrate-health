@@ -1,0 +1,47 @@
+{
+  "capturedAtUtc": "2026-10-04T19:47:24.522Z",
+  "sourceCommit": "d8e55c105834093f889b2cff2a5c96d224cc6e80",
+  "baseline": true,
+  "harness": [
+    {
+      "path": "e2e/expo-web/planned-pause.spec.ts",
+      "sha256": "25020d76dbdb574d9ea79b36c655ad9159c0fc4dabdaac48a46c78361f412bb9"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "path": "e2e/expo-web/text-scaling.ts",
+      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e"
+    },
+    {
+      "path": "playwright.expo-web.config.ts",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    }
+  ],
+  "display": {
+    "scale": 1,
+    "dark": false,
+    "locale": "en-US",
+    "timezone": "America/Los_Angeles"
+  },
+  "route": "http://127.0.0.1:43410/today",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "browser": "154.0.8037.95",
+  "project": "desktop-chrome",
+  "fixture": "planned-pause.spec.ts + fixtures.ts",
+  "frozenClock": "2026-07-21T19:00:00Z + deterministic 16ms steps",
+  "normalization": "hideTransientPwaNotices suppresses unrelated PWA notices identically; no compared UI modified",
+  "image": "before-desktop-chrome-calendar-light.png",
+  "imageSha256": "39fe3301d390893e6d9ac290d9f554dc9f7b27e282d27fe3270e726dadb00af0",
+  "servedScripts": [
+    {
+      "url": "http://127.0.0.1:43410/_expo/static/js/web/index-05456834b7d6242ac306a0350b65b019.js",
+      "sha256": "4e677e87b286d2ae26e7008172907c489b244a6dfddb125d64a800a3ea0b448e"
+    }
+  ]
+}

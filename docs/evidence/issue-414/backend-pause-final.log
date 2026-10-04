@@ -1,0 +1,13 @@
+Γ£ö background pause materialization excludes accounts without current access (1.0095ms)
+Γ£ö pause lifecycle materializes dates, preserves an explicit override, and reopens resume day (7.6731ms)
+Γ£ö effective resolution infers only a past blank day inside tracking history (5.917ms)
+Γ£ö expected resume date becomes confirmation due without automatically closing the pause (0.2631ms)
+Γ£ö active pause suppresses both reminder types and resolves existing reminders (0.5472ms)
+Γä╣ tests 5
+Γä╣ suites 0
+Γä╣ pass 5
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 2178.14
