@@ -140,3 +140,20 @@ test('existing completion provenance survives manual pace and recompletion; a ne
     assert.equal(plan.evaluation.dailyCalorieTarget, comparison.target_kcal + 250);
     assert.equal(plan.evaluation.tdee, snapshot.evaluation.tdee);
 });
+
+test('new-goal serialization conflict is recoverable and retry keeps its operation ID', async () => {
+    const f = fixture();
+    const originalTransaction = f.db.$transaction;
+    f.db.$transaction = async () => { throw new Prisma.PrismaClientKnownRequestError('serialization conflict', { code: 'P2034', clientVersion: 'test' }); };
+    const payload = { start_weight: 85, target_weight: 75, daily_deficit: 250 };
+    const conflict = await f.call('post', '/', payload, 'new-goal-retry');
+    assert.equal(conflict.statusCode, 409);
+    assert.equal(conflict.body.code, 'GOAL_PLAN_CHANGED');
+    assert.equal(conflict.body.retryable, true);
+    assert.equal(f.counts().creates, 0);
+    f.db.$transaction = originalTransaction;
+    const saved = await f.call('post', '/', payload, 'new-goal-retry');
+    assert.equal(saved.statusCode, 200);
+    assert.deepEqual((await f.call('post', '/', payload, 'new-goal-retry')).body, saved.body);
+    assert.equal(f.counts().creates, 1);
+});

@@ -251,7 +251,7 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 9);
+  assert.equal(result.version, 10);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.equal(result.account.email_verified_at, '2025-01-02T12:00:00.000Z');
@@ -346,10 +346,21 @@ test('portable export preserves captured and unavailable day plans through JSON 
     const { exportAccountData } = loadAccountLifecycle({ user: { findUnique: async () => row } });
     const exported = JSON.parse(JSON.stringify(await exportAccountData(7)));
     const day = exported.food_log_days[0];
-    assert.equal(exported.version, 9);
+    assert.equal(exported.version, 10);
     assert.equal(day.status, 'OPEN');
     assert.equal(day.comparison_target_kcal, snapshot.comparison_target_kcal);
     assert.equal(day.comparison_maintenance_kcal, snapshot.comparison_maintenance_kcal);
     assert.equal(day.comparison_captured_at, snapshot.comparison_captured_at?.toISOString() ?? null);
   }
+});
+
+test('export v10 retains both manual pace and nullable legacy revision provenance', async () => {
+  const row = { ...exportRow, calorie_plan_revisions: [
+    { ...exportRow.calorie_plan_revisions[0], configured_daily_deficit: 250 },
+    { ...exportRow.calorie_plan_revisions[0], id: 6, configured_daily_deficit: null }
+  ] };
+  const { exportAccountData } = loadAccountLifecycle({ user: { findUnique: async () => row } });
+  const wire = JSON.parse(JSON.stringify(await exportAccountData(7)));
+  assert.equal(wire.version, 10);
+  assert.deepEqual(wire.calorie_plan_revisions.map(revision => revision.configured_daily_deficit), [250, null]);
 });

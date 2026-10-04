@@ -2010,7 +2010,7 @@ components:
           const: calibrate-account-export
         version:
           type: integer
-          const: 9
+          const: 10
         exported_at:
           type: string
           format: date-time
@@ -2369,11 +2369,12 @@ components:
         applied_at: { type: [string, 'null'], format: date-time }
     AccountExportCaloriePlanRevision:
       type: object
-      required: [id, source_goal_id, recommendation_id, target_adjustment_kcal, effective_local_date, calorie_plan_review_status, calorie_plan_review_reason, created_at]
+      required: [id, source_goal_id, recommendation_id, configured_daily_deficit, target_adjustment_kcal, effective_local_date, calorie_plan_review_status, calorie_plan_review_reason, created_at]
       properties:
         id: { type: integer }
         source_goal_id: { type: integer }
         recommendation_id: { type: [integer, 'null'] }
+        configured_daily_deficit: { type: [integer, 'null'], description: 'Configured pace from a manual change; null for calibration-only and legacy revisions.' }
         target_adjustment_kcal: { type: integer }
         effective_local_date: { type: string, format: date }
         calorie_plan_review_status: { type: string, enum: [CLEAR, REQUIRES_REVIEW] }

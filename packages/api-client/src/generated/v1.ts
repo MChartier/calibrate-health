@@ -1247,7 +1247,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 9;
+            version: 10;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -1589,6 +1589,8 @@ export interface components {
             id: number;
             source_goal_id: number;
             recommendation_id: number | null;
+            /** @description Configured pace from a manual change; null for calibration-only and legacy revisions. */
+            configured_daily_deficit: number | null;
             target_adjustment_kcal: number;
             /** Format: date */
             effective_local_date: string;
