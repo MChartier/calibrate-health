@@ -1,6 +1,6 @@
 # Matched before/after evidence for issue 408
 
-These are genuine, unedited Chrome browser screenshots of **Today > Choose a day**, captured on Windows from separately built source revisions. They are not emulator/device screenshots. No personal data, image manipulation, UI hiding, or simulated baseline was used.
+These are genuine, unedited Chrome browser screenshots of **Today > Choose a day**, captured on Windows from separately built source revisions. They are not emulator/device screenshots. No personal data, post-capture image editing, or simulated baseline was used. Both captures use the shared hideTransientPwaNotices helper to suppress unrelated transient PWA notices; the calendar comparison content was not altered.
 
 - Before source: `29fb444ae4389ca81f3437d24685ed9badc43410` (actual baseline source in a new detached worktree).
 - After source: `3d2b4959b6592cfeb3dcf60dc2ca818e219eacc5` (the implementation source, before this evidence-only commit).
