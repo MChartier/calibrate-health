@@ -45,6 +45,7 @@ function loadMetricsRouter(prismaStub) {
   delete require.cache[caloriePlanReviewPath];
 
   const normalizedPrismaStub = {
+    $executeRaw: async () => 1,
     ...prismaStub,
     $queryRaw: prismaStub.$queryRaw ?? (async () => []),
     $transaction: prismaStub.$transaction ?? (async (callback) => callback(normalizedPrismaStub)),

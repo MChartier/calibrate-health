@@ -1,3 +1,4 @@
+import { lockCaloriePlanningInputs } from './caloriePlanningLock';
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
@@ -502,6 +503,7 @@ export async function applyCalibrationRecommendation(options: {
             requestPayload: { recommendation_id: options.recommendationId },
             transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
             mutate: async (tx, claimedOperationId) => {
+                await lockCaloriePlanningInputs(tx, options.userId);
                 const recommendation = await tx.calibrationRecommendation.findFirst({
                     where: { id: options.recommendationId, user_id: options.userId },
                     include: { plan_revision: true }
@@ -631,6 +633,7 @@ export async function cancelScheduledCalibrationChange(options: {
         operationKind: 'calibration_recommendation.cancel',
         requestPayload: { recommendation_id: options.recommendationId },
         mutate: async (tx, claimedOperationId) => {
+            await lockCaloriePlanningInputs(tx, options.userId);
             const recommendation = await tx.calibrationRecommendation.findFirst({
                 where: {
                     id: options.recommendationId,

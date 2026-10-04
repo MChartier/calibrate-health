@@ -6,7 +6,7 @@ function fixture() {
     const revisions = [], events = [], receipts = new Map();
     let stale = 0, creates = 0, weight = 85000;
     const matching = ({ where, orderBy }) => revisions.filter(r => r.source_goal_id === where.source_goal_id && (!where.configured_daily_deficit || r.configured_daily_deficit != null) && (!where.effective_local_date?.lte || r.effective_local_date <= where.effective_local_date.lte) && (!where.effective_local_date?.gt || r.effective_local_date > where.effective_local_date.gt)).sort((a, b) => orderBy[0].effective_local_date === 'desc' ? b.effective_local_date - a.effective_local_date || b.id - a.id : a.effective_local_date - b.effective_local_date || a.id - b.id);
-    const db = { user: { findUnique: async () => ({ ...user }) }, goal: { findFirst: async () => ({ ...goal }), create: async ({ data }) => { creates++; return { ...data, id: 10, created_at: new Date() }; } }, bodyMetric: { findFirst: async () => weight === null ? null : { weight_grams: weight } }, caloriePlanRevision: { findFirst: async (args) => matching(args)[0] ?? null, findMany: async (args) => matching(args), create: async ({ data }) => { const r = { id: revisions.length + 1, recommendation_id: null, configured_daily_deficit: null, calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null, ...data }; revisions.push(r); return r; } }, calibrationRecommendation: { updateMany: async () => { stale++; return { count: 1 }; } }, syncChange: { create: async ({ data }) => { events.push(data); return { id: 1n }; } }, clientOperation: { create: async ({ data }) => { if (receipts.has(data.operation_id))
+    const db = { $executeRaw: async () => 1, user: { findUnique: async () => ({ ...user }) }, goal: { findFirst: async () => ({ ...goal }), create: async ({ data }) => { creates++; return { ...data, id: 10, created_at: new Date() }; } }, bodyMetric: { findFirst: async () => weight === null ? null : { weight_grams: weight } }, caloriePlanRevision: { findFirst: async (args) => matching(args)[0] ?? null, findMany: async (args) => matching(args), create: async ({ data }) => { const r = { id: revisions.length + 1, recommendation_id: null, configured_daily_deficit: null, calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null, ...data }; revisions.push(r); return r; } }, calibrationRecommendation: { updateMany: async () => { stale++; return { count: 1 }; } }, syncChange: { create: async ({ data }) => { events.push(data); return { id: 1n }; } }, clientOperation: { create: async ({ data }) => { if (receipts.has(data.operation_id))
                 throw new Prisma.PrismaClientKnownRequestError('duplicate', { code: 'P2002', clientVersion: 'test' }); receipts.set(data.operation_id, { ...data, response_status: null, completed_at: null }); }, update: async ({ where, data }) => Object.assign(receipts.get(where.user_id_operation_id.operation_id), data), findUnique: async ({ where }) => receipts.get(where.user_id_operation_id.operation_id) }, $transaction: async (callback) => callback(db) };
     const dbPath = require.resolve('../src/config/database'), stub = new Module(dbPath);
     stub.exports = db;
@@ -168,4 +168,19 @@ test('missing and non-object pace request bodies return structured 400 before mu
     }
     assert.equal(f.revisions.length, 0);
     assert.equal(f.events.length, 0);
+});
+
+test('raw SQL serialization and deadlock conflicts return recoverable plan conflicts without a revision', async () => {
+    for (const code of ['40001', '40P01']) {
+        const f = fixture();
+        const preview = await f.call('get', '/pace-options');
+        f.db.$executeRaw = async () => { throw new Prisma.PrismaClientKnownRequestError('concurrent writer', {
+            code: 'P2010', clientVersion: 'test', meta: { code }
+        }); };
+        const result = await f.call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: preview.body.expected_plan_version });
+        assert.equal(result.statusCode, 409);
+        assert.equal(result.body.code, 'GOAL_PLAN_CHANGED');
+        assert.equal(f.revisions.length, 0);
+        assert.equal(f.events.length, 0);
+    }
 });
