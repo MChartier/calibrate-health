@@ -331,3 +331,17 @@ it('keeps native logout intent across offline restart and drains the old token b
     expect(mockLogoutMobile).toHaveBeenLastCalledWith('refresh');
     expect([...mockSecureLogoutStorage.values()]).toEqual([]);
 });
+
+
+it('revokes the native session even when local draft cleanup fails', async () => {
+    mockGetClientConfig.mockResolvedValue({ server_version: '1.2.0' });
+    mockRefreshMobile.mockResolvedValue(AUTH_PAYLOAD);
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.user?.id).toBe(7));
+    mockLogoutMobile.mockClear();
+    jest.mocked(clearOnboardingDraft).mockRejectedValueOnce(new Error('Storage unavailable'));
+    await act(async () => { await expect(result.current.logout()).rejects.toThrow('Storage unavailable'); });
+    expect(result.current.user).toBeNull();
+    expect(mockLogoutMobile).toHaveBeenCalledWith('refresh');
+    expect([...mockSecureLogoutStorage.values()]).toEqual(['{"signedOut":true,"pending":false}']);
+});

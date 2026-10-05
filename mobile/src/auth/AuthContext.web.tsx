@@ -243,8 +243,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = useCallback(async () => {
         await beginExplicitLogout(serverUrl);
         await cleanupBrowserPushBeforeSessionChange().catch(() => undefined);
-        await clearSession();
-        await flushExplicitLogout(serverUrl).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+        try {
+            await clearSession();
+        } finally {
+            // Local cleanup failure must not suppress server session revocation.
+            await flushExplicitLogout(serverUrl).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+        }
     }, [clearSession, serverUrl]);
 
     const recheckClientCompatibility = useCallback(async () => {

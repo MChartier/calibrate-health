@@ -85,6 +85,7 @@ describe('browser onboarding draft cleanup', () => {
         await act(async () => { await expect(result.current.logout()).rejects.toThrow('Storage unavailable'); });
         expect(result.current.user).toBeNull();
         expect(clearBrowserUserScopedCaches).toHaveBeenCalled();
+        expect(mockLogoutBrowser).toHaveBeenCalledTimes(1);
     });
 });
 

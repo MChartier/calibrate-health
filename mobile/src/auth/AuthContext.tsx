@@ -529,8 +529,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = useCallback(async () => {
         const target = serverUrl || HOSTED_SERVER_URL;
         await beginExplicitLogout(target, refreshTokenRef.current ?? undefined);
-        await clearSession();
-        await flushExplicitLogout(target).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+        try {
+            await clearSession();
+        } finally {
+            // Local cleanup failure must not suppress server session revocation.
+            await flushExplicitLogout(target).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+        }
     }, [clearSession, serverUrl]);
 
     const persistAccountDeletionCleanupNotice = useCallback(async (notice: AccountDeletionCleanupNotice) => {
