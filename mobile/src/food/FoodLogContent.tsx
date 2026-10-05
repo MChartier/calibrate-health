@@ -232,6 +232,12 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
         setCopySource(source);
     }
 
+    function requestDelete(entry: FoodLogEntry) {
+        const creationId = (entry as FoodLogEntry & LocalEntry).localCreation?.operationId;
+        if (outbox.mutations.some(mutation => mutation.id === creationId && mutation.state === 'failed')) openEditEntry(entry);
+        else deleteRecovery.requestDelete(entry);
+    }
+
     function openEditEntry(entry: FoodLogEntry) {
         setConfirmDiscard(false);
         discardFailed.reset();
@@ -308,11 +314,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                         disabled={!canEditFood}
                         copyDisabled={!isOnline || outbox.mutations.length > 0}
                         onEditEntry={openEditEntry}
-                        onDeleteEntry={(entry) => {
-                            const creationId = (entry as FoodLogEntry & LocalEntry).localCreation?.operationId;
-                            if (outbox.mutations.some(mutation => mutation.id === creationId && mutation.state === 'failed')) openEditEntry(entry);
-                            else deleteRecovery.requestDelete(entry);
-                        }}
+                        onDeleteEntry={requestDelete}
                         onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
                         onCopyDay={() => openCopy({ kind: 'day' })}
                     />
@@ -326,7 +328,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     disabled={!canEditFood}
                     copyDisabled={!isOnline || outbox.mutations.length > 0}
                     onEditEntry={openEditEntry}
-                    onDeleteEntry={deleteRecovery.requestDelete}
+                    onDeleteEntry={requestDelete}
                     onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
                     onCopyDay={() => openCopy({ kind: 'day' })}
                     onSaveMealAsRecipe={isOnline && outbox.mutations.length === 0 ? (meal, entries) => {

@@ -197,7 +197,7 @@ test('a failed local creation offers explicit discard instead of saving unreacha
         open.onerror = () => reject(open.error);
     }));
     await page.reload();
-    await page.getByRole('button', { name: 'Edit Failed oats', exact: true }).click();
+    await page.getByRole('button', { name: 'Delete Failed oats', exact: true }).click();
     await expect(edit).toContainText('A correction cannot pass the failed write.');
     await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await edit.getByRole('button', { name: 'Discard failed entry', exact: true }).click();
