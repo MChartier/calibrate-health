@@ -7,7 +7,7 @@ const today = FROZEN_LOCAL_DATE;
 
 async function install(page: Page, ux: UxHarness, target: string | null = '2026-08-03', active = true) {
     await ux.install('populated', { foodEntries: [] });
-    const state = { active, target, startsOn: '2026-07-20', resumedOn: null as string | null, failResume: false, queueResume: false, failUpdate: false, failRead: false, resumeAttempts: 0, overrides: new Map<string, string>(), rangeRequests: [] as string[] };
+    const state = { active, target, startsOn: '2026-07-20', resumedOn: null as string | null, failResume: false, queueResume: false, failUpdate: false, queueUpdate: false, failRead: false, resumeAttempts: 0, overrides: new Map<string, string>(), rangeRequests: [] as string[] };
     const pause = () => ({ active: state.active, id: 9, starts_on: state.startsOn, expected_resume_on: state.target, resumed_on: state.resumedOn, started_at: '2026-07-20T12:00:00Z', resumed_at: null, materialized_through: today, resume_confirmation_due: state.active && state.target !== null && state.target <= today });
     const day = (date: string) => {
         let status = state.overrides.get(date) ?? ((date >= state.startsOn && (state.active || (state.resumedOn !== null && date < state.resumedOn))) ? 'PAUSED' : 'OPEN');
@@ -20,6 +20,7 @@ async function install(page: Page, ux: UxHarness, target: string | null = '2026-
         const method = route.request().method();
         if (method === 'GET' && state.failRead) return route.fulfill({ status: 503, json: { message: 'Synthetic pause read failure' } });
         if (method === 'POST' || method === 'PATCH') {
+            if (state.queueUpdate) return route.fulfill({ status: 503, json: { message: 'Synthetic retryable pause write failure' } });
             if (state.failUpdate) return route.fulfill({ status: 400, json: { message: 'Synthetic pause update rejected' } });
             const payload = route.request().postDataJSON();
             state.target = payload.expected_resume_on;
@@ -245,4 +246,40 @@ test('offline cached plan and accepted queued resume converge after real browser
     await calendar(page);
     await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
+});
+
+
+test('queued pause metadata survives new observers, calendar refetch, reload and replay', async ({ page, ux }) => {
+    const state = await install(page, ux, null, false); await open(page); await calendar(page);
+    state.queueUpdate = true;
+    expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/pause', status: 503 });
+    await page.getByRole('button', { name: 'Pause tracking', exact: true }).click();
+    await page.getByRole('button', { name: 'Choose expected resume date', exact: true }).click();
+    await page.getByLabel('Expected resume date', { exact: true }).fill('2026-08-03');
+    await page.getByRole('button', { name: 'Pause with this date', exact: true }).click();
+    await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
+    await calendar(page);
+    await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
+    await page.getByRole('button', { name: 'Next month', exact: true }).click();
+    await expect(page.getByTestId('calendar-day-2026-08-02')).toHaveAccessibleName(/planned/);
+    await page.getByRole('button', { name: 'Close date picker', exact: true }).click();
+    await page.reload(); await hideTransientPwaNotices(page); await calendar(page);
+    await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
+    await activateFixtureOffline(page); state.queueUpdate = false; await page.context().setOffline(false);
+    await expect.poll(() => state.active).toBe(true);
+    await page.getByRole('button', { name: 'Close date picker', exact: true }).click();
+    await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
+    // A due server pause makes the existing extension controls available.
+    state.target = today; await page.reload(); await hideTransientPwaNotices(page);
+    await page.getByRole('button', { name: 'Extend pause', exact: true }).click();
+    state.queueUpdate = true;
+    expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/food-days/pause', status: 503 });
+    await page.getByRole('button', { name: 'Until I resume', exact: true }).click();
+    await expect(page.getByText('Until you resume', { exact: true })).toBeVisible();
+    await calendar(page); await expect(page.getByTestId('calendar-day-2026-07-31')).toHaveAccessibleName(/until resumed/);
+    await page.reload(); await hideTransientPwaNotices(page);
+    await expect(page.getByText('Until you resume', { exact: true })).toBeVisible();
+    await activateFixtureOffline(page); state.queueUpdate = false; await page.context().setOffline(false);
+    await expect.poll(() => state.target).toBeNull();
+    await expect(page.getByText('Until you resume', { exact: true })).toBeVisible();
 });

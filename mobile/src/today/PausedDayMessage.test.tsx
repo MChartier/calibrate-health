@@ -1,3 +1,5 @@
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'id' }));
+jest.mock('../offline/provider', () => ({ useOfflineOutbox: () => ({ mutations: [] }) }));
 import { render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PausedDayMessage } from './PausedDayMessage';

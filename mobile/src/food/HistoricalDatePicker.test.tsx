@@ -1,3 +1,5 @@
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'id' }));
+jest.mock('../offline/provider', () => ({ useOfflineOutbox: () => ({ mutations: [] }) }));
 import React from 'react';
 import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
