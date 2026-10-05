@@ -1,0 +1,45 @@
+{
+  "head": "a10c00649a338849190b0433e20b85aade7415f8",
+  "base": "4728d4f75b70e6440a9778a42cd2224a300db725",
+  "bodySha256": "8bdfcc8193229152a7541c88c002811adb836c789312736de450e89db5d1ba58",
+  "checkedAt": "2026-10-05T18:33:35.426Z",
+  "browser": "154.0.8037.95",
+  "images": [
+    {
+      "alt": "Before: auth outage redirects to Sign in",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: cached Today with Pending reconnection and tracking controls",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "files": [
+    {
+      "name": "body.md",
+      "sha256": "8bdfcc8193229152a7541c88c002811adb836c789312736de450e89db5d1ba58"
+    },
+    {
+      "name": "embedded-pair.png",
+      "sha256": "e94b48f7d6c20cf223a51233ab7eb3aa23bc5e6055e9e3ac94887302e696b7c2"
+    },
+    {
+      "name": "full.png",
+      "sha256": "5d1b48d40d4fd1727eb16d6ba17c35e76543d8b3129e1481686bd63e933e5530"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "04fedb8918bb6dd2269cf7c0c81378e0838ebec019641c0b5b86c8a73d27d19d"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "98fa048efb62dbaea20508d0f6b99b88d67296cff88c9b5dfed4896e52e72f8a"
+    },
+    {
+      "name": "renderer.cjs",
+      "sha256": "61e721b5ef8cb9d1cf81ced3a59b9c46cbd1ab69d24d38aa141688fe3e00df3b"
+    }
+  ]
+}

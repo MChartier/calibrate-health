@@ -1,0 +1,22 @@
+{
+  "schema and migration": {
+    "files": 2,
+    "added": 75,
+    "removed": 0
+  },
+  "product code": {
+    "files": 23,
+    "added": 754,
+    "removed": 26
+  },
+  "maintained regressions and database rehearsals": {
+    "files": 20,
+    "added": 757,
+    "removed": 25
+  },
+  "maintained runbook": {
+    "files": 1,
+    "added": 315,
+    "removed": 0
+  }
+}
