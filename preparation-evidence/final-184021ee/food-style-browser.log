@@ -1,0 +1,12 @@
+[WebServer] (node:34044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 2 tests using 1 worker
+
+(node:27372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:164:5 ΓÇ║ a failed local creation offers explicit discard instead of saving unreachable corrections (2.5s)
+  ok 2 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:302:5 ΓÇ║ failed edits on a server row require explicit recovery before correction or deletion (11.2s)
+
+  2 passed (15.2s)
