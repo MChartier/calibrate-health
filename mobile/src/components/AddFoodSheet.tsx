@@ -20,6 +20,7 @@ import { useAuth } from '../auth/AuthContext';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { getProviderAttribution, type ProviderAttribution } from '../barcode/workflow';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
+import { queuedFoodDayStatus } from '../offline/foodDayIntent';
 import type { QueuedMutation } from '../offline/queuedMutation';
 import { useOfflineOutbox } from '../offline/provider';
 import { foodDayQueryKey, useFoodDayStatus } from './FoodTrackingStatus';
@@ -226,13 +227,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         if (!day) throw new Error('Day status is unavailable. Try again.');
         if (day.status === 'PAUSED') throw new Error('Resume tracking before adding food.');
         const submit = async (write: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>, mustQueue: boolean, pending: readonly QueuedMutation[]) => {
-            let status = day.status;
-            for (const mutation of pending) {
-                const intent = mutation.payload as { date?: string; status?: typeof status; is_complete?: boolean } | null;
-                if (intent?.date !== payload.date || mutation.state === 'failed') continue;
-                if (mutation.operation === OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS && intent.status) status = intent.status;
-                if (mutation.operation === OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_DAY) status = intent.is_complete ? 'COMPLETE' : 'OPEN';
-            }
+            const status = queuedFoodDayStatus(pending, payload.date, day.status);
             if (status === 'PAUSED') throw new Error('Resume tracking before adding food.');
             // Reopening and its dependent food write share one dispatch lock, including queued fallback.
             if (status !== 'OPEN') {

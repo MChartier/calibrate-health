@@ -1,3 +1,4 @@
+import { assertQueuedFoodDayOpen } from './foodDayIntent';
 import type { OutboxDispatch } from './mutationDispatch';
 import type { QueuedMutation } from './queuedMutation';
 import { foodWirePayload } from './trackingProjection';
@@ -55,9 +56,10 @@ export async function executeOrQueueMutation<T>({
     enqueue,
     createOperationId = Crypto.randomUUID
 }: ExecuteOrQueueOptions<T>): Promise<OutboxMutationResult<T>> {
-    if (withOutbox) return withOutbox((durableEnqueue, mustQueue) => executeOrQueueMutation({
-        operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId
-    }));
+    if (withOutbox) return withOutbox((durableEnqueue, mustQueue, pending) => {
+        assertQueuedFoodDayOpen(pending, operation, payload);
+        return executeOrQueueMutation({ operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId });
+    });
     const operationId = createOperationId();
     if (forceQueue || !onlineManager.isOnline() || (isRecord(payload) && payload.localCreation)) {
         await enqueue(operation, payload, operationId);

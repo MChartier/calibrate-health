@@ -405,3 +405,5 @@ Primary contracts checked during preparation:
 [email/password REST](https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password),
 [session revocation](https://firebase.google.com/docs/auth/admin/manage-sessions),
 and [export limitations](https://firebase.google.com/docs/cli/auth).
+
+Food/day dispatch folds ordered durable status and pause/resume intent under the dispatch lock. Add Food retains its explicit submit-to-reopen behavior and keeps reopening plus creation together. Other food actions reject queued closed/paused days and ask the user to reopen or resume explicitly; both storage implementations enforce the same insertion guard. No background replay manufactures reopening intent.

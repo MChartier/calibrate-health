@@ -232,7 +232,7 @@ describe('AddFoodSheet async resource states', () => {
     });
 
     it('does not add food when a durable day pause supersedes cached OPEN', async () => {
-        const rows = [{ id: 'prior-day', namespace: 'test', sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-day.set-status', payload: { date: '2026-08-08', status: 'PAUSED' } } as QueuedMutation];
+        const rows = [{ id: 'prior-day', namespace: 'test', sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-tracking-pause.start', payload: { starts_on: '2026-08-08' } } as QueuedMutation];
         const write = jest.fn(async () => undefined);
         mockWithOutbox = createOutboxDispatch('stale-paused', async () => rows, write, () => true);
         const screen = renderSheet(client => client.setQueryData(['mobile-food-day', '2026-08-08'], { date: '2026-08-08', status: 'OPEN' }));
