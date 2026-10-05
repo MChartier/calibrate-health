@@ -68,6 +68,10 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     const [confirmDiscard, setConfirmDiscard] = useState(false);
     const failedFood = editEntry ? findFailedFood(outbox.mutations, { ...localTarget(editEntry), date: selectedDate }) : undefined;
     const failedCreation = failedFood?.operation === 'food.create';
+    const discardLabels = failedCreation
+        ? { initial: 'Discard failed entry', confirm: 'Confirm discard failed entry' }
+        : { initial: 'Discard queued changes', confirm: 'Confirm discard queued changes' };
+    const discardButtonLabel = confirmDiscard ? discardLabels.confirm : discardLabels.initial;
     const discardFailed = useMutation({
         networkMode: 'always',
         mutationFn: async () => {
@@ -440,9 +444,9 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                 {failedFood && <>
                     <AppButton title="Retry original change" disabled={retryFailedFood.isPending || discardFailed.isPending} variant="secondary" onPress={() => retryFailedFood.mutate()} />
                     {retryFailedFood.error && <AppText accessibilityRole="alert">Unable to retry. Your queued changes are still on this device.</AppText>}
-                    <AppText accessibilityRole="alert">{failedCreation ? 'This local entry could not sync. Retry it in Settings → Offline changes, or discard it here before adding a corrected entry. A correction cannot pass the failed write.' : 'This entry has failed queued changes. Retry the original request or discard its queued changes before editing or deleting it. Saving another correction cannot pass the failed write.'}</AppText>
+                    <AppText accessibilityRole="alert">{failedCreation ? 'This local entry could not sync. Retry it in Settings > Offline changes, or discard it here before adding a corrected entry. A correction cannot pass the failed write.' : 'This entry has failed queued changes. Retry the original request or discard its queued changes before editing or deleting it. Saving another correction cannot pass the failed write.'}</AppText>
                     {confirmDiscard && <AppText>{failedCreation ? 'Discard this local entry and its pending edits? Other queued changes are kept. This does not delete any server record.' : 'Discard all queued edits and deletion for this entry? Other entries are kept. This does not delete or undo any server record; refresh when connected to see what reached the server.'}</AppText>}
-                    <AppButton title={confirmDiscard ? (failedCreation ? 'Confirm discard failed entry' : 'Confirm discard queued changes') : (failedCreation ? 'Discard failed entry' : 'Discard queued changes')} disabled={discardFailed.isPending || retryFailedFood.isPending} variant="secondary" onPress={() => confirmDiscard ? discardFailed.mutate() : setConfirmDiscard(true)} />
+                    <AppButton title={discardButtonLabel} disabled={discardFailed.isPending || retryFailedFood.isPending} variant="secondary" onPress={() => confirmDiscard ? discardFailed.mutate() : setConfirmDiscard(true)} />
                     {discardFailed.error && <AppText accessibilityRole="alert">Unable to discard this entry. Its sync state may have changed; close and reopen it to review.</AppText>}
                 </>}
                 <TextField label="Food name" value={editName} onChangeText={setEditName} />
