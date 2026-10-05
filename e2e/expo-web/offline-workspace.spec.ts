@@ -344,7 +344,7 @@ test('failed edits on a server row require explicit recovery before correction o
     await page.route('**/api/v1/food/*', async route => {
         if (route.request().method() !== 'PATCH') return route.fallback();
         writes.push(route.request().postDataJSON());
-        return route.fulfill({ json: { id: 11, name: 'Fixture breakfast', date: '2026-07-21', meal_period: 'breakfast', calories: 500 } });
+        return route.fulfill({ json: { id: 31, name: 'Fixture breakfast', date: '2026-07-21', meal_period: 'breakfast', calories: 500 } });
     });
     await page.unroute('**/auth/me', outage);
     await page.getByRole('button', { name: 'Retry connection', exact: true }).click();
