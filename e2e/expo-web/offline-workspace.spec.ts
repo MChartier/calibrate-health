@@ -22,6 +22,10 @@ test('auth outage retains a local weigh-in across reload and replays after recon
     await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
     await page.reload();
     await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+    await page.getByRole('button', { name: 'Review saved changes', exact: true }).click();
+    const pending = page.getByRole('dialog', { name: 'Saved on this device' });
+    await expect(pending).toContainText('Weight: 87.9 kg');
+    await pending.getByRole('button', { name: /close/i }).click();
     let writes = 0;
     await page.route('**/api/v1/metrics', async (route) => {
         if (route.request().method() !== 'POST') return route.fallback();
@@ -53,4 +57,6 @@ test('network loss still persists a local weigh-in immediately', async ({ page, 
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
     await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+    await page.getByRole('button', { name: 'Review saved changes', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Saved on this device' })).toContainText('Weight: 87.9 kg');
 });

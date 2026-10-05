@@ -233,6 +233,11 @@ knows the device is offline and enqueue before attempting network I/O. Other
 server-only mutations retain their normal network behavior. Cached data is
 limited to resources previously loaded on that device: remote food search,
 uncached history and account/security operations still need a connection.
+The saved-changes sheet reads durable outbox entries directly, so queued weights,
+food additions/edits/deletions and day changes can be reviewed after restart.
+Cached server totals are explicitly identified as last-synchronized values; no
+server IDs or calculated totals are invented for local entries. Same-date weight
+corrections replay in order; new local food entries become editable after sync.
 The pending-reconnection notice retries on foreground/reconnect, offers manual
 retry and uses a 5-second exponential delay capped at 60 seconds. Existing outbox
 replay retains its own bounded retry policy. A recovered account mismatch stops
