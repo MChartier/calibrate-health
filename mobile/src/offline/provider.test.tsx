@@ -76,7 +76,7 @@ describe('native offline outbox provider recovery', () => {
         jest.restoreAllMocks();
     });
 
-    it('preserves the startup barrier and retries failed writes after foreground recovery', async () => {
+    it('preserves failed barriers through foreground recovery until explicit retry', async () => {
         let appStateListener: ((state: string) => void) | null = null;
         const remove = jest.fn();
         jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
@@ -101,7 +101,10 @@ describe('native offline outbox provider recovery', () => {
         act(() => appStateListener?.('background'));
         expect(mockRetryFailed).not.toHaveBeenCalled();
         act(() => appStateListener?.('active'));
-        await waitFor(() => expect(mockRetryFailed).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(2));
+        expect(mockRetryFailed).not.toHaveBeenCalled();
+        await act(async () => { await result.current.retryFailed('chosen-failure'); });
+        expect(mockRetryFailed).toHaveBeenCalledWith('chosen-failure');
         await waitFor(() => expect(onReplayCompleted).toHaveBeenCalledWith({
             replayed: 1,
             replayedOperations: ['metric.add'],
@@ -217,7 +220,8 @@ describe('native offline outbox provider recovery', () => {
             expect(mockRetryFailed).not.toHaveBeenCalled();
 
             act(() => onlineManager.setOnline(true));
-            await waitFor(() => expect(mockRetryFailed).toHaveBeenCalledTimes(1));
+            await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(2));
+            expect(mockRetryFailed).not.toHaveBeenCalled();
         } finally {
             jest.useRealTimers();
         }

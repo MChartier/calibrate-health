@@ -183,15 +183,13 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
             if (!active || !isForegrounded || !isOnline || result.retryAfterMs === null) return;
             retryTimer = setTimeout(() => {
                 retryTimer = null;
-                if (active && isForegrounded && isOnline) void replayPending(false);
+                if (active && isForegrounded && isOnline) void replayPending();
             }, result.retryAfterMs);
         };
         /** Reconcile this provider generation and apply retry timing before post-replay work. */
-        const replayPending = async (includeFailures: boolean) => {
+        const replayPending = async () => {
             try {
-                const result = includeFailures
-                    ? await reconciler.retryFailed()
-                    : await reconciler.reconcile();
+                const result = await reconciler.reconcile();
                 // Apply retry state before any slower invalidation or queue refresh can reorder completions.
                 scheduleRetry(result);
                 await notifyAfterReplay(result);
@@ -203,14 +201,14 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         retrySchedulerRef.current = scheduleRetry;
 
         // Replay on startup, after backoff, and after foreground or connectivity recovery.
-        if (isForegrounded && isOnline) void replayPending(false);
+        if (isForegrounded && isOnline) void replayPending();
         const appStateSubscription = AppState.addEventListener('change', (state) => {
             isForegrounded = state === 'active';
             if (!isForegrounded) {
                 clearRetry();
                 return;
             }
-            if (isOnline) void replayPending(true);
+            if (isOnline) void replayPending();
         });
         const unsubscribeOnline = onlineManager.subscribe(() => {
             isOnline = onlineManager.isOnline();
@@ -218,7 +216,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
                 clearRetry();
                 return;
             }
-            if (isForegrounded) void replayPending(true);
+            if (isForegrounded) void replayPending();
         });
         return () => {
             active = false;

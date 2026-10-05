@@ -231,15 +231,13 @@ export function OfflineOutboxProvider({
             if (!active || !isOnline || !isVisible || result.retryAfterMs === null) return;
             retryTimer = setTimeout(() => {
                 retryTimer = null;
-                if (active && isOnline && isVisible) void replay(false);
+                if (active && isOnline && isVisible) void replay();
             }, result.retryAfterMs);
         };
         /** Reconcile this provider generation and apply retry timing before post-replay work. */
-        const replay = async (includeFailures: boolean) => {
+        const replay = async () => {
             try {
-                const result = includeFailures
-                    ? await reconciler.retryFailed()
-                    : await reconciler.reconcile();
+                const result = await reconciler.reconcile();
                 // Apply retry state before any slower invalidation or queue refresh can reorder completions.
                 scheduleRetry(result);
                 await notifyAfterReplay(result);
@@ -256,11 +254,11 @@ export function OfflineOutboxProvider({
                 clearRetry();
                 return;
             }
-            void replay(true);
+            void replay();
         };
         retrySchedulerRef.current = scheduleRetry;
 
-        if (isOnline && isVisible) void replay(false);
+        if (isOnline && isVisible) void replay();
         const unsubscribeConnectivity = connectivity.subscribe(() => {
             isOnline = connectivity.isOnline();
             replayIfEligible();
