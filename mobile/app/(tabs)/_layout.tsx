@@ -215,17 +215,14 @@ export default function TabsLayout() {
         }
     });
     const openNotification = useMutation({
+        networkMode: 'always',
         mutationFn: async (notification: InAppNotification) => {
             await api.markInAppNotificationRead(notification.id);
             return notification;
         },
-        onSuccess: async (notification) => {
+        onSuccess: (notification) => {
             reconcileNotificationRead(queryClient, notification.id);
-            await invalidateNotificationQueries(queryClient);
-            requestGuardedNavigation(() => {
-                setIsNotificationDrawerOpen(false);
-                router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
-            });
+            void invalidateNotificationQueries(queryClient);
         }
     });
     const requestAddFood = React.useCallback((input: AddFoodRequestInput = {}) => {
@@ -444,14 +441,21 @@ export default function TabsLayout() {
                         unreadCount={unreadCount}
                         state={notificationsState}
                         isBusy={dismissNotification.isPending || openNotification.isPending}
+                        isOpening={openNotification.isPending}
                         actionError={dismissNotification.error ?? openNotification.error}
                         onClose={() => setIsNotificationDrawerOpen(false)}
-                        onOpenNotification={(notification) => openNotification.mutate(notification)}
-                        onDismissNotification={(notification) => dismissNotification.mutate(notification)}
-                        onViewAll={() => requestGuardedNavigation(() => {
+                        onOpenNotification={(notification) => requestGuardedNavigation(() => {
                             setIsNotificationDrawerOpen(false);
-                            router.push(canonicalPathForRoute('notifications') as Href);
+                            router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
+                        }, async () => {
+                            try {
+                                await openNotification.mutateAsync(notification);
+                                return true;
+                            } catch {
+                                return false;
+                            }
                         })}
+                        onDismissNotification={(notification) => dismissNotification.mutate(notification)}
                         onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
                     />
                     <ResumeTrackingPrompt />

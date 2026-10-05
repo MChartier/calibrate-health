@@ -87,11 +87,11 @@ describe('PublicLegalPage', () => {
         expect(appHeader.getByLabelText('App actions')).toBeTruthy();
 
         fireEvent.press(appHeader.getByRole('button', { name: 'Back to Settings' }));
-        fireEvent.press(appHeader.getByRole('button', { name: 'Open notifications' }));
+        expect(appHeader.queryByRole('button', { name: 'Open notifications' })).toBeNull();
         fireEvent.press(appHeader.getByRole('button', { name: 'Account & settings' }));
 
         expect(mockReplace).toHaveBeenCalledWith('/settings');
-        expect(mockPush).toHaveBeenNthCalledWith(1, '/notifications');
-        expect(mockPush).toHaveBeenNthCalledWith(2, '/settings');
+        expect(mockPush).toHaveBeenCalledTimes(1);
+        expect(mockPush).toHaveBeenCalledWith('/settings');
     });
 });

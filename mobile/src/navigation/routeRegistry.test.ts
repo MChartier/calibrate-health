@@ -68,7 +68,6 @@ describe('route registry', () => {
       'my-foods': 'settings-data',
       about: 'settings-help',
       advanced: 'settings-help',
-      notifications: 'today',
       weight: 'progress',
       barcode: 'today',
     } as const satisfies Partial<Record<RouteId, RouteId>>;
@@ -138,6 +137,14 @@ describe('route registry', () => {
       isAlias: true,
     });
     expect(getRouteByPath('/not-registered')).toBeNull();
+    expect(getRouteByPath('/notifications?cursor=old#history')).toMatchObject({
+      routeId: 'today',
+      canonicalPath: '/today',
+      matchedPath: '/notifications',
+      isAlias: true,
+    });
+    expect(ROUTE_REGISTRY.today.aliases).toContainEqual({ path: '/notifications', authenticatedRedirect: 'today' });
+    expect(getRouteByPath('/notifications/old')).toBeNull();
   });
   it('recognizes the active route without treating another stack entry as active', () => {
     expect(isRouteActive('/today', 'today')).toBe(true);

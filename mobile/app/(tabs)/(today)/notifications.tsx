@@ -1,5 +1,5 @@
-import { NotificationHistory } from '../../../src/notifications/NotificationHistory';
+import { Redirect } from 'expo-router';
 
 export default function NotificationsScreen() {
-    return <NotificationHistory />;
+    return <Redirect href="/today" />;
 }

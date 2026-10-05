@@ -77,13 +77,6 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links, ac
                         </View>
                         <View accessibilityRole="toolbar" accessibilityLabel="App actions" style={styles.appHeaderActions}>
                             <AppIconButton
-                                accessibilityLabel="Open notifications"
-                                icon="notifications-outline"
-                                iconSize={21}
-                                variant="ghost"
-                                onPress={() => router.push('/notifications')}
-                            />
-                            <AppIconButton
                                 accessibilityLabel="Account & settings"
                                 accessibilityHint="Opens account details and app settings"
                                 icon="person-circle-outline"

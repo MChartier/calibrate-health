@@ -32,6 +32,11 @@ describe('route metadata', () => {
     });
 
     it('canonicalizes aliases and keeps private/authentication routes out of search indexes', () => {
+        expect(resolveRouteMetadata('/notifications?cursor=old#history', { authenticated: true })).toMatchObject({
+            title: 'Today - Calibrate',
+            canonicalPath: '/today',
+            robots: ROUTE_ROBOTS_POLICIES.PRIVATE
+        });
         expect(resolveRouteMetadata('/log?date=2026-08-09', { authenticated: true })).toMatchObject({
             canonicalPath: '/today',
             robots: ROUTE_ROBOTS_POLICIES.PRIVATE

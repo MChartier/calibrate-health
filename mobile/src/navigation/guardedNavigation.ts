@@ -1,5 +1,7 @@
 type Navigate = () => void;
-type NavigationGuard = (navigate: Navigate) => Promise<void>;
+export type PrepareNavigation = () => Promise<boolean>;
+
+type NavigationGuard = (navigate: Navigate, prepare?: PrepareNavigation) => Promise<void>;
 
 let activeGuard: NavigationGuard | undefined;
 
@@ -19,7 +21,8 @@ export function interceptGuardedNavigation(navigate: Navigate, preventDefault: (
     return true;
 }
 
-export function requestGuardedNavigation(navigate: Navigate): void {
-    if (activeGuard) void activeGuard(navigate);
+export function requestGuardedNavigation(navigate: Navigate, prepare?: PrepareNavigation): void {
+    if (activeGuard) void activeGuard(navigate, prepare);
+    else if (prepare) void prepare().then((ready) => { if (ready) navigate(); });
     else navigate();
 }

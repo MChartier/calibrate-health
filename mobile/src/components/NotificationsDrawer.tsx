@@ -4,7 +4,6 @@ import type { InAppNotification } from '@calibrate/api-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SUPPORTED_MODAL_ORIENTATIONS } from '../layout/adaptiveLayout';
 import { AppSection } from './AppSection';
-import { AppButton } from './AppButton';
 import { AppIconButton } from './AppIconButton';
 import { AppText } from './AppText';
 import { NotificationCard } from './NotificationCard';
@@ -32,11 +31,11 @@ type NotificationsDrawerProps = {
     unreadCount: number | null;
     state: AsyncResourceState;
     isBusy: boolean;
+    isOpening?: boolean;
     actionError?: unknown;
     onClose: () => void;
     onOpenNotification: (notification: InAppNotification) => void;
     onDismissNotification: (notification: InAppNotification) => void;
-    onViewAll: () => void;
     onRetry?: () => void;
 };
 
@@ -47,11 +46,11 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     unreadCount,
     state,
     isBusy,
+    isOpening = false,
     actionError,
     onClose,
     onOpenNotification,
     onDismissNotification,
-    onViewAll,
     onRetry
 }) => {
     const theme = useAppTheme();
@@ -65,11 +64,12 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const drawerProgress = useRef(new Animated.Value(1)).current;
     const panelRef = useRef<View>(null);
+    const requestClose = () => { if (!isOpening) onClose(); };
 
     useModalFocusManagement({
         visible: shouldRender && visible,
         containerRef: panelRef,
-        onEscape: onClose
+        onEscape: requestClose
     });
 
     useEffect(() => {
@@ -123,7 +123,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
             animationType="none"
             presentationStyle="overFullScreen"
             statusBarTranslucent
-            onRequestClose={onClose}
+            onRequestClose={requestClose}
             supportedOrientations={SUPPORTED_MODAL_ORIENTATIONS}
         >
             <View style={styles.root}>
@@ -133,7 +133,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     focusable={false}
                     importantForAccessibility="no-hide-descendants"
                     aria-hidden
-                    onPress={onClose}
+                    onPress={requestClose}
                     style={StyleSheet.absoluteFill}
                 >
                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
@@ -146,6 +146,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                     aria-label="Notifications"
                     aria-modal
                     role="dialog"
+                    tabIndex={-1}
                     style={[
                         styles.panel,
                         {
@@ -165,12 +166,14 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             <AppText variant="caption">
                                 {unreadCount === null ? 'Unread count unavailable' : `${unreadCount} unread`}
                             </AppText>
+                            {isOpening && <AppText variant="caption" accessibilityLiveRegion="polite">Opening reminder...</AppText>}
                         </View>
                         <AppIconButton
                             icon="close"
                             accessibilityLabel="Close notifications"
                             variant="ghost"
-                            onPress={onClose}
+                            onPress={requestClose}
+                            busy={isOpening}
                         />
                     </View>
 
@@ -213,12 +216,6 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                             </AppSection>
                         )}
 
-                        <AppButton
-                            testID="view-all-notifications"
-                            title="View all notifications"
-                            variant="secondary"
-                            onPress={onViewAll}
-                        />
                     </ScrollView>
                 </Animated.View>
             </View>

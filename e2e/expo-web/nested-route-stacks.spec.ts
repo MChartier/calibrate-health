@@ -5,6 +5,64 @@ import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtu
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-07');
 
+test('legacy notifications bookmarks replace themselves with Today and cannot reopen history', async ({ page, ux }) => {
+  await ux.install('populated');
+  const historyRequests: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.searchParams.get('view') === 'history' || url.pathname.endsWith('/notifications/in-app/read-all')) {
+      historyRequests.push(request.url());
+    }
+  });
+  for (const legacy of ['/notifications', '/notifications?cursor=old#history']) {
+    await page.goto('/progress');
+    await expect(page.locator('#route-focus-title')).toHaveText('Progress');
+    await page.goto(legacy);
+    await expect(page).toHaveURL((url) => url.pathname === '/today' && !url.search && !url.hash);
+    await expect(page).toHaveTitle('Today - Calibrate');
+    await expect(page.getByTestId('notification-history')).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId('notifications-button')).toBeVisible();
+    await expect(page).toHaveURL((url) => url.pathname === '/today');
+    for (let count = 0; count < 2; count += 1) {
+      await page.goBack();
+      await expect(page.getByTestId('notifications-button')).toBeVisible();
+      await expect(page.locator('#route-focus-title')).toHaveText('Progress');
+      await expect(page).toHaveURL((url) => url.pathname === '/progress');
+      await page.goForward();
+      await expect(page.getByTestId('notifications-button')).toBeVisible();
+      await expect(page.locator('#route-focus-title')).toHaveText('Today');
+      await expect(page).toHaveURL((url) => url.pathname === '/today');
+    }
+  }
+  expect(historyRequests).toEqual([]);
+});
+
+test('unknown notification subpaths retain not-found recovery', async ({ page, ux }) => {
+  await ux.install('populated');
+  expectApiFailure(page, { method: 'GET', pathname: '/notifications/obsolete', status: 404 });
+  await page.goto('/notifications/obsolete');
+  await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
+  await hideTransientPwaNotices(page);
+  await page.getByRole('button', { name: 'Go to Today', exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === '/today');
+});
+
+test('signed-in legal pages retain Settings navigation without the history shortcut', async ({ page, ux }) => {
+  await ux.install('populated');
+  for (const route of ['/privacy', '/terms']) {
+    await page.goto(route);
+    const header = page.getByTestId('legal-app-header');
+    await expect(header.getByRole('button', { name: 'Open notifications' })).toHaveCount(0);
+    await header.getByRole('button', { name: 'Account & settings', exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await page.goBack();
+    await expect(page).toHaveURL((url) => url.pathname === route);
+    await header.getByRole('button', { name: 'Back to Settings', exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+  }
+});
+
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,

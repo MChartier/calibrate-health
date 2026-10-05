@@ -22,21 +22,20 @@ function notification(overrides: Partial<InAppNotificationPageItem> = {}): InApp
     };
 }
 
-describe('NotificationCard history presentation', () => {
-    it('shows timestamp, unread state, destination, and dismissal controls', () => {
+describe('NotificationCard active reminder presentation', () => {
+    it('shows the local date, destination, and dismissal controls', () => {
         const onOpen = jest.fn();
         const onDismiss = jest.fn();
         const item = notification();
         const screen = render(
             <NotificationCard
                 notification={item}
-                showHistoryState
                 onOpen={onOpen}
                 onDismiss={onDismiss}
             />
         );
 
-        expect(screen.getByText(/Unread/)).toBeTruthy();
+        expect(screen.getByText('Aug 9')).toBeTruthy();
         expect(screen.getByTestId('notification-card-7')).toBeTruthy();
         fireEvent.press(screen.getByTestId('notification-open-7'));
         fireEvent.press(screen.getByTestId('notification-dismiss-7'));
@@ -44,19 +43,28 @@ describe('NotificationCard history presentation', () => {
         expect(onDismiss).toHaveBeenCalledWith(item);
     });
 
-    it('labels resolved history without presenting unread or broken dismissal actions', () => {
+    it('keeps a resolved reminder safe if one is present in cached data', () => {
         const screen = render(
             <NotificationCard
                 notification={notification({ resolved_at: '2026-08-09T13:00:00.000Z' })}
-                showHistoryState
                 onOpen={jest.fn()}
                 onDismiss={jest.fn()}
             />
         );
 
-        expect(screen.getByText(/Resolved/)).toBeTruthy();
+        expect(screen.queryByText(/Resolved/)).toBeNull();
         expect(screen.queryByText(/Unread/)).toBeNull();
         expect(screen.queryByTestId('notification-dismiss-7')).toBeNull();
         expect(screen.getByTestId('notification-open-7')).toBeTruthy();
+    });
+
+    it('disables both reminder actions while another action is pending', () => {
+        const onOpen = jest.fn();
+        const onDismiss = jest.fn();
+        const screen = render(<NotificationCard notification={notification()} isBusy onOpen={onOpen} onDismiss={onDismiss} />);
+        fireEvent.press(screen.getByTestId('notification-open-7'));
+        fireEvent.press(screen.getByTestId('notification-dismiss-7'));
+        expect(onOpen).not.toHaveBeenCalled();
+        expect(onDismiss).not.toHaveBeenCalled();
     });
 });
