@@ -1,0 +1,1135 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-05T22:10:43.811Z",
+  "owner": "MChartier",
+  "task": "01a105d0-2544-70b1-813c-cf8460fd70c6",
+  "host": "mchartier_zbook",
+  "platform": "win32",
+  "node": "v24.19.0",
+  "target": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "refs/heads/master",
+    "sha": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "head": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+  "mergeBase": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "parentRevisions": [],
+  "ultimateTarget": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "sourceTrees": {
+    "before": "d4475f7630894ddd8fe3f87382a075615c182d49",
+    "after": "f5ee7f5d77dd57efb604fbd7b38f344fdb006fef"
+  },
+  "retention": {
+    "ref": "refs/heads/evidence/issue412-master-c5f149a",
+    "purpose": "Genuine actual-master-to-final issue412 evidence outside product commits",
+    "lifetime": "All reviews and receipts; never rewrite/delete/merge"
+  },
+  "originalRetention": [
+    {
+      "ref": "evidence/pr417-reviewed-736a86c",
+      "commit": "736a86caa519ec929a5fda79d42793c8ff915a6f",
+      "path": "docs/pr-screenshots/issue-412/manifest.json",
+      "sha256": "ff7873d8acc89f224a757cd2f0392e2ba879c89baf78ec448da86d829ef9dbf5",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/736a86caa519ec929a5fda79d42793c8ff915a6f/docs/pr-screenshots/issue-412/manifest.json",
+      "publicAccessVerified": true
+    },
+    {
+      "ref": "evidence/pr417-guard-recovery-4dcad2c",
+      "commit": "c7646821a1f2f4142a5d7c41a1026302b7c40e16",
+      "path": "docs/pr-screenshots/issue-412-guard-failure/manifest.json",
+      "sha256": "49f73fc9dbac467245f82a52e69754358c30a4b67108760c628abe83069fc089",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/c7646821a1f2f4142a5d7c41a1026302b7c40e16/docs/pr-screenshots/issue-412-guard-failure/manifest.json",
+      "publicAccessVerified": true
+    },
+    {
+      "ref": "evidence/pr417-offline-recovery-3c743b4",
+      "commit": "772dd261c6bcc3697bcd01a965497c74a9865e87",
+      "path": "docs/pr-screenshots/issue-412-offline-recovery/manifest.json",
+      "sha256": "32286736658a63162186db2059e34d501f9dfde8057542ff1f75a5e338623b7c",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/772dd261c6bcc3697bcd01a965497c74a9865e87/docs/pr-screenshots/issue-412-offline-recovery/manifest.json",
+      "publicAccessVerified": true
+    },
+    {
+      "ref": "evidence/pr417-refresh-recovery-123bab9",
+      "commit": "f3195813a3148f65c57ee27ab4eb6c59ac9cfff7",
+      "path": "docs/pr-screenshots/issue-412-refresh-recovery/manifest.json",
+      "sha256": "3db8d9ea2e8e46926d3cd5bd3411db890287a9069022fdbe9465ccc7e9231da6",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/f3195813a3148f65c57ee27ab4eb6c59ac9cfff7/docs/pr-screenshots/issue-412-refresh-recovery/manifest.json",
+      "publicAccessVerified": true
+    }
+  ],
+  "sourceFiles": [
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "e2e/expo-web/fixtures.ts",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "gitBlob": "f0fcd329dfc0fe21c6bf8d76340d48501350bdc7",
+      "sha256": "70400e1eba1b3b53c7a2a32692179cc6dc70d3e571291e39de1379ecab0404a8"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "e2e/expo-web/nested-settings-routes.spec.ts",
+      "gitBlob": "93e6f70c16d5e3b0b509d93e63b3837c2bbc6437",
+      "sha256": "e34c240d292c236c68bd607e9c61e7ccc36fab357e6adb9857824270b2434054"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "e2e/expo-web/compact-rail.spec.ts",
+      "gitBlob": "b5c7f975d053c8dc91257de9a1b9f57386a8a0b2",
+      "sha256": "60337215271e1f75bf5ab8950ee7be8fdf662e9e2c3b05371fb10f70b0fd1102"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "playwright.expo-web.config.ts",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "playwright.ux.config.ts",
+      "gitBlob": "f6c9617c18cc42f002b42e1a79cf4d39e720e48f",
+      "sha256": "42d60ea835b95e4f27bdfd65796a90560ede537b8778264310031c9ee268b15a"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "scripts/expo-web-build.mjs",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "scripts/expo-web-static-server.mjs",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "scripts/expo-web-release.mjs",
+      "gitBlob": "cae076adf0d24bb969c3b470d443fc3162c3e304",
+      "sha256": "a7d1b1146296ec71a407dfe32ad165894367fe2eb7302d3f67f523442dbfba06"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "gitBlob": "5df1812b6a18e11cb04c68f95f274e289e0f490f",
+      "sha256": "5152f110c1f645f1b2fdb0b87ff33ff8349b7953ee590e587aa06f0d354d46e8"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/src/components/NotificationsDrawer.tsx",
+      "gitBlob": "e1e348826beec0ccd041ffc9fb6c2dd8535c9761",
+      "sha256": "b58e210d77b650d275b13c6b93d25276222e8e2afa59dbd10d82df39ef366bcb"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "gitBlob": "6ff041ce91df8b9d1cd9a3031880bb17927f2342",
+      "sha256": "03db18582f23bea0427cd06e9604c9bb6a9407d360b922509ddda705e29a59c2"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "gitBlob": "0f902c21e505d6ab709911494d9eca452981fc14",
+      "sha256": "46606fd11b69d1e8925b1292997c78aad698bb0a1391c7ef829dd0eb07f8f75c"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/app/(tabs)/(settings)/preferences.tsx",
+      "gitBlob": "fa9396a1fb2d0b890854eeebd6f9ed7d8e5d41a9",
+      "sha256": "257a2dc7d65d60d98db1b4d2f5902ae8e5d9d566998eeb9cfe4b785ce0cf525a"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/src/navigation/WebNavigationRail.web.tsx",
+      "gitBlob": "77039a872592be53952870fb3b033efd7a561403",
+      "sha256": "30d7b1cecbae7ec7bb368308f331120ee53b325703cf4544710e02d0d96ba147"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "gitBlob": "bba8d5d7b15288b52418d95322c722e9988bb2f3",
+      "sha256": "b74834578d26c174608be01e76ce0985147704d46c57a4a6fe2dd0e0a23a2699"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "shared/designTokens.ts",
+      "gitBlob": "6635649a4c5d85f9e42d92e72ec7ab2cc8223c59",
+      "sha256": "40c3e1ae9f4790feca7ada4d61267149f3ed4bf0127757f9572b557e6e53c962"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "package-lock.json",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    },
+    {
+      "commit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "path": "mobile/src/notifications/NotificationHistory.tsx",
+      "gitBlob": "d9fb4f11773c98734758f3eaf6f1ba97418cf381",
+      "sha256": "c9691357cf941450aab444d77708b104b65756d631723231899c246f00a5ff6c"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "e2e/expo-web/fixtures.ts",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "gitBlob": "7befd57041f7b009a7a02c7766db4487becd4529",
+      "sha256": "3e2918013a1d63c9edf2d4c77ab9c44f2e3fede02498f9c33574346f39573ca5"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "gitBlob": "4ae3678cff38c7b34cd1d4bdbcc8fe3cb5bada1a",
+      "sha256": "deb20ad63260415c5f90bb82286f25c8bb9e11ca4e0f6ad58cfb38bd764df322"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "e2e/expo-web/nested-settings-routes.spec.ts",
+      "gitBlob": "93e6f70c16d5e3b0b509d93e63b3837c2bbc6437",
+      "sha256": "e34c240d292c236c68bd607e9c61e7ccc36fab357e6adb9857824270b2434054"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "e2e/expo-web/notification-legacy-gates.spec.ts",
+      "gitBlob": "cff0b9b8632b9f7f5c43811c7193498df16215cd",
+      "sha256": "f35b96c437a52dba12cf918985ee0c6e7e869820fd63b7d35f500281a246d659"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "e2e/expo-web/compact-rail.spec.ts",
+      "gitBlob": "b5c7f975d053c8dc91257de9a1b9f57386a8a0b2",
+      "sha256": "60337215271e1f75bf5ab8950ee7be8fdf662e9e2c3b05371fb10f70b0fd1102"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "playwright.expo-web.config.ts",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "playwright.ux.config.ts",
+      "gitBlob": "f6c9617c18cc42f002b42e1a79cf4d39e720e48f",
+      "sha256": "42d60ea835b95e4f27bdfd65796a90560ede537b8778264310031c9ee268b15a"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "scripts/expo-web-build.mjs",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "scripts/expo-web-static-server.mjs",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "scripts/expo-web-release.mjs",
+      "gitBlob": "cae076adf0d24bb969c3b470d443fc3162c3e304",
+      "sha256": "a7d1b1146296ec71a407dfe32ad165894367fe2eb7302d3f67f523442dbfba06"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "gitBlob": "55b83dea49e4f9e87b7610b8fb12096d313e3128",
+      "sha256": "2a86bfd8d0d2bf922cbbdd65da26e45cd274cd38009d0a0f423832e093a15f74"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "mobile/src/components/NotificationsDrawer.tsx",
+      "gitBlob": "283ee7cb95c3b80eeeb979414a1cba8a282212b1",
+      "sha256": "dec89f274a0798798be0f303f3a14e61b9c4839300dc7f1810ee20d096ad9316"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "gitBlob": "e95a7f2b36ffcbdc4f3deb4c7a81d50fe8f732e0",
+      "sha256": "155cabd4c5b2d1b03c518a3c5cdef50287d032f6d80742aee2cc4bd96c170781"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "gitBlob": "491b1544b30d6810a5f2aaf873eff7a5045cecff",
+      "sha256": "a0e87b389bf5294dd9bff724a36fcf7603c8ffc01639a1c1f81ece3dbdbd29e7"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "mobile/app/(tabs)/(settings)/preferences.tsx",
+      "gitBlob": "fa9396a1fb2d0b890854eeebd6f9ed7d8e5d41a9",
+      "sha256": "257a2dc7d65d60d98db1b4d2f5902ae8e5d9d566998eeb9cfe4b785ce0cf525a"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "mobile/src/navigation/WebNavigationRail.web.tsx",
+      "gitBlob": "77039a872592be53952870fb3b033efd7a561403",
+      "sha256": "30d7b1cecbae7ec7bb368308f331120ee53b325703cf4544710e02d0d96ba147"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "gitBlob": "f7f8f280d49893f8f83aa62d76bb017073de3822",
+      "sha256": "1d97e562dfc241827b69e776a91ae0d3f20e65849ca42eefccedf787873b9e68"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "shared/designTokens.ts",
+      "gitBlob": "6635649a4c5d85f9e42d92e72ec7ab2cc8223c59",
+      "sha256": "40c3e1ae9f4790feca7ada4d61267149f3ed4bf0127757f9572b557e6e53c962"
+    },
+    {
+      "commit": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "path": "package-lock.json",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    }
+  ],
+  "logs": [
+    {
+      "path": "current-lint.log",
+      "rawSha256": "7243b67b9cdf7b3e645db2c9ad9c835481615bcf8e2b0840f5748a99839393cb",
+      "publishedSha256": "3e2ea03ad5710430b9ed6f5d20f0628793d227c4d8e4f4292332368d11a54588",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-build.log",
+      "rawSha256": "a140ef8bf10b9d06dd2a90cfb2d2eac61e9ecf65f73b0268f783dbe7e98490f3",
+      "publishedSha256": "d5d94755bd2f2009cb0f21599fe3e494188bf613986602a1dd4942c92bd9ef22",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "baseline-build.log",
+      "rawSha256": "53014ac0240d729506e67e743aa44afbf46142fd429965d1d9b333a4d7f3aba4",
+      "publishedSha256": "9bba25f00881d16342a9c3d4b41466d0c8750a7037c977d604d85a385a52aa98",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-mobile.log",
+      "rawSha256": "89abe7e003131224ac93fb12c248edaa50fc5782fd8f45d8b9c3d3c890688614",
+      "publishedSha256": "39afa246864d0774c46c8243b10c85801751975f5e83d68d4d18dd5ce15f5e1f",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-browser.log",
+      "rawSha256": "940f29b4c53eb79f520b35f2a2cda27f05a41283666a8ce4fe141d67415a97cd",
+      "publishedSha256": "3dcd791d66de620ec66ac9c67f2e9bc0c22dcb25e27ce332310391beefbbf547",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-dead-code.log",
+      "rawSha256": "5d3c3a268f49652b89604e1e61fbfb28297e792a383b314ee9985a73fe5c1793",
+      "publishedSha256": "d93d5e07b3878223921c13fa078fb3bdb89b17a63bb378ad19eed34f10c92d63",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-release-contract.log",
+      "rawSha256": "25411c0630729a04dca41169037f276e4695d9d9c3bb96d5277849ba50c2c834",
+      "publishedSha256": "028c77968f403ad8628337c6ae44ef7d2bf5ffd2b317194a770f7e286ddcc6bd",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-rail.log",
+      "rawSha256": "9517f55314a809218e990898ccd6dec2b6d2362a4fdcbc15134334deb4556111",
+      "publishedSha256": "d3743e4b2600c1dd8662e3f723c8f9f2f6c31c67ba958cea849bc3ff2927b323",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-settings-phone.log",
+      "rawSha256": "f0cbb1d19a36116f247ed29c0dc9a69811c91f5da15432854ce5ae1eb6d9ffe8",
+      "publishedSha256": "eb27f78500927e29cb973eb4ba08fc6c9584265ad70d914122c70a6d56220345",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-ux.log",
+      "rawSha256": "bc12646c608df280577ed6d7c696f3a2d1f813c7f656ba5bde2cf5e1ebc36ef3",
+      "publishedSha256": "c6b018cc2649d4e232b48f8deb52a07424bcc2607019a41ae10132b765e771f6",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "baseline-capture.log",
+      "rawSha256": "b3c944473deebfe0b0906e435b99aa3e61f08ef5fd017168bb1d5af9ff15e60c",
+      "publishedSha256": "78b0fee5113e8359f3895e832ac0b60895c60680efea14ed524452abad49b9dd",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    },
+    {
+      "path": "current-capture.log",
+      "rawSha256": "1f7aa02b9e59ea0094a5aee5ca6d1234b608bef568f4ceb8c82db5fcb9ac24bd",
+      "publishedSha256": "06210a143dfb59b86a62f587dc5c28615772b39ec01586c18e7423e5099ad486",
+      "transformation": "Private local paths redacted; CRLF normalized to LF; no other log transformation."
+    }
+  ],
+  "captures": [
+    {
+      "name": "empty-desktop",
+      "side": "after",
+      "source": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceTree": "f5ee7f5d77dd57efb604fbd7b38f344fdb006fef",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:03:31.654Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/today",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "state": "empty reminders",
+        "expectedFooter": false
+      },
+      "image": "after-empty-desktop.png",
+      "imageSha256": "41ccb5b585001f4f23efc7dc7f8c65bda888c8a647202bc5632c6c5563071b14",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-6443a2624c153c3b6c5ee213feb57ff6.js",
+          "sha256": "d6cfdf9bcd4aabe8a05c6d4002154622aa8806d9a654e20747704a5bcf8c46eb"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/after-empty-desktop.json"
+    },
+    {
+      "name": "failure-desktop",
+      "side": "after",
+      "source": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceTree": "f5ee7f5d77dd57efb604fbd7b38f344fdb006fef",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:03:36.832Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/preferences",
+      "historyRequests": 0,
+      "actionRequests": 1,
+      "observation": {
+        "confirmations": 1,
+        "draft": "08:30",
+        "globalUnread": 20,
+        "readFailed503": true
+      },
+      "image": "after-failure-desktop.png",
+      "imageSha256": "2c0fc9538348db141da7efe3ec3fa41b4c4e8ced5b4f823612a48beb08f493f3",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-6443a2624c153c3b6c5ee213feb57ff6.js",
+          "sha256": "d6cfdf9bcd4aabe8a05c6d4002154622aa8806d9a654e20747704a5bcf8c46eb"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/after-failure-desktop.json"
+    },
+    {
+      "name": "legacy-desktop",
+      "side": "after",
+      "source": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceTree": "f5ee7f5d77dd57efb604fbd7b38f344fdb006fef",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:03:34.189Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/today",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "expectedRoute": "/today"
+      },
+      "image": "after-legacy-desktop.png",
+      "imageSha256": "cac9d1633507575e047ed09688b515caada9908d954729b9c9898624419a974e",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-6443a2624c153c3b6c5ee213feb57ff6.js",
+          "sha256": "d6cfdf9bcd4aabe8a05c6d4002154622aa8806d9a654e20747704a5bcf8c46eb"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/after-legacy-desktop.json"
+    },
+    {
+      "name": "pending-desktop",
+      "side": "after",
+      "source": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceTree": "f5ee7f5d77dd57efb604fbd7b38f344fdb006fef",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:03:36.522Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/preferences",
+      "historyRequests": 0,
+      "actionRequests": 1,
+      "observation": {
+        "confirmations": 1,
+        "draft": "08:30",
+        "closeDisabled": true,
+        "sequence": "Same edited draft and reminder action; accept confirmation if the source presents it. Base confirms only after successful read; final confirms before read."
+      },
+      "image": "after-pending-desktop.png",
+      "imageSha256": "4798e871de256bcb1bdecfa382733c8fdc357d53bd76feb2436f7fb3e4291f56",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-6443a2624c153c3b6c5ee213feb57ff6.js",
+          "sha256": "d6cfdf9bcd4aabe8a05c6d4002154622aa8806d9a654e20747704a5bcf8c46eb"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/after-pending-desktop.json"
+    },
+    {
+      "name": "populated-phone",
+      "side": "after",
+      "source": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceTree": "f5ee7f5d77dd57efb604fbd7b38f344fdb006fef",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:03:32.884Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/settings",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "activeCards": 5,
+        "globalUnread": 20,
+        "expectedFooter": false
+      },
+      "image": "after-populated-phone.png",
+      "imageSha256": "778d8f5f4c97c793d22ef4b6738d39b126b178dd27524c902796c5d5fb0701b3",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-6443a2624c153c3b6c5ee213feb57ff6.js",
+          "sha256": "d6cfdf9bcd4aabe8a05c6d4002154622aa8806d9a654e20747704a5bcf8c46eb"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/after-populated-phone.json"
+    },
+    {
+      "name": "preferences-phone",
+      "side": "after",
+      "source": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceTree": "f5ee7f5d77dd57efb604fbd7b38f344fdb006fef",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:03:35.282Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/preferences",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "journey": "Settings > Profile & preferences > Preferences; reminder controls retained"
+      },
+      "image": "after-preferences-phone.png",
+      "imageSha256": "b37c832e9f213f7978e08ee2fe789de9ef4c6f177e521fa2bdc5dca8e1f5376f",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-6443a2624c153c3b6c5ee213feb57ff6.js",
+          "sha256": "d6cfdf9bcd4aabe8a05c6d4002154622aa8806d9a654e20747704a5bcf8c46eb"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/after-preferences-phone.json"
+    },
+    {
+      "name": "empty-desktop",
+      "side": "before",
+      "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "sourceTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:02:49.553Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/today",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "state": "empty reminders",
+        "expectedFooter": true
+      },
+      "image": "before-empty-desktop.png",
+      "imageSha256": "acfaef4a8532a2405aabe8d55cfae77b946fd306a9051aad0f4b5e32045a03fa",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+          "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/before-empty-desktop.json"
+    },
+    {
+      "name": "failure-desktop",
+      "side": "before",
+      "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "sourceTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:02:53.706Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/preferences",
+      "historyRequests": 0,
+      "actionRequests": 1,
+      "observation": {
+        "confirmations": 0,
+        "draft": "08:30",
+        "globalUnread": 20,
+        "readFailed503": true
+      },
+      "image": "before-failure-desktop.png",
+      "imageSha256": "56b02db79ccadd04f14996ac2eb6d5d6c52103b34d6eeb92f0415dad55a2c19b",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+          "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/before-failure-desktop.json"
+    },
+    {
+      "name": "legacy-desktop",
+      "side": "before",
+      "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "sourceTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:02:51.409Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/notifications",
+      "historyRequests": 1,
+      "actionRequests": 0,
+      "observation": {
+        "expectedRoute": "/notifications"
+      },
+      "image": "before-legacy-desktop.png",
+      "imageSha256": "2bde90faebf998fd6cf66cdbdd18018311eef7e6aff42141060661f8290760ee",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+          "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/before-legacy-desktop.json"
+    },
+    {
+      "name": "pending-desktop",
+      "side": "before",
+      "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "sourceTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:02:53.523Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/preferences",
+      "historyRequests": 0,
+      "actionRequests": 1,
+      "observation": {
+        "confirmations": 0,
+        "draft": "08:30",
+        "closeDisabled": false,
+        "sequence": "Same edited draft and reminder action; accept confirmation if the source presents it. Base confirms only after successful read; final confirms before read."
+      },
+      "image": "before-pending-desktop.png",
+      "imageSha256": "99ac318849d8e2db11908433e9ca40fb56c13fa66f424e3bf7e9990f68fa0dfd",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+          "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/before-pending-desktop.json"
+    },
+    {
+      "name": "populated-phone",
+      "side": "before",
+      "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "sourceTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:02:50.502Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/settings",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "activeCards": 5,
+        "globalUnread": 20,
+        "expectedFooter": true
+      },
+      "image": "before-populated-phone.png",
+      "imageSha256": "778d8f5f4c97c793d22ef4b6738d39b126b178dd27524c902796c5d5fb0701b3",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+          "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/before-populated-phone.json"
+    },
+    {
+      "name": "preferences-phone",
+      "side": "before",
+      "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+      "sourceTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+      "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-05T22:02:52.463Z",
+      "browser": "154.0.8037.95",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/preferences",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "journey": "Settings > Profile & preferences > Preferences; reminder controls retained"
+      },
+      "image": "before-preferences-phone.png",
+      "imageSha256": "b37c832e9f213f7978e08ee2fe789de9ef4c6f177e521fa2bdc5dca8e1f5376f",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+          "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+        }
+      ],
+      "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "record": "captures/before-preferences-phone.json"
+    }
+  ],
+  "exportInventories": {
+    "before": "before-export-inventory.json",
+    "after": "after-export-inventory.json"
+  },
+  "artifacts": [
+    {
+      "path": "current-lint.log",
+      "bytes": 2690,
+      "sha256": "3e2ea03ad5710430b9ed6f5d20f0628793d227c4d8e4f4292332368d11a54588",
+      "gitBlob": "433b732c50c67ae6589f66f742c753c89396e6d8"
+    },
+    {
+      "path": "current-build.log",
+      "bytes": 4867,
+      "sha256": "d5d94755bd2f2009cb0f21599fe3e494188bf613986602a1dd4942c92bd9ef22",
+      "gitBlob": "21c45994db40cfaf1bd5b166f502c003d0faaed1"
+    },
+    {
+      "path": "baseline-build.log",
+      "bytes": 4867,
+      "sha256": "9bba25f00881d16342a9c3d4b41466d0c8750a7037c977d604d85a385a52aa98",
+      "gitBlob": "589c3689d4e5633c020b3e2705d71ba022ae5754"
+    },
+    {
+      "path": "current-mobile.log",
+      "bytes": 9406,
+      "sha256": "39afa246864d0774c46c8243b10c85801751975f5e83d68d4d18dd5ce15f5e1f",
+      "gitBlob": "a83f9f247a5793caa364f3a7e87fa32533c75bd6"
+    },
+    {
+      "path": "current-browser.log",
+      "bytes": 27095,
+      "sha256": "3dcd791d66de620ec66ac9c67f2e9bc0c22dcb25e27ce332310391beefbbf547",
+      "gitBlob": "00ce19c8dc85d8b879fda3db2ade9f3df70f34da"
+    },
+    {
+      "path": "current-dead-code.log",
+      "bytes": 848,
+      "sha256": "d93d5e07b3878223921c13fa078fb3bdb89b17a63bb378ad19eed34f10c92d63",
+      "gitBlob": "e192e4dbfacfd340d2392f3f39abd4eca8daca1e"
+    },
+    {
+      "path": "current-release-contract.log",
+      "bytes": 1593,
+      "sha256": "028c77968f403ad8628337c6ae44ef7d2bf5ffd2b317194a770f7e286ddcc6bd",
+      "gitBlob": "12f607d10867b3d251ba15d447e9472000774155"
+    },
+    {
+      "path": "current-rail.log",
+      "bytes": 1792,
+      "sha256": "d3743e4b2600c1dd8662e3f723c8f9f2f6c31c67ba958cea849bc3ff2927b323",
+      "gitBlob": "53f6c7caf2377de6c368fd79e3277b636399437f"
+    },
+    {
+      "path": "current-settings-phone.log",
+      "bytes": 570,
+      "sha256": "eb27f78500927e29cb973eb4ba08fc6c9584265ad70d914122c70a6d56220345",
+      "gitBlob": "0e51f23ee3d8ab781cbcd945119fb518aaf2beab"
+    },
+    {
+      "path": "current-ux.log",
+      "bytes": 57147,
+      "sha256": "c6b018cc2649d4e232b48f8deb52a07424bcc2607019a41ae10132b765e771f6",
+      "gitBlob": "d34ccb9d00eaa974e211ac3e7616177c50d0e954"
+    },
+    {
+      "path": "baseline-capture.log",
+      "bytes": 587,
+      "sha256": "78b0fee5113e8359f3895e832ac0b60895c60680efea14ed524452abad49b9dd",
+      "gitBlob": "08cb183be56d4f283a3b8b7d77fc00af51eb84c5"
+    },
+    {
+      "path": "current-capture.log",
+      "bytes": 585,
+      "sha256": "06210a143dfb59b86a62f587dc5c28615772b39ec01586c18e7423e5099ad486",
+      "gitBlob": "d4e9ced54ca26c751ca52bc10b7ea696954462e8"
+    },
+    {
+      "path": "before-export-inventory.json",
+      "bytes": 29436,
+      "sha256": "145ab5aa50d802c035ee807d9d278feeb17c3c8da1b9df6a1d2d403d86cbeb21",
+      "gitBlob": "41f2bfcc733d5edbce4e9335318229127d61f76c"
+    },
+    {
+      "path": "after-export-inventory.json",
+      "bytes": 29436,
+      "sha256": "522e1e9be1cdc5e9b9a3237dbd1d81e7a953aecab41920e6c598b827d7448826",
+      "gitBlob": "4367fc7a63cdfd23960e594e31a8b7feae99e456"
+    },
+    {
+      "path": "captures/after-empty-desktop.json",
+      "bytes": 1424,
+      "sha256": "ff1d7ce55688dea182f29565092e6c16dd8cff9af5e3a6ce5baeceff29d8f888",
+      "gitBlob": "8d36b8d9d149b6e244faeda34d431dfeb06e89df"
+    },
+    {
+      "path": "captures/after-empty-desktop.png",
+      "bytes": 46767,
+      "sha256": "41ccb5b585001f4f23efc7dc7f8c65bda888c8a647202bc5632c6c5563071b14",
+      "gitBlob": "b971fb7535bea6b52dffc7e211189b6247d5b0a0"
+    },
+    {
+      "path": "captures/after-failure-desktop.json",
+      "bytes": 1470,
+      "sha256": "ff96d66e441f30120708a5c9c8ef5298f6ba8a0e66ce3d0b1bb18d6950467565",
+      "gitBlob": "5286847f1fe2b33aa64eaa7b9688a4ad65244611"
+    },
+    {
+      "path": "captures/after-failure-desktop.png",
+      "bytes": 93099,
+      "sha256": "2c0fc9538348db141da7efe3ec3fa41b4c4e8ced5b4f823612a48beb08f493f3",
+      "gitBlob": "d7d3a14099814fa3e5516f7a6b7ce012d2bfc2a0"
+    },
+    {
+      "path": "captures/after-legacy-desktop.json",
+      "bytes": 1396,
+      "sha256": "414fd7da4d99fa9b57839019bb562af84e78ba76978282ba3f5c988bf6178509",
+      "gitBlob": "5281a05751c1de0f3b12ce5f1819379ad6bc3d0f"
+    },
+    {
+      "path": "captures/after-legacy-desktop.png",
+      "bytes": 47952,
+      "sha256": "cac9d1633507575e047ed09688b515caada9908d954729b9c9898624419a974e",
+      "gitBlob": "37bf0ed6e1b05bf38c5eb3816594a3b593279c90"
+    },
+    {
+      "path": "captures/after-pending-desktop.json",
+      "bytes": 1621,
+      "sha256": "b29c6012a52866ec2bae66b0d14982aec3e1bb6e3b9bd139f7295e7e544d5692",
+      "gitBlob": "588a1e19e814e893845f495bdac7c00b419155dd"
+    },
+    {
+      "path": "captures/after-pending-desktop.png",
+      "bytes": 90673,
+      "sha256": "4798e871de256bcb1bdecfa382733c8fdc357d53bd76feb2436f7fb3e4291f56",
+      "gitBlob": "81118550aab94ebbecc83e9f47cabcf8e9d9e923"
+    },
+    {
+      "path": "captures/after-populated-phone.json",
+      "bytes": 1442,
+      "sha256": "66d7b656f54a50287eafc69351790d021cfec2c92df41ad05ed6485b4c6e296e",
+      "gitBlob": "dd592ae1da872c3f5fcacaaaf3d74ec2f3ae3ebb"
+    },
+    {
+      "path": "captures/after-populated-phone.png",
+      "bytes": 41131,
+      "sha256": "778d8f5f4c97c793d22ef4b6738d39b126b178dd27524c902796c5d5fb0701b3",
+      "gitBlob": "f0370aeeddc3a2cc25c242d17d8c982df15d2513"
+    },
+    {
+      "path": "captures/after-preferences-phone.json",
+      "bytes": 1467,
+      "sha256": "91e7a09804fa295172612fc3fc3c62e5c1ed78f20221a1dac56acf4d5f1d2d92",
+      "gitBlob": "afaf1895320a9c3a3874cbf1985584771b6e6046"
+    },
+    {
+      "path": "captures/after-preferences-phone.png",
+      "bytes": 37207,
+      "sha256": "b37c832e9f213f7978e08ee2fe789de9ef4c6f177e521fa2bdc5dca8e1f5376f",
+      "gitBlob": "988512e0a664934e269c30ee6fed37e03421d653"
+    },
+    {
+      "path": "captures/before-empty-desktop.json",
+      "bytes": 1425,
+      "sha256": "ad2c5f3c6c4401d7f3a82342dc4e395041a005f62f3ef2183fe4b8c7a3ed7ab5",
+      "gitBlob": "ec0105ec4ad2868e871098b6bea06607dd721fda"
+    },
+    {
+      "path": "captures/before-empty-desktop.png",
+      "bytes": 49579,
+      "sha256": "acfaef4a8532a2405aabe8d55cfae77b946fd306a9051aad0f4b5e32045a03fa",
+      "gitBlob": "3b2cd8a87cfa743020e6c0249496d7a36a7be91d"
+    },
+    {
+      "path": "captures/before-failure-desktop.json",
+      "bytes": 1472,
+      "sha256": "345d76a4ad08ca13dd1527c7247ea38d518cd753ce47e56ec57323eac917f725",
+      "gitBlob": "bfe7b0888987134503d994b027492acf2d1d63ce"
+    },
+    {
+      "path": "captures/before-failure-desktop.png",
+      "bytes": 95970,
+      "sha256": "56b02db79ccadd04f14996ac2eb6d5d6c52103b34d6eeb92f0415dad55a2c19b",
+      "gitBlob": "bc25e5051709973047847bd20ce60145db62911a"
+    },
+    {
+      "path": "captures/before-legacy-desktop.json",
+      "bytes": 1414,
+      "sha256": "071b9752a664e0e1e6e9f721939444f11ced03dd4175aa8d6aa94d2b7fa62b73",
+      "gitBlob": "5a48f0636e2302521fb76f13b77d844ed3914201"
+    },
+    {
+      "path": "captures/before-legacy-desktop.png",
+      "bytes": 56155,
+      "sha256": "2bde90faebf998fd6cf66cdbdd18018311eef7e6aff42141060661f8290760ee",
+      "gitBlob": "f86e623cddbb56348f8f515e14ebe0ca9b143b82"
+    },
+    {
+      "path": "captures/before-pending-desktop.json",
+      "bytes": 1624,
+      "sha256": "7d3c9d48e2d4425d8ac5b4922bfc965ceeb0e0f2cda2fb67e3982fb5254328e2",
+      "gitBlob": "f0d14ff970e0e776e0411c4f8917b137802e9802"
+    },
+    {
+      "path": "captures/before-pending-desktop.png",
+      "bytes": 92526,
+      "sha256": "99ac318849d8e2db11908433e9ca40fb56c13fa66f424e3bf7e9990f68fa0dfd",
+      "gitBlob": "82365efbccad4ec86bd9b3028f28e5aa8e1a1814"
+    },
+    {
+      "path": "captures/before-populated-phone.json",
+      "bytes": 1443,
+      "sha256": "81b6f859951eae9626a9f3bfb213e82bc002a5c33eecef69ec1e8b5b6874cd2f",
+      "gitBlob": "5bfcb911841d76c23cbeb0706e044ab87ef89a22"
+    },
+    {
+      "path": "captures/before-populated-phone.png",
+      "bytes": 41131,
+      "sha256": "778d8f5f4c97c793d22ef4b6738d39b126b178dd27524c902796c5d5fb0701b3",
+      "gitBlob": "f0370aeeddc3a2cc25c242d17d8c982df15d2513"
+    },
+    {
+      "path": "captures/before-preferences-phone.json",
+      "bytes": 1469,
+      "sha256": "037add9ffba9f60e9d6b7a9c700c7786ab71b885e8c20ac875bef3da95a60ef8",
+      "gitBlob": "08abac2d49e41aa2a04d8d7605899ced68d02101"
+    },
+    {
+      "path": "captures/before-preferences-phone.png",
+      "bytes": 37207,
+      "sha256": "b37c832e9f213f7978e08ee2fe789de9ef4c6f177e521fa2bdc5dca8e1f5376f",
+      "gitBlob": "988512e0a664934e269c30ee6fed37e03421d653"
+    },
+    {
+      "path": "capture.spec.ts",
+      "bytes": 7782,
+      "sha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+      "gitBlob": "bc17a2b1cbb93fa07874883f21801ed443ea2de1"
+    },
+    {
+      "path": "capture.config.cjs",
+      "bytes": 445,
+      "sha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331",
+      "gitBlob": "0abaca8cc41ca43fe42b881cab02c040c1c0e462"
+    },
+    {
+      "path": "local-scope-inventory.json",
+      "bytes": 10718,
+      "sha256": "d61c3043933e23e857cfcefbf1b97eef487a8be53a30451eb0370814735ba8a9",
+      "gitBlob": "db5e7c6220ccf8d1b18957c3a5163be6168691cc"
+    },
+    {
+      "path": "complete-merge.diff",
+      "bytes": 126686,
+      "sha256": "d4f8c47d68a69b94fd23562d205dddb7f054218b62a741adf8717575193c3e43",
+      "gitBlob": "5f30d6280c38cd63b7fc0be3f8b687369e93bc4f"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4415,
+      "sha256": "6d6a0f4865fa8d5c3989facb86f5453a867786724202c77ab9901ed88ecad12a",
+      "gitBlob": "2504b681465ff17c2ee16366e0e204c28f52ab75"
+    }
+  ]
+}

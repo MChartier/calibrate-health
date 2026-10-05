@@ -1,0 +1,2722 @@
+diff --git a/docs/expo-web.md b/docs/expo-web.md
+index 89c15531..019ce3d9 100644
+--- a/docs/expo-web.md
++++ b/docs/expo-web.md
+@@ -16,6 +16,11 @@ the Android client; platform-specific behavior belongs behind `.web` and `.nativ
+ Native-only features such as Health Connect and Wear transport must not evaluate native modules in the browser bundle.
+ Browser routes should either use the web implementation or render intentional guidance.
+ 
++The app-bar bell opens up to five active reminders with the global unread count. Reminder schedules and delivery
++permission/recovery controls remain in Settings > Profile & preferences > Preferences. The retired `/notifications`
++history address replaces itself with `/today` after the normal account gates. This client simplification does not
++delete stored reminder records or remove history/read-all APIs used by compatible older clients.
++
+ ## Development and validation
+ 
+ - `npm run dev`: start the worktree-scoped backend, Expo web, and Postgres Compose services.
+diff --git a/e2e/expo-web/launch-17-notification-center.spec.ts b/e2e/expo-web/launch-17-notification-center.spec.ts
+index f0fcd329..4ae3678c 100644
+--- a/e2e/expo-web/launch-17-notification-center.spec.ts
++++ b/e2e/expo-web/launch-17-notification-center.spec.ts
+@@ -1,420 +1,375 @@
+-import { mkdir } from 'node:fs/promises';
+-import path from 'node:path';
+-import type { Page, Route, TestInfo } from '@playwright/test';
+ import { expect, expectApiFailure, FROZEN_LOCAL_DATE, hideTransientPwaNotices, test } from './fixtures';
++import {
++  emitNotificationUpdate,
++  installDeniedBrowserPermission,
++  installNotificationApi,
++  installRealtimeHarness,
++} from './notification-reminders.fixture';
++
++test('empty reminders remain accessible from Today, Progress and Settings without an archive', async ({ page, ux }) => {
++  await ux.install('populated');
++  const fixture = await installNotificationApi(page, true);
++  for (const route of ['/today', '/progress', '/settings']) {
++    await page.goto(route);
++    await hideTransientPwaNotices(page);
++    const bell = page.getByTestId('notifications-button');
++    await bell.focus();
++    await bell.press('Enter');
++    const panel = page.getByRole('dialog', { name: 'Notifications', exact: true });
++    await expect(panel.getByText('All caught up', { exact: true })).toBeVisible();
++    await expect(panel.getByTestId('view-all-notifications')).toHaveCount(0);
++    await expect(panel.getByRole('button')).toHaveCount(1);
++    await expect(panel.getByRole('button', { name: 'Close notifications' })).toBeFocused();
++    await page.keyboard.press('Tab');
++    await expect(panel.getByRole('button', { name: 'Close notifications' })).toBeFocused();
++    await page.keyboard.press('Escape');
++    await expect(panel).toHaveCount(0);
++    await expect(bell).toBeFocused();
++    await bell.click();
++    await page.getByTestId('notifications-drawer-backdrop').click({ position: { x: 1, y: 1 } });
++    await expect(panel).toHaveCount(0);
++    await expect(page).toHaveURL((url) => url.pathname === route);
++  }
++  expect(fixture.listViews.every((view) => view === 'active')).toBe(true);
++  expect(fixture.readAllRequests).toBe(0);
++});
+ 
+-const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-17');
+-const REALTIME_EVENT_NAME = 'notification-update';
+-
+-
+-type NotificationItem = {
+-  id: number;
+-  type: 'LOG_WEIGHT_REMINDER' | 'LOG_FOOD_REMINDER' | 'GENERIC';
+-  local_date: string;
+-  title: string;
+-  body: string;
+-  action_url: string;
+-  read_at: string | null;
+-  dismissed_at: string | null;
+-  resolved_at: string | null;
+-  created_at: string;
+-  updated_at: string;
+-};
+-
+-type NotificationFixture = {
+-  failHistoryRequests: number;
+-  history: NotificationItem[];
+-  addIncoming(): NotificationItem;
+-};
+-
+-function notification(id: number, overrides: Partial<NotificationItem> = {}): NotificationItem {
+-  const minute = String(id % 60).padStart(2, '0');
+-  const isWeight = id % 2 === 1;
+-  return {
+-    id,
+-    type: isWeight ? 'LOG_WEIGHT_REMINDER' : 'LOG_FOOD_REMINDER',
+-    local_date: FROZEN_LOCAL_DATE,
+-    title: isWeight ? `Weight reminder ${id}` : `Food reminder ${id}`,
+-    body: isWeight ? 'Keep your weight trend current.' : 'Finish today\'s food log.',
+-    action_url: isWeight ? '/log?quickAdd=weight' : '/log?quickAdd=food',
+-    read_at: null,
+-    dismissed_at: null,
+-    resolved_at: null,
+-    created_at: `2026-07-21T18:${minute}:00.000Z`,
+-    updated_at: `2026-07-21T18:${minute}:00.000Z`,
+-    ...overrides,
+-  };
+-}
+-
+-function populatedHistory(): NotificationItem[] {
+-  const history = Array.from({ length: 23 }, (_, index) => notification(123 - index));
+-  history[2] = notification(121, { read_at: '2026-07-21T18:45:00.000Z' });
+-  history[3] = notification(120, {
+-    read_at: '2026-07-21T18:44:00.000Z',
+-    dismissed_at: '2026-07-21T18:44:00.000Z',
+-  });
+-  history[4] = notification(119, { resolved_at: '2026-07-21T18:43:00.000Z' });
+-  return history;
+-}
+-
+-function fulfillJson(route: Route, body: unknown, status = 200) {
+-  return route.fulfill({
+-    status,
+-    contentType: 'application/json',
+-    headers: status >= 400 ? { 'x-request-id': 'fixture-notification-history' } : undefined,
+-    body: JSON.stringify(body),
+-  });
+-}
+-
+-function activeNotifications(history: NotificationItem[]) {
+-  return history.filter((item) => !item.read_at && !item.dismissed_at && !item.resolved_at);
+-}
+-
+-async function installNotificationApi(page: Page, empty = false): Promise<NotificationFixture> {
+-  const fixture: NotificationFixture = {
+-    failHistoryRequests: 0,
+-    history: empty ? [] : populatedHistory(),
+-    addIncoming() {
+-      const incoming = notification(124, {
+-        title: 'A new reminder arrived',
+-        body: 'This row arrived while older history stayed paginated.',
+-      });
+-      this.history = [incoming, ...this.history.filter(({ id }) => id !== incoming.id)];
+-      return incoming;
+-    },
+-  };
+-
+-  await page.route('**/api/v1/notifications/in-app**', async (route) => {
+-    const request = route.request();
+-    const url = new URL(request.url());
+-    const pathname = url.pathname;
+-    const method = request.method();
+-
+-    if (pathname === '/api/v1/notifications/in-app/read-all' && method === 'PATCH') {
+-      let updatedCount = 0;
+-      fixture.history = fixture.history.map((item) => {
+-        if (item.read_at) return item;
+-        updatedCount += 1;
+-        return { ...item, read_at: '2026-07-21T19:05:00.000Z' };
+-      });
+-      return fulfillJson(route, { ok: true, updated_count: updatedCount });
+-    }
+-
+-    const itemMatch = pathname.match(/^\/api\/v1\/notifications\/in-app\/(\d+)\/(read|dismiss)$/);
+-    if (itemMatch && method === 'PATCH') {
+-      const id = Number(itemMatch[1]);
+-      const operation = itemMatch[2];
+-      fixture.history = fixture.history.map((item) => {
+-        if (item.id !== id) return item;
+-        if (operation === 'dismiss' && !item.resolved_at) {
+-          return {
+-            ...item,
+-            read_at: item.read_at ?? '2026-07-21T19:04:00.000Z',
+-            dismissed_at: item.dismissed_at ?? '2026-07-21T19:04:00.000Z',
+-          };
+-        }
+-        if (operation === 'read' && !item.dismissed_at && !item.resolved_at) {
+-          return { ...item, read_at: item.read_at ?? '2026-07-21T19:04:00.000Z' };
+-        }
+-        return item;
+-      });
+-      return fulfillJson(route, { ok: true });
+-    }
+-
+-    if (pathname !== '/api/v1/notifications/in-app' || method !== 'GET') return route.fallback();
+-
+-    const view = url.searchParams.get('view');
+-    const active = activeNotifications(fixture.history);
+-    if (view === 'active') {
+-      return fulfillJson(route, {
+-        notifications: active.slice(0, 5),
+-        unread_count: active.length,
+-        next_cursor: active.length > 5 ? `after-${active[4].id}` : null,
+-      });
+-    }
+-
+-    if (view === 'history') {
+-      if (fixture.failHistoryRequests > 0) {
+-        fixture.failHistoryRequests -= 1;
+-        return fulfillJson(route, {
+-          message: 'Notification history is temporarily unavailable.',
+-          code: 'NOTIFICATION_HISTORY_UNAVAILABLE',
+-          retryable: true,
+-          request_id: 'fixture-notification-history',
+-        }, 503);
+-      }
+-      const cursor = url.searchParams.get('cursor');
+-      const cursorId = cursor?.startsWith('after-') ? Number(cursor.slice('after-'.length)) : null;
+-      const eligible = cursorId ? fixture.history.filter(({ id }) => id < cursorId) : fixture.history;
+-      const pageItems = eligible.slice(0, 20);
+-      return fulfillJson(route, {
+-        notifications: pageItems,
+-        unread_count: active.length,
+-        next_cursor: eligible.length > pageItems.length ? `after-${pageItems.at(-1)!.id}` : null,
+-      });
+-    }
+-
+-    return route.fallback();
+-  });
+-
+-  return fixture;
+-}
+-
+-async function installRealtimeHarness(page: Page) {
+-  await page.addInitScript((eventName) => {
+-    type Listener = (event: { data: string }) => void;
+-    const sources: Array<{ listeners: Map<string, Set<Listener>>; closed: boolean }> = [];
+-
+-    class FixtureEventSource {
+-      listeners = new Map<string, Set<Listener>>();
+-      closed = false;
+-      onerror: ((event: Event) => unknown) | null = null;
+-
+-      constructor(_url: string, _options?: EventSourceInit) {
+-        sources.push(this);
+-      }
+-
+-      addEventListener(name: string, listener: Listener) {
+-        const listeners = this.listeners.get(name) ?? new Set<Listener>();
+-        listeners.add(listener);
+-        this.listeners.set(name, listeners);
+-      }
+-
+-      close() {
+-        this.closed = true;
+-      }
+-    }
+-
+-    Object.defineProperty(window, 'EventSource', { configurable: true, value: FixtureEventSource });
+-    Object.defineProperty(window, '__CALIBRATE_NOTIFICATION_E2E__', {
+-      configurable: true,
+-      value: {
+-        emit(payload: unknown) {
+-          const event = { data: JSON.stringify(payload) };
+-          for (const source of sources) {
+-            if (source.closed) continue;
+-            for (const listener of source.listeners.get(eventName) ?? []) listener(event);
+-          }
+-        },
+-      },
+-    });
+-  }, REALTIME_EVENT_NAME);
+-}
+-
+-async function emitNotificationUpdate(page: Page) {
+-  await page.evaluate(() => {
+-    const harness = (window as unknown as {
+-      __CALIBRATE_NOTIFICATION_E2E__: { emit(payload: unknown): void };
+-    }).__CALIBRATE_NOTIFICATION_E2E__;
+-    harness.emit({ reason: 'created', updated_at: '2026-07-21T19:05:00.000Z' });
+-  });
+-}
+-
+-async function installDeniedBrowserPermission(page: Page) {
+-  await page.addInitScript(() => {
+-    let permission: NotificationPermission = 'default';
+-    const NativeNotification = window.Notification ?? class FixtureNotification {};
+-    const fixtureNotification = new Proxy(NativeNotification, {
+-      get(target, property, receiver) {
+-        if (property === 'permission') return permission;
+-        if (property === 'requestPermission') {
+-          return async () => {
+-            permission = 'denied';
+-            return permission;
+-          };
+-        }
+-        return Reflect.get(target, property, receiver);
+-      },
+-    });
+-    Object.defineProperty(window, 'Notification', { configurable: true, value: fixtureNotification });
+-    Object.defineProperty(window, 'PushManager', {
+-      configurable: true,
+-      value: class FixturePushManager {},
+-    });
+-    if (!('serviceWorker' in navigator)) {
+-      Object.defineProperty(navigator, 'serviceWorker', {
+-        configurable: true,
+-        value: {
+-          addEventListener() {},
+-          removeEventListener() {},
+-          getRegistration: async () => null,
+-          getRegistrations: async () => [],
+-        },
+-      });
+-    }
+-  });
+-
+-  await page.route('**/api/v1/client-config', (route) => fulfillJson(route, {
+-    api_version: 1,
+-    server_version: '1.0.0',
+-    capabilities: {
+-      self_hosted_server_url: true,
+-      native_push: false,
+-      web_push: true,
+-      health_connect_activity: true,
+-      wear_os_ready: true,
+-    },
+-  }));
+-}
++test('five reminders retain global count, new-arrival refresh, dismissal and local-date actions', async ({ page, ux }) => {
++  await ux.install('populated');
++  await installRealtimeHarness(page);
++  const fixture = await installNotificationApi(page);
++  await page.goto('/today');
++  await hideTransientPwaNotices(page);
++  await expect(page.getByTestId('notifications-badge')).toHaveText('20');
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
++  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++  for (const id of [121, 120, 119]) await expect(panel.getByTestId(`notification-card-${id}`)).toHaveCount(0);
++  await expect(panel.getByTestId('view-all-notifications')).toHaveCount(0);
++  await panel.getByTestId('notification-dismiss-123').click();
++  await expect(panel.getByTestId('notification-card-123')).toHaveCount(0);
++  await expect(panel.getByText('19 unread', { exact: true })).toBeVisible();
++  await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
++  const incoming = fixture.addIncoming();
++  incoming.local_date = '2026-07-20';
++  await emitNotificationUpdate(page);
++  await expect(panel.getByTestId('notification-card-124')).toContainText('A new reminder arrived');
++  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++  await panel.getByTestId('notification-open-124').click();
++  await expect(page).toHaveURL((url) => url.pathname === '/today' && url.searchParams.get('date') === '2026-07-20');
++  await expect(panel).toHaveCount(0);
++  await expect(page.getByRole('dialog', { name: 'Add food', exact: true }).last()).toBeVisible();
++  expect(fixture.listViews.every((view) => view === 'active')).toBe(true);
++  expect(fixture.readAllRequests).toBe(0);
++});
+ 
++test('weight reminder routing survives close/reopen and browser Back/Forward', async ({ page, ux }) => {
++  await ux.install('populated');
++  const fixture = await installNotificationApi(page);
++  await page.goto('/today');
++  await hideTransientPwaNotices(page);
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  await page.getByRole('button', { name: 'Close notifications', exact: true }).click();
++  await page.getByTestId('notifications-button').click();
++  await panel.getByTestId('notification-open-123').click();
++  await expect(page).toHaveURL((url) => url.pathname === '/weight' && url.searchParams.get('date') === FROZEN_LOCAL_DATE);
++  await expect(panel).toHaveCount(0);
++  await page.goBack();
++  await expect(page).toHaveURL((url) => url.pathname === '/today');
++  await page.goForward();
++  await expect(page).toHaveURL((url) => url.pathname === '/weight');
++  expect(fixture.listViews.every((view) => view === 'active')).toBe(true);
++  expect(fixture.readAllRequests).toBe(0);
++});
+ 
+-async function expectNoHorizontalOverflow(page: Page) {
+-  const widths = await page.evaluate(() => ({
+-    bodyWidth: document.body.scrollWidth,
+-    clientWidth: document.documentElement.clientWidth,
+-    scrollWidth: document.documentElement.scrollWidth,
+-  }));
+-  expect(widths.bodyWidth).toBeLessThanOrEqual(widths.clientWidth);
+-  expect(widths.scrollWidth).toBeLessThanOrEqual(widths.clientWidth);
+-}
++test('fetch failure never reassures falsely and Retry restores current reminders', async ({ page, ux }) => {
++  await ux.install('populated');
++  const fixture = await installNotificationApi(page);
++  fixture.failFetchRequests = 10;
++  expectApiFailure(page, { method: 'GET', pathname: '/api/v1/notifications/in-app', status: 503 });
++  await page.goto('/today');
++  await hideTransientPwaNotices(page);
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  await expect(panel.getByText("Can't load notifications", { exact: true })).toBeVisible();
++  await expect(panel.getByText('Unread count unavailable')).toBeVisible();
++  await expect(panel.getByText('All caught up')).toHaveCount(0);
++  await expect(panel.getByTestId('view-all-notifications')).toHaveCount(0);
++  fixture.failFetchRequests = 0;
++  await panel.getByRole('button', { name: 'Retry', exact: true }).click();
++  await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
++  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++});
+ 
+-async function captureEvidence(page: Page, testInfo: TestInfo, state: 'history' | 'drawer') {
+-  if (process.env.CALIBRATE_CAPTURE_EVIDENCE !== '1') return;
+-  const filename = state === 'history'
+-    ? 'notification-history-desktop-1024x1000.png'
+-    : 'notification-empty-drawer-phone-320x568.png';
+-  await page.evaluate(() => document.fonts.ready);
+-  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
++test('loading reminders exposes no archive or false empty state and settles honestly', async ({ page, ux }) => {
++  const controller = await ux.install('populated', { apiResources: [{
++    pathname: '/api/v1/notifications/in-app', state: 'loading',
++    content: { notifications: [], unread_count: 0 }, empty: { notifications: [], unread_count: 0 },
++  }] });
++  await page.goto('/today');
+   await hideTransientPwaNotices(page);
+-  await mkdir(EVIDENCE_DIR, { recursive: true });
+-  await page.screenshot({ path: path.join(EVIDENCE_DIR, filename), fullPage: false });
+-  const viewport = page.viewportSize();
+-  expect(viewport).toEqual(state === 'history'
+-    ? { width: 1_024, height: 1_000 }
+-    : { width: 320, height: 568 });
+-}
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  await expect(panel.getByText('Unread count unavailable')).toBeVisible();
++  await expect(panel.getByText('All caught up')).toHaveCount(0);
++  await expect(panel.getByTestId('view-all-notifications')).toHaveCount(0);
++  controller.releaseLoading();
++  await expect(panel.getByText('All caught up')).toBeVisible();
++  await expect(panel.getByText('0 unread', { exact: true })).toBeVisible();
++});
+ 
+-test('notification drawer and history preserve state, pagination, delivery, and routing truth', async (
+-  { page, ux },
+-  testInfo,
+-) => {
+-  const project = testInfo.project.name;
+-  if (project === 'desktop-chrome') {
+-    await page.setViewportSize({ width: 1_024, height: 1_000 });
+-  } else if (project === 'compact-phone-chrome') {
+-    await page.setViewportSize({ width: 320, height: 568 });
++test('the populated reminder panel is retained on Progress and Settings', async ({ page, ux }) => {
++  await ux.install('populated');
++  await installNotificationApi(page);
++  for (const route of ['/progress', '/settings']) {
++    await page.goto(route);
++    await hideTransientPwaNotices(page);
++    await page.getByTestId('notifications-button').click();
++    const panel = page.getByTestId('notifications-drawer-panel');
++    await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++    await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
++    await expect(panel.getByTestId('view-all-notifications')).toHaveCount(0);
++    await panel.getByRole('button', { name: 'Close notifications' }).click();
++    await expect(panel).toHaveCount(0);
++    await expect(page).toHaveURL((url) => url.pathname === route);
+   }
+-  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+-  const controller = await ux.install(project === 'android-phone-chrome' ? 'offline' : 'populated');
+-  await installRealtimeHarness(page);
+-  if (project === 'compact-phone-chrome') await installDeniedBrowserPermission(page);
+-  const fixture = await installNotificationApi(page, project === 'compact-phone-chrome');
++});
+ 
+-  if (project === 'tablet-chrome') {
+-    fixture.failHistoryRequests = 10;
+-    expectApiFailure(page, {
+-      method: 'GET',
+-      pathname: '/api/v1/notifications/in-app',
+-      status: 503,
+-    });
+-    await page.goto('/notifications');
+-    const error = page.getByTestId('async-state-error');
+-    await expect(error.getByText("Can't load notification history", { exact: true })).toBeVisible();
+-    await expect(page.getByTestId('notification-history-empty')).toHaveCount(0);
+-    fixture.failHistoryRequests = 0;
+-    await error.getByRole('button', { name: 'Retry', exact: true }).click();
+-    await expect(page.getByTestId('notification-history-list')).toBeVisible();
+-    await page.getByRole('button', { name: 'Back to Today', exact: true }).click();
+-    await expect(page).toHaveURL((url) => url.pathname === '/today');
+-    await expectNoHorizontalOverflow(page);
+-    return;
+-  }
++test('cached reminders survive offline and failed refresh before recovery', async ({ page, ux }) => {
++  const controller = await ux.install('offline');
++  await installRealtimeHarness(page);
++  const fixture = await installNotificationApi(page);
++  await page.goto('/today');
++  await hideTransientPwaNotices(page);
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
++  await controller.activateOffline();
++  await expect(panel.getByText('Offline - showing saved information', { exact: true })).toBeVisible();
++  await expect(panel.getByTestId('notification-card-123')).toBeVisible();
++  await expect(panel.getByTestId('view-all-notifications')).toHaveCount(0);
++  fixture.failFetchRequests = 10;
++  expectApiFailure(page, { method: 'GET', pathname: '/api/v1/notifications/in-app', status: 503 });
++  await page.context().setOffline(false);
++  await emitNotificationUpdate(page);
++  await expect(panel.getByText("Couldn't refresh notifications", { exact: true })).toBeVisible();
++  await expect(panel.getByTestId('notification-card-123')).toBeVisible();
++  fixture.failFetchRequests = 0;
++  await panel.getByRole('button', { name: 'Retry', exact: true }).click();
++  await expect(panel.getByText("Couldn't refresh notifications", { exact: true })).toHaveCount(0);
++  await panel.getByTestId('notification-open-123').click();
++  await expect(page).toHaveURL((url) => url.pathname === '/weight');
++});
+ 
+-  if (project === 'compact-phone-chrome') {
++for (const action of ['read', 'dismiss'] as const) {
++  test(`${action} failure preserves reminder/count, blocks repeated actions, and recovers`, async ({ page, ux }) => {
++    await ux.install('populated');
++    const fixture = await installNotificationApi(page);
++    fixture.holdActions = true;
++    fixture.failActions = 1;
++    expectApiFailure(page, { method: 'PATCH', pathname: `/api/v1/notifications/in-app/123/${action}`, status: 503 });
+     await page.goto('/today');
+-    expect(await page.evaluate(() => ({
+-      notification: 'Notification' in window,
+-      permission: 'Notification' in window ? window.Notification.permission : null,
+-      pushManager: 'PushManager' in window,
+-      serviceWorker: 'serviceWorker' in navigator,
+-    }))).toEqual({
+-      notification: true,
+-      permission: 'default',
+-      pushManager: true,
+-      serviceWorker: true,
+-    });
+     await hideTransientPwaNotices(page);
+     await page.getByTestId('notifications-button').click();
+-    const drawer = page.getByTestId('notifications-drawer-panel');
+-    await expect(drawer).toBeVisible();
+-    await expect(drawer.getByText('All caught up', { exact: true })).toBeVisible();
+-    await expect(drawer.getByTestId(/^notification-card-/)).toHaveCount(0);
+-    await expect(drawer.getByTestId('view-all-notifications')).toBeVisible();
+-    await expectNoHorizontalOverflow(page);
+-    await captureEvidence(page, testInfo, 'drawer');
+-
+-    await drawer.getByTestId('view-all-notifications').click();
+-    await expect(page).toHaveURL((url) => url.pathname === '/notifications');
+-    await expect(page.getByTestId('notifications-drawer-panel')).toHaveCount(0);
+-    await expect(page.getByTestId('notification-history-empty')).toContainText('No notification history yet');
+-    const delivery = page.getByTestId('notification-delivery-status');
+-    await expect(delivery).toContainText('Enable notifications in this browser');
+-    await page.getByTestId('notification-delivery-action').click();
+-    await expect(delivery).toContainText('Notifications are blocked for this site.');
+-    await expect(page.getByTestId('notification-delivery-action')).toContainText('Check notification access');
+-    await page.getByTestId('notification-preferences-cta').click();
+-    await expect(page).toHaveURL((url) => url.pathname === '/profile');
+-    await expect(page.getByTestId('settings-open-preferences')).toBeVisible();
+-    await expectNoHorizontalOverflow(page);
+-    return;
+-  }
+-
+-  if (project === 'android-phone-chrome') {
+-    await page.goto('/notifications');
+-    const history = page.getByTestId('notification-history');
+-    await expect(history.getByTestId('notification-history-list')).toBeVisible();
+-    await controller.activateOffline();
+-    await expect(history.getByText('Offline - showing saved information', { exact: true })).toBeVisible();
+-    await expect(history.getByTestId('notification-card-123')).toBeVisible();
+-    await page.context().setOffline(false);
+-    await history.getByTestId('notification-open-123').click();
+-    await expect(page).toHaveURL((url) => url.pathname === '/weight');
+-    await expectNoHorizontalOverflow(page);
+-    return;
+-  }
++    const panel = page.getByTestId('notifications-drawer-panel');
++    const button = panel.getByTestId(`notification-${action === 'read' ? 'open' : 'dismiss'}-123`);
++    await button.click();
++    await expect(button).toBeDisabled();
++    await button.dispatchEvent('click');
++    await expect.poll(() => fixture.actionRequests).toBe(1);
++    await expect.poll(() => fixture.releaseAction !== null).toBe(true);
++    fixture.releaseAction!();
++    await expect(panel.getByText('Unable to update that notification. Try again.')).toBeVisible();
++    await expect(panel.getByTestId('notification-card-123')).toBeVisible();
++    await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++    fixture.holdActions = false;
++    await button.click();
++    if (action === 'read') await expect(page).toHaveURL((url) => url.pathname === '/weight');
++    else await expect(panel.getByText('19 unread', { exact: true })).toBeVisible();
++    expect(fixture.actionRequests).toBe(2);
++  });
++}
+ 
+-  await page.goto('/today');
+-  await expect(page.getByTestId('notifications-badge')).toContainText('20');
++test('an offline reminder open settles without trapping the editor and can recover online', async ({ page, ux }) => {
++  await ux.install('populated');
++  const fixture = await installNotificationApi(page);
++  await page.goto('/preferences');
+   await hideTransientPwaNotices(page);
++  const time = page.getByTestId('settings-food-reminder-time');
++  await time.fill('08:30');
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  fixture.failActions = 1;
++  expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/notifications/in-app/123/read', status: 503 });
++  await page.context().setOffline(true);
++  await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false);
++  const confirmation = page.waitForEvent('dialog');
++  const click = panel.getByTestId('notification-open-123').click();
++  await (await confirmation).accept();
++  await click;
++  await expect(panel.getByText('Unable to update that notification. Try again.')).toBeVisible();
++  await expect(panel.getByRole('button', { name: 'Close notifications' })).toBeEnabled();
++  await expect(panel.getByTestId('notification-card-123')).toBeVisible();
++  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++  await panel.getByRole('button', { name: 'Close notifications' }).click();
++  await expect(time).toHaveValue('08:30');
++  await page.context().setOffline(false);
++  fixture.failActions = 0;
+   await page.getByTestId('notifications-button').click();
+-  const drawer = page.getByTestId('notifications-drawer-panel');
+-  await expect(drawer).toBeVisible();
+-  await expect(drawer.getByTestId(/^notification-card-/)).toHaveCount(5);
+-  await expect(drawer.getByText('20 unread', { exact: true })).toBeVisible();
+-  await drawer.getByTestId('view-all-notifications').click();
++  const retryConfirmation = page.waitForEvent('dialog');
++  const retryClick = panel.getByTestId('notification-open-123').click();
++  await (await retryConfirmation).accept();
++  await retryClick;
++  await expect(page).toHaveURL((url) => url.pathname === '/weight');
++});
+ 
+-  await expect(page).toHaveURL((url) => url.pathname === '/notifications');
+-  await expect(page.getByTestId('notifications-drawer-panel')).toHaveCount(0);
+-  const history = page.getByTestId('notification-history');
+-  const historyList = history.getByTestId('notification-history-list');
+-  await expect(historyList.getByTestId(/^notification-card-/)).toHaveCount(20);
+-  await expect(history.getByTestId('notification-card-119')).toContainText('Resolved');
+-  await expect(history.getByTestId('notification-dismiss-119')).toHaveCount(0);
+-  await expectNoHorizontalOverflow(page);
+-  await captureEvidence(page, testInfo, 'history');
++test('a successful reminder read navigates while its refresh is paused offline and recovers online', async ({ page, ux }) => {
++  await ux.install('populated');
++  const fixture = await installNotificationApi(page);
++  await page.goto('/preferences');
++  await hideTransientPwaNotices(page);
++  const time = page.getByTestId('settings-food-reminder-time');
++  const originalTime = await time.inputValue();
++  await time.fill('08:30');
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++  expectApiFailure(page, { method: 'GET', pathname: '/api/v1/notifications/in-app', status: 503 });
++  let refreshStarted = false;
++  await page.route('**/api/v1/notifications/in-app?*', async (route) => {
++    refreshStarted = true;
++    await page.context().setOffline(true);
++    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: 'Refresh unavailable.' }) });
++  }, { times: 1 });
++  const confirmation = page.waitForEvent('dialog');
++  const click = panel.getByTestId('notification-open-123').click();
++  await (await confirmation).accept();
++  await click;
++  await expect.poll(() => refreshStarted).toBe(true);
++  await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false);
++  await expect(page).toHaveURL((url) => url.pathname === '/weight');
++  await expect(panel).toHaveCount(0);
++  expect(fixture.actionRequests).toBe(1);
++  expect(fixture.history.find(({ id }) => id === 123)?.read_at).not.toBeNull();
++  await page.goBack();
++  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
++  await expect(time).toHaveValue(originalTime);
++  await page.context().setOffline(false);
++  await page.getByRole('button', { name: 'Open notifications, 19 unread', exact: true }).click();
++  await expect(panel.getByTestId(/^notification-card-/)).toHaveCount(5);
++  await expect(panel.getByTestId('notification-card-123')).toHaveCount(0);
++  await expect(panel.getByText('19 unread', { exact: true })).toBeVisible();
++  await panel.getByRole('button', { name: 'Close notifications' }).click();
++});
+ 
+-  fixture.addIncoming();
+-  await emitNotificationUpdate(page);
+-  await expect(history.getByTestId('notification-card-124')).toContainText('A new reminder arrived');
+-  await history.getByTestId('notification-history-load-more').click();
+-  await expect(historyList.getByTestId(/^notification-card-/)).toHaveCount(24);
+-  const renderedIds = await historyList.getByTestId(/^notification-card-/).evaluateAll((cards) =>
+-    cards.map((card) => card.getAttribute('data-testid')),
+-  );
+-  expect(new Set(renderedIds).size).toBe(renderedIds.length);
++test('a failed reminder read preserves the dirty Preferences draft and permits a guarded retry', async ({ page, ux }) => {
++  await ux.install('populated');
++  const fixture = await installNotificationApi(page);
++  await page.goto('/preferences');
++  await hideTransientPwaNotices(page);
++  const time = page.getByTestId('settings-food-reminder-time');
++  const originalTime = await time.inputValue();
++  await time.fill('08:30');
++  await page.getByTestId('notifications-button').click();
++  const panel = page.getByTestId('notifications-drawer-panel');
++  fixture.failActions = 1;
++  fixture.holdActions = true;
++  expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/notifications/in-app/123/read', status: 503 });
++  const confirmation = page.waitForEvent('dialog');
++  const click = panel.getByTestId('notification-open-123').click();
++  await (await confirmation).accept();
++  await click;
++  const open = panel.getByTestId('notification-open-123');
++  await expect(open).toBeDisabled();
++  await expect(panel.getByRole('button', { name: 'Close notifications' })).toBeDisabled();
++  await expect(panel.getByText('Opening reminder...', { exact: true })).toBeVisible();
++  await page.keyboard.press('Escape');
++  await page.getByTestId('notifications-drawer-backdrop').click({ position: { x: 1, y: 1 } });
++  await expect(panel).toBeVisible();
++  await page.keyboard.press('Tab');
++  await expect.poll(() => panel.evaluate((element) => element.contains(document.activeElement))).toBe(true);
++  await expect(time).toHaveValue('08:30');
++  await open.dispatchEvent('click');
++  await expect.poll(() => fixture.actionRequests).toBe(1);
++  await expect.poll(() => fixture.releaseAction !== null).toBe(true);
++  fixture.releaseAction!();
++  await expect(panel.getByText('Unable to update that notification. Try again.')).toBeVisible();
++  await expect(panel.getByTestId('notification-card-123')).toBeVisible();
++  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
++  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
++  await panel.getByRole('button', { name: 'Close notifications' }).click();
++  await expect(time).toHaveValue('08:30');
+ 
+-  await history.getByTestId('notification-mark-all-read').click();
+-  await expect(history.getByText('0 unread notifications', { exact: true })).toBeVisible();
+-  await expect(page.getByTestId('notifications-badge')).toHaveCount(0);
+-  await expect(history.getByTestId('notification-card-123')).toContainText('Read');
+-  await expect(history.getByTestId('notification-card-119')).toContainText('Resolved');
+-  await expect(history.getByTestId('notification-mark-all-read')).toBeDisabled();
++  await page.getByTestId('notifications-button').click();
++  const canceledConfirmation = page.waitForEvent('dialog');
++  const canceledClick = panel.getByTestId('notification-open-123').click();
++  await (await canceledConfirmation).dismiss();
++  await canceledClick;
++  expect(fixture.actionRequests).toBe(1);
++  fixture.holdActions = false;
++  const retryConfirmation = page.waitForEvent('dialog');
++  const retryClick = panel.getByTestId('notification-open-123').click();
++  await (await retryConfirmation).accept();
++  await retryClick;
++  await expect(page).toHaveURL((url) => url.pathname === '/weight');
++  expect(fixture.actionRequests).toBe(2);
++  await expect(page.getByRole('dialog', { name: 'Weight entry', exact: true })).toBeVisible();
++  await page.goBack();
++  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
++  await expect(time).toHaveValue(originalTime);
++  expect(fixture.readAllRequests).toBe(0);
++  expect(fixture.listViews.every((view) => view === 'active')).toBe(true);
++});
+ 
++test('Preferences retains browser permission recovery and guarded reminder navigation', async ({ page, ux }) => {
++  await ux.install('populated');
++  await installDeniedBrowserPermission(page);
++  const fixture = await installNotificationApi(page);
++  await page.goto('/settings');
++  await page.getByTestId('settings-open-profile').click();
++  await page.getByTestId('settings-open-preferences').click();
++  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
+   await hideTransientPwaNotices(page);
++  const delivery = page.getByTestId('settings-delivery-permission');
++  await expect(delivery).toContainText('Enable notifications in this browser');
++  await delivery.getByRole('button', { name: 'Enable push notifications' }).click();
++  await expect(delivery).toContainText('Notifications are blocked for this site.');
++  await delivery.getByRole('button', { name: 'Check again' }).click();
++  await page.getByTestId('settings-food-reminder-time').fill('08:30');
+   await page.getByTestId('notifications-button').click();
+-  await expect(page.getByTestId('notifications-drawer-panel').getByText('All caught up', { exact: true })).toBeVisible();
++  const confirmation = page.waitForEvent('dialog');
++  const canceledClick = page.getByTestId('notification-open-123').click();
++  const guard = await confirmation;
++  expect(guard.type()).toBe('confirm');
++  expect(guard.message()).toContain('Discard changes?');
++  await guard.dismiss();
++  await canceledClick;
++  await expect(page).toHaveURL((url) => url.pathname === '/preferences');
++  expect(fixture.actionRequests).toBe(0);
++  const panel = page.getByTestId('notifications-drawer-panel');
++  await expect(panel.getByTestId('notification-card-123')).toBeVisible();
++  await expect(panel.getByText('20 unread', { exact: true })).toBeVisible();
+   await page.getByRole('button', { name: 'Close notifications', exact: true }).click();
+-  await page.getByRole('button', { name: 'Go back', exact: true }).click();
+-  await expect(page).toHaveURL((url) => url.pathname === '/today');
+-  await expectNoHorizontalOverflow(page);
++  await expect(page.getByTestId('settings-food-reminder-time')).toHaveValue('08:30');
++  await page.getByTestId('notifications-button').click();
++  fixture.holdActions = true;
++  const acceptedConfirmation = page.waitForEvent('dialog');
++  const acceptedClick = panel.getByTestId('notification-open-123').click();
++  await (await acceptedConfirmation).accept();
++  await acceptedClick;
++  const openButton = panel.getByTestId('notification-open-123');
++  await expect(openButton).toBeDisabled();
++  await openButton.dispatchEvent('click');
++  await expect.poll(() => fixture.actionRequests).toBe(1);
++  await expect.poll(() => fixture.releaseAction !== null).toBe(true);
++  fixture.releaseAction!();
++  await expect(page).toHaveURL((url) => url.pathname === '/weight');
++  expect(fixture.actionRequests).toBe(1);
++  await expect(panel).toHaveCount(0);
++  await expect(page.getByRole('dialog', { name: 'Weight entry', exact: true })).toBeVisible();
++  await page.getByRole('button', { name: 'Close weight entry', exact: true }).click();
++  await expect(page.getByRole('button', { name: 'Open notifications, 19 unread', exact: true }).getByTestId('notifications-badge')).toHaveText('19');
++  expect(fixture.listViews.every((view) => view === 'active')).toBe(true);
+ });
+diff --git a/e2e/expo-web/launch-18-settings-trust-center.spec.ts b/e2e/expo-web/launch-18-settings-trust-center.spec.ts
+index 53c8d11b..eaec810c 100644
+--- a/e2e/expo-web/launch-18-settings-trust-center.spec.ts
++++ b/e2e/expo-web/launch-18-settings-trust-center.spec.ts
+@@ -1,7 +1,7 @@
+ import { mkdir } from 'node:fs/promises';
+ import path from 'node:path';
+ import type { Page, Route, TestInfo } from '@playwright/test';
+-import { expect, expectApiFailure, test } from './fixtures';
++import { expect, expectApiFailure, hideTransientPwaNotices as suppressTransientPwaNotices, test } from './fixtures';
+ 
+ const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-18');
+ const CURRENT_SESSION_ID = 'browser_11111111-1111-4111-8111-111111111111';
+@@ -468,6 +468,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
+ 
+   if (project === 'android-phone-chrome') {
+     await page.goto('/today');
++    await suppressTransientPwaNotices(page);
+     await page.getByRole('button', { name: 'Account & settings' }).click();
+     await expect(page).toHaveURL((url) => url.pathname === '/settings');
+     await page.getByTestId('settings-open-connections').click();
+diff --git a/e2e/expo-web/launch-24-data-state-matrix.ts b/e2e/expo-web/launch-24-data-state-matrix.ts
+index e4fe39ec..e75f18ec 100644
+--- a/e2e/expo-web/launch-24-data-state-matrix.ts
++++ b/e2e/expo-web/launch-24-data-state-matrix.ts
+@@ -151,20 +151,6 @@ const SAVED_FOOD = {
+   is_pinned: true,
+ };
+ 
+-const NOTIFICATION = {
+-  id: 91,
+-  type: 'LOG_WEIGHT_REMINDER',
+-  local_date: LOCAL_DATE,
+-  title: 'Matrix reminder',
+-  body: 'Keep your weight trend current.',
+-  action_url: '/weight',
+-  read_at: null,
+-  dismissed_at: null,
+-  resolved_at: null,
+-  created_at: '2026-07-21T18:45:00.000Z',
+-  updated_at: '2026-07-21T18:45:00.000Z',
+-};
+-
+ function foodDay(url: URL, status: 'OPEN' | 'INCOMPLETE') {
+   return {
+     date: url.searchParams.get('date') ?? LOCAL_DATE,
+@@ -432,20 +418,6 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
+     staleText: "Couldn't refresh saved foods",
+     terminalEmptyText: 'No saved foods yet. Create a food or recipe to reuse it when logging.',
+   }),
+-  routeCase('notifications', {
+-    resource: {
+-      pathname: '/api/v1/notifications/in-app',
+-      content: { notifications: [NOTIFICATION], unread_count: 1, next_cursor: null },
+-      empty: { notifications: [], unread_count: 0, next_cursor: null },
+-      matches: (url) => url.searchParams.get('view') === 'history',
+-    },
+-    loading: { kind: 'testId', value: 'notification-history-loading' },
+-    content: { kind: 'text', value: 'Matrix reminder' },
+-    empty: { kind: 'text', value: 'No notification history yet' },
+-    errorText: "Can't load notification history",
+-    staleText: "Couldn't refresh notification history",
+-    terminalEmptyText: 'No notification history yet',
+-  }),
+   routeCase('weight', {
+     resource: {
+       pathname: '/api/v1/metrics',
+diff --git a/e2e/expo-web/nested-route-stacks.spec.ts b/e2e/expo-web/nested-route-stacks.spec.ts
+index b287bdbf..3a72d754 100644
+--- a/e2e/expo-web/nested-route-stacks.spec.ts
++++ b/e2e/expo-web/nested-route-stacks.spec.ts
+@@ -5,6 +5,64 @@ import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtu
+ 
+ const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-07');
+ 
++test('legacy notifications bookmarks replace themselves with Today and cannot reopen history', async ({ page, ux }) => {
++  await ux.install('populated');
++  const historyRequests: string[] = [];
++  page.on('request', (request) => {
++    const url = new URL(request.url());
++    if (url.searchParams.get('view') === 'history' || url.pathname.endsWith('/notifications/in-app/read-all')) {
++      historyRequests.push(request.url());
++    }
++  });
++  for (const legacy of ['/notifications', '/notifications?cursor=old#history']) {
++    await page.goto('/progress');
++    await expect(page.locator('#route-focus-title')).toHaveText('Progress');
++    await page.goto(legacy);
++    await expect(page).toHaveURL((url) => url.pathname === '/today' && !url.search && !url.hash);
++    await expect(page).toHaveTitle('Today - Calibrate');
++    await expect(page.getByTestId('notification-history')).toHaveCount(0);
++    await page.reload();
++    await expect(page.getByTestId('notifications-button')).toBeVisible();
++    await expect(page).toHaveURL((url) => url.pathname === '/today');
++    for (let count = 0; count < 2; count += 1) {
++      await page.goBack();
++      await expect(page.getByTestId('notifications-button')).toBeVisible();
++      await expect(page.locator('#route-focus-title')).toHaveText('Progress');
++      await expect(page).toHaveURL((url) => url.pathname === '/progress');
++      await page.goForward();
++      await expect(page.getByTestId('notifications-button')).toBeVisible();
++      await expect(page.locator('#route-focus-title')).toHaveText('Today');
++      await expect(page).toHaveURL((url) => url.pathname === '/today');
++    }
++  }
++  expect(historyRequests).toEqual([]);
++});
++
++test('unknown notification subpaths retain not-found recovery', async ({ page, ux }) => {
++  await ux.install('populated');
++  expectApiFailure(page, { method: 'GET', pathname: '/notifications/obsolete', status: 404 });
++  await page.goto('/notifications/obsolete');
++  await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
++  await hideTransientPwaNotices(page);
++  await page.getByRole('button', { name: 'Go to Today', exact: true }).click();
++  await expect(page).toHaveURL((url) => url.pathname === '/today');
++});
++
++test('signed-in legal pages retain Settings navigation without the history shortcut', async ({ page, ux }) => {
++  await ux.install('populated');
++  for (const route of ['/privacy', '/terms']) {
++    await page.goto(route);
++    const header = page.getByTestId('legal-app-header');
++    await expect(header.getByRole('button', { name: 'Open notifications' })).toHaveCount(0);
++    await header.getByRole('button', { name: 'Account & settings', exact: true }).click();
++    await expect(page).toHaveURL((url) => url.pathname === '/settings');
++    await page.goBack();
++    await expect(page).toHaveURL((url) => url.pathname === route);
++    await header.getByRole('button', { name: 'Back to Settings', exact: true }).click();
++    await expect(page).toHaveURL((url) => url.pathname === '/settings');
++  }
++});
++
+ async function expectNoHorizontalOverflow(page: Page) {
+   const widths = await page.evaluate(() => ({
+     clientWidth: document.documentElement.clientWidth,
+diff --git a/e2e/expo-web/notification-legacy-gates.spec.ts b/e2e/expo-web/notification-legacy-gates.spec.ts
+new file mode 100644
+index 00000000..cff0b9b8
+--- /dev/null
++++ b/e2e/expo-web/notification-legacy-gates.spec.ts
+@@ -0,0 +1,45 @@
++import { expect, test } from './fixtures';
++
++test('legacy notifications preserves sign-in gating on direct entry and reload', async ({ page, ux }) => {
++  await ux.install('signed-out');
++  await page.goto('/notifications?cursor=stale#history');
++  await expect(page).toHaveURL((url) => url.pathname === '/login');
++  await page.reload();
++  await expect(page).toHaveURL((url) => url.pathname === '/login');
++  await expect(page.getByTestId('notifications-button')).toHaveCount(0);
++});
++
++for (const [state, destination] of [
++  ['email_verification_required', '/verify-email'],
++  ['legal_acceptance_required', '/legal-update'],
++] as const) {
++  test(`legacy notifications preserves the ${state} account gate`, async ({ page, ux }) => {
++    await ux.install('populated');
++    await page.route('**/auth/me', (route) => route.fulfill({
++      json: { user: {
++        id: 17, email: 'release@example.invalid', timezone: 'America/Los_Angeles', language: 'en',
++        weight_unit: 'KG', height_unit: 'CM', created_at: '2026-01-01T12:00:00.000Z',
++        account_access: { state, email_verified: state !== 'email_verification_required', legal_current: false },
++      } },
++    }));
++    await page.goto('/notifications?cursor=stale#history');
++    await expect(page).toHaveURL((url) => url.pathname === destination);
++    await page.reload();
++    await expect(page).toHaveURL((url) => url.pathname === destination);
++    await expect(page.getByTestId('notifications-button')).toHaveCount(0);
++  });
++}
++
++test('legacy notifications preserves incomplete-profile onboarding', async ({ page, ux }) => {
++  await ux.install('populated', { apiResources: [{
++    pathname: '/api/v1/user/profile', state: 'content', empty: null,
++    content: {
++      profile: { timezone: 'America/Los_Angeles', date_of_birth: null, sex: null, height_mm: null, activity_level: null },
++      latest_weight_grams: null, goal_daily_deficit: null,
++      calorieSummary: { missing: ['profile'], eligibility: { status: 'ineligible' }, planStatus: 'unavailable' },
++    },
++  }] });
++  await page.goto('/notifications');
++  await expect(page).toHaveURL((url) => url.pathname === '/onboarding');
++  await expect(page.getByTestId('notification-history')).toHaveCount(0);
++});
+diff --git a/e2e/expo-web/notification-reminders.fixture.ts b/e2e/expo-web/notification-reminders.fixture.ts
+new file mode 100644
+index 00000000..7befd570
+--- /dev/null
++++ b/e2e/expo-web/notification-reminders.fixture.ts
+@@ -0,0 +1,256 @@
++import type { Page, Route } from '@playwright/test';
++import { FROZEN_LOCAL_DATE } from './fixtures';
++
++const REALTIME_EVENT_NAME = 'notification-update';
++
++
++type NotificationItem = {
++  id: number;
++  type: 'LOG_WEIGHT_REMINDER' | 'LOG_FOOD_REMINDER' | 'GENERIC';
++  local_date: string;
++  title: string;
++  body: string;
++  action_url: string;
++  read_at: string | null;
++  dismissed_at: string | null;
++  resolved_at: string | null;
++  created_at: string;
++  updated_at: string;
++};
++
++type NotificationFixture = {
++  failFetchRequests: number;
++  failActions: number;
++  actionRequests: number;
++  holdActions: boolean;
++  releaseAction: (() => void) | null;
++  listViews: string[];
++  readAllRequests: number;
++  history: NotificationItem[];
++  addIncoming(): NotificationItem;
++};
++
++function notification(id: number, overrides: Partial<NotificationItem> = {}): NotificationItem {
++  const minute = String(id % 60).padStart(2, '0');
++  const isWeight = id % 2 === 1;
++  return {
++    id,
++    type: isWeight ? 'LOG_WEIGHT_REMINDER' : 'LOG_FOOD_REMINDER',
++    local_date: FROZEN_LOCAL_DATE,
++    title: isWeight ? `Weight reminder ${id}` : `Food reminder ${id}`,
++    body: isWeight ? 'Keep your weight trend current.' : 'Finish today\'s food log.',
++    action_url: isWeight ? '/log?quickAdd=weight' : '/log?quickAdd=food',
++    read_at: null,
++    dismissed_at: null,
++    resolved_at: null,
++    created_at: `2026-07-21T18:${minute}:00.000Z`,
++    updated_at: `2026-07-21T18:${minute}:00.000Z`,
++    ...overrides,
++  };
++}
++
++function populatedHistory(): NotificationItem[] {
++  const history = Array.from({ length: 23 }, (_, index) => notification(123 - index));
++  history[2] = notification(121, { read_at: '2026-07-21T18:45:00.000Z' });
++  history[3] = notification(120, {
++    read_at: '2026-07-21T18:44:00.000Z',
++    dismissed_at: '2026-07-21T18:44:00.000Z',
++  });
++  history[4] = notification(119, { resolved_at: '2026-07-21T18:43:00.000Z' });
++  return history;
++}
++
++function fulfillJson(route: Route, body: unknown, status = 200) {
++  return route.fulfill({
++    status,
++    contentType: 'application/json',
++    headers: status >= 400 ? { 'x-request-id': 'fixture-notification-history' } : undefined,
++    body: JSON.stringify(body),
++  });
++}
++
++function activeNotifications(history: NotificationItem[]) {
++  return history.filter((item) => !item.read_at && !item.dismissed_at && !item.resolved_at);
++}
++
++export async function installNotificationApi(page: Page, empty = false): Promise<NotificationFixture> {
++  const fixture: NotificationFixture = {
++    failFetchRequests: 0,
++    failActions: 0,
++    actionRequests: 0,
++    holdActions: false,
++    releaseAction: null,
++    listViews: [],
++    readAllRequests: 0,
++    history: empty ? [] : populatedHistory(),
++    addIncoming() {
++      const incoming = notification(124, {
++        title: 'A new reminder arrived',
++        body: 'A timely reminder arrived while the panel was open.',
++      });
++      this.history = [incoming, ...this.history.filter(({ id }) => id !== incoming.id)];
++      return incoming;
++    },
++  };
++
++  await page.route('**/api/v1/notifications/in-app**', async (route) => {
++    const request = route.request();
++    const url = new URL(request.url());
++    const pathname = url.pathname;
++    const method = request.method();
++
++    if (pathname === '/api/v1/notifications/in-app/read-all' && method === 'PATCH') {
++      fixture.readAllRequests += 1;
++      return fulfillJson(route, { message: 'The active reminder client must not mark all history read.' }, 400);
++    }
++
++    const itemMatch = pathname.match(/^\/api\/v1\/notifications\/in-app\/(\d+)\/(read|dismiss)$/);
++    if (itemMatch && method === 'PATCH') {
++      fixture.actionRequests += 1;
++      if (fixture.holdActions) await new Promise<void>((resolve) => { fixture.releaseAction = resolve; });
++      if (fixture.failActions > 0) {
++        fixture.failActions -= 1;
++        return fulfillJson(route, { message: 'Reminder update unavailable.', code: 'UNAVAILABLE', retryable: true }, 503);
++      }
++      const id = Number(itemMatch[1]);
++      const operation = itemMatch[2];
++      fixture.history = fixture.history.map((item) => {
++        if (item.id !== id) return item;
++        if (operation === 'dismiss' && !item.resolved_at) {
++          return {
++            ...item,
++            read_at: item.read_at ?? '2026-07-21T19:04:00.000Z',
++            dismissed_at: item.dismissed_at ?? '2026-07-21T19:04:00.000Z',
++          };
++        }
++        if (operation === 'read' && !item.dismissed_at && !item.resolved_at) {
++          return { ...item, read_at: item.read_at ?? '2026-07-21T19:04:00.000Z' };
++        }
++        return item;
++      });
++      return fulfillJson(route, { ok: true });
++    }
++
++    if (pathname !== '/api/v1/notifications/in-app' || method !== 'GET') return route.fallback();
++
++    const view = url.searchParams.get('view');
++    fixture.listViews.push(view ?? 'default');
++    if (fixture.failFetchRequests > 0) {
++      fixture.failFetchRequests -= 1;
++      return fulfillJson(route, { message: 'Reminders unavailable.', code: 'UNAVAILABLE', retryable: true }, 503);
++    }
++    const active = activeNotifications(fixture.history);
++    if (view === 'active') {
++      return fulfillJson(route, {
++        notifications: active.slice(0, 5),
++        unread_count: active.length,
++        next_cursor: active.length > 5 ? `after-${active[4].id}` : null,
++      });
++    }
++
++    if (view === 'history') {
++      return fulfillJson(route, { message: 'The active reminder client must not request history.' }, 400);
++    }
++
++    return route.fallback();
++  });
++
++  return fixture;
++}
++
++export async function installRealtimeHarness(page: Page) {
++  await page.addInitScript((eventName) => {
++    type Listener = (event: { data: string }) => void;
++    const sources: Array<{ listeners: Map<string, Set<Listener>>; closed: boolean }> = [];
++
++    class FixtureEventSource {
++      listeners = new Map<string, Set<Listener>>();
++      closed = false;
++      onerror: ((event: Event) => unknown) | null = null;
++
++      constructor(_url: string, _options?: EventSourceInit) {
++        sources.push(this);
++      }
++
++      addEventListener(name: string, listener: Listener) {
++        const listeners = this.listeners.get(name) ?? new Set<Listener>();
++        listeners.add(listener);
++        this.listeners.set(name, listeners);
++      }
++
++      close() {
++        this.closed = true;
++      }
++    }
++
++    Object.defineProperty(window, 'EventSource', { configurable: true, value: FixtureEventSource });
++    Object.defineProperty(window, '__CALIBRATE_NOTIFICATION_E2E__', {
++      configurable: true,
++      value: {
++        emit(payload: unknown) {
++          const event = { data: JSON.stringify(payload) };
++          for (const source of sources) {
++            if (source.closed) continue;
++            for (const listener of source.listeners.get(eventName) ?? []) listener(event);
++          }
++        },
++      },
++    });
++  }, REALTIME_EVENT_NAME);
++}
++
++export async function emitNotificationUpdate(page: Page) {
++  await page.evaluate(() => {
++    const harness = (window as unknown as {
++      __CALIBRATE_NOTIFICATION_E2E__: { emit(payload: unknown): void };
++    }).__CALIBRATE_NOTIFICATION_E2E__;
++    harness.emit({ reason: 'created', updated_at: '2026-07-21T19:05:00.000Z' });
++  });
++}
++
++export async function installDeniedBrowserPermission(page: Page) {
++  await page.addInitScript(() => {
++    let permission: NotificationPermission = 'default';
++    const NativeNotification = window.Notification ?? class FixtureNotification {};
++    const fixtureNotification = new Proxy(NativeNotification, {
++      get(target, property, receiver) {
++        if (property === 'permission') return permission;
++        if (property === 'requestPermission') {
++          return async () => {
++            permission = 'denied';
++            return permission;
++          };
++        }
++        return Reflect.get(target, property, receiver);
++      },
++    });
++    Object.defineProperty(window, 'Notification', { configurable: true, value: fixtureNotification });
++    Object.defineProperty(window, 'PushManager', {
++      configurable: true,
++      value: class FixturePushManager {},
++    });
++    if (!('serviceWorker' in navigator)) {
++      Object.defineProperty(navigator, 'serviceWorker', {
++        configurable: true,
++        value: {
++          addEventListener() {},
++          removeEventListener() {},
++          getRegistration: async () => null,
++          getRegistrations: async () => [],
++        },
++      });
++    }
++  });
++
++  await page.route('**/api/v1/client-config', (route) => fulfillJson(route, {
++    api_version: 1,
++    server_version: '1.0.0',
++    capabilities: {
++      self_hosted_server_url: true,
++      native_push: false,
++      web_push: true,
++      health_connect_activity: true,
++      wear_os_ready: true,
++    },
++  }));
++}
+diff --git a/mobile/app/(tabs)/(today)/notifications.tsx b/mobile/app/(tabs)/(today)/notifications.tsx
+index 692b3b2a..22bf909d 100644
+--- a/mobile/app/(tabs)/(today)/notifications.tsx
++++ b/mobile/app/(tabs)/(today)/notifications.tsx
+@@ -1,5 +1,5 @@
+-import { NotificationHistory } from '../../../src/notifications/NotificationHistory';
++import { Redirect } from 'expo-router';
+ 
+ export default function NotificationsScreen() {
+-    return <NotificationHistory />;
++    return <Redirect href="/today" />;
+ }
+diff --git a/mobile/app/(tabs)/_layout.tsx b/mobile/app/(tabs)/_layout.tsx
+index 5df1812b..55b83dea 100644
+--- a/mobile/app/(tabs)/_layout.tsx
++++ b/mobile/app/(tabs)/_layout.tsx
+@@ -215,17 +215,14 @@ export default function TabsLayout() {
+         }
+     });
+     const openNotification = useMutation({
++        networkMode: 'always',
+         mutationFn: async (notification: InAppNotification) => {
+             await api.markInAppNotificationRead(notification.id);
+             return notification;
+         },
+-        onSuccess: async (notification) => {
++        onSuccess: (notification) => {
+             reconcileNotificationRead(queryClient, notification.id);
+-            await invalidateNotificationQueries(queryClient);
+-            requestGuardedNavigation(() => {
+-                setIsNotificationDrawerOpen(false);
+-                router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
+-            });
++            void invalidateNotificationQueries(queryClient);
+         }
+     });
+     const requestAddFood = React.useCallback((input: AddFoodRequestInput = {}) => {
+@@ -444,14 +441,21 @@ export default function TabsLayout() {
+                         unreadCount={unreadCount}
+                         state={notificationsState}
+                         isBusy={dismissNotification.isPending || openNotification.isPending}
++                        isOpening={openNotification.isPending}
+                         actionError={dismissNotification.error ?? openNotification.error}
+                         onClose={() => setIsNotificationDrawerOpen(false)}
+-                        onOpenNotification={(notification) => openNotification.mutate(notification)}
+-                        onDismissNotification={(notification) => dismissNotification.mutate(notification)}
+-                        onViewAll={() => requestGuardedNavigation(() => {
++                        onOpenNotification={(notification) => requestGuardedNavigation(() => {
+                             setIsNotificationDrawerOpen(false);
+-                            router.push(canonicalPathForRoute('notifications') as Href);
++                            router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
++                        }, async () => {
++                            try {
++                                await openNotification.mutateAsync(notification);
++                                return true;
++                            } catch {
++                                return false;
++                            }
+                         })}
++                        onDismissNotification={(notification) => dismissNotification.mutate(notification)}
+                         onRetry={isOnline ? () => notificationsQuery.refetch() : undefined}
+                     />
+                     <ResumeTrackingPrompt />
+diff --git a/mobile/src/components/NotificationCard.test.tsx b/mobile/src/components/NotificationCard.test.tsx
+index b00a8c73..e49e6236 100644
+--- a/mobile/src/components/NotificationCard.test.tsx
++++ b/mobile/src/components/NotificationCard.test.tsx
+@@ -22,21 +22,20 @@ function notification(overrides: Partial<InAppNotificationPageItem> = {}): InApp
+     };
+ }
+ 
+-describe('NotificationCard history presentation', () => {
+-    it('shows timestamp, unread state, destination, and dismissal controls', () => {
++describe('NotificationCard active reminder presentation', () => {
++    it('shows the local date, destination, and dismissal controls', () => {
+         const onOpen = jest.fn();
+         const onDismiss = jest.fn();
+         const item = notification();
+         const screen = render(
+             <NotificationCard
+                 notification={item}
+-                showHistoryState
+                 onOpen={onOpen}
+                 onDismiss={onDismiss}
+             />
+         );
+ 
+-        expect(screen.getByText(/Unread/)).toBeTruthy();
++        expect(screen.getByText('Aug 9')).toBeTruthy();
+         expect(screen.getByTestId('notification-card-7')).toBeTruthy();
+         fireEvent.press(screen.getByTestId('notification-open-7'));
+         fireEvent.press(screen.getByTestId('notification-dismiss-7'));
+@@ -44,19 +43,28 @@ describe('NotificationCard history presentation', () => {
+         expect(onDismiss).toHaveBeenCalledWith(item);
+     });
+ 
+-    it('labels resolved history without presenting unread or broken dismissal actions', () => {
++    it('keeps a resolved reminder safe if one is present in cached data', () => {
+         const screen = render(
+             <NotificationCard
+                 notification={notification({ resolved_at: '2026-08-09T13:00:00.000Z' })}
+-                showHistoryState
+                 onOpen={jest.fn()}
+                 onDismiss={jest.fn()}
+             />
+         );
+ 
+-        expect(screen.getByText(/Resolved/)).toBeTruthy();
++        expect(screen.queryByText(/Resolved/)).toBeNull();
+         expect(screen.queryByText(/Unread/)).toBeNull();
+         expect(screen.queryByTestId('notification-dismiss-7')).toBeNull();
+         expect(screen.getByTestId('notification-open-7')).toBeTruthy();
+     });
++
++    it('disables both reminder actions while another action is pending', () => {
++        const onOpen = jest.fn();
++        const onDismiss = jest.fn();
++        const screen = render(<NotificationCard notification={notification()} isBusy onOpen={onOpen} onDismiss={onDismiss} />);
++        fireEvent.press(screen.getByTestId('notification-open-7'));
++        fireEvent.press(screen.getByTestId('notification-dismiss-7'));
++        expect(onOpen).not.toHaveBeenCalled();
++        expect(onDismiss).not.toHaveBeenCalled();
++    });
+ });
+diff --git a/mobile/src/components/NotificationCard.tsx b/mobile/src/components/NotificationCard.tsx
+index 0ec944c1..b7b1a52f 100644
+--- a/mobile/src/components/NotificationCard.tsx
++++ b/mobile/src/components/NotificationCard.tsx
+@@ -4,8 +4,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
+ import type { InAppNotification } from '@calibrate/api-client';
+ import {
+     formatNotificationDate,
+-    formatNotificationTimestamp,
+-    getNotificationStateLabel,
+     getNotificationText
+ } from '../notifications/presentation';
+ import { getNotificationAction } from '../notifications/workflow';
+@@ -18,16 +16,14 @@ import { AppText } from './AppText';
+ type NotificationCardProps = {
+     notification: InAppNotification;
+     isBusy?: boolean;
+-    showHistoryState?: boolean;
+     onOpen: (notification: InAppNotification) => void;
+     onDismiss: (notification: InAppNotification) => void;
+ };
+ 
+-/** Shared reminder presentation for the lightweight drawer and deep-linkable route. */
++/** Presents an active reminder and its logging and dismissal actions. */
+ export const NotificationCard: React.FC<NotificationCardProps> = ({
+     notification,
+     isBusy = false,
+-    showHistoryState = false,
+     onOpen,
+     onDismiss
+ }) => {
+@@ -37,7 +33,6 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
+     const text = getNotificationText(notification);
+     const isResolved = 'resolved_at' in notification && Boolean(notification.resolved_at);
+     const isUnread = !notification.read_at && !notification.dismissed_at && !isResolved;
+-    const stateLabel = getNotificationStateLabel(notification);
+ 
+     return (
+         <AppSection
+@@ -60,9 +55,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
+                         {isUnread ? <View style={styles.unreadDot} /> : null}
+                     </View>
+                     <AppText variant="caption">
+-                        {showHistoryState
+-                            ? `${formatNotificationTimestamp(notification.created_at)} | ${stateLabel}`
+-                            : formatNotificationDate(notification.local_date)}
++                        {formatNotificationDate(notification.local_date)}
+                     </AppText>
+                     <AppText variant="muted">{text.body}</AppText>
+                 </View>
+diff --git a/mobile/src/components/NotificationsDrawer.test.tsx b/mobile/src/components/NotificationsDrawer.test.tsx
+index ad9442f2..f0e5ff6b 100644
+--- a/mobile/src/components/NotificationsDrawer.test.tsx
++++ b/mobile/src/components/NotificationsDrawer.test.tsx
+@@ -33,7 +33,6 @@ function renderDrawer(overrides: Partial<React.ComponentProps<typeof Notificatio
+         onClose: jest.fn(),
+         onOpenNotification: jest.fn(),
+         onDismissNotification: jest.fn(),
+-        onViewAll: jest.fn(),
+         onRetry: jest.fn(),
+         ...overrides
+     };
+@@ -84,12 +83,17 @@ describe('NotificationsDrawer', () => {
+         expect(props.onClose).toHaveBeenCalledTimes(1);
+     });
+ 
+-    it('provides a discoverable path to the full notification history', () => {
+-        const { props, screen } = renderDrawer();
+-
+-        fireEvent.press(screen.getByRole('button', { name: 'View all notifications' }));
+-
+-        expect(props.onViewAll).toHaveBeenCalledTimes(1);
++    it.each([
++        ASYNC_RESOURCE_STATES.CONTENT,
++        ASYNC_RESOURCE_STATES.EMPTY,
++        ASYNC_RESOURCE_STATES.LOADING,
++        ASYNC_RESOURCE_STATES.ERROR,
++        ASYNC_RESOURCE_STATES.STALE,
++        ASYNC_RESOURCE_STATES.DEGRADED
++    ])('has no archive entry point in the %s state', (kind) => {
++        const { screen } = renderDrawer({ state: { kind, error: new Error('unavailable') } });
++        expect(screen.queryByRole('button', { name: 'View all notifications' })).toBeNull();
++        expect(screen.queryByTestId('view-all-notifications')).toBeNull();
+     });
+ 
+     it('exposes one modal dialog and keeps the decorative backdrop out of the accessibility tree', () => {
+@@ -157,7 +161,7 @@ describe('NotificationsDrawer', () => {
+         expect(screen.getByText('Time to weigh in')).toBeTruthy();
+     });
+ 
+-    it('limits the quick drawer to five items while keeping full history discoverable', () => {
++    it('limits the quick drawer to five items while keeping the global unread count', () => {
+         const notifications = Array.from({ length: 7 }, (_, index) => ({
+             ...NOTIFICATION,
+             id: index + 1,
+@@ -169,6 +173,30 @@ describe('NotificationsDrawer', () => {
+         expect(screen.getByText('Reminder 1')).toBeTruthy();
+         expect(screen.getByText('Reminder 5')).toBeTruthy();
+         expect(screen.queryByText('Reminder 6')).toBeNull();
+-        expect(screen.getByTestId('view-all-notifications')).toBeTruthy();
++        expect(screen.getByText('7 unread')).toBeTruthy();
++        expect(screen.queryByTestId('view-all-notifications')).toBeNull();
++    });
++
++    it('keeps the editor behind the modal while opening and restores dismissal after failure', () => {
++        const { props, screen } = renderDrawer({ isOpening: true, isBusy: true });
++        expect(screen.getByText('Opening reminder...')).toBeTruthy();
++        expect(screen.getByLabelText('Close notifications').props.accessibilityState.disabled).toBe(true);
++        fireEvent.press(screen.getByLabelText('Close notifications'));
++        act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());
++        fireEvent.press(screen.getByTestId('notifications-drawer-backdrop', { includeHiddenElements: true }));
++        expect(props.onClose).not.toHaveBeenCalled();
++        screen.rerender(<NotificationsDrawer {...props} isOpening={false} isBusy={false} actionError={new Error('failed')} />);
++        expect(screen.queryByText('Opening reminder...')).toBeNull();
++        fireEvent.press(screen.getByLabelText('Close notifications'));
++        act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());
++        fireEvent.press(screen.getByTestId('notifications-drawer-backdrop', { includeHiddenElements: true }));
++        expect(props.onClose).toHaveBeenCalledTimes(3);
++    });
++
++    it('closes through native Back and backdrop without opening another route', () => {
++        const { props, screen } = renderDrawer();
++        act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());
++        fireEvent.press(screen.getByTestId('notifications-drawer-backdrop', { includeHiddenElements: true }));
++        expect(props.onClose).toHaveBeenCalledTimes(2);
+     });
+ });
+diff --git a/mobile/src/components/NotificationsDrawer.tsx b/mobile/src/components/NotificationsDrawer.tsx
+index e1e34882..283ee7cb 100644
+--- a/mobile/src/components/NotificationsDrawer.tsx
++++ b/mobile/src/components/NotificationsDrawer.tsx
+@@ -4,7 +4,6 @@ import type { InAppNotification } from '@calibrate/api-client';
+ import { useSafeAreaInsets } from 'react-native-safe-area-context';
+ import { SUPPORTED_MODAL_ORIENTATIONS } from '../layout/adaptiveLayout';
+ import { AppSection } from './AppSection';
+-import { AppButton } from './AppButton';
+ import { AppIconButton } from './AppIconButton';
+ import { AppText } from './AppText';
+ import { NotificationCard } from './NotificationCard';
+@@ -32,11 +31,11 @@ type NotificationsDrawerProps = {
+     unreadCount: number | null;
+     state: AsyncResourceState;
+     isBusy: boolean;
++    isOpening?: boolean;
+     actionError?: unknown;
+     onClose: () => void;
+     onOpenNotification: (notification: InAppNotification) => void;
+     onDismissNotification: (notification: InAppNotification) => void;
+-    onViewAll: () => void;
+     onRetry?: () => void;
+ };
+ 
+@@ -47,11 +46,11 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
+     unreadCount,
+     state,
+     isBusy,
++    isOpening = false,
+     actionError,
+     onClose,
+     onOpenNotification,
+     onDismissNotification,
+-    onViewAll,
+     onRetry
+ }) => {
+     const theme = useAppTheme();
+@@ -65,11 +64,12 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
+     const backdropOpacity = useRef(new Animated.Value(0)).current;
+     const drawerProgress = useRef(new Animated.Value(1)).current;
+     const panelRef = useRef<View>(null);
++    const requestClose = () => { if (!isOpening) onClose(); };
+ 
+     useModalFocusManagement({
+         visible: shouldRender && visible,
+         containerRef: panelRef,
+-        onEscape: onClose
++        onEscape: requestClose
+     });
+ 
+     useEffect(() => {
+@@ -123,7 +123,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
+             animationType="none"
+             presentationStyle="overFullScreen"
+             statusBarTranslucent
+-            onRequestClose={onClose}
++            onRequestClose={requestClose}
+             supportedOrientations={SUPPORTED_MODAL_ORIENTATIONS}
+         >
+             <View style={styles.root}>
+@@ -133,7 +133,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
+                     focusable={false}
+                     importantForAccessibility="no-hide-descendants"
+                     aria-hidden
+-                    onPress={onClose}
++                    onPress={requestClose}
+                     style={StyleSheet.absoluteFill}
+                 >
+                     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+@@ -146,6 +146,7 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
+                     aria-label="Notifications"
+                     aria-modal
+                     role="dialog"
++                    tabIndex={-1}
+                     style={[
+                         styles.panel,
+                         {
+@@ -165,12 +166,14 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
+                             <AppText variant="caption">
+                                 {unreadCount === null ? 'Unread count unavailable' : `${unreadCount} unread`}
+                             </AppText>
++                            {isOpening && <AppText variant="caption" accessibilityLiveRegion="polite">Opening reminder...</AppText>}
+                         </View>
+                         <AppIconButton
+                             icon="close"
+                             accessibilityLabel="Close notifications"
+                             variant="ghost"
+-                            onPress={onClose}
++                            onPress={requestClose}
++                            busy={isOpening}
+                         />
+                     </View>
+ 
+@@ -213,12 +216,6 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
+                             </AppSection>
+                         )}
+ 
+-                        <AppButton
+-                            testID="view-all-notifications"
+-                            title="View all notifications"
+-                            variant="secondary"
+-                            onPress={onViewAll}
+-                        />
+                     </ScrollView>
+                 </Animated.View>
+             </View>
+diff --git a/mobile/src/components/legal/PublicLegalPage.test.tsx b/mobile/src/components/legal/PublicLegalPage.test.tsx
+index 23b1035c..ce42be0e 100644
+--- a/mobile/src/components/legal/PublicLegalPage.test.tsx
++++ b/mobile/src/components/legal/PublicLegalPage.test.tsx
+@@ -87,11 +87,11 @@ describe('PublicLegalPage', () => {
+         expect(appHeader.getByLabelText('App actions')).toBeTruthy();
+ 
+         fireEvent.press(appHeader.getByRole('button', { name: 'Back to Settings' }));
+-        fireEvent.press(appHeader.getByRole('button', { name: 'Open notifications' }));
++        expect(appHeader.queryByRole('button', { name: 'Open notifications' })).toBeNull();
+         fireEvent.press(appHeader.getByRole('button', { name: 'Account & settings' }));
+ 
+         expect(mockReplace).toHaveBeenCalledWith('/settings');
+-        expect(mockPush).toHaveBeenNthCalledWith(1, '/notifications');
+-        expect(mockPush).toHaveBeenNthCalledWith(2, '/settings');
++        expect(mockPush).toHaveBeenCalledTimes(1);
++        expect(mockPush).toHaveBeenCalledWith('/settings');
+     });
+ });
+diff --git a/mobile/src/components/legal/PublicLegalPage.tsx b/mobile/src/components/legal/PublicLegalPage.tsx
+index 883b11d0..42c2ca4e 100644
+--- a/mobile/src/components/legal/PublicLegalPage.tsx
++++ b/mobile/src/components/legal/PublicLegalPage.tsx
+@@ -76,13 +76,6 @@ export function PublicLegalPage({ title, lastUpdated, intro, sections, links, ac
+                             </AppText>
+                         </View>
+                         <View accessibilityRole="toolbar" accessibilityLabel="App actions" style={styles.appHeaderActions}>
+-                            <AppIconButton
+-                                accessibilityLabel="Open notifications"
+-                                icon="notifications-outline"
+-                                iconSize={21}
+-                                variant="ghost"
+-                                onPress={() => router.push('/notifications')}
+-                            />
+                             <AppIconButton
+                                 accessibilityLabel="Account & settings"
+                                 accessibilityHint="Opens account details and app settings"
+diff --git a/mobile/src/diagnostics/operationDiagnostics.test.tsx b/mobile/src/diagnostics/operationDiagnostics.test.tsx
+index f86016b5..2540d557 100644
+--- a/mobile/src/diagnostics/operationDiagnostics.test.tsx
++++ b/mobile/src/diagnostics/operationDiagnostics.test.tsx
+@@ -49,7 +49,7 @@ describe('fixed client operation diagnostics', () => {
+         const secondError = { requestId: '2222222222222222', message: 'private food payload' };
+         const { rerender } = renderHook(
+             (props: { error: unknown; errorUpdatedAt: number }) => useClientQueryFailureDiagnostic({
+-                operation: 'notification_history_page',
++                operation: 'saved_foods_load',
+                 isError: true,
+                 error: props.error,
+                 errorUpdatedAt: props.errorUpdatedAt
+@@ -64,7 +64,7 @@ describe('fixed client operation diagnostics', () => {
+         rerender({ error: secondError, errorUpdatedAt: 200 });
+         await waitFor(() => expect(mockReportClientDiagnostic).toHaveBeenCalledTimes(2));
+         expect(mockReportClientDiagnostic).toHaveBeenLastCalledWith(expect.objectContaining({
+-            operation: 'notification_history_page',
++            operation: 'saved_foods_load',
+             request_id: '2222222222222222'
+         }));
+     });
+diff --git a/mobile/src/diagnostics/operationDiagnostics.ts b/mobile/src/diagnostics/operationDiagnostics.ts
+index 1c776a0a..a389e781 100644
+--- a/mobile/src/diagnostics/operationDiagnostics.ts
++++ b/mobile/src/diagnostics/operationDiagnostics.ts
+@@ -10,7 +10,6 @@ type FeatureOperation = Extract<
+     | 'onboarding_complete'
+     | 'food_copy'
+     | 'saved_foods_load'
+-    | 'notification_history_page'
+     | 'weight_trend_load'
+ >;
+ 
+@@ -18,7 +17,6 @@ const FEATURE_OPERATION_ROUTES: Record<FeatureOperation, ClientDiagnosticRoute>
+     onboarding_complete: 'onboarding',
+     food_copy: 'today',
+     saved_foods_load: 'saved_foods',
+-    notification_history_page: 'notifications',
+     weight_trend_load: 'progress'
+ };
+ 
+@@ -36,7 +34,7 @@ export function reportClientOperationFailure(operation: FeatureOperation, error:
+ }
+ 
+ type QueryFailureDiagnostic = {
+-    operation: Extract<FeatureOperation, 'saved_foods_load' | 'notification_history_page' | 'weight_trend_load'>;
++    operation: Extract<FeatureOperation, 'saved_foods_load' | 'weight_trend_load'>;
+     isError: boolean;
+     error: unknown;
+     errorUpdatedAt: number;
+diff --git a/mobile/src/hooks/useConfirmDiscardNavigation.test.ts b/mobile/src/hooks/useConfirmDiscardNavigation.test.ts
+index 5960f36b..6e9dc1fa 100644
+--- a/mobile/src/hooks/useConfirmDiscardNavigation.test.ts
++++ b/mobile/src/hooks/useConfirmDiscardNavigation.test.ts
+@@ -108,6 +108,50 @@ describe('useConfirmDiscardNavigation', () => {
+         expect(navigate).toHaveBeenCalledTimes(2);
+     });
+ 
++    it('keeps the draft and guard until preparation succeeds, blocking duplicate preparation', async () => {
++        mockConfirmDiscardChanges.mockResolvedValue(true);
++        let finish: (ready: boolean) => void = () => {};
++        const prepare = jest.fn(() => new Promise<boolean>((resolve) => { finish = resolve; }));
++        const discard = jest.fn();
++        const navigate = jest.fn();
++        renderHook(() => useConfirmDiscardNavigation(true, false, discard));
++        await act(async () => requestGuardedNavigation(navigate, prepare));
++        expect(prepare).toHaveBeenCalledTimes(1);
++        expect(discard).not.toHaveBeenCalled();
++        expect(mockShouldPreventRemove).toBe(true);
++        await act(async () => requestGuardedNavigation(navigate, prepare));
++        expect(prepare).toHaveBeenCalledTimes(1);
++        expect(mockConfirmDiscardChanges).toHaveBeenCalledTimes(1);
++        await act(async () => finish(false));
++        expect(discard).not.toHaveBeenCalled();
++        expect(navigate).not.toHaveBeenCalled();
++        expect(mockShouldPreventRemove).toBe(true);
++
++        mockConfirmDiscardChanges.mockResolvedValue(false);
++        await act(async () => requestGuardedNavigation(navigate, prepare));
++        expect(prepare).toHaveBeenCalledTimes(1);
++        mockConfirmDiscardChanges.mockResolvedValue(true);
++        await act(async () => requestGuardedNavigation(navigate, prepare));
++        await act(async () => finish(true));
++        expect(prepare).toHaveBeenCalledTimes(2);
++        expect(discard).toHaveBeenCalledTimes(1);
++        expect(navigate).toHaveBeenCalledTimes(1);
++        expect(discard.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0]);
++        expect(mockShouldPreventRemove).toBe(false);
++    });
++
++    it('requires successful preparation even without a focused editor', async () => {
++        mockIsFocused = false;
++        renderHook(() => useConfirmDiscardNavigation(true));
++        const navigate = jest.fn();
++        const prepare = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
++        await act(async () => requestGuardedNavigation(navigate, prepare));
++        expect(navigate).not.toHaveBeenCalled();
++        await act(async () => requestGuardedNavigation(navigate, prepare));
++        expect(navigate).toHaveBeenCalledTimes(1);
++        expect(mockConfirmDiscardChanges).not.toHaveBeenCalled();
++    });
++
+     it('ignores duplicate shell requests while confirmation is pending', async () => {
+         let confirm: (answer: boolean) => void = () => {};
+         mockConfirmDiscardChanges.mockReturnValue(new Promise((resolve) => { confirm = resolve; }));
+diff --git a/mobile/src/hooks/useConfirmDiscardNavigation.ts b/mobile/src/hooks/useConfirmDiscardNavigation.ts
+index 6ff041ce..e95a7f2b 100644
+--- a/mobile/src/hooks/useConfirmDiscardNavigation.ts
++++ b/mobile/src/hooks/useConfirmDiscardNavigation.ts
+@@ -4,7 +4,7 @@ import { useNavigation } from 'expo-router';
+ import { useIsFocused, usePreventRemove } from 'expo-router/build/react-navigation/core';
+ import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
+ import { useBrowserDiscardNavigation } from './useBrowserDiscardNavigation';
+-import { registerNavigationGuard } from '../navigation/guardedNavigation';
++import { registerNavigationGuard, type PrepareNavigation } from '../navigation/guardedNavigation';
+ 
+ type Navigate = () => void;
+ 
+@@ -42,19 +42,15 @@ export function useConfirmDiscardNavigation(
+         if (!isFocused || (!isDirty && !isNavigationBlocked)) setNavigationAllowed(false);
+     }, [isDirty, isFocused, isNavigationBlocked]);
+ 
+-    const requestNavigation = useCallback(async (navigate: Navigate) => {
++    const requestNavigation = useCallback(async (navigate: Navigate, prepare?: PrepareNavigation) => {
+         if (isNavigationBlocked || confirmationPendingRef.current) return;
+-        if (!isDirty) {
+-            allowNavigation(navigate);
+-            return;
+-        }
+-
+         confirmationPendingRef.current = true;
+         try {
+-            if (await confirmDiscardChanges()) {
+-                discardRef.current?.();
+-                allowNavigation(navigate);
+-            }
++            if (isDirty && !await confirmDiscardChanges()) return;
++            // A failed prerequisite must leave both the editor and its guard intact.
++            if (prepare && !await prepare()) return;
++            if (isDirty) discardRef.current?.();
++            allowNavigation(navigate);
+         } finally {
+             confirmationPendingRef.current = false;
+         }
+diff --git a/mobile/src/navigation/guardedNavigation.ts b/mobile/src/navigation/guardedNavigation.ts
+index 0f902c21..491b1544 100644
+--- a/mobile/src/navigation/guardedNavigation.ts
++++ b/mobile/src/navigation/guardedNavigation.ts
+@@ -1,5 +1,7 @@
+ type Navigate = () => void;
+-type NavigationGuard = (navigate: Navigate) => Promise<void>;
++export type PrepareNavigation = () => Promise<boolean>;
++
++type NavigationGuard = (navigate: Navigate, prepare?: PrepareNavigation) => Promise<void>;
+ 
+ let activeGuard: NavigationGuard | undefined;
+ 
+@@ -19,7 +21,8 @@ export function interceptGuardedNavigation(navigate: Navigate, preventDefault: (
+     return true;
+ }
+ 
+-export function requestGuardedNavigation(navigate: Navigate): void {
+-    if (activeGuard) void activeGuard(navigate);
++export function requestGuardedNavigation(navigate: Navigate, prepare?: PrepareNavigation): void {
++    if (activeGuard) void activeGuard(navigate, prepare);
++    else if (prepare) void prepare().then((ready) => { if (ready) navigate(); });
+     else navigate();
+ }
+diff --git a/mobile/src/navigation/routeMetadata.test.ts b/mobile/src/navigation/routeMetadata.test.ts
+index 9781a47e..7f546fc1 100644
+--- a/mobile/src/navigation/routeMetadata.test.ts
++++ b/mobile/src/navigation/routeMetadata.test.ts
+@@ -32,6 +32,11 @@ describe('route metadata', () => {
+     });
+ 
+     it('canonicalizes aliases and keeps private/authentication routes out of search indexes', () => {
++        expect(resolveRouteMetadata('/notifications?cursor=old#history', { authenticated: true })).toMatchObject({
++            title: 'Today - Calibrate',
++            canonicalPath: '/today',
++            robots: ROUTE_ROBOTS_POLICIES.PRIVATE
++        });
+         expect(resolveRouteMetadata('/log?date=2026-08-09', { authenticated: true })).toMatchObject({
+             canonicalPath: '/today',
+             robots: ROUTE_ROBOTS_POLICIES.PRIVATE
+diff --git a/mobile/src/navigation/routeRegistry.test.ts b/mobile/src/navigation/routeRegistry.test.ts
+index 92c787f5..a444bf16 100644
+--- a/mobile/src/navigation/routeRegistry.test.ts
++++ b/mobile/src/navigation/routeRegistry.test.ts
+@@ -68,7 +68,6 @@ describe('route registry', () => {
+       'my-foods': 'settings-data',
+       about: 'settings-help',
+       advanced: 'settings-help',
+-      notifications: 'today',
+       weight: 'progress',
+       barcode: 'today',
+     } as const satisfies Partial<Record<RouteId, RouteId>>;
+@@ -138,6 +137,14 @@ describe('route registry', () => {
+       isAlias: true,
+     });
+     expect(getRouteByPath('/not-registered')).toBeNull();
++    expect(getRouteByPath('/notifications?cursor=old#history')).toMatchObject({
++      routeId: 'today',
++      canonicalPath: '/today',
++      matchedPath: '/notifications',
++      isAlias: true,
++    });
++    expect(ROUTE_REGISTRY.today.aliases).toContainEqual({ path: '/notifications', authenticatedRedirect: 'today' });
++    expect(getRouteByPath('/notifications/old')).toBeNull();
+   });
+   it('recognizes the active route without treating another stack entry as active', () => {
+     expect(isRouteActive('/today', 'today')).toBe(true);
+diff --git a/mobile/src/navigation/routeRegistry.ts b/mobile/src/navigation/routeRegistry.ts
+index bba8d5d7..f7f8f280 100644
+--- a/mobile/src/navigation/routeRegistry.ts
++++ b/mobile/src/navigation/routeRegistry.ts
+@@ -31,7 +31,6 @@ export const ROUTE_IDS = [
+   'plan-check',
+   'activity',
+   'my-foods',
+-  'notifications',
+   'about',
+   'advanced',
+   'server-admin',
+@@ -234,7 +233,10 @@ export const ROUTE_REGISTRY = {
+     shellPolicy: 'app',
+     deepLink: 'render',
+     authenticatedRedirect: null,
+-    aliases: [{ path: '/log', authenticatedRedirect: 'today' }],
++    aliases: [
++      { path: '/log', authenticatedRedirect: 'today' },
++      { path: '/notifications', authenticatedRedirect: 'today' },
++    ],
+   }),
+   progress: route({
+     path: '/progress',
+@@ -435,17 +437,6 @@ export const ROUTE_REGISTRY = {
+     deepLink: 'render',
+     authenticatedRedirect: null,
+   }),
+-  notifications: route({
+-    path: '/notifications',
+-    title: 'Notifications',
+-    parent: 'today',
+-    fallback: 'today',
+-    backLabel: 'Back to Today',
+-    authClass: 'authenticated',
+-    shellPolicy: 'app',
+-    deepLink: 'render',
+-    authenticatedRedirect: null,
+-  }),
+   about: route({
+     path: '/about',
+     title: 'About Calibrate',
+diff --git a/mobile/src/notifications/NotificationHistory.test.tsx b/mobile/src/notifications/NotificationHistory.test.tsx
+deleted file mode 100644
+index 39d68857..00000000
+--- a/mobile/src/notifications/NotificationHistory.test.tsx
++++ /dev/null
+@@ -1,149 +0,0 @@
+-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+-import type { InAppNotificationPageItem, InAppNotificationPageResponse } from '@calibrate/api-client';
+-import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
+-import { NATIVE_PUSH_STATES } from './workflow';
+-import { NotificationHistory } from './NotificationHistory';
+-
+-const mockPush = jest.fn();
+-const mockRequestPermission = jest.fn(async () => undefined);
+-const mockRouterPush = jest.fn();
+-const mockQueryClients: QueryClient[] = [];
+-const mockApi = {
+-    getInAppNotifications: jest.fn<Promise<InAppNotificationPageResponse>, [unknown]>(),
+-    markInAppNotificationRead: jest.fn(async () => ({ ok: true as const })),
+-    dismissInAppNotification: jest.fn(async () => ({ ok: true as const })),
+-    markAllInAppNotificationsRead: jest.fn(async () => ({ ok: true as const, updated_count: 1 }))
+-};
+-
+-jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+-jest.mock('react-native-safe-area-context', () => ({
+-    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 })
+-}));
+-jest.mock('expo-router', () => ({ router: { push: (...args: unknown[]) => mockRouterPush(...args) } }));
+-jest.mock('../auth/AuthContext', () => ({ useAuth: () => ({ api: mockApi }) }));
+-jest.mock('../hooks/useNativePushRegistration', () => ({
+-    useNativePushRegistration: () => mockPush()
+-}));
+-jest.mock('../diagnostics/operationDiagnostics', () => ({ useClientQueryFailureDiagnostic: jest.fn() }));
+-
+-function notification(id: number, overrides: Partial<InAppNotificationPageItem> = {}): InAppNotificationPageItem {
+-    return {
+-        id,
+-        type: IN_APP_NOTIFICATION_TYPES.LOG_FOOD_REMINDER,
+-        local_date: '2026-08-09',
+-        title: `Reminder ${id}`,
+-        body: 'Review your log.',
+-        action_url: '/log?quickAdd=food',
+-        read_at: null,
+-        dismissed_at: null,
+-        resolved_at: null,
+-        created_at: `2026-08-09T12:0${id}:00.000Z`,
+-        updated_at: `2026-08-09T12:0${id}:00.000Z`,
+-        ...overrides
+-    };
+-}
+-
+-function page(
+-    notifications: InAppNotificationPageItem[],
+-    nextCursor: string | null = null,
+-    unreadCount = notifications.filter((item) => !item.read_at && !item.dismissed_at && !item.resolved_at).length
+-): InAppNotificationPageResponse {
+-    return { notifications, unread_count: unreadCount, next_cursor: nextCursor };
+-}
+-
+-function renderHistory() {
+-    const queryClient = new QueryClient({ defaultOptions: {
+-        queries: { retry: false, gcTime: 0 },
+-        mutations: { retry: false, gcTime: 0 }
+-    } });
+-    mockQueryClients.push(queryClient);
+-    return render(
+-        <QueryClientProvider client={queryClient}>
+-            <NotificationHistory />
+-        </QueryClientProvider>
+-    );
+-}
+-
+-describe('NotificationHistory', () => {
+-    afterEach(() => {
+-        for (const queryClient of mockQueryClients.splice(0)) queryClient.clear();
+-    });
+-
+-    beforeEach(() => {
+-        jest.clearAllMocks();
+-        mockPush.mockReturnValue({
+-            state: NATIVE_PUSH_STATES.REGISTERED,
+-            requestPermission: mockRequestPermission,
+-            openSettings: jest.fn(async () => undefined),
+-            refreshPermission: jest.fn(async () => undefined),
+-            retryRegistration: jest.fn(async () => undefined)
+-        });
+-    });
+-
+-    it('keeps paginated history deduplicated and exposes read-all and preferences actions', async () => {
+-        mockApi.getInAppNotifications.mockImplementation(async (query: unknown) => {
+-            const cursor = (query as { cursor?: string }).cursor;
+-            return cursor ? page([notification(2), notification(1)]) : page([notification(3), notification(2)], 'older', 3);
+-        });
+-        const screen = renderHistory();
+-
+-        await screen.findByText('Reminder 3');
+-        fireEvent.press(screen.getByTestId('notification-history-load-more'));
+-        await screen.findByText('Reminder 1');
+-        expect(screen.getAllByText('Reminder 2')).toHaveLength(1);
+-
+-        fireEvent.press(screen.getByTestId('notification-mark-all-read'));
+-        await waitFor(() => expect(mockApi.markAllInAppNotificationsRead).toHaveBeenCalledTimes(1));
+-        await waitFor(() => expect(mockApi.getInAppNotifications.mock.calls.length).toBeGreaterThanOrEqual(4));
+-        fireEvent.press(screen.getByTestId('notification-preferences-cta'));
+-        expect(mockRouterPush).toHaveBeenCalledWith('/profile');
+-    });
+-
+-    it('offers a meaningful preference action when history is empty', async () => {
+-        mockApi.getInAppNotifications.mockResolvedValue(page([]));
+-        const screen = renderHistory();
+-
+-        expect(await screen.findByTestId('notification-history-empty')).toBeTruthy();
+-        fireEvent.press(screen.getByRole('button', { name: 'Review notification preferences' }));
+-        expect(mockRouterPush).toHaveBeenCalledWith('/profile');
+-    });
+-
+-    it('makes permission-required delivery state actionable without rendering subscription details', async () => {
+-        mockApi.getInAppNotifications.mockResolvedValue(page([]));
+-        mockPush.mockReturnValue({
+-            state: NATIVE_PUSH_STATES.PERMISSION_REQUIRED,
+-            requestPermission: mockRequestPermission,
+-            openSettings: jest.fn(async () => undefined),
+-            refreshPermission: jest.fn(async () => undefined),
+-            retryRegistration: jest.fn(async () => undefined)
+-        });
+-        const screen = renderHistory();
+-
+-        const action = await screen.findByTestId('notification-delivery-action');
+-        expect(screen.getByText('Enable push notifications')).toBeTruthy();
+-        expect(screen.queryByText(/token|endpoint|p256dh|auth/i)).toBeNull();
+-        fireEvent.press(action);
+-        expect(mockRequestPermission).toHaveBeenCalledTimes(1);
+-    });
+-
+-    it('uses iOS delivery copy and opens native device settings when notifications are blocked', async () => {
+-        mockApi.getInAppNotifications.mockResolvedValue(page([]));
+-        const openSettings = jest.fn(async () => undefined);
+-        mockPush.mockReturnValue({
+-            state: NATIVE_PUSH_STATES.BLOCKED,
+-            requestPermission: mockRequestPermission,
+-            openSettings,
+-            refreshPermission: jest.fn(async () => undefined),
+-            retryRegistration: jest.fn(async () => undefined)
+-        });
+-        const screen = renderHistory();
+-
+-        await screen.findByTestId('notification-history-empty');
+-        const action = await screen.findByTestId('notification-delivery-action');
+-        expect(screen.getByText(/Enable them in iOS settings/)).toBeTruthy();
+-        expect(screen.getByText('Open device settings')).toBeTruthy();
+-        fireEvent.press(action);
+-        await waitFor(() => expect(openSettings).toHaveBeenCalledTimes(1));
+-    });
+-});
+diff --git a/mobile/src/notifications/NotificationHistory.tsx b/mobile/src/notifications/NotificationHistory.tsx
+deleted file mode 100644
+index d9fb4f11..00000000
+--- a/mobile/src/notifications/NotificationHistory.tsx
++++ /dev/null
+@@ -1,268 +0,0 @@
+-import { useMemo } from 'react';
+-import { Platform, StyleSheet, View } from 'react-native';
+-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+-import { router, type Href } from 'expo-router';
+-import type { InAppNotification } from '@calibrate/api-client';
+-import { AppButton } from '../components/AppButton';
+-import { AppSection } from '../components/AppSection';
+-import { AppNotice } from '../components/AppNotice';
+-import { AppText } from '../components/AppText';
+-import {
+-    AsyncStateBoundary,
+-    useAsyncResourceState,
+-    useOnlineStatus
+-} from '../components/AsyncStateBoundary';
+-import { NotificationCard } from '../components/NotificationCard';
+-import { SectionHeader } from '../components/SectionHeader';
+-import { SkeletonBlock } from '../components/SkeletonBlock';
+-import { TabScreen } from '../components/TabScreen';
+-import { useAuth } from '../auth/AuthContext';
+-import { getSafeActionErrorMessage } from '../errors/presentation';
+-import { useNativePushRegistration } from '../hooks/useNativePushRegistration';
+-import { canonicalPathForRoute } from '../navigation/routeRegistry';
+-import { spacing, useAppTheme, type AppTheme } from '../theme';
+-import {
+-    NOTIFICATION_HISTORY_PAGE_SIZE,
+-    dedupeNotificationPages,
+-    invalidateNotificationQueries,
+-    notificationHistoryQueryKey,
+-    reconcileAllNotificationsRead,
+-    reconcileNotificationDismissed,
+-    reconcileNotificationRead
+-} from './query';
+-import {
+-    getNotificationAction,
+-    getPushStatusPresentation,
+-    getPushStatusTarget,
+-    NATIVE_PUSH_STATES
+-} from './workflow';
+-import { useClientQueryFailureDiagnostic } from '../diagnostics/operationDiagnostics';
+-
+-type DeliveryAction = {
+-    label: string;
+-    run: () => Promise<void>;
+-};
+-
+-export function NotificationHistory() {
+-    const theme = useAppTheme();
+-    const styles = useMemo(() => createStyles(theme), [theme]);
+-    const { api } = useAuth();
+-    const queryClient = useQueryClient();
+-    const isOnline = useOnlineStatus();
+-    const pushRegistration = useNativePushRegistration();
+-    const isWeb = Platform.OS === 'web';
+-    const deliveryStatus = getPushStatusPresentation(pushRegistration.state, getPushStatusTarget(Platform.OS));
+-
+-    const historyQuery = useInfiniteQuery({
+-        queryKey: notificationHistoryQueryKey,
+-        queryFn: ({ pageParam }) => api.getInAppNotifications({
+-            view: 'history',
+-            limit: NOTIFICATION_HISTORY_PAGE_SIZE,
+-            cursor: pageParam
+-        }),
+-        initialPageParam: undefined as string | undefined,
+-        getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined
+-    });
+-    const historyState = useAsyncResourceState(historyQuery, (data) =>
+-        data.pages.every((page) => page.notifications.length === 0)
+-    );
+-    useClientQueryFailureDiagnostic({
+-        operation: 'notification_history_page',
+-        isError: historyQuery.isError || historyQuery.isFetchNextPageError,
+-        error: historyQuery.error,
+-        errorUpdatedAt: historyQuery.errorUpdatedAt
+-    });
+-    const notifications = dedupeNotificationPages(historyQuery.data?.pages);
+-    const unreadCount = historyQuery.data?.pages[0]?.unread_count ?? 0;
+-
+-    const dismissNotification = useMutation({
+-        mutationFn: (notification: InAppNotification) =>
+-            api.dismissInAppNotification(notification.id).then(() => notification),
+-        onSuccess: async (notification) => {
+-            reconcileNotificationDismissed(queryClient, notification.id);
+-            await invalidateNotificationQueries(queryClient);
+-        }
+-    });
+-    const openNotification = useMutation({
+-        mutationFn: (notification: InAppNotification) =>
+-            api.markInAppNotificationRead(notification.id).then(() => notification),
+-        onSuccess: async (notification) => {
+-            reconcileNotificationRead(queryClient, notification.id);
+-            await invalidateNotificationQueries(queryClient);
+-            router.push(getNotificationAction(notification.action_url, notification.local_date).href as Href);
+-        }
+-    });
+-    const markAllRead = useMutation({
+-        mutationFn: () => api.markAllInAppNotificationsRead(),
+-        onSuccess: async () => {
+-            reconcileAllNotificationsRead(queryClient);
+-            await invalidateNotificationQueries(queryClient);
+-        }
+-    });
+-
+-    let deliveryAction: DeliveryAction | null = null;
+-    if (deliveryStatus.action === 'request') {
+-        deliveryAction = { label: 'Enable push notifications', run: pushRegistration.requestPermission };
+-    } else if (deliveryStatus.action === 'settings') {
+-        deliveryAction = isWeb
+-            ? { label: 'Check notification access', run: pushRegistration.refreshPermission }
+-            : { label: 'Open device settings', run: pushRegistration.openSettings };
+-    } else if (deliveryStatus.action === 'retry') {
+-        deliveryAction = { label: 'Retry push registration', run: pushRegistration.retryRegistration };
+-    }
+-    const showDeliveryStatus = pushRegistration.state !== NATIVE_PUSH_STATES.REGISTERED
+-        && pushRegistration.state !== NATIVE_PUSH_STATES.SIGNED_OUT;
+-    const actionError = openNotification.error ?? dismissNotification.error ?? markAllRead.error;
+-    const isMutating = openNotification.isPending || dismissNotification.isPending || markAllRead.isPending;
+-    const openPreferences = () => router.push(canonicalPathForRoute('settings-profile') as Href);
+-
+-    return (
+-        <TabScreen contentWidth="overview" testID="notification-history">
+-            <AppSection style={styles.headerCard}>
+-                <SectionHeader
+-                    title="Notification history"
+-                    description="Review reminder activity across this account."
+-                />
+-                <AppText variant="caption">
+-                    {unreadCount === 1 ? '1 unread notification' : `${unreadCount} unread notifications`}
+-                </AppText>
+-                <View style={styles.headerActions}>
+-                    <AppButton
+-                        testID="notification-mark-all-read"
+-                        title={markAllRead.isPending ? 'Marking all read...' : 'Mark all read'}
+-                        variant="secondary"
+-                        disabled={!isOnline || unreadCount === 0 || markAllRead.isPending}
+-                        onPress={() => markAllRead.mutate()}
+-                        style={styles.headerAction}
+-                    />
+-                    <AppButton
+-                        testID="notification-preferences-cta"
+-                        title="Notification preferences"
+-                        variant="ghost"
+-                        onPress={openPreferences}
+-                        style={styles.headerAction}
+-                    />
+-                </View>
+-            </AppSection>
+-
+-            {showDeliveryStatus && (
+-                <AppNotice
+-                    testID="notification-delivery-status"
+-                    tone={deliveryStatus.isError ? 'danger' : 'info'}
+-                    accessibilityRole={deliveryStatus.isError ? 'alert' : undefined}
+-                >
+-                    <SectionHeader title="Notification delivery" />
+-                    <AppText variant="muted">{deliveryStatus.message}</AppText>
+-                    {deliveryAction && (
+-                        <AppButton
+-                            testID="notification-delivery-action"
+-                            title={deliveryAction.label}
+-                            variant="secondary"
+-                            onPress={() => void deliveryAction?.run()}
+-                        />
+-                    )}
+-                </AppNotice>
+-            )}
+-
+-            <AsyncStateBoundary
+-                state={historyState}
+-                resourceLabel="notification history"
+-                loading={<NotificationHistorySkeleton styles={styles} />}
+-                empty={(
+-                    <AppSection testID="notification-history-empty">
+-                        <AppText variant="subtitle">No notification history yet</AppText>
+-                        <AppText variant="muted">
+-                            Enabled food and weight reminders will appear here after they are created.
+-                        </AppText>
+-                        <AppButton
+-                            title="Review notification preferences"
+-                            variant="secondary"
+-                            onPress={openPreferences}
+-                        />
+-                    </AppSection>
+-                )}
+-                onRetry={isOnline ? () => historyQuery.refetch() : undefined}
+-                retrying={historyQuery.isFetching}
+-            >
+-                <View testID="notification-history-list" style={styles.list}>
+-                    {notifications.map((notification) => (
+-                        <NotificationCard
+-                            key={notification.id}
+-                            notification={notification}
+-                            showHistoryState
+-                            isBusy={isMutating}
+-                            onOpen={(item) => openNotification.mutate(item)}
+-                            onDismiss={(item) => dismissNotification.mutate(item)}
+-                        />
+-                    ))}
+-                    {historyQuery.hasNextPage && (
+-                        <AppButton
+-                            testID="notification-history-load-more"
+-                            title={historyQuery.isFetchingNextPage ? 'Loading more...' : 'Load older notifications'}
+-                            variant="secondary"
+-                            disabled={!isOnline || historyQuery.isFetchingNextPage}
+-                            onPress={() => void historyQuery.fetchNextPage()}
+-                        />
+-                    )}
+-                </View>
+-            </AsyncStateBoundary>
+-
+-            {actionError && (
+-                <AppNotice tone="danger" accessibilityRole="alert">
+-                    <AppText style={styles.errorText}>
+-                        {getSafeActionErrorMessage(actionError, 'Unable to update notification history. Try again.')}
+-                    </AppText>
+-                </AppNotice>
+-            )}
+-        </TabScreen>
+-    );
+-}
+-
+-function NotificationHistorySkeleton({ styles }: { styles: ReturnType<typeof createStyles> }) {
+-    return (
+-        <AppSection testID="notification-history-loading">
+-            {[0, 1, 2].map((row) => (
+-                <View key={row} style={styles.skeletonRow}>
+-                    <SkeletonBlock width={42} height={42} radius={21} />
+-                    <View style={styles.skeletonText}>
+-                        <SkeletonBlock width="68%" height={22} />
+-                        <SkeletonBlock width="88%" height={16} />
+-                    </View>
+-                </View>
+-            ))}
+-        </AppSection>
+-    );
+-}
+-
+-function createStyles(theme: AppTheme) {
+-    return StyleSheet.create({
+-        headerCard: {
+-            gap: spacing.md
+-        },
+-        headerActions: {
+-            flexDirection: 'row',
+-            flexWrap: 'wrap',
+-            gap: spacing.sm
+-        },
+-        headerAction: {
+-            flexGrow: 1
+-        },
+-        list: {
+-            gap: spacing.md,
+-            width: '100%'
+-        },
+-        skeletonRow: {
+-            minHeight: 58,
+-            flexDirection: 'row',
+-            alignItems: 'center',
+-            gap: spacing.md
+-        },
+-        skeletonText: {
+-            flex: 1,
+-            gap: spacing.sm
+-        },
+-        errorText: {
+-            color: theme.colors.danger
+-        }
+-    });
+-}
+diff --git a/mobile/src/notifications/presentation.test.ts b/mobile/src/notifications/presentation.test.ts
+index 3799a2b2..63e3d284 100644
+--- a/mobile/src/notifications/presentation.test.ts
++++ b/mobile/src/notifications/presentation.test.ts
+@@ -2,8 +2,6 @@ import type { InAppNotification } from '@calibrate/api-client';
+ import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
+ import {
+     formatNotificationDate,
+-    formatNotificationTimestamp,
+-    getNotificationStateLabel,
+     getNotificationText
+ } from './presentation';
+ 
+@@ -42,17 +40,4 @@ describe('notification presentation', () => {
+         expect(formatNotificationDate('2026-07-20')).toMatch(/Jul 20/);
+     });
+ 
+-    it('formats timestamps and distinguishes history states', () => {
+-        expect(formatNotificationTimestamp('2026-07-20T12:30:00.000Z')).toMatch(/Jul 20/);
+-        expect(getNotificationStateLabel(createNotification())).toBe('Unread');
+-        expect(getNotificationStateLabel(createNotification({ read_at: '2026-07-20T13:00:00.000Z' }))).toBe('Read');
+-        expect(getNotificationStateLabel(createNotification({
+-            read_at: '2026-07-20T13:00:00.000Z',
+-            dismissed_at: '2026-07-20T13:01:00.000Z'
+-        }))).toBe('Dismissed');
+-        expect(getNotificationStateLabel({
+-            ...createNotification(),
+-            resolved_at: '2026-07-20T13:02:00.000Z'
+-        })).toBe('Resolved');
+-    });
+ });
+diff --git a/mobile/src/notifications/presentation.ts b/mobile/src/notifications/presentation.ts
+index 5e78c567..54866b23 100644
+--- a/mobile/src/notifications/presentation.ts
++++ b/mobile/src/notifications/presentation.ts
+@@ -31,23 +31,3 @@ export function formatNotificationDate(value: string): string {
+     if (Number.isNaN(date.getTime())) return value;
+     return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+ }
+-
+-export function formatNotificationTimestamp(value: string): string {
+-    const date = new Date(value);
+-    if (Number.isNaN(date.getTime())) return value;
+-    return new Intl.DateTimeFormat(undefined, {
+-        month: 'short',
+-        day: 'numeric',
+-        hour: 'numeric',
+-        minute: '2-digit'
+-    }).format(date);
+-}
+-
+-export function getNotificationStateLabel(
+-    notification: InAppNotification & { resolved_at?: string | null }
+-): string {
+-    if (notification.dismissed_at) return 'Dismissed';
+-    if ('resolved_at' in notification && notification.resolved_at) return 'Resolved';
+-    if (notification.read_at) return 'Read';
+-    return 'Unread';
+-}
+diff --git a/mobile/src/notifications/query.test.ts b/mobile/src/notifications/query.test.ts
+index ac412b5e..7702a8d9 100644
+--- a/mobile/src/notifications/query.test.ts
++++ b/mobile/src/notifications/query.test.ts
+@@ -1,17 +1,15 @@
+-import { QueryClient, type InfiniteData } from '@tanstack/react-query';
++import { QueryClient } from '@tanstack/react-query';
+ import type { InAppNotification } from '@calibrate/api-client';
+ import { IN_APP_NOTIFICATION_TYPES } from '@calibrate/shared/inAppNotifications';
+ import {
+     activeNotificationQueryKey,
+-    dedupeNotificationPages,
+-    notificationHistoryQueryKey,
+-    reconcileAllNotificationsRead,
++    invalidateNotificationQueries,
+     reconcileNotificationDismissed,
+     reconcileNotificationRead,
+     type NotificationListPage
+ } from './query';
+ 
+-function notification(id: number, overrides: Partial<InAppNotification> = {}): InAppNotification {
++function notification(id: number): InAppNotification {
+     return {
+         id,
+         type: IN_APP_NOTIFICATION_TYPES.GENERIC,
+@@ -21,81 +19,47 @@ function notification(id: number, overrides: Partial<InAppNotification> = {}): I
+         action_url: '/today',
+         read_at: null,
+         dismissed_at: null,
+-        created_at: `2026-08-09T12:0${id}:00.000Z`,
+-        ...overrides
++        created_at: '2026-08-09T12:00:00.000Z'
+     };
+ }
+ 
+-function historyData(pages: NotificationListPage[]): InfiniteData<NotificationListPage> {
+-    return { pages, pageParams: pages.map((_, index) => index || undefined) };
+-}
++describe('active notification query reconciliation', () => {
++    it.each([reconcileNotificationRead, reconcileNotificationDismissed])(
++        'removes one reminder and decrements the global unread count only once',
++        (reconcile) => {
++            const client = new QueryClient();
++            client.setQueryData(activeNotificationQueryKey, {
++                notifications: [notification(2), notification(1)],
++                unread_count: 7,
++                next_cursor: 'more-active'
++            });
++            reconcile(client, 2);
++            reconcile(client, 2);
++            expect(client.getQueryData<NotificationListPage>(activeNotificationQueryKey)).toMatchObject({
++                unread_count: 6,
++                notifications: [{ id: 1 }],
++                next_cursor: 'more-active'
++            });
++            expect(client.getQueryCache().getAll()).toHaveLength(1);
++            client.clear();
++        }
++    );
+ 
+-describe('notification query reconciliation', () => {
+-    it('deduplicates cursor pages in first-seen order when a realtime refresh overlaps an older page', () => {
+-        expect(dedupeNotificationPages([
+-            { notifications: [notification(3), notification(2)], unread_count: 3 },
+-            { notifications: [notification(2), notification(1)], unread_count: 3 }
+-        ]).map(({ id }) => id)).toEqual([3, 2, 1]);
++    it('does not invent cached data or decrement for a reminder outside the quick list', () => {
++        const client = new QueryClient();
++        reconcileNotificationRead(client, 99);
++        expect(client.getQueryData(activeNotificationQueryKey)).toBeUndefined();
++        client.setQueryData(activeNotificationQueryKey, { notifications: [notification(1)], unread_count: 7 });
++        reconcileNotificationDismissed(client, 99);
++        expect(client.getQueryData<NotificationListPage>(activeNotificationQueryKey)?.unread_count).toBe(7);
++        client.clear();
+     });
+ 
+-    it('reconciles one read notification across badge, drawer, and history caches', () => {
+-        const queryClient = new QueryClient();
+-        queryClient.setQueryData(activeNotificationQueryKey, {
+-            notifications: [notification(2), notification(1)],
+-            unread_count: 2,
+-            next_cursor: null
+-        });
+-        queryClient.setQueryData(notificationHistoryQueryKey, historyData([{
+-            notifications: [notification(2), notification(1)],
+-            unread_count: 2,
+-            next_cursor: null
+-        }]));
+-
+-        reconcileNotificationRead(queryClient, 2, '2026-08-09T13:00:00.000Z');
+-
+-        expect(queryClient.getQueryData<NotificationListPage>(activeNotificationQueryKey)).toMatchObject({
+-            unread_count: 1,
+-            notifications: [{ id: 1 }]
+-        });
+-        const history = queryClient.getQueryData<InfiniteData<NotificationListPage>>(notificationHistoryQueryKey);
+-        expect(history?.pages[0].notifications[0]).toMatchObject({
+-            id: 2,
+-            read_at: '2026-08-09T13:00:00.000Z'
+-        });
+-        queryClient.clear();
+-    });
+-
+-    it('marks dismissal and read-all without rebuilding infinite-query pages', () => {
+-        const queryClient = new QueryClient();
+-        const pages = historyData([
+-            { notifications: [notification(2)], unread_count: 2, next_cursor: 'cursor' },
+-            { notifications: [notification(1)], unread_count: 2, next_cursor: null }
+-        ]);
+-        queryClient.setQueryData(activeNotificationQueryKey, {
+-            notifications: [notification(2), notification(1)],
+-            unread_count: 2,
+-            next_cursor: null
+-        });
+-        queryClient.setQueryData(notificationHistoryQueryKey, pages);
+-
+-        reconcileNotificationDismissed(queryClient, 2, '2026-08-09T13:00:00.000Z');
+-        let history = queryClient.getQueryData<InfiniteData<NotificationListPage>>(notificationHistoryQueryKey)!;
+-        expect(history.pages).toHaveLength(2);
+-        expect(history.pageParams).toEqual(pages.pageParams);
+-        expect(history.pages[0].notifications[0]).toMatchObject({
+-            dismissed_at: '2026-08-09T13:00:00.000Z',
+-            read_at: '2026-08-09T13:00:00.000Z'
+-        });
+-
+-        reconcileAllNotificationsRead(queryClient, '2026-08-09T14:00:00.000Z');
+-        expect(queryClient.getQueryData<NotificationListPage>(activeNotificationQueryKey)).toMatchObject({
+-            unread_count: 0,
+-            notifications: []
+-        });
+-        history = queryClient.getQueryData<InfiniteData<NotificationListPage>>(notificationHistoryQueryKey)!;
+-        expect(history.pages).toHaveLength(2);
+-        expect(history.pages.every((page) => page.unread_count === 0)).toBe(true);
+-        expect(history.pages[1].notifications[0].read_at).toBe('2026-08-09T14:00:00.000Z');
+-        queryClient.clear();
++    it('invalidates the active query for new arrivals and authoritative refetch after mutations', async () => {
++        const client = new QueryClient();
++        client.setQueryData(activeNotificationQueryKey, { notifications: [notification(1)], unread_count: 1 });
++        await invalidateNotificationQueries(client);
++        expect(client.getQueryState(activeNotificationQueryKey)?.isInvalidated).toBe(true);
++        client.clear();
+     });
+ });
+diff --git a/mobile/src/notifications/query.ts b/mobile/src/notifications/query.ts
+index 80735cc1..98d0323d 100644
+--- a/mobile/src/notifications/query.ts
++++ b/mobile/src/notifications/query.ts
+@@ -1,9 +1,8 @@
+-import type { InfiniteData, QueryClient } from '@tanstack/react-query';
++import type { QueryClient } from '@tanstack/react-query';
+ import type { InAppNotification } from '@calibrate/api-client';
+ 
+ export const MOBILE_NOTIFICATION_QUERY_KEY = ['mobile-in-app-notifications'] as const;
+ export const ACTIVE_NOTIFICATION_LIMIT = 5;
+-export const NOTIFICATION_HISTORY_PAGE_SIZE = 20;
+ 
+ export type NotificationListPage = {
+     notifications: InAppNotification[];
+@@ -17,49 +16,9 @@ export const activeNotificationQueryKey = [
+     ACTIVE_NOTIFICATION_LIMIT
+ ] as const;
+ 
+-export const notificationHistoryQueryKey = [
+-    ...MOBILE_NOTIFICATION_QUERY_KEY,
+-    'history',
+-    NOTIFICATION_HISTORY_PAGE_SIZE
+-] as const;
+-
+-/** Keep paged history stable when an invalidation returns an item already present in an older page. */
+-export function dedupeNotificationPages(
+-    pages: readonly NotificationListPage[] | undefined
+-): InAppNotification[] {
+-    const seen = new Set<number>();
+-    const notifications: InAppNotification[] = [];
+-    for (const page of pages ?? []) {
+-        for (const notification of page.notifications) {
+-            if (seen.has(notification.id)) continue;
+-            seen.add(notification.id);
+-            notifications.push(notification);
+-        }
+-    }
+-    return notifications;
+-}
+-
+-function updateHistoryNotification(
+-    data: InfiniteData<NotificationListPage> | undefined,
+-    notificationId: number,
+-    update: (notification: InAppNotification) => InAppNotification
+-): InfiniteData<NotificationListPage> | undefined {
+-    if (!data) return data;
+-    return {
+-        ...data,
+-        pages: data.pages.map((page) => ({
+-            ...page,
+-            notifications: page.notifications.map((notification) =>
+-                notification.id === notificationId ? update(notification) : notification
+-            )
+-        }))
+-    };
+-}
+-
+ export function reconcileNotificationRead(
+     queryClient: QueryClient,
+-    notificationId: number,
+-    readAt = new Date().toISOString()
++    notificationId: number
+ ): void {
+     queryClient.setQueryData<NotificationListPage>(activeNotificationQueryKey, (current) => current ? ({
+         ...current,
+@@ -68,49 +27,13 @@ export function reconcileNotificationRead(
+             current.notifications.some(({ id }) => id === notificationId) ? 1 : 0
+         ))
+     }) : current);
+-    queryClient.setQueryData<InfiniteData<NotificationListPage>>(notificationHistoryQueryKey, (current) =>
+-        updateHistoryNotification(current, notificationId, (notification) => ({
+-            ...notification,
+-            read_at: notification.read_at ?? readAt
+-        }))
+-    );
+ }
+ 
+ export function reconcileNotificationDismissed(
+     queryClient: QueryClient,
+-    notificationId: number,
+-    dismissedAt = new Date().toISOString()
+-): void {
+-    reconcileNotificationRead(queryClient, notificationId, dismissedAt);
+-    queryClient.setQueryData<InfiniteData<NotificationListPage>>(notificationHistoryQueryKey, (current) =>
+-        updateHistoryNotification(current, notificationId, (notification) => ({
+-            ...notification,
+-            dismissed_at: notification.dismissed_at ?? dismissedAt,
+-            read_at: notification.read_at ?? dismissedAt
+-        }))
+-    );
+-}
+-
+-export function reconcileAllNotificationsRead(
+-    queryClient: QueryClient,
+-    readAt = new Date().toISOString()
++    notificationId: number
+ ): void {
+-    queryClient.setQueryData<NotificationListPage>(activeNotificationQueryKey, (current) => current ? ({
+-        ...current,
+-        notifications: [],
+-        unread_count: 0
+-    }) : current);
+-    queryClient.setQueryData<InfiniteData<NotificationListPage>>(notificationHistoryQueryKey, (current) => current ? ({
+-        ...current,
+-        pages: current.pages.map((page) => ({
+-            ...page,
+-            unread_count: 0,
+-            notifications: page.notifications.map((notification) => ({
+-                ...notification,
+-                read_at: notification.read_at ?? readAt
+-            }))
+-        }))
+-    }) : current);
++    reconcileNotificationRead(queryClient, notificationId);
+ }
+ 
+ export function invalidateNotificationQueries(queryClient: QueryClient): Promise<void> {
+diff --git a/mobile/src/settings/PreferencesSettingsScreen.test.tsx b/mobile/src/settings/PreferencesSettingsScreen.test.tsx
+index 77d482b9..7c8f62f6 100644
+--- a/mobile/src/settings/PreferencesSettingsScreen.test.tsx
++++ b/mobile/src/settings/PreferencesSettingsScreen.test.tsx
+@@ -1,7 +1,14 @@
+-import { fireEvent, render } from '@testing-library/react-native';
++import { fireEvent, render, within } from '@testing-library/react-native';
+ import { Platform } from 'react-native';
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+ import PreferencesSettingsScreen from '../../app/(tabs)/(settings)/preferences';
++import { NATIVE_PUSH_STATES, type NativePushState } from '../notifications/workflow';
++
++let mockPushState: NativePushState = NATIVE_PUSH_STATES.UNSUPPORTED;
++const mockRequestPermission = jest.fn();
++const mockOpenSettings = jest.fn();
++const mockRefreshPermission = jest.fn();
++const mockRetryRegistration = jest.fn();
+ 
+ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+ jest.mock('expo-router', () => ({ useRouter: () => ({}) }));
+@@ -9,7 +16,13 @@ jest.mock('../components/TabScreen', () => ({
+     TabScreen: require('react-native').View
+ }));
+ jest.mock('../hooks/useNativePushRegistration', () => ({
+-    useNativePushRegistration: () => ({ state: 'unsupported' })
++    useNativePushRegistration: () => ({
++        state: mockPushState,
++        requestPermission: mockRequestPermission,
++        openSettings: mockOpenSettings,
++        refreshPermission: mockRefreshPermission,
++        retryRegistration: mockRetryRegistration
++    })
+ }));
+ jest.mock('../hooks/useConfirmDiscardNavigation', () => ({
+     useConfirmDiscardNavigation: () => ({})
+@@ -41,9 +54,46 @@ function editor(client: QueryClient) {
+ }
+ 
+ describe('PreferencesSettingsScreen draft refresh', () => {
+-    beforeEach(() => { mockUser = { ...initialUser }; });
++    beforeEach(() => {
++        mockUser = { ...initialUser };
++        mockPushState = NATIVE_PUSH_STATES.UNSUPPORTED;
++        jest.clearAllMocks();
++    });
+     afterEach(() => { jest.restoreAllMocks(); });
+ 
++    it('keeps permission requests and blocked-device recovery on Preferences', () => {
++        jest.replaceProperty(Platform, 'OS', 'ios');
++        mockPushState = NATIVE_PUSH_STATES.PERMISSION_REQUIRED;
++        const client = new QueryClient();
++        const screen = render(editor(client));
++        const delivery = within(screen.getByTestId('settings-delivery-permission'));
++        expect(delivery.queryByText(/token|endpoint|p256dh|auth/i)).toBeNull();
++        fireEvent.press(delivery.getByRole('button', { name: 'Enable push notifications' }));
++        expect(mockRequestPermission).toHaveBeenCalledTimes(1);
++
++        mockPushState = NATIVE_PUSH_STATES.BLOCKED;
++        screen.rerender(editor(client));
++        expect(delivery.getByText(/Enable them in iOS settings/)).toBeTruthy();
++        fireEvent.press(delivery.getByRole('button', { name: 'Open device settings' }));
++        fireEvent.press(delivery.getByRole('button', { name: 'Check again' }));
++        expect(mockOpenSettings).toHaveBeenCalledTimes(1);
++        expect(mockRefreshPermission).toHaveBeenCalledTimes(1);
++        screen.unmount();
++        client.clear();
++    });
++
++    it('retries registration from Preferences without changing reminder intent', () => {
++        mockPushState = NATIVE_PUSH_STATES.ERROR;
++        const client = new QueryClient();
++        const screen = render(editor(client));
++        fireEvent.press(screen.getByRole('button', { name: 'Retry push registration' }));
++        expect(mockRetryRegistration).toHaveBeenCalledTimes(1);
++        expect(screen.getByRole('switch', { name: 'Food reminders' })).toBeChecked();
++        expect(screen.getByRole('switch', { name: 'Weight reminders' })).toBeChecked();
++        screen.unmount();
++        client.clear();
++    });
++
+     it.each(['ios', 'android'] as const)('uses the %s notification status on the routed page', (platform) => {
+         jest.replaceProperty(Platform, 'OS', platform);
+         const client = new QueryClient();

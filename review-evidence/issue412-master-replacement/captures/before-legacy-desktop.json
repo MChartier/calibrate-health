@@ -1,0 +1,39 @@
+{
+  "name": "legacy-desktop",
+  "side": "before",
+  "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "sourceTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+  "harnessSource": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+  "sourceClean": true,
+  "capturedAtUtc": "2026-10-05T22:02:51.409Z",
+  "browser": "154.0.8037.95",
+  "host": "mchartier_zbook",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "theme": "light",
+  "scale": 1,
+  "locale": "en-US",
+  "timezone": "America/Los_Angeles",
+  "clock": "2026-07-21T19:00:00.000Z",
+  "reducedMotion": "reduce",
+  "serviceWorkers": "block",
+  "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+  "route": "/notifications",
+  "historyRequests": 1,
+  "actionRequests": 0,
+  "observation": {
+    "expectedRoute": "/notifications"
+  },
+  "image": "before-legacy-desktop.png",
+  "imageSha256": "2bde90faebf998fd6cf66cdbdd18018311eef7e6aff42141060661f8290760ee",
+  "servedAssets": [
+    {
+      "path": "_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+      "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+    }
+  ],
+  "captureHarnessSha256": "b3d5053d4450180313c77e16b7650c0df6bdd90514804ba542c8e428fb45e7c3",
+  "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+}

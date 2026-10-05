@@ -1,0 +1,285 @@
+{
+  "schemaVersion": 1,
+  "repository": "MChartier/calibrate-health",
+  "target": {
+    "ref": "refs/heads/master",
+    "sha": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "head": {
+    "ref": "refs/heads/mchartier/remove-notification-history-clean",
+    "sha": "c5f149a516cbd8733b02fffa4ebf22630db6611d"
+  },
+  "mergeBase": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "declaredParent": null,
+  "parentState": "independent",
+  "ultimateTarget": {
+    "ref": "refs/heads/master",
+    "sha": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "commits": [
+    {
+      "sha": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "parents": [
+        "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+      ],
+      "subject": "Remove notification history while preserving current reminders",
+      "rationale": "Single issue412 product change with maintained regression/compatibility documentation; no evidence or unrelated branch history.",
+      "paths": [
+        "docs/expo-web.md",
+        "e2e/expo-web/launch-17-notification-center.spec.ts",
+        "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+        "e2e/expo-web/launch-24-data-state-matrix.ts",
+        "e2e/expo-web/nested-route-stacks.spec.ts",
+        "e2e/expo-web/notification-legacy-gates.spec.ts",
+        "e2e/expo-web/notification-reminders.fixture.ts",
+        "mobile/app/(tabs)/(today)/notifications.tsx",
+        "mobile/app/(tabs)/_layout.tsx",
+        "mobile/src/components/NotificationCard.test.tsx",
+        "mobile/src/components/NotificationCard.tsx",
+        "mobile/src/components/NotificationsDrawer.test.tsx",
+        "mobile/src/components/NotificationsDrawer.tsx",
+        "mobile/src/components/legal/PublicLegalPage.test.tsx",
+        "mobile/src/components/legal/PublicLegalPage.tsx",
+        "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+        "mobile/src/diagnostics/operationDiagnostics.ts",
+        "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+        "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+        "mobile/src/navigation/guardedNavigation.ts",
+        "mobile/src/navigation/routeMetadata.test.ts",
+        "mobile/src/navigation/routeRegistry.test.ts",
+        "mobile/src/navigation/routeRegistry.ts",
+        "mobile/src/notifications/NotificationHistory.test.tsx",
+        "mobile/src/notifications/NotificationHistory.tsx",
+        "mobile/src/notifications/presentation.test.ts",
+        "mobile/src/notifications/presentation.ts",
+        "mobile/src/notifications/query.test.ts",
+        "mobile/src/notifications/query.ts",
+        "mobile/src/settings/PreferencesSettingsScreen.test.tsx"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/expo-web.md",
+      "additions": 5,
+      "deletions": 0,
+      "status": "M",
+      "rationale": "Five maintained lines document legacy redirect, retained active reminders/Preferences and server/data compatibility."
+    },
+    {
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "additions": 351,
+      "deletions": 396,
+      "status": "M",
+      "rationale": "Maintained active-reminder, count/action/recovery, guarded-editor and offline regression scenarios replacing mixed archive coverage."
+    },
+    {
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "additions": 2,
+      "deletions": 1,
+      "status": "M",
+      "rationale": "Reuse existing transient-notice suppression for the retained phone Settings/Preferences regression; no product UI hiding."
+    },
+    {
+      "path": "e2e/expo-web/launch-24-data-state-matrix.ts",
+      "additions": 0,
+      "deletions": 28,
+      "status": "M",
+      "rationale": "Remove only retired history-route fixture/case; retain other route data-state coverage."
+    },
+    {
+      "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+      "additions": 58,
+      "deletions": 0,
+      "status": "M",
+      "rationale": "Maintained legacy-route replacement, history Back/Forward, legal shortcut and unknown-route recovery coverage."
+    },
+    {
+      "path": "e2e/expo-web/notification-legacy-gates.spec.ts",
+      "additions": 45,
+      "deletions": 0,
+      "status": "A",
+      "rationale": "Maintain signed-out, verification, legal-acceptance and onboarding gates for legacy bookmarks."
+    },
+    {
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "additions": 256,
+      "deletions": 0,
+      "status": "A",
+      "rationale": "Shared synthetic reminder fixture for active list/count/actions/SSE and controlled failures; rejects retired client history/read-all calls."
+    },
+    {
+      "path": "mobile/app/(tabs)/(today)/notifications.tsx",
+      "additions": 2,
+      "deletions": 2,
+      "status": "M",
+      "rationale": "Compatibility replacement redirect to Today after existing shell gates."
+    },
+    {
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "additions": 14,
+      "deletions": 10,
+      "status": "M",
+      "rationale": "Remove history entry wiring; preserve immediate reminder cache reconciliation and guarded open/failure/offline behavior; retain merged rail."
+    },
+    {
+      "path": "mobile/src/components/NotificationCard.test.tsx",
+      "additions": 15,
+      "deletions": 7,
+      "status": "M",
+      "rationale": "Retain current reminder rendering/actions coverage while removing archive-only state expectations."
+    },
+    {
+      "path": "mobile/src/components/NotificationCard.tsx",
+      "additions": 2,
+      "deletions": 9,
+      "status": "M",
+      "rationale": "Remove demonstrably dead archive-state presentation props and formatting; retain active reminder card."
+    },
+    {
+      "path": "mobile/src/components/NotificationsDrawer.test.tsx",
+      "additions": 37,
+      "deletions": 9,
+      "status": "M",
+      "rationale": "Maintain drawer accessibility/dismissal and accepted-pending-open guards; verify removed footer."
+    },
+    {
+      "path": "mobile/src/components/NotificationsDrawer.tsx",
+      "additions": 10,
+      "deletions": 13,
+      "status": "M",
+      "rationale": "Remove history footer; protect accepted pending navigation with visible busy state and modal dismissal guard."
+    },
+    {
+      "path": "mobile/src/components/legal/PublicLegalPage.test.tsx",
+      "additions": 3,
+      "deletions": 3,
+      "status": "M",
+      "rationale": "Verify retired history shortcut removal while preserving remaining legal-page navigation."
+    },
+    {
+      "path": "mobile/src/components/legal/PublicLegalPage.tsx",
+      "additions": 0,
+      "deletions": 7,
+      "status": "M",
+      "rationale": "Remove only obsolete direct history shortcut."
+    },
+    {
+      "path": "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+      "additions": 2,
+      "deletions": 2,
+      "status": "M",
+      "rationale": "Retarget diagnostic assertions to an existing live operation, preserving coverage."
+    },
+    {
+      "path": "mobile/src/diagnostics/operationDiagnostics.ts",
+      "additions": 1,
+      "deletions": 3,
+      "status": "M",
+      "rationale": "Remove unused history-only client operation mapping; shared/server contract unchanged."
+    },
+    {
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+      "additions": 44,
+      "deletions": 0,
+      "status": "M",
+      "rationale": "Maintain failed-prerequisite draft preservation, duplicate guard protection and successful departure ordering."
+    },
+    {
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "additions": 7,
+      "deletions": 11,
+      "status": "M",
+      "rationale": "Allow fallible reminder preparation after consent and before draft discard/navigation."
+    },
+    {
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "additions": 6,
+      "deletions": 3,
+      "status": "M",
+      "rationale": "Carry optional fallible reminder preparation through existing guard API."
+    },
+    {
+      "path": "mobile/src/navigation/routeMetadata.test.ts",
+      "additions": 5,
+      "deletions": 0,
+      "status": "M",
+      "rationale": "Assert retired history address resolves as Today alias, not archive metadata."
+    },
+    {
+      "path": "mobile/src/navigation/routeRegistry.test.ts",
+      "additions": 8,
+      "deletions": 1,
+      "status": "M",
+      "rationale": "Maintain legacy alias and canonical route expectations."
+    },
+    {
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "additions": 4,
+      "deletions": 13,
+      "status": "M",
+      "rationale": "Remove archive route metadata; retain /notifications as Today compatibility alias."
+    },
+    {
+      "path": "mobile/src/notifications/NotificationHistory.test.tsx",
+      "additions": 0,
+      "deletions": 149,
+      "status": "D",
+      "rationale": "Delete tests only for the removed component; retained permission/recovery coverage moves to Preferences."
+    },
+    {
+      "path": "mobile/src/notifications/NotificationHistory.tsx",
+      "additions": 0,
+      "deletions": 268,
+      "status": "D",
+      "rationale": "Delete requested historical client screen and its duplicate controls."
+    },
+    {
+      "path": "mobile/src/notifications/presentation.test.ts",
+      "additions": 0,
+      "deletions": 15,
+      "status": "M",
+      "rationale": "Remove only tests for dead history-only formatting."
+    },
+    {
+      "path": "mobile/src/notifications/presentation.ts",
+      "additions": 0,
+      "deletions": 20,
+      "status": "M",
+      "rationale": "Remove unused archive timestamp/state helpers; retain reminder date/text."
+    },
+    {
+      "path": "mobile/src/notifications/query.test.ts",
+      "additions": 39,
+      "deletions": 75,
+      "status": "M",
+      "rationale": "Maintain active cache read/dismiss/count/invalidation contracts; remove dead history cache assertions."
+    },
+    {
+      "path": "mobile/src/notifications/query.ts",
+      "additions": 4,
+      "deletions": 81,
+      "status": "M",
+      "rationale": "Remove client-only history pagination/read-all reconciliation; preserve active key/cache and invalidation."
+    },
+    {
+      "path": "mobile/src/settings/PreferencesSettingsScreen.test.tsx",
+      "additions": 53,
+      "deletions": 3,
+      "status": "M",
+      "rationale": "Retain permission/blocked/error/retry coverage on the existing Preferences home."
+    }
+  ],
+  "totals": {
+    "commits": 1,
+    "files": 30,
+    "additions": 973,
+    "deletions": 1129
+  },
+  "excludedFromProductHistory": [
+    "One-off captures, logs, manifests, build inventories and harnesses",
+    "Original PR417 evidence add/update/delete commits",
+    "Merged/sibling PR history beyond actual target master"
+  ],
+  "checkedAtUtc": "2026-10-05T22:04:27.749Z"
+}

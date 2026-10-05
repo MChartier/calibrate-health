@@ -1,0 +1,2 @@
+const path=require('node:path');
+module.exports={testDir:__dirname,testMatch:'capture.spec.ts',outputDir:path.join(__dirname,'capture-results-'+process.env.CAPTURE_SIDE),workers:1,retries:0,timeout:60000,reporter:'list',use:{baseURL:process.env.CAPTURE_URL,channel:'chrome',viewport:{width:1440,height:1000},deviceScaleFactor:1,locale:'en-US',timezoneId:'America/Los_Angeles',reducedMotion:'reduce',colorScheme:'light',serviceWorkers:'block'}};

@@ -1,0 +1,12 @@
+
+Running 5 tests using 1 worker
+
+(node:16060) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 capture.spec.ts:26:1 ΓÇ║ empty drawer (1.2s)
+  ok 2 capture.spec.ts:27:1 ΓÇ║ populated drawer on compact dark screen (1.2s)
+  ok 3 capture.spec.ts:28:1 ΓÇ║ legacy address (1.3s)
+  ok 4 capture.spec.ts:29:1 ΓÇ║ continued Preferences access (1.1s)
+  ok 5 capture.spec.ts:30:1 ΓÇ║ pending and failed reminder read with edited Preferences (1.6s)
+
+  5 passed (8.8s)
