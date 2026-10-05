@@ -1,0 +1,13 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand pendingPause useFoodTrackingPause PausedDayMessage HistoricalDatePicker FoodTrackingStatus
+PASS src/components/FoodTrackingStatus.test.tsx
+PASS src/food/useFoodTrackingPause.test.tsx
+PASS src/food/pendingPause.test.ts
+PASS src/today/PausedDayMessage.test.tsx
+PASS src/food/HistoricalDatePicker.test.tsx
+
+Test Suites: 5 passed, 5 total
+Tests:       35 passed, 35 total
+Snapshots:   0 total
+Time:        5.087 s
+Ran all test suites matching /pendingPause|useFoodTrackingPause|PausedDayMessage|HistoricalDatePicker|FoodTrackingStatus/i.

@@ -1,0 +1,133 @@
+
+> mobile@0.2.7 test
+> jest --runInBand useFoodTrackingPause
+
+FAIL src/food/useFoodTrackingPause.test.tsx
+  × keeps queued start/date across a new observer, manual refetch and another remount (73 ms)
+  × keeps food-tracking-pause.update through server refetch until replay removes the overlay (55 ms)
+  × keeps food-tracking-pause.resume through server refetch until replay removes the overlay (62 ms)
+  × restores server metadata when queued intent is failed (63 ms)
+  × restores server metadata when queued intent is discarded (62 ms)
+
+  ● keeps queued start/date across a new observer, manual refetch and another remount
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+    -   "active": true,
+    -   "expected_resume_on": "2026-08-04",
+    -   "starts_on": "2026-07-21",
+    +   "active": false,
+    +   "expected_resume_on": "2026-08-03",
+    +   "starts_on": "2026-07-20",
+      }
+
+      24 |         await waitFor(() => expect(screen.result.current.isSuccess).toBe(true));
+      25 |         await act(async () => { await screen.result.current.refetch(); });
+    > 26 |         expect(screen.result.current.data?.pause).toMatchObject({ active: true, starts_on: '2026-07-21', expected_resume_on: '2026-08-04' });
+         |                                                   ^
+      27 |         screen.unmount(); screen.client.clear();
+      28 |     }
+      29 | });
+
+      at toMatchObject (src/food/useFoodTrackingPause.test.tsx:26:51)
+          at _loop.next (<anonymous>)
+      at Object._loop (src/food/useFoodTrackingPause.test.tsx:22:58)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● keeps food-tracking-pause.update through server refetch until replay removes the overlay
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "active": true,
+    -   "expected_resume_on": null,
+    +   "expected_resume_on": "2026-08-03",
+      }
+
+      38 |     await waitFor(() => expect(screen.result.current.isSuccess).toBe(true));
+      39 |     await act(async () => { await screen.result.current.refetch(); });
+    > 40 |     expect(screen.result.current.data?.pause).toMatchObject(expected);
+         |                                               ^
+      41 |     mockGetPause.mockResolvedValue({ pause: { ...serverPause, ...expected } });
+      42 |     mockMutations = []; screen.rerender({});
+      43 |     await waitFor(() => expect(screen.result.current.data?.pause).toMatchObject(expected));
+
+      at toMatchObject (src/food/useFoodTrackingPause.test.tsx:40:47)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● keeps food-tracking-pause.resume through server refetch until replay removes the overlay
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+    -   "active": false,
+    +   "active": true,
+      }
+
+      38 |     await waitFor(() => expect(screen.result.current.isSuccess).toBe(true));
+      39 |     await act(async () => { await screen.result.current.refetch(); });
+    > 40 |     expect(screen.result.current.data?.pause).toMatchObject(expected);
+         |                                               ^
+      41 |     mockGetPause.mockResolvedValue({ pause: { ...serverPause, ...expected } });
+      42 |     mockMutations = []; screen.rerender({});
+      43 |     await waitFor(() => expect(screen.result.current.data?.pause).toMatchObject(expected));
+
+      at toMatchObject (src/food/useFoodTrackingPause.test.tsx:40:47)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● restores server metadata when queued intent is failed
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-09-01"
+    Received: "2026-08-03"
+
+      50 |     const screen = mount();
+      51 |     await waitFor(() => expect(screen.result.current.isSuccess).toBe(true));
+    > 52 |     expect(screen.result.current.data?.pause.expected_resume_on).toBe('2026-09-01');
+         |                                                                  ^
+      53 |     mockMutations = disposition === 'failed' ? [{ ...mutation, state: 'failed' }] : [];
+      54 |     screen.rerender({});
+      55 |     await waitFor(() => expect(screen.result.current.data?.pause.expected_resume_on).toBe('2026-08-03'));
+
+      at toBe (src/food/useFoodTrackingPause.test.tsx:52:66)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● restores server metadata when queued intent is discarded
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-09-01"
+    Received: "2026-08-03"
+
+      50 |     const screen = mount();
+      51 |     await waitFor(() => expect(screen.result.current.isSuccess).toBe(true));
+    > 52 |     expect(screen.result.current.data?.pause.expected_resume_on).toBe('2026-09-01');
+         |                                                                  ^
+      53 |     mockMutations = disposition === 'failed' ? [{ ...mutation, state: 'failed' }] : [];
+      54 |     screen.rerender({});
+      55 |     await waitFor(() => expect(screen.result.current.data?.pause.expected_resume_on).toBe('2026-08-03'));
+
+      at toBe (src/food/useFoodTrackingPause.test.tsx:52:66)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 5 total
+Snapshots:   0 total
+Time:        1.054 s
+Ran all test suites matching /useFoodTrackingPause/i.

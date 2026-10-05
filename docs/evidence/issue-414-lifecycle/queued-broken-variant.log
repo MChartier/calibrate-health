@@ -1,0 +1,108 @@
+
+> mobile@0.2.7 test
+> jest --runInBand FoodTrackingStatus -t keeps accepted queued
+
+FAIL src/components/FoodTrackingStatus.test.tsx
+  food tracking day resolution
+    × keeps accepted queued intent through control success without reading pre-replay server state (96 ms)
+    × keeps accepted queued intent through prompt success without reading pre-replay server state (66 ms)
+    × keeps accepted queued intent through extend success without reading pre-replay server state (62 ms)
+    ○ skipped clears the plan through control resume and ignores an older in-flight pause read
+    ○ skipped clears the plan through prompt resume and ignores an older in-flight pause read
+    ○ skipped does not clear the prior plan when resume fails or durable queue storage rejects the attempt
+    ○ skipped stacks completion and pause targets when native text is enlarged
+    ○ skipped offers completion, incomplete, and pause actions for an open current day
+    ○ skipped removes the rectangular Android elevation from the past-day completion action
+    ○ skipped presents inferred blank, incomplete, complete, and paused days without food prompts
+    ○ skipped does not present failed cached day data as fully logged
+    ○ skipped does not present cached completion when another required Today resource failed
+    ○ skipped fills only the remaining Today space with a centered status hero
+    ○ skipped asks for confirmation when an expected resume date is due and exposes every extension path
+    ○ skipped keeps the pause active when the confirmation is dismissed and offers it again next foreground
+    ○ skipped updates the expected date for tomorrow, a chosen date, or until manual resume
+    ○ skipped confirms resume explicitly and reopens the local resume day
+
+  ● food tracking day resolution › keeps accepted queued intent through control success without reading pre-replay server state
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+    -   "status": "OPEN",
+    +   "status": "PAUSED",
+      }
+
+      181 |         expect(client.getQueryData(key)).toMatchObject({ pause: surface === 'extend'
+      182 |             ? { active: true, expected_resume_on: null, resume_confirmation_due: false } : { active: false } });
+    > 183 |         expect(client.getQueryData(foodDayQueryKey(date))).toMatchObject({ status: surface === 'extend' ? 'PAUSED' : 'OPEN' });
+          |                                                            ^
+      184 |         expect(mockApi.getFoodTrackingPause).not.toHaveBeenCalled();
+      185 |         expect(mockApi.getFoodDay).not.toHaveBeenCalled();
+      186 |         screen.unmount(); client.clear();
+
+      at toMatchObject (src/components/FoodTrackingStatus.test.tsx:183:60)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● food tracking day resolution › keeps accepted queued intent through prompt success without reading pre-replay server state
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "pause": Object {
+    -     "active": false,
+    +     "active": true,
+        },
+      }
+
+      179 |         await waitFor(() => expect(mockEnqueue).toHaveBeenCalledTimes(1));
+      180 |         await waitFor(() => expect(client.isMutating()).toBe(0));
+    > 181 |         expect(client.getQueryData(key)).toMatchObject({ pause: surface === 'extend'
+          |                                          ^
+      182 |             ? { active: true, expected_resume_on: null, resume_confirmation_due: false } : { active: false } });
+      183 |         expect(client.getQueryData(foodDayQueryKey(date))).toMatchObject({ status: surface === 'extend' ? 'PAUSED' : 'OPEN' });
+      184 |         expect(mockApi.getFoodTrackingPause).not.toHaveBeenCalled();
+
+      at toMatchObject (src/components/FoodTrackingStatus.test.tsx:181:42)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● food tracking day resolution › keeps accepted queued intent through extend success without reading pre-replay server state
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+        "pause": Object {
+          "active": true,
+    -     "expected_resume_on": null,
+    -     "resume_confirmation_due": false,
+    +     "expected_resume_on": "2026-07-23",
+    +     "resume_confirmation_due": true,
+        },
+      }
+
+      179 |         await waitFor(() => expect(mockEnqueue).toHaveBeenCalledTimes(1));
+      180 |         await waitFor(() => expect(client.isMutating()).toBe(0));
+    > 181 |         expect(client.getQueryData(key)).toMatchObject({ pause: surface === 'extend'
+          |                                          ^
+      182 |             ? { active: true, expected_resume_on: null, resume_confirmation_due: false } : { active: false } });
+      183 |         expect(client.getQueryData(foodDayQueryKey(date))).toMatchObject({ status: surface === 'extend' ? 'PAUSED' : 'OPEN' });
+      184 |         expect(mockApi.getFoodTrackingPause).not.toHaveBeenCalled();
+
+      at toMatchObject (src/components/FoodTrackingStatus.test.tsx:181:42)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 14 skipped, 17 total
+Snapshots:   0 total
+Time:        1.206 s, estimated 3 s
+Ran all test suites matching /FoodTrackingStatus/i with tests matching "keeps accepted queued".

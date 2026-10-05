@@ -1,0 +1,40 @@
+
+Running 26 tests using 2 workers
+
+(node:35384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10232) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in dark (2.5s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in light (2.6s)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:117:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (2.4s)
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:148:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (2.4s)
+  -   6 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:190:5 ΓÇ║ planned pause remains readable at enlarged text
+  ok  7 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:201:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (1.5s)
+  ok  8 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:220:5 ΓÇ║ matched failed resume and recovery retains the actual pause until success (1.3s)
+  ok  9 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:234:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (1.8s)
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:169:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (11.4s)
+  ok 11 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:266:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (1.3s)
+  ok 10 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:251:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (8.5s)
+  ok 12 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:301:5 ΓÇ║ matched accepted queued resume before replay (1.0s)
+(node:35072) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 13 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:334:5 ΓÇ║ matched queued pause metadata survives calendar reads (1.5s)
+  ok 14 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in light (2.0s)
+  ok 15 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:117:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (2.2s)
+  ok 16 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:148:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (2.4s)
+  ok 17 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:169:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (10.6s)
+  ok 18 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:190:5 ΓÇ║ planned pause remains readable at enlarged text (1.2s)
+  ok 19 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:201:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (1.4s)
+  ok 20 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:220:5 ΓÇ║ matched failed resume and recovery retains the actual pause until success (1.2s)
+  ok 21 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:234:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (2.2s)
+(node:39696) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 22 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:251:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (8.7s)
+  ok 24 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:266:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (1.6s)
+  ok 23 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in dark (2.5s)
+  ok 25 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:301:5 ΓÇ║ matched accepted queued resume before replay (1.3s)
+  ok 26 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:334:5 ΓÇ║ matched queued pause metadata survives calendar reads (1.8s)
+
+  1 skipped
+  25 passed (1.1m)

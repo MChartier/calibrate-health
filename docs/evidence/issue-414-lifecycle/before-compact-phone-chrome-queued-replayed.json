@@ -1,0 +1,47 @@
+{
+  "capturedAtUtc": "2026-10-05T22:33:56.205Z",
+  "sourceCommit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "baseline": true,
+  "harness": [
+    {
+      "path": "e2e/expo-web/planned-pause.spec.ts",
+      "sha256": "b7e855db80058372c03b766ed8b31eb51d32e93a27bfc2c0adad41a0ec3ce4a4"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "path": "e2e/expo-web/text-scaling.ts",
+      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e"
+    },
+    {
+      "path": "playwright.expo-web.config.ts",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    }
+  ],
+  "display": {
+    "scale": 1,
+    "dark": false,
+    "locale": "en-US",
+    "timezone": "America/Los_Angeles"
+  },
+  "route": "http://127.0.0.1:43420/today",
+  "viewport": {
+    "width": 320,
+    "height": 720
+  },
+  "browser": "154.0.8037.95",
+  "project": "compact-phone-chrome",
+  "fixture": "planned-pause.spec.ts + fixtures.ts",
+  "frozenClock": "2026-07-21T19:00:00Z + deterministic 16ms steps",
+  "normalization": "hideTransientPwaNotices suppresses unrelated PWA notices identically; no compared UI modified",
+  "image": "before-compact-phone-chrome-queued-replayed.png",
+  "imageSha256": "f794798b1b91e4379700041e6aac0f388962337b53b38cea4876581e808b230d",
+  "servedScripts": [
+    {
+      "url": "http://127.0.0.1:43420/_expo/static/js/web/index-a32a5a279459052dfedb345dd2794281.js",
+      "sha256": "3e5ee1d9aaf0787d18443534f47bc384d824f0fc025c306e0bed7d04b9396a91"
+    }
+  ]
+}
