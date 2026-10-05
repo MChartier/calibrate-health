@@ -1,0 +1,16 @@
+{
+  "base": "472b2a1600fc3be122d3bdebbb380b3adc11a8a8",
+  "testSha256": "ca28e3e76e4000869e0e133d16547a66c0164d3791d8a42c10fd329869312ce3",
+  "before": [
+    {
+      "path": "mobile/src/offline/operations.ts",
+      "sha256": "fb3e029ec5c2b157f7e6d730dce4a0198193a8cad9c16ba1b231e128d19a4851"
+    },
+    {
+      "path": "mobile/src/offline/reconciler.ts",
+      "sha256": "f66ba3b481b28eea1542365fbfe21bfcc63afaad3c0ef436debdd6146b1680a5"
+    }
+  ],
+  "restored": true,
+  "exitCode": 1
+}

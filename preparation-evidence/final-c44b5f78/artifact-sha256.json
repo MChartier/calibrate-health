@@ -1,0 +1,118 @@
+[
+  {
+    "name": ".gitattributes",
+    "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+  },
+  {
+    "name": "commit-inventory.txt",
+    "sha256": "4450d1d88cb7cfaae6a6a83b5f3f76da891565e9928d9855b8cbd7fd199fd045"
+  },
+  {
+    "name": "complete-merge.diff",
+    "sha256": "471c97d62952cbd3ac80aba489943a9eefaf38034d78d916f3b14bb82ae246d3"
+  },
+  {
+    "name": "demonstrate-lifecycle-recovery.cjs",
+    "sha256": "cdc32968bb6e3f9642f416c184254282e504e5e22b7025c982dd4635bda70d3b"
+  },
+  {
+    "name": "demonstrate-pause-matrix.cjs",
+    "sha256": "578acffef4974a8b3c2922dcdc1fdcfcad8a6bab66d7b3803a0d84597481300c"
+  },
+  {
+    "name": "lifecycle-final-browser.log",
+    "sha256": "9312d8b802e97d34b85fabbc9bf4434bc7c6a74842c7bbe497a72d566a9877d5"
+  },
+  {
+    "name": "lifecycle-final-build.log",
+    "sha256": "6ef43dff904dfeca8849e9afd0c909117aae1892c047b84f2aca69ae4febca90"
+  },
+  {
+    "name": "lifecycle-final-knip.log",
+    "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+  },
+  {
+    "name": "lifecycle-final-mobile.log",
+    "sha256": "52bba14c682e52656a8b26cb0028b0ffd3be5ea5f886b493ba91e4921602ea42"
+  },
+  {
+    "name": "lifecycle-recovery-before.log",
+    "sha256": "855422551f5a619c9c7e147d4e0e23fa2102b99cbc3c0b97647937b99645f4a2"
+  },
+  {
+    "name": "lifecycle-recovery-experiment.json",
+    "sha256": "a1ce5bc3cd21e84540bbfff77813e230e1673793dd0ef31f32add39204bb3105"
+  },
+  {
+    "name": "lifecycle-recovery-focused-final.log",
+    "sha256": "fb7918dbdae3b27333a2c5282580dd6558dfabdd86982086b5aed9ed1998e2f2"
+  },
+  {
+    "name": "lifecycle-recovery-typecheck.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "name": "lifecycle-running-build.json",
+    "sha256": "a232238ca136d3ea4cdd598c463380469c83872e781814aaa354f9a4f3051377"
+  },
+  {
+    "name": "merge-diff-inventory.json",
+    "sha256": "51e28c8f1cfe46554b751703d254a7474db19e81268a2bae44bbd94ef4d79931"
+  },
+  {
+    "name": "pause-matrix-before.log",
+    "sha256": "7a7e16d8501a7f0a9323db1dfb277e9fc4dc26b2d839e9e6024a73eb958f8a22"
+  },
+  {
+    "name": "pause-matrix-experiment.json",
+    "sha256": "b4f5bf4d12ff42c9e2ec58ea0c2b6ff1615367465b1a2d3faa46f8dce8c03a78"
+  },
+  {
+    "name": "pause-matrix-focused.log",
+    "sha256": "2e0600e4b076ef0b9c15f7553330a564a825c56b25940b4c2861849ef37d375d"
+  },
+  {
+    "name": "pause-matrix-knip.log",
+    "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+  },
+  {
+    "name": "pause-matrix-typecheck.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "name": "README.md",
+    "sha256": "d2d95e86cc8cd57d08623892b494d9d0762635226f8d8449b33b1615d4cb62af"
+  },
+  {
+    "name": "verify-lifecycle-build.cjs",
+    "sha256": "d30dbe7f9901769da394a2233e0a511ba55502863aeee7e81ec17df5f0a3fea5"
+  },
+  {
+    "name": "export/sw.js",
+    "sha256": "39f1a3dcf985e1c7665cebbb24984e81ebbc6553aed90ba15c65b858acaea67f"
+  },
+  {
+    "name": "export/_expo/static/js/web/ImagePicker-34e1258edcd343c74b8483260b76ca26.js",
+    "sha256": "d1c70029457b91f973025158f23631965e4fdc42f3cbfeed3fb482d91ac3f5ef"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-57cd49fae74c30a1eafde2634e8d2fce.js",
+    "sha256": "d0a62472c3f64ec58463093a62d41e2d762ea5b401dd78022b3650d24e1a6382"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-642bc57b88b403c326e6f6f47a4332aa.js",
+    "sha256": "6ea6d8691847da88008889719aeeb9f8af9c6bff49f6332623cbc8a9be96e118"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-de135ecb82dc4608b3b6de1ab883036c.js",
+    "sha256": "0404de73d2260e878596ba9ae3057d8a193029fbc1558aa0d3b86133f63f019a"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-f0acdc5e756d7387419573089d9d5410.js",
+    "sha256": "1bc66d87c8273859dd74f815784b2128a4bac773b5226127dc9262399d8c32e0"
+  },
+  {
+    "name": "export/_expo/static/js/web/ProgressExpansionContent-27e35d2974f8ad6186da581355fd99d9.js",
+    "sha256": "3aedefaf8f12918bc791bb1312b1ed53097ccee151c74fbe72a41943d5e540d2"
+  }
+]
