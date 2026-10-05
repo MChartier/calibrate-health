@@ -85,7 +85,7 @@ export default function BarcodeScreen() {
     const styles = useMemo(() => createStyles(theme), [theme]);
     const routeParams = useLocalSearchParams<BarcodeWorkflowRouteParams>();
     const { api, user, isLoading: isAuthLoading, clearLocalSession } = useAuth();
-    const { enqueue, mutations = [] } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const isOnline = useOnlineStatus();
     const [permission, requestPermission, refreshPermission] = useCameraPermissions();
@@ -189,6 +189,7 @@ export default function BarcodeScreen() {
                 throw new Error('Backfill this day before adding food.');
             }
             return executeOrQueueMutation({
+                withOutbox,
                 forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
                 payload,

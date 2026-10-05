@@ -85,7 +85,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     const footerRowStyle = [styles.footerRow, fontScale >= 1.3 && styles.footerRowStacked];
     const { colors } = theme;
     const { api, user } = useAuth();
-    const { enqueue, mutations = [] } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
     const failedWeight = findFailedMetric(mutations, date);
     const queryClient = useQueryClient();
     const reduceMotion = useReducedMotionPreference();
@@ -136,6 +136,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             }
             const payload = { weight: parsedWeight, date };
             return executeOrQueueMutation<MetricSaveResponse>({
+                withOutbox,
                 forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.ADD_METRIC,
                 payload,
@@ -169,6 +170,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             if (!existingMetric) throw new Error('No weight entry exists for this day.');
             const payload = { ...localTarget(existingMetric), date };
             return executeOrQueueMutation({
+                withOutbox,
                 forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC,
                 payload,

@@ -1,3 +1,4 @@
+import { createOutboxDispatch, type OutboxDispatch } from './mutationDispatch';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { onlineManager } from '@tanstack/react-query';
 import { AppState } from 'react-native';
@@ -11,6 +12,7 @@ import { queueWearSyncInvalidation } from '../wear/syncInvalidation';
 
 type OfflineOutboxContextValue = {
     isReady: boolean;
+    withOutbox: OutboxDispatch;
     initializationError: string | null;
     mutations: QueuedMutation[];
     enqueue: (operation: string, payload: unknown, operationId?: string) => Promise<QueuedMutation>;
@@ -36,6 +38,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
     const userId = hasFullAccountAccess(user) ? user?.id : undefined;
     const [outbox, setOutbox] = useState<SqliteOutbox | null>(null);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
+    const [newEnqueue, setNewEnqueue] = useState<{ store: SqliteOutbox } | null>(null);
     const [initializationError, setInitializationError] = useState<string | null>(null);
     const retrySchedulerRef = useRef<(result: ReconcileResult) => void>(() => undefined);
     const currentBindingRef = useRef({ serverUrl, userId, outbox });
@@ -100,11 +103,20 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         await onReplayCompleted(result);
     }, [notifyWearAfterReplay, onReplayCompleted]);
 
-    const enqueue = useCallback(async (operation: string, payload: unknown, operationId?: string) => {
-        const mutation = await requireOutbox().enqueue({ id: operationId, operation, payload });
+    const enqueueUnlocked = useCallback(async (operation: string, payload: unknown, operationId?: string) => {
+        const store = requireOutbox();
+        const mutation = await store.enqueue({ id: operationId, operation, payload });
         await refresh();
+        setNewEnqueue({ store });
         return mutation;
     }, [refresh, requireOutbox]);
+
+    const withOutbox = useMemo(() => createOutboxDispatch(
+        userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId), () => requireOutbox().list(), enqueueUnlocked,
+        () => currentBindingRef.current.serverUrl === serverUrl && currentBindingRef.current.userId === userId && currentBindingRef.current.outbox === outbox
+    ), [serverUrl, userId, outbox, requireOutbox, enqueueUnlocked]);
+    const enqueue = useCallback((operation: string, payload: unknown, operationId?: string) =>
+        withOutbox(write => write(operation, payload, operationId)) as Promise<QueuedMutation>, [withOutbox]);
 
     const reconcile = useCallback(async () => {
         if (!reconciler) throw new Error('Offline outbox is unavailable until authentication is ready.');
@@ -204,18 +216,23 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
             unsubscribeOnline();
         };
     }, [notifyAfterReplay, reconciler, refresh]);
+    useEffect(() => {
+        if (!newEnqueue || newEnqueue.store !== outbox || !onlineManager.isOnline() || AppState.currentState === 'background') return;
+        void reconcile().catch(() => undefined);
+    }, [newEnqueue, outbox, reconcile]);
     const value = useMemo<OfflineOutboxContextValue>(() => ({
         isReady: outbox !== null,
         initializationError,
         mutations,
         enqueue,
+        withOutbox,
         reconcile,
         retryFailed,
         discardAll,
         discardFailedFood,
         discardFailedMutation,
         refresh
-    }), [discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

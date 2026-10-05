@@ -345,3 +345,16 @@ it('revokes the native session even when local draft cleanup fails', async () =>
     expect(mockLogoutMobile).toHaveBeenCalledWith('refresh');
     expect([...mockSecureLogoutStorage.values()]).toEqual(['{"signedOut":true,"pending":false}']);
 });
+
+
+it('clears UI and revokes the native token when writing logout intent fails', async () => {
+    mockGetClientConfig.mockResolvedValue({ server_version: '1.2.0' });
+    mockRefreshMobile.mockResolvedValue(AUTH_PAYLOAD);
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.user?.id).toBe(7));
+    mockLogoutMobile.mockClear();
+    jest.mocked(require('expo-secure-store').setItemAsync).mockRejectedValueOnce(new Error('Storage full'));
+    await act(async () => result.current.logout());
+    expect(result.current.user).toBeNull();
+    expect(mockLogoutMobile).toHaveBeenCalledWith('refresh');
+});

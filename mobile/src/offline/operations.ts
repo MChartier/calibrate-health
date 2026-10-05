@@ -1,3 +1,4 @@
+import type { OutboxDispatch } from './mutationDispatch';
 import type { QueuedMutation } from './queuedMutation';
 import { foodWirePayload } from './trackingProjection';
 import { onlineManager } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ export type OutboxMutationResult<T> =
 type ExecuteOrQueueOptions<T> = {
     operation: OfflineMutationOperation;
     forceQueue?: boolean;
+    withOutbox?: OutboxDispatch;
     payload: unknown;
     execute: (operationId: string) => Promise<T>;
     enqueue: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>;
@@ -47,11 +49,15 @@ function requirePositiveInteger(value: unknown, operation: string): number {
 export async function executeOrQueueMutation<T>({
     operation,
     forceQueue = false,
+    withOutbox,
     payload,
     execute,
     enqueue,
     createOperationId = Crypto.randomUUID
 }: ExecuteOrQueueOptions<T>): Promise<OutboxMutationResult<T>> {
+    if (withOutbox) return withOutbox((durableEnqueue, mustQueue) => executeOrQueueMutation({
+        operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId
+    }));
     const operationId = createOperationId();
     if (forceQueue || !onlineManager.isOnline() || (isRecord(payload) && payload.localCreation)) {
         await enqueue(operation, payload, operationId);

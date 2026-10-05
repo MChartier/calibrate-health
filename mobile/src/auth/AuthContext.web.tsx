@@ -241,13 +241,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 
     const logout = useCallback(async () => {
-        await beginExplicitLogout(serverUrl);
+        let intentPersisted = true;
+        await beginExplicitLogout(serverUrl).catch(() => { intentPersisted = false; });
         await cleanupBrowserPushBeforeSessionChange().catch(() => undefined);
         try {
             await clearSession();
         } finally {
             // Local cleanup failure must not suppress server session revocation.
-            await flushExplicitLogout(serverUrl).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+            await flushExplicitLogout(serverUrl).catch(() => setAuthError(intentPersisted
+                ? 'Signed out on this device. Server sign-out is pending connection.'
+                : 'Signed out in this app. Device storage is unavailable and server sign-out is pending. Reconnect before closing this app.'));
         }
     }, [clearSession, serverUrl]);
 

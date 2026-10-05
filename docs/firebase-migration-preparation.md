@@ -260,7 +260,13 @@ replay instead of sending the old account's data under the new session.
 Queued additions and corrections are projected into the tracking views without
 persisting synthetic IDs as server rows. Active food holds are date-scoped;
 failed writes remain reviewable without blocking unrelated query refreshes.
-Day-status changes queue behind existing writes. Failed food creations, updates and deletions
+Day-status changes queue behind existing writes. Every producer reads the durable
+outbox under an account/server dispatch lock before deciding to execute directly.
+Browser Web Locks serialize tabs; without them, writes always enter the durable
+queue. Native dispatches serialize within the application runtime. A stale React
+snapshot cannot let day completion overtake another tab's queued food. A new
+enqueue requests eligible replay without waiting for a separate lifecycle event;
+unchanged deferred work retains its existing backoff. Failed food creations, updates and deletions
 must be retried or explicitly discarded before a correction or deletion is accepted. The
 entry's discard confirmation removes only that entry's queued food changes,
 atomically within its account/server namespace; it does not delete a server
@@ -320,6 +326,13 @@ The logout regressions cover offline logout/restart/reconnection, retained queue
 tracking, replacement-account login and late native refresh responses. Browser account
 switching requires an HTTPS preview, matching the production credential transport rule.
 Native checks are component/storage tests, not emulator or physical-device evidence.
+
+If persisting explicit sign-out fails, local cleanup and server revocation are
+still attempted independently. In-process intent retains the active native token
+in memory (never browser credential storage) and retries while the app remains
+open. An unreadable durable record is not overwritten. If storage and networking
+both fail, the UI states the restart limitation and asks the user to reconnect
+before closing; no durable sign-out guarantee is claimed in that state.
 
 ## Remaining stages and cutover gates
 

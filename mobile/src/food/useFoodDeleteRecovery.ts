@@ -1,3 +1,4 @@
+import type { OutboxDispatch } from '../offline/mutationDispatch';
 import { findFailedFood } from '../offline/failedCreation';
 import { localTarget } from '../offline/trackingProjection';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -20,6 +21,7 @@ import {
 } from './foodDeleteRecovery';
 
 type FoodDeleteOutboxBindings = {
+    withOutbox?: OutboxDispatch;
     enqueue: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>;
     mutations: readonly QueuedMutation[];
     retryFailed: (operationId?: string) => Promise<unknown>;
@@ -57,6 +59,7 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
         commit: (ticket) => {
             const current = optionsRef.current;
             return executeOrQueueMutation({
+                withOutbox: current.outbox.withOutbox,
                 forceQueue: current.outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG,
                 payload: { ...localTarget(ticket.entry), ...(current.date ? { date: current.date } : {}) },

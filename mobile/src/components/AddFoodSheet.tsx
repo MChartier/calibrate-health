@@ -148,7 +148,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     const { width: viewportWidth, fontScale } = useWindowDimensions();
     const isOnline = useOnlineStatus();
     const { api, user } = useAuth();
-    const { enqueue, mutations = [] } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const foodDayQuery = useFoodDayStatus(date, visible);
     const [mode, setMode] = useState<AddFoodMode>(DEFAULT_ADD_FOOD_MODE);
@@ -228,6 +228,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         if (day.status !== 'OPEN') {
             const reopenPayload = { date: payload.date, status: 'OPEN' as const };
             const reopened = await executeOrQueueMutation({
+                withOutbox,
                 forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
                 payload: reopenPayload,
@@ -242,6 +243,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
             queryClient.setQueryData(foodDayQueryKey(payload.date), reopened.value);
         }
         return executeOrQueueMutation({
+                withOutbox,
             forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
             payload: queuedPayload,

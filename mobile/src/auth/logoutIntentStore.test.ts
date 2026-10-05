@@ -75,3 +75,27 @@ it('revokes a late rotated native token without marking a replacement account si
     expect(revoke).toHaveBeenLastCalledWith(SERVER, 'late-rotated');
     expect(values.size).toBe(0);
 });
+
+
+it.each([true, false])('revokes and remains signed out when persistent intent writes fail (browser=%s)', async browser => {
+    const revoke = jest.fn<Promise<unknown>, [string, string?]>(async () => undefined);
+    const store = createLogoutIntentStore({ get: async () => null, set: async () => { throw new Error('Full'); }, remove: async () => { throw new Error('Full'); } }, revoke, browser);
+    await expect(store.beginExplicitLogout(SERVER, 'refresh')).rejects.toThrow('Full');
+    expect(await store.hasExplicitLogout(SERVER)).toBe(true);
+    revoke.mockRejectedValueOnce(new TypeError('Offline'));
+    await expect(store.flushExplicitLogout(SERVER)).rejects.toThrow('Offline');
+    expect(await store.hasExplicitLogout(SERVER)).toBe(true);
+    await store.flushExplicitLogout(SERVER);
+    expect(revoke).toHaveBeenLastCalledWith(...(browser ? [SERVER] : [SERVER, 'refresh']));
+    await store.flushExplicitLogout(SERVER);
+    expect(revoke).toHaveBeenCalledTimes(2);
+});
+
+it('does not overwrite unreadable durable intent and still revokes the active native token', async () => {
+    const set = jest.fn(async () => undefined), revoke = jest.fn(async () => undefined);
+    const store = createLogoutIntentStore({ get: async () => { throw new Error('Blocked'); }, set, remove: async () => undefined }, revoke, false);
+    await expect(store.beginExplicitLogout(SERVER, 'active')).rejects.toThrow('could not be read');
+    await store.flushExplicitLogout(SERVER);
+    expect(revoke).toHaveBeenCalledWith(SERVER, 'active');
+    expect(set).not.toHaveBeenCalled();
+});

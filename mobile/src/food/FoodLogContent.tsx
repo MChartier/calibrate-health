@@ -221,6 +221,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
 
             const queuedPayload = { ...localTarget(editEntry), date: selectedDate, update: payload };
             return executeOrQueueMutation({
+                withOutbox: outbox.withOutbox,
                 forceQueue: outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG,
                 payload: queuedPayload,

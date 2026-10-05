@@ -528,12 +528,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = useCallback(async () => {
         const target = serverUrl || HOSTED_SERVER_URL;
-        await beginExplicitLogout(target, refreshTokenRef.current ?? undefined);
+        let intentPersisted = true;
+        await beginExplicitLogout(target, refreshTokenRef.current ?? undefined).catch(() => { intentPersisted = false; });
         try {
             await clearSession();
         } finally {
             // Local cleanup failure must not suppress server session revocation.
-            await flushExplicitLogout(target).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+            await flushExplicitLogout(target).catch(() => setAuthError(intentPersisted
+                ? 'Signed out on this device. Server sign-out is pending connection.'
+                : 'Signed out in this app. Device storage is unavailable and server sign-out is pending. Reconnect before closing this app.'));
         }
     }, [clearSession, serverUrl]);
 

@@ -4,6 +4,8 @@ type Storage = { get: (key: string) => Promise<string | null>; set: (key: string
 /** Serialize invalidation and account switching; completed logout still suppresses automatic sign-in. */
 export function createLogoutIntentStore(storage: Storage, revoke: (server: string, token?: string) => Promise<unknown>, browser: boolean, lock: <T>(key: string, work: () => Promise<T>) => Promise<T> = (_key, work) => work()) {
     const pending = new Map<string, Promise<unknown>>();
+    const unsaved = new Map<string, Intent>();
+    const unreadable = new Set<string>();
     const key = (server: string) => 'calibrate.logout.' + Array.from(new URL(server).origin).map(c => c.charCodeAt(0).toString(16)).join('');
     function serial<T>(server: string, work: (storageKey: string) => Promise<T>): Promise<T> {
         const storageKey = key(server);
@@ -11,12 +13,19 @@ export function createLogoutIntentStore(storage: Storage, revoke: (server: strin
         pending.set(storageKey, result.catch(() => undefined));
         return result;
     }
-    const read = async (k: string): Promise<Intent | null> => JSON.parse(await storage.get(k) ?? 'null') as Intent | null;
-    const save = (k: string, intent: Intent) => intent.signedOut || intent.pending ? storage.set(k, JSON.stringify(intent)) : storage.remove(k);
+    const read = async (k: string): Promise<Intent | null> => unsaved.get(k) ?? JSON.parse(await storage.get(k) ?? 'null') as Intent | null;
+    const save = async (k: string, intent: Intent) => {
+        // Keep an in-process recovery path even when persistent storage rejects the write.
+        unsaved.set(k, intent);
+        if (unreadable.has(k)) throw new Error('Sign-out storage could not be read; existing durable intent is preserved.');
+        if (intent.signedOut || intent.pending) await storage.set(k, JSON.stringify(intent));
+        else await storage.remove(k);
+        unsaved.delete(k);
+    };
     return {
         hasExplicitLogout: (server: string) => serial(server, async k => Boolean((await read(k))?.signedOut)),
         beginExplicitLogout: (server: string, token?: string) => serial(server, async k => {
-            const previous = await read(k);
+            const previous = await read(k).catch(() => { unreadable.add(k); return null; });
             const tokens = browser ? [] : [...new Set([...(previous?.refreshTokens ?? []), ...(token ? [token] : [])])];
             await save(k, { signedOut: true, pending: browser || tokens.length > 0, ...(tokens.length ? { refreshTokens: tokens } : {}) });
         }),
@@ -31,20 +40,20 @@ export function createLogoutIntentStore(storage: Storage, revoke: (server: strin
             if (!intent?.pending) return;
             if (browser) {
                 await revoke(server);
-                await save(k, { signedOut: intent.signedOut, pending: false });
+                await save(k, { signedOut: intent.signedOut, pending: false }).catch(() => undefined);
             } else {
                 const remaining = [...(intent.refreshTokens ?? [])];
                 while (remaining.length) {
                     await revoke(server, remaining[0]);
                     remaining.shift();
-                    await save(k, { signedOut: intent.signedOut, pending: remaining.length > 0, ...(remaining.length ? { refreshTokens: remaining } : {}) });
+                    await save(k, { signedOut: intent.signedOut, pending: remaining.length > 0, ...(remaining.length ? { refreshTokens: remaining } : {}) }).catch(() => undefined);
                 }
             }
         }),
         finishExplicitLogin: (server: string) => serial(server, async k => {
             const intent = await read(k);
             if (intent?.pending) await save(k, { ...intent, signedOut: false });
-            else await storage.remove(k);
+            else await save(k, { signedOut: false, pending: false });
         })
     };
 }

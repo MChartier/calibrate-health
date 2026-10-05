@@ -431,3 +431,93 @@ test('failed tracking controls have explicit shared recovery without losing unre
     await page.reload();
     await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
 });
+
+
+test('a stale second tab queues day completion after durable food intent', async ({ page, context, ux }) => {
+    await ux.install('populated');
+    await page.goto('/today');
+    await expect(page.getByRole('button', { name: 'Complete day', exact: true })).toBeVisible();
+    const other = await context.newPage(); await ux.installOnPage(other);
+    await other.goto('/food-log');
+    // The shared fixture uses a per-tab deterministic UUID counter; give this tab its own deterministic prefix.
+    await other.evaluate(() => { const original = crypto.randomUUID.bind(crypto); Object.defineProperty(crypto, 'randomUUID', { configurable: true, value: () => original().replace(/^00000000/, '00000001') }); });
+    let held = true; const applied: string[] = [];
+    for (const tab of [page, other]) {
+        expectApiFailure(tab, { method: 'POST', pathname: '/api/v1/food', status: 503 });
+        await tab.route('**/api/v1/food', route => {
+            if (route.request().method() !== 'POST') return route.fallback();
+            if (held) return route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } });
+            applied.push('food'); return route.fulfill({ json: { id: 950, ...route.request().postDataJSON() } });
+        });
+        await tab.route('**/api/v1/food-days', route => {
+            if (route.request().method() !== 'PATCH') return route.fallback();
+            applied.push('complete'); return route.fulfill({ json: { date: '2026-07-21', status: 'COMPLETE', is_complete: true, is_representative: true } });
+        });
+    }
+    await other.getByRole('button', { name: 'Add food', exact: true }).click();
+    const add = other.getByRole('dialog', { name: 'Add food', exact: true });
+    await add.getByRole('radio', { name: 'Quick', exact: true }).click();
+    await add.getByRole('textbox', { name: 'Calories', exact: true }).fill('200');
+    await add.getByRole('textbox', { name: 'Food name (optional)', exact: true }).fill('Other tab oats');
+    await add.getByRole('button', { name: 'Add & close', exact: true }).click();
+    await expect(other.getByRole('button', { name: 'Edit Other tab oats', exact: true })).toBeVisible();
+    // The first tab has not refreshed its provider snapshot since the other tab queued the food.
+    await expect(page.getByTestId('offline-workspace-status')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Complete day', exact: true }).click();
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('pending changes');
+    expect(applied).toEqual([]);
+    const queued = await page.evaluate(() => new Promise<string[]>((resolve, reject) => {
+        const open = indexedDB.open('calibrate-offline'); open.onsuccess = () => { const db = open.result; const request = db.transaction('queued_mutations').objectStore('queued_mutations').getAll(); request.onsuccess = () => { resolve(request.result.map(row => row.operation)); db.close(); }; request.onerror = () => reject(request.error); }; open.onerror = () => reject(open.error);
+    }));
+    expect(queued).toEqual(['food.create', 'food-day.set-status']);
+    held = false;
+    await activateFixtureOffline(page);
+    await page.context().setOffline(false);
+    await expect.poll(() => applied).toEqual(['food', 'complete']);
+    await other.close();
+});
+
+test('logout still clears the UI and revokes the browser session when intent storage rejects writes', async ({ page, ux }) => {
+    await ux.install('populated'); await page.goto('/security');
+    await expect(page.getByRole('button', { name: 'Log out', exact: true })).toBeVisible();
+    let revocations = 0;
+    await page.route('**/auth/logout', route => { revocations += 1; return route.fulfill({ json: { message: 'Signed out' } }); });
+    await page.evaluate(() => {
+        const original = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key: string, value: string) {
+            if (key.includes('calibrate.logout.')) throw new DOMException('Synthetic quota failure', 'QuotaExceededError');
+            return original.call(this, key, value);
+        };
+    });
+    await page.getByRole('button', { name: 'Log out', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect.poll(() => revocations).toBe(1);
+});
+
+
+test('logout warns when storage and revocation fail and retries from memory after reconnect', async ({ page, ux }) => {
+    await ux.install('populated'); await page.goto('/security');
+    await expect(page.getByRole('button', { name: 'Log out', exact: true })).toBeVisible();
+    let unavailable = true; let revocations = 0;
+    expectApiFailure(page, { method: 'POST', pathname: '/auth/logout', status: 503 });
+    await page.route('**/auth/logout', route => {
+        if (unavailable) return route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } });
+        revocations += 1; return route.fulfill({ json: { message: 'Signed out' } });
+    });
+    await page.evaluate(() => {
+        const original = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key: string, value: string) {
+            if (key.includes('calibrate.logout.')) throw new DOMException('Synthetic quota failure', 'QuotaExceededError');
+            return original.call(this, key, value);
+        };
+    });
+    await page.getByRole('button', { name: 'Log out', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect(page.getByText('Signed out in this app. Device storage is unavailable and server sign-out is pending. Reconnect before closing this app.', { exact: true })).toBeVisible();
+    expect(revocations).toBe(0);
+    unavailable = false;
+    await activateFixtureOffline(page);
+    await page.context().setOffline(false);
+    await expect.poll(() => revocations).toBe(1);
+    await expect(page.getByText('Reconnect before closing this app.', { exact: false })).toHaveCount(0);
+});

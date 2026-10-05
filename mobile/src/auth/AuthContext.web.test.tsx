@@ -175,3 +175,15 @@ it('stays explicitly signed out across failed invalidation, restart, recovery an
     const third = renderAuth();
     await waitFor(() => expect(third.result.current.user?.id).toBe(8));
 });
+
+
+it('clears UI and revokes the cookie session when writing logout intent fails', async () => {
+    mockRestoreSession.mockResolvedValue({ user: USER });
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.user?.id).toBe(7));
+    mockLogoutBrowser.mockClear();
+    jest.mocked(AsyncStorage.setItem).mockRejectedValueOnce(new Error('Storage full'));
+    await act(async () => result.current.logout());
+    expect(result.current.user).toBeNull();
+    expect(mockLogoutBrowser).toHaveBeenCalledTimes(1);
+});
