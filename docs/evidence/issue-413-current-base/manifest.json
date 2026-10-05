@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "before": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "after": "1af6ca93b9c3ce2b0c4efc0bb59d1827755228b7",
+  "host": "MCHARTIER_ZBOOK",
+  "capturedAtUtc": "2026-10-05T21:42:04.900Z",
+  "sourceClean": true,
+  "build": "Separate baseline and divider worktrees; npm.cmd --prefix mobile run build:web via baseline command and current npm.cmd run test:web:e2e wrapper. Static servers: node scripts/expo-web-static-server.mjs --port 44135 / 44136. Per-capture scripts record verifies response bytes against corresponding mobile/dist export.",
+  "capture": "Copy retained capture.spec.ts and capture.config.ts into .codex-screenshots/issue413-replacement in current source checkout. Set CAPTURE_SOURCE to isolated checkout absolute path, CAPTURE_LABEL before/after, CAPTURE_URL http://127.0.0.1:44135 or 44136; npx.cmd playwright test --config .codex-screenshots/issue413-replacement/capture.config.ts. Fixture and build tooling at both exact source commits are immutable Git source. Harness uses current-source e2e/expo-web/fixtures.ts; unchanged between paired source commits.",
+  "normalization": "Identical synthetic paused fixture, frozen clock, viewport, theme, DPR1; shared PWA notices suppressed; no compared UI hiding, cropping or image edits.",
+  "scope": "Actual current master to clean product head, no parent. Historical PR418 captures/receipts remain at evidence/pr418-reviewed-fbb74a9 unchanged.",
+  "files": [
+    {
+      "path": "after-1440-dark.png",
+      "sha256": "900d76f0b1e89f4b1d3b01387ae1e3bd9108c079714dadc32c93307e7b386dcd"
+    },
+    {
+      "path": "after-1440-dark.png.json",
+      "sha256": "5f6f663f13b975f2cb5e1a35fb10749ca63d6079c2571e2de757887a42a4612c"
+    },
+    {
+      "path": "after-1440-light.png",
+      "sha256": "046f50beaaa9d432e9d43919034515596f0a5d4ec7c1ae5fcb0e0bcf2f11f1fa"
+    },
+    {
+      "path": "after-1440-light.png.json",
+      "sha256": "b50319fcded1c47b05c150c360c8ccbaa393f812d233c79defb368037195bec2"
+    },
+    {
+      "path": "after-390-dark.png",
+      "sha256": "ba759838057c6723ad991df93f91b9849045271f76099a28457f9f14f5e50723"
+    },
+    {
+      "path": "after-390-dark.png.json",
+      "sha256": "198d4f1c64b4c9d9af92c7a40fd134746962e2279bc274ddec5258927f56d437"
+    },
+    {
+      "path": "after-390-light.png",
+      "sha256": "29bc597a385988bdd6f32fa291ae5f565888086a0a956953384fedb7b2485d23"
+    },
+    {
+      "path": "after-390-light.png.json",
+      "sha256": "31788199987db45ed742a31f333004974e1d94abfa32a544b6337f35be5215c2"
+    },
+    {
+      "path": "before-1440-dark.png",
+      "sha256": "65eb91f12fe2345e41568d4e60c2ceb0d7493754c365ed7fc82465d7fe166d41"
+    },
+    {
+      "path": "before-1440-dark.png.json",
+      "sha256": "7b1144182de77aca10339a1a8c0a4f307650d43d7bbff5e89fe1874e7e394a93"
+    },
+    {
+      "path": "before-1440-light.png",
+      "sha256": "0ae3f558c9b9c5a9d6039e4e976d4607aaa63668dd47fad4944e209d60e5cc30"
+    },
+    {
+      "path": "before-1440-light.png.json",
+      "sha256": "6c5a2e2e937997b2843e0b3d59d061067a4de41c5494af470611200312b37c35"
+    },
+    {
+      "path": "before-390-dark.png",
+      "sha256": "7016b6d54431640f2d7eeb9d4dc9040c6bffa38cde6307ccd00bb8597177b85e"
+    },
+    {
+      "path": "before-390-dark.png.json",
+      "sha256": "e467cbeade834d8645bf79aa69e1b6632df535219def11303d2978958ab13218"
+    },
+    {
+      "path": "before-390-light.png",
+      "sha256": "034b2ad2528de97a76c2908ee7d6863881f8ae791b8f390c905345603fbfb394"
+    },
+    {
+      "path": "before-390-light.png.json",
+      "sha256": "e93485de387422628d0e49c1b9ce2fc13c987d40d282365691e086aa0eedf115"
+    },
+    {
+      "path": "capture.config.ts",
+      "sha256": "127a0a48df1795a0ada6ee1306924d355a80c54fdab0dbf9ac76bf87b912a477"
+    },
+    {
+      "path": "capture.spec.ts",
+      "sha256": "53845eefd2e5f2f0b50676f935577e858b200975f81dd2a3df88847591655116"
+    },
+    {
+      "path": "pixel-diff.cjs",
+      "sha256": "29e367e4d8a687e9e597362b0b5dc25d5c37c0615ea3ae649b3316557e89e073"
+    },
+    {
+      "path": "pixel-diff.json",
+      "sha256": "0958dd737e5650881787d365cc00fcd0072dde4842937ddd9799c08aaf5d7ff4"
+    },
+    {
+      "path": "replacement-baseline-build.log",
+      "sha256": "459742abe022ba7c9fd7d11125abe53b5000bb0f0e1f04fff00676cab414b38f"
+    },
+    {
+      "path": "replacement-paused-flows.log",
+      "sha256": "1f261d1d85c6538e2f50f24c9efbd08249a6b3d6994b336ee8831830be073341"
+    }
+  ]
+}

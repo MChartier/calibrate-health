@@ -1,0 +1,46 @@
+[
+  {
+    "width": 1440,
+    "theme": "light",
+    "count": 1352,
+    "bounds": {
+      "minX": 88,
+      "minY": 857,
+      "maxX": 1439,
+      "maxY": 857
+    }
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "count": 1352,
+    "bounds": {
+      "minX": 88,
+      "minY": 857,
+      "maxX": 1439,
+      "maxY": 857
+    }
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "count": 390,
+    "bounds": {
+      "minX": 0,
+      "minY": 629,
+      "maxX": 389,
+      "maxY": 629
+    }
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "count": 390,
+    "bounds": {
+      "minX": 0,
+      "minY": 629,
+      "maxX": 389,
+      "maxY": 629
+    }
+  }
+]
