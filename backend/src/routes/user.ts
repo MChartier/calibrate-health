@@ -627,7 +627,13 @@ router.patch('/profile', async (req, res) => {
       return { status: 200, body: { user: serializeUserForClient(updatedUser) } };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
     return res.status(result.status).json(result.body);
-  } catch {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+      return res.status(409).json({
+        message: 'Your profile or calorie plan changed during saving. Refresh and try again.',
+        code: 'PROFILE_PLAN_CHANGED', retryable: true
+      });
+    }
     return res.status(500).json({ message: 'Server error' });
   }
 });

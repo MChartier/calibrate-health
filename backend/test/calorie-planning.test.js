@@ -51,6 +51,7 @@ test('stored planning marks a current-safe but scheduled-unsafe revision and fai
     calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
   };
   const database = {
+    $executeRaw: async () => 1,
     user: { findUnique: async () => ({
       id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), sex: 'MALE',
       height_mm: 1750, activity_level: 'SEDENTARY', weight_unit: 'KG', height_unit: 'CM'
@@ -92,6 +93,7 @@ test('a resolved stored prerequisite marker becomes historical review instead of
     calorie_plan_review_status: 'REQUIRES_REVIEW', calorie_plan_review_reason: 'LATEST_WEIGHT_REQUIRED'
   };
   const database = {
+    $executeRaw: async () => 1,
     user: { findUnique: async () => ({
       id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), sex: 'MALE',
       height_mm: 1750, activity_level: 'SEDENTARY', weight_unit: 'KG', height_unit: 'CM'

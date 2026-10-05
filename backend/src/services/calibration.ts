@@ -1,3 +1,4 @@
+import { lockCaloriePlanningInputs } from './caloriePlanningLock';
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
@@ -387,7 +388,12 @@ async function buildCalibrationStatusSnapshot(
         };
     }
     const goalStartDate = formatDateToLocalDateString(goal.created_at, user.timezone);
-    const revisionStartDate = currentPlan ? toDateKey(currentPlan.effectiveLocalDate) : goalStartDate;
+    // A manual pace change can occur after logging/completion; start new calibration evidence with the next full day.
+    const revisionStartDate = currentPlan
+        ? toDateKey(planning.effectiveRevision?.configured_daily_deficit != null
+            ? addUtcDays(currentPlan.effectiveLocalDate, 1)
+            : currentPlan.effectiveLocalDate)
+        : goalStartDate;
     const planStartDate = goalStartDate > revisionStartDate ? goalStartDate : revisionStartDate;
     const foodDays = buildFoodEvidence({ logs, completionDays, planStartDate, asOfDate: asOfDateKey });
     const latestPausedDate = foodDays
@@ -497,6 +503,7 @@ export async function applyCalibrationRecommendation(options: {
             requestPayload: { recommendation_id: options.recommendationId },
             transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
             mutate: async (tx, claimedOperationId) => {
+                await lockCaloriePlanningInputs(tx, options.userId);
                 const recommendation = await tx.calibrationRecommendation.findFirst({
                     where: { id: options.recommendationId, user_id: options.userId },
                     include: { plan_revision: true }
@@ -626,6 +633,7 @@ export async function cancelScheduledCalibrationChange(options: {
         operationKind: 'calibration_recommendation.cancel',
         requestPayload: { recommendation_id: options.recommendationId },
         mutate: async (tx, claimedOperationId) => {
+            await lockCaloriePlanningInputs(tx, options.userId);
             const recommendation = await tx.calibrationRecommendation.findFirst({
                 where: {
                     id: options.recommendationId,
