@@ -1,3 +1,5 @@
+import { hasExplicitLogout, beginExplicitLogout, flushExplicitLogout, finishExplicitLogin } from './logoutIntent.web';
+import { usePendingLogoutRetry } from './usePendingLogoutRetry';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate/api-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -54,6 +56,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const queryClient = useQueryClient();
     const [serverUrl] = useState(getDefaultServerUrl);
+    usePendingLogoutRetry(serverUrl, flushExplicitLogout, () => { if (!accountScopeRef.current) setAuthError(null); });
     const [user, setUser] = useState<UserClientPayload | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
@@ -117,12 +120,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         let active = true;
+        let mayRestoreWorkspace = false;
         setIsLoading(true);
-        void restoreBrowserDevelopmentSession(api, serverUrl).then(async ({ user: nextUser }) => {
-            if (active) await acceptUser(nextUser);
+        void (async () => {
+            if (await hasExplicitLogout(serverUrl)) {
+                await clearSession();
+                await flushExplicitLogout(serverUrl).catch(() => { if (active) setAuthError('Signed out on this device. Server sign-out is pending connection.'); });
+                return null;
+            }
+            mayRestoreWorkspace = true;
+            return restoreBrowserDevelopmentSession(api, serverUrl);
+        })().then(async (payload) => {
+            if (active && payload) await acceptUser(payload.user);
         }).catch(async (error: unknown) => {
             if (!active || (error instanceof ApiError && error.status === 401)) return;
-            if (isRetryableMutationError(error)) {
+            if (mayRestoreWorkspace && isRetryableMutationError(error)) {
                 const cached = await restoreOfflineWorkspace(serverUrl, queryClient).catch(() => null);
                 if (!active) return;
                 if (cached) {
@@ -137,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (active) setIsLoading(false);
         });
         return () => { active = false; };
-    }, [acceptUser, api, serverUrl]);
+    }, [acceptUser, api, clearSession, serverUrl]);
 
     const probeCurrentServer = useCallback(async (): Promise<ServerConnectionResult> => {
         const currentRequest = requestId.current + 1;
@@ -174,6 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [queryClient]);
 
     const login = useCallback(async (email: string, password: string, _serverCandidate: string) => {
+        await flushExplicitLogout(serverUrl);
         const payload = await authenticateAgainstConfirmedServer({
             candidate: serverUrl,
             confirmServer: confirmCurrentServer,
@@ -183,6 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }).loginBrowser({ email, password })
         });
         if (!payload) return false;
+        await finishExplicitLogin(serverUrl);
         queryClient.clear();
         await clearBrowserUserScopedCaches();
         await acceptUser(payload.user);
@@ -195,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         _serverCandidate: string,
         acceptance: RegistrationLegalAcceptance
     ) => {
+        await flushExplicitLogout(serverUrl);
         const payload = await authenticateAgainstConfirmedServer({
             candidate: serverUrl,
             confirmServer: confirmCurrentServer,
@@ -218,6 +233,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         });
         if (!payload) return false;
+        await finishExplicitLogin(serverUrl);
         queryClient.clear();
         await clearBrowserUserScopedCaches();
         await acceptUser(payload.user);
@@ -225,24 +241,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 
     const logout = useCallback(async () => {
-        try {
-            await cleanupBrowserPushBeforeSessionChange();
-            await api.logoutBrowser();
-        } finally {
-            await clearSession();
-        }
-    }, [api, clearSession]);
+        await beginExplicitLogout(serverUrl);
+        await cleanupBrowserPushBeforeSessionChange().catch(() => undefined);
+        await clearSession();
+        await flushExplicitLogout(serverUrl).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+    }, [clearSession, serverUrl]);
 
     const recheckClientCompatibility = useCallback(async () => {
+        const scope = accountScopeRef.current;
+        if (await hasExplicitLogout(serverUrl)) { await flushExplicitLogout(serverUrl); return false; }
         const recovery = new CalibrateApiClient({ baseUrl: serverUrl, requestCredentials: 'include' });
         try {
             const payload = await recovery.getMe();
+            if (accountScopeRef.current !== scope) return false;
             if (accountScopeRef.current && payload.user.id !== accountScopeRef.current.userId) {
                 await clearSession();
                 return false;
             }
             await acceptUser(payload.user);
         } catch (error) {
+            if (accountScopeRef.current !== scope) return false;
             if (error instanceof ApiError && error.status === 401) await clearSession();
             throw error;
         }

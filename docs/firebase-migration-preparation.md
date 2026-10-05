@@ -272,6 +272,23 @@ The exported-web test in e2e/expo-web/offline-workspace.spec.ts exercises actual
 UI outage/reload, queued weight, restart, authenticated replay and network loss
 using synthetic API fixtures. These do not certify Firebase or physical devices.
 
+Explicit logout remains available while local tracking awaits reconnection. It
+persists a per-server signed-out marker before clearing the current local session;
+startup never restores that account automatically while the marker exists. Server
+revocation bypasses the tracking request gate and retries on reconnect, foreground
+or startup. A new explicit login or registration first completes pending revocation.
+Browser storage contains only logout state, never the HttpOnly session credential.
+Native pending refresh credentials stay in SecureStore until acknowledged revocation;
+late refresh responses are revoked instead of restoring a signed-out session.
+Serialized token storage prevents an older write from restoring cleared credentials.
+Unrelated local data and account/server-scoped queued tracking changes are retained.
+An outage alone continues to preserve verified local access; explicit logout does not.
+
+The logout regressions cover offline logout/restart/reconnection, retained queued
+tracking, replacement-account login and late native refresh responses. Browser account
+switching requires an HTTPS preview, matching the production credential transport rule.
+Native checks are component/storage tests, not emulator or physical-device evidence.
+
 ## Remaining stages and cutover gates
 
 1. **Runtime authority integration:** use the prepared SQL mapping/version and

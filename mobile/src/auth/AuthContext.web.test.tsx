@@ -135,3 +135,42 @@ it('keeps the established identity and enters reconnection after a completed tim
     expect(result.current.pendingReconnection).toBe(true);
     expect(result.current.user?.id).toBe(7);
 });
+
+it('ignores a successful reconnection response that arrives after explicit logout', async () => {
+    mockRestoreSession.mockResolvedValue({ user: USER });
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.user?.id).toBe(7));
+    let finish!: (value: unknown) => void;
+    mockGetMe.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    let reconnect!: Promise<boolean>;
+    act(() => { reconnect = result.current.recheckClientCompatibility(); });
+    await act(async () => result.current.logout());
+    await act(async () => { finish({ user: USER }); expect(await reconnect).toBe(false); });
+    expect(result.current.user).toBeNull();
+    expect(await restoreOfflineWorkspace('https://health.example', new QueryClient())).toBeNull();
+});
+
+it('stays explicitly signed out across failed invalidation, restart, recovery and another-account login', async () => {
+    mockRestoreSession.mockResolvedValue({ user: USER });
+    const first = renderAuth();
+    await waitFor(() => expect(first.result.current.user?.id).toBe(7));
+    mockLogoutBrowser.mockRejectedValueOnce(new TypeError('Offline'));
+    await act(async () => first.result.current.logout());
+    expect(first.result.current.user).toBeNull();
+    first.unmount();
+    mockLogoutBrowser.mockRejectedValueOnce(new TypeError('Still offline'));
+    mockRestoreSession.mockClear();
+    const second = renderAuth();
+    await waitFor(() => expect(second.result.current.isLoading).toBe(false));
+    expect(second.result.current.user).toBeNull();
+    expect(mockRestoreSession).not.toHaveBeenCalled();
+    mockLogoutBrowser.mockResolvedValue(undefined);
+    mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
+    await act(async () => { expect(await second.result.current.login('other@example.com', 'password', 'https://health.example')).toBe(true); });
+    expect(second.result.current.user?.id).toBe(8);
+    expect(mockLogoutBrowser).toHaveBeenCalled();
+    second.unmount();
+    mockRestoreSession.mockResolvedValue({ user: { ...USER, id: 8 } });
+    const third = renderAuth();
+    await waitFor(() => expect(third.result.current.user?.id).toBe(8));
+});

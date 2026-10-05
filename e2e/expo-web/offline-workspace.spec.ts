@@ -209,3 +209,91 @@ test('a failed local creation offers explicit discard instead of saving unreacha
     await page.reload();
     await expect(page.getByRole('button', { name: 'Edit Failed oats', exact: true })).toHaveCount(0);
 });
+
+test('logout terminates the browser session while tracking awaits reconnection', async ({ page, ux }) => {
+    await ux.install('populated');
+    await page.goto('/today');
+    await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => Object.keys(localStorage).some(key => key.includes('offline-workspace')))).toBe(true);
+    let terminated = false;
+    let logoutRequests = 0;
+    expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 503 });
+    expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 401 });
+    await page.route('**/auth/me', route => route.fulfill({ status: terminated ? 401 : 503, json: terminated ? { error: 'Not authenticated', code: 'NOT_AUTHENTICATED' } : { error: 'Unavailable', retryable: true } }));
+    await page.route('**/auth/logout', route => {
+        logoutRequests += 1;
+        terminated = true;
+        return route.fulfill({ json: { message: 'Signed out' } });
+    });
+    await page.goto('/security');
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('Pending reconnection');
+    await page.getByRole('button', { name: 'Log out', exact: true }).click();
+    await expect(page).toHaveURL(url => url.pathname === '/login');
+    await expect.poll(() => logoutRequests).toBe(1);
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect(page.getByTestId('offline-workspace-status')).toHaveCount(0);
+});
+
+test('offline logout stays signed out through reload, revokes after reconnect and permits a different account', async ({ page, ux }) => {
+    await ux.install('populated');
+    await page.goto('/security');
+    await expect(page.getByRole('button', { name: 'Log out', exact: true })).toBeVisible();
+    const original = await page.evaluate(async () => (await (await fetch('/auth/me', { credentials: 'include' })).json()).user);
+    let sessionUser = original;
+    let disconnected = false;
+    let revocations = 0;
+    expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 401 });
+    await page.route('**/auth/me', route => disconnected ? route.abort('internetdisconnected') : sessionUser
+        ? route.fulfill({ json: { user: sessionUser } })
+        : route.fulfill({ status: 401, json: { code: 'NOT_AUTHENTICATED', error: 'Not authenticated' } }));
+    await page.route('**/auth/logout', route => {
+        if (disconnected) return route.abort('internetdisconnected');
+        revocations += 1; sessionUser = null;
+        return route.fulfill({ json: { message: 'Signed out' } });
+    });
+    await page.route('**/api/v1/client-config', route => route.fulfill({ json: { api_version: 1, api_versions: { supported: ['v1'] }, server_version: '0.37.0', min_supported_mobile_version: '0.0.0', min_supported_wear_version: '0.0.0', capabilities: {} } }));
+    await page.route('**/auth/login', route => {
+        expect(revocations).toBe(1);
+        sessionUser = { ...original, id: 18, email: 'other@example.invalid' };
+        return route.fulfill({ json: { user: sessionUser } });
+    });
+    await page.evaluate(async () => { localStorage.setItem('unrelated-local-data', 'keep'); await navigator.serviceWorker.ready; });
+    await page.goto('/today');
+    await expect(page.getByRole('heading', { name: 'Daily balance', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: "Today's weight. Weigh in. Log weight", exact: true }).click();
+    const weight = page.getByRole('dialog', { name: 'Weight entry' });
+    await expect(weight.getByRole('textbox', { name: 'Weight in kilograms', exact: true })).toBeVisible();
+    disconnected = true;
+    await activateFixtureOffline(page);
+    await weight.getByRole('textbox', { name: 'Weight in kilograms', exact: true }).fill('87.9');
+    await weight.getByRole('button', { name: /^(Log|Save) weight$/ }).click();
+    await page.goto('/security');
+    await page.getByRole('button', { name: 'Log out', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    expect(revocations).toBe(0);
+    disconnected = false;
+    await page.context().setOffline(false);
+    await expect.poll(() => revocations).toBe(1);
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    // The exported app deliberately rejects HTTP sign-in. HTTPS preview exercises replacement-account login.
+    if (new URL(page.url()).protocol === 'https:') {
+        await page.getByRole('textbox', { name: 'Email', exact: true }).fill('other@example.invalid');
+        await page.getByRole('textbox', { name: 'Password', exact: true }).fill('synthetic-password');
+        await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+        await page.reload();
+        await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+    }
+    expect(revocations).toBe(1);
+    expect(await page.evaluate(() => localStorage.getItem('unrelated-local-data'))).toBe('keep');
+    const queued = await page.evaluate(() => new Promise<Array<{ namespace: string; operation: string }>>((resolve, reject) => {
+        const open = indexedDB.open('calibrate-offline');
+        open.onsuccess = () => { const db = open.result; const tx = db.transaction('queued_mutations'); const rows = tx.objectStore('queued_mutations').getAll(); rows.onsuccess = () => { resolve(rows.result); db.close(); }; rows.onerror = () => reject(rows.error); };
+        open.onerror = () => reject(open.error);
+    }));
+    expect(queued).toEqual([expect.objectContaining({ namespace: expect.stringContaining('::user:17'), operation: 'metric.add' })]);
+});

@@ -1,3 +1,5 @@
+import { hasExplicitLogout, beginExplicitLogout, flushExplicitLogout, finishExplicitLogin, queueNativeRevocation } from './logoutIntent';
+import { usePendingLogoutRetry } from './usePendingLogoutRetry';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ApiError,
@@ -93,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const refreshTokenRef = useRef<string | null>(null);
     const serverTestRequestRef = useRef(0);
     const serverUrlRef = useRef('');
+    usePendingLogoutRetry(serverUrl, flushExplicitLogout, () => { if (!accountScopeRef.current) setAuthError(null); });
     const [pendingReconnection, setPendingReconnection] = useState(false);
     const localOnlyRef = useRef(false);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
@@ -131,10 +134,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== serverUrlRef.current)) {
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
         }
-        if (accountScopeRef.current !== nextScope) return;
+        if (accountScopeRef.current !== nextScope) return false;
         if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== nextScope.serverUrl)) queryClient.clear();
         await hydrateVerifiedOfflineWorkspace(nextScope.serverUrl, payload.user.id, queryClient, () => accountScopeRef.current === nextScope);
-        if (accountScopeRef.current !== nextScope) return;
+        if (accountScopeRef.current !== nextScope) return false;
         localOnlyRef.current = false;
         setPendingReconnection(false);
         setAuthError(null);
@@ -150,10 +153,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             refreshToken: payload.refresh_token
         });
         if (accountScopeRef.current === nextScope) await saveOfflineWorkspace(nextScope.serverUrl, payload.user, queryClient).catch(() => undefined);
+        return accountScopeRef.current === nextScope;
     }, [queryClient]);
 
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
         const currentRefreshToken = refreshTokenRef.current;
+        const scope = accountScopeRef.current;
+        const isCurrent = () => accountScopeRef.current === scope && refreshTokenRef.current === currentRefreshToken;
         if (!currentRefreshToken) return false;
 
         const refreshClient = new CalibrateApiClient({
@@ -163,10 +169,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         try {
             const refreshed = await refreshClient.refreshMobile<MobileAuthResponse>(currentRefreshToken);
+            if (!isCurrent()) {
+                await queueNativeRevocation(serverUrl || HOSTED_SERVER_URL, refreshed.refresh_token);
+                await flushExplicitLogout(serverUrl || HOSTED_SERVER_URL).catch(() => undefined);
+                throw new Error('Authentication scope changed during refresh.');
+            }
             if (accountScopeRef.current && refreshed.user.id !== accountScopeRef.current.userId) return false;
-            await persistAuthPayload(refreshed);
+            if (!await persistAuthPayload(refreshed)) {
+                await queueNativeRevocation(serverUrl || HOSTED_SERVER_URL, refreshed.refresh_token);
+                await flushExplicitLogout(serverUrl || HOSTED_SERVER_URL).catch(() => undefined);
+                throw new Error('Authentication scope changed during refresh.');
+            }
             return true;
         } catch (error) {
+            if (!isCurrent()) throw new Error('Authentication scope changed during refresh.');
             if (error instanceof ApiError && error.status === 401) return false;
             if (isRetryableMutationError(error)) {
                 localOnlyRef.current = true;
@@ -248,6 +264,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 serverUrlRef.current = storedServerUrl;
                 setServerUrlState(storedServerUrl);
                 setDeviceId(nextDeviceId);
+                if (await hasExplicitLogout(storedServerUrl)) {
+                    await clearSession();
+                    await flushExplicitLogout(storedServerUrl).catch(() => { if (isMounted) setAuthError('Signed out on this device. Server sign-out is pending connection.'); });
+                    return;
+                }
+                // A late rotated token can require revocation without signing out the current account.
+                void flushExplicitLogout(storedServerUrl).catch(() => undefined);
                 setAccountDeletionCleanupNotice(storedCleanupNotice);
                 if (storedCleanupNotice) {
                     setAccessToken(null);
@@ -431,7 +454,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const payload = await authenticateAgainstConfirmedServer({
                 candidate: serverCandidate,
                 confirmServer: confirmSelectedServerUrl,
-                authenticate: (confirmedServerUrl) => {
+                authenticate: async (confirmedServerUrl) => {
+                    await flushExplicitLogout(confirmedServerUrl);
                     const authClient = new CalibrateApiClient({
                         baseUrl: confirmedServerUrl,
                         clientIdentity: MOBILE_CLIENT_IDENTITY,
@@ -447,6 +471,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             });
             if (!payload) return false;
+            await finishExplicitLogin(serverUrlRef.current);
 
             await persistAuthPayload(payload);
             return true;
@@ -467,7 +492,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const payload = await authenticateAgainstConfirmedServer({
                 candidate: serverCandidate,
                 confirmServer: confirmSelectedServerUrl,
-                authenticate: (confirmedServerUrl) => {
+                authenticate: async (confirmedServerUrl) => {
+                    await flushExplicitLogout(confirmedServerUrl);
                     const legalAcceptance = requiresHostedLegalAcceptance(confirmedServerUrl)
                         ? requireRegistrationLegalAcceptance(acceptance)
                         : null;
@@ -492,6 +518,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             });
             if (!payload) return false;
+            await finishExplicitLogin(serverUrlRef.current);
 
             await persistAuthPayload(payload);
             return true;
@@ -500,12 +527,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     const logout = useCallback(async () => {
-        try {
-            await api.logoutMobile(refreshTokenRef.current ?? undefined);
-        } finally {
-            await clearSession();
-        }
-    }, [api, clearSession]);
+        const target = serverUrl || HOSTED_SERVER_URL;
+        await beginExplicitLogout(target, refreshTokenRef.current ?? undefined);
+        await clearSession();
+        await flushExplicitLogout(target).catch(() => setAuthError('Signed out on this device. Server sign-out is pending connection.'));
+    }, [clearSession, serverUrl]);
 
     const persistAccountDeletionCleanupNotice = useCallback(async (notice: AccountDeletionCleanupNotice) => {
         // Update the mounted auth shell first so guidance remains visible even if durable storage is unavailable.

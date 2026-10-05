@@ -25,4 +25,3 @@ export function applyTrackingReceipt(client: QueryClient, mutation: QueuedMutati
         client.setQueryData<MetricEntry[]>(['mobile-metrics'], rows => rows?.filter(row => row.id !== result.id));
     }
 }
-
