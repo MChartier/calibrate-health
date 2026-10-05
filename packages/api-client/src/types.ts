@@ -147,7 +147,7 @@ export type OnboardingCompleteResponse = {
 
 export type AccountExport = {
     format: 'calibrate-account-export';
-    version: 7;
+    version: 9;
     exported_at: string;
     account: {
         id: number;
@@ -218,6 +218,9 @@ export type AccountExport = {
         origin: FoodLogDayOrigin;
         is_complete: boolean;
         completed_at: string | null;
+        comparison_target_kcal?: number | null;
+        comparison_maintenance_kcal?: number | null;
+        comparison_captured_at?: string | null;
         created_at: string;
         updated_at: string;
     }>;
@@ -950,7 +953,16 @@ export type FoodLogDaySource =
     | 'DEFAULT'
     | 'BEFORE_TRACKING_START';
 
+export type FoodDayCalorieComparison = {
+    consumed_kcal: number;
+    target_kcal: number;
+    maintenance_kcal: number;
+    captured_at: string;
+};
+
 export type FoodLogDay = {
+    /** Optional for older servers; null means no trustworthy historical comparison. */
+    calorie_comparison?: FoodDayCalorieComparison | null;
     date: string;
     status: FoodLogDayStatus;
     origin: FoodLogDayOrigin | null;

@@ -523,6 +523,10 @@ model FoodLogDay {
   origin       FoodLogDayOrigin @default(USER)
   /// Timestamp of when the day was marked complete (cleared for other statuses).
   completed_at DateTime?
+  /// Plan observed at the first same-local-day completion; never reconstructed for older days.
+  comparison_target_kcal Int?
+  comparison_maintenance_kcal Int?
+  comparison_captured_at DateTime?
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 

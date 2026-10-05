@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { Prisma, type FoodLog } from '@prisma/client';
 import prisma from '../config/database';
+import { captureFoodDayComparison } from './foodDayComparison';
 import { getRecentFoodSuggestions, type RecentFoodSuggestion } from './recentFoods';
 
 import {
@@ -421,11 +422,12 @@ export async function executeWatchMutation(options: {
       }
       const completedAt = mutation.payload.is_complete ? new Date() : null;
       const status = mutation.payload.is_complete ? 'COMPLETE' : 'OPEN';
-      const day = await tx.foodLogDay.upsert({
+      let day = await tx.foodLogDay.upsert({
         where: { user_id_local_date: { user_id: options.userId, local_date: mutation.localDate } },
         update: { status, origin: 'USER', completed_at: completedAt },
         create: { user_id: options.userId, local_date: mutation.localDate, status, origin: 'USER', completed_at: completedAt }
       });
+      if (completedAt) day = await captureFoodDayComparison(tx, day, completedAt);
       const body = {
         type: 'food_day.set_complete',
         food_day: {
