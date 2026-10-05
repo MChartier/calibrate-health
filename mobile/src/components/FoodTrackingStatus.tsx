@@ -7,6 +7,8 @@ import { useAuth } from '../auth/AuthContext';
 import { executeOrQueueMutation, OFFLINE_MUTATION_OPERATIONS } from '../offline/operations';
 import { useOfflineOutbox } from '../offline/provider';
 import { foodDayRangeQueryRoot } from '../food/calendar';
+import { foodTrackingPauseQueryKey } from '../food/queryKeys';
+import { useFoodTrackingPause } from '../food/useFoodTrackingPause';
 import { FoodLogDockActions } from '../food/FoodLogDockActions';
 import { getFoodDayStatusLabel } from '../food/dayPresentation';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
@@ -21,7 +23,6 @@ import { SectionHeader } from './SectionHeader';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 
 export const foodDayQueryKey = (date: string) => ['mobile-food-day', date] as const;
-const foodTrackingPauseQueryKey = ['mobile-food-tracking-pause'] as const;
 
 const EXPANDED_STATUS_CONTENT_MAX_WIDTH = 520; // Keeps the status message readable on wide dashboards.
 const EXPANDED_STATUS_ACTION_MAX_WIDTH = 320; // Keeps the primary action prominent without spanning a desktop card.
@@ -131,6 +132,7 @@ export const DayStatusCard: React.FC<{
             });
         },
         onSuccess: async (result, resumeOn) => {
+            await queryClient.cancelQueries({ queryKey: foodTrackingPauseQueryKey });
             queryClient.setQueryData(foodDayQueryKey(date), {
                 ...storedDay(date, 'PAUSED'),
                 origin: 'PAUSE'
@@ -158,6 +160,7 @@ export const DayStatusCard: React.FC<{
             });
         },
         onSuccess: async () => {
+            await queryClient.cancelQueries({ queryKey: foodTrackingPauseQueryKey });
             queryClient.setQueryData(foodDayQueryKey(date), storedDay(date, 'OPEN'));
             queryClient.setQueryData(foodTrackingPauseQueryKey, {
                 pause: { ...activePause(date, null), active: false, starts_on: null, materialized_through: null }
@@ -417,11 +420,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const today = getTodayDate(user?.timezone);
-    const pauseQuery = useQuery({
-        queryKey: foodTrackingPauseQueryKey,
-        queryFn: () => api.getFoodTrackingPause(),
-        enabled: Boolean(user)
-    });
+    const pauseQuery = useFoodTrackingPause();
     const [dismissedThisForeground, setDismissedThisForeground] = useState(false);
     const [showExtend, setShowExtend] = useState(false);
     const [customDate, setCustomDate] = useState('');
@@ -447,6 +446,10 @@ export const ResumeTrackingPrompt: React.FC = () => {
             });
         },
         onSuccess: async () => {
+            await queryClient.cancelQueries({ queryKey: foodTrackingPauseQueryKey });
+            queryClient.setQueryData(foodTrackingPauseQueryKey, {
+                pause: { ...activePause(today, null), active: false, starts_on: null, materialized_through: null }
+            });
             queryClient.setQueryData(foodDayQueryKey(today), storedDay(today, 'OPEN'));
             setDismissedThisForeground(true);
             setShowExtend(false);
@@ -464,6 +467,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
             });
         },
         onSuccess: async (result, expectedResumeOn) => {
+            await queryClient.cancelQueries({ queryKey: foodTrackingPauseQueryKey });
             const current = pauseQuery.data?.pause ?? activePause(today, expectedResumeOn);
             const pause = result.disposition === 'synced'
                 ? result.value.pause
