@@ -47,3 +47,9 @@ final checkpoint rather than this immutable capture receipt.
 
 No emulator/physical-device UI or real Firebase rehearsal is claimed. Runtime
 Firebase lifecycle and external security-event integration remain unfinished.
+
+Publication correction: the first evidence commit 1270094f normalized the capture
+harness line endings. This superseding evidence commit retains exact original
+harness bytes under -text attributes so the manifest digest is verifiable. The
+first commit and all original manifests/images remain in history; their identities
+are not silently replaced. Use this corrected commit for the evidence links.
