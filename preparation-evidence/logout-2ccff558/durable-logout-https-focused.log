@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:28168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:238:5 ΓÇ║ offline logout stays signed out through reload, revokes after reconnect and permits a different account (3.8s)
+
+  1 passed (4.9s)

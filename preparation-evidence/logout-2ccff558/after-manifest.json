@@ -1,0 +1,26 @@
+{
+  "source": "2ccff558633c9fd743162687bc404cfc2d81822d",
+  "tree": "7bdd0b48cf62027020acc3bbe1a17b6363145217",
+  "capturedAt": "2026-10-05T20:04:15.620Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "deviceScale": 1,
+  "finalUrl": "http://127.0.0.1:4174/login",
+  "revocations": 1,
+  "assets": [
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-8afe55cf6730aa37a8c8320b965f95e7.js",
+      "sha256": "54347bbddef1a59546cd5d01000b442cd93082ea03948c5902083d9d8f1305c6"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-8afe55cf6730aa37a8c8320b965f95e7.js",
+      "sha256": "54347bbddef1a59546cd5d01000b442cd93082ea03948c5902083d9d8f1305c6"
+    }
+  ],
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "harnessSha256": "52893e0c02c3eba37f2678aa07d46601560fe7422c55da5db349c088664b16c8",
+  "imageSha256": "2eb437206f65ad872869c7d0ae8e26b947f4f6163ade42e5cdb6b8f140f4119b"
+}

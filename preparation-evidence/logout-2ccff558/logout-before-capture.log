@@ -1,0 +1,52 @@
+[WebServer] (node:37552) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 1 test using 1 worker
+
+(node:14708) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [desktop-chrome] ΓÇ║ e2e\expo-web\logout-capture.spec.ts:6:5 ΓÇ║ matched explicit offline logout capture (1.5s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\logout-capture.spec.ts:6:5 ΓÇ║ matched explicit offline logout capture 
+
+    Error: Browser errors; route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=POST /auth/logout (net::ERR_INTERNET_DISCONNECTED)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "pageerror: Failed to fetch",
+    + ]
+
+       at fixtures.ts:890
+
+      888 |       console.error(`[expo-web failure] ${failureContext}`);
+      889 |     }
+    > 890 |     expect.soft(diagnostics.browserErrors, `Browser errors; ${failureContext}`).toEqual([]);
+          |                                                                                 ^
+      891 |     expect.soft(diagnostics.unexpectedApiRequests, `Unhandled API requests; ${failureContext}`).toEqual([]);
+      892 |   }, { auto: true }],
+      893 |   ux: async ({ page, context }, use) => {
+        at Object.exports.test._test.test.extend.diagnostics.auto (C:\Users\MChar\Documents\Codex\2026-10-05\task-2\offline-baseline-421\e2e\expo-web\fixtures.ts:890:81)
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\logout-capture-matched-explicit-offline-logout-capture-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\logout-capture-matched-explicit-offline-logout-capture-desktop-chrome\error-context.md
+
+    attachment #3: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\logout-capture-matched-explicit-offline-logout-capture-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\logout-capture-matched-explicit-offline-logout-capture-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  1 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\logout-capture.spec.ts:6:5 ΓÇ║ matched explicit offline logout capture 
