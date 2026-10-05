@@ -1,0 +1,32 @@
+✔ local compatibility works without Firebase configuration (151.037ms)
+✔ Firebase password authentication returns only a boolean and binds verified project and UID (0.6467ms)
+✔ wrong configured project and missing configuration never call the network or local bcrypt fallback (0.3851ms)
+✔ enumeration-safe credential failures differ from retryable network/configuration failures (0.7904ms)
+✔ timeout covers hanging transport and token verification (33.0848ms)
+✔ forged response, verifier rejection and oversized input cannot create an authenticated result (0.5322ms)
+✔ offline CLI reports synthetic inventory and holds collisions without disclosing input (2872.3498ms)
+✔ offline CLI refuses apply and exposes a usable help contract (1841.4764ms)
+✔ inventory accounts for every row, holds both sides of collisions and exposes no credentials (1.6405ms)
+✔ mapping is deterministic and source/installation/project scoped (0.4707ms)
+✔ default dry run reads source only and never calls destination or persists progress (0.9021ms)
+✔ bounded import preserves encoded BCRYPT and verification, and resume never reimports successful records (0.5926ms)
+✔ partial failure records exact failed indexes and stops all automatic retries (0.536ms)
+✔ timeout after possible success leaves durable ambiguity and suppresses provider details (0.2925ms)
+✔ failed intent persistence prevents any network mutation (0.2146ms)
+✔ wrong project, source drift, destination conflicts and malformed checkpoints fail closed (1.4023ms)
+✔ malformed provider partial-result indexes remain ambiguous (0.2277ms)
+✔ unavailable source or destination inspection cannot leak callback details or permit import (0.5595ms)
+✔ synthetic bcrypt variants, Unicode and 72-byte boundaries retain password bytes locally (1328.9604ms)
+✔ actual disk journal resumes successful imports without resubmitting the account (24.675ms)
+✔ persisted import intent survives a failed process operation and requires reconciliation (10.5284ms)
+✔ journal excludes concurrent importers and refuses stale locks (10.4327ms)
+✔ abrupt process exit retains both import intent and lock instead of allowing an automatic retry (1019.263ms)
+✔ journal refuses wrong manifests, torn records and attempts to rewind successful imports (15.7011ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5806.5875
