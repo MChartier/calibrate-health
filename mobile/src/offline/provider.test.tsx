@@ -256,6 +256,7 @@ describe('native offline outbox provider recovery', () => {
             const currentOutbox = {
                 recoverInterrupted: jest.fn(async () => undefined),
                 list: jest.fn(async () => [currentDeferred]),
+                discardFailedMutation: jest.fn(async (_id: string) => undefined),
                 clear: jest.fn(async () => undefined)
             };
             mockOutboxesByNamespace.set('https://health.example::user:9', currentOutbox);
