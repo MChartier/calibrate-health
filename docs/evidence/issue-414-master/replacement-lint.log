@@ -1,0 +1,44 @@
+npm notice run cal-io@0.37.0 lint
+npm notice run npm run lint:backend && npm run lint:shared && npm run lint:api-client && npm run lint:mobile
+npm notice run cal-io@0.37.0 lint:backend
+npm notice run npm --prefix backend run typecheck
+npm notice run backend@0.37.0 pretypecheck
+npm notice run npm run prisma:generate
+npm warn Unknown env config "global-ignore-file". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> backend@0.37.0 prisma:generate
+> prisma generate
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé  Update available 7.9.0 -> 8.0.0-rc.20                  Γöé
+Γöé                                                         Γöé
+Γöé  This is a major update - please follow the guide at    Γöé
+Γöé  https://pris.ly/d/major-version-upgrade                Γöé
+Γöé                                                         Γöé
+Γöé  Run the following to update                            Γöé
+Γöé    npm i -g prisma@latest                               Γöé
+Γöé    npm i @prisma/client@latest                          Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+Γ£ö Generated Prisma Client (v7.9.0) to .\node_modules\@prisma\client in 620ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+npm notice run backend@0.37.0 typecheck
+npm notice run tsc --noEmit -p tsconfig.build.json
+npm notice run cal-io@0.37.0 lint:shared
+npm notice run npm --prefix shared run typecheck
+npm notice run @calibrate/shared@0.0.0 typecheck
+npm notice run tsc --noEmit -p tsconfig.build.json
+npm notice run cal-io@0.37.0 lint:api-client
+npm notice run npm --prefix packages/api-client run typecheck
+npm notice run @calibrate/api-client@0.0.0 typecheck
+npm notice run tsc -p tsconfig.json
+npm notice run cal-io@0.37.0 lint:mobile
+npm notice run npm --prefix mobile run typecheck
+npm notice run mobile@0.2.7 typecheck
+npm notice run tsc --noEmit

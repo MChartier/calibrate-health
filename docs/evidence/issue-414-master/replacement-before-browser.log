@@ -1,0 +1,19 @@
+
+Running 6 tests using 2 workers
+
+(node:36456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14020) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:86:9 ΓÇ║ dated plan and exact month boundary in light (1.3s)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:86:9 ΓÇ║ dated plan and exact month boundary in dark (1.4s)
+(node:27676) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:219:5 ΓÇ║ matched failed resume and recovery retains the actual pause until success (1.2s)
+(node:40536) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 4 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:86:9 ΓÇ║ dated plan and exact month boundary in light (1.2s)
+  ok 6 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:219:5 ΓÇ║ matched failed resume and recovery retains the actual pause until success (1.4s)
+  ok 5 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:86:9 ΓÇ║ dated plan and exact month boundary in dark (1.4s)
+
+  6 passed (6.8s)
