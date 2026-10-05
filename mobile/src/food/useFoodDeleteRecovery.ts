@@ -1,3 +1,4 @@
+import { findFailedFood } from '../offline/failedCreation';
 import { localTarget } from '../offline/trackingProjection';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
@@ -87,8 +88,11 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
     }, [controller]);
 
     const queuedDeleteIds = useMemo(
-        () => getQueuedFoodDeleteIds(options.outbox.mutations),
-        [options.outbox.mutations]
+        () => getQueuedFoodDeleteIds(options.outbox.mutations).filter(id => {
+            const entry = options.entries?.find(row => row.id === id);
+            return !findFailedFood(options.outbox.mutations, { ...(entry ? localTarget(entry) : { id }), date: options.date });
+        }),
+        [options.outbox.mutations, options.entries, options.date]
     );
     const failedQueuedDeletes = useMemo(
         () => getFailedQueuedFoodDeletes(options.outbox.mutations),

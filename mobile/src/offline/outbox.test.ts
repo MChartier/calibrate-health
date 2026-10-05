@@ -53,7 +53,7 @@ describe('SqliteOutbox', () => {
             row({ id: 'unrelated', sequence: 3, operation: 'metric.add' })
         ]) });
         const database = databaseMock({ withExclusiveTransactionAsync: jest.fn(async task => task(transaction as never)) });
-        await new SqliteOutbox(database, namespace).discardFailedCreation('operation-1');
+        await new SqliteOutbox(database, namespace).discardFailedFood('operation-1');
         expect(transaction.runAsync).toHaveBeenCalledTimes(2);
         expect(transaction.runAsync).toHaveBeenCalledWith(expect.stringContaining('DELETE'), ['operation-1', namespace]);
         expect(transaction.runAsync).toHaveBeenCalledWith(expect.stringContaining('DELETE'), ['edit', namespace]);
@@ -143,6 +143,19 @@ describe('SqliteOutbox', () => {
 
         await expect(outbox.claimNext()).resolves.toBeNull();
         expect(transaction.runAsync).not.toHaveBeenCalled();
+    });
+
+    it('atomically removes only the failed server-entry edits and deletion after explicit confirmation', async () => {
+        const transaction = databaseMock({ getAllAsync: jest.fn(async () => [
+            row({ id: 'failed-edit', operation: 'food.update', state: 'failed', payload_json: '{"id":42,"date":"2026-07-18"}' }),
+            row({ id: 'later-edit', operation: 'food.update', payload_json: '{"id":42,"date":"2026-07-18"}' }),
+            row({ id: 'delete', operation: 'food.delete', payload_json: '{"id":42,"date":"2026-07-18"}' }),
+            row({ id: 'other', operation: 'food.update', payload_json: '{"id":99,"date":"2026-07-19"}' })
+        ]) });
+        const database = databaseMock({ withExclusiveTransactionAsync: jest.fn(async task => task(transaction as never)) });
+        await new SqliteOutbox(database, namespace).discardFailedFood('failed-edit');
+        expect(transaction.runAsync).toHaveBeenCalledTimes(3);
+        for (const id of ['failed-edit', 'later-edit', 'delete']) expect(transaction.runAsync).toHaveBeenCalledWith('DELETE FROM queued_mutations WHERE id = ? AND namespace = ?', [id, namespace]);
     });
 
     it('clears only the authenticated namespace during account deletion', async () => {

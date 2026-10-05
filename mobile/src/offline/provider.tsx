@@ -17,7 +17,7 @@ type OfflineOutboxContextValue = {
     reconcile: () => Promise<ReconcileResult>;
     retryFailed: (id?: string) => Promise<ReconcileResult>;
     discardAll: () => Promise<void>;
-    discardFailedCreation: (id: string) => Promise<void>;
+    discardFailedFood: (id: string) => Promise<void>;
     refresh: () => Promise<void>;
 };
 
@@ -125,8 +125,8 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         return result;
     }, [notifyAfterReplay, reconciler, refresh]);
 
-    const discardFailedCreation = useCallback(async (id: string) => {
-        await requireOutbox().discardFailedCreation(id);
+    const discardFailedFood = useCallback(async (id: string) => {
+        await requireOutbox().discardFailedFood(id);
         await refresh();
     }, [refresh, requireOutbox]);
 
@@ -207,9 +207,9 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         reconcile,
         retryFailed,
         discardAll,
-        discardFailedCreation,
+        discardFailedFood,
         refresh
-    }), [discardFailedCreation, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

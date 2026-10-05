@@ -49,3 +49,10 @@ describe('durable tracking overlays', () => {
 it('does not invent zero nutrition for legacy saved-food intent without a local snapshot', () => {
     expect(projectFood([], [mutation(1, 'food.create', { date, meal_period: 'BREAKFAST', my_food_id: 9, servings_consumed: 2 })], date)).toEqual([]);
 });
+
+it('keeps an entry visible when deletion is trapped behind its failed edit', () => {
+    const entry = { id: 5, name: 'Existing', meal_period: 'BREAKFAST' as const, calories: 200 };
+    const update = { ...mutation(1, 'food.update', { id: 5, date, update: { calories: 300 } }), state: 'failed' as const };
+    const deletion = mutation(2, 'food.delete', { id: 5, date });
+    expect(projectFood([entry], [update, deletion], date)).toEqual([expect.objectContaining({ id: 5, calories: 300 })]);
+});

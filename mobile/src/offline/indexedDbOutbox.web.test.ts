@@ -26,10 +26,10 @@ describe('IndexedDbOutbox', () => {
         await outbox.enqueue({ id: 'weight', operation: 'metric.add', payload: { weight: 87 } });
         await other.enqueue({ id: 'creation', operation: 'food.create', payload: { calories: 900 } });
         await outbox.claimNext();
-        await expect(outbox.discardFailedCreation('creation')).rejects.toThrow('changed');
+        await expect(outbox.discardFailedFood('creation')).rejects.toThrow('changed');
         expect(await outbox.list()).toHaveLength(3);
         await outbox.fail('creation', 'My food not found');
-        await outbox.discardFailedCreation('creation');
+        await outbox.discardFailedFood('creation');
         expect((await outbox.list()).map(row => row.id)).toEqual(['weight']);
         expect(await other.list()).toHaveLength(1);
         expect((await outbox.claimNext())?.id).toBe('weight');
@@ -40,8 +40,30 @@ describe('IndexedDbOutbox', () => {
         await outbox.enqueue({ id: 'creation', operation: 'food.create', payload: { calories: 200 } });
         await outbox.enqueue({ id: 'edit', operation: 'food.update', payload: { localCreation: { operationId: 'creation' } } });
         await outbox.claimNext(); await outbox.fail('creation', 'Rejected'); await outbox.retryFailed('creation');
-        await expect(outbox.discardFailedCreation('creation')).rejects.toThrow('changed');
+        await expect(outbox.discardFailedFood('creation')).rejects.toThrow('changed');
         expect(await outbox.list()).toHaveLength(2);
+    });
+
+    it.each(['server', 'optimistic'] as const)('recovers failed %s edits with explicit retry or target-scoped discard, retaining other dates/accounts', async kind => {
+        const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE);
+        const other = new IndexedDbOutbox(database, SECOND_NAMESPACE);
+        const target = kind === 'server' ? { id: 42, date: '2026-07-18' } : { id: -1, date: '2026-07-18', localCreation: { operationId: 'acknowledged-create', payload: { date: '2026-07-18' } } };
+        await outbox.enqueue({ id: 'failed-edit', operation: 'food.update', payload: { ...target, update: { calories: 350 } } });
+        await outbox.enqueue({ id: 'later-edit', operation: 'food.update', payload: { ...target, update: { calories: 400 } } });
+        await outbox.enqueue({ id: 'delete', operation: 'food.delete', payload: target });
+        await outbox.enqueue({ id: 'other-date', operation: 'food.update', payload: { id: 99, date: '2026-07-19', update: { calories: 500 } } });
+        await other.enqueue({ id: 'failed-edit', operation: 'food.update', payload: { ...target, update: { calories: 900 } } });
+        await outbox.claimNext(); await outbox.fail('failed-edit', 'Food day paused');
+        expect(await outbox.claimNext()).toBeNull();
+        await outbox.retryFailed('failed-edit');
+        await expect(outbox.discardFailedFood('failed-edit')).rejects.toThrow('changed');
+        const retry = await outbox.claimNext();
+        expect(retry).toEqual(expect.objectContaining({ id: 'failed-edit', attemptCount: 2, payload: { ...target, update: { calories: 350 } } }));
+        await outbox.fail('failed-edit', 'Still paused');
+        await outbox.discardFailedFood('failed-edit');
+        expect((await outbox.list()).map(row => row.id)).toEqual(['other-date']);
+        expect((await other.list())[0].payload).toEqual({ ...target, update: { calories: 900 } });
+        expect((await outbox.claimNext())?.id).toBe('other-date');
     });
 
     it('persists all supported write shapes in insertion order with stable operation IDs', async () => {

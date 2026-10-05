@@ -260,11 +260,24 @@ replay instead of sending the old account's data under the new session.
 Queued additions and corrections are projected into the tracking views without
 persisting synthetic IDs as server rows. Active food holds are date-scoped;
 failed writes remain reviewable without blocking unrelated query refreshes.
-Day-status changes queue behind existing writes. Failed local food creations
-must be retried or explicitly discarded before a correction is accepted. The
-entry's discard confirmation removes only that creation and its dependent edits,
+Day-status changes queue behind existing writes. Failed food creations, updates and deletions
+must be retried or explicitly discarded before a correction or deletion is accepted. The
+entry's discard confirmation removes only that entry's queued food changes,
 atomically within its account/server namespace; it does not delete a server
 record or silently replace an ambiguous request with a new operation ID.
+
+Retry preserves the exact original operation ID and payload. Confirmed discard is
+an explicit abandonment of the selected entry's queued edits/deletion, not rollback
+of work that may have reached the server. It keeps other entries, dates and account
+namespaces, rejects stale confirmation after retry starts, and is transactional on
+both stores. Existing server entries remain editable after recovery; optimistic
+entries use their immutable creation reference rather than a synthetic numeric ID.
+A queued deletion behind a failed edit leaves the entry visible for recovery. The
+editor blocks Save and redirects Delete into recovery while that entry has a failed
+intent. Unrelated offline writes remain durable behind the existing ordered queue
+barrier and are visibly pending; recovery does not reorder them or silently replay
+a changed request. Metric and day-state operations retain their existing original-ID
+retry and ordered-barrier contracts; food discard never removes those operations.
 
 Maintained client tests cover startup network/auth outages, confirmed rejection,
 account/server isolation, durable outbox restart and true-offline weigh-in intent.

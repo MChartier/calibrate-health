@@ -1,4 +1,5 @@
-import { localTarget, type LocalEntry } from '../offline/trackingProjection';
+import { findFailedFood } from '../offline/failedCreation';
+import { localTarget } from '../offline/trackingProjection';
 import { useTrackingFood } from '../offline/useTrackingQueries';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -65,15 +66,20 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     const [editAmountDirty, setEditAmountDirty] = useState(false);
     const [editCaloriesOverridden, setEditCaloriesOverridden] = useState(false);
     const [confirmDiscard, setConfirmDiscard] = useState(false);
-    const failedCreationId = (editEntry as (FoodLogEntry & LocalEntry) | null)?.localCreation?.operationId;
-    const failedCreation = outbox.mutations.find(mutation => mutation.id === failedCreationId && mutation.state === 'failed');
+    const failedFood = editEntry ? findFailedFood(outbox.mutations, { ...localTarget(editEntry), date: selectedDate }) : undefined;
+    const failedCreation = failedFood?.operation === 'food.create';
     const discardFailed = useMutation({
         networkMode: 'always',
         mutationFn: async () => {
-            if (!failedCreation) throw new Error('The failed entry changed.');
-            await outbox.discardFailedCreation(failedCreation.id);
+            if (!failedFood) throw new Error('The failed entry changed.');
+            await outbox.discardFailedFood(failedFood.id);
         },
         onSuccess: async () => { setEditEntry(null); await invalidateLogQueries(); }
+    });
+    const retryFailedFood = useMutation({
+        networkMode: 'always',
+        mutationFn: async () => { if (failedFood) await outbox.retryFailed(failedFood.id); },
+        onSuccess: () => { setConfirmDiscard(false); }
     });
     const [editError, setEditError] = useState<string | null>(null);
     const [isEditMealSelectorOpen, setIsEditMealSelectorOpen] = useState(false);
@@ -193,6 +199,8 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
         mutationFn: () => {
             if (!editEntry) throw new Error('Choose a food entry to edit.');
 
+            if (findFailedFood(outbox.mutations, { ...localTarget(editEntry), date: selectedDate })) throw new Error('Resolve the failed queued changes before saving a correction.');
+
             const payload: FoodLogUpdatePayload = {
                 name: editName.trim(),
                 meal_period: editMeal
@@ -233,14 +241,14 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     }
 
     function requestDelete(entry: FoodLogEntry) {
-        const creationId = (entry as FoodLogEntry & LocalEntry).localCreation?.operationId;
-        if (outbox.mutations.some(mutation => mutation.id === creationId && mutation.state === 'failed')) openEditEntry(entry);
+        if (findFailedFood(outbox.mutations, { ...localTarget(entry), date: selectedDate })) openEditEntry(entry);
         else deleteRecovery.requestDelete(entry);
     }
 
     function openEditEntry(entry: FoodLogEntry) {
         setConfirmDiscard(false);
         discardFailed.reset();
+        retryFailedFood.reset();
         const amountConfig = getFoodLogEditableAmount(entry);
         setEditEntry(entry);
         setEditName(entry.name);
@@ -429,10 +437,12 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     setEditEntry(null);
                 }}
             >
-                {failedCreation && <>
-                    <AppText accessibilityRole="alert">This local entry could not sync. Retry it in Settings → Offline changes, or discard it here before adding a corrected entry. A correction cannot pass the failed write.</AppText>
-                    {confirmDiscard && <AppText>Discard this local entry and its pending edits? Other queued changes are kept. This does not delete any server record.</AppText>}
-                    <AppButton title={confirmDiscard ? 'Confirm discard failed entry' : 'Discard failed entry'} disabled={discardFailed.isPending} variant="secondary" onPress={() => confirmDiscard ? discardFailed.mutate() : setConfirmDiscard(true)} />
+                {failedFood && <>
+                    <AppButton title="Retry original change" disabled={retryFailedFood.isPending || discardFailed.isPending} variant="secondary" onPress={() => retryFailedFood.mutate()} />
+                    {retryFailedFood.error && <AppText accessibilityRole="alert">Unable to retry. Your queued changes are still on this device.</AppText>}
+                    <AppText accessibilityRole="alert">{failedCreation ? 'This local entry could not sync. Retry it in Settings → Offline changes, or discard it here before adding a corrected entry. A correction cannot pass the failed write.' : 'This entry has failed queued changes. Retry the original request or discard its queued changes before editing or deleting it. Saving another correction cannot pass the failed write.'}</AppText>
+                    {confirmDiscard && <AppText>{failedCreation ? 'Discard this local entry and its pending edits? Other queued changes are kept. This does not delete any server record.' : 'Discard all queued edits and deletion for this entry? Other entries are kept. This does not delete or undo any server record; refresh when connected to see what reached the server.'}</AppText>}
+                    <AppButton title={confirmDiscard ? (failedCreation ? 'Confirm discard failed entry' : 'Confirm discard queued changes') : (failedCreation ? 'Discard failed entry' : 'Discard queued changes')} disabled={discardFailed.isPending || retryFailedFood.isPending} variant="secondary" onPress={() => confirmDiscard ? discardFailed.mutate() : setConfirmDiscard(true)} />
                     {discardFailed.error && <AppText accessibilityRole="alert">Unable to discard this entry. Its sync state may have changed; close and reopen it to review.</AppText>}
                 </>}
                 <TextField label="Food name" value={editName} onChangeText={setEditName} />
@@ -488,7 +498,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     />
                     <AppButton
                         title={updateFood.isPending ? 'Saving...' : 'Save'}
-                        disabled={updateFood.isPending || Boolean(failedCreation)}
+                        disabled={updateFood.isPending || Boolean(failedFood)}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={handleSaveEdit}
                         style={styles.rowButton}

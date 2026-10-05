@@ -297,3 +297,57 @@ test('offline logout stays signed out through reload, revokes after reconnect an
     }));
     expect(queued).toEqual([expect.objectContaining({ namespace: expect.stringContaining('::user:17'), operation: 'metric.add' })]);
 });
+
+
+test('failed edits on a server row require explicit recovery before correction or deletion', async ({ page, ux }) => {
+    await ux.install('populated');
+    await page.goto('/food-log');
+    await expect(page.getByRole('button', { name: 'Edit Fixture breakfast', exact: true })).toBeVisible();
+    expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 503 });
+    const outage = async (route: import('@playwright/test').Route) => route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } });
+    await page.route('**/auth/me', outage);
+    await page.reload();
+    const edit = page.getByRole('dialog', { name: 'Edit food', exact: true });
+    for (const value of ['400', '450']) {
+        await page.getByRole('button', { name: 'Edit Fixture breakfast', exact: true }).click();
+        await edit.getByRole('textbox', { name: 'Calories', exact: true }).fill(value);
+        await edit.getByRole('button', { name: 'Save', exact: true }).click();
+    }
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('2 pending changes');
+    const markFailed = () => page.evaluate(() => new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('calibrate-offline');
+        open.onsuccess = () => { const db = open.result; const tx = db.transaction('queued_mutations', 'readwrite'); const store = tx.objectStore('queued_mutations'); const read = store.getAll();
+            read.onsuccess = () => { const first = read.result.find(row => row.operation === 'food.update'); store.put({ ...first, state: 'failed', lastError: 'Food day paused' }); };
+            tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
+        open.onerror = () => reject(open.error);
+    }));
+    await markFailed(); await page.reload();
+    await page.getByRole('button', { name: 'Delete Fixture breakfast', exact: true }).click();
+    await expect(edit).toContainText('Saving another correction cannot pass the failed write.');
+    await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+    await edit.getByRole('button', { name: 'Retry original change', exact: true }).click();
+    await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+    await markFailed(); await page.reload();
+    await page.getByRole('button', { name: 'Edit Fixture breakfast', exact: true }).click();
+    await edit.getByRole('button', { name: 'Discard queued changes', exact: true }).click();
+    await expect(edit).toContainText('This does not delete or undo any server record');
+    await edit.getByRole('button', { name: 'Confirm discard queued changes', exact: true }).click();
+    await expect(edit).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('0 pending changes');
+    await page.getByRole('button', { name: 'Edit Fixture breakfast', exact: true }).click();
+    await expect(edit.getByRole('textbox', { name: 'Calories', exact: true })).toHaveValue('360');
+    await edit.getByRole('textbox', { name: 'Calories', exact: true }).fill('500');
+    await edit.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+    const writes: unknown[] = [];
+    await page.route('**/api/v1/food/*', async route => {
+        if (route.request().method() !== 'PATCH') return route.fallback();
+        writes.push(route.request().postDataJSON());
+        return route.fulfill({ json: { id: 11, name: 'Fixture breakfast', date: '2026-07-21', meal_period: 'breakfast', calories: 500 } });
+    });
+    await page.unroute('**/auth/me', outage);
+    await page.getByRole('button', { name: 'Retry connection', exact: true }).click();
+    await expect(page.getByTestId('offline-workspace-status')).toHaveCount(0);
+    expect(writes).toEqual([expect.objectContaining({ calories: 500 })]);
+});

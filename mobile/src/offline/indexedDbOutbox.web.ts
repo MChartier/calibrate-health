@@ -1,4 +1,4 @@
-import { failedCreationDiscardIds } from './failedCreation';
+import { failedFoodDiscardIds } from './failedCreation';
 import * as Crypto from 'expo-crypto';
 import type { OutboxStore } from './outbox';
 import {
@@ -279,7 +279,7 @@ export class IndexedDbOutbox implements OutboxStore {
         );
     }
 
-    discardFailedCreation(id: string): Promise<void> {
+    discardFailedFood(id: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const transaction = this.database.transaction(MUTATION_STORE, 'readwrite');
             const store = transaction.objectStore(MUTATION_STORE);
@@ -288,7 +288,7 @@ export class IndexedDbOutbox implements OutboxStore {
             request.onsuccess = () => {
                 try {
                     const rows = request.result as StoredMutation[];
-                    const ids = failedCreationDiscardIds(rows.map(mapStoredMutation), id);
+                    const ids = failedFoodDiscardIds(rows.map(mapStoredMutation), id);
                     for (const row of rows) if (ids.includes(row.id)) store.delete(requireSequence(row));
                 } catch (error) { failure = error; transaction.abort(); }
             };

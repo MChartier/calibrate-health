@@ -1,3 +1,4 @@
+import { findFailedFood } from './failedCreation';
 import type { FoodLogEntry, MetricEntry, FoodLogCreatePayload } from '@calibrate/api-client';
 import type { QueuedMutation } from './queuedMutation';
 
@@ -50,7 +51,7 @@ export function projectFood(entries: readonly FoodLogEntry[] | undefined, mutati
             }
             if (!result) continue;
             if (mutation.operation === 'food.delete') {
-                if (mutation.state !== 'failed') result = result.filter(row => row.id !== p.id && (!reference || row.localOperationId !== reference.operationId));
+                if (!findFailedFood(mutations, { ...p, date })) result = result.filter(row => row.id !== p.id && (!reference || row.localOperationId !== reference.operationId));
             } else {
                 const update = fields(p.update);
                 result = result.map(row => {
