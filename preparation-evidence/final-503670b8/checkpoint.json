@@ -1,0 +1,179 @@
+{
+  "checkedAt": "2026-10-05T20:35:15.044Z",
+  "pr": "https://github.com/MChartier/calibrate-health/pull/423",
+  "head": "503670b85cbb95f83c6598753a867e75b92800c8",
+  "base": "4728d4f75b70e6440a9778a42cd2224a300db725",
+  "parent": null,
+  "draft": true,
+  "bodySha256": "aeadea907804f19038b600ee9bb9314ae954d208cec48fa2df300689fb5e19f4",
+  "ownerTask": "01a10cfe-a79f-7198-9e8f-2b4dc6703031",
+  "host": "mchartier_zbook",
+  "branch": "mchartier/firebase-migration-preparation",
+  "workflow": "workflow-v3",
+  "prStandard": "pr-review-v3",
+  "checks": [
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37370171649/job/111965079337",
+      "name": "Classify Test Inputs",
+      "state": "QUEUED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37370171690/job/111965074207",
+      "name": "Classify Build Inputs",
+      "state": "QUEUED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37370171668/job/111965074370",
+      "name": "Classify Database Inputs",
+      "state": "QUEUED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37370171711/job/111965074289",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "state": "QUEUED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37370171679/job/111965075462",
+      "name": "Classify Production Image Inputs",
+      "state": "QUEUED"
+    }
+  ],
+  "reviewSummary": {
+    "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5999325319",
+    "html_url": "https://github.com/MChartier/calibrate-health/pull/423#issuecomment-5999325319",
+    "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/423",
+    "id": 5999325319,
+    "node_id": "IC_kwDOQbBgUs8AAAABZZZwhw",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-10-05T17:10:06Z",
+    "updated_at": "2026-10-05T20:32:15Z",
+    "author_association": "NONE",
+    "body": "<!-- codex-pull-request-review-summary -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | 🔄 **Running** since <relative-time datetime=\"2026-10-05T20:32:13.724962Z\">2026-10-05T20:32:13.724962Z</relative-time> | `503670b` | Manual request |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+    "reactions": {
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5999325319/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": {
+      "id": 1144995,
+      "slug": "chatgpt-codex-connector",
+      "node_id": "A_kwHOAOQ6Gs4AEXij",
+      "owner": {
+        "login": "openai",
+        "id": 14957082,
+        "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+        "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/openai",
+        "html_url": "https://github.com/openai",
+        "followers_url": "https://api.github.com/users/openai/followers",
+        "following_url": "https://api.github.com/users/openai/following{/other_user}",
+        "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+        "organizations_url": "https://api.github.com/users/openai/orgs",
+        "repos_url": "https://api.github.com/users/openai/repos",
+        "events_url": "https://api.github.com/users/openai/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/openai/received_events",
+        "type": "Organization",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "name": "ChatGPT Codex Connector",
+      "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+      "external_url": "https://www.chatgpt.com",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "created_at": "2025-02-14T01:37:05Z",
+      "updated_at": "2026-09-23T18:52:59Z",
+      "permissions": {
+        "actions": "write",
+        "checks": "read",
+        "contents": "write",
+        "emails": "read",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "statuses": "read",
+        "workflows": "write"
+      },
+      "events": [
+        "check_run",
+        "check_suite",
+        "commit_comment",
+        "issues",
+        "issue_comment",
+        "pull_request",
+        "pull_request_review",
+        "pull_request_review_comment",
+        "pull_request_review_thread",
+        "repository",
+        "status",
+        "sub_issues"
+      ]
+    },
+    "minimized": null,
+    "pin": null
+  },
+  "evidenceCommit": "7fb7981bf713b24cc96e5278a4bdd9997bfc7386",
+  "validation": {
+    "mobileFull": {
+      "suites": 221,
+      "tests": 1114
+    },
+    "finalFocused": {
+      "tests": 11
+    },
+    "typecheck": "passed",
+    "knip": "passed",
+    "committedBuild": "passed",
+    "finalBrowser": {
+      "maintained": 7,
+      "afterCapture": 1,
+      "result": "passed"
+    },
+    "baselineCapture": "passed",
+    "artifactApiVerification": "17 exact files including served bundles",
+    "renderedInspection": "all eight embedded images loaded; new Before/After recovery pixels inspected in local exact-body Chrome render"
+  },
+  "mergeDiff": {
+    "files": 77,
+    "added": 3470,
+    "deleted": 131,
+    "operationalArtifacts": 0,
+    "diffCheck": "passed",
+    "worktree": "clean"
+  },
+  "limitations": [
+    "CI and configured review are pending; do not dispatch independent QA until complete.",
+    "Direct private GitHub UI unavailable; local exact-body render is not that gate or waiver.",
+    "Native evidence is component/storage/SQL transaction mocks, not emulator or physical device.",
+    "Real Firebase import/rehearsal and runtime lifecycle/security/deletion/Wear remain outstanding; GCP422 remains dependent."
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "head": "503670b85cbb95f83c6598753a867e75b92800c8",
+  "base": "4728d4f75b70e6440a9778a42cd2224a300db725",
+  "bodySha256": "aeadea907804f19038b600ee9bb9314ae954d208cec48fa2df300689fb5e19f4",
+  "checkedAt": "2026-10-05T20:34:18.957Z",
+  "browser": "154.0.8037.95",
+  "images": [
+    {
+      "alt": "Before: auth outage redirects to Sign in",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: cached Today and Pending reconnection",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Today returns after offline logout",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Sign in remains after offline logout and reconnection",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: Today visibly retains 87.9 kg",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: Offline oats visibly retains 350 kcal and edit/delete controls",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Save enabled despite failed queued edit",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: original retry, discard confirmation and disabled Save",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "files": [
+    {
+      "name": "body.md",
+      "sha256": "aeadea907804f19038b600ee9bb9314ae954d208cec48fa2df300689fb5e19f4"
+    },
+    {
+      "name": "embedded-failure.png",
+      "sha256": "1da99fb0a9c0b95761ffe763a0631b18954eb740a685ee02a0b9b750182140cc"
+    },
+    {
+      "name": "embedded-local-values.png",
+      "sha256": "1717ba5fc0e242fc607f6001d840d3b398daa5c38c59169033f85a6d9ed0fe3b"
+    },
+    {
+      "name": "embedded-logout-pair.png",
+      "sha256": "bd1545da2763b1dcf936157f64a34651f5e7fbdd75c765c41c0942dd49fd11fb"
+    },
+    {
+      "name": "embedded-pair.png",
+      "sha256": "e94b48f7d6c20cf223a51233ab7eb3aa23bc5e6055e9e3ac94887302e696b7c2"
+    },
+    {
+      "name": "full.png",
+      "sha256": "d6dd0a191ad9df3ee446e098b5469c6c3866b700854faa334495d4a526fd9471"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "932189a891b6809ea0dda43424cb0ab93620ec9e0e5f971d40f832040f5c5956"
+    },
+    {
+      "name": "manifest.json",
+      "sha256": "a1d9c19548dd36657bcbf52e26f2aeeb023a7a988c38d21c03ea1348da9544dd"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "a14d3e049e52456211a34a10624826cbf7acc93afa79cbb2c5cbb30b2db375dc"
+    },
+    {
+      "name": "renderer.cjs",
+      "sha256": "b1ca4bd560b61cb2ddc90aff05dd1efeb971d20193d5f3752656239916a2de11"
+    }
+  ]
+}
