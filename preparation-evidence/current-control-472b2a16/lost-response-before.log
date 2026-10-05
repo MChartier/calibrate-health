@@ -1,0 +1,52 @@
+FAIL src/offline/foodDayReceipts.test.ts
+  × does not resurrect stale food-day.set-status state after lost-response replay and a second-client reopen (13 ms)
+  × does not resurrect stale food-tracking-pause.start state after lost-response replay and a second-client reopen (9 ms)
+  ○ skipped retains applied food-day.set-status after queue deletion and persisted reopen, without crossing accounts
+  ○ skipped retains applied food-tracking-pause.start after queue deletion and persisted reopen, without crossing accounts
+  ○ skipped serializes a slow authoritative read before a newer direct completion receipt
+  ○ skipped retains an acknowledged control under its original request ID if receipt persistence fails
+  ○ skipped keeps the original control pending if its post-replay server read is unavailable
+
+  ● does not resurrect stale food-day.set-status state after lost-response replay and a second-client reopen
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "OPEN"
+    Received: "COMPLETE"
+
+      86 |         expect(writes).toBe(1); expect(ids).toEqual(['same-original-id', 'same-original-id']);
+      87 |         expect(await store.list()).toEqual([]);
+    > 88 |         expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date, 'OPEN')).toBe('OPEN');
+         |                                                                                         ^
+      89 |         const dispatch = createOutboxDispatch('account', () => store.list(), (kind, payload, id) => store.enqueue({ operation: kind, payload, id }), () => true, true);
+      90 |         await expect(executeOrQueueMutation({ withOutbox: dispatch, forceQueue: true, operation: 'food.create', payload: { date }, execute: async () => undefined, enqueue: async () => undefined })).resolves.toMatchObject({ disposition: 'queued' });
+      91 |     } finally { database.close(); }
+
+      at toBe (src/offline/foodDayReceipts.test.ts:88:89)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● does not resurrect stale food-tracking-pause.start state after lost-response replay and a second-client reopen
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "OPEN"
+    Received: "PAUSED"
+
+      86 |         expect(writes).toBe(1); expect(ids).toEqual(['same-original-id', 'same-original-id']);
+      87 |         expect(await store.list()).toEqual([]);
+    > 88 |         expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date, 'OPEN')).toBe('OPEN');
+         |                                                                                         ^
+      89 |         const dispatch = createOutboxDispatch('account', () => store.list(), (kind, payload, id) => store.enqueue({ operation: kind, payload, id }), () => true, true);
+      90 |         await expect(executeOrQueueMutation({ withOutbox: dispatch, forceQueue: true, operation: 'food.create', payload: { date }, execute: async () => undefined, enqueue: async () => undefined })).resolves.toMatchObject({ disposition: 'queued' });
+      91 |     } finally { database.close(); }
+
+      at toBe (src/offline/foodDayReceipts.test.ts:88:89)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 5 skipped, 7 total
+Snapshots:   0 total
+Time:        0.997 s, estimated 1 s
+Ran all test suites matching /src\\offline\\foodDayReceipts.test.ts/i with tests matching "does not resurrect stale".

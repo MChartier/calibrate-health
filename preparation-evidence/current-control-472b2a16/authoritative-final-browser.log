@@ -1,0 +1,24 @@
+[WebServer] (node:29332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 14 tests using 1 worker
+
+(node:36184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:66:5 ΓÇ║ calendar refresh, uncached month failure, retry, and completion reopening stay honest (17.3s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:3:5 ΓÇ║ auth outage retains a local weigh-in across reload and replays after reconnection (3.8s)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:64:5 ΓÇ║ network loss still persists a local weigh-in immediately (3.3s)
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:100:5 ΓÇ║ offline food additions and repeated edits are visible after restart and replay once before deletion (16.4s)
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:164:5 ΓÇ║ a failed local creation offers explicit discard instead of saving unreachable corrections (2.6s)
+  ok  6 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:213:5 ΓÇ║ logout terminates the browser session while tracking awaits reconnection (1.7s)
+  ok  7 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:238:5 ΓÇ║ offline logout stays signed out through reload, revokes after reconnect and permits a different account (2.9s)
+  ok  8 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:302:5 ΓÇ║ failed edits on a server row require explicit recovery before correction or deletion (11.9s)
+  ok  9 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:357:9 ΓÇ║ failed weight recovery blocks trapped corrections for metric.add (2.9s)
+  ok 10 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:357:9 ΓÇ║ failed weight recovery blocks trapped corrections for metric.delete (3.1s)
+  ok 11 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:406:5 ΓÇ║ failed tracking controls have explicit shared recovery without losing unrelated weight (1.8s)
+  ok 12 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:436:5 ΓÇ║ a stale second tab queues day completion after durable food intent (2.4s)
+  ok 13 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:480:5 ΓÇ║ logout still clears the UI and revokes the browser session when intent storage rejects writes (921ms)
+  ok 14 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:498:5 ΓÇ║ logout warns when storage and revocation fail and retries from memory after reconnect (1.0s)
+
+  14 passed (1.2m)

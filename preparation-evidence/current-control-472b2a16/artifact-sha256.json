@@ -1,0 +1,86 @@
+[
+  {
+    "name": ".gitattributes",
+    "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+  },
+  {
+    "name": "authoritative-final-browser.log",
+    "sha256": "4f45499bdf16ce86fa7d392380801a20dd2bdc6904fc2978181f5ffb254e05a2"
+  },
+  {
+    "name": "authoritative-final-build.log",
+    "sha256": "1e5c1394aff4aeb60b9399648a93b7a0b8346878c76bec6bc45611b051fbc455"
+  },
+  {
+    "name": "authoritative-final-mobile.log",
+    "sha256": "6a0e02bf0827fb9caa96ca163b345eb074aa138ed631628da7e37a6d49fe1390"
+  },
+  {
+    "name": "authoritative-running-build.json",
+    "sha256": "5ee4ee8594d094ac2c36acc1ef24753fd79398a91feededdf2f99e23fccd5ddb"
+  },
+  {
+    "name": "current-control-final-focused.log",
+    "sha256": "cf4b1bd3e6c3ace2e83280c14cd93558482e99216095ada8aa718538199de30f"
+  },
+  {
+    "name": "current-control-final-knip-2.log",
+    "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+  },
+  {
+    "name": "current-control-final-typecheck-2.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "name": "demonstrate-lost-response.cjs",
+    "sha256": "a0f1ae4adfc8ad5c7303c3dc0a7241626d6dc612d1cefd2acc9aea78ea339395"
+  },
+  {
+    "name": "lost-response-before.log",
+    "sha256": "1ceeefe3d7ef6a4a85064b1dc5abe989ae3e21dc5025f2dd7f94a3fb15dd4290"
+  },
+  {
+    "name": "lost-response-experiment.json",
+    "sha256": "80f3fe7d8254ba7832864ef58a27f5dfd2e2c9d8ada0752e48d95545d08f72a0"
+  },
+  {
+    "name": "lost-response-original-test.ts",
+    "sha256": "3eb3e0ce15da307b944433a20c5cbd9867766cebbbcd138a76a3a2ea4081bbb9"
+  },
+  {
+    "name": "README.md",
+    "sha256": "1ebe949621a85c83752f22202fa83900f99bfa1b60754b00e62fafddf2ae99a5"
+  },
+  {
+    "name": "verify-authoritative-build.cjs",
+    "sha256": "e67ad6e75ecb2b413d9831a33a2ef782c69a50c040972da8ac3f27a3c9c1af21"
+  },
+  {
+    "name": "export/sw.js",
+    "sha256": "6f69a4a9115a7abe8df20eeb414b8fc8a2df2884eacfa717886abad2a8fe948e"
+  },
+  {
+    "name": "export/_expo/static/js/web/ImagePicker-69c097ba915c87e5aa151e6ae9d24a89.js",
+    "sha256": "74bc297a111efddb1ff9ad2be1ba21ad42f67cfb1d76ad99b0ac1e9758b003c2"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-006fc68c1815d9f3839bbac1bc636352.js",
+    "sha256": "e02d3219e89e834c87b60c7c9fc97d67f0ffa7e0ba48c6887b958415c621acc2"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-7c3f6f883199f97753d607fa3fd33e32.js",
+    "sha256": "ed3ab709eba2c9a37248ccd5a717eb6652533b9930c294c322563d4632bbee5a"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-87ad6adf0b4d9d29cdf0aa0a7ef76070.js",
+    "sha256": "2134610865826e837923bd3b680d67d180521f8b6cc9728ac0f535df5d966b31"
+  },
+  {
+    "name": "export/_expo/static/js/web/index-92d71452988736d7f029379777be3632.js",
+    "sha256": "81cc161a9ec9f00761d9bfed54b806a76d8cacaa008a408bd0e96a973a629467"
+  },
+  {
+    "name": "export/_expo/static/js/web/ProgressExpansionContent-a725ce0fb500e6443ae6c149a9b92064.js",
+    "sha256": "ae8e54fb0d5451ba659ec9fe6af08e5c1f71659bd093a16819d8307179d72737"
+  }
+]
