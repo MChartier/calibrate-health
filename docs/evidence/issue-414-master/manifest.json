@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAtUtc": "2026-10-05T22:07:55.466Z",
+  "createdAtUtc": "2026-10-05T22:08:21.544Z",
   "actualBase": {
     "repository": "MChartier/calibrate-health",
     "ref": "master",
@@ -8,7 +8,7 @@
   },
   "beforeSourceCommit": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
   "afterSourceCommit": "25e90e196004072dba5e7cfcba056677be9e6f83",
-  "harnessCommit": "f15d7cf283168305e32273930c170ad357993f6d",
+  "harnessCommit": "27ef3da6c1e4cbe808ba820168589d96daa0df8b",
   "pairs": [
     {
       "id": "compact-phone-chrome-calendar-dark",
@@ -125,7 +125,7 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "735ce7a731eb37343e70b0eda08331dca09b70f91b65d61338f86917ff94ddba"
+      "sha256": "be2d172ab03f9a77c87ebfeb4f594250e5be2308e49708be73555e5c3391d4c4"
     },
     {
       "path": "after-build.json",
@@ -433,7 +433,7 @@
     },
     {
       "path": "assemble.cjs",
-      "sha256": "36ec1d9abe41448f575efa9e43d5d83992060bf0d18699a67c8bea0ce960f10e"
+      "sha256": "787fd49429625fe3f5b6b129f5cef8b9b2a23a95b3edf1d45da14ba5b6e6c528"
     },
     {
       "path": "before-build.json",
@@ -545,27 +545,27 @@
     },
     {
       "path": "replacement-after-browser.log",
-      "sha256": "b18b95d111d26d01c6b8bf32a594c60dafd814a41845b36852392f090dea54e6"
+      "sha256": "cc9f5b16225276bd76dee482c433ededfc1b79b2e208f54113fb6e04fbdaa07b"
     },
     {
       "path": "replacement-backend.log",
-      "sha256": "ee45666d9bdc002d2cfc76bf0e6672e47be5cdb887a2eb07911eba1b5d0367c8"
+      "sha256": "df96e14eac9be1bff514a7a0feab84fb1e3fa98129ae0a65684892c8c4cb7144"
     },
     {
       "path": "replacement-before-browser.log",
-      "sha256": "2aeb2505ba9a49359f3a473ac929346b1a0f27183a9df2daef9964ffa6367e16"
+      "sha256": "63249609dd91662532c279b75b02963cb7fd0ae0b6c57a5cf415628c1a9bb7d9"
     },
     {
       "path": "replacement-lint.log",
-      "sha256": "3f75f099b1ddf654120ceb30d9a2f833255be1de85a552cd8f524f8cd675f28f"
+      "sha256": "0c2b324b004c56c0d07b468a82a0fc1bf337948e5a23885dacf1d40f83f3c64a"
     },
     {
       "path": "replacement-mobile.log",
-      "sha256": "2df5658f5a8422c36ccef953bac7b1956cc0ce7b7c96961e949399fc1bb59d99"
+      "sha256": "146a89cf13f6d327eb11545f7f24abff05790d90dcf4de00771973d2759a4fb3"
     },
     {
       "path": "replacement-release.log",
-      "sha256": "11f6a56262b921c55185ab29c4afa34d802b1333dbad2c8a19a0efe14fa350a7"
+      "sha256": "df406b1294dca208815a34052ab00bb8b1b48c26c2895d7fb60cfb37a75cc978"
     }
   ]
 }
