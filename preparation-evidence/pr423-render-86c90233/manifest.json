@@ -1,0 +1,68 @@
+{
+  "head": "86c902330964ad9fb77c6938d53d26fde4c557f6",
+  "base": "4728d4f75b70e6440a9778a42cd2224a300db725",
+  "bodySha256": "ca86bcbc5206ac46ff61fd55fc1a3b879a9c6de62817913cc1f21ac5aa78221e",
+  "checkedAt": "2026-10-05T19:28:33.840Z",
+  "browser": "154.0.8037.95",
+  "images": [
+    {
+      "alt": "Before: auth outage redirects to Sign in",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: cached Today and Pending reconnection",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: Today visibly retains 87.9 kg",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: Offline oats visibly retains 350 kcal and edit/delete controls",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: failed local creation blocks unreachable Save and offers confirmed selective discard",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "files": [
+    {
+      "name": "body.md",
+      "sha256": "ca86bcbc5206ac46ff61fd55fc1a3b879a9c6de62817913cc1f21ac5aa78221e"
+    },
+    {
+      "name": "embedded-failure.png",
+      "sha256": "f54a31ac867c472420d112eb0d079d218dae716019261a45638183773464c825"
+    },
+    {
+      "name": "embedded-local-values.png",
+      "sha256": "f4298e479be285f72bfe68168b5bc29d5d37ef509665a7342bf998e9c55dcc9d"
+    },
+    {
+      "name": "embedded-pair.png",
+      "sha256": "e94b48f7d6c20cf223a51233ab7eb3aa23bc5e6055e9e3ac94887302e696b7c2"
+    },
+    {
+      "name": "full.png",
+      "sha256": "5b86476ced9c2d8ea1c9c1163642c0e8ef2b6c46a31649927b8074d455a1a0a4"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "d33d5e5297f8ba098ef67e24c1486795121c1be1b0ea5f46c905b6aadf973417"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "e2d67aa89d04842101c9b7b41b6cc451c02f098cf53555873ae6472388749599"
+    },
+    {
+      "name": "renderer.cjs",
+      "sha256": "5f7789cfc29003ba17cd320c9bd2d712dc149febc0d130b911faec1b1a3314e6"
+    }
+  ]
+}
