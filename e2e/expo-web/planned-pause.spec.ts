@@ -12,7 +12,7 @@ const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex
 
 async function install(page: Page, ux: UxHarness, target: string | null = '2026-08-03', active = true) {
     await ux.install('populated', { foodEntries: [] });
-    const state = { active, target, startsOn: '2026-07-20', resumedOn: null as string | null, failResume: false, queueResume: false, failUpdate: false, failRead: false, resumeAttempts: 0, dayReads: 0, overrides: new Map<string, string>(), rangeRequests: [] as string[] };
+    const state = { active, target, startsOn: '2026-07-20', resumedOn: null as string | null, failResume: false, queueResume: false, failUpdate: false, queueUpdate: false, failRead: false, resumeAttempts: 0, dayReads: 0, overrides: new Map<string, string>(), rangeRequests: [] as string[] };
     const pause = () => ({ active: state.active, id: 9, starts_on: state.startsOn, expected_resume_on: state.target, resumed_on: state.resumedOn, started_at: '2026-07-20T12:00:00Z', resumed_at: null, materialized_through: today, resume_confirmation_due: state.active && state.target !== null && state.target <= today });
     const day = (date: string) => {
         let status = state.overrides.get(date) ?? ((date >= state.startsOn && (state.active || (state.resumedOn !== null && date < state.resumedOn))) ? 'PAUSED' : 'OPEN');
@@ -25,6 +25,7 @@ async function install(page: Page, ux: UxHarness, target: string | null = '2026-
         const method = route.request().method();
         if (method === 'GET' && state.failRead) return route.fulfill({ status: 503, json: { message: 'Synthetic pause read failure' } });
         if (method === 'POST' || method === 'PATCH') {
+            if (state.queueUpdate) return route.fulfill({ status: 503, json: { message: 'Synthetic retryable pause write failure' } });
             if (state.failUpdate) return route.fulfill({ status: 400, json: { message: 'Synthetic pause update rejected' } });
             const payload = route.request().postDataJSON();
             state.target = payload.expected_resume_on;
@@ -327,4 +328,34 @@ test('matched accepted queued resume before replay', async ({ page, ux }, info) 
     if (before) await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
     else await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
     await capture(page, info, 'queued-replayed');
+});
+
+
+test('matched queued pause metadata survives calendar reads', async ({ page, ux }, info) => {
+    const state = await install(page, ux, null, false); await open(page); await calendar(page);
+    state.queueUpdate = true;
+    expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/pause', status: 503 });
+    await page.getByRole('button', { name: 'Pause tracking', exact: true }).click();
+    await page.getByRole('button', { name: 'Choose expected resume date', exact: true }).click();
+    await page.getByLabel('Expected resume date', { exact: true }).fill('2026-08-03');
+    await page.getByRole('button', { name: 'Pause with this date', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => new Promise<number>((resolve, reject) => {
+        const request = indexedDB.open('calibrate-offline');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            const db = request.result;
+            const records = db.transaction('queued_mutations', 'readonly').objectStore('queued_mutations').getAll();
+            records.onsuccess = () => { resolve(records.result.filter(record => record.operation === 'food-tracking-pause.start').length); db.close(); };
+            records.onerror = () => { reject(records.error); db.close(); };
+        };
+    }))).toBe(1);
+
+    expect(state.active).toBe(false);
+    if (before) await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+    else await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
+    await capture(page, info, 'queued-start-today');
+    await calendar(page);
+    if (before) await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
+    else await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
+    await capture(page, info, 'queued-start-calendar');
 });
