@@ -1,9 +1,10 @@
+import { GoalPaceSheet } from '../../../src/progress/GoalPaceSheet';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useWindowDimensions, AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
+import type { CaloriePlanOptionsRequest, GoalEntry } from '@calibrate/api-client';
 import { AppButton } from '../../../src/components/AppButton';
 import { AppSection } from '../../../src/components/AppSection';
 import { AppText } from '../../../src/components/AppText';
@@ -125,6 +126,7 @@ export default function ProgressScreen() {
     const retryFailedProgressResources = async () => {
         await Promise.all(failedProgressQueries.map((query) => query.refetch()));
     };
+    const [paceGoal, setPaceGoal] = useState<GoalEntry | null>(null);
     const [isGoalEditorOpen, setIsGoalEditorOpen] = useState(false);
     const [startWeight, setStartWeight] = useState('');
     const [targetWeight, setTargetWeight] = useState('');
@@ -264,6 +266,15 @@ export default function ProgressScreen() {
         return goalQuery.data ? formatWeightInput(goalQuery.data.start_weight) : '';
     }
 
+    function editCurrentGoal() {
+        const currentGoal = goalQuery.data;
+        if (currentGoal?.plan_status === 'available' && currentGoal.daily_deficit !== 0) {
+            setPaceGoal(currentGoal);
+            return;
+        }
+        openGoalEditor();
+    }
+
     function openGoalEditor() {
         const currentGoal = goalQuery.data;
         const nextStartWeight = getDefaultStartWeight();
@@ -387,7 +398,7 @@ export default function ProgressScreen() {
                             metrics={metricsQuery.data}
                             goal={goalQuery.data}
                             user={user}
-                            onEditGoal={openGoalEditor}
+                            onEditGoal={editCurrentGoal}
                             onSetNextGoal={openNextGoalEditor}
                             weightChangePending={hasPendingWeightChange}
                             targetCalories={!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available'
@@ -412,6 +423,14 @@ export default function ProgressScreen() {
                 />}
             </FixedPage>
 
+            {paceGoal && <GoalPaceSheet
+                goal={paceGoal}
+                onClose={() => setPaceGoal(null)}
+                onStartNewGoal={() => {
+                    setPaceGoal(null);
+                    openGoalEditor();
+                }}
+            />}
             <BottomSheetModal
                 visible={isGoalEditorOpen}
                 accessibilityLabel="Set a new goal"

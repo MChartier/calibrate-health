@@ -22,7 +22,7 @@ import { ASYNC_RESOURCE_STATES } from '../../../src/asyncState/resolveAsyncState
 import { useSharedLogDateNavigation } from '../../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
 import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPreviousFoodLog';
-import { shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
+import { getFoodDayCalorieTarget, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
 import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
 import { canonicalPathForRoute } from '../../../src/navigation/routeRegistry';
@@ -108,7 +108,7 @@ export default function TodayScreen() {
     const calorieSummary = profileQuery.data?.calorieSummary;
     const planStatus = calorieSummary?.planStatus;
     const planIsAvailable = planStatus === 'available' && !hasPendingWeightChange;
-    const target = planIsAvailable ? calorieSummary?.dailyCalorieTarget ?? null : null;
+    const currentTarget = planIsAvailable ? calorieSummary?.dailyCalorieTarget ?? null : null;
     const planPresentation = getCaloriePlanPresentation(calorieSummary?.planReasonCode, planStatus);
     function openWeightEntry() {
         setIsWeightEntryOpen(true);
@@ -131,6 +131,7 @@ export default function TodayScreen() {
     const selectedDateMetric = (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === selectedDate) ?? null;
     const isToday = selectedDate === getTodayDate(user?.timezone);
     const dayStatus = foodDayQuery.data;
+    const target = getFoodDayCalorieTarget({ day: dayStatus, isToday, currentTarget });
     const showCalorieComparison = shouldShowCalorieComparison({
         status: dayStatus?.status,
         isToday,
@@ -140,6 +141,7 @@ export default function TodayScreen() {
     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
     if (!planIsAvailable) unavailableLabel = planStatus === 'requires_review' ? 'Plan needs review' : 'Target unavailable';
     if (hasPendingWeightChange) unavailableLabel = 'Rechecking target';
+    if (!isToday || dayStatus?.status === 'COMPLETE') unavailableLabel = 'Saved target unavailable';
     if (isPaused) unavailableLabel = 'Tracking paused';
     const contentLoading = dashboardState.kind === 'loading';
     if (contentLoading) unavailableLabel = 'Loading day';
@@ -183,7 +185,7 @@ export default function TodayScreen() {
                     compact
                     open
                 />
-                {!contentLoading && !foodIsUnavailable && !isPaused && !hasPendingWeightChange && !planIsAvailable && <View style={styles.planAction}>
+                {!contentLoading && !foodIsUnavailable && isToday && dayStatus?.status !== 'COMPLETE' && !isPaused && !hasPendingWeightChange && !planIsAvailable && <View style={styles.planAction}>
                     <AppText variant="muted">{planPresentation.message}</AppText>
                     <AppButton title={planPresentation.actionLabel} variant="ghost" onPress={handlePlanAction} />
                 </View>}

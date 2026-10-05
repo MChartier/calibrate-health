@@ -1,4 +1,4 @@
-import type { FoodLogDayStatus } from '@calibrate/api-client';
+import type { FoodLogDay, FoodLogDayStatus } from '@calibrate/api-client';
 
 export type FoodDayStatusLabel = 'Fully logged' | 'Not fully logged' | 'Paused';
 
@@ -39,4 +39,15 @@ export function shouldEmphasizePausedStatus({
     isContentLoading: boolean;
 }) {
     return status === 'PAUSED' && isToday && !hasFoodEntries && !isContentLoading;
+}
+
+/** Historical/finalized days must never borrow today's changing calorie plan. */
+export function getFoodDayCalorieTarget({ day, isToday, currentTarget }: {
+    day: FoodLogDay | undefined;
+    isToday: boolean;
+    currentTarget: number | null;
+}): number | null {
+    if (day?.status === 'COMPLETE') return day.calorie_comparison?.target_kcal ?? null;
+    if (!isToday) return null;
+    return currentTarget;
 }
