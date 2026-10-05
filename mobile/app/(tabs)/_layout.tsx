@@ -34,6 +34,8 @@ import { useOfflineOutbox } from '../../src/offline/provider';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { resolveContextualFab } from '../../src/navigation/contextualFab';
 import { GuardedTabButton } from '../../src/navigation/GuardedTabButton';
+import { WebNavigationRail } from '../../src/navigation/WebNavigationRail';
+import { WEB_NAVIGATION_RAIL_WIDTH } from '../../src/navigation/WebNavigationRail.types';
 import { requestGuardedNavigation } from '../../src/navigation/guardedNavigation';
 import {
     canonicalPathForRoute,
@@ -173,6 +175,8 @@ export default function TabsLayout() {
     const canNavigateBack = routerCanGoBack || browserCanGoBack;
     const activeRoute = getRouteByPath(pathname);
     const usesNavigationRail = width >= NAVIGATION_RAIL_BREAKPOINT;
+    const usesWebNavigationRail = Platform.OS === 'web' && usesNavigationRail;
+    const [webNavigationRailWidth, setWebNavigationRailWidth] = React.useState(WEB_NAVIGATION_RAIL_WIDTH);
     const logDateNavigation = useLogDateNavigation();
     const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user && hasFullAccess));
     const addFoodRequestSequence = React.useRef(0);
@@ -286,7 +290,7 @@ export default function TabsLayout() {
         + insets.bottom;
     const desktopContentGutter = Math.max(
         spacing.xl,
-        (width - DESKTOP_NAV_RAIL_WIDTH - DESKTOP_CONTENT_MAX_WIDTH) / 2 + spacing.xl
+        (width - (usesWebNavigationRail ? webNavigationRailWidth : DESKTOP_NAV_RAIL_WIDTH) - DESKTOP_CONTENT_MAX_WIDTH) / 2 + spacing.xl
     );
     const bottomTabHorizontalPadding = resolveSafeHorizontalPadding(
         spacing.md,
@@ -332,6 +336,9 @@ export default function TabsLayout() {
                     )}
                     <Tabs
                         backBehavior="history"
+                        tabBar={usesWebNavigationRail
+                            ? (props) => <WebNavigationRail {...props} onWidthChange={setWebNavigationRailWidth} />
+                            : undefined}
                         screenOptions={{
                             tabBarPosition: usesNavigationRail ? 'left' : 'bottom',
                             tabBarVariant: usesNavigationRail ? 'material' : 'uikit',

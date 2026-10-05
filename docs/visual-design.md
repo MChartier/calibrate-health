@@ -45,6 +45,11 @@ passes behind the header during expansion. Keep the inner content constrained. P
 `CalibrateLogo` and existing bathroom-scale icon.
 Bottom tabs retain their destinations and short selected underline. Ordinary food items have no icon
 tiles, individual frames, or duplicate navigation decorators.
+On web at 1024px and above, group Today and Progress at the top of an 88px rail, with icons above
+fully visible labels and a compact selected icon pill plus label underline. Keep the whole link at
+least 48px in both dimensions, with distinct hover, pressed, and keyboard-focus feedback. Let the
+rail grow with enlarged labels and use its measured width for contextual action alignment. Preserve
+the native wide tab bar and compact bottom tabs; account controls remain in the header.
 Full-width navigation rows own the entire page width, including the side gutters, for hit testing,
 hover, press, and focus treatment. Constrain their inner content with `FixedPageColumn`; do not extend
 a child beyond a narrow parent, since native hit testing would still stop at that parent's bounds.
