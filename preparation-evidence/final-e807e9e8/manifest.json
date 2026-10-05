@@ -1,8 +1,8 @@
 {
   "head": "e807e9e872e0fe00279bb3c437bc3eb23aa6de52",
   "base": "4728d4f75b70e6440a9778a42cd2224a300db725",
-  "bodySha256": "232aad9eff213872255eb4c05cdfac02b534d4bca930b27950a96f1da720589f",
-  "checkedAt": "2026-10-05T20:12:43.970Z",
+  "bodySha256": "d8b6126524d5fd85638669b15125edc46b44521f927d27d069e347ebea7a6494",
+  "checkedAt": "2026-10-05T20:13:31.393Z",
   "browser": "154.0.8037.95",
   "images": [
     {
@@ -44,7 +44,7 @@
   "files": [
     {
       "name": "body.md",
-      "sha256": "232aad9eff213872255eb4c05cdfac02b534d4bca930b27950a96f1da720589f"
+      "sha256": "d8b6126524d5fd85638669b15125edc46b44521f927d27d069e347ebea7a6494"
     },
     {
       "name": "embedded-failure.png",
@@ -64,15 +64,19 @@
     },
     {
       "name": "full.png",
-      "sha256": "aa59bc96cb817bd6df225aa595126f1e2f47e5e6b51b1bf638721ef4219570df"
+      "sha256": "c4ef56b80fd80a54874178ff94661215ed2355a6c3af09aca4528ef7edf3591f"
     },
     {
       "name": "github-markdown.html",
-      "sha256": "986c1ca68386a5edb4924e1544ecf7364607aa06550dd8e93b29477300080e83"
+      "sha256": "0dbbca0c4ec69c2e5e450e8b09dcb47893be8fad7acf68c92221ddd33a004e4c"
+    },
+    {
+      "name": "manifest.json",
+      "sha256": "e2d657058984d6dfa4de53f2d03833f19d24dfaade144dcd4e4ab711ae5bf679"
     },
     {
       "name": "rendered.html",
-      "sha256": "0ed9f673b3f7886b701ade26abd9e1edf8d54047215c73ad4b7652a24fd6e586"
+      "sha256": "bd38ccb89f620258a3832cc6892c5ede7fc6034a7f045cf1c59a2f2574b296f5"
     },
     {
       "name": "renderer.cjs",

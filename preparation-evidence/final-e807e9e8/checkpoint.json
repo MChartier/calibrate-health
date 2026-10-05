@@ -1,11 +1,11 @@
 {
-  "checkedAt": "2026-10-05T20:13:09.831Z",
+  "checkedAt": "2026-10-05T20:13:32.558Z",
   "head": "e807e9e872e0fe00279bb3c437bc3eb23aa6de52",
   "base": "4728d4f75b70e6440a9778a42cd2224a300db725",
   "parent": null,
   "pr": "https://github.com/MChartier/calibrate-health/pull/423",
   "draft": true,
-  "bodySha256": "232aad9eff213872255eb4c05cdfac02b534d4bca930b27950a96f1da720589f",
+  "bodySha256": "d8b6126524d5fd85638669b15125edc46b44521f927d27d069e347ebea7a6494",
   "reviewSummary": {
     "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5999325319",
     "html_url": "https://github.com/MChartier/calibrate-health/pull/423#issuecomment-5999325319",
@@ -150,8 +150,8 @@
   "captureApplicability": "Outage/tracking capture source86c and logout capture source2cc retained honestly. Final continuation guarantees revocation on local cleanup rejection only; captured normal-cleanup UI/flows unchanged. Forced-cleanup browser/native regressions passed.",
   "mergeDiff": {
     "files": 76,
-    "added": 3314,
-    "deleted": 135,
+    "added": 3308,
+    "deleted": 129,
     "operationalArtifacts": 0
   },
   "limitations": [
