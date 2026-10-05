@@ -1,0 +1,46 @@
+{
+  "head": "8a0c35345d572bb4ef45534ca770493623ea9742",
+  "patchSha256": "04725d48e75d26c2315e60e9ad4b7a647c8f9688aa18fe299200b615ee49d280",
+  "changed": [
+    {
+      "file": "docs/firebase-migration-preparation.md",
+      "sha256": "d7cb52baeccfc2d95142aa616dc23d37cd5ee143e8a2e3a82787387d3e308a6e"
+    },
+    {
+      "file": "e2e/expo-web/offline-workspace.spec.ts",
+      "sha256": "6b6341b72134a195681136626bd262bd2c9ff7d6826efb8537a90cd378c5f510"
+    },
+    {
+      "file": "mobile/src/components/FoodTrackingStatus.test.tsx",
+      "sha256": "62fe138acc2edac179637d5986cccf5a3cc1dde4d71f9872dff3d8c9b3f288cc"
+    },
+    {
+      "file": "mobile/src/components/FoodTrackingStatus.tsx",
+      "sha256": "f412a601c8f6ee94d436b8583abe08fbaa42a39ed805b6a6f43e20988f9dc37d"
+    },
+    {
+      "file": "mobile/src/offline/failedMutationRecovery.test.ts",
+      "sha256": "4efe51f7839651183a56d11b3847ade5adcab51f86cb6305a0cd5c1e1b5cac86"
+    },
+    {
+      "file": "mobile/src/offline/failedMutationRecovery.ts",
+      "sha256": "fc0d3637339585daf28468968e467040839f12be7cffd93ada00829e40180533"
+    },
+    {
+      "file": "mobile/src/offline/foodDayIntent.ts",
+      "sha256": "7c9570532d1732df1b280cd652f16c9806b8fc6c7ecd0d6a2141966b5c472f88"
+    },
+    {
+      "file": "mobile/src/offline/foodDayIntent.web.test.ts",
+      "sha256": "d7cdd7a44af8f473362c6fa820c6148ca65dd78286639cccb0b2d85d2e862ed2"
+    },
+    {
+      "file": "mobile/src/offline/mutationConflict.ts",
+      "sha256": "4d03372464e3ab4e04d568200c448ff9b52829fe5ce6a6a3a109072b0caf1a7d"
+    },
+    {
+      "file": "mobile/src/offline/operations.ts",
+      "sha256": "1baeed1f6ab20bb10f1cdff7e2c47e09ebfd5a24cccfecc04ff672c787de1c88"
+    }
+  ]
+}

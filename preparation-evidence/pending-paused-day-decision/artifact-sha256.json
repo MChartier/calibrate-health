@@ -1,0 +1,74 @@
+[
+  {
+    "name": ".gitattributes",
+    "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+  },
+  {
+    "name": "guard-configured-review.json",
+    "sha256": "bd0f4e54fec6d3b03254b2477aae91807733a678e6e14e6d049c5e95ec0ee8f4"
+  },
+  {
+    "name": "guard-evidence-api-verification.json",
+    "sha256": "0712a42832c272f491baa5dd5b0bb17480db87a726910c565821cf45b8a44052"
+  },
+  {
+    "name": "paused-day-browser-final.log",
+    "sha256": "cae76cdff61a39762450c7b68ba135917474235190565956b96cfe3e86aa05c7"
+  },
+  {
+    "name": "paused-day-browser-fixed.log",
+    "sha256": "cb51b08a6147113e2eb427f78c306f737fa4003f36790cc5a0ef6f5bc8516a84"
+  },
+  {
+    "name": "paused-day-browser-focused.log",
+    "sha256": "0befbd680facbf4fde2c8f596a6e6ac9337522f4ee02322c4b591ba4f3d5c7d7"
+  },
+  {
+    "name": "paused-day-build.log",
+    "sha256": "12238747d0c371ff93bf1c701448acfd5fabf711bfbcc139e74a2e84307deab8"
+  },
+  {
+    "name": "paused-day-focused.log",
+    "sha256": "c3bc982efc1c9c7cbd2bbfa433d4a0912170b4b50b462afecbcfbe37bb7e2747"
+  },
+  {
+    "name": "paused-day-full-mobile-final.log",
+    "sha256": "5ee9e1ca803a4981f5885a71759fb1b561759b1eef3b30c3a0782042199cc87d"
+  },
+  {
+    "name": "paused-day-full-mobile.log",
+    "sha256": "53c8b1f77b498bc420318b3db22315c8eea6cde5b4a110b8c01d2e841eb6ade4"
+  },
+  {
+    "name": "paused-day-initial.log",
+    "sha256": "ea5968644c7c7a1c86fd01ee6dd86aad01429c2bdbf14e5e642616ea8015fbc0"
+  },
+  {
+    "name": "paused-day-knip.log",
+    "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+  },
+  {
+    "name": "paused-day-recovery-focused.log",
+    "sha256": "90ac13f2aa1cc2eeaebc39376b0eb985b76dd327e58eb1ffe17de3446ef31764"
+  },
+  {
+    "name": "paused-day-typecheck-final.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "name": "presentation7b9-evidence-api-verification.json",
+    "sha256": "cce7153897691563992d878fdd679b9228b2fb7ad5e411fdedf907a1363b259b"
+  },
+  {
+    "name": "proposed.patch",
+    "sha256": "04725d48e75d26c2315e60e9ad4b7a647c8f9688aa18fe299200b615ee49d280"
+  },
+  {
+    "name": "README.md",
+    "sha256": "aad19c2545bc8398b43eb101df6856cdc54b0e82d00d770c195c76559e313349"
+  },
+  {
+    "name": "source-sha256.json",
+    "sha256": "c9cc848d8e17aa4d42a2c986997a84f30a09838bd7e9d7a94dd073ab6980eaa7"
+  }
+]

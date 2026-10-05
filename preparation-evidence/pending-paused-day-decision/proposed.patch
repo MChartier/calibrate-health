@@ -1,0 +1,265 @@
+diff --git a/docs/firebase-migration-preparation.md b/docs/firebase-migration-preparation.md
+index 02d64a8e..50f92b65 100644
+--- a/docs/firebase-migration-preparation.md
++++ b/docs/firebase-migration-preparation.md
+@@ -419,3 +419,5 @@ Every queued control, including pause expectation updates, verifies current stat
+ Ordinary pause metadata reads also reconcile the acknowledged pause snapshot under the namespace lock. Pending controls remain a separate ordered overlay, so a pre-replay server read cannot erase explicit queued pause/resume intent.
+ 
+ Pause metadata consumers share useFoodTrackingPause: acknowledged scoped snapshots are applied first, then ordered pending start/update/resume intent. Canonical refetch cannot resurrect a prompt for an already queued resume. Repeated same-date resumes reuse the durable original request; choosing another date requires resolving the existing resume first.
++
++Day-status commands also validate durable pause state before dispatch and transactional insertion. A stale reopen/completion cannot override a pause saved by another producer. The existing historical Backfill action carries local explicit intent; only that deliberate OPEN action or a fresh authoritative server-day receipt can override a covering pause. The backfill marker stays in local intent and is omitted from API payloads. Today still requires Resume tracking.
+diff --git a/e2e/expo-web/offline-workspace.spec.ts b/e2e/expo-web/offline-workspace.spec.ts
+index f4af4ff5..e932f64d 100644
+--- a/e2e/expo-web/offline-workspace.spec.ts
++++ b/e2e/expo-web/offline-workspace.spec.ts
+@@ -583,3 +583,28 @@ test('a stale second tab cannot copy server food before another tabs saved food
+     await expect(copy).toContainText('Synchronize saved changes before copying food.');
+     expect(copies).toBe(0); await other.close();
+ });
++
++test('a stale completed-day action cannot reopen a pause queued in another tab', async ({ page, context, ux }) => {
++    const options: import('./fixtures').AuthenticatedApiOptions = { foodDayStatus: 'COMPLETE' };
++    await ux.install('populated', options); await page.goto('/today');
++    await expect(page.getByRole('button', { name: 'Day completed', exact: true })).toBeVisible();
++    const other = await context.newPage(); await ux.installOnPage(other); await other.goto('/today');
++    await other.evaluate(() => { const original = crypto.randomUUID.bind(crypto); Object.defineProperty(crypto, 'randomUUID', { configurable: true, value: () => original().replace(/^00000000/, '00000003') }); });
++    await other.route('**/api/v1/food-days', route => { options.foodDayStatus = 'OPEN'; return route.fulfill({ json: { date: '2026-07-21', status: 'OPEN' } }); });
++    await other.getByRole('button', { name: 'Day completed', exact: true }).click();
++    await other.getByRole('button', { name: 'Choose date', exact: true }).click();
++    await expect(other.getByRole('button', { name: 'Pause tracking', exact: true })).toBeVisible();
++    expectApiFailure(other, { method: 'POST', pathname: '/api/v1/food-days/pause', status: 503 });
++    await other.route('**/api/v1/food-days/pause', route => route.request().method() === 'POST' ? route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } }) : route.fallback());
++    await other.getByRole('button', { name: 'Pause tracking', exact: true }).click();
++    await other.getByRole('button', { name: 'Until I resume', exact: true }).click();
++    await expect(other.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
++    await expect(page.getByRole('button', { name: 'Day completed', exact: true })).toBeVisible();
++    let writes = 0;
++    await page.route('**/api/v1/food-days**', route => { if (route.request().method() !== 'GET') writes++; return route.fallback(); });
++    await page.getByRole('button', { name: 'Day completed', exact: true }).click();
++    await expect(page.getByText('Tracking changed to paused. Resume tracking or explicitly backfill this day before changing its status.', { exact: true })).toBeVisible();
++    expect(writes).toBe(0);
++    await expect(other.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
++    await other.close();
++});
+diff --git a/mobile/src/components/FoodTrackingStatus.test.tsx b/mobile/src/components/FoodTrackingStatus.test.tsx
+index cf6f6f74..c0ebb8f9 100644
+--- a/mobile/src/components/FoodTrackingStatus.test.tsx
++++ b/mobile/src/components/FoodTrackingStatus.test.tsx
+@@ -1,3 +1,5 @@
++import { createOutboxDispatch, type OutboxDispatch } from '../offline/mutationDispatch';
++import type { QueuedMutation } from '../offline/queuedMutation';
+ import React from 'react';
+ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+ import { AppState, Dimensions, StyleSheet } from 'react-native';
+@@ -10,10 +12,11 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
+ 
+ const mockEnqueue = jest.fn();
++let mockWithOutbox: OutboxDispatch | undefined;
+ const mockReadFoodPause = jest.fn((fetch: () => Promise<unknown>) => fetch());
+ let mockMutations: unknown[] = [];
+ jest.mock('../offline/provider', () => ({
+-    useOfflineOutbox: () => ({ enqueue: mockEnqueue, mutations: mockMutations, readFoodPause: mockReadFoodPause })
++    useOfflineOutbox: () => ({ enqueue: mockEnqueue, withOutbox: mockWithOutbox, mutations: mockMutations, readFoodPause: mockReadFoodPause })
+ }));
+ 
+ const mockApi = {
+@@ -128,6 +131,7 @@ describe('food tracking day resolution', () => {
+         act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 1 } }));
+         jest.clearAllMocks();
+         mockMutations = [];
++        mockWithOutbox = undefined;
+         foregroundListener = undefined;
+         appStateSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_, listener) => {
+             foregroundListener = listener as (state: string) => void;
+@@ -150,6 +154,19 @@ describe('food tracking day resolution', () => {
+         expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
+     });
+ 
++    it.each([true, false])('distinguishes stale completed-day reopen from explicit paused historical backfill: stale=%s', async stale => {
++        const date = '2026-07-23';
++        const rows = [{ id: 'pause', namespace: 'test', sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-tracking-pause.start', payload: { starts_on: date } } as QueuedMutation];
++        mockWithOutbox = createOutboxDispatch('day-override-' + stale, async () => rows, mockEnqueue, () => true);
++        mockApi.getFoodDay.mockResolvedValue(resolvedDay(stale ? 'COMPLETE' : 'PAUSED'));
++        const screen = renderWithQuery(<DayStatusCard date={date} isToday={stale} />);
++        const button = await screen.findByRole('button', { name: stale ? 'Edit or backfill' : 'Backfill this day' });
++        fireEvent.press(button);
++        if (stale) { await screen.findByRole('alert'); expect(mockEnqueue).not.toHaveBeenCalled(); }
++        else await waitFor(() => expect(mockEnqueue).toHaveBeenCalledWith('food-day.set-status', { date, status: 'OPEN', explicitPausedBackfill: true }, 'tracking-operation-id'));
++        expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
++    });
++
+     it('stacks completion and pause targets when native text is enlarged', async () => {
+         act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 2 } }));
+         mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
+diff --git a/mobile/src/components/FoodTrackingStatus.tsx b/mobile/src/components/FoodTrackingStatus.tsx
+index b912298f..0bb423cc 100644
+--- a/mobile/src/components/FoodTrackingStatus.tsx
++++ b/mobile/src/components/FoodTrackingStatus.tsx
+@@ -117,11 +117,13 @@ export const DayStatusCard: React.FC<{
+         networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
+         mutationFn: (status: Exclude<FoodLogDayStatus, 'PAUSED'>) => {
+             const payload = { date, status };
++            const intent = status === 'OPEN' && !isToday && dayQuery.data?.status === 'PAUSED'
++                ? { ...payload, explicitPausedBackfill: true } : payload;
+             return executeOrQueueMutation({
+                 withOutbox,
+                 forceQueue: mutations.length > 0,
+                 operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
+-                payload,
++                payload: intent,
+                 execute: (operationId) => api.setFoodDayStatus(payload, operationId),
+                 enqueue
+             });
+diff --git a/mobile/src/offline/failedMutationRecovery.test.ts b/mobile/src/offline/failedMutationRecovery.test.ts
+index 31292127..f7a2996d 100644
+--- a/mobile/src/offline/failedMutationRecovery.test.ts
++++ b/mobile/src/offline/failedMutationRecovery.test.ts
+@@ -11,7 +11,7 @@ it.each(Object.values(OFFLINE_MUTATION_OPERATIONS))('enforces failed-head recove
+     if (operation === 'food-tracking-pause.start') correction = { operation: 'food-tracking-pause.resume', payload: { resumed_on: '2026-07-21' } };
+     if (operation === 'food-tracking-pause.update') correction = { operation, payload: { expected_resume_on: '2026-07-22' } };
+     if (operation === 'food-tracking-pause.resume') correction = { operation: 'food-tracking-pause.start', payload: { starts_on: '2026-07-22', expected_resume_on: null } };
+-    expect(() => assertRecoverableEnqueue([parent], correction, ns)).toThrow(/Resolve the failed (related|pause) change/);
++    expect(() => assertRecoverableEnqueue([parent], correction, ns)).toThrow(/Resolve the failed (related|pause|tracking) change/);
+     expect(() => assertRecoverableEnqueue([parent], correction, 'https://other.example::user:7')).not.toThrow();
+     expect(() => assertRecoverableEnqueue([{ ...parent, state: 'pending' }], correction, ns)).not.toThrow();
+     expect(parent.payload).toEqual({ id: 42, date: '2026-07-21', weight: 88 });
+diff --git a/mobile/src/offline/failedMutationRecovery.ts b/mobile/src/offline/failedMutationRecovery.ts
+index a41769d9..b1ded549 100644
+--- a/mobile/src/offline/failedMutationRecovery.ts
++++ b/mobile/src/offline/failedMutationRecovery.ts
+@@ -1,6 +1,6 @@
+ import { OfflineMutationConflict } from './mutationConflict';
+ import { validatePauseTransition } from './pauseIntent';
+-import { assertQueuedFoodDayOpen } from './foodDayIntent';
++import { assertQueuedDayTransition, assertQueuedFoodDayOpen } from './foodDayIntent';
+ import type { NewQueuedMutation, QueuedMutation } from './queuedMutation';
+ import type { OfflineMutationOperation } from './mutationKinds';
+ import { failedFoodDiscardIds } from './failedCreation';
+@@ -45,6 +45,7 @@ export function failedMutationDiscardIds(rows: readonly QueuedMutation[], id: st
+ /** Runs inside the same transaction as insertion. Never acknowledge an unreachable correction as saved. */
+ export function assertRecoverableEnqueue(rows: readonly QueuedMutation[], mutation: NewQueuedMutation, namespace: string): void {
+     if (validatePauseTransition(rows.filter(row => row.namespace === namespace), mutation.operation, mutation.payload)) throw new OfflineMutationConflict('duplicate');
++    assertQueuedDayTransition(rows.filter(row => row.namespace === namespace), mutation.operation, mutation.payload);
+     assertQueuedFoodDayOpen(rows.filter(row => row.namespace === namespace), mutation.operation, mutation.payload);
+     const candidate = { id: mutation.id ?? '__new__', namespace, operation: mutation.operation, payload: mutation.payload, state: 'pending' } as QueuedMutation;
+     const failed = rows.find(row => row.state === 'failed' && row.namespace === namespace && (
+diff --git a/mobile/src/offline/foodDayIntent.ts b/mobile/src/offline/foodDayIntent.ts
+index 589043b4..21146db0 100644
+--- a/mobile/src/offline/foodDayIntent.ts
++++ b/mobile/src/offline/foodDayIntent.ts
+@@ -1,3 +1,4 @@
++import { OfflineMutationConflict } from './mutationConflict';
+ import type { QueuedMutation } from './queuedMutation';
+ 
+ type DayStatus = 'OPEN' | 'COMPLETE' | 'INCOMPLETE' | 'PAUSED';
+@@ -15,6 +16,9 @@ export function queuedFoodDayStatus(rows: readonly QueuedMutation[], date: strin
+         if (row.state === 'failed') throw new Error('Resolve the failed tracking change in Review saved changes before changing food.');
+         if (pause) status = 'PAUSED';
+         if (resume && (date === p.resumed_on || status === 'PAUSED' || status === undefined)) status = 'OPEN';
++        // Only a deliberate paused-day backfill or fresh server receipt may override a pause.
++        const explicitBackfill = row.operation === 'food-day.set-status' && p.status === 'OPEN' && p.explicitPausedBackfill === true;
++        if (dayControl && status === 'PAUSED' && !row.id.startsWith('receipt:') && !explicitBackfill) continue;
+         if (dayControl && row.operation === 'food-day.update') status = p.is_complete ? 'COMPLETE' : 'OPEN';
+         if (dayControl && row.operation === 'food-day.set-status' && ['OPEN', 'COMPLETE', 'INCOMPLETE', 'PAUSED'].includes(String(p.status))) status = p.status as DayStatus;
+     }
+@@ -33,3 +37,13 @@ export function assertQueuedFoodDayOpen(rows: readonly QueuedMutation[], operati
+     const status = queuedFoodDayStatus(rows, date);
+     if (status && status !== 'OPEN') throw new Error('The day changed in another action. Reopen or resume the day explicitly before changing food.');
+ }
++
++/** A stale day button cannot silently override a pause saved by another producer. */
++export function assertQueuedDayTransition(rows: readonly QueuedMutation[], operation: string, payload: unknown): void {
++    if (!['food-day.set-status', 'food-day.update'].includes(operation)) return;
++    const p = fields(payload);
++    if (typeof p.date !== 'string') return;
++    if (queuedFoodDayStatus(rows, p.date) !== 'PAUSED') return;
++    if (operation === 'food-day.set-status' && p.status === 'OPEN' && p.explicitPausedBackfill === true) return;
++    throw new OfflineMutationConflict('pausedDay');
++}
+diff --git a/mobile/src/offline/foodDayIntent.web.test.ts b/mobile/src/offline/foodDayIntent.web.test.ts
+index 7f9258c4..cffcd369 100644
+--- a/mobile/src/offline/foodDayIntent.web.test.ts
++++ b/mobile/src/offline/foodDayIntent.web.test.ts
+@@ -1,6 +1,6 @@
+ import { IDBFactory } from 'fake-indexeddb';
+ import { IndexedDbOutbox, openIndexedDbOutboxDatabase } from './indexedDbOutbox.web';
+-import { assertQueuedFoodDayOpen, queuedFoodDayStatus } from './foodDayIntent';
++import { assertQueuedDayTransition, assertQueuedFoodDayOpen, queuedFoodDayStatus } from './foodDayIntent';
+ import { createOutboxDispatch } from './mutationDispatch';
+ import { executeOrQueueMutation } from './operations';
+ import { OutboxReconciler } from './reconciler';
+@@ -75,3 +75,44 @@ it('rejects stale-tab food after completion, retains explicit repeated reopening
+         expect(await store.list()).toEqual([]);
+     } finally { database.close(); }
+ });
++
++it('rejects all stale day transitions under pending or acknowledged pause while preserving explicit backfill and server authority', () => {
++    const pause = row('food-tracking-pause.start', { starts_on: date });
++    const forms = [row('food-day.set-status', { date, status: 'OPEN' }), row('food-day.set-status', { date, status: 'COMPLETE' }), row('food-day.set-status', { date, status: 'INCOMPLETE' }), row('food-day.update', { date, is_complete: false }), row('food-day.update', { date, is_complete: true })];
++    for (const paused of [pause, { ...pause, id: 'receipt:pause' }]) for (const form of forms) {
++        expect(() => assertQueuedDayTransition([paused], form.operation, form.payload)).toThrow(/paused/);
++        expect(queuedFoodDayStatus([paused, form], date)).toBe('PAUSED');
++        expect(() => assertQueuedFoodDayOpen([paused, form], 'food.create', { date })).toThrow(/Reopen or resume/);
++        expect(() => assertQueuedDayTransition([paused, row('food-tracking-pause.resume', { resumed_on: date })], form.operation, form.payload)).not.toThrow();
++    }
++    const backfill = row('food-day.set-status', { date, status: 'OPEN', explicitPausedBackfill: true });
++    expect(() => assertQueuedDayTransition([pause], backfill.operation, backfill.payload)).not.toThrow();
++    expect(queuedFoodDayStatus([pause, backfill], date)).toBe('OPEN');
++    expect(queuedFoodDayStatus([pause, { ...forms[0], id: 'receipt:server-day' }], date)).toBe('OPEN');
++    expect(() => assertQueuedDayTransition([pause], 'food-day.update', { date, is_complete: false, explicitPausedBackfill: true })).toThrow(/paused/);
++});
++
++it('rejects stale reopen before insertion and preserves explicit historical backfill through restart and replay', async () => {
++    const factory = new IDBFactory(); let database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'paused-backfill' });
++    let store = new IndexedDbOutbox(database, 'account'); let id = 0;
++    const dispatch = createOutboxDispatch('account', () => store.list(), (operation, payload, requestId) => store.enqueue({ operation, payload, id: requestId }), () => true);
++    const send = (operation: 'food-tracking-pause.start' | 'food-day.set-status' | 'food.create', payload: unknown) => executeOrQueueMutation({ withOutbox: dispatch, forceQueue: true, operation, payload, execute: async () => undefined, enqueue: async () => undefined, createOperationId: () => String(++id) });
++    try {
++        await send('food-tracking-pause.start', { starts_on: date, expected_resume_on: null });
++        await expect(send('food-day.set-status', { date, status: 'OPEN' })).rejects.toThrow(/paused/);
++        await expect(store.enqueue({ id: 'bypass', operation: 'food-day.update', payload: { date, is_complete: false } })).rejects.toThrow(/paused/);
++        expect(await store.list()).toHaveLength(1);
++        await send('food-day.set-status', { date, status: 'OPEN', explicitPausedBackfill: true });
++        await send('food.create', { date, calories: 120 });
++        const ids = (await store.list()).map(row => row.id);
++        database.close(); database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'paused-backfill' }); store = new IndexedDbOutbox(database, 'account');
++        expect((await store.list()).map(row => row.id)).toEqual(ids);
++        const applied: QueuedMutation[] = [];
++        const result = await new OutboxReconciler(store, async mutation => {
++            if (mutation.operation === 'food.create') expect(queuedFoodDayStatus(applied, date)).toBe('OPEN');
++            applied.push(mutation);
++        }).reconcile();
++        expect(result.replayed).toBe(3); expect(result.failedMutation).toBeNull();
++        expect(queuedFoodDayStatus(applied, '2026-08-09')).toBe('PAUSED');
++    } finally { database.close(); }
++});
+diff --git a/mobile/src/offline/mutationConflict.ts b/mobile/src/offline/mutationConflict.ts
+index fd0aef3d..21c0e4a8 100644
+--- a/mobile/src/offline/mutationConflict.ts
++++ b/mobile/src/offline/mutationConflict.ts
+@@ -1,4 +1,5 @@
+ const messages = {
++    pausedDay: 'Tracking changed to paused. Resume tracking or explicitly backfill this day before changing its status.',
+     "failed": "Resolve the failed pause change in Review saved changes before trying again.",
+     "active": "Tracking is already paused. Update or resume the saved pause before starting another.",
+     "pending": "A resume is already saved. Synchronize or resolve it before changing the pause.",
+diff --git a/mobile/src/offline/operations.ts b/mobile/src/offline/operations.ts
+index 4daa792d..0f855a11 100644
+--- a/mobile/src/offline/operations.ts
++++ b/mobile/src/offline/operations.ts
+@@ -1,5 +1,5 @@
+ import { validatePauseTransition } from './pauseIntent';
+-import { assertQueuedFoodDayOpen } from './foodDayIntent';
++import { assertQueuedDayTransition, assertQueuedFoodDayOpen } from './foodDayIntent';
+ import type { OutboxDispatch } from './mutationDispatch';
+ import type { QueuedMutation } from './queuedMutation';
+ import { foodWirePayload } from './trackingProjection';
+@@ -62,6 +62,7 @@ export async function executeOrQueueMutation<T>({
+     if (withOutbox) return withOutbox((durableEnqueue, mustQueue, pending, record) => {
+         const existing = validatePauseTransition(pending, operation, payload);
+         if (existing) return Promise.resolve({ disposition: 'queued' as const, operationId: existing.id });
++        assertQueuedDayTransition(pending, operation, payload);
+         assertQueuedFoodDayOpen(pending, operation, payload);
+         return executeOrQueueMutation({ operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId, recordControl: record });
+     });
