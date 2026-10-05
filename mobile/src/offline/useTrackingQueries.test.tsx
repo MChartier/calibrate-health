@@ -29,3 +29,20 @@ it('rehydrates intent without polluting server snapshots and filters another acc
     await waitFor(() => expect(mockGetFoodLog).toHaveBeenCalled());
     view.unmount(); client.clear();
 });
+
+it('fetches unrelated dates and refreshes through a failed food edit without erasing queued intent', async () => {
+    mockAuth = { ...mockAuth, serverUrl: 'https://one.invalid', user: { id: 1 } };
+    mockGetFoodLog.mockReset().mockResolvedValue([{ id: 7, name: 'Server oats', calories: 100, meal_period: 'BREAKFAST' }]);
+    mockMutations = [{ ...queued, payload: { ...queued.payload as object, date: '2026-07-22' } }];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const view = renderHook(() => useTrackingFood(date), { wrapper });
+    await waitFor(() => expect(view.result.current.data?.[0].name).toBe('Server oats'));
+    mockMutations = [{ ...queued, operation: 'food.update', payload: { date, id: 7, update: { calories: 200 } }, state: 'failed' }];
+    view.rerender({});
+    await view.result.current.refetch();
+    await waitFor(() => expect(mockGetFoodLog).toHaveBeenCalledTimes(2));
+    expect(view.result.current.data?.[0].calories).toBe(200);
+    expect(client.getQueryData(['mobile-food', date])).toEqual([expect.objectContaining({ calories: 100 })]);
+    view.unmount(); client.clear();
+});

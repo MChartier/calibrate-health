@@ -83,3 +83,20 @@ export function projectMetrics(entries: readonly MetricEntry[] | undefined, muta
     }
     return result;
 }
+
+export function hasActiveFoodMutation(mutations: readonly QueuedMutation[], date: string, cached?: readonly FoodLogEntry[]): boolean {
+    return mutations.some(mutation => {
+        if (!mutation.operation.startsWith('food.') || mutation.state === 'failed') return false;
+        const payload = fields(mutation.payload);
+        const targetDate = payload.date ?? fields(fields(payload.localCreation).payload).date;
+        return targetDate ? targetDate === date : Boolean(cached?.some(row => row.id === payload.id));
+    });
+}
+
+/** Keep known receipt identities when refreshed server rows replace their local snapshot. */
+export function preserveFoodReceiptIdentities(fresh: FoodLogEntry[], previous?: readonly (FoodLogEntry & LocalEntry)[]): (FoodLogEntry & LocalEntry)[] {
+    return fresh.map(row => {
+        const receipt = previous?.find(old => old.id === row.id)?.localOperationId;
+        return receipt ? { ...row, localOperationId: receipt } : row;
+    });
+}

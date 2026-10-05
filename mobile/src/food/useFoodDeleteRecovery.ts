@@ -32,6 +32,7 @@ export type FoodDeleteRecoveryFailure = Readonly<{
 }>;
 
 export type UseFoodDeleteRecoveryOptions = {
+    date?: string;
     entries?: readonly FoodLogEntry[];
     deleteFoodLog: (entryId: number, operationId: string) => Promise<void>;
     outbox: FoodDeleteOutboxBindings;
@@ -57,7 +58,7 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
             return executeOrQueueMutation({
                 forceQueue: current.outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG,
-                payload: localTarget(ticket.entry),
+                payload: { ...localTarget(ticket.entry), ...(current.date ? { date: current.date } : {}) },
                 execute: () => current.deleteFoodLog(ticket.entry.id, ticket.operationId),
                 enqueue: current.outbox.enqueue,
                 createOperationId: () => ticket.operationId

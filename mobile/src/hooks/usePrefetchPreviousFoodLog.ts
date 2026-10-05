@@ -1,3 +1,6 @@
+import type { FoodLogEntry } from '@calibrate/api-client';
+import { useScopedTrackingMutations } from '../offline/useTrackingQueries';
+import { hasActiveFoodMutation, preserveFoodReceiptIdentities, type LocalEntry } from '../offline/trackingProjection';
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
@@ -7,18 +10,19 @@ import { addDaysToDateOnly } from '../utils/dates';
 export function usePrefetchPreviousFoodLog(selectedDate: string, minDate: string): void {
     const { api } = useAuth();
     const queryClient = useQueryClient();
+    const mutations = useScopedTrackingMutations();
 
     useEffect(() => {
         const previousDate = addDaysToDateOnly(selectedDate, -1);
         if (previousDate < minDate) return;
 
-        void queryClient.prefetchQuery({
+        if (!hasActiveFoodMutation(mutations, previousDate, queryClient.getQueryData<FoodLogEntry[]>(['mobile-food', previousDate]))) void queryClient.prefetchQuery({
             queryKey: ['mobile-food', previousDate],
-            queryFn: () => api.getFoodLog(previousDate)
+            queryFn: async () => preserveFoodReceiptIdentities(await api.getFoodLog(previousDate), queryClient.getQueryData<(FoodLogEntry & LocalEntry)[]>(['mobile-food', previousDate]))
         });
         void queryClient.prefetchQuery({
             queryKey: ['mobile-food-day', previousDate],
             queryFn: () => api.getFoodDay(previousDate)
         });
-    }, [api, minDate, queryClient, selectedDate]);
+    }, [api, minDate, queryClient, selectedDate, mutations]);
 }

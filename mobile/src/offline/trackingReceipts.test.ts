@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { applyTrackingReceipt } from './trackingReceipts';
-import { projectFood } from './trackingProjection';
+import { projectFood, preserveFoodReceiptIdentities } from './trackingProjection';
 import type { QueuedMutation } from './queuedMutation';
 
 it('keeps acknowledged food visible through partial replay and deduplicates a pre-dequeue crash', () => {
@@ -11,6 +11,8 @@ it('keeps acknowledged food visible through partial replay and deduplicates a pr
     const snapshot = JSON.parse(JSON.stringify(client.getQueryData(['mobile-food', date])));
     expect(projectFood(snapshot, [create], date)).toEqual([expect.objectContaining({ id: 501, name: 'Oats' })]);
     expect(projectFood(snapshot, [], date)).toEqual(snapshot);
+    const refreshed = preserveFoodReceiptIdentities([{ id: 501, name: 'Server refreshed oats', calories: 210, meal_period: 'BREAKFAST' }], snapshot);
+    expect(projectFood(refreshed, [create], date)).toEqual([expect.objectContaining({ id: 501, name: 'Server refreshed oats', calories: 210 })]);
     const edit = { ...create, id: 'stable-edit', operation: 'food.update', payload: { id: 501, update: { calories: 300 } } } as QueuedMutation;
     applyTrackingReceipt(client, edit, { id: 501, name: 'Oats', calories: 300, meal_period: 'BREAKFAST' });
     expect(projectFood(client.getQueryData(['mobile-food', date]), [], date)).toEqual([expect.objectContaining({ calories: 300, localOperationId: 'stable-create' })]);

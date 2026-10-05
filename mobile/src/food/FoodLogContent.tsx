@@ -129,6 +129,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
 
     const deleteRecovery = useFoodDeleteRecovery({
         entries: foodQuery.data,
+        date: selectedDate,
         deleteFoodLog: (id, operationId) => api.deleteFoodLog(id, operationId),
         outbox,
         onCommitted: async () => {
@@ -195,7 +196,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                 payload.calories = Number(editCalories);
             }
 
-            const queuedPayload = { ...localTarget(editEntry), update: payload };
+            const queuedPayload = { ...localTarget(editEntry), date: selectedDate, update: payload };
             return executeOrQueueMutation({
                 forceQueue: outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG,

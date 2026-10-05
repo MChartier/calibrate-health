@@ -23,6 +23,7 @@ test('auth outage retains a local weigh-in across reload and replays after recon
     await page.reload();
     await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
     await expect(page.getByTestId('today-weight-card')).toContainText('87.9 kg');
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeInViewport({ ratio: 1 });
     await page.getByRole('button', { name: 'Review saved changes', exact: true }).click();
     const pending = page.getByRole('dialog', { name: 'Saved on this device' });
     await expect(pending).toContainText('Weight: 87.9 kg');
