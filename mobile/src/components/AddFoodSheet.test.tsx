@@ -220,6 +220,30 @@ describe('AddFoodSheet async resource states', () => {
         expect(mockApi.createFoodLog).not.toHaveBeenCalled();
     });
 
+    it.each(['food-day.set-status', 'food-day.update'])('reopens after durable %s completion despite a cached OPEN day', async operation => {
+        const rows = [{ id: 'prior-day', namespace: 'test', sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation, payload: { date: '2026-08-08', status: 'COMPLETE', is_complete: true } } as QueuedMutation];
+        mockWithOutbox = createOutboxDispatch('stale-open-' + operation, async () => rows, async (kind, payload) => { rows.push({ operation: kind, payload } as QueuedMutation); }, () => true);
+        const screen = renderSheet(client => client.setQueryData(['mobile-food-day', '2026-08-08'], { date: '2026-08-08', status: 'OPEN' }));
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+        fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+        await waitFor(() => expect(rows.map(row => (row.payload as { status?: string }).status ?? row.operation)).toEqual(['COMPLETE', 'OPEN', 'food.create']));
+        expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+    });
+
+    it('does not add food when a durable day pause supersedes cached OPEN', async () => {
+        const rows = [{ id: 'prior-day', namespace: 'test', sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-day.set-status', payload: { date: '2026-08-08', status: 'PAUSED' } } as QueuedMutation];
+        const write = jest.fn(async () => undefined);
+        mockWithOutbox = createOutboxDispatch('stale-paused', async () => rows, write, () => true);
+        const screen = renderSheet(client => client.setQueryData(['mobile-food-day', '2026-08-08'], { date: '2026-08-08', status: 'OPEN' }));
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+        fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+        await screen.findByRole('alert');
+        expect(write).not.toHaveBeenCalled();
+        expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+    });
+
     it('does not add food when reopening is rejected', async () => {
         onlineManager.setOnline(true);
         mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status: 'COMPLETE' });
