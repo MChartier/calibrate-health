@@ -1,0 +1,47 @@
+{
+  "capturedAtUtc": "2026-10-05T22:21:16.667Z",
+  "sourceCommit": "071ad4a7455ac44d06f050682332527728eebca6",
+  "baseline": false,
+  "harness": [
+    {
+      "path": "e2e/expo-web/planned-pause.spec.ts",
+      "sha256": "530cf29464d022c83e650bf519347c669e8b0f1483d8aa9d25fa89889e2efb88"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "path": "e2e/expo-web/text-scaling.ts",
+      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e"
+    },
+    {
+      "path": "playwright.expo-web.config.ts",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    }
+  ],
+  "display": {
+    "scale": 1,
+    "dark": false,
+    "locale": "en-US",
+    "timezone": "America/Los_Angeles"
+  },
+  "route": "http://127.0.0.1:43424/today",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "browser": "154.0.8037.95",
+  "project": "desktop-chrome",
+  "fixture": "planned-pause.spec.ts + fixtures.ts",
+  "frozenClock": "2026-07-21T19:00:00Z + deterministic 16ms steps",
+  "normalization": "hideTransientPwaNotices suppresses unrelated PWA notices identically; no compared UI modified",
+  "image": "after-desktop-chrome-offline-saved-plan.png",
+  "imageSha256": "de033a1ca2a077b60374fbe58268226e7424b05461ff302be74978f7b2bc7e80",
+  "servedScripts": [
+    {
+      "url": "http://127.0.0.1:43424/_expo/static/js/web/index-5c2d1791ce392946b79c6aab5c06decf.js",
+      "sha256": "395c04ac2ba3366ff90dd94923cafdaa8af6494df65d7b33f02800351a35f2bc"
+    }
+  ]
+}

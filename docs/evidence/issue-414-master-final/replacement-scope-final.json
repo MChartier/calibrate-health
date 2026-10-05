@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-05T22:21:28.840Z",
+  "actualTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "headSha": "071ad4a7455ac44d06f050682332527728eebca6",
+  "mergeBase": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "declaredParent": {
+    "state": "none; former parent410 merged",
+    "formerPr": 410,
+    "mergedInto": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "ultimateTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "remoteTotals": {
+    "commits": 2,
+    "files": 13,
+    "additions": 615,
+    "deletions": 31
+  },
+  "pagination": "All pages via gh api --paginate --slurp, per_page100 for PR commits, PR files and each commit file inventory; counts reconciled with live PR metadata.",
+  "commits": [
+    {
+      "sha": "25e90e196004072dba5e7cfcba056677be9e6f83",
+      "parents": [
+        "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+      ],
+      "subject": "Show expected resume and future planned pause days",
+      "scope": "Issue414 expected-resume visibility and display-only forecast with necessary maintained regressions.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "cd891f568ecdacfc6d735a874a878e36ff48e8d8",
+          "additions": 246,
+          "deletions": 0,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/components/FoodTrackingStatus.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "34059a09e2a6e0c27cbdd157b957224750704a9b",
+          "additions": 35,
+          "deletions": 0,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/components/FoodTrackingStatus.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "9faebc00f2a584181663d6793d5840cb1edd2f54",
+          "additions": 10,
+          "deletions": 6,
+          "scope": "Cancel stale reads before successful pause mutation updates and clear forecast on both explicit resume surfaces."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "0634e0d3c61543b28fd1b9360e8f30c8a80c6f37",
+          "additions": 32,
+          "deletions": 2,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "637333c28053819ca8ceb753ae7a5af758b0f07a",
+          "additions": 55,
+          "deletions": 13,
+          "scope": "Display future plan separately from canonical recorded history; browse target month without future selection or history requests."
+        },
+        {
+          "path": "mobile/src/food/plannedPause.test.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "148db35c78d72bc47d4bf2cb042229098e84f731",
+          "additions": 57,
+          "deletions": 0,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/food/plannedPause.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "9fa61566d49f365c772b5a922729078e8699b5b8",
+          "additions": 37,
+          "deletions": 0,
+          "scope": "Date-only validation, expectation wording and display-only forecast/browse boundaries."
+        },
+        {
+          "path": "mobile/src/food/queryKeys.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "9162a806d8bc8edf24141fca31d0cd8bc0388e36",
+          "additions": 1,
+          "deletions": 0,
+          "scope": "Reuse existing pause API/query key across Today, calendar and prompt."
+        },
+        {
+          "path": "mobile/src/food/useFoodTrackingPause.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "c5eca9649665e7d4302095b1c82c0fb79abbd167",
+          "additions": 13,
+          "deletions": 0,
+          "scope": "Reuse existing pause API/query key across Today, calendar and prompt."
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "2bdf3771ee860b0c91cfb5baf4f835a464fcc6b7",
+          "additions": 12,
+          "deletions": 0,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "c6509969f4922680b2dc3c31c0df1cdf7aabcef9",
+          "additions": 12,
+          "deletions": 3,
+          "scope": "Refresh the shared pause/day/calendar queries after existing outbox replay."
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.test.tsx",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "a3c5119ea8db285afbee256107eb3678c1666068",
+          "additions": 46,
+          "deletions": 0,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "865928e71db92a788f6c93024a84e5514558673c",
+          "additions": 19,
+          "deletions": 1,
+          "scope": "Show current-day expectation with honest loading/stale/error handling; keep historical copy independent."
+        }
+      ]
+    },
+    {
+      "sha": "071ad4a7455ac44d06f050682332527728eebca6",
+      "parents": [
+        "25e90e196004072dba5e7cfcba056677be9e6f83"
+      ],
+      "subject": "Preserve accepted queued pause intent until replay reconciliation",
+      "scope": "Issue414 expected-resume visibility and display-only forecast with necessary maintained regressions.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "263fdd0737a81d8cb409a5a787564bb1599e639f",
+          "additions": 2,
+          "deletions": 0,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/components/FoodTrackingStatus.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "95b7acfaea711b7d2a4d1ee79e8a2404d44267ac",
+          "additions": 28,
+          "deletions": 0,
+          "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+        },
+        {
+          "path": "mobile/src/components/FoodTrackingStatus.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "29b81bf2230900ee54243bdd48856cafc9403207",
+          "additions": 10,
+          "deletions": 6,
+          "scope": "Cancel stale reads before successful pause mutation updates and clear forecast on both explicit resume surfaces."
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "e2e/expo-web/planned-pause.spec.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "263fdd0737a81d8cb409a5a787564bb1599e639f",
+      "additions": 248,
+      "deletions": 0,
+      "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+    },
+    {
+      "path": "mobile/src/components/FoodTrackingStatus.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "95b7acfaea711b7d2a4d1ee79e8a2404d44267ac",
+      "additions": 63,
+      "deletions": 0,
+      "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+    },
+    {
+      "path": "mobile/src/components/FoodTrackingStatus.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "29b81bf2230900ee54243bdd48856cafc9403207",
+      "additions": 20,
+      "deletions": 12,
+      "scope": "Cancel stale reads before successful pause mutation updates and clear forecast on both explicit resume surfaces."
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "0634e0d3c61543b28fd1b9360e8f30c8a80c6f37",
+      "additions": 32,
+      "deletions": 2,
+      "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "637333c28053819ca8ceb753ae7a5af758b0f07a",
+      "additions": 55,
+      "deletions": 13,
+      "scope": "Display future plan separately from canonical recorded history; browse target month without future selection or history requests."
+    },
+    {
+      "path": "mobile/src/food/plannedPause.test.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "148db35c78d72bc47d4bf2cb042229098e84f731",
+      "additions": 57,
+      "deletions": 0,
+      "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+    },
+    {
+      "path": "mobile/src/food/plannedPause.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "9fa61566d49f365c772b5a922729078e8699b5b8",
+      "additions": 37,
+      "deletions": 0,
+      "scope": "Date-only validation, expectation wording and display-only forecast/browse boundaries."
+    },
+    {
+      "path": "mobile/src/food/queryKeys.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "9162a806d8bc8edf24141fca31d0cd8bc0388e36",
+      "additions": 1,
+      "deletions": 0,
+      "scope": "Reuse existing pause API/query key across Today, calendar and prompt."
+    },
+    {
+      "path": "mobile/src/food/useFoodTrackingPause.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "c5eca9649665e7d4302095b1c82c0fb79abbd167",
+      "additions": 13,
+      "deletions": 0,
+      "scope": "Reuse existing pause API/query key across Today, calendar and prompt."
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "2bdf3771ee860b0c91cfb5baf4f835a464fcc6b7",
+      "additions": 12,
+      "deletions": 0,
+      "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "c6509969f4922680b2dc3c31c0df1cdf7aabcef9",
+      "additions": 12,
+      "deletions": 3,
+      "scope": "Refresh the shared pause/day/calendar queries after existing outbox replay."
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.test.tsx",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "a3c5119ea8db285afbee256107eb3678c1666068",
+      "additions": 46,
+      "deletions": 0,
+      "scope": "Maintained regression for issue414 boundaries, UI behavior, accessible future-date disabling or cache/offline recovery."
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "865928e71db92a788f6c93024a84e5514558673c",
+      "additions": 19,
+      "deletions": 1,
+      "scope": "Show current-day expectation with honest loading/stale/error handling; keep historical copy independent."
+    }
+  ],
+  "exclusions": "No evidence/capture archive, add-delete churn, parent/sibling merge or unrelated migration in published range.",
+  "relatedIntersection": {
+    "pr": 423,
+    "headReadOnly": "82d916b61c7c41ca404c32277ed5777aa69cf43d",
+    "file": "mobile/src/components/FoodTrackingStatus.tsx",
+    "assessment": "Independent mutationFn/networkMode/outbox changes versus issue414 shared query/onSuccess cache changes. No propagation or dependency introduced. Coordinator notified in405 comment6003968109; eventual integration checks required."
+  }
+}

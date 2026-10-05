@@ -1,0 +1,27 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand FoodTrackingStatus
+PASS src/components/FoodTrackingStatus.test.tsx
+  food tracking day resolution
+    ΓêÜ clears the plan through control resume and ignores an older in-flight pause read (149 ms)
+    ΓêÜ clears the plan through prompt resume and ignores an older in-flight pause read (75 ms)
+    ΓêÜ keeps accepted queued intent through control success without reading pre-replay server state (63 ms)
+    ΓêÜ keeps accepted queued intent through prompt success without reading pre-replay server state (65 ms)
+    ΓêÜ keeps accepted queued intent through extend success without reading pre-replay server state (64 ms)
+    ΓêÜ does not clear the prior plan when resume fails or durable queue storage rejects the attempt (126 ms)
+    ΓêÜ stacks completion and pause targets when native text is enlarged (68 ms)
+    ΓêÜ offers completion, incomplete, and pause actions for an open current day (68 ms)
+    ΓêÜ removes the rectangular Android elevation from the past-day completion action (58 ms)
+    ΓêÜ presents inferred blank, incomplete, complete, and paused days without food prompts (253 ms)
+    ΓêÜ does not present failed cached day data as fully logged (68 ms)
+    ΓêÜ does not present cached completion when another required Today resource failed (63 ms)
+    ΓêÜ fills only the remaining Today space with a centered status hero (63 ms)
+    ΓêÜ asks for confirmation when an expected resume date is due and exposes every extension path (64 ms)
+    ΓêÜ keeps the pause active when the confirmation is dismissed and offers it again next foreground (63 ms)
+    ΓêÜ updates the expected date for tomorrow, a chosen date, or until manual resume (379 ms)
+    ΓêÜ confirms resume explicitly and reopens the local resume day (129 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        3.115 s, estimated 4 s
+Ran all test suites matching /FoodTrackingStatus/i.
