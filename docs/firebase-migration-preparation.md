@@ -88,9 +88,17 @@ Firebase behavior or database durability.
   importer processes too. The engine itself does not acquire these freezes.
   A collision precheck alone has a race: Firebase import has no create-only
   precondition and can overwrite a UID or duplicate an email.
-- Supply a durable checkpoint store that atomically persists and flushes each
-  update before resolving `saveCheckpoint`. It must bind the manifest and prevent
-  concurrent writers. An in-memory callback is only suitable for tests.
+- `withMigrationJournal` supplies a single-host append-only checkpoint store.
+  It flushes each record with fsync before resolving `saveCheckpoint`, binds the
+  manifest, and holds an exclusive lock file. It refuses a second importer,
+  torn records, stale locks and state rewinds. A process crash retains the lock;
+  never remove it automatically. Operator reconciliation must first establish
+  that its owner and any outstanding remote requests are quiescent. This lock
+  does not block database/Firebase writers or coordinate multiple hosts. Protect
+  the directory with platform ACLs; POSIX mode 0600 alone does not establish
+  Windows ACLs. Test and approve storage durability and backup on the intended
+  operator filesystem before a real import; synthetic process-restart tests do
+  not certify recovery after host power loss.
 - Batches default to 100 and cannot exceed 1,000. Send only UID, normalized email,
   original verification boolean and UTF-8 bytes of the complete encoded bcrypt
   hash, with `{ hash: { algorithm: 'BCRYPT' } }`. No separate salt/cost options,
@@ -186,11 +194,12 @@ required by this preparation tooling.
 Run synthetic preparation tests from `backend/`:
 
 ```text
-node -r ts-node/register --test test/firebase-migration.test.js test/credential-provider.test.js test/firebase-migration-cli.test.js
+node -r ts-node/register --test test/firebase-migration.test.js test/credential-provider.test.js test/firebase-migration-cli.test.js test/migration-journal.test.js
 ```
 
 These tests cover the observable offline CLI, byte-preserving payloads, timeout,
-source drift, collisions, resume, partial failure, identity binding and local
+source drift, collisions, on-disk resume, abrupt-process lock retention, torn
+records, partial failure, identity binding and local
 compatibility. They do not exercise a real Firebase project, an emulator, a live
 database migration, or changed app UI. Production cutover remains blocked on
 the remaining stages above.

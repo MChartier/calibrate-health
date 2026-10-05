@@ -109,7 +109,7 @@ test('timeout after possible success leaves durable ambiguity and suppresses pro
 test('failed intent persistence prevents any network mutation', async () => {
   const h = harness();
   h.options.saveCheckpoint = async () => { throw new Error('disk unavailable'); };
-  await assert.rejects(runFirebaseMigration(h.plan, { ...h.options, apply: true }), /disk unavailable/);
+  await assert.rejects(runFirebaseMigration(h.plan, { ...h.options, apply: true }), /checkpoint persistence failed/);
   assert.equal(h.imports.length, 0);
 });
 
@@ -134,6 +134,26 @@ test('malformed provider partial-result indexes remain ambiguous', async () => {
   h.options.destination.importUsers = async () => ({ successCount: 0, failureCount: 1, errors: [{ index: 3 }] });
   await assert.rejects(runFirebaseMigration(h.plan, { ...h.options, apply: true }), /reconciliation/);
   assert.deepEqual(h.saved.at(-1).states, ['in_flight']);
+});
+
+test('unavailable source or destination inspection cannot leak callback details or permit import', async () => {
+  for (const target of ['readSource', 'findCollisions']) {
+    const h = harness();
+    const fail = async () => { throw new Error('secret-source-connection'); };
+    if (target === 'readSource') h.options.readSource = fail;
+    else h.options.destination.findCollisions = fail;
+    await assert.rejects(runFirebaseMigration(h.plan, { ...h.options, apply: true }), (error) => {
+      assert.ok(!error.message.includes('secret'));
+      return true;
+    });
+    assert.equal(h.imports.length, 0);
+  }
+  for (const result of [null, {}, { errors: [null] }]) {
+    const h = harness();
+    h.options.destination.importUsers = async () => result;
+    await assert.rejects(runFirebaseMigration(h.plan, { ...h.options, apply: true }), /reconciliation/);
+    assert.deepEqual(h.saved.at(-1).states, ['in_flight']);
+  }
 });
 
 test('synthetic bcrypt variants, Unicode and 72-byte boundaries retain password bytes locally', async () => {

@@ -187,10 +187,16 @@ export async function runFirebaseMigration(plan: MigrationPlan, options: Migrati
   if (checkpoint.states.includes('rejected')) throw new Error('Rejected import requires a reviewed recovery plan');
   // Even a dry run detects changed source data, without sending credential material anywhere.
   const readUnchangedSource = async () => {
-    const accounts = await options.readSource();
+    let accounts: MigrationAccount[];
+    try { accounts = await options.readSource(); } catch { throw new Error('Migration source unavailable'); }
     const current = planFirebaseMigration(plan.scope, accounts, []);
     if (current.digest !== plan.digest) throw new Error('Migration source changed');
     return accounts;
+  };
+  const save = async () => {
+    try { await options.saveCheckpoint(structuredClone(checkpoint)); } catch {
+      throw new Error('Migration checkpoint persistence failed; reconcile before retrying');
+    }
   };
   await readUnchangedSource();
   if (!options.apply) return checkpoint;
@@ -204,16 +210,23 @@ export async function runFirebaseMigration(plan: MigrationPlan, options: Migrati
       // Encoded bcrypt bytes, NOT base64-decoded bytes; no separate salt/cost parameters.
       passwordHash: Buffer.from(accounts[row.ordinal].passwordHash, 'utf8')
     }));
-    if (await options.destination.findCollisions(batch.map(({ uid, email }) => ({ uid, email })))) {
+    let collision: boolean;
+    try {
+      collision = await options.destination.findCollisions(batch.map(({ uid, email }) => ({ uid, email })));
+    } catch { throw new Error('Migration destination inspection unavailable'); }
+    if (collision !== false) {
       throw new Error('Destination collision; import stopped');
     }
     pending.forEach((row) => { checkpoint.states[row.ordinal] = 'in_flight'; });
     // Persist intent BEFORE the network mutation. A crash here deliberately requires reconciliation.
-    await options.saveCheckpoint(structuredClone(checkpoint));
+    await save();
     let result: Awaited<ReturnType<MigrationDestination['importUsers']>>;
     try {
       result = await options.destination.importUsers(batch, { hash: { algorithm: 'BCRYPT' } });
     } catch {
+      throw new Error('Ambiguous import requires reconciliation');
+    }
+    if (!result || !Array.isArray(result.errors) || result.errors.some((error) => !error || typeof error !== 'object')) {
       throw new Error('Ambiguous import requires reconciliation');
     }
     const failed = new Set(result.errors.map((error) => error.index));
@@ -225,7 +238,7 @@ export async function runFirebaseMigration(plan: MigrationPlan, options: Migrati
       throw new Error('Ambiguous import requires reconciliation');
     }
     pending.forEach((row, index) => { checkpoint.states[row.ordinal] = failed.has(index) ? 'rejected' : 'imported'; });
-    await options.saveCheckpoint(structuredClone(checkpoint));
+    await save();
     if (failed.size) throw new Error('Partial import requires a reviewed recovery plan');
   }
   return checkpoint;
