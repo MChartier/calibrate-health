@@ -1,0 +1,82 @@
+{
+  "head": "e807e9e872e0fe00279bb3c437bc3eb23aa6de52",
+  "base": "4728d4f75b70e6440a9778a42cd2224a300db725",
+  "bodySha256": "232aad9eff213872255eb4c05cdfac02b534d4bca930b27950a96f1da720589f",
+  "checkedAt": "2026-10-05T20:12:43.970Z",
+  "browser": "154.0.8037.95",
+  "images": [
+    {
+      "alt": "Before: auth outage redirects to Sign in",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: cached Today and Pending reconnection",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Today returns after offline logout",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Sign in remains after offline logout and reconnection",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: Today visibly retains 87.9 kg",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: Offline oats visibly retains 350 kcal and edit/delete controls",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Current: failed local creation blocks unreachable Save and offers confirmed selective discard",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "files": [
+    {
+      "name": "body.md",
+      "sha256": "232aad9eff213872255eb4c05cdfac02b534d4bca930b27950a96f1da720589f"
+    },
+    {
+      "name": "embedded-failure.png",
+      "sha256": "f54a31ac867c472420d112eb0d079d218dae716019261a45638183773464c825"
+    },
+    {
+      "name": "embedded-local-values.png",
+      "sha256": "f4298e479be285f72bfe68168b5bc29d5d37ef509665a7342bf998e9c55dcc9d"
+    },
+    {
+      "name": "embedded-logout-pair.png",
+      "sha256": "db58cd90d7de5a6c433291d4b979ad366693b2a9667f1b83728c6a40ed19894e"
+    },
+    {
+      "name": "embedded-pair.png",
+      "sha256": "e57aa75e66646aa530c0d84291db4135b59c71771eb3ee0e7b1dee479dc2b39a"
+    },
+    {
+      "name": "full.png",
+      "sha256": "aa59bc96cb817bd6df225aa595126f1e2f47e5e6b51b1bf638721ef4219570df"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "986c1ca68386a5edb4924e1544ecf7364607aa06550dd8e93b29477300080e83"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "0ed9f673b3f7886b701ade26abd9e1edf8d54047215c73ad4b7652a24fd6e586"
+    },
+    {
+      "name": "renderer.cjs",
+      "sha256": "7d8e555fb1c6f15b0ea0ed1803cc4b906d63ca07667625dfb1ee2300bda292c2"
+    }
+  ]
+}

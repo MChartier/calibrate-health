@@ -1,0 +1,12 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth/AuthContext.test.tsx src/auth/AuthContext.web.test.tsx src/auth/logoutIntentStore.test.ts src/auth/storage.test.ts
+PASS src/auth/AuthContext.test.tsx
+PASS src/auth/AuthContext.web.test.tsx
+PASS src/auth/storage.test.ts
+PASS src/auth/logoutIntentStore.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       34 passed, 34 total
+Snapshots:   0 total
+Time:        3.786 s
+Ran all test suites matching /src\\auth\\AuthContext.test.tsx|src\\auth\\AuthContext.web.test.tsx|src\\auth\\logoutIntentStore.test.ts|src\\auth\\storage.test.ts/i.
