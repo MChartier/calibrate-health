@@ -1,0 +1,63 @@
+{
+  "at": "2026-10-05T21:16:35.491Z",
+  "sourceSha": "7349964a65dab0de95c198f99616db329b76bba4",
+  "tree": "38c0efd6753331d915ef770a69e109c2746d69d8",
+  "assets": [
+    {
+      "path": "progress.html",
+      "sha256": "1c1de5888429eccb09d24254dc4d89b6a415683e7414d2a8288ef2add10406f2",
+      "bytes": 25428,
+      "servedMatches": true
+    },
+    {
+      "path": "today.html",
+      "sha256": "5c9acb56ab1628832e163c18008536f9cec73ac25e9e21d9f747e4af538bf3aa",
+      "bytes": 25419,
+      "servedMatches": true
+    },
+    {
+      "path": "sw.js",
+      "sha256": "54650ed60e1a2772218c750b193287da2785bafc1caf00e389adff5ce24dafe6",
+      "bytes": 7381,
+      "servedMatches": true
+    },
+    {
+      "path": "_expo/static/js/web/ImagePicker-c698cd7273a74c48b54d1516b0974aa8.js",
+      "sha256": "79c680cd4d26f133e208495e4afe0f9df497e86999a9f3295f85d075bf8f6b13",
+      "bytes": 8596,
+      "servedMatches": true
+    },
+    {
+      "path": "_expo/static/js/web/index-0e46bd146acc382d0c35fb4113b7abaa.js",
+      "sha256": "106a3ea92e04d6338150239dc9227c96e74dafda946bf74f2b62bd1e8bddfcff",
+      "bytes": 2070,
+      "servedMatches": true
+    },
+    {
+      "path": "_expo/static/js/web/index-64d8d86f42dd817a0ec714d541f11e8f.js",
+      "sha256": "b8ad2bb36781ae2347142ed73f5731ebd203d4c1f8c7bbb7954852dc4355641c",
+      "bytes": 45171,
+      "servedMatches": true
+    },
+    {
+      "path": "_expo/static/js/web/index-b903855175e9791914b6883b8c085972.js",
+      "sha256": "af3b2616ff8c718704d31531e6eca8ae524df8a38e0150cf69bab2d59f376d06",
+      "bytes": 3724412,
+      "servedMatches": true
+    },
+    {
+      "path": "_expo/static/js/web/index-f5810f8414b93bd7684007b00dba28d4.js",
+      "sha256": "210c1daca72103fdf012a889df52303b008c25637e3584f888e4a9a952f4ce4f",
+      "bytes": 58683,
+      "servedMatches": true
+    },
+    {
+      "path": "_expo/static/js/web/ProgressExpansionContent-3dc4cef5f605756bb9ac57e4eb2e37f6.js",
+      "sha256": "0ce6cf596b29e9c06c1d1b2027c8dbd0fd1cd4cb8f49b3780b25f780ac0fea44",
+      "bytes": 587,
+      "servedMatches": true
+    }
+  ],
+  "buildCommand": "npm.cmd run test:web:e2e -- --workers=2 e2e/expo-web/goal-pace.spec.ts",
+  "serving": "Repository createExpoWebStaticServer, loopback temporary port; closed after byte verification."
+}

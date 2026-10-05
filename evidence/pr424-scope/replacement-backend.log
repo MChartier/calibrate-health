@@ -1,0 +1,125 @@
+npm notice run backend@0.37.0 pretest
+npm notice run npm run prisma:generate
+npm warn Unknown env config "global-ignore-file". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> backend@0.37.0 prisma:generate
+> prisma generate
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+
+Γ£ö Generated Prisma Client (v7.9.0) to .\node_modules\@prisma\client in 684ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+npm notice run backend@0.37.0 test
+npm notice run node -r ts-node/register --test test/goal-pace.test.js test/calibration-service.test.js test/calorie-planning.test.js test/routes-goals.test.js test/routes-user.test.js test/routes-metrics.test.js test/watch-service.test.js test/account-lifecycle.test.js
+Γ£ö account export returns canonical versioned tracking data without credentials (1795.8391ms)
+Γ£ö account export returns null for a missing account (15.4474ms)
+Γ£ö account deletion removes only the selected account root (8.5806ms)
+Γ£ö portable export preserves captured and unavailable day plans through JSON serialization (23.7109ms)
+Γ£ö export v10 retains both manual pace and nullable legacy revision provenance (9.3053ms)
+Γ£ö calibration status materializes a deterministic model-scoped recommendation (1115.7846ms)
+Γ£ö calibration status maps paused food days into a post-break evidence restart (14.2466ms)
+Γ£ö calibration status acknowledges a pause started on the current incomplete day (12.0166ms)
+Γ£ö scheduled revisions suppress new materialization and report the resulting budget (15.2339ms)
+Γ£ö v1 trend rollback suppresses v2 calibration recommendations without changing accepted revisions (13.2368ms)
+Γ£ö applying a recommendation revalidates, schedules one revision, and replays safely (21.9312ms)
+Γ£ö recommendation apply retries the complete serializable mutation after a P2034 conflict (19.8327ms)
+Γ£ö recommendation apply stops after three persistent P2034 conflicts (10.6764ms)
+Γ£ö canceling a future revision restores the recommendation for review (21.4218ms)
+Γ£ö a scheduled revision cannot be canceled after its effective local date (16.6951ms)
+Γ£ö an APPLIED recommendation from an old goal cannot replay onto the current plan (17.5571ms)
+Γ£ö recommendation apply rejects a profile or weight race that changes the exact target inside the transaction (19.6198ms)
+Γ£ö calibration status returns Plan check assessments for maintenance and gain without actions (32.7481ms)
+Γ£ö manual pace changes exclude the mixed adjustment day and invalidate earlier calibration evidence (12.944ms)
+Γ£ö stored planning marks a current-safe but scheduled-unsafe revision and fails all reads closed (19.9359ms)
+Γ£ö a resolved stored prerequisite marker becomes historical review instead of looping to the old repair action (1.168ms)
+Γ£ö adjustment preserves identity, baseline, target intent and 33% progress; replay and unchanged save are harmless (2575.6344ms)
+Γ£ö local year boundary and same-day ordering preserve earlier pace; scheduled calibration inherits new pace (22.2971ms)
+Γ£ö stale editor, changed profile, another goal and reused operation never overwrite a newer plan (26.8337ms)
+Γ£ö missing weight, unsafe/review plan, unsupported values and direction changes have no partial domain writes (116.8809ms)
+Γ£ö gain adjustment preserves negative direction; intentional new goal still creates a fresh identity (20.7781ms)
+Γ£ö effective and scheduled corrections are retained; unsafe future combination is disabled (20.0858ms)
+Γ£ö existing completion provenance survives manual pace and recompletion; a new day captures the new plan (413.3428ms)
+Γ£ö new-goal serialization conflict is recoverable and retry keeps its operation ID (272.4246ms)
+Γ£ö missing and non-object pace request bodies return structured 400 before mutation (17.9232ms)
+Γ£ö raw SQL serialization and deadlock conflicts return recoverable plan conflicts without a revision (58.3968ms)
+Γ£ö goals route: rejects unauthenticated requests via router.use middleware (2628.0904ms)
+Γ£ö goals route: GET / returns null when the user has no goal (40.5386ms)
+Γ£ö goals route: GET / maps stored gram weights into the user unit (15.7686ms)
+Γ£ö goals route: GET / preserves an unsafe historical daily deficit and marks it for review (15.5892ms)
+Γ£ö goals route: POST / validates daily_deficit and weight inputs before writing (13.1201ms)
+Γ£ö goals route: POST / rejects incoherent start/target weights for loss goals (20.6117ms)
+Γ£ö goals route: POST / creates a goal and returns weights in user units (19.9197ms)
+Γ£ö metrics route: rejects unauthenticated requests via router.use middleware (1684.5235ms)
+Γ£ö metrics route: GET / validates start/end query params when provided (36.9392ms)
+Γ£ö metrics route: GET / validates include_trend query values (31.7711ms)
+Γ£ö metrics route: GET / validates range query values (28.7301ms)
+Γ£ö metrics route: GET / uses inclusive comparison endpoints for relative ranges (104.1743ms)
+Γ£ö metrics route: GET / anchors a relative trend range to an explicit historical end date (28.3005ms)
+Γ£ö metrics route: GET / returns metrics with weight converted to the user unit (24.3114ms)
+Γ£ö metrics route: GET / returns trend-augmented payload when include_trend=true (28.3895ms)
+Γ£ö metrics route: GET / adds scoped v2 evidence and freshness metadata (28.8712ms)
+Γ£ö metrics route: GET / derives point bands and summary from one raw source revision (24.286ms)
+Γ£ö metrics route: GET / preserves raw measurements and marks trend unavailable after refresh failure (24.0813ms)
+Γ£ö metrics route: GET / degrades after a same-day source edit when read-time refitting still fails (30.6913ms)
+Γ£ö metrics route: GET / catches a fitting race and still returns raw measurements (22.8261ms)
+Γ£ö metrics route: GET / keeps legacy fallback when last-known-good trends do not cover newest raw data (24.204ms)
+Γ£ö metrics route: GET / excludes future rows and suppresses outdated pace (21.3568ms)
+Γ£ö metrics route: GET / applies current, stale, and outdated freshness boundaries (94.8875ms)
+Γ£ö metrics route: GET / keeps stale as-of metadata when a narrow range has no returned weigh-ins (28.2165ms)
+Γ£ö metrics route: GET / recomputes a bounded historical trend as of the requested end date (24.3733ms)
+Γ£ö metrics route: GET / legacy weekly rate ignores a pre-gap reversal (25.3905ms)
+Γ£ö metrics route: GET / trend payload stays unit-invariant across KG and LB preferences (27.5066ms)
+Γ£ö metrics route: GET / ignores trend rows older than the active trend horizon (26.8097ms)
+Γ£ö metrics route: POST / rejects invalid date values (29.6113ms)
+Γ£ö metrics route: POST / rejects future account-local weight dates (28.751ms)
+Γ£ö metrics route: POST / rejects malformed or out-of-range body fat percentages (29.1973ms)
+Γ£ö metrics route: POST / rejects empty updates (32.2117ms)
+Γ£ö metrics route: POST / requires weight when creating a new day via body_fat_percent-only update (25.7931ms)
+Γ£ö metrics route: POST / updates existing metrics when weight is omitted (22.158ms)
+Γ£ö metrics route: POST / upserts metrics when weight is provided (25.8978ms)
+Γ£ö metrics route: POST / evaluates goal recognition from pre-save history inside the transaction (25.0837ms)
+Γ£ö metrics route: DELETE /:id validates ids and handles not-found deletes (21.668ms)
+Γ£ö metrics route: DELETE /:id returns 204 when a row is deleted (20.6086ms)
+Γ£ö metrics route: POST / saves a bounded weight but suppresses an unsafe goal progress receipt and marks review (24.0795ms)
+Γ£ö metrics route: DELETE /:id marks the current plan when deleting the latest weight makes it unsafe (30.3757ms)
+Γ£ö user route: rejects unauthenticated requests via router.use middleware (3900.1085ms)
+Γ£ö user route: GET /me returns 404 when the user row is missing (40.1435ms)
+Γ£ö user route: GET /me returns serialized user data (36.0357ms)
+Γ£ö user route: PUT /profile-image validates data_url input (31.8016ms)
+Γ£ö user route: PUT /profile-image rejects invalid profile image payloads (28.8926ms)
+Γ£ö user route: PUT /profile-image stores bytes and returns a data URL (36.3041ms)
+Γ£ö user route: PATCH /password validates request shape and rejects identical passwords (28.9339ms)
+Γ£ö user route: PATCH /password updates password when current password matches (27.0585ms)
+Γ£ö user route: GET /account/export returns a no-store attachment (25.7186ms)
+Γ£ö user route: DELETE /account requires and verifies the current password (25.9305ms)
+Γ£ö user route: DELETE /account deletes data, destroys the request session, and clears the cookie (22.0891ms)
+Γ£ö user route: PATCH /preferences validates reminder preference booleans (26.3522ms)
+Γ£ö user route: PATCH /preferences updates reminder preference fields (32.629ms)
+Γ£ö user route: PATCH /preferences validates haptics_enabled boolean (25.4253ms)
+Γ£ö user route: PATCH /preferences updates haptics_enabled field (20.3129ms)
+Γ£ö user route: GET /profile reads the latest goal with deterministic ordering (29.6029ms)
+Γ£ö user route: PATCH /profile fails invalid legacy timezones closed and marks the current goal in the same transaction (19.4815ms)
+Γ£ö user route: a profile serialization conflict returns a retryable conflict (20.28ms)
+Γ£ö watch mutation parser accepts canonical grams and rejects unknown fields (3720.0599ms)
+Γ£ö watch snapshot rejects an invalid stored timezone before reading any guessed local day (38.3811ms)
+Γ£ö watch snapshot is bounded, timezone-local, and derives current-session undo (25.9045ms)
+Γ£ö watch goal progress covers loss, gain, maintenance, missing goals, and completed targets (17.2829ms)
+Γ£ö watch food creation snapshots My Food and records trusted session provenance (21.2322ms)
+Γ£ö watch food creation rejects paused days before inserting (16.7853ms)
+Γ£ö watch food deletion is limited to the current session undo candidate (17.8231ms)
+Γ£ö watch undo is invalidated by a later phone edit and never walks to an older create (19.1173ms)
+Γ£ö watch metric and completion mutations use canonical date-only upserts (19.96ms)
+Γ£ö watch metric and completion mutations reject stale snapshot revisions (20.1958ms)
+Γä╣ tests 99
+Γä╣ suites 0
+Γä╣ pass 99
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 4688.1832

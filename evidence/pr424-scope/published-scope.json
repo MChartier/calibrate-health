@@ -1,0 +1,317 @@
+{
+  "at": "2026-10-05T21:13:28.318Z",
+  "baseRefName": "master",
+  "baseRefOid": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "headRefOid": "7349964a65dab0de95c198f99616db329b76bba4",
+  "isDraft": true,
+  "labels": [],
+  "commits": [
+    {
+      "sha": "7349964a65dab0de95c198f99616db329b76bba4",
+      "parents": [
+        "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+      ],
+      "subject": "Preserve existing goal progress when adjusting calorie pace"
+    }
+  ],
+  "files": [
+    {
+      "path": ".github/workflows/database-upgrade.yml",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 3,
+      "deletions": 0,
+      "acceptanceRationale": "Run the real PostgreSQL pace/replay/concurrency regression in the existing upgrade gate."
+    },
+    {
+      "path": "backend/prisma/migrations/0044_goal_pace_history/migration.sql",
+      "previousPath": null,
+      "status": "added",
+      "additions": 1,
+      "deletions": 0,
+      "acceptanceRationale": "Add nullable dated configured deficit; preserve legacy calibration rows and original Goal."
+    },
+    {
+      "path": "backend/prisma/schema.prisma",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "acceptanceRationale": "Prisma mirror of the single new nullable history column."
+    },
+    {
+      "path": "backend/src/routes/goals.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 85,
+      "deletions": 10,
+      "acceptanceRationale": "Authenticated preview and atomic retry-safe pace mutation; serialize intentional new-goal races."
+    },
+    {
+      "path": "backend/src/routes/user.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 7,
+      "deletions": 1,
+      "acceptanceRationale": "Return recoverable 409 when a profile write races the new pace safety transaction."
+    },
+    {
+      "path": "backend/src/services/accountLifecycle.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "acceptanceRationale": "Export configured pace history without losing calibration provenance; export-format v10, not a release bump."
+    },
+    {
+      "path": "backend/src/services/calibration.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 9,
+      "deletions": 1,
+      "acceptanceRationale": "Preserve corrections, exclude the mixed adjustment day, and serialize calibration/pace races."
+    },
+    {
+      "path": "backend/src/services/caloriePlanReview.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "acceptanceRationale": "Weight/profile safety review shares the pace transaction guard."
+    },
+    {
+      "path": "backend/src/services/caloriePlanning.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 14,
+      "deletions": 1,
+      "acceptanceRationale": "Resolve deficit by local effective date independently of calibration corrections."
+    },
+    {
+      "path": "backend/src/services/caloriePlanningLock.ts",
+      "previousPath": null,
+      "status": "added",
+      "additions": 25,
+      "deletions": 0,
+      "acceptanceRationale": "Serialize authoritative profile/weight/goal safety inputs and normalize database conflicts."
+    },
+    {
+      "path": "backend/src/services/goalPace.ts",
+      "previousPath": null,
+      "status": "added",
+      "additions": 52,
+      "deletions": 0,
+      "acceptanceRationale": "Server-owned safety options, version token and unchanged-goal serialization."
+    },
+    {
+      "path": "backend/test/account-lifecycle.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 15,
+      "deletions": 2,
+      "acceptanceRationale": "Verify manual and legacy-null pace history survives portable export."
+    },
+    {
+      "path": "backend/test/calibration-service.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 13,
+      "deletions": 0,
+      "acceptanceRationale": "Verify calibration evidence boundary after a manual pace change; adapt lock stub."
+    },
+    {
+      "path": "backend/test/calorie-planning.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "acceptanceRationale": "Adapt existing safety regression stubs for the transaction guard."
+    },
+    {
+      "path": "backend/test/goal-pace.test.js",
+      "previousPath": null,
+      "status": "added",
+      "additions": 188,
+      "deletions": 0,
+      "acceptanceRationale": "Continuity, dated history, safety, retry, concurrent goal and separate new-goal regressions."
+    },
+    {
+      "path": "backend/test/routes-goals.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "acceptanceRationale": "Adapt existing create-goal regression stub for the shared transaction guard."
+    },
+    {
+      "path": "backend/test/routes-metrics.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "acceptanceRationale": "Adapt weight-write regression stub for the shared transaction guard."
+    },
+    {
+      "path": "backend/test/routes-user.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 16,
+      "deletions": 0,
+      "acceptanceRationale": "Verify recoverable profile/pace conflict and transactional guard."
+    },
+    {
+      "path": "backend/test/watch-service.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "acceptanceRationale": "Adapt Watch weight-mutation regression stub for the shared guard; no new Watch feature."
+    },
+    {
+      "path": "docs/openapi/v1.yaml",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 72,
+      "deletions": 2,
+      "acceptanceRationale": "Additive pace endpoints, profile conflict and exported pace history contract."
+    },
+    {
+      "path": "docs/visual-design.md",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "acceptanceRationale": "One line documenting Edit goal pace controls and intentional new-goal action."
+    },
+    {
+      "path": "e2e/expo-web/goal-pace.spec.ts",
+      "previousPath": null,
+      "status": "added",
+      "additions": 145,
+      "deletions": 0,
+      "acceptanceRationale": "Maintained UI regression for continuity, cancel/retry/refresh/history and intentional reset."
+    },
+    {
+      "path": "mobile/app/(tabs)/(progress)/progress.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 21,
+      "deletions": 2,
+      "acceptanceRationale": "Route Edit goal to pace editor; retain explicit new-goal/onboarding behavior."
+    },
+    {
+      "path": "mobile/app/(tabs)/(today)/today.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 5,
+      "deletions": 3,
+      "acceptanceRationale": "Show saved completed-day target instead of replacing it with newly adjusted current pace."
+    },
+    {
+      "path": "mobile/src/food/dayPresentation.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 11,
+      "deletions": 0,
+      "acceptanceRationale": "Verify saved historical target is independent of the changing current target."
+    },
+    {
+      "path": "mobile/src/food/dayPresentation.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 12,
+      "deletions": 1,
+      "acceptanceRationale": "Select saved completed-day target; do not invent missing historical targets."
+    },
+    {
+      "path": "mobile/src/progress/GoalPaceSheet.test.tsx",
+      "previousPath": null,
+      "status": "added",
+      "additions": 171,
+      "deletions": 0,
+      "acceptanceRationale": "Draft/cancel/offline/pending/retry/stale-plan/new-goal component regressions."
+    },
+    {
+      "path": "mobile/src/progress/GoalPaceSheet.tsx",
+      "previousPath": null,
+      "status": "added",
+      "additions": 140,
+      "deletions": 0,
+      "acceptanceRationale": "Pace editor, safety preview, retry identity, cache refresh and separate new-goal action."
+    },
+    {
+      "path": "mobile/src/progress/ProgressScreen.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "acceptanceRationale": "Provide deterministic operation-ID dependency for Progress editor regression."
+    },
+    {
+      "path": "packages/api-client/src/client.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 12,
+      "deletions": 0,
+      "acceptanceRationale": "No-store pace preview and PATCH with operation-ID header."
+    },
+    {
+      "path": "packages/api-client/src/generated/v1.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 131,
+      "deletions": 1,
+      "acceptanceRationale": "Generated mirror of additive OpenAPI and export changes."
+    },
+    {
+      "path": "packages/api-client/src/types.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 9,
+      "deletions": 1,
+      "acceptanceRationale": "Typed pace request/options and lossless export history shape."
+    },
+    {
+      "path": "packages/api-client/test/account-lifecycle.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 2,
+      "acceptanceRationale": "Verify manual/legacy pace export readback."
+    },
+    {
+      "path": "packages/api-client/test/goal-pace.test.ts",
+      "previousPath": null,
+      "status": "added",
+      "additions": 24,
+      "deletions": 0,
+      "acceptanceRationale": "Verify no-store preview and stable retry payload/header."
+    },
+    {
+      "path": "scripts/postgres-goal-pace-smoke.mjs",
+      "previousPath": null,
+      "status": "added",
+      "additions": 193,
+      "deletions": 0,
+      "acceptanceRationale": "Real database identity/history/replay and forced concurrent safety races."
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.mjs",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 3,
+      "acceptanceRationale": "Include 0044 in the exact migration ledger and verify nullable legacy upgrade."
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.test.mjs",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "acceptanceRationale": "Keep rollback ledger assertions aligned with the required history migration."
+    }
+  ],
+  "additions": 1400,
+  "deletions": 34
+}

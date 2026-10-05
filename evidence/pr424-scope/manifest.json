@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-05T21:18:36.466Z",
+  "source": {
+    "repository": "MChartier/calibrate-health",
+    "pr": 424,
+    "branch": "mchartier/goal-pace-scope",
+    "head": "7349964a65dab0de95c198f99616db329b76bba4",
+    "baseRef": "master",
+    "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+    "mergeBase": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+    "headTree": "38c0efd6753331d915ef770a69e109c2746d69d8",
+    "baseTree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+    "openParent": null,
+    "mergedPrerequisite": 410,
+    "commits": 1,
+    "files": 37,
+    "additions": 1400,
+    "deletions": 34
+  },
+  "originalCaptures": {
+    "beforeSource": "872f7b5f00c5ace203e1d5c1b15b201c84e9dd48",
+    "afterSource": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+    "applicability": "Verified whole-tree equality: original Before tree equals actual master base tree; original After tree equals current head tree. No capture source was relabeled.",
+    "evidenceCommit": "9217068c875406176118866b7fdf7ecf5fc3a3ca",
+    "manifestPath": "evidence/pr415-rail/manifest.json",
+    "manifestSha256": "60066447b1bf633301d1422b89a88b5caa683adacb966bd7c94d163b26d11c28",
+    "readmeSha256": "3df2eea6220e28806666a0f700f5113edd3d6806ea9928f7e309ea763096dd9d",
+    "beforePngSha256": "ef026511bc12488560301a385d6d71a99f26d0b1032a10a888324b9586d6fb5e",
+    "afterPngSha256": "a6b1181aae56450d5b5f6b5c4eb33a3148e37ac1562fcfedab13a7e3c7ea1588"
+  },
+  "localValidation": {
+    "host": "MCHARTIER_ZBOOK",
+    "setup": "Repository node .codex/local-environment.setup.mjs passed; dependency cache hits and Prisma generated; no containers started.",
+    "lint": "npm.cmd run lint: backend/shared/API client/mobile passed.",
+    "apiContract": "npm.cmd run api:contract:check: passed, no generated diff.",
+    "backend": {
+      "passed": 99,
+      "command": "npm.cmd --prefix backend test -- test/goal-pace.test.js test/calibration-service.test.js test/calorie-planning.test.js test/routes-goals.test.js test/routes-user.test.js test/routes-metrics.test.js test/watch-service.test.js test/account-lifecycle.test.js"
+    },
+    "mobile": {
+      "passed": 30,
+      "suites": 3,
+      "command": "npm.cmd --prefix mobile test -- --runInBand src/progress/GoalPaceSheet.test.tsx src/progress/ProgressScreen.test.tsx src/food/dayPresentation.test.ts"
+    },
+    "apiClient": {
+      "passed": 69,
+      "command": "npm.cmd --prefix packages/api-client test"
+    },
+    "rollbackUnit": {
+      "passed": 14,
+      "command": "node --test scripts/postgres-rollback-smoke.test.mjs"
+    },
+    "browser": {
+      "passed": 8,
+      "productionBuildPassed": true,
+      "command": "CALIBRATE_EXPO_WEB_PORT=4198 npm.cmd run test:web:e2e -- --workers=2 e2e/expo-web/goal-pace.spec.ts",
+      "sourceFixture": "e2e/expo-web/goal-pace.spec.ts at exact head",
+      "projects": [
+        "desktop-chrome",
+        "tablet-chrome",
+        "android-phone-chrome",
+        "compact-phone-chrome"
+      ],
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "runtime": "Windows system Chrome; phone projects are browser viewports, not Android devices.",
+      "behavior": "Continuity; cancel zero writes; lost-response retry same operation; manual refresh; preserved completed target; reopen/reload; Escape/new-goal cancel focus; intentional new-goal reset; blocking axe checks; compact light 200 percent text."
+    },
+    "servedAssets": 9,
+    "diffCheckPassed": true,
+    "attemptCorrection": "Nested test:expo-web:e2e npm alias rejected --workers before build/tests; direct repository test:web:e2e entrypoint passed."
+  },
+  "limits": [
+    "Browser APIs use synthetic fixtures.",
+    "Native/emulator/physical-device/Watch runtime and local live-database application not executed.",
+    "Exact-head GitHub CI/review recorded separately; no pending result is claimed here."
+  ],
+  "retention": {
+    "ref": "refs/heads/evidence/pr424-scope-cleanup-oct05",
+    "owner": "Existing issue409 implementation owner; coordinator retains after handoff.",
+    "lifetime": "Indefinite review/audit. No rewrite, repurpose, routine deletion or merge. Explicit human authorization required for retirement.",
+    "preservedRefs": [
+      "refs/heads/archive/pr415-pre-scope-cleanup-ed4a2a7",
+      "refs/heads/evidence/pr415-rail-integration-oct05",
+      "refs/heads/evidence/pr415-reviewed-a1df146"
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "replacement-lint.log",
+      "sha256": "19ea7c4bef799e38fd8be167fe2ab6d083f549bf696a658ca772078d1deb1124",
+      "originalLocalLogSha256": "19ea7c4bef799e38fd8be167fe2ab6d083f549bf696a658ca772078d1deb1124",
+      "normalization": "Absolute owned-worktree path replaced with <worktree>; output and assertions preserved."
+    },
+    {
+      "path": "replacement-contract.log",
+      "sha256": "66b12963a64f72568852386dc3337facd9bf7b579bebb52e6eccb53a6abd4c4d",
+      "originalLocalLogSha256": "66b12963a64f72568852386dc3337facd9bf7b579bebb52e6eccb53a6abd4c4d",
+      "normalization": "Absolute owned-worktree path replaced with <worktree>; output and assertions preserved."
+    },
+    {
+      "path": "replacement-backend.log",
+      "sha256": "4fc02182938762afc65e97eb765bb55944053a297ea7327f56a24c8962a96c5e",
+      "originalLocalLogSha256": "4fc02182938762afc65e97eb765bb55944053a297ea7327f56a24c8962a96c5e",
+      "normalization": "Absolute owned-worktree path replaced with <worktree>; output and assertions preserved."
+    },
+    {
+      "path": "replacement-mobile.log",
+      "sha256": "3c0bfd1daf1540e814fbe38adacd6f718b8f0dfc97a1c38599f93a5670c6e431",
+      "originalLocalLogSha256": "3c0bfd1daf1540e814fbe38adacd6f718b8f0dfc97a1c38599f93a5670c6e431",
+      "normalization": "Absolute owned-worktree path replaced with <worktree>; output and assertions preserved."
+    },
+    {
+      "path": "replacement-api-client.log",
+      "sha256": "df48a31b6857df45c089bdda89f8c8c3ec1ac6c53a6a20b5bcf05bb4ac75f177",
+      "originalLocalLogSha256": "df48a31b6857df45c089bdda89f8c8c3ec1ac6c53a6a20b5bcf05bb4ac75f177",
+      "normalization": "Absolute owned-worktree path replaced with <worktree>; output and assertions preserved."
+    },
+    {
+      "path": "replacement-rollback-unit.log",
+      "sha256": "f738a1acc24afcbf6a93b1263bec386751deb210d8b5873c8b50b19685c996fa",
+      "originalLocalLogSha256": "f738a1acc24afcbf6a93b1263bec386751deb210d8b5873c8b50b19685c996fa",
+      "normalization": "Absolute owned-worktree path replaced with <worktree>; output and assertions preserved."
+    },
+    {
+      "path": "replacement-browser.log",
+      "sha256": "727d9c1f2b814d69071f8c634f5a2787ff2e3740276b89e850317e5efe6eb2d6",
+      "originalLocalLogSha256": "727d9c1f2b814d69071f8c634f5a2787ff2e3740276b89e850317e5efe6eb2d6",
+      "normalization": "Absolute owned-worktree path replaced with <worktree>; output and assertions preserved."
+    },
+    {
+      "path": "published-scope.json",
+      "sha256": "edfbd688037ec0dc8169afd44a710cadd1155a03b9c602f663dba34d74b19527"
+    },
+    {
+      "path": "build-assets.json",
+      "sha256": "83d68062802726b83e8089442e6a56342c630364cf58be6157cc87653655ac5c"
+    }
+  ]
+}

@@ -1,0 +1,183 @@
+npm notice run cal-io@0.37.0 test:web:e2e
+npm notice run node scripts/expo-web-playwright.mjs --workers=2 e2e/expo-web/goal-pace.spec.ts
+npm notice run mobile@0.2.7 prebuild:web
+npm notice run npm --prefix ../shared run build
+npm warn Unknown env config "global-ignore-file". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @calibrate/shared@0.0.0 build
+> tsc -p tsconfig.build.json
+
+npm notice run mobile@0.2.7 build:web
+npm notice run node ../scripts/expo-web-build.mjs
+Expo Autolinking module resolution enabled
+Starting Metro Bundler
+
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+╬╗ Bundled 1200ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1744 modules)
+Web Bundled 1513ms mobile\index.js (1841 modules)
+
+ΓÇ║ web bundles (6):
+_expo/static/js/web/ImagePicker-c698cd7273a74c48b54d1516b0974aa8.js (8.6KB)
+_expo/static/js/web/index-0e46bd146acc382d0c35fb4113b7abaa.js (2.1KB)
+_expo/static/js/web/index-64d8d86f42dd817a0ec714d541f11e8f.js (45KB)
+_expo/static/js/web/index-b903855175e9791914b6883b8c085972.js (3.7MB)
+_expo/static/js/web/index-f5810f8414b93bd7684007b00dba28d4.js (59KB)
+_expo/static/js/web/ProgressExpansionContent-3dc4cef5f605756bb9ac57e4eb2e37f6.js (587B)
+
+ΓÇ║ Static routes (123):
+/log (25KB)
+/data (25KB)
+/help (25KB)
+/ (index) (24KB)
+/terms (33KB)
+/login (24KB)
+/goals (25KB)
+/about (25KB)
+/watch (25KB)
+/today (25KB)
+/weight (25KB)
+/barcode (22KB)
+/privacy (44KB)
+/support (30KB)
+/devices (25KB)
+/profile (25KB)
+/_sitemap (23KB)
+/register (24KB)
+/progress (25KB)
+/activity (25KB)
+/advanced (25KB)
+/my-foods (25KB)
+/security (25KB)
+/settings (25KB)
+/food-log (25KB)
+/+not-found (21KB)
+/onboarding (24KB)
+/plan-check (25KB)
+/(tabs)/log (25KB)
+/connections (25KB)
+/(tabs)/data (25KB)
+/(tabs)/help (25KB)
+/preferences (25KB)
+/(today)/log (25KB)
+/legal-update (24KB)
+/verify-email (27KB)
+/(auth)/login (24KB)
+/(tabs)/goals (25KB)
+/weight-trend (25KB)
+/(tabs)/about (25KB)
+/server-admin (25KB)
+/(tabs)/watch (25KB)
+/(tabs)/today (25KB)
+/(tabs)/weight (25KB)
+/notifications (25KB)
+/(today)/today (25KB)
+/reset-password (28KB)
+/connected-apps (25KB)
+/(tabs)/devices (25KB)
+/health-connect (25KB)
+/(tabs)/profile (25KB)
+/forgot-password (26KB)
+/nutrition-label (24KB)
+/(auth)/register (24KB)
+/(tabs)/progress (25KB)
+/(tabs)/activity (25KB)
+/(tabs)/advanced (25KB)
+/(settings)/data (25KB)
+/(settings)/help (25KB)
+/(tabs)/my-foods (25KB)
+/profile-details (25KB)
+/(tabs)/security (25KB)
+/(tabs)/settings (25KB)
+/(tabs)/food-log (25KB)
+/account-deletion (30KB)
+/(progress)/goals (25KB)
+/(settings)/about (25KB)
+/(settings)/watch (25KB)
+/(today)/food-log (25KB)
+/(tabs)/plan-check (25KB)
+/(progress)/weight (25KB)
+/(tabs)/connections (25KB)
+/(settings)/devices (25KB)
+/(tabs)/preferences (25KB)
+/(settings)/profile (25KB)
+/(tabs)/(today)/log (25KB)
+/(progress)/progress (25KB)
+/(tabs)/weight-trend (25KB)
+/(settings)/activity (25KB)
+/(settings)/advanced (25KB)
+/(settings)/my-foods (25KB)
+/(settings)/security (25KB)
+/(tabs)/server-admin (25KB)
+/(settings)/settings (25KB)
+/(tabs)/notifications (25KB)
+/(tabs)/(today)/today (25KB)
+/(progress)/plan-check (25KB)
+/(tabs)/connected-apps (25KB)
+/(tabs)/health-connect (25KB)
+/(today)/notifications (25KB)
+/health-connect-privacy (28KB)
+/(settings)/connections (25KB)
+/(tabs)/(settings)/data (25KB)
+/(tabs)/(settings)/help (25KB)
+/(settings)/preferences (25KB)
+/(tabs)/profile-details (25KB)
+/(tabs)/(progress)/goals (25KB)
+/(progress)/weight-trend (25KB)
+/(tabs)/(settings)/about (25KB)
+/(settings)/server-admin (25KB)
+/(tabs)/(settings)/watch (25KB)
+/(tabs)/(today)/food-log (25KB)
+/(tabs)/(progress)/weight (25KB)
+/(settings)/connected-apps (25KB)
+/(tabs)/(settings)/devices (25KB)
+/(settings)/health-connect (25KB)
+/(tabs)/(settings)/profile (25KB)
+/(tabs)/(progress)/progress (25KB)
+/(tabs)/(settings)/activity (25KB)
+/(tabs)/(settings)/advanced (25KB)
+/(tabs)/(settings)/my-foods (25KB)
+/(settings)/profile-details (25KB)
+/(tabs)/(settings)/security (25KB)
+/(tabs)/(settings)/settings (25KB)
+/(tabs)/(progress)/plan-check (25KB)
+/(tabs)/(today)/notifications (25KB)
+/(tabs)/(settings)/connections (25KB)
+/(tabs)/(settings)/preferences (25KB)
+/(tabs)/(progress)/weight-trend (25KB)
+/(tabs)/(settings)/server-admin (25KB)
+/(tabs)/(settings)/connected-apps (25KB)
+/(tabs)/(settings)/health-connect (25KB)
+/(tabs)/(settings)/profile-details (25KB)
+
+Exported: dist
+Built Expo web static-routes release artifact: 4 reachable bundles; 12 precached paths.
+Expo web release test server listening at http://127.0.0.1:4198
+
+Running 8 tests using 2 workers
+
+(node:9036) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:7944) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (4.7s)
+  ok 2 [desktop-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (5.0s)
+(node:21156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:37304) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [tablet-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (5.5s)
+  ok 4 [tablet-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (5.5s)
+(node:39376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 5 [android-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (5.4s)
+  ok 6 [android-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (5.7s)
+(node:27624) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:9660) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 7 [compact-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (5.6s)
+  ok 8 [compact-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (5.8s)
+
+  8 passed (26.8s)
