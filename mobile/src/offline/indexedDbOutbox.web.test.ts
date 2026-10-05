@@ -18,6 +18,32 @@ describe('IndexedDbOutbox', () => {
 
     afterEach(() => database.close());
 
+    it('atomically discards a failed creation and dependent edits, keeping other accounts and independent work', async () => {
+        const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE);
+        const other = new IndexedDbOutbox(database, SECOND_NAMESPACE);
+        await outbox.enqueue({ id: 'creation', operation: 'food.create', payload: { calories: 200 } });
+        await outbox.enqueue({ id: 'edit', operation: 'food.update', payload: { localCreation: { operationId: 'creation' }, update: { calories: 300 } } });
+        await outbox.enqueue({ id: 'weight', operation: 'metric.add', payload: { weight: 87 } });
+        await other.enqueue({ id: 'creation', operation: 'food.create', payload: { calories: 900 } });
+        await outbox.claimNext();
+        await expect(outbox.discardFailedCreation('creation')).rejects.toThrow('changed');
+        expect(await outbox.list()).toHaveLength(3);
+        await outbox.fail('creation', 'My food not found');
+        await outbox.discardFailedCreation('creation');
+        expect((await outbox.list()).map(row => row.id)).toEqual(['weight']);
+        expect(await other.list()).toHaveLength(1);
+        expect((await outbox.claimNext())?.id).toBe('weight');
+    });
+
+    it('rejects stale discard after a failure has been retried without deleting its dependent edits', async () => {
+        const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE);
+        await outbox.enqueue({ id: 'creation', operation: 'food.create', payload: { calories: 200 } });
+        await outbox.enqueue({ id: 'edit', operation: 'food.update', payload: { localCreation: { operationId: 'creation' } } });
+        await outbox.claimNext(); await outbox.fail('creation', 'Rejected'); await outbox.retryFailed('creation');
+        await expect(outbox.discardFailedCreation('creation')).rejects.toThrow('changed');
+        expect(await outbox.list()).toHaveLength(2);
+    });
+
     it('persists all supported write shapes in insertion order with stable operation IDs', async () => {
         const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE, () => 'unused', () => 100);
         const writes = [

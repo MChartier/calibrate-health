@@ -1,3 +1,4 @@
+import { failedCreationDiscardIds } from './failedCreation';
 import * as Crypto from 'expo-crypto';
 import type { OutboxStore } from './outbox';
 import {
@@ -276,6 +277,25 @@ export class IndexedDbOutbox implements OutboxStore {
                 updatedAt: this.now()
             })
         );
+    }
+
+    discardFailedCreation(id: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const transaction = this.database.transaction(MUTATION_STORE, 'readwrite');
+            const store = transaction.objectStore(MUTATION_STORE);
+            const request = store.index(NAMESPACE_INDEX).getAll(this.namespace);
+            let failure: unknown;
+            request.onsuccess = () => {
+                try {
+                    const rows = request.result as StoredMutation[];
+                    const ids = failedCreationDiscardIds(rows.map(mapStoredMutation), id);
+                    for (const row of rows) if (ids.includes(row.id)) store.delete(requireSequence(row));
+                } catch (error) { failure = error; transaction.abort(); }
+            };
+            transaction.oncomplete = () => resolve();
+            transaction.onabort = () => reject(failure ?? transaction.error ?? new Error('Unable to discard failed entry.'));
+            transaction.onerror = () => reject(transaction.error ?? new Error('Unable to discard failed entry.'));
+        });
     }
 
     clear(): Promise<void> {

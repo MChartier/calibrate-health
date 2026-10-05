@@ -13,6 +13,7 @@ type OfflineOutboxContextValue = {
     reconcile: () => Promise<ReconcileResult>;
     retryFailed: (id?: string) => Promise<ReconcileResult>;
     discardAll: () => Promise<void>;
+    discardFailedCreation: (id: string) => Promise<void>;
     refresh: () => Promise<void>;
 };
 
@@ -172,6 +173,11 @@ export function OfflineOutboxProvider({
         return result;
     }, [initializationError, notifyAfterReplay, reconciler, refresh]);
 
+    const discardFailedCreation = useCallback(async (id: string) => {
+        await requireOutbox().discardFailedCreation(id);
+        await refresh();
+    }, [refresh, requireOutbox]);
+
     const discardAll = useCallback(async () => {
         await requireOutbox().clear();
         setMutations([]);
@@ -250,8 +256,9 @@ export function OfflineOutboxProvider({
         reconcile,
         retryFailed,
         discardAll,
+        discardFailedCreation,
         refresh
-    }), [discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [discardFailedCreation, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

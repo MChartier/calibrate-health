@@ -102,7 +102,7 @@ export const DayStatusCard: React.FC<{
     style?: StyleProp<ViewStyle>;
 }> = ({ date, isToday, failed = false, loading = false, stackActions = false, compact = false, expanded = false, presentation = 'section', onAddFood, onActionComplete, style }) => {
     const { api } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const { enqueue, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const { width, fontScale } = useWindowDimensions();
@@ -118,6 +118,7 @@ export const DayStatusCard: React.FC<{
         mutationFn: (status: Exclude<FoodLogDayStatus, 'PAUSED'>) => {
             const payload = { date, status };
             return executeOrQueueMutation({
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
                 payload,
                 execute: (operationId) => api.setFoodDayStatus(payload, operationId),
@@ -136,6 +137,7 @@ export const DayStatusCard: React.FC<{
         mutationFn: (resumeOn: string | null) => {
             const payload = { starts_on: date, expected_resume_on: resumeOn };
             return executeOrQueueMutation({
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.START_FOOD_TRACKING_PAUSE,
                 payload,
                 execute: (operationId) => api.startFoodTrackingPause(payload, operationId),
@@ -164,6 +166,7 @@ export const DayStatusCard: React.FC<{
         mutationFn: () => {
             const payload = { resumed_on: date };
             return executeOrQueueMutation({
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING,
                 payload,
                 execute: (operationId) => api.resumeFoodTracking(payload, operationId),
@@ -425,7 +428,7 @@ export const DayStatusCard: React.FC<{
 
 export const ResumeTrackingPrompt: React.FC = () => {
     const { api, user } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const { enqueue, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -454,6 +457,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
         mutationFn: () => {
             const payload = { resumed_on: today };
             return executeOrQueueMutation({
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING,
                 payload,
                 execute: (operationId) => api.resumeFoodTracking(payload, operationId),
@@ -472,6 +476,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
         mutationFn: (expectedResumeOn: string | null) => {
             const payload = { expected_resume_on: expectedResumeOn };
             return executeOrQueueMutation({
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_TRACKING_PAUSE,
                 payload,
                 execute: (operationId) => api.updateFoodTrackingPause(payload, operationId),

@@ -10,8 +10,9 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
 
 const mockEnqueue = jest.fn();
+let mockMutations: unknown[] = [];
 jest.mock('../offline/provider', () => ({
-    useOfflineOutbox: () => ({ enqueue: mockEnqueue })
+    useOfflineOutbox: () => ({ enqueue: mockEnqueue, mutations: mockMutations })
 }));
 
 const mockApi = {
@@ -125,6 +126,7 @@ describe('food tracking day resolution', () => {
     beforeEach(() => {
         act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 1 } }));
         jest.clearAllMocks();
+        mockMutations = [];
         foregroundListener = undefined;
         appStateSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_, listener) => {
             foregroundListener = listener as (state: string) => void;
@@ -135,6 +137,16 @@ describe('food tracking day resolution', () => {
     afterEach(() => {
         appStateSpy.mockRestore();
         act(() => Dimensions.set({ window: originalWindow }));
+    });
+
+    it('queues day completion behind existing food intent even with healthy authentication', async () => {
+        mockMutations = [{ id: 'pending-food', operation: 'food.create' }];
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
+        const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday />);
+        await waitFor(() => expect(screen.getByText('Complete day')).toBeTruthy());
+        fireEvent.press(screen.getByText('Complete day'));
+        await waitFor(() => expect(mockEnqueue).toHaveBeenCalledWith('food-day.set-status', { date: '2026-07-23', status: 'COMPLETE' }, 'tracking-operation-id'));
+        expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
     });
 
     it('stacks completion and pause targets when native text is enlarged', async () => {

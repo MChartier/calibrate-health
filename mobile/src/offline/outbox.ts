@@ -1,3 +1,4 @@
+import { failedCreationDiscardIds } from './failedCreation';
 import * as Crypto from 'expo-crypto';
 import type { OutboxDatabase } from './database';
 import {
@@ -206,6 +207,16 @@ export class SqliteOutbox implements OutboxStore {
              WHERE namespace = ? AND state = ?${idClause}`,
             params
         );
+    }
+
+    async discardFailedCreation(id: string): Promise<void> {
+        await this.database.withExclusiveTransactionAsync(async transaction => {
+            const rows = await transaction.getAllAsync<QueuedMutationRow>('SELECT * FROM queued_mutations WHERE namespace = ? ORDER BY sequence ASC', [this.namespace]);
+            const ids = failedCreationDiscardIds(rows.map(mapRow), id);
+            for (const target of ids) {
+                await transaction.runAsync('DELETE FROM queued_mutations WHERE id = ? AND namespace = ?', [target, this.namespace]);
+            }
+        });
     }
 
     async clear(): Promise<void> {

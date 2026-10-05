@@ -1,4 +1,4 @@
-import { localTarget } from '../offline/trackingProjection';
+import { localTarget, type LocalEntry } from '../offline/trackingProjection';
 import { useTrackingFood } from '../offline/useTrackingQueries';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -64,6 +64,17 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     const [editAmount, setEditAmount] = useState('');
     const [editAmountDirty, setEditAmountDirty] = useState(false);
     const [editCaloriesOverridden, setEditCaloriesOverridden] = useState(false);
+    const [confirmDiscard, setConfirmDiscard] = useState(false);
+    const failedCreationId = (editEntry as (FoodLogEntry & LocalEntry) | null)?.localCreation?.operationId;
+    const failedCreation = outbox.mutations.find(mutation => mutation.id === failedCreationId && mutation.state === 'failed');
+    const discardFailed = useMutation({
+        networkMode: 'always',
+        mutationFn: async () => {
+            if (!failedCreation) throw new Error('The failed entry changed.');
+            await outbox.discardFailedCreation(failedCreation.id);
+        },
+        onSuccess: async () => { setEditEntry(null); await invalidateLogQueries(); }
+    });
     const [editError, setEditError] = useState<string | null>(null);
     const [isEditMealSelectorOpen, setIsEditMealSelectorOpen] = useState(false);
     const [recipeDraftMeal, setRecipeDraftMeal] = useState<MealPeriod | null>(null);
@@ -222,6 +233,8 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     }
 
     function openEditEntry(entry: FoodLogEntry) {
+        setConfirmDiscard(false);
+        discardFailed.reset();
         const amountConfig = getFoodLogEditableAmount(entry);
         setEditEntry(entry);
         setEditName(entry.name);
@@ -254,6 +267,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     }
 
     function handleSaveEdit() {
+        if (failedCreation) { setEditError('Resolve the failed local entry before saving corrections.'); return; }
         if (!editName.trim()) {
             setEditError('Food name is required.');
             return;
@@ -294,7 +308,11 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                         disabled={!canEditFood}
                         copyDisabled={!isOnline || outbox.mutations.length > 0}
                         onEditEntry={openEditEntry}
-                        onDeleteEntry={deleteRecovery.requestDelete}
+                        onDeleteEntry={(entry) => {
+                            const creationId = (entry as FoodLogEntry & LocalEntry).localCreation?.operationId;
+                            if (outbox.mutations.some(mutation => mutation.id === creationId && mutation.state === 'failed')) openEditEntry(entry);
+                            else deleteRecovery.requestDelete(entry);
+                        }}
                         onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
                         onCopyDay={() => openCopy({ kind: 'day' })}
                     />
@@ -409,6 +427,12 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     setEditEntry(null);
                 }}
             >
+                {failedCreation && <>
+                    <AppText accessibilityRole="alert">This local entry could not sync. Retry it in Settings → Offline changes, or discard it here before adding a corrected entry. A correction cannot pass the failed write.</AppText>
+                    {confirmDiscard && <AppText>Discard this local entry and its pending edits? Other queued changes are kept. This does not delete any server record.</AppText>}
+                    <AppButton title={confirmDiscard ? 'Confirm discard failed entry' : 'Discard failed entry'} disabled={discardFailed.isPending} variant="secondary" onPress={() => confirmDiscard ? discardFailed.mutate() : setConfirmDiscard(true)} />
+                    {discardFailed.error && <AppText accessibilityRole="alert">Unable to discard this entry. Its sync state may have changed; close and reopen it to review.</AppText>}
+                </>}
                 <TextField label="Food name" value={editName} onChangeText={setEditName} />
                 {editAmountConfig && (
                     <NumberStepperField
@@ -462,7 +486,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     />
                     <AppButton
                         title={updateFood.isPending ? 'Saving...' : 'Save'}
-                        disabled={updateFood.isPending}
+                        disabled={updateFood.isPending || Boolean(failedCreation)}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={handleSaveEdit}
                         style={styles.rowButton}

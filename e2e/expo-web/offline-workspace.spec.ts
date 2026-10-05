@@ -160,3 +160,52 @@ test('offline food additions and repeated edits are visible after restart and re
     expect({ creations, edits, deletions }).toEqual({ creations: 1, edits: 2, deletions: 1 });
     expect(food).toEqual([]);
 });
+
+test('a failed local creation offers explicit discard instead of saving unreachable corrections', async ({ page, ux }) => {
+    await ux.install('populated');
+    await page.goto('/food-log');
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeVisible();
+    expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 503 });
+    await page.route('**/auth/me', route => route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } }));
+    await page.reload();
+    await page.getByRole('button', { name: 'Add food', exact: true }).click();
+    const add = page.getByRole('dialog', { name: 'Add food', exact: true });
+    await add.getByRole('radio', { name: 'Quick', exact: true }).click();
+    await add.getByRole('textbox', { name: 'Calories', exact: true }).fill('200');
+    await add.getByRole('textbox', { name: 'Food name (optional)', exact: true }).fill('Failed oats');
+    await add.getByRole('button', { name: 'Add & close', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit Failed oats', exact: true }).click();
+    const edit = page.getByRole('dialog', { name: 'Edit food', exact: true });
+    await edit.getByRole('textbox', { name: 'Calories', exact: true }).fill('300');
+    await edit.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('2 pending changes');
+    // Simulate a persisted nonretryable creation result; exercise the real IndexedDB queue and recovery UI.
+    await page.evaluate(() => new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('calibrate-offline');
+        open.onsuccess = () => {
+            const db = open.result;
+            const tx = db.transaction('queued_mutations', 'readwrite');
+            const store = tx.objectStore('queued_mutations');
+            const rows = store.getAll();
+            rows.onsuccess = () => {
+                const creation = rows.result.find(row => row.operation === 'food.create');
+                store.put({ ...creation, state: 'failed', lastError: 'My food not found' });
+            };
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = () => reject(tx.error);
+        };
+        open.onerror = () => reject(open.error);
+    }));
+    await page.reload();
+    await page.getByRole('button', { name: 'Edit Failed oats', exact: true }).click();
+    await expect(edit).toContainText('A correction cannot pass the failed write.');
+    await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+    await edit.getByRole('button', { name: 'Discard failed entry', exact: true }).click();
+    await expect(edit).toContainText('Other queued changes are kept.');
+    await edit.getByRole('button', { name: 'Confirm discard failed entry', exact: true }).click();
+    await expect(edit).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit Failed oats', exact: true })).toHaveCount(0);
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('0 pending changes');
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Edit Failed oats', exact: true })).toHaveCount(0);
+});

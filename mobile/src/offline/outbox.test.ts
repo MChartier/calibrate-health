@@ -47,6 +47,18 @@ function databaseMock(overrides: Partial<OutboxDatabase> = {}): OutboxDatabase {
 describe('SqliteOutbox', () => {
     const namespace = 'https://health.example::user:7';
 
+    it('checks failed state and deletes only the creation chain inside one namespace transaction', async () => {
+        const transaction = databaseMock({ getAllAsync: jest.fn(async () => [
+            row({ state: 'failed' }), row({ id: 'edit', sequence: 2, operation: 'food.update', payload_json: '{"localCreation":{"operationId":"operation-1"}}' }),
+            row({ id: 'unrelated', sequence: 3, operation: 'metric.add' })
+        ]) });
+        const database = databaseMock({ withExclusiveTransactionAsync: jest.fn(async task => task(transaction as never)) });
+        await new SqliteOutbox(database, namespace).discardFailedCreation('operation-1');
+        expect(transaction.runAsync).toHaveBeenCalledTimes(2);
+        expect(transaction.runAsync).toHaveBeenCalledWith(expect.stringContaining('DELETE'), ['operation-1', namespace]);
+        expect(transaction.runAsync).toHaveBeenCalledWith(expect.stringContaining('DELETE'), ['edit', namespace]);
+    });
+
     it('persists the authenticated namespace with the serialized payload', async () => {
         const createdRow = row();
         const database = databaseMock({

@@ -257,6 +257,15 @@ retry and uses a 5-second exponential delay capped at 60 seconds. Existing outbo
 replay retains its own bounded retry policy. A recovered account mismatch stops
 replay instead of sending the old account's data under the new session.
 
+Queued additions and corrections are projected into the tracking views without
+persisting synthetic IDs as server rows. Active food holds are date-scoped;
+failed writes remain reviewable without blocking unrelated query refreshes.
+Day-status changes queue behind existing writes. Failed local food creations
+must be retried or explicitly discarded before a correction is accepted. The
+entry's discard confirmation removes only that creation and its dependent edits,
+atomically within its account/server namespace; it does not delete a server
+record or silently replace an ambiguous request with a new operation ID.
+
 Maintained client tests cover startup network/auth outages, confirmed rejection,
 account/server isolation, durable outbox restart and true-offline weigh-in intent.
 The exported-web test in e2e/expo-web/offline-workspace.spec.ts exercises actual
