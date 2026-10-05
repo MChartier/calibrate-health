@@ -1,0 +1,220 @@
+{
+  "checkedAt": "2026-10-05T22:59:53.732Z",
+  "summary": {
+    "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5999325319",
+    "html_url": "https://github.com/MChartier/calibrate-health/pull/423#issuecomment-5999325319",
+    "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/423",
+    "id": 5999325319,
+    "node_id": "IC_kwDOQbBgUs8AAAABZZZwhw",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-10-05T17:10:06Z",
+    "updated_at": "2026-10-05T22:58:45Z",
+    "author_association": "NONE",
+    "body": "<!-- codex-pull-request-review-summary -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-05T22:58:44.981861Z\">2026-10-05T22:58:44.981861Z</relative-time> | `c44b5f7` | Manual request |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+    "reactions": {
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5999325319/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": {
+      "id": 1144995,
+      "slug": "chatgpt-codex-connector",
+      "node_id": "A_kwHOAOQ6Gs4AEXij",
+      "owner": {
+        "login": "openai",
+        "id": 14957082,
+        "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+        "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/openai",
+        "html_url": "https://github.com/openai",
+        "followers_url": "https://api.github.com/users/openai/followers",
+        "following_url": "https://api.github.com/users/openai/following{/other_user}",
+        "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+        "organizations_url": "https://api.github.com/users/openai/orgs",
+        "repos_url": "https://api.github.com/users/openai/repos",
+        "events_url": "https://api.github.com/users/openai/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/openai/received_events",
+        "type": "Organization",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "name": "ChatGPT Codex Connector",
+      "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+      "external_url": "https://www.chatgpt.com",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "created_at": "2025-02-14T01:37:05Z",
+      "updated_at": "2026-09-23T18:52:59Z",
+      "permissions": {
+        "actions": "write",
+        "checks": "read",
+        "contents": "write",
+        "emails": "read",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "statuses": "read",
+        "workflows": "write"
+      },
+      "events": [
+        "check_run",
+        "check_suite",
+        "commit_comment",
+        "issues",
+        "issue_comment",
+        "pull_request",
+        "pull_request_review",
+        "pull_request_review_comment",
+        "pull_request_review_thread",
+        "repository",
+        "status",
+        "sub_issues"
+      ]
+    },
+    "minimized": null,
+    "pin": null
+  },
+  "currentFindings": [
+    {
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4189734964",
+      "pull_request_review_id": 5421679845,
+      "id": 4189734964,
+      "node_id": "PRRC_kwDOQbBgUs75ukg0",
+      "diff_hunk": "@@ -0,0 +1,57 @@\n+const storage = (): typeof import('@react-native-async-storage/async-storage').default => {\n+    const module = require('@react-native-async-storage/async-storage');\n+    return module.default ?? module;\n+};\n+import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';\n+import type { QueuedMutation } from './queuedMutation';\n+import { withMutationLock } from './mutationLock';\n+\n+const PREFIX = '@calibrate/food-day-receipts/v1/';\n+const key = (namespace: string) => PREFIX + encodeURIComponent(namespace);\n+type Journal = { version: 1; sequence: number; rows: (QueuedMutation & { receiptOperationId: string })[] };\n+async function read(namespace: string): Promise<Journal> {\n+    const raw = await storage().getItem(key(namespace));\n+    if (!raw) return { version: 1, sequence: 0, rows: [] };\n+    const parsed = JSON.parse(raw) as Journal;\n+    if (parsed.version !== 1 || !Number.isSafeInteger(parsed.sequence) || !Array.isArray(parsed.rows) || parsed.rows.some(row => row.namespace !== namespace)) throw new Error('Saved tracking state is invalid. Reconnect before changing food.');\n+    return parsed;\n+}\n+export async function readFoodDayReceipts(namespace: string): Promise<QueuedMutation[]> { return (await read(namespace)).rows; }\n+\n+/** Call under the namespace lock, before acknowledging a control or removing its queued row. */\n+export async function recordFoodDayReceipt(namespace: string, operation: string, payload: unknown, id: string): Promise<void> {\n+    const p = payload as Record<string, unknown>;\n+    if (!p || typeof p !== 'object') return;\n+    const date = operation === 'food-tracking-pause.start' ? p.starts_on : operation === 'food-tracking-pause.resume' ? p.resumed_on : p.date;\n+    if (typeof date !== 'string' || !['food-day.set-status', 'food-day.update', 'food-tracking-pause.start', 'food-tracking-pause.resume'].includes(operation)) return;\n+    const journal = await read(namespace);\n+    const receiptKey = operation.startsWith('food-day.') ? 'day:' + date : operation + ':' + date;\n+    const receiptId = 'receipt:' + receiptKey;\n+    const prior = journal.rows.find(row => row.id === receiptId);\n+    if (prior?.receiptOperationId === id && !id.startsWith('server-read:')) return;\n+    const sequence = journal.sequence + 1;\n+    const next: QueuedMutation & { receiptOperationId: string } = { sequence, id: receiptId, namespace, operation, payload: payload as QueuedMutation['payload'], state: 'pending', attemptCount: 0, lastError: null, receiptOperationId: id, createdAt: sequence, updatedAt: sequence };\n+    await storage().setItem(key(namespace), JSON.stringify({ version: 1, sequence, rows: [...journal.rows.filter(row => row.id !== receiptId), next] }));\n+}\n+\n+/** Serialize the authoritative read with controls so an older response cannot erase a later acknowledgement. */\n+export function readAndRecordFoodDay(namespace: string, date: string, fetch: () => Promise<FoodLogDay>): Promise<FoodLogDay> {\n+    return withMutationLock(namespace, async exclusive => {\n+        const day = await fetch();\n+        if (exclusive) await recordFoodDayReceipt(namespace, 'food-day.set-status', { date, status: day.status }, 'server-read:' + Date.now() + ':' + day.status);\n+        return day;\n+    });\n+}\n+\n+/** A fresh pause snapshot replaces only pause-derived history, never a separately verified day. */\n+export async function recordCurrentPauseReceipt(namespace: string, pause: FoodTrackingPause, id: string): Promise<void> {\n+    const journal = await read(namespace);\n+    const sequence = journal.sequence + 1;\n+    const rows = journal.rows.filter(row => !row.operation.startsWith('food-tracking-pause.'));",
+      "path": "mobile/src/offline/foodDayReceipts.ts",
+      "commit_id": "c44b5f7850288b94b24e8ca773584a4fa25937b9",
+      "original_commit_id": "c44b5f7850288b94b24e8ca773584a4fa25937b9",
+      "user": {
+        "login": "chatgpt-codex-connector[bot]",
+        "id": 199175422,
+        "node_id": "BOT_kgDOC98s_g",
+        "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+        "html_url": "https://github.com/apps/chatgpt-codex-connector",
+        "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Reconcile pause receipts on ordinary server reads**\n\nWhen another device resumes tracking, this device's successful `getFoodTrackingPause()` refresh in `ResumeTrackingPrompt` never calls this receipt reconciler; only queued-control replay does. A previously stored `food-tracking-pause.start` receipt therefore survives even after the client observes an inactive server pause, and if connectivity is later lost before a particular day is fetched, `queuedFoodDayStatus` projects that stale receipt as `PAUSED` and blocks offline food logging for that day. Record fresh ordinary pause-query snapshots through this function under the namespace lock as well.\n\nUseful? React with 👍 / 👎.",
+      "created_at": "2026-10-05T22:58:41Z",
+      "updated_at": "2026-10-05T22:58:41Z",
+      "html_url": "https://github.com/MChartier/calibrate-health/pull/423#discussion_r4189734964",
+      "pull_request_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423",
+      "_links": {
+        "self": {
+          "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4189734964"
+        },
+        "html": {
+          "href": "https://github.com/MChartier/calibrate-health/pull/423#discussion_r4189734964"
+        },
+        "pull_request": {
+          "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423"
+        }
+      },
+      "reactions": {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4189734964/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "start_line": 47,
+      "original_start_line": 47,
+      "start_side": "RIGHT",
+      "line": 50,
+      "original_line": 50,
+      "side": "RIGHT",
+      "author_association": "NONE",
+      "original_position": 50,
+      "position": 50,
+      "subject_type": "line"
+    }
+  ],
+  "currentReviews": [
+    {
+      "id": 5421679845,
+      "node_id": "PRR_kwDOQbBgUs8AAAABQyhE5Q",
+      "user": {
+        "login": "chatgpt-codex-connector[bot]",
+        "id": 199175422,
+        "node_id": "BOT_kgDOC98s_g",
+        "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+        "html_url": "https://github.com/apps/chatgpt-codex-connector",
+        "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "body": "\n### 💡 Codex Review\n\nHere are some automated review suggestions for this pull request.\n\n**Reviewed commit:** `c44b5f7850`\n    \n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+      "state": "COMMENTED",
+      "html_url": "https://github.com/MChartier/calibrate-health/pull/423#pullrequestreview-5421679845",
+      "pull_request_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423",
+      "author_association": "NONE",
+      "_links": {
+        "html": {
+          "href": "https://github.com/MChartier/calibrate-health/pull/423#pullrequestreview-5421679845"
+        },
+        "pull_request": {
+          "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423"
+        }
+      },
+      "submitted_at": "2026-10-05T22:58:41Z",
+      "commit_id": "c44b5f7850288b94b24e8ca773584a4fa25937b9"
+    }
+  ],
+  "recentBotComments": []
+}
