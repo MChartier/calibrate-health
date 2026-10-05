@@ -27,7 +27,7 @@ const mockApi = {
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({
         api: mockApi,
-        user: { id: 7, timezone: 'UTC' }
+        user: { id: 7, timezone: 'UTC' }, serverUrl: 'https://example.test'
     })
 }));
 
@@ -365,5 +365,19 @@ it('routes ordinary pause queries and refetch through the receipt-aware reader',
     await waitFor(() => expect(mockReadFoodPause.mock.calls.length).toBeGreaterThan(before + 1));
     screen.unmount();
 });
+
+    it('keeps a persisted queued resume hidden after remount and foreground refetch', async () => {
+        mockMutations = [{ id: 'saved-resume', namespace: 'https://example.test::user:7', sequence: 1, operation: 'food-tracking-pause.resume', payload: { resumed_on: '2026-07-23' }, state: 'pending' }];
+        mockApi.getFoodTrackingPause.mockResolvedValue({ pause: duePause });
+        for (let restart = 0; restart < 2; restart++) {
+            const screen = renderWithQuery(<ResumeTrackingPrompt />);
+            await waitFor(() => expect(mockReadFoodPause).toHaveBeenCalled());
+            await act(async () => { foregroundListener?.('active'); });
+            expect(screen.queryByText('Resume tracking')).toBeNull();
+            expect(mockApi.resumeFoodTracking).not.toHaveBeenCalled();
+            expect(mockEnqueue).not.toHaveBeenCalled();
+            screen.unmount();
+        }
+    });
 
 });

@@ -249,3 +249,28 @@ it('orders a slow ordinary pause read before a later explicit pause acknowledgem
     release(); await Promise.all([read, pause]);
     expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), '2026-08-10', 'OPEN')).toBe('PAUSED');
 });
+
+it('coalesces repeated resume after storage restart and replays a lost response with the original ID only', async () => {
+    const factory = new IDBFactory(); let database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'resume-duplicates' });
+    let store = new IndexedDbOutbox(database, 'account');
+    const makeDispatch = () => createOutboxDispatch('account', () => store.list(), (operation, payload, id) => store.enqueue({ operation, payload, id }), () => true, true);
+    const submit = (resumed_on = date) => executeOrQueueMutation({ withOutbox: makeDispatch(), forceQueue: true, operation: 'food-tracking-pause.resume', payload: { resumed_on }, execute: async () => undefined, enqueue: async () => undefined, createOperationId: () => 'original-resume' });
+    let writes = 0, attempts = 0; const ids: string[] = [];
+    const api = {
+        resumeFoodTracking: async (_payload: unknown, id: string) => { ids.push(id); if (++attempts === 1) { writes++; throw new TypeError('Response lost after commit'); } return undefined; },
+        getFoodDay: async () => ({ date, status: 'OPEN' }),
+        getFoodTrackingPause: async () => ({ pause: { active: false, starts_on: null } })
+    } as unknown as import('@calibrate/api-client').CalibrateApiClient;
+    try {
+        expect(await submit()).toMatchObject({ disposition: 'queued', operationId: 'original-resume' });
+        database.close(); database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'resume-duplicates' });
+        store = new IndexedDbOutbox(database, 'account');
+        expect(await submit()).toMatchObject({ disposition: 'queued', operationId: 'original-resume' });
+        await expect(submit('2026-08-09')).rejects.toThrow(/already saved/);
+        expect(await store.list()).toHaveLength(1);
+        const executor = createQueuedMutationExecutor(api);
+        expect((await new OutboxReconciler(store, executor, 'account').reconcile()).deferredMutation?.id).toBe('original-resume');
+        expect((await new OutboxReconciler(store, executor, 'account').reconcile()).replayed).toBe(1);
+        expect(ids).toEqual(['original-resume', 'original-resume']); expect(writes).toBe(1); expect(await store.list()).toEqual([]);
+    } finally { database.close(); }
+});

@@ -48,6 +48,7 @@ export async function recordCurrentPauseReceipt(namespace: string, pause: FoodTr
     const journal = await read(namespace);
     const sequence = journal.sequence + 1;
     const rows = journal.rows.filter(row => !row.operation.startsWith('food-tracking-pause.'));
+    rows.push({ sequence, id: 'receipt:pause-snapshot', namespace, operation: 'food-tracking-pause.snapshot', payload: { pause }, state: 'pending', attemptCount: 0, lastError: null, receiptOperationId: id, createdAt: sequence, updatedAt: sequence });
     if (pause.active && pause.starts_on) rows.push({
         sequence, id: 'receipt:current-pause', namespace, operation: 'food-tracking-pause.start',
         payload: { starts_on: pause.starts_on }, state: 'pending', attemptCount: 0, lastError: null,

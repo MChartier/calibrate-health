@@ -1,3 +1,5 @@
+import { useFoodTrackingPause } from '../food/useFoodTrackingPause';
+import { foodTrackingPauseQueryKey } from '../food/queryKeys';
 import { queuedFoodDayStatus } from '../offline/foodDayIntent';
 import { useScopedTrackingMutations } from '../offline/useTrackingQueries';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -23,7 +25,7 @@ import { SectionHeader } from './SectionHeader';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 
 export const foodDayQueryKey = (date: string) => ['mobile-food-day', date] as const;
-const foodTrackingPauseQueryKey = ['mobile-food-tracking-pause'] as const;
+
 
 const EXPANDED_STATUS_CONTENT_MAX_WIDTH = 520; // Keeps the status message readable on wide dashboards.
 const EXPANDED_STATUS_ACTION_MAX_WIDTH = 320; // Keeps the primary action prominent without spanning a desktop card.
@@ -429,16 +431,12 @@ export const DayStatusCard: React.FC<{
 
 export const ResumeTrackingPrompt: React.FC = () => {
     const { api, user } = useAuth();
-    const { enqueue, withOutbox, readFoodPause, mutations = [] } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const today = getTodayDate(user?.timezone);
-    const pauseQuery = useQuery({
-        queryKey: foodTrackingPauseQueryKey,
-        queryFn: () => readFoodPause ? readFoodPause(() => api.getFoodTrackingPause()) : api.getFoodTrackingPause(),
-        enabled: Boolean(user)
-    });
+    const pauseQuery = useFoodTrackingPause();
     const [dismissedThisForeground, setDismissedThisForeground] = useState(false);
     const [showExtend, setShowExtend] = useState(false);
     const [customDate, setCustomDate] = useState('');

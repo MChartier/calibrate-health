@@ -417,3 +417,5 @@ Control replay treats the idempotency response as an acceptance receipt, not cur
 Every queued control, including pause expectation updates, verifies current state independently of its mutation response body. A fresh pause snapshot replaces obsolete pause-derived receipts before dequeueing: inactive state removes stale indefinite pause projections; an intervening active pause remains authoritative. Separately verified exact-day states are preserved. This local snapshot does not reconstruct historical pause intervals or change server records.
 
 Ordinary pause metadata reads also reconcile the acknowledged pause snapshot under the namespace lock. Pending controls remain a separate ordered overlay, so a pre-replay server read cannot erase explicit queued pause/resume intent.
+
+Pause metadata consumers share useFoodTrackingPause: acknowledged scoped snapshots are applied first, then ordered pending start/update/resume intent. Canonical refetch cannot resurrect a prompt for an already queued resume. Repeated same-date resumes reuse the durable original request; choosing another date requires resolving the existing resume first.

@@ -59,6 +59,15 @@ export async function executeOrQueueMutation<T>({
     createOperationId = Crypto.randomUUID
 }: ExecuteOrQueueOptions<T>): Promise<OutboxMutationResult<T>> {
     if (withOutbox) return withOutbox((durableEnqueue, mustQueue, pending, record) => {
+        if (operation === OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING) {
+            const controls = pending.filter(row => !row.id.startsWith('receipt:') && (row.operation === OFFLINE_MUTATION_OPERATIONS.START_FOOD_TRACKING_PAUSE || row.operation === OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING));
+            const last = controls.at(-1);
+            if (last?.operation === operation) {
+                if (last.state === 'failed') throw new Error('Resolve the failed resume in Review saved changes before trying again.');
+                if (!isRecord(payload) || !isRecord(last.payload) || payload.resumed_on !== last.payload.resumed_on) throw new Error('A resume is already saved. Synchronize or resolve it before choosing another resume date.');
+                return Promise.resolve({ disposition: 'queued' as const, operationId: last.id });
+            }
+        }
         assertQueuedFoodDayOpen(pending, operation, payload);
         return executeOrQueueMutation({ operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId, recordControl: record });
     });

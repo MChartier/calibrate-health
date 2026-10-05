@@ -521,3 +521,38 @@ test('logout warns when storage and revocation fail and retries from memory afte
     await expect.poll(() => revocations).toBe(1);
     await expect(page.getByText('Reconnect before closing this app.', { exact: false })).toHaveCount(0);
 });
+
+test('queued resume stays resolved through reload and refetch and replays one request identity', async ({ page, ux }, testInfo) => {
+    const options: import('./fixtures').AuthenticatedApiOptions = { foodDayStatus: 'PAUSED' };
+    await ux.install('paused', options);
+    let recovering = false; let writes = 0;
+    const ids: string[] = [];
+    const pause = () => ({ active: options.foodDayStatus === 'PAUSED', id: 9, starts_on: '2026-07-20', expected_resume_on: '2026-07-21', resumed_on: null, started_at: null, resumed_at: null, materialized_through: '2026-07-21', resume_confirmation_due: options.foodDayStatus === 'PAUSED' });
+    await page.route('**/api/v1/food-days/pause', route => route.fulfill({ json: { pause: pause() } }));
+    expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/resume', status: 503 });
+    await page.route('**/api/v1/food-days/resume', async route => {
+        ids.push(route.request().headers()['x-client-operation-id']);
+        if (!recovering) return route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } });
+        writes++; options.foodDayStatus = 'OPEN';
+        return route.fulfill({ json: { pause: pause(), day: { date: '2026-07-21', status: 'OPEN' } } });
+    });
+    await page.goto('/today');
+    const prompt = page.getByRole('dialog', { name: 'Ready to resume tracking?' });
+    await expect(prompt).toBeVisible();
+    await prompt.getByRole('button', { name: 'Resume tracking', exact: true }).click();
+    await expect(prompt).toHaveCount(0);
+    for (let restart = 0; restart < 2; restart++) {
+        await page.reload();
+        await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+        await expect(prompt).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toHaveCount(0);
+    }
+    await page.screenshot({ path: testInfo.outputPath('queued-resume-after-restart.png') });
+    expect(new Set(ids).size).toBe(1);
+    recovering = true;
+    await activateFixtureOffline(page);
+    await page.context().setOffline(false);
+    await expect(page.getByTestId('offline-workspace-status')).toHaveCount(0);
+    expect(writes).toBe(1); expect(new Set(ids).size).toBe(1);
+    await expect(prompt).toHaveCount(0);
+});
