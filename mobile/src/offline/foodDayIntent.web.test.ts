@@ -32,6 +32,7 @@ it('preserves earlier paused dates when a later date resumes and folds legacy co
     const controls = [row('food-tracking-pause.start', { starts_on: '2026-08-07' }), row('food-tracking-pause.resume', { resumed_on: '2026-08-09' })];
     expect(queuedFoodDayStatus(controls, date, 'OPEN')).toBe('PAUSED');
     expect(queuedFoodDayStatus(controls, '2026-08-09', 'PAUSED')).toBe('OPEN');
+    expect(queuedFoodDayStatus([row('food-day.set-status', { date: '2026-08-10', status: 'COMPLETE' }), row('food-tracking-pause.resume', { resumed_on: '2026-08-09' })], '2026-08-10')).toBe('COMPLETE');
     expect(queuedFoodDayStatus([row('food-day.update', { date, is_complete: true })], date, 'OPEN')).toBe('COMPLETE');
 });
 

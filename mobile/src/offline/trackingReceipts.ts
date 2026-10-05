@@ -7,7 +7,10 @@ import type { LocalEntry } from './trackingProjection';
 export function applyTrackingReceipt(client: QueryClient, mutation: QueuedMutation, response: unknown) {
     const payload = mutation.payload as Record<string, any>;
     const result = response as Record<string, any>;
-    if (mutation.operation === 'food.create') {
+    if (mutation.operation.startsWith('food-day.') || mutation.operation.startsWith('food-tracking-pause.')) {
+        if (result.day) client.setQueryData(['mobile-food-day', result.day.date], result.day);
+        if (result.pause) client.setQueryData(['mobile-food-tracking-pause'], { pause: result.pause });
+    } else if (mutation.operation === 'food.create') {
         client.setQueryData<(FoodLogEntry & LocalEntry)[]>(['mobile-food', payload.date], rows => [
             ...(rows ?? []).filter(row => row.id !== result.id),
             { ...result, localOperationId: mutation.id } as FoodLogEntry & LocalEntry

@@ -212,7 +212,7 @@ describe('browser offline outbox provider', () => {
             operation: 'food-day.update',
             payload: { date: '2026-07-18', is_complete: true }
         });
-        const executeMutation = jest.fn(async () => undefined);
+        const executeMutation = jest.fn(async () => ({ currentControl: { day: { date: '2026-07-18', status: 'COMPLETE' as const } } }));
         const onReplayCompleted = jest.fn(async () => undefined);
         const connectivity = createConnectivity(true);
         const wrapper = ({ children }: { children: React.ReactNode }) => (

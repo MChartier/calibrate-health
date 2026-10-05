@@ -14,7 +14,7 @@ export function queuedFoodDayStatus(rows: readonly QueuedMutation[], date: strin
         if (!(dayControl || pause || resume)) continue;
         if (row.state === 'failed') throw new Error('Resolve the failed tracking change in Review saved changes before changing food.');
         if (pause) status = 'PAUSED';
-        if (resume) status = 'OPEN';
+        if (resume && (date === p.resumed_on || status === 'PAUSED' || status === undefined)) status = 'OPEN';
         if (dayControl && row.operation === 'food-day.update') status = p.is_complete ? 'COMPLETE' : 'OPEN';
         if (dayControl && row.operation === 'food-day.set-status' && ['OPEN', 'COMPLETE', 'INCOMPLETE', 'PAUSED'].includes(String(p.status))) status = p.status as DayStatus;
     }

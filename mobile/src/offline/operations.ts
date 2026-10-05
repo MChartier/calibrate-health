@@ -89,6 +89,14 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient, options: {
         assertCurrent();
         const applied = async (response: unknown) => { assertCurrent(); await options.onApplied?.(mutation, response); };
         const payload = requireRecordPayload(mutation.payload, mutation.operation);
+        const currentControl = async (date?: string, readPause = false) => {
+            const day = date ? await api.getFoodDay(date) : undefined;
+            const pause = readPause ? (await api.getFoodTrackingPause()).pause : undefined;
+            assertCurrent();
+            const current = { day, pause };
+            await applied(current);
+            return { currentControl: current };
+        };
         switch (mutation.operation) {
             case OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG:
                 await applied(await api.createFoodLog(foodWirePayload(payload), mutation.id));
@@ -125,7 +133,7 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient, options: {
                     throw new Error('Queued food-day.update payload is invalid.');
                 }
                 await api.updateFoodDay({ date: payload.date, is_complete: payload.is_complete }, mutation.id);
-                return;
+                return currentControl(payload.date);
             case OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS:
                 if (
                     typeof payload.date !== 'string' ||
@@ -134,7 +142,7 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient, options: {
                     throw new Error('Queued food-day.set-status payload is invalid.');
                 }
                 await api.setFoodDayStatus({ date: payload.date, status: payload.status }, mutation.id);
-                return;
+                return currentControl(payload.date);
             case OFFLINE_MUTATION_OPERATIONS.START_FOOD_TRACKING_PAUSE:
                 if (
                     typeof payload.starts_on !== 'string' ||
@@ -146,7 +154,7 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient, options: {
                     starts_on: payload.starts_on,
                     expected_resume_on: payload.expected_resume_on
                 }, mutation.id);
-                return;
+                return currentControl(typeof payload.starts_on === 'string' ? payload.starts_on : undefined, true);
             case OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_TRACKING_PAUSE:
                 if (!(payload.expected_resume_on === null || typeof payload.expected_resume_on === 'string')) {
                     throw new Error('Queued food-tracking-pause.update payload is invalid.');
@@ -160,7 +168,7 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient, options: {
                     throw new Error('Queued food-tracking-pause.resume payload is invalid.');
                 }
                 await api.resumeFoodTracking({ resumed_on: payload.resumed_on }, mutation.id);
-                return;
+                return currentControl(payload.resumed_on, true);
             default:
                 throw new Error(`Unsupported queued mutation operation: ${mutation.operation}`);
         }

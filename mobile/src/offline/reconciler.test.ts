@@ -276,6 +276,7 @@ it('serializes interrupted recovery across two reconcilers sharing a durable nam
     const execute = async (mutation: QueuedMutation) => {
         calls.push(mutation.operation);
         if (mutation.operation === 'food.create') { entered(); await barrier; }
+        else return { currentControl: { day: { date: '2026-08-08', status: 'COMPLETE' as const } } };
     };
     const recover = jest.spyOn(store, 'recoverInterrupted');
     const first = new OutboxReconciler(store, execute, 'shared-replay').reconcile();

@@ -1,10 +1,12 @@
+import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
 import { recordFoodDayReceipt } from './foodDayReceipts';
 import { withMutationLock } from './mutationLock';
 import type { OutboxStore } from './outbox';
 import type { QueuedMutation } from './queuedMutation';
 import { isRetryableMutationError } from './retryability';
 
-export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void>;
+type CurrentControlState = { day?: Pick<FoodLogDay, 'date' | 'status'>; pause?: FoodTrackingPause };
+export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void | { currentControl: CurrentControlState }>;
 
 export const OUTBOX_RETRY_BASE_DELAY_MS = 5_000;
 export const OUTBOX_RETRY_MAX_DELAY_MS = 15 * 60_000;
@@ -88,8 +90,14 @@ export class OutboxReconciler {
             }
 
             try {
-                await this.executeMutation(mutation);
-                if (this.namespace) await recordFoodDayReceipt(this.namespace, mutation.operation, mutation.payload, mutation.id);
+                const result = await this.executeMutation(mutation);
+                if (this.namespace && (mutation.operation.startsWith('food-day.') || mutation.operation.startsWith('food-tracking-pause.'))) {
+                    if (!result?.currentControl) throw new Error('Current tracking state was not verified after replay.');
+                    const { day, pause } = result.currentControl;
+                    // Cached idempotency responses prove the request was accepted, not that its old state is current.
+                    if (pause?.active && pause.starts_on) await recordFoodDayReceipt(this.namespace, 'food-tracking-pause.start', { starts_on: pause.starts_on }, 'server-read:replay:' + mutation.id);
+                    if (day) await recordFoodDayReceipt(this.namespace, 'food-day.set-status', { date: day.date, status: day.status }, 'server-read:replay:' + mutation.id);
+                }
                 await this.outbox.complete(mutation.id);
                 replayed += 1;
                 replayedOperations.push(mutation.operation);
