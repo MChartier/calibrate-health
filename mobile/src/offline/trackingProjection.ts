@@ -1,7 +1,7 @@
 import type { FoodLogEntry, MetricEntry, FoodLogCreatePayload } from '@calibrate/api-client';
 import type { QueuedMutation } from './queuedMutation';
 
-export type LocalCreation = { operationId: string; localId: number; operation: 'food.create' | 'metric.add'; payload: Record<string, unknown> };
+type LocalCreation = { operationId: string; localId: number; operation: 'food.create' | 'metric.add'; payload: Record<string, unknown> };
 export type LocalEntry = { localCreation?: LocalCreation; localOperationId?: string };
 const fields = (value: unknown): Record<string, any> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, any> : {};
 
