@@ -1,0 +1,83 @@
+FAIL src/components/AddFoodSheet.test.tsx
+  AddFoodSheet adaptive layout
+    ○ skipped keeps phone search focused while retaining full controls on tablets
+  AddFoodSheet async resource states
+    × reopens after durable food-day.set-status completion despite a cached OPEN day (1378 ms)
+    × reopens after durable food-day.update completion despite a cached OPEN day (1031 ms)
+    ○ skipped reopens a COMPLETE day only when food is submitted
+    ○ skipped reopens a INCOMPLETE day only when food is submitted
+    ○ skipped queues the food after its reopen when the connection fails
+    ○ skipped keeps queued reopen and food ahead of a competing day completion
+    ○ skipped does not add food when a durable day pause supersedes cached OPEN
+    ○ skipped does not add food when reopening is rejected
+    ○ skipped preloads meal-aware recent foods before typing and refreshes them when the meal changes
+    ○ skipped does not describe an uncached offline food search as having no matches
+    ○ skipped keeps the empty web search result region keyboard reachable
+    ○ skipped keeps results visible and actionable while the mobile search field is focused
+    ○ skipped removes the Android bottom inset only while the search workspace is focused
+    ○ skipped finds cached library recipes offline and opens quantity confirmation without logging
+    ○ skipped offers only Quick and Search while keeping saved recipes discoverable in Search
+    ○ skipped links to Saved foods from the Add Food sheet
+    ○ skipped confirms before Saved foods or Scan discards a selected food draft
+
+  ● AddFoodSheet async resource states › reopens after durable food-day.set-status completion despite a cached OPEN day
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+      Array [
+        "COMPLETE",
+    -   "OPEN",
+        "food.create",
+      ]
+
+      228 |         fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+      229 |         fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+    > 230 |         await waitFor(() => expect(rows.map(row => (row.payload as { status?: string }).status ?? row.operation)).toEqual(['COMPLETE', 'OPEN', 'food.create']));
+          |                      ^
+      231 |         expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+      232 |     });
+      233 |
+
+      at src/components/AddFoodSheet.test.tsx:230:22
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (src/components/AddFoodSheet.test.tsx:232:6)
+
+  ● AddFoodSheet async resource states › reopens after durable food-day.update completion despite a cached OPEN day
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+      Array [
+        "COMPLETE",
+    -   "OPEN",
+        "food.create",
+      ]
+
+      228 |         fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+      229 |         fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+    > 230 |         await waitFor(() => expect(rows.map(row => (row.payload as { status?: string }).status ?? row.operation)).toEqual(['COMPLETE', 'OPEN', 'food.create']));
+          |                      ^
+      231 |         expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+      232 |     });
+      233 |
+
+      at src/components/AddFoodSheet.test.tsx:230:22
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (src/components/AddFoodSheet.test.tsx:232:6)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 16 skipped, 18 total
+Snapshots:   0 total
+Time:        3.504 s, estimated 5 s
+Ran all test suites matching /src\\components\\AddFoodSheet.test.tsx/i with tests matching "reopens after durable".

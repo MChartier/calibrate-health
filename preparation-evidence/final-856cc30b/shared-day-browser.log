@@ -1,0 +1,73 @@
+[WebServer] (node:36904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 14 tests using 1 worker
+
+(node:16132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:66:5 ΓÇ║ calendar refresh, uncached month failure, retry, and completion reopening stay honest (17.5s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:3:5 ΓÇ║ auth outage retains a local weigh-in across reload and replays after reconnection (3.8s)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:64:5 ΓÇ║ network loss still persists a local weigh-in immediately (4.1s)
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:100:5 ΓÇ║ offline food additions and repeated edits are visible after restart and replay once before deletion (16.7s)
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:164:5 ΓÇ║ a failed local creation offers explicit discard instead of saving unreachable corrections (2.7s)
+  ok  6 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:213:5 ΓÇ║ logout terminates the browser session while tracking awaits reconnection (2.2s)
+  ok  7 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:238:5 ΓÇ║ offline logout stays signed out through reload, revokes after reconnect and permits a different account (3.9s)
+  ok  8 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:302:5 ΓÇ║ failed edits on a server row require explicit recovery before correction or deletion (13.0s)
+  ok  9 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:357:9 ΓÇ║ failed weight recovery blocks trapped corrections for metric.add (6.3s)
+  ok 10 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:357:9 ΓÇ║ failed weight recovery blocks trapped corrections for metric.delete (7.6s)
+  ok 11 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:406:5 ΓÇ║ failed tracking controls have explicit shared recovery without losing unrelated weight (4.5s)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=POST /api/v1/food (503)
+  x  12 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:436:5 ΓÇ║ a stale second tab queues day completion after durable food intent (12.5s)
+(node:39300) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 13 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:480:5 ΓÇ║ logout still clears the UI and revokes the browser session when intent storage rejects writes (1.8s)
+  ok 14 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:498:5 ΓÇ║ logout warns when storage and revocation fail and retries from memory after reconnect (1.8s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:436:5 ΓÇ║ a stale second tab queues day completion after durable food intent 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+        "food",
+    -   "complete",
+    +   "food",
+      ]
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      474 |     await activateFixtureOffline(page);
+      475 |     await page.context().setOffline(false);
+    > 476 |     await expect.poll(() => applied).toEqual(['food', 'complete']);
+          |                                      ^
+      477 |     await other.close();
+      478 | });
+      479 |
+        at C:\Users\MChar\Documents\Codex\2026-10-05\task-2\firebase-421\e2e\expo-web\offline-workspace.spec.ts:476:38
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--4c604-n-after-durable-food-intent-desktop-chrome\test-failed-2.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    attachment #2: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--4c604-n-after-durable-food-intent-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--4c604-n-after-durable-food-intent-desktop-chrome\error-context.md
+
+    attachment #5: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--4c604-n-after-durable-food-intent-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--4c604-n-after-durable-food-intent-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  1 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:436:5 ΓÇ║ a stale second tab queues day completion after durable food intent 
+  13 passed (1.7m)

@@ -1,0 +1,43 @@
+{
+  "head": "856cc30b0d28e6d8510244c984dc4c5e36959f89",
+  "tree": "3cce2e65b66aee88831d9c2f676e6b493849926a",
+  "checkedAt": "2026-10-05T22:18:36.247Z",
+  "url": "http://127.0.0.1:4174",
+  "assets": [
+    {
+      "path": "sw.js",
+      "sha256": "b326e7297525c1ab815ac5211a0802480f0c8536ea2961bf31f1aa007b7369d4",
+      "bytes": 15052
+    },
+    {
+      "path": "_expo/static/js/web/ImagePicker-69c097ba915c87e5aa151e6ae9d24a89.js",
+      "sha256": "74bc297a111efddb1ff9ad2be1ba21ad42f67cfb1d76ad99b0ac1e9758b003c2",
+      "bytes": 8596
+    },
+    {
+      "path": "_expo/static/js/web/index-6af59efea8fe70f92bab76469b3153a6.js",
+      "sha256": "69040cef83318319b6b80cc2a5fae1ddc56fdbc5aca26673681e2f4015b02312",
+      "bytes": 3754943
+    },
+    {
+      "path": "_expo/static/js/web/index-7c3f6f883199f97753d607fa3fd33e32.js",
+      "sha256": "ed3ab709eba2c9a37248ccd5a717eb6652533b9930c294c322563d4632bbee5a",
+      "bytes": 58683
+    },
+    {
+      "path": "_expo/static/js/web/index-87ad6adf0b4d9d29cdf0aa0a7ef76070.js",
+      "sha256": "2134610865826e837923bd3b680d67d180521f8b6cc9728ac0f535df5d966b31",
+      "bytes": 2070
+    },
+    {
+      "path": "_expo/static/js/web/index-92d71452988736d7f029379777be3632.js",
+      "sha256": "81cc161a9ec9f00761d9bfed54b806a76d8cacaa008a408bd0e96a973a629467",
+      "bytes": 45171
+    },
+    {
+      "path": "_expo/static/js/web/ProgressExpansionContent-a725ce0fb500e6443ae6c149a9b92064.js",
+      "sha256": "ae8e54fb0d5451ba659ec9fe6af08e5c1f71659bd093a16819d8307179d72737",
+      "bytes": 587
+    }
+  ]
+}

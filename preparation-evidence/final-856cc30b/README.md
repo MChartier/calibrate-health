@@ -1,0 +1,27 @@
+# Final shared dispatch and acknowledged-state evidence
+
+Owner: issue421 sole implementation task01a10cfe-a79f-7198-9e8f-2b4dc6703031, host mchartier_zbook. Retain this dedicated nonmerged evidence ref and historical identities for the lifetime of PR423/issue421 and review. Product head 856cc30b0d28e6d8510244c984dc4c5e36959f89; actual master acc8a30d6cde7477f08f0b7ace23df4047d21354; no unmerged parent. No Firebase provisioning, credentials, live-user reads/import, cutover, deployment, merge, release or readiness action occurred.
+
+## Final observable contracts
+
+- 227 maintained mobile suites / 1,184 tests pass. The subsequent final commit only isolates two provider test storage fixtures; both suites/15 tests pass separately. Product source matches the successful export. Typecheck and Knip pass.
+- All14 actual desktop Chrome browser scenarios pass on the final product build: cached outage/restart, food/weight persistence, failed-intent recovery, actual two-tab food-before-completion, offline logout and storage-failure revocation, and current-master calendar reopening/edit/completion. The server's seven JavaScript assets were fetched while these tests ran and matched exported SHA-256 bytes; receipts-running-build.json binds exact source/tree and retained export files.
+- Shared state-transition matrix covers all three food operations; complete/open and real pause.start/resume order; legacy day updates; failed relevant control; date isolation; repeated two-producer complete/reopen/add cycles; persisted IndexedDB close/reopen and replay with unchanged request IDs. These are synthetic component/store contracts, not real Firebase or native SQLite certification.
+- Exact prior7ff6937c AddFoodSheet fails both stale cached-OPEN/queued-completion cases; fixed source queues COMPLETE,OPEN,food.create. Exact prior82d916b6 reconciler performs interruption recovery twice while another replay is held; fixed source serializes recovery and applies food then completion once. Both controlled experiments restore fixed files in finally and bind source/test hashes.
+- A real browser run at82d916b6 exposed duplicate replay:13 scenarios passed and the two-tab scenario failed. Its exact log is retained. Its transient Playwright trace was not retained as a proof artifact; the deterministic prior-source replay regression supplies reproducible failure evidence. The final actual browser rerun passes14/14 without weakening the ordering assertion.
+- Acknowledged controls persist before queued-row removal, separate from pending work. Stale create/update/delete remains guarded after queue deletion and storage reopen. Fresh authoritative day reads reconcile state under the same lock; a slow earlier read cannot overwrite later completion. Receipt-write failure retains the original request ID. Scoped receipts neither authorize server requests nor contain credentials; account isolation is tested.
+- Replay and interruption recovery now share namespace ownership with dispatch. Startup does not reclaim another active tab outside that lock. Without browser Web Locks, work remains queued and replay fails closed; a maintained test proves neither recovery nor execution starts. A supported secure browser context is required for synchronization. Native uses one-runtime locking; device behavior is unexecuted.
+
+## UI evidence applicability and access
+
+Five original matched pairs remain at3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e. Before source acc8a30d6cde7477f08f0b7ace23df4047d21354; After source ed170e7e8a716e6a1b71b726bb49a0a184c01ad6. Those flows have no preceding closed-day/pause control intent; their outage/logout/failed-food/failed-weight/storage-failure states remain unchanged by compound ordering, applied receipts and replay ownership.14 final browser scenarios corroborate applicability. Never relabel the old captures as from 856cc30b0d28e6d8510244c984dc4c5e36959f89. Their exact source/build/fixture/harness/image manifests and59 verified API-byte identities remain preserved. The prior7ff body/render is retained as historical, not final evidence.
+
+Direct private GitHub rendered-page inspection remains unavailable. Local rendering of exact API-read-back body and verified image bytes supports presentation checks but is not that gate or a waiver. Final body/render and exact current CI/review readbacks are retained separately after publication.
+
+## Full actual-base scope
+
+29 branch-only commits;96 files,+4582/-203. Complete inventory and net diff are included. Implementation inspected the complete actual-base scope and successive owned changes; only product code/tooling, required schema/contracts, proportionate maintained regressions and operator runbook remain. No one-off log, export, capture harness, screenshot or repetitive report appears in the product merge diff. Earlier24/25/26-commit inventories and original evidence identities remain retained. The five temporary capture harnesses were removed only after matching their retained bytes and inspecting rendered embedded pairs.
+
+## Remaining boundaries
+
+Draft preparation does not close421 or unblock GCP422. Firebase runtime registration/login/recovery/verification/deletion/session/Wear integration, cross-store lifecycle/security enforcement, real existing-test-project rehearsal and eventual authorized cutover remain unfinished. No testproject access was supplied or used. Current CI/configured review must finish before independent QA; no readiness is claimed here.

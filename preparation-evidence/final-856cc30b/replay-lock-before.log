@@ -1,0 +1,35 @@
+FAIL src/offline/reconciler.test.ts
+  × serializes interrupted recovery across two reconcilers sharing a durable namespace (3 ms)
+  OutboxReconciler
+    ○ skipped replays queued writes serially in insertion order
+    ○ skipped persists the first failure and does not reorder later writes past it
+    ○ skipped returns explicit retryable replay failures to pending for a later recovery trigger
+    ○ skipped slows persistent retry traffic with deterministic jitter and a fifteen-minute ceiling
+    ○ skipped coalesces concurrent reconciliation requests into one replay loop
+    ○ skipped retries durable failures explicitly before continuing the queue
+    ○ skipped reports operations that succeeded before a later replay fails
+
+  ● serializes interrupted recovery across two reconcilers sharing a durable namespace
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 1
+    Received number of calls: 2
+
+      283 |     const second = new OutboxReconciler(store, execute, 'shared-replay').reconcile();
+      284 |     await Promise.resolve();
+    > 285 |     expect(recover).toHaveBeenCalledTimes(1);
+          |                     ^
+      286 |     expect(calls).toEqual(['food.create']);
+      287 |     release();
+      288 |     const results = await Promise.all([first, second]);
+
+      at Object.toHaveBeenCalledTimes (src/offline/reconciler.test.ts:285:21)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 7 skipped, 8 total
+Snapshots:   0 total
+Time:        0.564 s, estimated 1 s
+Ran all test suites matching /src\\offline\\reconciler.test.ts/i with tests matching "serializes interrupted recovery".

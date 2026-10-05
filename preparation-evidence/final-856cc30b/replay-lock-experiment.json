@@ -1,0 +1,8 @@
+{
+  "baseline": "82d916b61c7c41ca404c32277ed5777aa69cf43d",
+  "file": "firebase-421/mobile/src/offline/reconciler.ts",
+  "sourceSha256": "7cf0d0332fe8ad27b589c2d83170c5d4f44acf5325441f5b5571e34d74714927",
+  "testSha256": "e151d362698c5fe7f73fed2215000ccbe9610bd72bb5ffe20a1c2e67ccdea233",
+  "exitCode": 1,
+  "restored": true
+}
