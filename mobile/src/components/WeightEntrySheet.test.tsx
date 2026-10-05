@@ -1,7 +1,7 @@
 import React from 'react';
 import { AccessibilityInfo } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MetricSaveResponse, TrendMetricsResponse } from '@calibrate/api-client';
 import { WeightEntrySheet } from './WeightEntrySheet';
 
@@ -211,6 +211,19 @@ describe('WeightEntrySheet', () => {
             pathname: '/progress',
             params: { openNextGoal: 'true' }
         });
+    });
+
+    it('persists a weigh-in when the network manager is offline instead of pausing the mutation', async () => {
+        const screen = renderSheet();
+        await waitFor(() => expect(screen.getByLabelText('Weight in pounds')).toBeTruthy());
+        act(() => onlineManager.setOnline(false));
+        try {
+            fireEvent.changeText(screen.getByLabelText('Weight in pounds'), '169.5');
+            fireEvent.press(screen.getByRole('button', { name: 'Log weight' }));
+            await waitFor(() => expect(screen.getByText('Saved on this device')).toBeTruthy());
+            expect(mockEnqueue).toHaveBeenCalled();
+            expect(mockApi.addMetric).not.toHaveBeenCalled();
+        } finally { act(() => onlineManager.setOnline(true)); }
     });
 
     it('shows a neutral queued result without authoritative progress or confetti', async () => {

@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import {
     type CalibrateApiClient,
     type FoodLogCreatePayload,
@@ -62,6 +63,10 @@ export async function executeOrQueueMutation<T>({
     createOperationId = Crypto.randomUUID
 }: ExecuteOrQueueOptions<T>): Promise<OutboxMutationResult<T>> {
     const operationId = createOperationId();
+    if (!onlineManager.isOnline()) {
+        await enqueue(operation, payload, operationId);
+        return { disposition: 'queued', operationId };
+    }
     try {
         return { disposition: 'synced', operationId, value: await execute(operationId) };
     } catch (error) {

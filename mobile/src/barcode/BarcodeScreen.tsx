@@ -183,6 +183,7 @@ export default function BarcodeScreen() {
         onSettled: () => requestGate.current.finish()
     });
     const logFood = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: ({ payload }: FoodSelectionSubmitRequest) => {
             if (foodDayQuery.data?.status !== 'OPEN') {
                 throw new Error('Backfill this day before adding food.');

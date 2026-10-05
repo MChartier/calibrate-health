@@ -260,6 +260,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
     }
 
     const logFood = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: async (request: FoodSelectionSubmitRequest) => {
             await createFoodLog(request.payload);
             return request.closeAfterLogging;

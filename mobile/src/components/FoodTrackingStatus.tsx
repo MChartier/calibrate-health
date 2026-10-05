@@ -104,6 +104,7 @@ export const DayStatusCard: React.FC<{
     const [showExpectedDate, setShowExpectedDate] = useState(false);
 
     const setStatus = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: (status: Exclude<FoodLogDayStatus, 'PAUSED'>) => {
             const payload = { date, status };
             return executeOrQueueMutation({
@@ -121,6 +122,7 @@ export const DayStatusCard: React.FC<{
     });
 
     const startPause = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: (resumeOn: string | null) => {
             const payload = { starts_on: date, expected_resume_on: resumeOn };
             return executeOrQueueMutation({
@@ -148,6 +150,7 @@ export const DayStatusCard: React.FC<{
     });
 
     const resume = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             const payload = { resumed_on: date };
             return executeOrQueueMutation({
@@ -437,6 +440,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
 
     const refresh = useRefreshTrackingState(today);
     const resume = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             const payload = { resumed_on: today };
             return executeOrQueueMutation({
@@ -454,6 +458,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
         }
     });
     const extend = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: (expectedResumeOn: string | null) => {
             const payload = { expected_resume_on: expectedResumeOn };
             return executeOrQueueMutation({

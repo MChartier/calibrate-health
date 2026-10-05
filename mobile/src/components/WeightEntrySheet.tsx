@@ -125,6 +125,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     }, [queryClient]);
 
     const addWeight = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             const parsedWeight = parseWeightInput(weight);
             if (parsedWeight === null) throw new Error('Enter a valid weight greater than zero.');
@@ -159,6 +160,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     });
 
     const deleteWeight = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             if (!existingMetric) throw new Error('No weight entry exists for this day.');
             const payload = { id: existingMetric.id };

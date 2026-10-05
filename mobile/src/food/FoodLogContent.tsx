@@ -175,6 +175,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     });
 
     const updateFood = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             if (!editEntry) throw new Error('Choose a food entry to edit.');
 

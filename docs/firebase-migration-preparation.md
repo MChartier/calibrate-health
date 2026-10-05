@@ -219,6 +219,31 @@ same-account reconnection, mismatched-account rejection, and local/server logout
 boundaries. UI changes require genuine matched Before/After evidence. No real
 Firebase rehearsal or runtime activation is implied by synthetic tests.
 
+## Implemented local continuity checkpoint
+
+Browser and native startup can restore the last verified identity and an
+allowlisted tracking-query snapshot for the same server origin after a transient
+failure. Native restoration also requires the retained refresh credential.
+Snapshots are local workspace state, never server authorization; an explicit
+logout or confirmed rejection removes the restorable identity. Existing queued
+writes retain their server/user namespace and stable operation ID.
+
+Outbox-backed food, weight and day-status mutations run even when React Query
+knows the device is offline and enqueue before attempting network I/O. Other
+server-only mutations retain their normal network behavior. Cached data is
+limited to resources previously loaded on that device: remote food search,
+uncached history and account/security operations still need a connection.
+The pending-reconnection notice retries on foreground/reconnect, offers manual
+retry and uses a 5-second exponential delay capped at 60 seconds. Existing outbox
+replay retains its own bounded retry policy. A recovered account mismatch stops
+replay instead of sending the old account's data under the new session.
+
+Maintained client tests cover startup network/auth outages, confirmed rejection,
+account/server isolation, durable outbox restart and true-offline weigh-in intent.
+The exported-web test in e2e/expo-web/offline-workspace.spec.ts exercises actual
+UI outage/reload, queued weight, restart, authenticated replay and network loss
+using synthetic API fixtures. These do not certify Firebase or physical devices.
+
 ## Remaining stages and cutover gates
 
 1. **Runtime authority integration:** use the prepared SQL mapping/version and
