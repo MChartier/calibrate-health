@@ -1,6 +1,5 @@
 import {
     getFoodDayStatusLabel,
-    shouldEmphasizePausedStatus,
     shouldShowCalorieComparison
 } from './dayPresentation';
 
@@ -40,26 +39,6 @@ describe('day calorie presentation', () => {
             status,
             isToday: false,
             hasFoodEntries: true
-        })).toBe(false);
-    });
-
-    it('emphasizes a settled paused status when it is the only calorie content for today', () => {
-        expect(shouldEmphasizePausedStatus({
-            status: 'PAUSED',
-            isToday: true,
-            hasFoodEntries: false,
-            isContentLoading: false
-        })).toBe(true);
-    });
-
-    it.each([
-        { isToday: false, hasFoodEntries: false, isContentLoading: false },
-        { isToday: true, hasFoodEntries: true, isContentLoading: false },
-        { isToday: true, hasFoodEntries: false, isContentLoading: true }
-    ])('keeps the regular paused layout when other day content or loading state is present', (state) => {
-        expect(shouldEmphasizePausedStatus({
-            status: 'PAUSED',
-            ...state
         })).toBe(false);
     });
 });

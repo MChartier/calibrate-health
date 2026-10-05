@@ -2,7 +2,6 @@ import { MEAL_PERIODS } from '@calibrate/shared';
 import {
     BARCODE_RESUME_STEPS,
     BARCODE_RETURN_DESTINATIONS,
-    getBarcodeResumePath,
     parseBarcodeResumeContext,
     parseBarcodeWorkflowContext,
     serializeBarcodeWorkflowContext,
@@ -55,17 +54,4 @@ describe('barcode return context', () => {
             })).toEqual(resume);
         }
     );
-
-    it('builds a purpose-bound encoded resume path for authentication detours', () => {
-        expect(getBarcodeResumePath({
-            date: '2026-08-02',
-            meal: MEAL_PERIODS.AFTERNOON_SNACK,
-            returnTo: BARCODE_RETURN_DESTINATIONS.FOOD_LOG,
-            resumeStep: BARCODE_RESUME_STEPS.AUTH,
-            barcode: '012345678905'
-        })).toBe(
-            '/barcode?date=2026-08-02&meal=AFTERNOON_SNACK&returnTo=food-log'
-            + '&barcodeResume=auth&barcode=012345678905'
-        );
-    });
 });

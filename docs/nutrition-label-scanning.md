@@ -8,6 +8,9 @@ Missing or unclear fields remain empty. Per-100g panels, multiple calorie column
 
 ## Server operation
 
+Scanning is available only when the selected server enables `nutrition_label_scanning`. A disabled server
+rejects scans before buffering an upload or starting OCR; the client keeps manual food entry available.
+
 `POST /api/v1/nutrition-labels/scan` accepts one multipart `image` upload and returns an unsaved draft. Existing authenticated saved-food creation persists the reviewed food under the current user. Neither photos nor raw recognized text are stored or sent to external providers.
 
 OCR runs locally with Tesseract.js, bundled English language data, and Sharp. No credentials or runtime model downloads are required. Production installs include those dependencies automatically. Uploads are limited to 8 MB and 25 megapixels, with one active OCR job per server process, a 45-second deadline, and six scan attempts per user per minute. The client allows 60 seconds for upload and processing. The worker is terminated after success, failure, timeout, or client disconnection, then the scan slot is released.

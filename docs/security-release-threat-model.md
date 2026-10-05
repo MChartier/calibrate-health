@@ -1,7 +1,8 @@
 # Android and Wear security release threat model
 
-This review targets a private self-hosted Android/Wear release. Food names, weights, activity,
-notification endpoints, profile data, and exports are treated as sensitive health-adjacent data.
+Use this checklist when reviewing an Android/Wear release, including a self-hosted distribution.
+Food names, weights, activity, notification endpoints, profile data, and exports are treated as
+sensitive health-adjacent data.
 
 | Boundary | Primary threats | Release controls |
 | --- | --- | --- |
@@ -10,9 +11,9 @@ notification endpoints, profile data, and exports are treated as sensitive healt
 | Phone/watch pairing | Nearby replay, wrong account/server/node | Phone-initiated five-minute exchange, server-bound one-time token, signed P-256 challenge, exact node/account/origin correlation |
 | Device storage | Backup migration, token extraction, cross-account replay | OS backup disabled, phone SecureStore, Wear Keystore AES-GCM, origin/account outbox namespaces, validated idempotent replay |
 | Health Connect | Excess permissions, checkpoint mixing, silent weight replacement | Read-only declarations, optional weight request, account/install/type checkpoints, bounded resets, manual weight authority |
-| Imports and avatars | Oversized/compressed denial, executable upload | 2 MiB JSON limit, 25 MiB archive limit, 5 MiB uncompressed CSV-entry limits, in-memory parsing, processed avatar allowlist and cap |
+| Imports and images | Oversized/compressed denial, executable upload, OCR resource exhaustion | 2 MiB JSON, 25 MiB archive, 5 MiB CSV-entry limits, processed-avatar allowlist/cap, bounded label images and single-slot OCR with cancellation/deadline; see [label scanning](nutrition-label-scanning.md) |
 | Notifications | Token misuse, third-party disclosure, unsafe links | Bearer-session ownership, token validation, operator-disabled default, capability negotiation, generic reminders, allowlisted routes |
-| Logs and diagnostics | Credentials or health values in logs | Disabled-by-default diagnostics, bounded counters, protected metrics, opaque IDs, exception type only without message or stack |
+| Logs and diagnostics | Credentials or health values in logs | Disabled-by-default diagnostics, bounded counters, protected metrics, opaque IDs, allowlisted error categories without messages or stacks |
 
 ## Cross-account isolation invariant
 
@@ -21,16 +22,13 @@ database predicates. Wear routes additionally require a Wear session. Health Con
 push ownership come from the bearer session, never request JSON. Numeric resource ids alone never
 authorize a read, update, delete, undo, or association.
 
-## Release evidence still required
+## Candidate-specific validation
 
 - Exercise CSRF from cross-site and same-site sibling origins through the production proxy.
-- Repeat merged-manifest inspection in Play App Bundle Explorer; local test-signed phone/Wear
-  artifacts already exclude storage, overlay, microphone, Health Connect write, sensor, and
-  location permissions.
-- Repeat backup/restore and upgrade checks with permanent signing and a distributed predecessor;
-  the local encrypted restore drill and test-signed install/reinstall paths are complete.
-- Capture hostile-LAN traffic on physical devices; local release code, merged manifests, and
-  emulator UI already reject HTTP origins and cleartext transport.
+- Inspect the exact phone/Wear artifacts in Play App Bundle Explorer for forbidden storage,
+  overlay, microphone, Health Connect write, sensor, and location permissions.
+- Run encrypted backup/restore and same-signer upgrade checks with the distributed predecessor.
+- Verify physical release clients reject HTTP origins and cleartext transport, including on a hostile LAN.
 - Revoke sessions and switch accounts/servers offline; verify old outbox, tile, pairing,
   notification, and Health Connect state is not shown or replayed.
 - Review lock-screen previews and export sharing on the Galaxy Watch Ultra and phone used for dogfood.

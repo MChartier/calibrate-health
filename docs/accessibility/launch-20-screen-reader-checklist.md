@@ -1,8 +1,12 @@
-# Launch 20 web screen-reader checklist
+# Web screen-reader checklist
 
 This artifact separates automated browser evidence from manual assistive-technology work. It does not claim an NVDA, VoiceOver, or TalkBack pass.
 
-## Execution record
+## Evidence boundary
+
+The manual statuses below are the historical August 9, 2026 record, not a claim about the current
+release. Record fresh manual results with their tested commit; automated checks never imply a
+screen-reader pass.
 
 | Check | Status | Evidence |
 | --- | --- | --- |
@@ -37,11 +41,11 @@ Run this checklist against a release build with a populated deterministic accoun
    - On `Select nearest weigh-in`, use Left, Right, Home, and End and confirm each selected date/value update is announced.
    - Confirm Previous and Next weigh-in controls expose their disabled state at range boundaries and keep the selected point summary in sync.
 
-4. Settings and dialogs
-   - Open Preferences and confirm it is announced as a modal dialog with its description.
+4. Settings navigation
+   - Open Settings > Profile & preferences > Preferences and confirm the `Preferences` route heading receives focus.
    - Confirm `Weight unit` and `Height unit` are named radio groups. Arrow keys should select and focus one option while Tab leaves the group as one stop.
-   - Confirm background app content is absent from the virtual cursor while the dialog is open.
-   - Close Preferences and confirm focus returns to its Settings row.
+   - Save a changed unit and confirm navigation returns to `Profile & preferences`; reopen Preferences and confirm the selection persisted.
+   - Cancel an unchanged draft and confirm focus returns to the parent route heading. Check unsaved-change confirmation before discarding an edited draft.
 
 5. Reflow and high contrast
    - At 200% text, repeat Trend chart navigation and Preferences checks without horizontal page scrolling or clipped labels/actions.

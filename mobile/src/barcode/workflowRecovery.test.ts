@@ -1,9 +1,7 @@
 import { buildSearchedFoodLogPayload } from '../food/serving';
 import {
     BarcodeRequestGate,
-    BarcodeScanGate,
     BarcodeSubmissionGate,
-    getBarcodeCanonicalKey,
     normalizeBarcode,
     normalizeBarcodeInput,
     resolveBarcodeFoodCandidates
@@ -36,20 +34,28 @@ describe('barcode workflow recovery', () => {
             canonicalKey: '00042000001007',
             format: 'upc-e'
         });
-        expect(getBarcodeCanonicalKey('04210007', 'upc_e')).toBe('00042000001007');
-        expect(getBarcodeCanonicalKey('042000001007', 'upc_a')).toBe('00042000001007');
+        expect(normalizeBarcodeInput('04210007', 'upc_e')).toMatchObject({
+            ok: true, canonicalKey: '00042000001007'
+        });
+        expect(normalizeBarcodeInput('042000001007', 'upc_a')).toMatchObject({
+            ok: true, canonicalKey: '00042000001007'
+        });
     });
 
     it('uses one canonical duplicate key for UPC-A and zero-prefixed EAN-13 callbacks', () => {
-        expect(getBarcodeCanonicalKey('012345678905')).toBe('00012345678905');
-        expect(getBarcodeCanonicalKey('0012345678905')).toBe('00012345678905');
+        expect(normalizeBarcodeInput('012345678905')).toMatchObject({
+            ok: true, canonicalKey: '00012345678905'
+        });
+        expect(normalizeBarcodeInput('0012345678905')).toMatchObject({
+            ok: true, canonicalKey: '00012345678905'
+        });
 
-        const gate = new BarcodeScanGate();
-        expect(gate.accept('012345678905', 'upc_a')).toEqual({
+        const gate = new BarcodeRequestGate();
+        expect(gate.start('012345678905', 'upc_a')).toMatchObject({
             kind: 'accepted',
             barcode: '012345678905'
         });
-        expect(gate.accept('0012345678905', 'ean13')).toEqual({ kind: 'duplicate' });
+        expect(gate.start('0012345678905', 'ean13')).toEqual({ kind: 'duplicate' });
     });
 
     it('suppresses concurrent lookup requests but permits an intentional retry after settlement', () => {
@@ -61,6 +67,15 @@ describe('barcode workflow recovery', () => {
         expect(gate.start('0012345678905')).toEqual({ kind: 'duplicate' });
         gate.finish();
         expect(gate.start('0012345678905')).toMatchObject({ kind: 'accepted' });
+    });
+
+    it('rejects malformed input without locking later lookups and resets for a rescan', () => {
+        const gate = new BarcodeRequestGate();
+        expect(gate.start('not-a-barcode')).toMatchObject({ kind: 'invalid' });
+        expect(gate.start('012345678905')).toMatchObject({ kind: 'accepted' });
+        expect(gate.start('0012345678905')).toEqual({ kind: 'duplicate' });
+        gate.reset();
+        expect(gate.start('012345678905')).toMatchObject({ kind: 'accepted' });
     });
 
     it('keeps a log submit locked through success and unlocks only for failure or reset', () => {

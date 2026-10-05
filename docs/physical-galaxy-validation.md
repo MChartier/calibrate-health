@@ -5,18 +5,11 @@ signed Android phone and Wear artifacts built from one source commit. It is not 
 
 This document is a protocol, not proof that anyone performed it.
 
-## Current status
+## Evidence status
 
-As of the Launch 23 implementation PR:
-
-- Repository contracts and hosted emulator/package jobs may be exercised in CI.
-- No permanent release artifact has been built or signed by this work.
-- No physical Galaxy phone or Galaxy Watch validation has been executed by this work.
-- No OTA update has been published or verified on a physical release client by this work.
-- No physical result is currently recorded.
-- The risk inventory records physical coverage as a non-blocking diagnostic gap.
-
-Keep issue `#303` open until the owner decides the physical coverage is worth completing.
+[The risk inventory](../quality/risk-evidence.json) records outstanding physical-coverage gaps and
+any finalized results. Check its `diagnosticGaps` and `physicalDeviceEvidence` for the candidate
+being reviewed; a past implementation PR or emulator pass is not physical-device evidence.
 
 ## Source and privacy boundary
 
@@ -86,15 +79,16 @@ npm.cmd run test:native-release
 npm.cmd run test:risk-evidence
 ~~~
 
-The pull-request workflow also defines:
+The manually dispatched [Builds workflow](../.github/workflows/builds.yml) provides these opt-in lanes:
 
 - `android-emulator-e2e` - `npm run test:android:e2e` on an explicit Android phone emulator;
 - `wear-release-emulator-smoke` - `npm run test:wear:emulator` on a disposable-signed non-debuggable Wear build;
 - `native-package-upgrade` - package-only phone/Watch in-place upgrade using two emulators and a disposable signer.
 
-These jobs are required package/runtime evidence. They do not prove the permanent signer, physical hardware,
-interactive state preservation, or physical OTA behavior. Their temporary ADB serials and raw upgrade result are not
-uploaded.
+Select `validation_scope=native` or `web-and-native` for the emulator lanes. The upgrade lane additionally needs
+`run_native_upgrade=true` and a full `native_upgrade_baseline` SHA. They are not automatic pull-request gates and do
+not prove permanent signing, physical hardware, interactive state preservation, or physical OTA behavior. Their
+temporary ADB serials and raw upgrade result are not uploaded.
 
 Run the operator forms of `test:android:e2e`, `test:wear:emulator`, and `test:native:upgrade` when preparing the
 release record. Mark `gate-native-release`, `gate-android-emulator`, `gate-wear-emulator`, and

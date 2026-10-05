@@ -32,9 +32,9 @@ Current requirements used by this worksheet:
 | --- | --- | --- |
 | Android identity | Phone and watch use `net.darkmachines.healthtracker`. Their candidate version names and codes come from the frozen `shared/release.json` and must be confirmed from each final artifact rather than copied into this worksheet. | `shared/release.json`, `mobile/app.json`, `wear/app/build.gradle.kts` |
 | Phone platform | Expo config sets minimum SDK 26, disables backup, requests camera, vibration, and notifications, and blocks storage, microphone, and system-alert-window permissions. | `mobile/app.json` |
-| Camera | Camera access is requested only from the barcode screen after explanatory copy. Frames stay in `CameraView`; only the decoded UPC/EAN is sent for lookup. | `mobile/app/barcode.tsx` |
-| Profile image | A user-selected image is cropped, compressed, base64-encoded, and uploaded as the optional profile avatar. | `mobile/app/(tabs)/settings.tsx`, `backend/src/utils/profileImage.ts` |
-| Notifications | Android notification permission is requested only after a signed-in user acts and the selected server advertises native push support. Expo push is the only implemented native provider and is disabled by default server-side. | `mobile/src/hooks/useNativePushRegistration.ts`, `backend/src/config/nativePush.ts` |
+| Camera and label photos | Barcode frames stay on-device; only the decoded UPC/EAN is sent for lookup. Nutrition-label scanning separately lets the user take or choose a photo and uploads it to the selected server for local OCR. The server does not store the photo/raw recognized text or send them to an external OCR provider. | `mobile/app/barcode.tsx`, `mobile/src/nutritionLabel/`, `backend/src/routes/nutritionLabels.ts`, `backend/src/services/nutritionLabelScan.ts` |
+| Profile image | A user-selected image is cropped, compressed, base64-encoded, and uploaded as the optional profile avatar. | `mobile/app/(tabs)/(settings)/settings.tsx`, `backend/src/utils/profileImage.ts` |
+| Notifications | Android notification permission is requested only after a signed-in user acts and the selected server advertises native push support. Expo push is the only implemented native provider and is disabled by default server-side. | `mobile/src/hooks/useNativePushRegistration.tsx`, `backend/src/config/nativePush.ts` |
 | Health Connect permissions | The phone declares read-only access to steps, active calories, total calories, exercise sessions, and weight. No Health Connect write permission is declared. | `mobile/plugins/withHealthConnect.js` |
 | Health Connect selection | Steps, active calories, total calories, and exercise default on after the user connects. Weight is a separate setting and defaults off. | `mobile/src/healthConnect/types.ts`, `mobile/src/healthConnect/permissions.ts` |
 | Health Connect sync | Sync runs when the app opens or returns to the foreground while connected and unpaused. It uploads source records, deletions, and daily summaries to the selected Calibrate server. Initial reconciliation is limited to 30 days. | `mobile/src/healthConnect/provider.tsx`, `mobile/src/healthConnect/sync.ts` |
@@ -42,7 +42,7 @@ Current requirements used by this worksheet:
 | Phone local storage | Access and refresh tokens and the generated installation ID use SecureStore. Server URL, Health Connect preferences/checkpoints, and other preferences use app-local storage. Pending mutations use app-local SQLite. | `mobile/src/auth/storage.ts`, `mobile/src/healthConnect/provider.tsx`, `mobile/src/healthConnect/sync.ts`, `mobile/src/offline/` |
 | Server transport | Production phone code rejects HTTP origins; development code permits HTTP only for emulator, loopback, and private-network hosts. | `mobile/src/config/server.ts` |
 | Account export | A signed-in user can export versioned JSON. It includes profile, avatar, goals, weight, food, recipes, notification history, and Health Connect records/summaries, but excludes credentials, sessions, push endpoints/tokens, device IDs, sync tokens, and tombstones. The phone deletes its temporary export file after the Android share flow returns. | `backend/src/services/accountLifecycle.ts`, `mobile/src/account/accountData.ts` |
-| Account deletion | Phone Settings requires the current password plus `DELETE MY ACCOUNT`. The server cascade-deletes account-owned rows and clears the session. The phone independently attempts to clear its outbox, Health Connect grants/state, Wear coordination state, and credentials; a reachable paired watch receives an account-bound local-disconnect command. Failures surface explicit device-cleanup guidance. The public `/account-deletion` page provides hosted-service email instructions without requiring sign-in or app installation. | `mobile/app/(tabs)/settings.tsx`, `mobile/app/account-deletion.tsx`, `mobile/src/account/accountData.ts`, `mobile/src/healthConnect/accountCleanup.ts`, `mobile/src/wear/accountCleanup.ts`, `backend/src/routes/user.ts`, `backend/prisma/schema.prisma` |
+| Account deletion | Phone Settings requires the current password plus `DELETE MY ACCOUNT`. The server cascade-deletes account-owned rows and clears the session. The phone independently attempts to clear its outbox, Health Connect grants/state, Wear coordination state, and credentials; a reachable paired watch receives an account-bound local-disconnect command. Failures surface explicit device-cleanup guidance. The public `/account-deletion` page provides hosted-service email instructions without requiring sign-in or app installation. | `mobile/app/(tabs)/(settings)/settings.tsx`, `mobile/app/account-deletion.tsx`, `mobile/src/account/accountData.ts`, `mobile/src/healthConnect/accountCleanup.ts`, `mobile/src/wear/accountCleanup.ts`, `backend/src/routes/user.ts`, `backend/prisma/schema.prisma` |
 | Food providers | Search text, barcodes, language, and serving context can be relayed by the Calibrate server to FatSecret, USDA, or Open Food Facts. Account email and ID are not deliberately included in those requests. | `backend/src/routes/food.ts`, `backend/src/services/foodData/`, `mobile/app/privacy.tsx`, `mobile/src/legal/publicLegalContent.ts` |
 | Lose It import | A selected ZIP is uploaded to the server and parsed in memory. Preview is not persisted; execute creates the selected food and weight records. | `backend/src/routes/imports.ts` |
 | Wear permissions | The merged release requests internet, network state, notifications, and normal scheduling support (`WAKE_LOCK`, boot completed, and foreground service). It does not request body sensors, activity recognition, location, camera, microphone, or Health Connect permissions. | `wear/app/src/main/AndroidManifest.xml`, release merged manifest |
@@ -53,47 +53,23 @@ Current requirements used by this worksheet:
 
 ## Source-to-release mismatches and unresolved gates
 
-These findings must not be silently converted into affirmative Play Console answers.
+Source facts are not affirmative Play Console answers. Complete the detailed checks below on the
+exact distributed candidate, with particular attention to:
 
-1. **Resolved in local release build - phone backup state.** A clean Expo prebuild and test-signed release APK now
-   show `android:allowBackup="false"`. Repeat the inspection on the exact uploaded AAB and Play-generated APK; local
-   test signing is build-path evidence, not Play Console evidence.
-2. **Resolved in local release build - forbidden phone permissions.** The clean test-signed release APK excludes
-   `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `SYSTEM_ALERT_WINDOW`, and `RECORD_AUDIO`. Its complete
-   permission inventory also contains expected transitive infrastructure permissions from SecureStore,
-   notifications/FCM, install referrer, and launcher-badge compatibility. Review those normal permissions rather
-   than using an incorrect "only app-declared permissions" expectation, and repeat the check in App Bundle Explorer.
-3. **Required evidence - external account-deletion URL.** Source now provides a dedicated public
-   `/account-deletion` page with signed-in instructions, a hosted-service email request path, verification and
-   response timing, retention caveats, and self-hosted operator guidance. Before entering
-   `https://calibratehealth.app/account-deletion` in Data Safety, deploy it and confirm that it is publicly
-   accessible without login or app installation and that the hosted-service mailbox is monitored.
-4. **Required device evidence - deleted-account cleanup.** Source now attempts outbox, Health Connect, Wear,
-   and credential cleanup independently after confirmed server deletion. A reachable paired watch validates an
-   account-bound command from its exact retained phone node and runs its existing local disconnect. If the watch
-   is unreachable, phone data is still cleared and the user is instructed to disconnect on-watch. Verify both
-   reachable and unreachable-watch paths on release artifacts and retain the privacy policy's local-copy caveat.
-5. **Required device evidence - Wear legal handoff.** Source now exposes Privacy policy and Account deletion on
-   the Wear Connection screen. The watch sends an allowlisted destination to the exact paired phone; the phone
-   revalidates account/server/node scope and opens only `/privacy` or `/account-deletion` on that server. Confirm
-   both actions open the signed-out public pages on a paired release phone/watch.
-6. **Required evidence - privacy URL.** The proposed Play URL is
-   `https://calibratehealth.app/privacy`. Confirm that it is publicly accessible without login, non-geofenced,
-   not a PDF, stable, and displays the same policy reached from the phone's Health Connect privacy flow.
-7. **Required evidence - privacy enumeration.** Source now explicitly includes Health Connect source records and
-   daily activity summaries in the account-export list. Confirm the final hosted policy contains this wording and
-   record its version/date.
-8. **Required evidence - provider classification.** The code proves transfers to food providers and, when
-   enabled, Expo Push Service. Whether those transfers count as Play "sharing" depends on the publisher's
-   provider agreements and Google's service-provider or user-initiated exceptions. Do not answer "no data
-   shared" until that classification is documented.
-9. **Required evidence - encryption in transit.** Production phone code requires HTTPS, and the default Wear
-   release origin is HTTPS. Wear build flags can deliberately enable private-network cleartext for internal
-   use. Never use that flag for the Play bundle. Confirm both installed Play artifacts reject HTTP and that the
-   merged manifests disable cleartext before answering that all collected data is encrypted in transit.
-10. **Required evidence - no hidden SDK collection.** Source dependencies show no analytics or crash SDK, but
-    review the final bundle in Play SDK Index/App Bundle Explorer and inspect runtime traffic. Transitive SDK
-    behavior must be included in Data Safety.
+- **Final manifests and SDKs:** verify backup is disabled, forbidden permissions are absent, and
+  expected transitive infrastructure permissions are understood. Inspect App Bundle Explorer,
+  Play SDK Index, and runtime traffic; a local test-signed build cannot establish Play behavior.
+- **Public legal pages:** deploy `/account-deletion` and `/privacy` on `https://calibratehealth.app`.
+  Check signed-out, non-geofenced access without app installation; the privacy page must be stable,
+  non-PDF, and match the Health Connect policy. Verify the hosted deletion mailbox is monitored and
+  the policy covers exported Health Connect records and summaries. Record policy version/date.
+- **Deletion and legal handoffs:** test phone cleanup with a reachable and unreachable paired watch;
+  preserve the local-copy caveat. Verify account/server/node-bound Wear handoffs open only the
+  selected server's public `/privacy` and `/account-deletion` pages.
+- **Provider classification:** document food-provider and optional Expo Push transfers and the
+  applicable agreements before answering whether data is shared.
+- **Transport:** both Play artifacts must reject HTTP and disable cleartext. Wear's optional
+  private-network cleartext build flag must never be used in a Play bundle.
 
 ## Private/internal release decision
 
@@ -236,6 +212,7 @@ Use the following common explanation where the form allows supporting detail:
 | Build foods/recipes | Custom names, serving values, ingredient snapshots, pin state | Phone -> selected server | Until user/account deletion | Health info and other user-generated content; optional, app functionality. |
 | Import Lose It ZIP | Selected file and contained food/weight records | Phone -> selected server memory; parsed records -> database | Raw ZIP is memory-only; executed records persist | Files/docs collected optionally and processed ephemerally; extracted health info persists. |
 | Scan barcode | Live camera frames and decoded UPC/EAN | Frames stay on device; decoded barcode -> server -> configured food provider | Frames are not stored or transmitted; barcode may be stored only when the user logs the result | Camera permission disclosure; in-app search history processed ephemerally; provider transfer classification unresolved. |
+| Scan nutrition label | User-selected/captured photo and extracted serving/calorie values | Phone -> selected server for local OCR | Photo and raw OCR text are processed in memory, not stored; reviewed food persists only after Save | Optional photo upload; document ephemeral processing and retained food data in the final declaration. |
 | Search food | Search text, barcode, language, serving context | Phone -> server -> configured food provider | Not deliberately stored as search history; ordinary provider/server logs may apply | In-app search history, optional/ephemeral; provider transfer classification unresolved. |
 | Set avatar | Selected/cropped photo | Phone -> selected server | Resized inline avatar until removed/account deletion | Photos, optional, app functionality/personalization. |
 | Connect Health Connect | Steps, active/total energy, exercise sessions, optional weight, data origin/device metadata, deletions, daily aggregates | Health Connect -> phone -> selected server | Source records/summaries until account/operator deletion; sync tokens/preferences local | Health info and fitness info, optional, app functionality/personalization. No Health Connect data is sent to ad systems. |
@@ -257,8 +234,8 @@ exception only after documenting why it fits.
 - **Is all collected data encrypted in transit?** **Proposed Yes, conditional.** Submit Yes only after the exact Play
   phone and Wear artifacts reject cleartext and all production endpoints/providers use TLS. Otherwise answer No and
   stop the release because health data should not ship over cleartext.
-- **Can users request deletion?** **Not ready.** In-app deletion exists; publish and validate the required external
-  deletion URL before answering Yes.
+- **Can users request deletion?** **Conditional.** Source provides in-app deletion and a public request page.
+  Verify the deployed URL and monitored request path before answering Yes.
 - **Independent security review?** **No** unless a qualifying external assessment is completed.
 - **Sharing?** **Unresolved.** Complete the provider-role worksheet below first.
 
@@ -271,7 +248,7 @@ exception only after documenting why it fits.
 | Personal info - Other info | Yes: date of birth, sex, height, timezone, language, units, preferences | Required because core profile fields use this category | App functionality; personalization; account management | No proposed |
 | Health and fitness - Health info | Yes: weight/body data, nutrition/food, goals and calorie history | Required for the core tracking profile; individual logs/features can be optional | App functionality; personalization | No proposed except any push-content/provider classification that Play determines is sharing |
 | Health and fitness - Fitness info | Yes: activity level, optional steps/energy/exercise | Required for activity level; Health Connect imports optional | App functionality; personalization | No proposed |
-| Photos and videos - Photos | Yes: optional avatar | Optional | App functionality; personalization | No proposed |
+| Photos and videos - Photos | Yes: optional avatar and nutrition-label photo | Optional; label photo is processed ephemerally | App functionality; personalization | No proposed |
 | Files and docs | Yes: selected Lose It ZIP | Optional; ephemeral raw-file processing | App functionality | No proposed |
 | App activity - In-app search history | Yes: food query/barcode, ephemeral | Optional | App functionality | Unresolved for configured food providers |
 | App activity - App interactions | Yes: completed-day and notification read/dismiss/resolve state | Optional | App functionality | No proposed |
@@ -280,9 +257,9 @@ exception only after documenting why it fits.
 
 Do **not** select location, contacts, calendar, installed apps, web browsing, financial information, audio, SMS,
 emails/messages, or advertising data unless final artifact/runtime inspection finds collection not represented by
-the reviewed source. Camera permission does not by itself mean camera frames are collected: the barcode flow keeps
-frames on-device. Select crash logs, diagnostics, or analytics only if the final SDK/runtime review proves those
-types are transmitted from the app.
+the reviewed source. Barcode camera frames stay on-device, but chosen nutrition-label photos and avatars are
+uploaded to the selected server. Account for those separate photo flows. Select crash logs, diagnostics, or
+analytics only if the final SDK/runtime review proves those types are transmitted from the app.
 
 ### Provider-role worksheet
 
@@ -299,9 +276,11 @@ behavior does not support that purpose.
 
 ## Runtime permission and disclosure checks
 
-- [ ] Camera prompt appears only after opening barcode scan and explanatory text says it scans packaged-food barcodes.
-- [ ] Denying camera keeps manual food entry usable; "don't ask again" routes to Android settings.
-- [ ] Camera frames and images are absent from network captures and server logs; only the decoded code is transmitted.
+- [ ] Camera access follows an explicit barcode-scan or nutrition-label capture action, with purpose-specific copy.
+- [ ] Denying camera keeps manual food entry and label-photo selection usable; denial guidance explains recovery.
+- [ ] Barcode frames never leave the device; barcode lookup sends only the decoded code.
+- [ ] Label capture/selection uploads only the chosen photo to the selected server, performs OCR there, and does not
+  persist or log the photo/raw recognized text. Canceling a scan releases server work without saving a food.
 - [ ] Notification prompt appears only after user action and only when the selected server advertises native push.
 - [ ] Denying notifications keeps food, weight, activity, and in-app reminders usable.
 - [ ] Health Connect access starts only from the Health Connect card after the in-app disclosure is visible.
