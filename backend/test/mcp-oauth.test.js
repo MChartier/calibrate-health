@@ -192,7 +192,7 @@ test('MCP OAuth refresh rotation prunes only expired credentials for the active 
   assert.equal('used_at' in cleanup.refresh.where, false);
 });
 
-test('MCP OAuth approval cannot create a code after the verified password changes', async () => {
+test('MCP OAuth approval cannot create a code after the security version changes with the same password hash', async () => {
   const bcrypt = require('bcryptjs');
   const passwordHash = await bcrypt.hash('old-password', 4);
   let createdCode = false;
@@ -208,7 +208,12 @@ test('MCP OAuth approval cannot create a code after the verified password change
     expires_at: new Date('2026-08-19T12:10:00.000Z')
   };
   const tx = {
-    user: { updateMany: async () => ({ count: 0 }) },
+    user: { updateMany: async ({ where, data }) => {
+      assert.deepEqual(where, { id: 7, credential_security_version: 3 });
+      assert.deepEqual(data, { credential_security_version: 3 });
+      const currentVersion = 4;
+      return { count: where.credential_security_version === currentVersion ? 1 : 0 };
+    } },
     mcpOAuthAuthorizationRequest: {
       deleteMany: async (args) => { deletedRequest = args; return { count: 1 }; }
     },
@@ -219,7 +224,7 @@ test('MCP OAuth approval cannot create a code after the verified password change
   const prismaStub = {
     mcpOAuthAuthorizationRequest: { findUnique: async () => request },
     user: {
-      findFirst: async () => ({ id: 7, password_hash: passwordHash })
+      findFirst: async () => ({ id: 7, password_hash: passwordHash, credential_security_version: 3 })
     },
     $transaction: async (callback) => callback(tx)
   };

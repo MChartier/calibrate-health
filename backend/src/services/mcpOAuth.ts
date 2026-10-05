@@ -96,6 +96,7 @@ type CredentialPurpose = 'request' | 'code' | 'access' | 'refresh';
 const APPROVAL_USER_SELECT = {
   id: true,
   password_hash: true,
+  credential_security_version: true,
   ...ACCOUNT_ACCESS_SELECT
 } satisfies Prisma.UserSelect;
 
@@ -238,8 +239,8 @@ export class McpOAuthService {
       // Serialize approval against password change/reset. Whichever transaction commits second
       // observes or deletes the other's authorization code, so an old password cannot mint access.
       const credentialStillCurrent = await tx.user.updateMany({
-        where: { id: user.id, password_hash: user.password_hash },
-        data: { password_hash: user.password_hash }
+        where: { id: user.id, credential_security_version: user.credential_security_version },
+        data: { credential_security_version: user.credential_security_version }
       });
       if (credentialStillCurrent.count !== 1) {
         await tx.mcpOAuthAuthorizationRequest.deleteMany({ where: { request_hash: requestHash } });

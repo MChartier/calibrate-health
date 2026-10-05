@@ -152,6 +152,43 @@ async function insertRepresentativeLegacyData(client, schemaName) {
   return userId;
 }
 
+/** Exercise additive credential invariants on real synthetic SQL rows, then roll back all test writes. */
+async function verifyCredentialFoundation(client, schema, userId) {
+  await client.query('BEGIN');
+  try {
+    const initial = await client.query(`SELECT "password_hash", "credential_security_version" FROM ${schema}."User" WHERE "id" = $1`, [userId]);
+    assert.deepEqual(initial.rows[0], { password_hash: 'representative-password-hash', credential_security_version: 0 });
+    assert.equal((await client.query(`SELECT * FROM ${schema}."FirebaseIdentity"`)).rowCount, 0);
+    await client.query(`INSERT INTO ${schema}."FirebaseIdentity" ("user_id", "installation_id", "source_id", "project_id", "uid")
+      VALUES ($1, 'synthetic-install', 'synthetic-source', 'synthetic-project', 'synthetic-uid')`, [userId]);
+    const rejected = async (sql, args, code) => {
+      await client.query('SAVEPOINT credential_boundary');
+      try { await assert.rejects(client.query(sql, args), (error) => error.code === code); }
+      finally { await client.query('ROLLBACK TO SAVEPOINT credential_boundary'); }
+    };
+    await rejected(`UPDATE ${schema}."FirebaseIdentity" SET "uid" = 'changed-uid' WHERE "user_id" = $1`, [userId], 'P0001');
+    await rejected(`DELETE FROM ${schema}."FirebaseIdentity" WHERE "user_id" = $1`, [userId], 'P0001');
+    const second = await client.query(`INSERT INTO ${schema}."User" ("email", "password_hash") VALUES ('second-synthetic@example.invalid', 'synthetic') RETURNING "id"`);
+    await rejected(`INSERT INTO ${schema}."FirebaseIdentity" ("user_id", "installation_id", "source_id", "project_id", "uid")
+      VALUES ($1, 'synthetic-install', 'synthetic-source', 'synthetic-project', 'synthetic-uid')`, [second.rows[0].id], '23505');
+    await client.query(`INSERT INTO ${schema}."FirebaseIdentity" ("user_id", "installation_id", "source_id", "project_id", "uid")
+      VALUES ($1, 'synthetic-install', 'synthetic-source', 'synthetic-project', 'second-uid')`, [second.rows[0].id]);
+    await client.query(`DELETE FROM ${schema}."User" WHERE "id" = $1`, [second.rows[0].id]);
+    assert.equal((await client.query(`SELECT * FROM ${schema}."FirebaseIdentity" WHERE "user_id" = $1`, [second.rows[0].id])).rowCount, 0);
+    const changed = await client.query(`UPDATE ${schema}."User" SET "password_hash" = 'synthetic-new-hash' WHERE "id" = $1 RETURNING "credential_security_version"`, [userId]);
+    assert.equal(changed.rows[0].credential_security_version, 1);
+    const unchanged = await client.query(`UPDATE ${schema}."User" SET "password_hash" = 'synthetic-new-hash' WHERE "id" = $1 RETURNING "credential_security_version"`, [userId]);
+    assert.equal(unchanged.rows[0].credential_security_version, 1);
+    await client.query(`UPDATE ${schema}."User" SET "credential_security_version" = "credential_security_version" + 1 WHERE "id" = $1`, [userId]);
+    const stale = await client.query(`UPDATE ${schema}."User" SET "credential_security_version" = 1 WHERE "id" = $1 AND "credential_security_version" = 1`, [userId]);
+    assert.equal(stale.rowCount, 0, 'Stale MCP approval must not acquire the account lock');
+    await rejected(`UPDATE ${schema}."User" SET "credential_security_version" = 0 WHERE "id" = $1`, [userId], 'P0001');
+    console.log('[db-upgrade-smoke] PASS: immutable mapping, local deletion cascade and monotonic credential security version.');
+  } finally {
+    await client.query('ROLLBACK');
+  }
+}
+
 /** Verify both retained user data and the native-client schema added after 0020. */
 async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) {
   const schema = `"${schemaName}"`;
@@ -263,6 +300,7 @@ async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) 
      ORDER BY "migration_name"`
   );
   assert.deepEqual(appliedResult.rows.map((row) => row.migration_name), migrationNames);
+  await verifyCredentialFoundation(client, schema, userId);
 }
 
 /** Run a populated upgrade in a disposable schema and remove only that schema afterward. */

@@ -12,6 +12,7 @@ import prisma, { pgPool } from './config/database';
 import { isProductionOrStagingEnv } from './config/environment';
 import { getNativePushModeConfigurationWarning } from './config/nativePush';
 import { resolveMcpConfiguration } from './config/mcp';
+import { validateCredentialProviderConfiguration } from './config/credentialProvider';
 import { configureFrontendStaticAssets } from './frontendStatic';
 import { isAuthenticatedUser } from './middleware/authenticatedUser';
 import authRoutes from './routes/auth';
@@ -66,6 +67,7 @@ import {
 } from './observability';
 
 const SESSION_TTL_MS = DEFAULT_SESSION_TTL_MS;
+validateCredentialProviderConfiguration();
 
 type SameSiteSetting = 'lax' | 'none' | 'strict';
 

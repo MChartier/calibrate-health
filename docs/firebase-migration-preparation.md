@@ -1,10 +1,41 @@
 # Firebase existing-account migration preparation
 
-This is the first, offline preparation stage of [issue 421](https://github.com/MChartier/calibrate-health/issues/421).
+This is additive preparation for [issue 421](https://github.com/MChartier/calibrate-health/issues/421).
 It does **not** enable Firebase authentication or complete the migration. Existing
 endpoints continue using local credentials and the current browser/native/Wear
-session registry. No database schema, user IDs, owned rows, legal history, account
-exports, server-selection behavior, or deployment defaults change in this stage.
+session registry. An additive schema prepares identity links and a credential
+security version. Existing user IDs, passwords, owned rows, legal history,
+account exports, server selection and local-provider defaults are preserved.
+
+## Additive SQL and local-provider foundation
+
+Migration `0045_firebase_identity_foundation` adds an initially empty
+`FirebaseIdentity` table. One row per User.id and a unique `(project_id, uid)`
+constraint enforce one-to-one mapping. A trigger prevents changing the mapping
+or deleting/replacing it while its account exists. SQL account deletion still
+cascades to the mapping. This preserves local deletion behavior; it does not
+implement future cross-store deletion or its durable tombstone workflow.
+No migration creates a provider account, chooses a UID or links by email.
+The row is preparation metadata, **not a switch of credential authority**.
+
+`User.credential_security_version` starts at zero. A database trigger increments
+it whenever the password hash changes, including writes from older local
+application versions, and rejects decreasing versions. A future security bridge
+can explicitly advance the version without changing a retained hash. MCP
+approval locks the same account row against the version verified at password
+check time; a concurrent version change prevents an old authentication result
+from minting a code. Existing code/grant revocation remains in place. This
+version alone does not revoke already-issued sessions or implement the external
+event bridge.
+
+`AUTH_PROVIDER` defaults to `local`. Any other value fails startup with an
+actionable error; incidental Firebase environment variables never enable a
+hosted identity pool. Firebase runtime activation is intentionally unavailable
+until all lifecycle handlers and security reconciliation are integrated.
+Apply migrations before running this binary. A rollback to the older local
+binary remains compatible with this additive schema; the existing encrypted
+backup/restore rehearsal checks the unchanged local-data contract. Once any
+account changes provider authority, the stricter rollback boundary below applies.
 
 ## Offline inventory
 
@@ -139,12 +170,45 @@ credential/security version and pending deletion state. A valid provider identit
 must never claim an existing SQL account by email. Registration still needs an
 explicit, idempotent cross-store workflow and genuine legal consent.
 
+## External credential enforcement decision (not selected or enabled)
+
+Recommendation for review: a **60-second hard cache expiry, fail closed after
+expiry**, with uncached checks for new sessions and sensitive credential/grant
+operations. This bounds external-revocation exposure while avoiding a network
+lookup on every tracking request. It is a proposed tradeoff, not an implemented
+default or authorization to activate Firebase.
+
+| Option | External disable/delete/credential-change enforcement | Lookup and request latency | Already-signed-in sessions during Firebase outage |
+| --- | --- | --- | --- |
+| Every request, fail closed | Next server request after Firebase exposes the change; provider propagation and already-running requests remain limits | One lookup per authenticated request; every request waits for its round trip or timeout | Browser, native and Wear server access returns retryable unavailable immediately. Retain local session credentials so temporary outage does not force logout. |
+| 60-second cache, hard expiry (proposed) | At most 60 seconds of cached allow after a successful check, plus provider propagation; expired state never authorizes | At most one refresh per active account per minute with shared/coalesced caching; cache misses wait for provider | Existing requests can use the remaining valid cache interval, then all three clients fail closed. No unbounded stale-while-revalidate. |
+| 60-second cache plus 15-minute outage grace | Exposure can extend to 16 minutes since last success, plus provider propagation | Similar healthy lookup rate; bounded retries during outage | Previously signed-in users retain ordinary server access during grace. New/sensitive authorization stays closed. Higher revocation exposure; not recommended without explicit acceptance. |
+
+Example only: 1,000 accounts each making six requests/minute for one hour imply
+360,000 lookups with every-request checking versus about 60,000 with a coalesced
+60-second cache, plus uncached sensitive operations. Independent instance caches
+increase this count. No measured round-trip percentile or dollar saving is claimed;
+benchmark the actual project/region before sizing. Identity Platform's email tier
+is MAU-priced, so this is not a per-lookup price calculation; network waits still
+consume application capacity/billed compute and API quota. See
+[pricing](https://cloud.google.com/identity-platform/pricing) and
+[request quotas](https://firebase.google.com/docs/auth/limits).
+
+All options must check Calibrate's durable session/grant registry first on every
+request. Local logout, remote-device revocation, revoke-others and refresh replay
+must therefore reject subsequent requests immediately, independent of the provider
+cache. Firebase user-wide revocation cannot replace that registry. Detected
+external events must durably revoke applicable browser/native/Wear/push/pairing/MCP
+access and advance the security version. None of these policies can erase offline
+client caches or cancel a request that already completed authorization. The
+external-state bridge, action-link lifecycle, timeout budget, clock handling and
+reconciliation tests remain required before any policy can be enabled.
+
 ## Remaining stages and cutover gates
 
-1. **Additive SQL/runtime foundation:** unique immutable project/UID mapping,
-   security-version invariant, explicit local defaults and installation-owned
-   Firebase opt-in. Coordinate schema/lifecycle overlap with existing owners
-   before integrating. No live authority switch belongs in schema deployment.
+1. **Runtime authority integration:** use the prepared SQL mapping/version and
+   introduce installation-owned Firebase opt-in only with complete lifecycle
+   enforcement. No live authority switch belongs in schema deployment.
 2. **Complete lifecycle:** route registration/login, current-password checks,
    recovery, verification, deletion and MCP approval through the same authority.
    Serialize MCP approval against credential/security changes. Preserve PKCE,
