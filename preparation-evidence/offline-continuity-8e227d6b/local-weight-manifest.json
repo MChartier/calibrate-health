@@ -1,0 +1,37 @@
+{
+  "source": "8e227d6b049e465a060ea407d306bb84c0de1d05",
+  "tree": "e866cd368e75917d668e10fea4a41dfd588839fb",
+  "capturedAt": "2026-10-05T19:02:33.523Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "deviceScale": 1,
+  "finalUrl": "http://127.0.0.1:4174/today",
+  "assets": [
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-1e39074f3fd110337c60e3a0a2e8e7ab.js",
+      "sha256": "f8cae07e01e8f31e236916a000276799eb25ddb6a7f5a6b10f87169babac401c"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-1e39074f3fd110337c60e3a0a2e8e7ab.js",
+      "sha256": "f8cae07e01e8f31e236916a000276799eb25ddb6a7f5a6b10f87169babac401c"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-1e39074f3fd110337c60e3a0a2e8e7ab.js",
+      "sha256": "f8cae07e01e8f31e236916a000276799eb25ddb6a7f5a6b10f87169babac401c"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-1e39074f3fd110337c60e3a0a2e8e7ab.js",
+      "sha256": "f8cae07e01e8f31e236916a000276799eb25ddb6a7f5a6b10f87169babac401c"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-1e39074f3fd110337c60e3a0a2e8e7ab.js",
+      "sha256": "f8cae07e01e8f31e236916a000276799eb25ddb6a7f5a6b10f87169babac401c"
+    }
+  ],
+  "imageSha256": "debc0ab5e6a78dda180d96bb4c104f5d81d98abcb40ee299e932fb4928d12912",
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "harnessSha256": "e4cc2454de7232bb21a41a0cc8ae68b4257a72fc309787ed029747b44744d458"
+}
