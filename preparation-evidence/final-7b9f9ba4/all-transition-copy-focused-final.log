@@ -1,0 +1,29 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/offline/pauseIntent.test.ts src/offline/foodDayReceipts.test.ts src/offline/foodDayIntent.web.test.ts src/offline/operations.test.ts src/food/copyFoodWhenSynchronized.test.ts
+PASS src/offline/foodDayReceipts.test.ts
+FAIL src/food/copyFoodWhenSynchronized.test.ts
+  ΓùÅ rejects stale-tab copy after durable food intent and serializes a copy before later intent
+
+    Unable to complete queued mutation food.
+
+      203 |         if (!row || row.state !== OUTBOX_MUTATION_STATES.REPLAYING) {
+      204 |             await done;
+    > 205 |             throw new Error(`Unable to complete queued mutation ${id}.`);
+          |                   ^
+      206 |         }
+      207 |         await requestResult(store.delete(requireSequence(row)));
+      208 |         await done;
+
+      at IndexedDbOutbox.<anonymous> (src/offline/indexedDbOutbox.web.ts:205:19)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS src/offline/pauseIntent.test.ts
+PASS src/offline/foodDayIntent.web.test.ts
+PASS src/offline/operations.test.ts
+
+Test Suites: 1 failed, 4 passed, 5 total
+Tests:       1 failed, 49 passed, 50 total
+Snapshots:   0 total
+Time:        1.489 s, estimated 2 s
+Ran all test suites matching /src\\offline\\pauseIntent.test.ts|src\\offline\\foodDayReceipts.test.ts|src\\offline\\foodDayIntent.web.test.ts|src\\offline\\operations.test.ts|src\\food\\copyFoodWhenSynchronized.test.ts/i.
