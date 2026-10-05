@@ -1,0 +1,10 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/offline/trackingProjection.test.ts src/offline/failedCreation.test.ts
+PASS src/offline/failedCreation.test.ts
+PASS src/offline/trackingProjection.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        0.865 s, estimated 1 s
+Ran all test suites matching /src\\offline\\trackingProjection.test.ts|src\\offline\\failedCreation.test.ts/i.

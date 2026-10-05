@@ -1,0 +1,25 @@
+{
+  "source": "503670b85cbb95f83c6598753a867e75b92800c8",
+  "tree": "decee0be96faa66b81d34e68adb8478302feb901",
+  "capturedAt": "2026-10-05T20:31:40.753Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "deviceScale": 1,
+  "finalUrl": "http://127.0.0.1:4174/food-log",
+  "assets": [
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-07a52f86c4a7beadb1c7c3492f364d14.js",
+      "sha256": "67650a17b7d9e2ff702379d0ce2796011745c3f28f97bed4edcf03ae099058d6"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-07a52f86c4a7beadb1c7c3492f364d14.js",
+      "sha256": "67650a17b7d9e2ff702379d0ce2796011745c3f28f97bed4edcf03ae099058d6"
+    }
+  ],
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "harnessSha256": "26255633c5cd29720bb55ae24c9980c80088a093fbfbaff729e25b13f2e3f16f",
+  "imageSha256": "90c012dd346ceee51c2c404eebee4849b676470ac5c1a7686bd3978a5d969d1e"
+}
