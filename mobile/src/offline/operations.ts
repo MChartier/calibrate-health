@@ -162,7 +162,7 @@ export function createQueuedMutationExecutor(api: CalibrateApiClient, options: {
                 await api.updateFoodTrackingPause({
                     expected_resume_on: payload.expected_resume_on
                 }, mutation.id);
-                return;
+                return currentControl(undefined, true);
             case OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING:
                 if (typeof payload.resumed_on !== 'string') {
                     throw new Error('Queued food-tracking-pause.resume payload is invalid.');

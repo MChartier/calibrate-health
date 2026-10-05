@@ -7,7 +7,7 @@ import { IndexedDbOutbox, openIndexedDbOutboxDatabase } from './indexedDbOutbox.
 import { createOutboxDispatch } from './mutationDispatch';
 import { executeOrQueueMutation, createQueuedMutationExecutor } from './operations';
 import { OutboxReconciler } from './reconciler';
-import { readAndRecordFoodDay, readFoodDayReceipts } from './foodDayReceipts';
+import { readAndRecordFoodDay, readFoodDayReceipts, recordFoodDayReceipt } from './foodDayReceipts';
 import { queuedFoodDayStatus } from './foodDayIntent';
 
 beforeEach(async () => { await AsyncStorage.clear(); });
@@ -130,5 +130,91 @@ it('does not replay an old resume across a newer authoritative paused day', asyn
         const receipts = await readFoodDayReceipts('account');
         expect(queuedFoodDayStatus(receipts, date)).toBe('OPEN');
         expect(queuedFoodDayStatus(receipts, laterDate)).toBe('PAUSED');
+    } finally { database.close(); }
+});
+
+const controlCases = [
+    ['complete', 'food-day.set-status', { date, status: 'COMPLETE' }, 'setFoodDayStatus'],
+    ['reopen', 'food-day.set-status', { date, status: 'OPEN' }, 'setFoodDayStatus'],
+    ['legacy complete', 'food-day.update', { date, is_complete: true }, 'updateFoodDay'],
+    ['legacy reopen', 'food-day.update', { date, is_complete: false }, 'updateFoodDay'],
+    ['pause', 'food-tracking-pause.start', { starts_on: date, expected_resume_on: null }, 'startFoodTrackingPause'],
+    ['expectation update', 'food-tracking-pause.update', { expected_resume_on: null }, 'updateFoodTrackingPause'],
+    ['resume', 'food-tracking-pause.resume', { resumed_on: date }, 'resumeFoodTracking']
+] as const;
+
+it.each(controlCases)('verifies %s after a successful void response, retry, intervening change and restart', async (_name, operation, payload, method) => {
+    const factory = new IDBFactory(); let database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'all-controls' });
+    let store = new IndexedDbOutbox(database, 'account');
+    let readUnavailable = true;
+    const { ApiError } = require('@calibrate/api-client');
+    const mutate = jest.fn(async () => undefined); // Executor does not depend on a mutation response body.
+    const api = {
+        [method]: mutate,
+        getFoodDay: async () => { if (readUnavailable) throw new ApiError('Unavailable', 503, null); return { date, status: 'OPEN' }; },
+        getFoodTrackingPause: async () => { if (readUnavailable) throw new ApiError('Unavailable', 503, null); return { pause: { active: false, starts_on: null } }; }
+    } as unknown as import('@calibrate/api-client').CalibrateApiClient;
+    try {
+        await recordFoodDayReceipt('account', 'food-tracking-pause.start', { starts_on: date }, 'old-pause');
+        await store.enqueue({ id: 'original-control', operation, payload });
+        let result = await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile();
+        expect(result.deferredMutation?.id).toBe('original-control');
+        expect(result.failedMutation).toBeNull();
+        database.close(); database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'all-controls' });
+        store = new IndexedDbOutbox(database, 'account');
+        readUnavailable = false; // Another client has reopened/resumed; cached mutation response is irrelevant.
+        result = await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile();
+        expect(result.replayed).toBe(1); expect(result.failedMutation).toBeNull(); expect(await store.list()).toEqual([]);
+        expect(mutate).toHaveBeenNthCalledWith(1, payload, 'original-control');
+        expect(mutate).toHaveBeenNthCalledWith(2, payload, 'original-control');
+        if (operation.startsWith('food-tracking-pause.')) {
+            expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), '2026-08-10', 'OPEN')).toBe('OPEN');
+        }
+    } finally { database.close(); }
+});
+
+it('replaces persisted pause history on verified resume while preserving newer exact-day authority', async () => {
+    const factory = new IDBFactory(); let database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'pause-boundary' });
+    let store = new IndexedDbOutbox(database, 'account');
+    const later = '2026-08-10';
+    const api = {
+        resumeFoodTracking: async () => undefined,
+        getFoodDay: async () => ({ date, status: 'OPEN' }),
+        getFoodTrackingPause: async () => ({ pause: { active: false, starts_on: null } })
+    } as unknown as import('@calibrate/api-client').CalibrateApiClient;
+    try {
+        await recordFoodDayReceipt('account', 'food-tracking-pause.start', { starts_on: date }, 'old-pause');
+        await readAndRecordFoodDay('account', later, async () => ({ date: later, status: 'COMPLETE' } as FoodLogDay));
+        await store.enqueue({ id: 'resume', operation: 'food-tracking-pause.resume', payload: { resumed_on: date } });
+        expect((await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile()).replayed).toBe(1);
+        database.close(); database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'pause-boundary' });
+        store = new IndexedDbOutbox(database, 'account');
+        const rows = await readFoodDayReceipts('account');
+        expect(await store.list()).toEqual([]);
+        expect(queuedFoodDayStatus(rows, '2026-08-09', 'OPEN')).toBe('OPEN');
+        expect(queuedFoodDayStatus(rows, later, 'OPEN')).toBe('COMPLETE');
+        expect(queuedFoodDayStatus(rows, '2026-08-11', 'OPEN')).toBe('OPEN');
+    } finally { database.close(); }
+});
+
+it('keeps a second-client active pause after replaying an old resume and later expectation update', async () => {
+    const factory = new IDBFactory(); const database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'new-pause' });
+    const store = new IndexedDbOutbox(database, 'account');
+    const api = {
+        resumeFoodTracking: async () => ({ pause: { active: false }, day: { date, status: 'OPEN' } }),
+        updateFoodTrackingPause: async () => undefined,
+        getFoodDay: async () => ({ date, status: 'OPEN' }),
+        getFoodTrackingPause: async () => ({ pause: { active: true, starts_on: '2026-08-09' } })
+    } as unknown as import('@calibrate/api-client').CalibrateApiClient;
+    try {
+        await recordFoodDayReceipt('account', 'food-tracking-pause.resume', { resumed_on: '2026-08-11' }, 'obsolete-resume');
+        await store.enqueue({ id: 'old-resume', operation: 'food-tracking-pause.resume', payload: { resumed_on: date } });
+        await store.enqueue({ id: 'expectation', operation: 'food-tracking-pause.update', payload: { expected_resume_on: null } });
+        expect((await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile()).replayed).toBe(2);
+        const rows = await readFoodDayReceipts('account');
+        expect(queuedFoodDayStatus(rows, date)).toBe('OPEN');
+        expect(queuedFoodDayStatus(rows, '2026-08-10', 'OPEN')).toBe('PAUSED');
+        expect(queuedFoodDayStatus(rows, '2026-08-12', 'OPEN')).toBe('PAUSED');
+        expect(await store.list()).toEqual([]);
     } finally { database.close(); }
 });

@@ -1,5 +1,5 @@
 import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
-import { recordFoodDayReceipt } from './foodDayReceipts';
+import { recordFoodDayReceipt, recordCurrentPauseReceipt } from './foodDayReceipts';
 import { withMutationLock } from './mutationLock';
 import type { OutboxStore } from './outbox';
 import type { QueuedMutation } from './queuedMutation';
@@ -95,7 +95,7 @@ export class OutboxReconciler {
                     if (!result?.currentControl) throw new Error('Current tracking state was not verified after replay.');
                     const { day, pause } = result.currentControl;
                     // Cached idempotency responses prove the request was accepted, not that its old state is current.
-                    if (pause?.active && pause.starts_on) await recordFoodDayReceipt(this.namespace, 'food-tracking-pause.start', { starts_on: pause.starts_on }, 'server-read:replay:' + mutation.id);
+                    if (pause) await recordCurrentPauseReceipt(this.namespace, pause, 'server-read:replay:' + mutation.id);
                     if (day) await recordFoodDayReceipt(this.namespace, 'food-day.set-status', { date: day.date, status: day.status }, 'server-read:replay:' + mutation.id);
                 }
                 await this.outbox.complete(mutation.id);

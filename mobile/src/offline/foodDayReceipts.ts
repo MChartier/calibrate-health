@@ -2,7 +2,7 @@ const storage = (): typeof import('@react-native-async-storage/async-storage').d
     const module = require('@react-native-async-storage/async-storage');
     return module.default ?? module;
 };
-import type { FoodLogDay } from '@calibrate/api-client';
+import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
 import type { QueuedMutation } from './queuedMutation';
 import { withMutationLock } from './mutationLock';
 
@@ -41,4 +41,17 @@ export function readAndRecordFoodDay(namespace: string, date: string, fetch: () 
         if (exclusive) await recordFoodDayReceipt(namespace, 'food-day.set-status', { date, status: day.status }, 'server-read:' + Date.now() + ':' + day.status);
         return day;
     });
+}
+
+/** A fresh pause snapshot replaces only pause-derived history, never a separately verified day. */
+export async function recordCurrentPauseReceipt(namespace: string, pause: FoodTrackingPause, id: string): Promise<void> {
+    const journal = await read(namespace);
+    const sequence = journal.sequence + 1;
+    const rows = journal.rows.filter(row => !row.operation.startsWith('food-tracking-pause.'));
+    if (pause.active && pause.starts_on) rows.push({
+        sequence, id: 'receipt:current-pause', namespace, operation: 'food-tracking-pause.start',
+        payload: { starts_on: pause.starts_on }, state: 'pending', attemptCount: 0, lastError: null,
+        receiptOperationId: id, createdAt: sequence, updatedAt: sequence
+    });
+    await storage().setItem(key(namespace), JSON.stringify({ version: 1, sequence, rows }));
 }
