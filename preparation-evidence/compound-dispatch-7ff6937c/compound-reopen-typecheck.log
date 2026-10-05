@@ -1,0 +1,4 @@
+npm notice run cal-io@0.37.0 lint:mobile
+npm notice run npm --prefix mobile run typecheck
+npm notice run mobile@0.2.7 typecheck
+npm notice run tsc --noEmit

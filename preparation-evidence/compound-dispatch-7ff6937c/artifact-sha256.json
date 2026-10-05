@@ -1,0 +1,54 @@
+[
+  {
+    "name": "boundary-evidence-api-verification.json",
+    "sha256": "fa75f6c185739d498913967686f603e81de2c6a14f988dce077c055c695967cf"
+  },
+  {
+    "name": "commit-inventory.txt",
+    "sha256": "0d73898853f2cfdeae3ce583bec2a8175dd948dda5fcc5ba22217ea3dae9c883"
+  },
+  {
+    "name": "complete-merge.diff",
+    "sha256": "a9f3cd5d4968d5eec2cfa4d0dcd57c9ff5ddbd5488652a36f267a04a8796ff44"
+  },
+  {
+    "name": "compound-reopen-after.log",
+    "sha256": "eded678c4ad21b1b09e1d1014853ca2fd9cd89a47d023bf7bfee01af4a08ffbe"
+  },
+  {
+    "name": "compound-reopen-before.log",
+    "sha256": "4c418048cdb61678bd4cd83ee917d14214823129a019e71c66bcf19d8d3cb20c"
+  },
+  {
+    "name": "compound-reopen-browser.log",
+    "sha256": "f2520591e4ba30bddd9b675552059db3975a9a7709bc128634fe5e0b66caebfa"
+  },
+  {
+    "name": "compound-reopen-build.log",
+    "sha256": "2bb37848441dc6d32a9c45cf954fc9d2a949aac255db44e11370b209d9cc717d"
+  },
+  {
+    "name": "compound-reopen-experiment.json",
+    "sha256": "70d547ec9778f6c1564d31b53f4ada2aa192054b6f17f3ea7e7e8770f59b560c"
+  },
+  {
+    "name": "compound-reopen-typecheck.log",
+    "sha256": "0951952180bfb43dce8babaec7711b0f4071b35d584479022e187e9a99782650"
+  },
+  {
+    "name": "demonstrate-compound-regression.cjs",
+    "sha256": "dd5444123ccded9f9c6d91f0aa94b05fc65da25efaddd43fa487bb380e6bde47"
+  },
+  {
+    "name": "merge-numstat.txt",
+    "sha256": "22e8c4f7372ded815db796200622f9072d4b2ae4e1eb3ac498b2163033e81e1e"
+  },
+  {
+    "name": "merge-stat.txt",
+    "sha256": "ff7f48b84eaf219bea2beb9cfd898debd898bf2163d30ed34dc92fb97c324274"
+  },
+  {
+    "name": "README.md",
+    "sha256": "1b56ecdfc9558e19fe4e2431d2a68f314fb95ae7a39fbf09377f97bc61752828"
+  }
+]

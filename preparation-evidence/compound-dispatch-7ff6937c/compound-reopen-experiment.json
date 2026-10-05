@@ -1,0 +1,8 @@
+{
+  "baseline": "ed170e7e8a716e6a1b71b726bb49a0a184c01ad6",
+  "baselineFile": "mobile/src/components/AddFoodSheet.tsx",
+  "baselineSha256": "66eafa20d34c890b45bb231d62a480cd06cb5bcf3a153c2fd8207c51139e1adb",
+  "testSha256": "01b5bd097c38e254d1b25f4994ed9558f90d78d0bc67a6cb08bcfa670e7a1f71",
+  "exitCode": 1,
+  "restored": true
+}
