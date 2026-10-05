@@ -1,0 +1,95 @@
+{
+  "ref": "95b7f17e948ef21de5bbb13deb8c89a619e4fe0d",
+  "checkedAt": "2026-10-05T20:06:38.944Z",
+  "files": [
+    {
+      "name": "after-index-8afe55cf6730aa37a8c8320b965f95e7.js",
+      "sha256": "54347bbddef1a59546cd5d01000b442cd93082ea03948c5902083d9d8f1305c6"
+    },
+    {
+      "name": "after-manifest.json",
+      "sha256": "24d5ff2dd13c7137468cd118fb8503e2fb401607ced6f1ee3ff7a761331100a6"
+    },
+    {
+      "name": "after.png",
+      "sha256": "2eb437206f65ad872869c7d0ae8e26b947f4f6163ade42e5cdb6b8f140f4119b"
+    },
+    {
+      "name": "before-index-26f7fcc820830a8f6e72f540a3ff4023.js",
+      "sha256": "9baef5dba3308385a6b2e33c16cc57aaab9b92a88c5dba4c576e1948fb1d4db5"
+    },
+    {
+      "name": "before-manifest.json",
+      "sha256": "b68efad621d932dc9cbd47b5a5007015eab260354f43c93a290d49fa2853e46d"
+    },
+    {
+      "name": "before.png",
+      "sha256": "19000b1cb5582ebb37da5f83dceda81ed516eb7dfaf64b4123eba969c6ef10cd"
+    },
+    {
+      "name": "ci-86c90233-startup-failure.json",
+      "sha256": "442d8357f3fd1ff5a2b00bdbd1b70988d099cb12fe02795b4b04e4347684457d"
+    },
+    {
+      "name": "durable-logout-final-build.log",
+      "sha256": "1964914ea70c704fb6c10d6967409b3b4401b2ca633c076a12b4a407822717ba"
+    },
+    {
+      "name": "durable-logout-full-mobile.log",
+      "sha256": "5dbb60c73e9a2f6df98f9afaa0aca1e66b5745ef6ab78a73a1521bbbc0f0da8b"
+    },
+    {
+      "name": "durable-logout-https-all.log",
+      "sha256": "a8faa95144f6b751de0bff8a31b0d3c38ab52027d5a97b6d8c9cd89130c4a928"
+    },
+    {
+      "name": "durable-logout-https-focused.log",
+      "sha256": "78bf88220f4073285e301373ebc7ea77b5e48d45df9cddad3469163360858c61"
+    },
+    {
+      "name": "durable-logout-knip.log",
+      "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+    },
+    {
+      "name": "durable-logout-typecheck.log",
+      "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+    },
+    {
+      "name": "fixtures.ts",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "name": "logout-before-capture.log",
+      "sha256": "9bfa374491adc3bac0f8fd5cc8135867761bedb7b73064f78499452078db6756"
+    },
+    {
+      "name": "logout-capture.spec.ts",
+      "sha256": "52893e0c02c3eba37f2678aa07d46601560fe7422c55da5db349c088664b16c8"
+    },
+    {
+      "name": "logout-final-browser.log",
+      "sha256": "fcb88f84b233b03bf40aa25c8cc03063ff55caf3a429373b07b219b6e431c3f9"
+    },
+    {
+      "name": "logout-https-server.mjs",
+      "sha256": "81b14bfd4a2711ebebaa1087c1229d629258ccb1fd9a34c6501d27602fc61faf"
+    },
+    {
+      "name": "logout-local-cert.pem",
+      "sha256": "fadae67cabc289a15070f39b52738c44fe0a54fe4ff3a6e020f6a1cb9e5799ce"
+    },
+    {
+      "name": "merge-diff-numstat.txt",
+      "sha256": "14cf65d41378670aca25c2a7beb459b214b8f7cf0578fae0b17c088c544dd7fb"
+    },
+    {
+      "name": "playwright.logout-https.config.ts",
+      "sha256": "93521179b9b96e984408f80777be65912d09e53b5926ba8a1cab38fe17c4d30d"
+    },
+    {
+      "name": "README.md",
+      "sha256": "343a2b90cd7b08b9ee43055effb13bbf52e3ef7b50f95ad7bd34bd6176be7f77"
+    }
+  ],
+  "verified": true
+}

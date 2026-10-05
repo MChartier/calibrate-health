@@ -1,0 +1,124 @@
+<h2 dir="auto">Summary</h2>
+<p dir="auto">A temporary authentication or network outage sends existing users back to Sign in after restart, interrupting local tracking. An explicit logout during network loss can also leave the browser session active and sign the user back in after reload. Calibrate also lacks the identity mapping and resumable migration tooling needed to prepare existing accounts for Firebase without replacing application IDs or password access.</p>
+<p dir="auto">This PR preserves the last verified, server-scoped identity and cached workspace through transient outages and restarts. Locally saved food and weight additions, corrections and deletions appear in tracking views and remain editable across restart. Reconnection verifies the same account before replaying ordered writes. Confirmed authentication rejection clears the restorable session. Explicit logout persists signed-out intent, bypasses the tracking gate for server revocation, and retries failed revocation without automatically restoring the account. Native late refresh responses are revoked; replacement-account login first completes pending revocation. Active food writes hold only their affected dates; failed writes remain reviewable, and failed local creations have an explicit discard confirmation before re-entry. Successful cold authentication preserves previously cached tracking even when subsequent data requests fail.</p>
+<p dir="auto">The additive Firebase preparation creates immutable identity mappings and a monotonic credential security version, protects MCP approval against stale credential checks, and adds a sanitized offline inventory command, dry-run-default BCRYPT engine, resumable journal, isolated provider adapter and operator runbook. Existing application IDs, password hashes, owned data and local self-hosting defaults remain intact.</p>
+<p dir="auto">Refs <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5715870761" data-permission-text="Title is private" data-url="https://github.com/MChartier/calibrate-health/issues/421" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/421/hovercard" href="https://github.com/MChartier/calibrate-health/issues/421">#421</a>. <strong>Firebase runtime activation and migration are not complete.</strong> This is a draft preparation checkpoint. GCP <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5715877730" data-permission-text="Title is private" data-url="https://github.com/MChartier/calibrate-health/issues/422" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/422/hovercard" href="https://github.com/MChartier/calibrate-health/issues/422">#422</a> depends on the remaining runtime foundation. Base: master at <code class="notranslate">4728d4f75b70e6440a9778a42cd2224a300db725</code>; head: <code class="notranslate">2ccff558633c9fd743162687bc404cfc2d81822d</code>; no unmerged parent. Other owners retain their branches; the FoodTrackingStatus overlap with <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5702707803" data-permission-text="Title is private" data-url="https://github.com/MChartier/calibrate-health/issues/419" data-hovercard-type="pull_request" data-hovercard-url="/MChartier/calibrate-health/pull/419/hovercard" href="https://github.com/MChartier/calibrate-health/pull/419">#419</a> is recorded for coordination.</p>
+<h2 dir="auto">Test plan and behavior evidence</h2>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Starting state and action</th>
+<th>Intended outcome</th>
+<th>Observed result and evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Load synthetic Today, return 503 from /auth/me, then reload.</td>
+<td>Keep cached tracking available during an infrastructure outage.</td>
+<td>Actual baseline shows Sign in; final source retains Today and Pending reconnection. Matched application images below.</td>
+</tr>
+<tr>
+<td>Save weight offline, restart, correct and delete it across further restarts. Also cold-authenticate successfully while tracking endpoints fail, then restart during another auth outage.</td>
+<td>Retain locally saved values and earlier cached food without erasing the workspace during successful auth.</td>
+<td>Today visibly retained 87.9 kg; corrections/deletion survived reloads; cold-auth sequence retained cached food and weight. <a href="https://github.com/MChartier/calibrate-health/blob/2ccff558633c9fd743162687bc404cfc2d81822d/e2e/expo-web/offline-workspace.spec.ts">Maintained scenarios</a>, <a href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/browser-results.log">five executed browser scenarios/captures</a>.</td>
+</tr>
+<tr>
+<td>Add food offline, edit calories twice, restart, delete, restart, then restore verified authentication.</td>
+<td>Show the current local value and replay each intent in order without duplicate creation.</td>
+<td>Offline oats remained visible at 350 kcal. Recovery observed one creation, two edits and one deletion using synthetic idempotency receipts. Same browser scenario/results above; visible current-state image below.</td>
+</tr>
+<tr>
+<td>Persist a failed local creation with a dependent edit, select Delete on its populated food card, confirm selective discard, then restart.</td>
+<td>Do not falsely save an unreachable correction or silently create a duplicate request.</td>
+<td>Save is blocked; confirmation removes the failed creation and dependent edit. Restart retains their removal. Transaction tests preserve unrelated writes/other accounts and reject stale discard after retry. <a href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/focused-tests.log">Storage and day-ordering tests</a>.</td>
+</tr>
+<tr>
+<td>Queue food on one date, inspect another date; leave a failed write; complete a day with existing queued food.</td>
+<td>Refresh unrelated/failed dates and preserve mutation order.</td>
+<td>Focused query tests allow unrelated and failed-date refresh, retain active-date hold, and preserve receipt identity. Healthy-auth day completion queues behind food. <a href="https://github.com/MChartier/calibrate-health/blob/2ccff558633c9fd743162687bc404cfc2d81822d/mobile/src/offline/useTrackingQueries.test.tsx">Query tests</a>, <a href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/mobile-tests.log">full mobile execution</a>.</td>
+</tr>
+<tr>
+<td>Exercise transient response/timeouts, immediate user updates, confirmed rejection and account/server changes.</td>
+<td>Restore local state only for the correct verified identity; never authorize server access from a snapshot.</td>
+<td>Browser/native auth, cache and API tests pass; rejection cleanup and scope guards remain enforced. <a href="https://github.com/MChartier/calibrate-health/blob/2ccff558633c9fd743162687bc404cfc2d81822d/mobile/src/auth/AuthContext.web.test.tsx">Auth tests</a>, <a href="https://github.com/MChartier/calibrate-health/blob/2ccff558633c9fd743162687bc404cfc2d81822d/mobile/src/auth/AuthContext.test.tsx">native auth tests</a>.</td>
+</tr>
+<tr>
+<td>Upgrade populated synthetic PostgreSQL, try identity reassignment/collision, change password and attempt stale MCP approval.</td>
+<td>Preserve owned data/hash while rejecting mapping changes and stale authentication.</td>
+<td>Populated PostgreSQL CI passed on the unchanged database foundation; exact-head CI status is bound in the checkpoint receipt. Mapping/decrease rejection, stale-version locking and deletion cascade are asserted. <a href="https://github.com/MChartier/calibrate-health/actions/runs/37362744358">Database CI</a>.</td>
+</tr>
+<tr>
+<td>Run offline inventory and resume scenarios with collisions, partial/ambiguous imports and interrupted journal writes.</td>
+<td>Account for rows, omit credentials from plans, skip successful imports and hold uncertain retries.</td>
+<td>Controlled CLI/journal/provider tests passed with synthetic inputs. <a href="https://github.com/MChartier/calibrate-health/blob/7afdb6f0bcbdec9d85f18c74aec610c0eb9d76a2/preparation-evidence/fc997b45-record.md">Retained foundation results</a>, <a href="https://github.com/MChartier/calibrate-health/blob/2ccff558633c9fd743162687bc404cfc2d81822d/backend/test/firebase-migration.test.js">maintained tests</a>. No Firebase import compatibility is inferred from these tests.</td>
+</tr>
+<tr>
+<td>Explicitly log out while offline, reload, reconnect, reload again, then sign in as another account over HTTPS.</td>
+<td>Stay signed out until deliberate login; finish revocation without losing unrelated queued tracking.</td>
+<td>Baseline restores Today with zero successful revocations. Final remains at Sign in with one revocation. Six browser scenarios pass, including HTTPS account switching. Native late-refresh and secure-storage regressions pass. <a href="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/README.md">Exact results/provenance</a>.</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h3 dir="auto">Before / After: restart during authentication outage</h3>
+<p dir="auto">Both images show the actual exported application with the same populated synthetic fixture, fixed clock, Chrome 154.0.8037.95, 1440x1000 viewport, scale 1 and light theme. Before uses actual master <code class="notranslate">4728d4f75b70e6440a9778a42cd2224a300db725</code>; After uses <code class="notranslate">86c902330964ad9fb77c6938d53d26fde4c557f6</code>. The route differs because baseline redirects to login. Shared normalization hides unrelated transient PWA lifecycle notices; the compared outage notice and tracking UI are unaltered.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before — local tracking becomes inaccessible</th>
+<th>After — cached tracking remains accessible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/before.png?raw=true" alt="Before: auth outage redirects to Sign in" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/after.png?raw=true" alt="After: cached Today and Pending reconnection" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/README.md">Immutable provenance, exact fixture/harness, source/build identities and image hashes</a> at evidence commit <code class="notranslate">cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd</code>. <a href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/before-manifest.json">Before manifest</a>; <a href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/after-manifest.json">After manifest</a>. Captured JavaScript response hashes match retained exported bundles; image pixels were inspected and repository API bytes verified.</p>
+<p dir="auto">The outage and tracking captures retain their actual source <a class="commit-link" data-hovercard-type="commit" data-hovercard-url="https://github.com/MChartier/calibrate-health/commit/86c902330964ad9fb77c6938d53d26fde4c557f6/hovercard" href="https://github.com/MChartier/calibrate-health/commit/86c902330964ad9fb77c6938d53d26fde4c557f6"><tt>86c9023</tt></a>. The final continuation changes explicit logout and auth/storage races; the displayed tracking behavior is unchanged, and all six maintained browser scenarios were rerun. These images are not relabeled as captures of the newer head.</p>
+<h3 dir="auto">Before / After: explicit offline logout, reconnect and reload</h3>
+<p dir="auto">Matched actual builds use the same synthetic session fixture and Chrome/viewport/clock settings above. Before: master <a class="commit-link" data-hovercard-type="commit" data-hovercard-url="https://github.com/MChartier/calibrate-health/commit/4728d4f75b70e6440a9778a42cd2224a300db725/hovercard" href="https://github.com/MChartier/calibrate-health/commit/4728d4f75b70e6440a9778a42cd2224a300db725"><tt>4728d4f</tt></a>. After: <a class="commit-link" data-hovercard-type="commit" data-hovercard-url="https://github.com/MChartier/calibrate-health/commit/2ccff558633c9fd743162687bc404cfc2d81822d/hovercard" href="https://github.com/MChartier/calibrate-health/commit/2ccff558633c9fd743162687bc404cfc2d81822d"><tt>2ccff55</tt></a>. After choosing Log out offline, reconnecting and reloading, master restores Today; the final build remains signed out and completes one revocation. Baseline's unhandled network error is retained in its capture log. No real session or Firebase project was used.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before - account returns after logout</th>
+<th>After - explicit logout persists</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/before.png?raw=true" alt="Before: Today returns after offline logout" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/after.png?raw=true" alt="After: Sign in remains after offline logout and reconnection" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/README.md">Immutable logout provenance and exact artifacts</a>, <a href="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/before-manifest.json">Before manifest</a>, <a href="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/after-manifest.json">After manifest</a>. The served JavaScript hashes match the retained bundles. Native evidence is component/storage testing, not device UI.</p>
+<h3 dir="auto">Current-state detail: local values and failure recovery</h3>
+<p dir="auto">These supplement the matched base-to-final outage comparison; they are not reconstructed Before images. Baseline loses access to tracking after the same auth-outage restart, so it cannot reach these offline editing states. These current-state images were captured at <a class="commit-link" data-hovercard-type="commit" data-hovercard-url="https://github.com/MChartier/calibrate-health/commit/86c902330964ad9fb77c6938d53d26fde4c557f6/hovercard" href="https://github.com/MChartier/calibrate-health/commit/86c902330964ad9fb77c6938d53d26fde4c557f6"><tt>86c9023</tt></a>; <a href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/README.md">each manifest and exact capture harness</a> binds its distinct setup and served build.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Saved weight after true-offline restart</th>
+<th>Food corrections retained after restart</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/local-weight.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/local-weight.png?raw=true" alt="Current: Today visibly retains 87.9 kg" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/local-food.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/local-food.png?raw=true" alt="Current: Offline oats visibly retains 350 kcal and edit/delete controls" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto">A synthetic persisted nonretryable creation outcome displays retry guidance and a selective discard confirmation. The executed scenario then confirms removal and verifies restart does not restore the discarded intent.</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/failed-food.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/cb39c8c0247ab2298e3dbc0d058982ad8ed39bfd/preparation-evidence/offline-continuity-86c90233/failed-food.png?raw=true" alt="Current: failed local creation blocks unreachable Save and offers confirmed selective discard" style="max-width: 100%;"></a></p>
+<p dir="auto">Migration tooling, SQL and credential-provider changes have no meaningful changed UI flow; the controlled CLI, journal and populated-database contracts above provide their behavioral evidence.</p>
+<h2 dir="auto">Supporting checks and limitations</h2>
+<ul dir="auto">
+<li>Final logout implementation: 220 mobile suites / 1,107 tests passed; mobile typecheck, Knip and committed-head web build passed. Six HTTP scenarios plus the matched After capture passed; six HTTPS scenarios passed including different-account login. <a href="https://github.com/MChartier/calibrate-health/blob/95b7f17e948ef21de5bbb13deb8c89a619e4fe0d/preparation-evidence/logout-2ccff558/README.md">Exact logs</a>. Current-head CI and configured engineering-review completion are recorded in PR checks and the separate checkpoint receipt. Independent readiness QA remains pending.</li>
+<li>Offline access covers cached resources and existing outbox-supported operations. Uncached history, remote searches and account/security operations require a connection for server completion; explicit logout takes effect locally and retains pending server revocation. Server-owned target/trend calculations await sync. Browser storage can be cleared. Failed creation correction requires retry or explicit discard/re-entry; discard does not delete server records. No native emulator or physical-device UI execution is claimed.</li>
+<li>Firebase lifecycle/session/Wear integration, cross-store deletion tombstones, external credential-event enforcement and a separately authorized real-project import rehearsal remain outstanding. No live users, project provisioning, credentials, import, cutover or deployment were touched. The journal coordinates cooperating local writers only, not a cross-store freeze or certified power-loss durability. <a href="https://github.com/MChartier/calibrate-health/blob/2ccff558633c9fd743162687bc404cfc2d81822d/docs/firebase-migration-preparation.md">Maintained staged runbook</a>.</li>
+<li>Direct private GitHub-page inspection is unavailable in this environment. The supplied presentation check is a local browser render of the exact API-read-back body with verified embedded images; it is not GitHub UI inspection or a baseline waiver. Independent QA must assess that gate.</li>
+<li>Complete merge diff: 76 files, +3,291/-135; product code, required schema/contracts, maintained regression tests and the operator runbook only. Exact captures, bundles, logs and historical receipts remain on the dedicated non-merged evidence ref. Draft only; no readiness, merge, release or cutover approval is claimed.</li>
+</ul>
