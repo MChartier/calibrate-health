@@ -429,14 +429,14 @@ export const DayStatusCard: React.FC<{
 
 export const ResumeTrackingPrompt: React.FC = () => {
     const { api, user } = useAuth();
-    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
+    const { enqueue, withOutbox, readFoodPause, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const today = getTodayDate(user?.timezone);
     const pauseQuery = useQuery({
         queryKey: foodTrackingPauseQueryKey,
-        queryFn: () => api.getFoodTrackingPause(),
+        queryFn: () => readFoodPause ? readFoodPause(() => api.getFoodTrackingPause()) : api.getFoodTrackingPause(),
         enabled: Boolean(user)
     });
     const [dismissedThisForeground, setDismissedThisForeground] = useState(false);

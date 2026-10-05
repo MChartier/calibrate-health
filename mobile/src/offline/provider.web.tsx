@@ -1,5 +1,5 @@
-import type { FoodLogDay } from '@calibrate/api-client';
-import { readFoodDayReceipts, readAndRecordFoodDay } from './foodDayReceipts';
+import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
+import { readFoodDayReceipts, readAndRecordFoodDay, readAndRecordFoodPause } from './foodDayReceipts';
 import { createOutboxDispatch, type OutboxDispatch } from './mutationDispatch';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
@@ -12,6 +12,7 @@ type OfflineOutboxContextValue = {
     isReady: boolean;
     withOutbox: OutboxDispatch;
     dayIntents: QueuedMutation[];
+    readFoodPause: (fetch: () => Promise<{ pause: FoodTrackingPause }>) => Promise<{ pause: FoodTrackingPause }>;
     readFoodDay: (date: string, fetch: () => Promise<FoodLogDay>) => Promise<FoodLogDay>;
     initializationError: string | null;
     mutations: QueuedMutation[];
@@ -177,6 +178,12 @@ export function OfflineOutboxProvider({
         if (currentBindingRef.current.namespace === namespace.value) setDayIntents(receipts);
         return result;
     }, [namespace.value]);
+    const readFoodPause = useCallback(async (fetch: () => Promise<{ pause: FoodTrackingPause }>) => {
+        const result = await readAndRecordFoodPause(namespace.value ?? 'unavailable', fetch);
+        const receipts = await readFoodDayReceipts(namespace.value ?? 'unavailable');
+        if (currentBindingRef.current.namespace === namespace.value) setDayIntents(receipts);
+        return result;
+    }, [namespace.value]);
     const enqueue = useCallback((operation: string, payload: unknown, operationId?: string) =>
         withOutbox(write => write(operation, payload, operationId)) as Promise<QueuedMutation>, [withOutbox]);
 
@@ -289,13 +296,14 @@ export function OfflineOutboxProvider({
         withOutbox,
         dayIntents,
         readFoodDay,
+        readFoodPause,
         reconcile,
         retryFailed,
         discardAll,
         discardFailedFood,
         discardFailedMutation,
         refresh
-    }), [dayIntents, readFoodDay, withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [dayIntents, readFoodPause, readFoodDay, withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

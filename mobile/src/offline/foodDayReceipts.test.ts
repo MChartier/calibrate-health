@@ -7,7 +7,7 @@ import { IndexedDbOutbox, openIndexedDbOutboxDatabase } from './indexedDbOutbox.
 import { createOutboxDispatch } from './mutationDispatch';
 import { executeOrQueueMutation, createQueuedMutationExecutor } from './operations';
 import { OutboxReconciler } from './reconciler';
-import { readAndRecordFoodDay, readFoodDayReceipts, recordFoodDayReceipt } from './foodDayReceipts';
+import { readAndRecordFoodDay, readAndRecordFoodPause, readFoodDayReceipts, recordFoodDayReceipt } from './foodDayReceipts';
 import { queuedFoodDayStatus } from './foodDayIntent';
 
 beforeEach(async () => { await AsyncStorage.clear(); });
@@ -217,4 +217,35 @@ it('keeps a second-client active pause after replaying an old resume and later e
         expect(queuedFoodDayStatus(rows, '2026-08-12', 'OPEN')).toBe('PAUSED');
         expect(await store.list()).toEqual([]);
     } finally { database.close(); }
+});
+
+it('reconciles an ordinary pause refresh before later offline dispatch without erasing pending intent', async () => {
+    const namespace = 'account';
+    await recordFoodDayReceipt(namespace, 'food-tracking-pause.start', { starts_on: date }, 'old');
+    await expect(readAndRecordFoodPause(namespace, async () => { throw new TypeError('offline'); })).rejects.toThrow('offline');
+    expect(queuedFoodDayStatus(await readFoodDayReceipts(namespace), '2026-08-10', 'OPEN')).toBe('PAUSED');
+    await readAndRecordFoodPause(namespace, async () => ({ pause: { active: false, starts_on: null } as import('@calibrate/api-client').FoodTrackingPause }));
+    expect(queuedFoodDayStatus(await readFoodDayReceipts(namespace), '2026-08-10', 'OPEN')).toBe('OPEN');
+    const factory = new IDBFactory(); const database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'ordinary-pause' });
+    const store = new IndexedDbOutbox(database, namespace);
+    try {
+        const dispatch = createOutboxDispatch(namespace, () => store.list(), (operation, payload, id) => store.enqueue({ operation, payload, id }), () => true, true);
+        await expect(executeOrQueueMutation({ withOutbox: dispatch, operation: 'food.create', payload: { date: '2026-08-10' }, forceQueue: true, execute: async () => undefined, enqueue: async () => undefined })).resolves.toMatchObject({ disposition: 'queued' });
+        await store.enqueue({ id: 'pending-pause', operation: 'food-tracking-pause.start', payload: { starts_on: date } });
+        await readAndRecordFoodPause(namespace, async () => ({ pause: { active: false, starts_on: null } as import('@calibrate/api-client').FoodTrackingPause }));
+        await expect(executeOrQueueMutation({ withOutbox: dispatch, operation: 'food.update', payload: { date: '2026-08-10' }, forceQueue: true, execute: async () => undefined, enqueue: async () => undefined })).rejects.toThrow(/Reopen or resume/);
+        expect((await store.list()).map(row => row.id)).toContain('pending-pause');
+    } finally { database.close(); }
+});
+
+it('orders a slow ordinary pause read before a later explicit pause acknowledgement', async () => {
+    let release!: () => void; let entered!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    const read = readAndRecordFoodPause('account', async () => { entered(); await gate; return { pause: { active: false, starts_on: null } as import('@calibrate/api-client').FoodTrackingPause }; });
+    await started;
+    const dispatch = createOutboxDispatch('account', async () => [], async () => undefined, () => true, true);
+    const pause = executeOrQueueMutation({ withOutbox: dispatch, operation: 'food-tracking-pause.start', payload: { starts_on: date }, execute: async () => undefined, enqueue: async () => undefined });
+    release(); await Promise.all([read, pause]);
+    expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), '2026-08-10', 'OPEN')).toBe('PAUSED');
 });

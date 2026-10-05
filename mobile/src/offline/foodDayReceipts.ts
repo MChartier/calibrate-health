@@ -55,3 +55,12 @@ export async function recordCurrentPauseReceipt(namespace: string, pause: FoodTr
     });
     await storage().setItem(key(namespace), JSON.stringify({ version: 1, sequence, rows }));
 }
+
+/** Ordinary pause refreshes use the same ordering as replay and direct controls. */
+export function readAndRecordFoodPause(namespace: string, fetch: () => Promise<{ pause: FoodTrackingPause }>): Promise<{ pause: FoodTrackingPause }> {
+    return withMutationLock(namespace, async exclusive => {
+        const result = await fetch();
+        if (exclusive) await recordCurrentPauseReceipt(namespace, result.pause, 'server-read:pause:' + Date.now());
+        return result;
+    });
+}

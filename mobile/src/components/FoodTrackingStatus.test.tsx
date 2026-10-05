@@ -10,9 +10,10 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
 
 const mockEnqueue = jest.fn();
+const mockReadFoodPause = jest.fn((fetch: () => Promise<unknown>) => fetch());
 let mockMutations: unknown[] = [];
 jest.mock('../offline/provider', () => ({
-    useOfflineOutbox: () => ({ enqueue: mockEnqueue, mutations: mockMutations })
+    useOfflineOutbox: () => ({ enqueue: mockEnqueue, mutations: mockMutations, readFoodPause: mockReadFoodPause })
 }));
 
 const mockApi = {
@@ -355,4 +356,14 @@ describe('food tracking day resolution', () => {
             'tracking-operation-id'
         ));
     });
+it('routes ordinary pause queries and refetch through the receipt-aware reader', async () => {
+    mockApi.getFoodTrackingPause.mockResolvedValue({ pause: { active: false } });
+    const before = mockReadFoodPause.mock.calls.length;
+    const screen = renderWithQuery(<ResumeTrackingPrompt />);
+    await waitFor(() => expect(mockReadFoodPause.mock.calls.length).toBeGreaterThan(before));
+    await act(async () => { foregroundListener?.('active'); });
+    await waitFor(() => expect(mockReadFoodPause.mock.calls.length).toBeGreaterThan(before + 1));
+    screen.unmount();
+});
+
 });
