@@ -25,6 +25,14 @@ test('local compatibility works without Firebase configuration', async () => {
   assert.equal(await provider.verify(local, 'synthetic-password'), true);
   assert.equal(await provider.verify(local, 'wrong-password'), false);
   assert.equal(await provider.verify(local, 'a'.repeat(73)), false);
+  assert.equal(await provider.verify(local, '\ud83d\ude00'.repeat(19)), false);
+});
+
+test('Firebase authority receives passwords beyond the local bcrypt byte limit', async () => {
+  const h = setup();
+  const password = '\ud83d\ude00'.repeat(30);
+  assert.equal(await h.provider.verify(identity, password), true);
+  assert.equal(JSON.parse(h.calls[0].request.body).password, password);
 });
 
 test('Firebase password authentication returns only a boolean and binds verified project and UID', async () => {
@@ -71,11 +79,10 @@ test('timeout covers hanging transport and token verification', async () => {
   await assert.rejects(h.provider.verify(identity, 'synthetic-password'), CredentialProviderUnavailable);
 });
 
-test('forged response, verifier rejection and oversized input cannot create an authenticated result', async () => {
+test('forged response and verifier rejection cannot create an authenticated result', async () => {
   const h = setup();
   h.options.verifier.verifyIdToken = async () => { throw new Error('revoked token'); };
   await assert.rejects(h.provider.verify(identity, 'synthetic-password'), CredentialProviderUnavailable);
-  assert.equal(await h.provider.verify(identity, '\ud83d\ude00'.repeat(19)), false);
   const wrong = setup({ fetch: async () => ({ ok: true, json: async () => ({ localId: 'wrong', idToken: 'forged' }) }) });
   assert.equal(await wrong.provider.verify(identity, 'synthetic-password'), false);
 });

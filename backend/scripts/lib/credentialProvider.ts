@@ -25,8 +25,8 @@ export class CredentialProvider {
   }) {}
 
   async verify(identity: CredentialIdentity, password: string): Promise<boolean> {
-    if (validateBcryptPasswordByteLength(password)) return false;
     if (identity.provider === 'local') {
+      if (validateBcryptPasswordByteLength(password)) return false;
       const matches = await bcrypt.compare(password, identity.passwordHash || DUMMY_AUTH_PASSWORD_HASH);
       return Boolean(identity.passwordHash) && matches;
     }
