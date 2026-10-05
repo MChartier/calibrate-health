@@ -1,0 +1,85 @@
+npm notice run @calibrate/api-client@0.0.0 pretest
+npm notice run npm --prefix ../../shared run build
+npm warn Unknown env config "global-ignore-file". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @calibrate/shared@0.0.0 build
+> tsc -p tsconfig.build.json
+
+npm notice run @calibrate/api-client@0.0.0 test
+npm notice run node --experimental-strip-types --test test/*.test.ts
+Γ£ö registration sends explicit legal versions and acceptance (50.3275ms)
+Γ£ö email verification endpoints remain usable before full account access (1.1329ms)
+Γ£ö password recovery uses generic public endpoints and the new_password wire field (0.7705ms)
+Γ£ö legal status and acceptance use authenticated v1 routes (0.7133ms)
+Γ£ö exportAccount requests the versioned authenticated endpoint (31.5973ms)
+Γ£ö deleteAccount sends the current password and accepts an empty 204 response (0.5418ms)
+Γ£ö unified account-session methods use the locked list and revocation wire (52.1018ms)
+Γ£ö activity day query uses versioned date parameters (28.5672ms)
+Γ£ö Health Connect sync carries its operation id and atomic checkpoint payload (1.9607ms)
+Γ£ö uses the versioned calibration status, apply, and cancel routes (44.9839ms)
+Γ£ö root-render failure remains anonymous and normal diagnostics do not request keepalive (32.4204ms)
+Γ£ö native feature diagnostics attach bearer identity and use the normal 401 refresh path (1.2642ms)
+Γ£ö web-vital diagnostics use authenticated unload-safe transport (1.9947ms)
+Γ£ö createFoodLog sends the caller operation ID (40.3639ms)
+Γ£ö addMetric sends the caller operation ID for metric upserts (0.8186ms)
+Γ£ö updateFoodDay sends the caller operation ID for completion changes (1.5926ms)
+Γ£ö day status and pause lifecycle methods preserve caller operation IDs and local dates (1.0519ms)
+Γ£ö createGoal sends the caller operation ID (0.3727ms)
+Γ£ö updatePreferences sends the caller operation ID (0.3167ms)
+Γ£ö updateFoodLog sends the caller operation ID (0.3641ms)
+Γ£ö deleteFoodLog sends the caller operation ID (0.5661ms)
+Γ£ö deleteMetric sends the caller operation ID (0.4348ms)
+Γ£ö operation ID header is omitted when callers do not provide one (0.4709ms)
+Γ£ö copyFoodLogs sends the atomic copy payload and returns the committed receipt (30.1355ms)
+Γ£ö normalizes legacy completion without inventing comparison data and preserves additive range values (31.4625ms)
+Γ£ö updateMyFood patches the owned resource with a typed snapshot definition (32.9581ms)
+Γ£ö deleteMyFood deletes the resource and accepts an empty response (0.6786ms)
+Γ£ö createRecipeFromFoodLogs posts the ordered food log snapshot request (2.8479ms)
+Γ£ö external recipe ingredient types preserve serving snapshots for editing (0.1693ms)
+Γ£ö getMyFoodsLibrary encodes filters and returns the paged envelope (26.9947ms)
+Γ£ö getMyFoodsLibrary omits absent query parameters (0.5433ms)
+Γ£ö setMyFoodPinned sends an ownership-safe resource patch payload (25.2632ms)
+Γ£ö notification methods preserve legacy reads and send additive paging/read-all requests (24.6965ms)
+Γ£ö label scans send authenticated multipart data to the versioned API and leave null fields intact (28.2333ms)
+Γ£ö atomic completion sends one complete payload and a stable operation ID (25.6376ms)
+Γ£ö getRecentFoods includes selected meal context in the query string (25.5689ms)
+Γ£ö default browser transport preserves the global fetch receiver (21.8974ms)
+Γ£ö client configuration forwards an explicit cache policy (0.5906ms)
+Γ£ö request timeout reports a connection timeout rather than a caller abort (19.4278ms)
+Γ£ö request timeout settles even when the fetch implementation ignores abort (15.2471ms)
+Γ£ö caller abort remains an AbortError and is not rewritten as a timeout (0.5699ms)
+Γ£ö a signal aborted before the request reaches fetch is still honored (0.4192ms)
+Γ£ö non-JSON error body is retained without masking HTTP status: upstream unavailable (0.6045ms)
+Γ£ö non-JSON error body is retained without masking HTTP status: <html><body>Bad gate (0.2091ms)
+Γ£ö non-JSON error body is retained without masking HTTP status: {"message": (0.1771ms)
+Γ£ö standard API errors expose typed metadata and prefer the response request ID (1.0143ms)
+Γ£ö legacy message-only API errors remain compatible without invented metadata (0.2482ms)
+Γ£ö malformed API error metadata is ignored instead of entering typed client state (0.2446ms)
+Γ£ö API error metadata bounds field fanout and rejects display-hostile tokens (0.2733ms)
+Γ£ö one successful refresh retries the original request with the replacement token (1.2889ms)
+Γ£ö a late 401 from the previous access token reuses the completed refresh (0.3986ms)
+Γ£ö a retried 401 does not start another refresh loop (0.263ms)
+Γ£ö native identity is attached to public and authenticated requests and cannot be overridden (0.2858ms)
+Γ£ö legacy food-day responses remain open and editable (0.2015ms)
+Γ£ö browser cookie transport uses session endpoints without native or bearer credentials (0.3737ms)
+Γ£ö browser Lose It uploads submit a real Blob instead of a React Native URI descriptor (0.5521ms)
+Γ£ö browser Lose It object URLs are hydrated before upload (2.0062ms)
+Γ£ö native Lose It URIs remain FormData descriptors even when React Native exposes window (0.4243ms)
+Γ£ö a per-request credential policy overrides the browser client default (0.1364ms)
+Γ£ö browser push methods use the versioned cookie-session endpoints (0.3349ms)
+Γ£ö upgrade-required responses notify the native shell without triggering auth logout (0.336ms)
+Γ£ö malformed upgrade bodies cannot inject unbounded compatibility UI content (0.2235ms)
+Γ£ö watch snapshot uses the versioned restricted surface (26.0398ms)
+Γ£ö watch snapshot contract exposes unit and revisions needed for offline actions (0.2855ms)
+Γ£ö watch snapshot sends If-None-Match and returns 304 metadata without throwing (0.7288ms)
+Γ£ö watch mutation always carries its client operation id (0.5953ms)
+Γ£ö phone pairing issuance is authenticated and carries the selected self-hosted origin (20.8141ms)
+Γ£ö Wear exchange is unauthenticated and sends the server-bound one-time credential (0.3554ms)
+Γä╣ tests 68
+Γä╣ suites 0
+Γä╣ pass 68
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 405.5838

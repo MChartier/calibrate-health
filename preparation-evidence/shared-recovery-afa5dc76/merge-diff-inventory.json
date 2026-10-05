@@ -1,0 +1,509 @@
+{
+  "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "head": "c5f96440c15fe0b0f8b223ed6deaf030dd407c85",
+  "commits": "24",
+  "files": 83,
+  "added": 3854,
+  "deleted": 167,
+  "operationalArtifactFiles": 0,
+  "inventory": [
+    {
+      "file": "backend/prisma/migrations/0045_firebase_identity_foundation/migration.sql",
+      "added": 59,
+      "deleted": 0,
+      "category": "required schema/migration"
+    },
+    {
+      "file": "backend/prisma/schema.prisma",
+      "added": 16,
+      "deleted": 0,
+      "category": "required schema/migration"
+    },
+    {
+      "file": "backend/scripts/firebase-migration-plan.js",
+      "added": 29,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "backend/scripts/lib/credentialProvider.ts",
+      "added": 81,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "backend/scripts/lib/firebaseMigration.ts",
+      "added": 245,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "backend/scripts/lib/migrationJournal.ts",
+      "added": 85,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "backend/src/config/credentialProvider.ts",
+      "added": 7,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "backend/src/index.ts",
+      "added": 2,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "backend/src/services/mcpOAuth.ts",
+      "added": 3,
+      "deleted": 2,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "backend/test/config-credential-provider.test.js",
+      "added": 15,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "backend/test/credential-provider.test.js",
+      "added": 88,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "backend/test/firebase-migration-cli.test.js",
+      "added": 51,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "backend/test/firebase-migration.test.js",
+      "added": 171,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "backend/test/mcp-oauth.test.js",
+      "added": 8,
+      "deleted": 3,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "backend/test/migration-journal.test.js",
+      "added": 100,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "docs/firebase-migration-preparation.md",
+      "added": 392,
+      "deleted": 0,
+      "category": "maintained runbook"
+    },
+    {
+      "file": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "added": 1,
+      "deleted": 1,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "e2e/expo-web/offline-workspace.spec.ts",
+      "added": 433,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "e2e/expo-web/release-smoke.spec.ts",
+      "added": 1,
+      "deleted": 1,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/app/(tabs)/(progress)/progress.tsx",
+      "added": 2,
+      "deleted": 1,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/app/(tabs)/(today)/today.tsx",
+      "added": 3,
+      "deleted": 2,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/app/_layout.tsx",
+      "added": 4,
+      "deleted": 4,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/app/_layout.web.tsx",
+      "added": 5,
+      "deleted": 3,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/public/sw.js",
+      "added": 5,
+      "deleted": 2,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.test.tsx",
+      "added": 138,
+      "deleted": 5,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.tsx",
+      "added": 105,
+      "deleted": 16,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.web.test.tsx",
+      "added": 98,
+      "deleted": 2,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.web.tsx",
+      "added": 104,
+      "deleted": 16,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/apiClientAuth.test.ts",
+      "added": 22,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/auth/logoutIntent.ts",
+      "added": 8,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/logoutIntent.web.ts",
+      "added": 9,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/logoutIntentStore.test.ts",
+      "added": 77,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/auth/logoutIntentStore.ts",
+      "added": 50,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/offlineWorkspace.test.ts",
+      "added": 61,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/auth/offlineWorkspace.ts",
+      "added": 81,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/storage.test.ts",
+      "added": 25,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/auth/storage.ts",
+      "added": 18,
+      "deleted": 10,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/auth/usePendingLogoutRetry.ts",
+      "added": 16,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/barcode/BarcodeScreen.tsx",
+      "added": 3,
+      "deleted": 1,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/components/AddFoodSheet.tsx",
+      "added": 16,
+      "deleted": 5,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/components/FoodTrackingStatus.test.tsx",
+      "added": 13,
+      "deleted": 1,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/components/FoodTrackingStatus.tsx",
+      "added": 23,
+      "deleted": 3,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/components/WeightEntrySheet.test.tsx",
+      "added": 38,
+      "deleted": 3,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/components/WeightEntrySheet.tsx",
+      "added": 19,
+      "deleted": 11,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/food/FoodLogContent.tsx",
+      "added": 55,
+      "deleted": 10,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/food/useFoodDeleteRecovery.ts",
+      "added": 10,
+      "deleted": 3,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/hooks/usePrefetchPreviousFoodLog.ts",
+      "added": 7,
+      "deleted": 3,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/FailedChangeRecoveryPanel.tsx",
+      "added": 41,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/OfflineWorkspaceStatus.tsx",
+      "added": 90,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/failedCreation.test.ts",
+      "added": 23,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/failedCreation.ts",
+      "added": 30,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/failedMutationRecovery.test.ts",
+      "added": 33,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/failedMutationRecovery.ts",
+      "added": 49,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/indexedDbOutbox.web.test.ts",
+      "added": 71,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/indexedDbOutbox.web.ts",
+      "added": 27,
+      "deleted": 1,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/mutationKinds.ts",
+      "added": 15,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/operations.test.ts",
+      "added": 26,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/operations.ts",
+      "added": 52,
+      "deleted": 25,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/outbox.test.ts",
+      "added": 37,
+      "deleted": 1,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/outbox.ts",
+      "added": 24,
+      "deleted": 14,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/pendingChangePresentation.test.ts",
+      "added": 17,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/pendingChangePresentation.ts",
+      "added": 50,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/provider.test.tsx",
+      "added": 11,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/provider.tsx",
+      "added": 14,
+      "deleted": 1,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/provider.web.test.tsx",
+      "added": 16,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/provider.web.tsx",
+      "added": 14,
+      "deleted": 1,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/trackingProjection.test.ts",
+      "added": 66,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/trackingProjection.ts",
+      "added": 104,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/trackingReceipts.test.ts",
+      "added": 22,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/trackingReceipts.ts",
+      "added": 27,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/useOfflineReplayExecutor.ts",
+      "added": 23,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/offline/useTrackingQueries.test.tsx",
+      "added": 48,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/offline/useTrackingQueries.ts",
+      "added": 42,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/progress/ProgressScreen.test.tsx",
+      "added": 1,
+      "deleted": 0,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/pwa/PwaStatusBanner.web.test.ts",
+      "added": 2,
+      "deleted": 2,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "mobile/src/pwa/PwaStatusBanner.web.tsx",
+      "added": 1,
+      "deleted": 1,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "mobile/src/pwa/serviceWorkerSecurity.test.ts",
+      "added": 13,
+      "deleted": 4,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "packages/api-client/src/client.ts",
+      "added": 13,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "scripts/expo-web-release.mjs",
+      "added": 2,
+      "deleted": 2,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "scripts/expo-web-release.test.mjs",
+      "added": 5,
+      "deleted": 2,
+      "category": "maintained regression tests"
+    },
+    {
+      "file": "scripts/postgres-populated-upgrade-smoke.mjs",
+      "added": 38,
+      "deleted": 0,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "scripts/postgres-rollback-smoke.mjs",
+      "added": 3,
+      "deleted": 3,
+      "category": "product/runtime/tooling"
+    },
+    {
+      "file": "scripts/postgres-rollback-smoke.test.mjs",
+      "added": 2,
+      "deleted": 2,
+      "category": "maintained regression tests"
+    }
+  ]
+}

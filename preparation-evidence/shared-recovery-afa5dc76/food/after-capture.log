@@ -1,0 +1,11 @@
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 1 test using 1 worker
+
+  ok 1 [desktop-chrome] › e2e\expo-web\failed-update-capture.spec.ts:6:5 › matched failed server food update recovery (1.8s)
+
+  1 passed (3.2s)
+[WebServer] (node:5020) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:6836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

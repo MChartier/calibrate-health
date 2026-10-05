@@ -1,0 +1,48 @@
+npm notice run backend@0.37.0 pretest
+npm notice run npm run prisma:generate
+npm warn Unknown env config "global-ignore-file". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> backend@0.37.0 prisma:generate
+> prisma generate
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+
+Γ£ö Generated Prisma Client (v7.9.0) to .\node_modules\@prisma\client in 612ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+npm notice run backend@0.37.0 test
+npm notice run node -r ts-node/register --test test/food-day-comparison.test.js test/routes-food-days.test.js test/account-lifecycle.test.js test/mcp-oauth.test.js
+Γ£ö account export returns canonical versioned tracking data without credentials (1346.3514ms)
+Γ£ö account export returns null for a missing account (12.3531ms)
+Γ£ö account deletion removes only the selected account root (9.6537ms)
+Γ£ö portable export preserves captured and unavailable day plans through JSON serialization (24.1798ms)
+Γ£ö captures only the actual local day and preserves the first plan through reopen/recomplete and later settings (13.1798ms)
+Γ£ö does not reconstruct past/future history or turn unsafe plans into colors (0.5745ms)
+Γ£ö uses the evaluated adjusted target while maintenance remains profile-estimated TDEE (0.3836ms)
+Γ£ö range returns known zero, sums immutable entry calories, hides non-complete comparisons, and rejects invalid totals (1.765ms)
+Γ£ö an invalid timezone leaves completion intact and comparison unavailable (0.1798ms)
+Γ£ö retains adjusted target ordering when a positive-deficit plan crosses maintenance (0.3761ms)
+Γ£ö MCP OAuth stores a hashed, ten-minute approval credential for an exact resource (2225.9507ms)
+Γ£ö MCP OAuth dynamic client persistence strips client secrets (13.3317ms)
+Γ£ö MCP OAuth uses different purpose-bound hashes for the same token text (14.4244ms)
+Γ£ö MCP OAuth revokes the entire grant when refresh-token replay wins a race (13.2875ms)
+Γ£ö MCP OAuth refresh rotation prunes only expired credentials for the active grant (10.8591ms)
+Γ£ö MCP OAuth approval cannot create a code after the security version changes with the same password hash (25.0108ms)
+Γ£ö food-days route: rejects unauthenticated requests via router.use middleware (2606.304ms)
+Γ£ö food-days route: GET / returns default incomplete status when no row exists (25.6226ms)
+Γ£ö food-days route: GET /range returns inclusive day statuses for start/end (15.7374ms)
+Γ£ö food-days route: GET /range supports month query (19.685ms)
+Γ£ö food-days route: GET /range validates query shape (12.0264ms)
+Γ£ö PATCH completion captures its local-day plan once and reopening/recompletion retains it (15.1115ms)
+Γä╣ tests 22
+Γä╣ suites 0
+Γä╣ pass 22
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 3051.4214
