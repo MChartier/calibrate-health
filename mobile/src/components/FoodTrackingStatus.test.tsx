@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
 import { DayStatusCard, ResumeTrackingPrompt, foodDayQueryKey } from './FoodTrackingStatus';
 import { AppSection } from './AppSection';
+import { getTodayDate } from '../utils/dates';
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
@@ -155,6 +156,33 @@ describe('food tracking day resolution', () => {
         expect(client.getQueryData(key)).toMatchObject({ pause: { active: false } });
         expect(invalidate).toHaveBeenCalledWith({ queryKey: ['mobile-food-days'] });
         expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
+        screen.unmount(); client.clear();
+    });
+
+    it.each(['control', 'prompt', 'extend'])('keeps accepted queued intent through %s success without reading pre-replay server state', async surface => {
+        const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: Infinity }, mutations: { gcTime: 0 } } });
+        const date = getTodayDate('UTC');
+        const key = ['mobile-food-tracking-pause'];
+        client.setQueryData(key, { pause: duePause });
+        client.setQueryData(foodDayQueryKey(date), resolvedDay('PAUSED'));
+        mockApi.getFoodTrackingPause.mockResolvedValue({ pause: duePause });
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('PAUSED'));
+        mockApi.resumeFoodTracking.mockRejectedValue(new TypeError('Transient network failure'));
+        mockApi.updateFoodTrackingPause.mockRejectedValue(new TypeError('Transient network failure'));
+        mockEnqueue.mockResolvedValue(undefined);
+        const screen = render(<QueryClientProvider client={client}>{surface === 'control'
+            ? <DayStatusCard date={date} isToday /> : <ResumeTrackingPrompt />}</QueryClientProvider>);
+        if (surface === 'extend') {
+            fireEvent.press(await screen.findByText('Extend pause'));
+            fireEvent.press(await screen.findByText('Until I resume'));
+        } else fireEvent.press(await screen.findByText('Resume tracking'));
+        await waitFor(() => expect(mockEnqueue).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(client.isMutating()).toBe(0));
+        expect(client.getQueryData(key)).toMatchObject({ pause: surface === 'extend'
+            ? { active: true, expected_resume_on: null, resume_confirmation_due: false } : { active: false } });
+        expect(client.getQueryData(foodDayQueryKey(date))).toMatchObject({ status: surface === 'extend' ? 'PAUSED' : 'OPEN' });
+        expect(mockApi.getFoodTrackingPause).not.toHaveBeenCalled();
+        expect(mockApi.getFoodDay).not.toHaveBeenCalled();
         screen.unmount(); client.clear();
     });
 

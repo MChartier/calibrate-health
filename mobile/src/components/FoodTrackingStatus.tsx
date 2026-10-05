@@ -145,7 +145,8 @@ export const DayStatusCard: React.FC<{
             setShowExpectedDate(false);
             setExpectedResumeOn('');
             onActionComplete?.();
-            await refresh();
+            // Queued intent stays cached until replay reconciles server state.
+            if (result.disposition === 'synced') await refresh();
         }
     });
 
@@ -159,13 +160,14 @@ export const DayStatusCard: React.FC<{
                 enqueue
             });
         },
-        onSuccess: async () => {
+        onSuccess: async (result) => {
             await queryClient.cancelQueries({ queryKey: foodTrackingPauseQueryKey });
             queryClient.setQueryData(foodDayQueryKey(date), storedDay(date, 'OPEN'));
             queryClient.setQueryData(foodTrackingPauseQueryKey, {
                 pause: { ...activePause(date, null), active: false, starts_on: null, materialized_through: null }
             });
-            await refresh();
+            // Queued intent stays cached until replay reconciles server state.
+            if (result.disposition === 'synced') await refresh();
         }
     });
 
@@ -445,7 +447,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
                 enqueue
             });
         },
-        onSuccess: async () => {
+        onSuccess: async (result) => {
             await queryClient.cancelQueries({ queryKey: foodTrackingPauseQueryKey });
             queryClient.setQueryData(foodTrackingPauseQueryKey, {
                 pause: { ...activePause(today, null), active: false, starts_on: null, materialized_through: null }
@@ -453,7 +455,8 @@ export const ResumeTrackingPrompt: React.FC = () => {
             queryClient.setQueryData(foodDayQueryKey(today), storedDay(today, 'OPEN'));
             setDismissedThisForeground(true);
             setShowExtend(false);
-            await refresh();
+            // Queued intent stays cached until replay reconciles server state.
+            if (result.disposition === 'synced') await refresh();
         }
     });
     const extend = useMutation({
@@ -476,7 +479,8 @@ export const ResumeTrackingPrompt: React.FC = () => {
             setDismissedThisForeground(true);
             setShowExtend(false);
             setCustomDate('');
-            await refresh();
+            // Queued intent stays cached until replay reconciles server state.
+            if (result.disposition === 'synced') await refresh();
         }
     });
 

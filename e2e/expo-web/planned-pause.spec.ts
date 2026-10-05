@@ -235,6 +235,8 @@ test('offline cached plan and accepted queued resume converge after real browser
             records.onerror = () => { reject(records.error); db.close(); };
         };
     }))).toBe(1);
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+    await expect(page.getByText('Tracking paused', { exact: true })).toHaveCount(0);
     await activateFixtureOffline(page);
     state.queueResume = false;
     await page.context().setOffline(false);
