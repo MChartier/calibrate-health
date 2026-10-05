@@ -102,16 +102,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         requestCredentials: 'include',
         fetchImpl: (input, init) => {
             if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
-            return globalThis.fetch(input, init).then((response) => {
-                if (response.status === 503) setPendingReconnection(true);
-                return response;
-            }).catch((error: unknown) => {
-                if (isRetryableMutationError(error)) {
-                    localOnlyRef.current = true;
-                    setPendingReconnection(true);
-                }
-                throw error;
-            });
+            return globalThis.fetch(input, init);
+        },
+        onRequestError: (error) => {
+            if (isRetryableMutationError(error)) {
+                if (accountScopeRef.current) localOnlyRef.current = true;
+                setPendingReconnection(true);
+            }
         },
         onUnauthorized: clearSession
     }), [clearSession, serverUrl]);
@@ -166,6 +163,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAuthError(result.ok ? null : result.message);
         return result;
     }, [probeCurrentServer]);
+
+    const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
+        const scope = accountScopeRef.current;
+        if (scope?.userId !== nextUser.id) return;
+        setUser(nextUser);
+        void saveOfflineWorkspace(scope.serverUrl, nextUser, queryClient).catch(() => undefined);
+    }, [queryClient]);
 
     const login = useCallback(async (email: string, password: string, _serverCandidate: string) => {
         const payload = await authenticateAgainstConfirmedServer({
@@ -268,7 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clientServerIncompatibility: null,
         accountDeletionCleanupNotice: null,
         serverConnection,
-        updateCurrentUser: setUser,
+        updateCurrentUser,
         setServerUrl: async () => (await confirmCurrentServer()).ok,
         testServerUrl: async () => (await probeCurrentServer()).ok,
         login,
@@ -278,7 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         recheckClientCompatibility,
         persistAccountDeletionCleanupNotice: async () => undefined,
         acknowledgeAccountDeletionCleanupNotice: async () => undefined
-    }), [api, pendingReconnection, authError, clearSessionWithBrowserCleanup, confirmCurrentServer, isLoading, login, logout, probeCurrentServer, recheckClientCompatibility, register, serverConnection, serverUrl, user]);
+    }), [updateCurrentUser, api, pendingReconnection, authError, clearSessionWithBrowserCleanup, confirmCurrentServer, isLoading, login, logout, probeCurrentServer, recheckClientCompatibility, register, serverConnection, serverUrl, user]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

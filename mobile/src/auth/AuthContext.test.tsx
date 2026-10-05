@@ -1,11 +1,12 @@
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { saveOfflineWorkspace, restoreOfflineWorkspace } from './offlineWorkspace';
-beforeEach(async () => { await AsyncStorage.clear(); });
+beforeEach(async () => { await AsyncStorage.clear(); mockClientOptions.length = 0; });
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+const mockClientOptions: Array<{ onRequestError?: (error: unknown) => void }> = [];
 const mockGetClientConfig = jest.fn();
 const mockRefreshMobile = jest.fn();
 const mockLoginMobile = jest.fn();
@@ -24,6 +25,7 @@ jest.mock('@calibrate/api-client', () => {
     return {
         ApiError,
         CalibrateApiClient: class {
+            constructor(options: { onRequestError?: (error: unknown) => void }) { mockClientOptions.push(options); }
             getClientConfig = (...args: unknown[]) => mockGetClientConfig(...args);
             refreshMobile = (...args: unknown[]) => mockRefreshMobile(...args);
             loginMobile = (...args: unknown[]) => mockLoginMobile(...args);
@@ -245,4 +247,26 @@ describe('native offline workspace restoration', () => {
         expect(result.current.user).toBeNull();
         expect(await restoreOfflineWorkspace('https://health.example', new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }))).toBeNull();
     });
+});
+
+
+it('persists a verified user access update without waiting for another tracking query', async () => {
+    mockGetClientConfig.mockResolvedValue({ server_version: '1.2.0' }); mockRefreshMobile.mockResolvedValue(AUTH_PAYLOAD);
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.user?.id).toBe(7));
+    const updated = { ...result.current.user!, account_access: { state: 'full' } } as never;
+    act(() => result.current.updateCurrentUser(updated));
+    const restored = await restoreOfflineWorkspace('https://health.example', new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }));
+    expect(restored?.account_access?.state).toBe('full');
+});
+
+it('keeps the established identity and enters reconnection after a completed timeout', async () => {
+    mockGetClientConfig.mockResolvedValue({ server_version: '1.2.0' }); mockRefreshMobile.mockResolvedValue(AUTH_PAYLOAD);
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.user?.id).toBe(7));
+    const observer = mockClientOptions.find((options) => options.onRequestError)?.onRequestError;
+    expect(observer).toBeDefined();
+    act(() => observer!(new Error('Request timed out while connecting to https://health.example')));
+    expect(result.current.pendingReconnection).toBe(true);
+    expect(result.current.user?.id).toBe(7);
 });

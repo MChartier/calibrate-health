@@ -192,3 +192,25 @@ describe('CalibrateApiClient v1 wire behavior', () => {
         });
     });
 });
+
+it.each([408, 429, 500, 502, 503])('observes the completed retryable HTTP %s failure without unauthorized cleanup', async (status) => {
+    const onUnauthorized = jest.fn();
+    const onRequestError = jest.fn();
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://example.test', onRequestError, onUnauthorized,
+        fetchImpl: async () => jsonResponse({ error: 'Unavailable', retryable: true }, status)
+    });
+    await expect(client.getMe()).rejects.toMatchObject({ status, retryable: true });
+    expect(onRequestError).toHaveBeenCalledWith(expect.objectContaining({ status, retryable: true }));
+    expect(onUnauthorized).not.toHaveBeenCalled();
+});
+
+it('observes the API-generated timeout even when fetch ignores abort', async () => {
+    const onRequestError = jest.fn();
+    const client = new CalibrateApiClient({
+        baseUrl: 'https://example.test', requestTimeoutMs: 10, onRequestError,
+        fetchImpl: () => new Promise<Response>(() => undefined)
+    });
+    await expect(client.getMe()).rejects.toThrow('Request timed out while connecting to');
+    expect(onRequestError).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('Request timed out while connecting to') }));
+});

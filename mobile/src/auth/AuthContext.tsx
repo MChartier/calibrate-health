@@ -183,18 +183,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 getAccessToken: () => accessTokenRef.current,
                 fetchImpl: (input, init) => {
                     if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
-                    return globalThis.fetch(input, init).then((response) => {
-                        if (response.status === 503) setPendingReconnection(true);
-                        return response;
-                    }).catch((error: unknown) => {
-                        if (isRetryableMutationError(error)) {
-                            localOnlyRef.current = true;
-                            setPendingReconnection(true);
-                        }
-                        throw error;
-                    });
+                    return globalThis.fetch(input, init);
                 },
                 refreshAccessToken,
+                onRequestError: (error) => {
+                    if (isRetryableMutationError(error)) {
+                        if (accountScopeRef.current) localOnlyRef.current = true;
+                        setPendingReconnection(true);
+                    }
+                },
                 onUnauthorized: clearSession
             }),
         [clearSession, handleClientUpgradeRequired, refreshAccessToken, serverUrl]
@@ -418,8 +415,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [confirmSelectedServerUrl]);
 
     const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
+        const scope = accountScopeRef.current;
+        if (scope?.userId !== nextUser.id) return;
         setUser(nextUser);
-    }, []);
+        void saveOfflineWorkspace(scope.serverUrl, nextUser, queryClient).catch(() => undefined);
+    }, [queryClient]);
 
     const login = useCallback(
         async (email: string, password: string, serverCandidate: string): Promise<boolean> => {
