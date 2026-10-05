@@ -1,0 +1,38 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/offline/foodDayReceipts.test.ts src/components/FoodTrackingStatus.test.tsx src/offline/provider.test.tsx src/offline/provider.web.test.tsx
+PASS src/components/FoodTrackingStatus.test.tsx
+PASS src/offline/provider.web.test.tsx
+  ΓùÅ Console
+
+    console.warn
+      An error occurred in the <OfflineOutboxProvider> component.
+      
+      Consider adding an error boundary to your tree to customize error handling behavior.
+      Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+      at defaultOnUncaughtError (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6400:15)
+      at logUncaughtError (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6460:11)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at lane.callback (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6490:9)
+      at callCallback (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4625:16)
+      at commitCallbacks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4645:11)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at commitLayoutEffectOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10103:15)
+      at flushLayoutEffects (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13774:15)
+      at commitRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13697:9)
+      at commitRootWhenReady (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12444:7)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12391:15)
+      at performSyncWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2923:7)
+      at flushSyncWorkAcrossRoots_impl (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2764:21)
+      at flushPendingEffects (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14128:11)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2896:11)
+      at Immediate.performWorkUntilDeadline [as _onImmediate] (../node_modules/scheduler/cjs/scheduler.native.development.js:45:48)
+
+PASS src/offline/provider.test.tsx
+PASS src/offline/foodDayReceipts.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       47 passed, 47 total
+Snapshots:   0 total
+Time:        4.288 s, estimated 5 s
+Ran all test suites matching /src\\offline\\foodDayReceipts.test.ts|src\\components\\FoodTrackingStatus.test.tsx|src\\offline\\provider.test.tsx|src\\offline\\provider.web.test.tsx/i.
