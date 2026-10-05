@@ -1,9 +1,14 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import path from 'node:path';
 import { expect, test, hideTransientPwaNotices, expectApiFailure, activateFixtureOffline, FROZEN_LOCAL_DATE, type UxHarness } from './fixtures';
-import type { Page } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 import { expectNoBlockingAccessibilityViolations } from './ux-a11y';
 import { applyTwoHundredPercentText } from './text-scaling';
 
+const before = process.env.CALIBRATE_PAUSE_BASELINE === '1';
 const today = FROZEN_LOCAL_DATE;
+const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
 async function install(page: Page, ux: UxHarness, target: string | null = '2026-08-03', active = true) {
     await ux.install('populated', { foodEntries: [] });
@@ -55,16 +60,37 @@ async function open(page: Page) {
     await expect(page.getByRole('button', { name: 'Choose date', exact: true })).toBeVisible();
 }
 async function calendar(page: Page) { await page.getByRole('button', { name: 'Choose date', exact: true }).click(); }
+async function capture(page: Page, info: TestInfo, name: string) {
+    await page.evaluate(() => document.fonts.ready);
+    const directory = process.env.CALIBRATE_PAUSE_EVIDENCE_DIR || info.outputPath('evidence');
+    await mkdir(directory, { recursive: true });
+    const stem = `${before ? 'before' : 'after'}-${info.project.name}-${name}`;
+    const imagePath = path.join(directory, stem + '.png');
+    await page.screenshot({ path: imagePath });
+    const scripts = await page.locator('script[src]').evaluateAll(elements => elements.map(element => (element as HTMLScriptElement).src));
+    const servedScripts = [];
+    for (const url of scripts) {
+        const response = await page.request.get(url); const bytes = await response.body();
+        const relative = decodeURIComponent(new URL(url).pathname).replace(/^\//, '');
+        const built = await readFile(path.join(process.env.CALIBRATE_PAUSE_BUILD_DIR || 'mobile/dist', relative));
+        expect(sha256(bytes)).toBe(sha256(built));
+        servedScripts.push({ url, sha256: sha256(bytes) });
+    }
+    const harness = await Promise.all(['e2e/expo-web/planned-pause.spec.ts', 'e2e/expo-web/fixtures.ts', 'e2e/expo-web/text-scaling.ts', 'playwright.expo-web.config.ts'].map(async file => ({ path: file, sha256: sha256(await readFile(file)) })));
+    const display = await page.evaluate(() => ({ scale: devicePixelRatio, dark: matchMedia('(prefers-color-scheme: dark)').matches, locale: navigator.language, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
+    await writeFile(path.join(directory, stem + '.json'), JSON.stringify({ capturedAtUtc: new Date().toISOString(), sourceCommit: process.env.CALIBRATE_PAUSE_SOURCE_SHA, baseline: before, harness, display,
+        route: page.url(), viewport: page.viewportSize(), browser: page.context().browser()?.version(), project: info.project.name, fixture: 'planned-pause.spec.ts + fixtures.ts', frozenClock: '2026-07-21T19:00:00Z + deterministic 16ms steps', normalization: 'hideTransientPwaNotices suppresses unrelated PWA notices identically; no compared UI modified', image: path.basename(imagePath), imageSha256: sha256(await readFile(imagePath)), servedScripts }, null, 2) + '\n');
+}
 
 for (const theme of ['light', 'dark'] as const) {
     test(`dated plan and exact month boundary in ${theme}`, async ({ page, ux }, info) => {
         await page.emulateMedia({ colorScheme: theme });
         await install(page, ux); await open(page);
         await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
-        await expect(page.getByText('Expected to resume Aug 3, 2026', { exact: true })).toBeVisible();
+        if (!before) await expect(page.getByText('Expected to resume Aug 3, 2026', { exact: true })).toBeVisible();
         await expect(page.getByText('Weigh in', { exact: true })).toBeInViewport({ ratio: 1 });
         await expect(page.getByText("Record today's weight", { exact: true })).toBeInViewport({ ratio: 1 });
-
+        await capture(page, info, `dated-today-${theme}`);
         await calendar(page);
         await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
         for (const [date, label] of [['16', 'at or below target'], ['17', 'at or below maintenance'], ['18', 'above maintenance'], ['19', 'comparison unavailable']]) await expect(page.getByTestId(`calendar-day-2026-07-${date}`)).toHaveAccessibleName(new RegExp(label));
@@ -72,13 +98,14 @@ for (const theme of ['light', 'dark'] as const) {
         await page.getByTestId('calendar-day-2026-07-22').dispatchEvent('click');
         await page.getByTestId('calendar-day-2026-07-22').dispatchEvent('keydown', { key: 'Enter' });
         await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(/selected/);
-        await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned tracking pause/);
-
+        if (!before) await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned tracking pause/);
+        await capture(page, info, `calendar-${theme}`);
+        if (before) { await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled(); return; }
         await page.getByRole('button', { name: 'Next month', exact: true }).click();
         await expect(page.getByTestId('calendar-day-2026-08-02')).toHaveAccessibleName(/planned tracking pause/);
         await expect(page.getByTestId('calendar-day-2026-08-03')).toHaveAccessibleName(/future date/);
         await expect(page.getByTestId('calendar-day-2026-08-02')).toBeDisabled();
-
+        await capture(page, info, `target-month-${theme}`);
         await expectNoBlockingAccessibilityViolations(page, info, { kind: 'route', surfaceId: 'planned-pause-calendar' });
         await page.getByRole('button', { name: 'Previous month', exact: true }).click();
         await page.keyboard.press('Escape');
@@ -86,7 +113,8 @@ for (const theme of ['light', 'dark'] as const) {
     });
 }
 
-test('real pause form, failed resume, recovery and preserved historical edit', async ({ page, ux }) => {
+test('real pause form, failed resume, recovery and preserved historical edit', async ({ page, ux }, info) => {
+    test.skip(before);
     const state = await install(page, ux, null, false); await open(page); await calendar(page);
     await page.getByRole('button', { name: 'Pause tracking', exact: true }).click();
     await page.getByRole('button', { name: 'Choose expected resume date', exact: true }).click();
@@ -106,28 +134,30 @@ test('real pause form, failed resume, recovery and preserved historical edit', a
     await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
-
+    await capture(page, info, 'failed-resume');
     state.failResume = false;
     await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
     await calendar(page);
     await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
     await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled();
+    await capture(page, info, 'resumed-calendar');
 });
 
-test('due prompt failed update, until-resumed removal and explicit resume', async ({ page, ux }) => {
+test('due prompt failed update, until-resumed removal and explicit resume', async ({ page, ux }, info) => {
+    test.skip(before);
     const state = await install(page, ux, today); await open(page);
     await page.getByRole('button', { name: 'Extend pause', exact: true }).click();
     state.failUpdate = true; expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/food-days/pause', status: 400 });
     await page.getByRole('button', { name: 'Until I resume', exact: true }).click();
     await expect(page.getByRole('alert')).toBeVisible(); expect(state.target).toBe(today);
-
+    await capture(page, info, 'failed-update');
     state.failUpdate = false; await page.getByRole('button', { name: 'Until I resume', exact: true }).click();
     await expect(page.getByText('Until you resume', { exact: true })).toBeVisible();
     await calendar(page);
     await expect(page.getByTestId('calendar-day-2026-07-31')).toHaveAccessibleName(/planned tracking pause, until resumed/);
     await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled();
-
+    await capture(page, info, 'open-ended-calendar');
     state.target = today; await page.reload(); await hideTransientPwaNotices(page);
     await page.getByRole('dialog', { name: 'Ready to resume tracking?' }).getByRole('button', { name: 'Resume tracking', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
@@ -135,12 +165,13 @@ test('due prompt failed update, until-resumed removal and explicit resume', asyn
     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
 });
 
-test('year target, shortened plan on reload and unavailable metadata recovery', async ({ page, ux }) => {
+test('year target, shortened plan on reload and unavailable metadata recovery', async ({ page, ux }, info) => {
+    test.skip(before);
     const state = await install(page, ux, '2027-01-02'); await open(page); await calendar(page);
     for (let month = 0; month < 6; month++) await page.getByRole('button', { name: 'Next month', exact: true }).click();
     await expect(page.getByTestId('calendar-day-2027-01-01')).toHaveAccessibleName(/planned tracking pause/);
     await expect(page.getByTestId('calendar-day-2027-01-02')).toHaveAccessibleName(/future date/);
-
+    await capture(page, info, 'year-boundary');
     expect(state.rangeRequests.every(range => range.endsWith(today))).toBe(true);
     state.target = '2026-07-23'; await page.reload(); await hideTransientPwaNotices(page);
     await expect(page.getByText('Expected to resume Jul 23, 2026')).toBeVisible(); await calendar(page);
@@ -150,22 +181,24 @@ test('year target, shortened plan on reload and unavailable metadata recovery', 
     await page.reload(); await hideTransientPwaNotices(page);
     await expect(page.getByText('Pause plan unavailable.', { exact: true })).toBeVisible({ timeout: 20000 });
     await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeEnabled();
-
+    await capture(page, info, 'unavailable-metadata');
     state.failRead = false; await page.reload(); await hideTransientPwaNotices(page);
     await expect(page.getByText('Expected to resume Jul 23, 2026')).toBeVisible();
 });
 
 test('planned pause remains readable at enlarged text', async ({ page, ux }, info) => {
-    test.skip(info.project.name !== 'compact-phone-chrome');
+    test.skip(before || info.project.name !== 'compact-phone-chrome');
     await install(page, ux); await open(page); await applyTwoHundredPercentText(page);
     await page.getByText('Expected to resume Aug 3, 2026').scrollIntoViewIfNeeded();
     await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeInViewport();
     await calendar(page); await page.getByText('Planned pause (future, view only)', { exact: true }).scrollIntoViewIfNeeded();
     await expect(page.getByText('Planned pause (future, view only)', { exact: true })).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    await capture(page, info, 'large-text');
 });
 
 test('reopening and month navigation refresh the plan and recover from a shortened horizon', async ({ page, ux }) => {
+    test.skip(before);
     const state = await install(page, ux); await open(page); await calendar(page);
     await page.getByRole('button', { name: 'Next month', exact: true }).click();
     await expect(page.getByTestId('calendar-day-2026-08-02')).toHaveAccessibleName(/planned/);
@@ -183,7 +216,22 @@ test('reopening and month navigation refresh the plan and recover from a shorten
     await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled();
 });
 
-test('due and overdue plans remain paused with no invented future interval', async ({ page, ux }) => {
+test('matched failed resume and recovery retains the actual pause until success', async ({ page, ux }, info) => {
+    const state = await install(page, ux); await open(page);
+    state.failResume = true; expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/resume', status: 400 });
+    await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
+    await capture(page, info, 'matched-failed-resume');
+    state.failResume = false; await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+    await calendar(page);
+    await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
+    await capture(page, info, 'matched-recovered-calendar');
+});
+
+test('due and overdue plans remain paused with no invented future interval', async ({ page, ux }, info) => {
+    test.skip(before);
     const state = await install(page, ux, today); await open(page);
     await expect(page.getByRole('button', { name: 'Extend pause', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
@@ -194,32 +242,34 @@ test('due and overdue plans remain paused with no invented future interval', asy
     state.target = '2026-07-20'; await page.reload(); await hideTransientPwaNotices(page);
     await expect(page.getByRole('button', { name: 'Extend pause', exact: true })).toBeVisible(); await page.keyboard.press('Escape');
     await expect(page.getByText('Expected resume date has passed (Jul 20, 2026). Tracking is still paused.')).toBeVisible();
-
+    await capture(page, info, 'overdue-today');
     await calendar(page); await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
     await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled();
 });
 
-test('cached read failure keeps the saved plan visibly stale and reopening recovers it', async ({ page, ux }) => {
+test('cached read failure keeps the saved plan visibly stale and reopening recovers it', async ({ page, ux }, info) => {
+    test.skip(before);
     const state = await install(page, ux); await open(page);
     await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
     state.failRead = true; expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/pause', status: 503 });
     await calendar(page);
     await expect(page.getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')).toBeVisible({ timeout: 20000 });
     await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
-
+    await capture(page, info, 'stale-plan');
     state.failRead = false; state.target = '2026-07-23';
     await page.getByRole('button', { name: 'Close date picker', exact: true }).click(); await calendar(page);
     await expect(page.getByText('Could not refresh the saved pause plan.')).toHaveCount(0);
     await expect(page.getByTestId('calendar-day-2026-07-23')).not.toHaveAccessibleName(/planned/);
 });
 
-test('offline cached plan and accepted queued resume converge after real browser outbox replay', async ({ page, ux }) => {
+test('offline cached plan and accepted queued resume converge after real browser outbox replay', async ({ page, ux }, info) => {
+    test.skip(before);
     const state = await install(page, ux); await open(page);
     await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
     state.queueResume = true; expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/resume', status: 503 });
     await activateFixtureOffline(page);
     await expect(page.getByText('Offline - showing saved pause plan.', { exact: true })).toBeVisible();
-
+    await capture(page, info, 'offline-saved-plan');
     await page.context().setOffline(false);
     await expect(page.getByText('Offline - showing saved pause plan.', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
@@ -243,4 +293,5 @@ test('offline cached plan and accepted queued resume converge after real browser
     await calendar(page);
     await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
+    await capture(page, info, 'replayed-resume');
 });
