@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Bounded PR415 desktop integration with current master rail; evidence only, never merge this ref into product.",
+  "owner": "Existing issue409/PR415 implementation owner; coordinator retains after handoff.",
+  "retention": {
+    "ref": "refs/heads/evidence/pr415-rail-integration-oct05",
+    "lifetime": "Indefinite review/audit retention; no rewrite, repurpose, routine deletion or merge. Retirement requires explicit human authorization."
+  },
+  "featureHead": "01d4cedf7634007fabdfa829be8b12a47eec2a04",
+  "directParent": {
+    "pr": 410,
+    "head": "6fadbcc6a6437609ae6e2d49d73ed3da95a94b47"
+  },
+  "ultimateMaster": "4728d4f75b70e6440a9778a42cd2224a300db725",
+  "sources": {
+    "before": {
+      "commit": "872f7b5f00c5ace203e1d5c1b15b201c84e9dd48",
+      "tree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+      "meaning": "Current master plus pinned parent410, without child415"
+    },
+    "after": {
+      "commit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "tree": "38c0efd6753331d915ef770a69e109c2746d69d8",
+      "parents": [
+        "872f7b5f00c5ace203e1d5c1b15b201c84e9dd48",
+        "01d4cedf7634007fabdfa829be8b12a47eec2a04"
+      ],
+      "meaning": "Conflict-free parent integration plus exact unchanged feature head; validation commit only"
+    }
+  },
+  "environment": {
+    "host": "MCHARTIER_ZBOOK",
+    "os": "Windows",
+    "node": "v24.19.0",
+    "browser": "Chrome 154.0.8037.95",
+    "surface": "Production Expo web export, browser only; synthetic API fixtures"
+  },
+  "fixture": {
+    "goal": 7,
+    "startWeightKg": 90,
+    "currentWeightKg": 85,
+    "targetWeightKg": 75,
+    "createdAt": "2026-01-01T12:00:00Z",
+    "targetDate": "2027-02-01T00:00:00Z",
+    "initialDeficit": 500,
+    "selectedDeficit": 250,
+    "clock": "2026-07-21T19:00:00Z",
+    "timezone": "America/Los_Angeles",
+    "locale": "en-US",
+    "scale": 1,
+    "reducedMotion": "reduce"
+  },
+  "pairs": [
+    {
+      "id": "integrated-desktop-saved-pace",
+      "before": "before-desktop-chrome-light-saved.png",
+      "after": "after-desktop-chrome-light-saved.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "normalization": "Shared hideTransientPwaNotices suppresses unrelated transient PWA notices on both sources. No compared content hidden, cropping, pixel editing or sensitive personal data.",
+      "result": "Before creates goal8, start85kg/July21/0%; After retains goal7, start90kg/January1/33%; both2350 target and May25 forward date; both88px rail and183px Snapshot."
+    }
+  ],
+  "buildEvidence": "builds.json contains exact production HTML/SW/JS hashes, disk times, and independently matching served HTTP hashes for9assets per source.",
+  "inputs": [
+    {
+      "file": "e2e/expo-web/goal-pace-integration-capture.spec.ts",
+      "sha256": "27f21b7b63f73ff41532f533bb0aeb25622cb00e5a4a9b7a81527d711eb7dc6b",
+      "bytes": 9312,
+      "sourceCommit": null,
+      "location": "Same retained evidence commit as this manifest"
+    },
+    {
+      "file": "e2e/expo-web/goal-pace.spec.ts",
+      "sha256": "31dcb9ffaadccf215d55148b612b291ed54138778185c589f2c1850d1f77f868",
+      "bytes": 10529,
+      "sourceCommit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "location": "Immutable source commit"
+    },
+    {
+      "file": "e2e/expo-web/fixtures.ts",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+      "bytes": 33191,
+      "sourceCommit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "location": "Immutable source commit"
+    },
+    {
+      "file": "e2e/expo-web/text-scaling.ts",
+      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e",
+      "bytes": 1964,
+      "sourceCommit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "location": "Immutable source commit"
+    },
+    {
+      "file": "e2e/expo-web/ux-a11y.ts",
+      "sha256": "33babe0c39c04dd979a9518896c9da00b7b747192c1b2e6c4baae94668ba7158",
+      "bytes": 3535,
+      "sourceCommit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "location": "Immutable source commit"
+    },
+    {
+      "file": "playwright.expo-web.config.ts",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1",
+      "bytes": 2477,
+      "sourceCommit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "location": "Immutable source commit"
+    },
+    {
+      "file": "scripts/expo-web-build.mjs",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad",
+      "bytes": 1411,
+      "sourceCommit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "location": "Immutable source commit"
+    },
+    {
+      "file": "scripts/expo-web-static-server.mjs",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607",
+      "bytes": 4696,
+      "sourceCommit": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+      "location": "Immutable source commit"
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "evidence/pr415-rail/after-desktop-chrome-light-editor-1024.png",
+      "sha256": "4fb3c91d5eb8c75caba0568607d282386d016f74accc21aa38a5bb6b0bccdc68",
+      "bytes": 71170
+    },
+    {
+      "file": "evidence/pr415-rail/after-desktop-chrome-light-editor.png",
+      "sha256": "db40a974cef57cc93b4ad9af11c8a1dc716ceaf51af28e493a43555973bad49d",
+      "bytes": 73645
+    },
+    {
+      "file": "evidence/pr415-rail/after-desktop-chrome-light-initial.png",
+      "sha256": "9bf4f605e16d4f312f826d215817c53dfa4c3cf7803879efbd1b132cba989b91",
+      "bytes": 58924
+    },
+    {
+      "file": "evidence/pr415-rail/after-desktop-chrome-light-intentional-new-goal.png",
+      "sha256": "1a790f50bd6b5f143782736a032c50d525a7684ff39ff55930f4dd14c9c2d654",
+      "bytes": 66265
+    },
+    {
+      "file": "evidence/pr415-rail/after-desktop-chrome-light-saved.png",
+      "sha256": "a6b1181aae56450d5b5f6b5c4eb33a3148e37ac1562fcfedab13a7e3c7ea1588",
+      "bytes": 57811
+    },
+    {
+      "file": "evidence/pr415-rail/after-desktop-chrome-light.json",
+      "sha256": "42d943da40ce0fbe04507121295ade307e7302132cd2df505fd0c2844115f948",
+      "bytes": 1562
+    },
+    {
+      "file": "evidence/pr415-rail/before-desktop-chrome-light-editor.png",
+      "sha256": "a8132aed1121e9173b3821c7482b0b05fd47baf947ec119e92d263dbd7607cf3",
+      "bytes": 66260
+    },
+    {
+      "file": "evidence/pr415-rail/before-desktop-chrome-light-initial.png",
+      "sha256": "9bf4f605e16d4f312f826d215817c53dfa4c3cf7803879efbd1b132cba989b91",
+      "bytes": 58924
+    },
+    {
+      "file": "evidence/pr415-rail/before-desktop-chrome-light-saved.png",
+      "sha256": "ef026511bc12488560301a385d6d71a99f26d0b1032a10a888324b9586d6fb5e",
+      "bytes": 57529
+    },
+    {
+      "file": "evidence/pr415-rail/before-desktop-chrome-light.json",
+      "sha256": "b347a7fb03c861853d7fbc04b2e4e69d66f94d1eb0b29767b1d5ec685819d5dc",
+      "bytes": 913
+    },
+    {
+      "file": "evidence/pr415-rail/builds.json",
+      "sha256": "54ca0e84d7842b5909cf300f9afc9016942ca46be34252e7ce9f6a41575207b5",
+      "bytes": 7964
+    }
+  ],
+  "executed": {
+    "builds": "Both source builds passed npm.cmd --prefix mobile run build:web after repo-owned setup.",
+    "maintainedDesktop": "2/2 light/dark goal-pace.spec.ts cases passed on integrated After. Includes cancellation, lost-response503/retry, manual refresh, reopen/reload, historical target, intentional new-goal save and axe.",
+    "matchedCapture": "Before1/1 and After1/1 passed using the same retained comparison harness.",
+    "integration": "Keyboard rail entry, Today/Progress return, Escape and cancelled-new-goal focus restoration passed. At1024x1000 rail88px, no horizontal overflow, all Save/Cancel/Set new goal controls visible within viewport.",
+    "productImpact": "No defect observed; no feature/parent branch change. Actual child feature diff remains37files/+1400/-34. No broad backend/native rerun or additional configured-review request."
+  },
+  "limitations": [
+    "Browser API fixtures are synthetic; no new live database execution.",
+    "Historical feature-head CI/review remains scoped to unchanged feature code; not a CI or configured review run of this integration source.",
+    "No new phone, native, emulator, device or Watch observations. Prior phone evidence remains associated with its original source.",
+    "Previous source/capture/manifest/QA records remain unchanged on evidence/pr415-reviewed-a1df146; no old capture relabeled."
+  ]
+}

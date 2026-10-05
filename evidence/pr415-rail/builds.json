@@ -1,0 +1,164 @@
+{
+  "before": {
+    "source": "872f7b5f00c5ace203e1d5c1b15b201c84e9dd48",
+    "tree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+    "command": "npm.cmd --prefix mobile run build:web",
+    "serveCommand": "node scripts/expo-web-static-server.mjs --port 5199",
+    "verifiedAt": "2026-10-05T03:16:35.498Z",
+    "files": [
+      {
+        "file": "progress.html",
+        "bytes": 25428,
+        "sha256": "67c980f887c07fad4c42455dcd163424ade53eeddaba684bdd78cfe0564393f5",
+        "servedPath": "/progress",
+        "servedSha256": "67c980f887c07fad4c42455dcd163424ade53eeddaba684bdd78cfe0564393f5",
+        "diskMtime": "2026-10-05T03:14:27.082Z"
+      },
+      {
+        "file": "today.html",
+        "bytes": 25419,
+        "sha256": "440c2ed4daf7613ee5bb2019cd054cf20766aa56c13fff1b66a5f35732ef375b",
+        "servedPath": "/today",
+        "servedSha256": "440c2ed4daf7613ee5bb2019cd054cf20766aa56c13fff1b66a5f35732ef375b",
+        "diskMtime": "2026-10-05T03:14:27.082Z"
+      },
+      {
+        "file": "sw.js",
+        "bytes": 7381,
+        "sha256": "31c58a67ce326f06e471257d0abc734fd1c7d82daa7298d6468163089f644971",
+        "servedPath": "/sw.js",
+        "servedSha256": "31c58a67ce326f06e471257d0abc734fd1c7d82daa7298d6468163089f644971",
+        "diskMtime": "2026-10-05T03:14:27.445Z"
+      },
+      {
+        "file": "_expo/static/js/web/ImagePicker-6bed1add26ff2575dcd44cb9beed99ad.js",
+        "bytes": 8596,
+        "sha256": "b9ac6498a161642341c3ec822651c0ae36b48c145267d8b958e8f2e17fc9208f",
+        "servedPath": "/_expo/static/js/web/ImagePicker-6bed1add26ff2575dcd44cb9beed99ad.js",
+        "servedSha256": "b9ac6498a161642341c3ec822651c0ae36b48c145267d8b958e8f2e17fc9208f",
+        "diskMtime": "2026-10-05T03:14:27.318Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-1c66e9aaf87c8190c72ec7445f407c52.js",
+        "bytes": 58683,
+        "sha256": "f48830e442f823db133c8a5b1b5743d0d40fd3354c4eaa88aa0afe84ff630590",
+        "servedPath": "/_expo/static/js/web/index-1c66e9aaf87c8190c72ec7445f407c52.js",
+        "servedSha256": "f48830e442f823db133c8a5b1b5743d0d40fd3354c4eaa88aa0afe84ff630590",
+        "diskMtime": "2026-10-05T03:14:27.318Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-7a10450d7ec4bc69cfd3b82716e36495.js",
+        "bytes": 2070,
+        "sha256": "af5ceb99120ada8b56606af84ef127e2a7f8eefa93af6b627d6f02e28e6e3708",
+        "servedPath": "/_expo/static/js/web/index-7a10450d7ec4bc69cfd3b82716e36495.js",
+        "servedSha256": "af5ceb99120ada8b56606af84ef127e2a7f8eefa93af6b627d6f02e28e6e3708",
+        "diskMtime": "2026-10-05T03:14:27.264Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-c53069254a4ef25726d5cb694a6693dd.js",
+        "bytes": 3717980,
+        "sha256": "7558aa667a83cb332e92c82ec3a7eeb5099aa9d80b719400cb65863601b3ba57",
+        "servedPath": "/_expo/static/js/web/index-c53069254a4ef25726d5cb694a6693dd.js",
+        "servedSha256": "7558aa667a83cb332e92c82ec3a7eeb5099aa9d80b719400cb65863601b3ba57",
+        "diskMtime": "2026-10-05T03:14:27.333Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-cbdbe7c96c52805337c1a278d362c339.js",
+        "bytes": 45171,
+        "sha256": "62d2dcd27abd122f6812534a4db37008567114db4948f7854bbac22611aaa51c",
+        "servedPath": "/_expo/static/js/web/index-cbdbe7c96c52805337c1a278d362c339.js",
+        "servedSha256": "62d2dcd27abd122f6812534a4db37008567114db4948f7854bbac22611aaa51c",
+        "diskMtime": "2026-10-05T03:14:27.318Z"
+      },
+      {
+        "file": "_expo/static/js/web/ProgressExpansionContent-d8893b57bba7a95c6860da7289f7da92.js",
+        "bytes": 587,
+        "sha256": "7a32116ab7c45bdfc5f7360a8a672be65ca04ef37f0f649659e124857016c31e",
+        "servedPath": "/_expo/static/js/web/ProgressExpansionContent-d8893b57bba7a95c6860da7289f7da92.js",
+        "servedSha256": "7a32116ab7c45bdfc5f7360a8a672be65ca04ef37f0f649659e124857016c31e",
+        "diskMtime": "2026-10-05T03:14:27.318Z"
+      }
+    ]
+  },
+  "after": {
+    "source": "add21da1fc1993b5ad6ce146ac7696f1132a63df",
+    "tree": "38c0efd6753331d915ef770a69e109c2746d69d8",
+    "command": "npm.cmd --prefix mobile run build:web",
+    "serveCommand": "node scripts/expo-web-static-server.mjs --port 5198",
+    "verifiedAt": "2026-10-05T03:16:35.655Z",
+    "files": [
+      {
+        "file": "progress.html",
+        "bytes": 25428,
+        "sha256": "1c1de5888429eccb09d24254dc4d89b6a415683e7414d2a8288ef2add10406f2",
+        "servedPath": "/progress",
+        "servedSha256": "1c1de5888429eccb09d24254dc4d89b6a415683e7414d2a8288ef2add10406f2",
+        "diskMtime": "2026-10-05T03:14:27.868Z"
+      },
+      {
+        "file": "today.html",
+        "bytes": 25419,
+        "sha256": "5c9acb56ab1628832e163c18008536f9cec73ac25e9e21d9f747e4af538bf3aa",
+        "servedPath": "/today",
+        "servedSha256": "5c9acb56ab1628832e163c18008536f9cec73ac25e9e21d9f747e4af538bf3aa",
+        "diskMtime": "2026-10-05T03:14:27.870Z"
+      },
+      {
+        "file": "sw.js",
+        "bytes": 7381,
+        "sha256": "54650ed60e1a2772218c750b193287da2785bafc1caf00e389adff5ce24dafe6",
+        "servedPath": "/sw.js",
+        "servedSha256": "54650ed60e1a2772218c750b193287da2785bafc1caf00e389adff5ce24dafe6",
+        "diskMtime": "2026-10-05T03:14:28.218Z"
+      },
+      {
+        "file": "_expo/static/js/web/ImagePicker-c698cd7273a74c48b54d1516b0974aa8.js",
+        "bytes": 8596,
+        "sha256": "79c680cd4d26f133e208495e4afe0f9df497e86999a9f3295f85d075bf8f6b13",
+        "servedPath": "/_expo/static/js/web/ImagePicker-c698cd7273a74c48b54d1516b0974aa8.js",
+        "servedSha256": "79c680cd4d26f133e208495e4afe0f9df497e86999a9f3295f85d075bf8f6b13",
+        "diskMtime": "2026-10-05T03:14:28.062Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-0e46bd146acc382d0c35fb4113b7abaa.js",
+        "bytes": 2070,
+        "sha256": "106a3ea92e04d6338150239dc9227c96e74dafda946bf74f2b62bd1e8bddfcff",
+        "servedPath": "/_expo/static/js/web/index-0e46bd146acc382d0c35fb4113b7abaa.js",
+        "servedSha256": "106a3ea92e04d6338150239dc9227c96e74dafda946bf74f2b62bd1e8bddfcff",
+        "diskMtime": "2026-10-05T03:14:28.107Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-64d8d86f42dd817a0ec714d541f11e8f.js",
+        "bytes": 45171,
+        "sha256": "b8ad2bb36781ae2347142ed73f5731ebd203d4c1f8c7bbb7954852dc4355641c",
+        "servedPath": "/_expo/static/js/web/index-64d8d86f42dd817a0ec714d541f11e8f.js",
+        "servedSha256": "b8ad2bb36781ae2347142ed73f5731ebd203d4c1f8c7bbb7954852dc4355641c",
+        "diskMtime": "2026-10-05T03:14:28.107Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-b903855175e9791914b6883b8c085972.js",
+        "bytes": 3724412,
+        "sha256": "af3b2616ff8c718704d31531e6eca8ae524df8a38e0150cf69bab2d59f376d06",
+        "servedPath": "/_expo/static/js/web/index-b903855175e9791914b6883b8c085972.js",
+        "servedSha256": "af3b2616ff8c718704d31531e6eca8ae524df8a38e0150cf69bab2d59f376d06",
+        "diskMtime": "2026-10-05T03:14:28.127Z"
+      },
+      {
+        "file": "_expo/static/js/web/index-f5810f8414b93bd7684007b00dba28d4.js",
+        "bytes": 58683,
+        "sha256": "210c1daca72103fdf012a889df52303b008c25637e3584f888e4a9a952f4ce4f",
+        "servedPath": "/_expo/static/js/web/index-f5810f8414b93bd7684007b00dba28d4.js",
+        "servedSha256": "210c1daca72103fdf012a889df52303b008c25637e3584f888e4a9a952f4ce4f",
+        "diskMtime": "2026-10-05T03:14:28.107Z"
+      },
+      {
+        "file": "_expo/static/js/web/ProgressExpansionContent-3dc4cef5f605756bb9ac57e4eb2e37f6.js",
+        "bytes": 587,
+        "sha256": "0ce6cf596b29e9c06c1d1b2027c8dbd0fd1cd4cb8f49b3780b25f780ac0fea44",
+        "servedPath": "/_expo/static/js/web/ProgressExpansionContent-3dc4cef5f605756bb9ac57e4eb2e37f6.js",
+        "servedSha256": "0ce6cf596b29e9c06c1d1b2027c8dbd0fd1cd4cb8f49b3780b25f780ac0fea44",
+        "diskMtime": "2026-10-05T03:14:28.107Z"
+      }
+    ]
+  }
+}
