@@ -1,0 +1,28 @@
+{
+  "source": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "tree": "d4475f7630894ddd8fe3f87382a075615c182d49",
+  "capturedAt": "2026-10-05T23:18:29.058Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "scale": 1,
+  "route": "http://127.0.0.1:4174/today",
+  "fixture": "paused synthetic user17; fixed July21 2026; 16ms clock steps; light/en-US/America/Los_Angeles; two reloads; resume503 throughout; transient PWA notices suppressed equally",
+  "requestIds": [
+    "00000000-0000-4000-8000-000000000001",
+    "00000000-0000-4000-8000-000000000001",
+    "00000000-0000-4000-8000-000000000001"
+  ],
+  "assets": [
+    {
+      "path": "_expo/static/js/web/index-c53069254a4ef25726d5cb694a6693dd.js",
+      "sha256": "7558aa667a83cb332e92c82ec3a7eeb5099aa9d80b719400cb65863601b3ba57",
+      "bytes": 3717980
+    }
+  ],
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "harnessSha256": "c71cdd4a5b635be56134ee4c4e3dd90574edb09afb06c631a4514bfd6421c16b",
+  "imageSha256": "c2d8b3babda638c4b6f48069281ea745f8b75fc49f7353aaf31936f03bc0f6be"
+}

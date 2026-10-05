@@ -1,0 +1,220 @@
+{
+  "checkedAt": "2026-10-05T23:10:00.325Z",
+  "summary": {
+    "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5999325319",
+    "html_url": "https://github.com/MChartier/calibrate-health/pull/423#issuecomment-5999325319",
+    "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/423",
+    "id": 5999325319,
+    "node_id": "IC_kwDOQbBgUs8AAAABZZZwhw",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-10-05T17:10:06Z",
+    "updated_at": "2026-10-05T23:08:53Z",
+    "author_association": "NONE",
+    "body": "<!-- codex-pull-request-review-summary -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-05T23:08:51.506802Z\">2026-10-05T23:08:51.506802Z</relative-time> | `0651fda` | Manual request |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+    "reactions": {
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5999325319/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": {
+      "id": 1144995,
+      "slug": "chatgpt-codex-connector",
+      "node_id": "A_kwHOAOQ6Gs4AEXij",
+      "owner": {
+        "login": "openai",
+        "id": 14957082,
+        "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+        "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/openai",
+        "html_url": "https://github.com/openai",
+        "followers_url": "https://api.github.com/users/openai/followers",
+        "following_url": "https://api.github.com/users/openai/following{/other_user}",
+        "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+        "organizations_url": "https://api.github.com/users/openai/orgs",
+        "repos_url": "https://api.github.com/users/openai/repos",
+        "events_url": "https://api.github.com/users/openai/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/openai/received_events",
+        "type": "Organization",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "name": "ChatGPT Codex Connector",
+      "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+      "external_url": "https://www.chatgpt.com",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "created_at": "2025-02-14T01:37:05Z",
+      "updated_at": "2026-09-23T18:52:59Z",
+      "permissions": {
+        "actions": "write",
+        "checks": "read",
+        "contents": "write",
+        "emails": "read",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "statuses": "read",
+        "workflows": "write"
+      },
+      "events": [
+        "check_run",
+        "check_suite",
+        "commit_comment",
+        "issues",
+        "issue_comment",
+        "pull_request",
+        "pull_request_review",
+        "pull_request_review_comment",
+        "pull_request_review_thread",
+        "repository",
+        "status",
+        "sub_issues"
+      ]
+    },
+    "minimized": null,
+    "pin": null
+  },
+  "currentFindings": [
+    {
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4189801190",
+      "pull_request_review_id": 5421763451,
+      "id": 4189801190,
+      "node_id": "PRRC_kwDOQbBgUs75u0rm",
+      "diff_hunk": "@@ -437,9 +454,12 @@ export const ResumeTrackingPrompt: React.FC = () => {\n \n     const refresh = useRefreshTrackingState(today);\n     const resume = useMutation({\n+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.\n         mutationFn: () => {\n             const payload = { resumed_on: today };\n             return executeOrQueueMutation({\n+                withOutbox,\n+                forceQueue: mutations.length > 0,",
+      "path": "mobile/src/components/FoodTrackingStatus.tsx",
+      "commit_id": "0651fdae64abefb6d9e74958e8dd3059c2db75cb",
+      "original_commit_id": "0651fdae64abefb6d9e74958e8dd3059c2db75cb",
+      "user": {
+        "login": "chatgpt-codex-connector[bot]",
+        "id": 199175422,
+        "node_id": "BOT_kgDOC98s_g",
+        "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+        "html_url": "https://github.com/apps/chatgpt-codex-connector",
+        "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Hide the resume prompt once resume is queued**\n\nWhen an offline resume from `ResumeTrackingPrompt` is queued and the app restarts before synchronization, the hydrated pause query still says the pause is active because this prompt's success handler never projects the queued resume into that cache. The prompt therefore reappears and this path queues a second resume behind the first; replaying the first clears the active pause, then the second receives the backend's non-retryable `NO_ACTIVE_PAUSE` 409 and becomes a permanent outbox barrier. Overlay pending resume intent in the prompt or persist an inactive pause snapshot when the first resume is queued.\n\nUseful? React with 👍 / 👎.",
+      "created_at": "2026-10-05T23:08:39Z",
+      "updated_at": "2026-10-05T23:08:39Z",
+      "html_url": "https://github.com/MChartier/calibrate-health/pull/423#discussion_r4189801190",
+      "pull_request_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423",
+      "_links": {
+        "self": {
+          "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4189801190"
+        },
+        "html": {
+          "href": "https://github.com/MChartier/calibrate-health/pull/423#discussion_r4189801190"
+        },
+        "pull_request": {
+          "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423"
+        }
+      },
+      "reactions": {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4189801190/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "start_line": null,
+      "original_start_line": null,
+      "start_side": null,
+      "line": 462,
+      "original_line": 462,
+      "side": "RIGHT",
+      "author_association": "NONE",
+      "original_position": 100,
+      "position": 100,
+      "subject_type": "line"
+    }
+  ],
+  "currentReviews": [
+    {
+      "id": 5421763451,
+      "node_id": "PRR_kwDOQbBgUs8AAAABQymLew",
+      "user": {
+        "login": "chatgpt-codex-connector[bot]",
+        "id": 199175422,
+        "node_id": "BOT_kgDOC98s_g",
+        "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+        "html_url": "https://github.com/apps/chatgpt-codex-connector",
+        "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "body": "\n### 💡 Codex Review\n\nHere are some automated review suggestions for this pull request.\n\n**Reviewed commit:** `0651fdae64`\n    \n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+      "state": "COMMENTED",
+      "html_url": "https://github.com/MChartier/calibrate-health/pull/423#pullrequestreview-5421763451",
+      "pull_request_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423",
+      "author_association": "NONE",
+      "_links": {
+        "html": {
+          "href": "https://github.com/MChartier/calibrate-health/pull/423#pullrequestreview-5421763451"
+        },
+        "pull_request": {
+          "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423"
+        }
+      },
+      "submitted_at": "2026-10-05T23:08:38Z",
+      "commit_id": "0651fdae64abefb6d9e74958e8dd3059c2db75cb"
+    }
+  ],
+  "recentBotComments": []
+}

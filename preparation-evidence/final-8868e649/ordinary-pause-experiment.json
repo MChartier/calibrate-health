@@ -1,0 +1,8 @@
+{
+  "base": "c44b5f7850288b94b24e8ca773584a4fa25937b9",
+  "path": "mobile/src/components/FoodTrackingStatus.tsx",
+  "test": "mobile/src/components/FoodTrackingStatus.test.tsx",
+  "fixtureSha256": "39a30e1a50f731cc6d3dcd6646a42d14a26833353ef0728bd44d6c2db73fa817",
+  "restored": true,
+  "exitCode": 1
+}

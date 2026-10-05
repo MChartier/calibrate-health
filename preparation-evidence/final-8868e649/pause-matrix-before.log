@@ -1,0 +1,121 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/offline/foodDayReceipts.test.ts
+FAIL src/offline/foodDayReceipts.test.ts
+  √ retains applied food-day.set-status after queue deletion and persisted reopen, without crossing accounts (21 ms)
+  √ retains applied food-tracking-pause.start after queue deletion and persisted reopen, without crossing accounts (2 ms)
+  √ serializes a slow authoritative read before a newer direct completion receipt (1 ms)
+  √ retains an acknowledged control under its original request ID if receipt persistence fails
+  √ does not resurrect stale food-day.set-status state after lost-response replay and a second-client reopen (2 ms)
+  √ does not resurrect stale food-tracking-pause.start state after lost-response replay and a second-client reopen (1 ms)
+  √ keeps the original control pending if its post-replay server read is unavailable (2 ms)
+  √ does not replay an old resume across a newer authoritative paused day (1 ms)
+  √ verifies complete after a successful void response, retry, intervening change and restart (1 ms)
+  √ verifies reopen after a successful void response, retry, intervening change and restart (1 ms)
+  √ verifies legacy complete after a successful void response, retry, intervening change and restart (2 ms)
+  √ verifies legacy reopen after a successful void response, retry, intervening change and restart (1 ms)
+  × verifies pause after a successful void response, retry, intervening change and restart (2 ms)
+  × verifies expectation update after a successful void response, retry, intervening change and restart (1 ms)
+  × verifies resume after a successful void response, retry, intervening change and restart (2 ms)
+  × replaces persisted pause history on verified resume while preserving newer exact-day authority (1 ms)
+  × keeps a second-client active pause after replaying an old resume and later expectation update (1 ms)
+
+  ● verifies pause after a successful void response, retry, intervening change and restart
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "OPEN"
+    Received: "PAUSED"
+
+      169 |         expect(mutate).toHaveBeenNthCalledWith(2, payload, 'original-control');
+      170 |         if (operation.startsWith('food-tracking-pause.')) {
+    > 171 |             expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), '2026-08-10', 'OPEN')).toBe('OPEN');
+          |                                                                                                     ^
+      172 |         }
+      173 |     } finally { database.close(); }
+      174 | });
+
+      at toBe (src/offline/foodDayReceipts.test.ts:171:101)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● verifies expectation update after a successful void response, retry, intervening change and restart
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "original-control"
+    Received: undefined
+
+      159 |         await store.enqueue({ id: 'original-control', operation, payload });
+      160 |         let result = await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile();
+    > 161 |         expect(result.deferredMutation?.id).toBe('original-control');
+          |                                             ^
+      162 |         expect(result.failedMutation).toBeNull();
+      163 |         database.close(); database = await openIndexedDbOutboxDatabase({ factory, databaseName: 'all-controls' });
+      164 |         store = new IndexedDbOutbox(database, 'account');
+
+      at toBe (src/offline/foodDayReceipts.test.ts:161:45)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● verifies resume after a successful void response, retry, intervening change and restart
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "OPEN"
+    Received: "PAUSED"
+
+      169 |         expect(mutate).toHaveBeenNthCalledWith(2, payload, 'original-control');
+      170 |         if (operation.startsWith('food-tracking-pause.')) {
+    > 171 |             expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), '2026-08-10', 'OPEN')).toBe('OPEN');
+          |                                                                                                     ^
+      172 |         }
+      173 |     } finally { database.close(); }
+      174 | });
+
+      at toBe (src/offline/foodDayReceipts.test.ts:171:101)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● replaces persisted pause history on verified resume while preserving newer exact-day authority
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "OPEN"
+    Received: "PAUSED"
+
+      192 |         const rows = await readFoodDayReceipts('account');
+      193 |         expect(await store.list()).toEqual([]);
+    > 194 |         expect(queuedFoodDayStatus(rows, '2026-08-09', 'OPEN')).toBe('OPEN');
+          |                                                                 ^
+      195 |         expect(queuedFoodDayStatus(rows, later, 'OPEN')).toBe('COMPLETE');
+      196 |         expect(queuedFoodDayStatus(rows, '2026-08-11', 'OPEN')).toBe('OPEN');
+      197 |     } finally { database.close(); }
+
+      at Object.toBe (src/offline/foodDayReceipts.test.ts:194:65)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● keeps a second-client active pause after replaying an old resume and later expectation update
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+      211 |         await store.enqueue({ id: 'old-resume', operation: 'food-tracking-pause.resume', payload: { resumed_on: date } });
+      212 |         await store.enqueue({ id: 'expectation', operation: 'food-tracking-pause.update', payload: { expected_resume_on: null } });
+    > 213 |         expect((await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile()).replayed).toBe(2);
+          |                                                                                                                        ^
+      214 |         const rows = await readFoodDayReceipts('account');
+      215 |         expect(queuedFoodDayStatus(rows, date)).toBe('OPEN');
+      216 |         expect(queuedFoodDayStatus(rows, '2026-08-10', 'OPEN')).toBe('PAUSED');
+
+      at Object.toBe (src/offline/foodDayReceipts.test.ts:213:120)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 12 passed, 17 total
+Snapshots:   0 total
+Time:        0.695 s, estimated 1 s
+Ran all test suites matching /src\\offline\\foodDayReceipts.test.ts/i.

@@ -1,0 +1,15 @@
+{
+  "base": "709f4545bdcad2627b54308b368958d45c95b715",
+  "tests": [
+    {
+      "path": "mobile/src/offline/provider.test.tsx",
+      "sha256": "5b467cabcb51263c3c5afc639044904c73893abcaf308fbbba628d2f5744f762"
+    },
+    {
+      "path": "mobile/src/offline/provider.web.test.tsx",
+      "sha256": "ef889abd625f6c981b7bbe2942e798f7a9b60fab76300b47a5df209059a5e9c1"
+    }
+  ],
+  "restored": true,
+  "exitCode": 1
+}

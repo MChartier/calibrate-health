@@ -1,0 +1,11 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/offline/foodDayReceipts.test.ts src/offline/operations.test.ts src/offline/reconciler.test.ts src/offline/foodDayIntent.test.ts
+PASS src/offline/foodDayReceipts.test.ts
+PASS src/offline/operations.test.ts
+PASS src/offline/reconciler.test.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       43 passed, 43 total
+Snapshots:   0 total
+Time:        1.464 s
+Ran all test suites matching /src\\offline\\foodDayReceipts.test.ts|src\\offline\\operations.test.ts|src\\offline\\reconciler.test.ts|src\\offline\\foodDayIntent.test.ts/i.

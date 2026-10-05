@@ -1,0 +1,11 @@
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 1 test using 1 worker
+
+  ok 1 [desktop-chrome] › e2e\expo-web\resume-intent-capture.spec.ts:6:5 › capture resume intent after two reloads (2.4s)
+
+  1 passed (3.9s)
+[WebServer] (node:39924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:19044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

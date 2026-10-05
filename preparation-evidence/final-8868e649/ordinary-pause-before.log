@@ -1,0 +1,44 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/components/FoodTrackingStatus.test.tsx
+FAIL src/components/FoodTrackingStatus.test.tsx
+  food tracking day resolution
+    √ queues day completion behind existing food intent even with healthy authentication (147 ms)
+    √ stacks completion and pause targets when native text is enlarged (62 ms)
+    √ offers completion, incomplete, and pause actions for an open current day (69 ms)
+    √ removes the rectangular Android elevation from the past-day completion action (68 ms)
+    √ presents inferred blank, incomplete, complete, and paused days without food prompts (250 ms)
+    √ does not present failed cached day data as fully logged (63 ms)
+    √ does not present cached completion when another required Today resource failed (64 ms)
+    √ fills only the remaining Today space with a centered status hero (63 ms)
+    √ asks for confirmation when an expected resume date is due and exposes every extension path (79 ms)
+    √ keeps the pause active when the confirmation is dismissed and offers it again next foreground (63 ms)
+    √ updates the expected date for tomorrow, a chosen date, or until manual resume (373 ms)
+    √ confirms resume explicitly and reopens the local resume day (126 ms)
+    × routes ordinary pause queries and refetch through the receipt-aware reader (1021 ms)
+
+  ● food tracking day resolution › routes ordinary pause queries and refetch through the receipt-aware reader
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      361 |     const before = mockReadFoodPause.mock.calls.length;
+      362 |     const screen = renderWithQuery(<ResumeTrackingPrompt />);
+    > 363 |     await waitFor(() => expect(mockReadFoodPause.mock.calls.length).toBeGreaterThan(before));
+          |                  ^
+      364 |     await act(async () => { foregroundListener?.('active'); });
+      365 |     await waitFor(() => expect(mockReadFoodPause.mock.calls.length).toBeGreaterThan(before + 1));
+      366 |     screen.unmount();
+
+      at Object.<anonymous> (src/components/FoodTrackingStatus.test.tsx:363:18)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 12 passed, 13 total
+Snapshots:   0 total
+Time:        3.485 s
+Ran all test suites matching /src\\components\\FoodTrackingStatus.test.tsx/i.
