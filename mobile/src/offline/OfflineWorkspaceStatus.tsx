@@ -8,12 +8,14 @@ import { AppText } from '../components/AppText';
 import { AppButton } from '../components/AppButton';
 import { BottomSheetModal } from '../components/BottomSheetModal';
 import { formatWeightUnit } from '../utils/format';
+import { useScopedTrackingMutations } from './useTrackingQueries';
 import { describePendingChange } from './pendingChangePresentation';
 
 /** Local continuity is independent of permission to resume server synchronization. */
 export function OfflineWorkspaceStatus() {
     const { user, serverUrl, pendingReconnection, recheckClientCompatibility } = useAuth();
-    const { mutations, reconcile } = useOfflineOutbox();
+    const { reconcile } = useOfflineOutbox();
+    const mutations = useScopedTrackingMutations();
     const queryClient = useQueryClient();
     const [retrying, setRetrying] = useState(false);
     const [reviewing, setReviewing] = useState(false);
@@ -70,7 +72,7 @@ export function OfflineWorkspaceStatus() {
         {pendingReconnection ? <AppButton title={retrying ? 'Reconnecting...' : 'Retry connection'} disabled={retrying} onPress={() => recoveryRef.current()} /> : null}
     </AppNotice>
         <BottomSheetModal visible={reviewing} onRequestClose={() => setReviewing(false)} title="Saved on this device" accessibilityLabel="Saved changes" showCloseButton>
-            <AppText>These changes are saved locally in the order shown. Tracking totals and server entries may still show their last synchronized values until reconnection.</AppText>
+            <AppText>These changes are saved locally in the order shown. Food and weight entries include these local changes. Server-calculated trends and targets update after reconnection.</AppText>
             {mutations.map((mutation) => {
                 const description = describePendingChange(mutation, formatWeightUnit(user.weight_unit));
                 return <View key={mutation.id} style={{ paddingVertical: 12 }}>
@@ -79,7 +81,7 @@ export function OfflineWorkspaceStatus() {
                     <AppText>{mutation.state === 'failed' ? 'Needs attention before synchronization' : 'Pending synchronization'}</AppText>
                 </View>;
             })}
-            <AppText>New local food entries can be edited after synchronization. To correct a weigh-in now, save a new weight for the same date; the latest value will be applied last.</AppText>
+            <AppText>You can edit or delete local entries in your tracking views. Changes synchronize in the order saved.</AppText>
         </BottomSheetModal>
     </>;
 }

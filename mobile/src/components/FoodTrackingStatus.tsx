@@ -1,3 +1,4 @@
+import { useScopedTrackingMutations } from '../offline/useTrackingQueries';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AppState, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -71,11 +72,20 @@ function useRefreshTrackingState(date?: string) {
 
 export function useFoodDayStatus(date: string, enabled = true) {
     const { api } = useAuth();
-    return useQuery({
+    const mutations = useScopedTrackingMutations();
+    const query = useQuery({
         queryKey: foodDayQueryKey(date),
         queryFn: () => api.getFoodDay(date),
         enabled
     });
+    let data = query.data;
+    for (const mutation of mutations) {
+        const payload = mutation.payload as { date?: string; status?: FoodLogDayStatus; is_complete?: boolean } | null;
+        if (payload?.date !== date || mutation.state === 'failed') continue;
+        if (mutation.operation === 'food-day.set-status' && payload.status) data = storedDay(date, payload.status);
+        if (mutation.operation === 'food-day.update') data = storedDay(date, payload.is_complete ? 'COMPLETE' : 'OPEN');
+    }
+    return { ...query, data };
 }
 
 export const DayStatusCard: React.FC<{

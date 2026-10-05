@@ -235,9 +235,23 @@ limited to resources previously loaded on that device: remote food search,
 uncached history and account/security operations still need a connection.
 The saved-changes sheet reads durable outbox entries directly, so queued weights,
 food additions/edits/deletions and day changes can be reviewed after restart.
-Cached server totals are explicitly identified as last-synchronized values; no
-server IDs or calculated totals are invented for local entries. Same-date weight
-corrections replay in order; new local food entries become editable after sync.
+Tracking views overlay ordered durable intent onto cached server rows. Local food
+and weight additions, edits and deletions are visible immediately and after
+restart; food totals use entry snapshots, while server-owned trends/targets wait
+for synchronization. Synthetic negative IDs are local only. Dependent edits and
+deletions preserve the immutable original creation request and operation ID;
+replay recovers the existing server idempotency receipt before addressing the
+real row. Receipt conflicts reject the dependent write rather than guessing or
+changing the original create. This relies on the current server's retained
+account/operation receipts; it does not enable compatibility with servers that
+lack that contract. Acknowledged rows are snapshotted before intent is dequeued,
+so partial replay and restart retain visible results. Query refetch waits while
+related intent is pending; receipt metadata prevents duplicate local rows.
+Legacy queued saved-food requests without a nutrition snapshot remain visible in
+the saved-changes sheet until synchronization; no zero-calorie value is invented.
+Successful cold authentication hydrates only the verified same-account cache
+before replacement, and partially loaded snapshots retain prior tracked queries.
+Account/server generation checks guard asynchronous hydration and replay.
 The pending-reconnection notice retries on foreground/reconnect, offers manual
 retry and uses a 5-second exponential delay capped at 60 seconds. Existing outbox
 replay retains its own bounded retry policy. A recovered account mismatch stops

@@ -43,7 +43,7 @@ import {
 import { DEV_TEST_EMAIL, DEV_TEST_PASSWORD, shouldDevAutoLogin } from './devAutoLogin';
 import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
 import { clearOnboardingDraft } from '../onboarding/draftStorage';
-import { clearOfflineWorkspace, restoreOfflineWorkspace, saveOfflineWorkspace } from './offlineWorkspace';
+import { clearOfflineWorkspace, hydrateVerifiedOfflineWorkspace, restoreOfflineWorkspace, saveOfflineWorkspace } from './offlineWorkspace';
 import { isRetryableMutationError } from '../offline/retryability';
 
 type AuthContextValue = {
@@ -133,6 +133,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         if (accountScopeRef.current !== nextScope) return;
         if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== nextScope.serverUrl)) queryClient.clear();
+        await hydrateVerifiedOfflineWorkspace(nextScope.serverUrl, payload.user.id, queryClient, () => accountScopeRef.current === nextScope);
+        if (accountScopeRef.current !== nextScope) return;
         localOnlyRef.current = false;
         setPendingReconnection(false);
         setAuthError(null);

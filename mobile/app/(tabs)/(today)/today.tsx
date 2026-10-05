@@ -1,3 +1,4 @@
+import { useTrackingFood, useTrackingMetrics } from '../../../src/offline/useTrackingQueries';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams, usePathname, type Href } from 'expo-router';
@@ -49,11 +50,11 @@ export default function TodayScreen() {
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
 
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
-    const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
+    const foodQuery = useTrackingFood(selectedDate);
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const canAddFood = foodDayQuery.data?.status === 'OPEN';
     const isPaused = foodDayQuery.data?.status === 'PAUSED';
-    const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
+    const metricsQuery = useTrackingMetrics();
     const isOnline = useOnlineStatus();
     const hasPendingWeightChange = usePendingWeightMutation();
 

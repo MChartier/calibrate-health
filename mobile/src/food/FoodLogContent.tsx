@@ -1,9 +1,11 @@
+import { localTarget } from '../offline/trackingProjection';
+import { useTrackingFood } from '../offline/useTrackingQueries';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Crypto from 'expo-crypto';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { FoodLogCopyPayload, FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../components/AddFoodSheet';
@@ -74,7 +76,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
 
-    const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
+    const foodQuery = useTrackingFood(selectedDate);
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const isOnline = useOnlineStatus();
     const foodState = useAsyncResourceState(foodQuery, (entries) => entries.length === 0);
@@ -193,8 +195,9 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                 payload.calories = Number(editCalories);
             }
 
-            const queuedPayload = { id: editEntry.id, update: payload };
+            const queuedPayload = { ...localTarget(editEntry), update: payload };
             return executeOrQueueMutation({
+                forceQueue: outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG,
                 payload: queuedPayload,
                 execute: (operationId) => api.updateFoodLog(editEntry.id, payload, operationId),
@@ -288,7 +291,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                         title={embedded ? null : 'Meals'}
                         entries={deleteRecovery.visibleEntries}
                         disabled={!canEditFood}
-                        copyDisabled={!isOnline}
+                        copyDisabled={!isOnline || outbox.mutations.length > 0}
                         onEditEntry={openEditEntry}
                         onDeleteEntry={deleteRecovery.requestDelete}
                         onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
@@ -302,16 +305,16 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     title={embedded ? null : 'Meals'}
                     entries={deleteRecovery.visibleEntries}
                     disabled={!canEditFood}
-                    copyDisabled={!isOnline}
+                    copyDisabled={!isOnline || outbox.mutations.length > 0}
                     onEditEntry={openEditEntry}
                     onDeleteEntry={deleteRecovery.requestDelete}
                     onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
                     onCopyDay={() => openCopy({ kind: 'day' })}
-                    onSaveMealAsRecipe={(meal, entries) => {
+                    onSaveMealAsRecipe={isOnline && outbox.mutations.length === 0 ? (meal, entries) => {
                         setRecipeSavedMessage(null);
                         setRecipeDraftMeal(meal);
                         setRecipeDraftEntries(entries);
-                    }}
+                    } : undefined}
                 />
             </AsyncStateBoundary>
 

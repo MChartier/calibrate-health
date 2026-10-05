@@ -31,7 +31,21 @@ export function saveOfflineWorkspace(server: string, user: UserClientPayload, cl
     };
     // Capture before queuing so an account switch cannot serialize the replacement user's cache.
     const encoded = JSON.stringify(snapshot);
-    return serialize(server, () => AsyncStorage.setItem(key(server), encoded));
+    return serialize(server, async () => {
+        const next = JSON.parse(encoded) as Snapshot;
+        try {
+            const previous = JSON.parse(await AsyncStorage.getItem(key(server)) ?? 'null') as Snapshot | null;
+            if (previous?.version === 1 && previous.origin === next.origin && previous.user.id === next.user.id && Array.isArray(previous.cache?.queries)) {
+                const queries = new Map(previous.cache.queries.filter(query => Array.isArray(query.queryKey) && TRACKING_KEYS.has(String(query.queryKey[0]))).map(query => [query.queryHash, query]));
+                for (const query of next.cache.queries) {
+                    const prior = queries.get(query.queryHash);
+                    if (!prior || query.state.dataUpdatedAt >= prior.state.dataUpdatedAt) queries.set(query.queryHash, query);
+                }
+                next.cache.queries = [...queries.values()];
+            }
+        } catch { /* Invalid prior data cannot replace the verified account snapshot. */ }
+        await AsyncStorage.setItem(key(server), JSON.stringify(next));
+    });
 }
 
 export function clearOfflineWorkspace(server: string): Promise<void> {
@@ -52,5 +66,16 @@ export function restoreOfflineWorkspace(server: string, client: QueryClient): Pr
                 Array.isArray(query.queryKey) && TRACKING_KEYS.has(String(query.queryKey[0]))) });
             return snapshot.user;
         } catch { return null; }
+    });
+}
+
+/** Hydrate only the freshly verified account, and only while its async auth generation is still current. */
+export function hydrateVerifiedOfflineWorkspace(server: string, userId: number, client: QueryClient, isCurrent: () => boolean): Promise<void> {
+    return serialize(server, async () => {
+        try {
+            const snapshot = JSON.parse(await AsyncStorage.getItem(key(server)) ?? 'null') as Snapshot | null;
+            if (!isCurrent() || snapshot?.version !== 1 || snapshot.origin !== origin(server) || snapshot.user.id !== userId || !Array.isArray(snapshot.cache?.queries)) return;
+            hydrate(client, { mutations: [], queries: snapshot.cache.queries.filter(query => Array.isArray(query.queryKey) && TRACKING_KEYS.has(String(query.queryKey[0]))) });
+        } catch { /* Missing or corrupt local data does not block verified authentication. */ }
     });
 }

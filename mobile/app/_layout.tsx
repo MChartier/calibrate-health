@@ -9,7 +9,7 @@ import { hasFullAccountAccess } from '../src/auth/accountAccess';
 import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
 import { useNotificationTapRouting } from '../src/notifications/useNotificationTapRouting';
 import { invalidateNotificationQueries } from '../src/notifications/query';
-import { createQueuedMutationExecutor } from '../src/offline/operations';
+import { useOfflineReplayExecutor } from '../src/offline/useOfflineReplayExecutor';
 import { OfflineOutboxProvider } from '../src/offline/provider';
 import { OfflineWorkspaceStatus } from '../src/offline/OfflineWorkspaceStatus';
 import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvalidation';
@@ -76,9 +76,8 @@ const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ chil
 };
 
 const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { api } = useAuth();
     const runtimeQueryClient = useQueryClient();
-    const executeMutation = React.useMemo(() => createQueuedMutationExecutor(api), [api]);
+    const executeMutation = useOfflineReplayExecutor();
     const onReplayCompleted = React.useCallback(
         (result: Parameters<typeof invalidateQueriesAfterOfflineReplay>[1]) =>
             invalidateQueriesAfterOfflineReplay(runtimeQueryClient, result),

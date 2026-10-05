@@ -1,3 +1,4 @@
+import { localTarget } from '../offline/trackingProjection';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -54,8 +55,9 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
         commit: (ticket) => {
             const current = optionsRef.current;
             return executeOrQueueMutation({
+                forceQueue: current.outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG,
-                payload: { id: ticket.entry.id },
+                payload: localTarget(ticket.entry),
                 execute: () => current.deleteFoodLog(ticket.entry.id, ticket.operationId),
                 enqueue: current.outbox.enqueue,
                 createOperationId: () => ticket.operationId

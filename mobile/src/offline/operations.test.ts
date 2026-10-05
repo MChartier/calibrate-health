@@ -177,3 +177,29 @@ describe('createQueuedMutationExecutor', () => {
             .rejects.toThrow('food.update payload is invalid');
     });
 });
+
+describe('dependent offline entry replay', () => {
+    it('resolves food edit and delete from the original immutable creation receipt after parent dequeue', async () => {
+        const original = { date: '2026-07-21', meal_period: 'BREAKFAST', name: 'Oats', calories: 200, localSnapshot: { name: 'Oats', calories: 200 } };
+        const localCreation = { operationId: 'original-create-id', localId: -1, operation: 'food.create', payload: original };
+        const api = { createFoodLog: jest.fn().mockResolvedValue({ id: 501 }), updateFoodLog: jest.fn(), deleteFoodLog: jest.fn() };
+        const execute = createQueuedMutationExecutor(api as unknown as CalibrateApiClient);
+        await execute(queuedMutation('food.update', { id: -1, localCreation, update: { calories: 350 } }));
+        await execute(queuedMutation('food.delete', { id: -1, localCreation }));
+        expect(api.createFoodLog).toHaveBeenNthCalledWith(1, { date: '2026-07-21', meal_period: 'BREAKFAST', name: 'Oats', calories: 200 }, 'original-create-id');
+        expect(api.createFoodLog).toHaveBeenNthCalledWith(2, { date: '2026-07-21', meal_period: 'BREAKFAST', name: 'Oats', calories: 200 }, 'original-create-id');
+        expect(api.updateFoodLog).toHaveBeenCalledWith(501, { calories: 350 }, 'stable-operation-id');
+        expect(api.deleteFoodLog).toHaveBeenCalledWith(501, 'stable-operation-id');
+    });
+    it('never guesses an ID or performs the child write if receipt recovery fails', async () => {
+        const api = { createFoodLog: jest.fn().mockRejectedValue(new ApiError('receipt conflict', 409, null)), deleteFoodLog: jest.fn() };
+        const execute = createQueuedMutationExecutor(api as unknown as CalibrateApiClient);
+        await expect(execute(queuedMutation('food.delete', { id: -1, localCreation: { operationId: 'original-create-id', localId: -1, operation: 'food.create', payload: { date: '2026-07-21' } } }))).rejects.toThrow('receipt conflict');
+        expect(api.deleteFoodLog).not.toHaveBeenCalled();
+    });
+    it('queues dependent edits even online so they cannot overtake their parent or earlier edits', async () => {
+        const execute = jest.fn(); const enqueue = jest.fn();
+        await executeOrQueueMutation({ operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG, payload: { id: -1, localCreation: { operationId: 'original-create-id' }, update: { calories: 350 } }, execute, enqueue });
+        expect(execute).not.toHaveBeenCalled(); expect(enqueue).toHaveBeenCalledTimes(1);
+    });
+});

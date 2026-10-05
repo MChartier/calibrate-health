@@ -1,3 +1,5 @@
+import { useTrackingMetrics } from '../offline/useTrackingQueries';
+import { localTarget } from '../offline/trackingProjection';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     AccessibilityInfo,
@@ -81,7 +83,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     const footerRowStyle = [styles.footerRow, fontScale >= 1.3 && styles.footerRowStacked];
     const { colors } = theme;
     const { api, user } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const { enqueue, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const reduceMotion = useReducedMotionPreference();
     const isOnline = useOnlineStatus();
@@ -93,11 +95,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     const [result, setResult] = useState<ResultState | null>(null);
     const weightUnit = formatWeightUnit(user?.weight_unit);
 
-    const metricsQuery = useQuery({
-        queryKey: ['mobile-metrics'],
-        queryFn: () => api.getMetrics(),
-        enabled: visible
-    });
+    const metricsQuery = useTrackingMetrics(visible);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', 'month'],
         queryFn: () => api.getTrendMetrics({ range: 'month' }),
@@ -134,6 +132,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             }
             const payload = { weight: parsedWeight, date };
             return executeOrQueueMutation<MetricSaveResponse>({
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.ADD_METRIC,
                 payload,
                 execute: (operationId) => api.addMetric(payload, operationId),
@@ -163,8 +162,9 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             if (!existingMetric) throw new Error('No weight entry exists for this day.');
-            const payload = { id: existingMetric.id };
+            const payload = localTarget(existingMetric);
             return executeOrQueueMutation({
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC,
                 payload,
                 execute: (operationId) => api.deleteMetric(existingMetric.id, operationId),

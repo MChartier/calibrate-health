@@ -2,7 +2,7 @@ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'unused') }));
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryClient } from '@tanstack/react-query';
-import { clearOfflineWorkspace, restoreOfflineWorkspace, saveOfflineWorkspace } from './offlineWorkspace';
+import { clearOfflineWorkspace, hydrateVerifiedOfflineWorkspace, restoreOfflineWorkspace, saveOfflineWorkspace } from './offlineWorkspace';
 const USER = { id: 7, email: 'synthetic@example.test' } as never;
 beforeEach(async () => { await AsyncStorage.clear(); });
 it('restores allowlisted tracking data across restart without persisting credentials or other-account state', async () => {
@@ -44,4 +44,18 @@ it('retains pending writes through auth-service outage, restart and same-account
     expect(applied).toEqual(['stable-operation']);
     expect(await outbox.list()).toEqual([]);
     database.close();
+});
+
+it('preserves cached tracking through successful cold authentication before any tracking endpoint reloads', async () => {
+    const original = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+    original.setQueryData(['mobile-metrics'], [{ id: 1, weight: 88 }]);
+    await saveOfflineWorkspace('https://one.test', USER, original);
+    const cold = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+    await saveOfflineWorkspace('https://one.test', USER, cold);
+    await hydrateVerifiedOfflineWorkspace('https://one.test', 7, cold, () => true);
+    expect(cold.getQueryData(['mobile-metrics'])).toEqual([{ id: 1, weight: 88 }]);
+    const other = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+    await hydrateVerifiedOfflineWorkspace('https://one.test', 8, other, () => true);
+    await hydrateVerifiedOfflineWorkspace('https://one.test', 7, other, () => false);
+    expect(other.getQueryData(['mobile-metrics'])).toBeUndefined();
 });
