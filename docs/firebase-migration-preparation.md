@@ -170,39 +170,54 @@ credential/security version and pending deletion state. A valid provider identit
 must never claim an existing SQL account by email. Registration still needs an
 explicit, idempotent cross-store workflow and genuine legal consent.
 
-## External credential enforcement decision (not selected or enabled)
+## Offline-first authorization and recovery
 
-Recommendation for review: a **60-second hard cache expiry, fail closed after
-expiry**, with uncached checks for new sessions and sensitive credential/grant
-operations. This bounds external-revocation exposure while avoiding a network
-lookup on every tracking request. It is a proposed tradeoff, not an implemented
-default or authorization to activate Firebase.
+The user's 2026-10-05 correction supersedes the earlier hard-expiry proposal:
+temporary network or authentication-provider outages must not sign people out,
+lock their local workspace, discard credentials, or delete cached/pending data.
+Previously signed-in people must be able to continue tracking locally, including
+after restart, with visible pending-reconnection/sync status.
 
-| Option | External disable/delete/credential-change enforcement | Lookup and request latency | Already-signed-in sessions during Firebase outage |
-| --- | --- | --- | --- |
-| Every request, fail closed | Next server request after Firebase exposes the change; provider propagation and already-running requests remain limits | One lookup per authenticated request; every request waits for its round trip or timeout | Browser, native and Wear server access returns retryable unavailable immediately. Retain local session credentials so temporary outage does not force logout. |
-| 60-second cache, hard expiry (proposed) | At most 60 seconds of cached allow after a successful check, plus provider propagation; expired state never authorizes | At most one refresh per active account per minute with shared/coalesced caching; cache misses wait for provider | Existing requests can use the remaining valid cache interval, then all three clients fail closed. No unbounded stale-while-revalidate. |
-| 60-second cache plus 15-minute outage grace | Exposure can extend to 16 minutes since last success, plus provider propagation | Similar healthy lookup rate; bounded retries during outage | Previously signed-in users retain ordinary server access during grace. New/sensitive authorization stays closed. Higher revocation exposure; not recommended without explicit acceptance. |
+Local continuity and server authorization are separate contracts:
 
-Example only: 1,000 accounts each making six requests/minute for one hour imply
-360,000 lookups with every-request checking versus about 60,000 with a coalesced
-60-second cache, plus uncached sensitive operations. Independent instance caches
-increase this count. No measured round-trip percentile or dollar saving is claimed;
-benchmark the actual project/region before sizing. Identity Platform's email tier
-is MAU-priced, so this is not a per-lookup price calculation; network waits still
-consume application capacity/billed compute and API quota. See
-[pricing](https://cloud.google.com/identity-platform/pricing) and
-[request quotas](https://firebase.google.com/docs/auth/limits).
+- Persist the last server-verified local identity and tracking cache scoped by
+  exact server origin and user ID. A cached identity opens only that local
+  workspace; it is never a server credential or proof of current authorization.
+- Queue local writes durably with stable operation IDs. Preserve FIFO order and
+  uncertain commits across process restart; replay only to the original account
+  and server after authorization succeeds. Never transfer queued data on login
+  or server switch. Explicit logout/deletion retains its established cleanup.
+- Treat network loss, timeout, provider unavailability, 429 and retryable 5xx as
+  pending reconnection, not revocation. Retain tokens and local content. Retry
+  with bounded exponential backoff, pause while offline/backgrounded, and retry
+  on reconnect/foreground or explicit retry. Do not require a provider round
+  trip for local editing or expire local access on a timer.
+- Server reads/writes and sync still enforce durable Calibrate session/grant
+  revocation and account isolation on every request. A provider outage returns
+  retryable unavailable when authorization cannot be established; it never
+  authorizes otherwise unauthorized server writes. Do not return 401 for an
+  infrastructure outage or clear a valid client session as a side effect.
+- An actually confirmed revoked, disabled or deleted identity is terminal for
+  server authorization. Stop replay and require explicit valid reauthentication
+  where permitted; never silently restore a revoked session from cached state.
+  Preserve unsynced content without exposing it to a different account. Cached
+  state cannot reverse a confirmed deletion or an explicit local logout.
 
-All options must check Calibrate's durable session/grant registry first on every
-request. Local logout, remote-device revocation, revoke-others and refresh replay
-must therefore reject subsequent requests immediately, independent of the provider
-cache. Firebase user-wide revocation cannot replace that registry. Detected
-external events must durably revoke applicable browser/native/Wear/push/pairing/MCP
-access and advance the security version. None of these policies can erase offline
-client caches or cancel a request that already completed authorization. The
-external-state bridge, action-link lifecycle, timeout budget, clock handling and
-reconciliation tests remain required before any policy can be enabled.
+For the eventual Firebase server bridge, ordinary requests may share/coalesce
+successful external-state checks for up to 60 seconds; fresh sessions and
+sensitive operations require a fresh check. This bounds server-side stale allow
+without placing any expiry on local tracking. After an expired check fails,
+server sync pauses with retryable unavailable while local work continues. Local
+SQL revocations take effect on the next request independently of that cache.
+The cache is a proposed server implementation bound, not permission to activate
+Firebase, extend revoked credentials or select outage-grace server access.
+Provider propagation and already-authorized in-flight requests remain limits.
+
+Validation must distinguish auth-service outage from network loss and confirmed
+revocation, cover restart with cached identity and pending writes, successful
+same-account reconnection, mismatched-account rejection, and local/server logout
+boundaries. UI changes require genuine matched Before/After evidence. No real
+Firebase rehearsal or runtime activation is implied by synthetic tests.
 
 ## Remaining stages and cutover gates
 

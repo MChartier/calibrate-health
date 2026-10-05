@@ -13,6 +13,7 @@ import { hasFullAccountAccess } from '../src/auth/accountAccess';
 import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
+import { OfflineWorkspaceStatus } from '../src/offline/OfflineWorkspaceStatus';
 import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvalidation';
 import { useAppTheme } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
@@ -100,7 +101,7 @@ const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) =
     useBrowserNotificationStream({ enabled: Boolean(user && hasFullAccountAccess(user)), serverUrl, queryClient });
     return (
         <OfflineOutboxProvider executeMutation={executeMutation} onReplayCompleted={onReplayCompleted}>
-            <HealthConnectProvider>{children}</HealthConnectProvider>
+            <HealthConnectProvider><OfflineWorkspaceStatus />{children}</HealthConnectProvider>
         </OfflineOutboxProvider>
     );
 };

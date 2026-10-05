@@ -1,3 +1,7 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveOfflineWorkspace, restoreOfflineWorkspace } from './offlineWorkspace';
+beforeEach(async () => { await AsyncStorage.clear(); });
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -5,9 +9,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const mockLoginBrowser = jest.fn();
 const mockLogoutBrowser = jest.fn(async () => undefined);
 const mockRestoreSession = jest.fn();
+const mockGetMe = jest.fn();
 jest.mock('@calibrate/api-client', () => ({
-    ApiError: class extends Error { status = 401; },
+    ApiError: class extends Error { status: number; constructor(status: number, message: string) { super(message); this.status = status; } },
     CalibrateApiClient: class {
+        getMe = (...args: unknown[]) => mockGetMe(...args);
         loginBrowser = (...args: unknown[]) => mockLoginBrowser(...args);
         logoutBrowser = () => mockLogoutBrowser();
     }
@@ -28,7 +34,7 @@ import { clearBrowserUserScopedCaches } from '../pwa/cacheIsolation.web';
 
 const USER = { id: 7, email: 'person@example.com' };
 function renderAuth() {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
     const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         <QueryClientProvider client={queryClient}><AuthProvider>{children}</AuthProvider></QueryClientProvider>
     );
@@ -77,5 +83,31 @@ describe('browser onboarding draft cleanup', () => {
         await act(async () => { await expect(result.current.logout()).rejects.toThrow('Storage unavailable'); });
         expect(result.current.user).toBeNull();
         expect(clearBrowserUserScopedCaches).toHaveBeenCalled();
+    });
+});
+
+describe('browser offline workspace restoration', () => {
+    it.each(['network', 'provider'])('keeps scoped local identity across %s outage and restart', async (kind) => {
+        await saveOfflineWorkspace('https://health.example', USER as never, new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }));
+        const error = kind === 'network' ? new TypeError('Network unavailable') : new (require('@calibrate/api-client').ApiError)(503, 'Provider unavailable');
+        mockRestoreSession.mockRejectedValueOnce(error);
+        mockGetMe.mockResolvedValue({ user: USER });
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.user?.id).toBe(7);
+        expect(result.current.pendingReconnection).toBe(true);
+        await act(async () => { await result.current.recheckClientCompatibility(); });
+        expect(result.current.pendingReconnection).toBe(false);
+        expect(result.current.user?.id).toBe(7);
+    });
+    it('refuses to attach an offline workspace to a different recovered cookie account', async () => {
+        await saveOfflineWorkspace('https://health.example', USER as never, new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }));
+        mockRestoreSession.mockRejectedValueOnce(new TypeError('Offline'));
+        mockGetMe.mockResolvedValue({ user: { ...USER, id: 8 } });
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.pendingReconnection).toBe(true));
+        await act(async () => { expect(await result.current.recheckClientCompatibility()).toBe(false); });
+        expect(result.current.user).toBeNull();
+        expect(await restoreOfflineWorkspace('https://health.example', new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }))).toBeNull();
     });
 });

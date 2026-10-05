@@ -1,3 +1,7 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveOfflineWorkspace, restoreOfflineWorkspace } from './offlineWorkspace';
+beforeEach(async () => { await AsyncStorage.clear(); });
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -93,7 +97,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
             user: { id: 7, email: 'person@example.com' }
         });
         const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
+            defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } }
         });
         const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
             <QueryClientProvider client={queryClient}>
@@ -130,7 +134,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
     it('fails closed without refreshing when the server omits its release version', async () => {
         mockGetClientConfig.mockResolvedValue({});
         const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
+            defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } }
         });
         const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
             <QueryClientProvider client={queryClient}>
@@ -154,7 +158,7 @@ const AUTH_PAYLOAD = {
     access_token: 'access', refresh_token: 'refresh', user: { id: 7, email: 'person@example.com' }
 };
 function renderAuth() {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
     const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         <QueryClientProvider client={queryClient}><AuthProvider>{children}</AuthProvider></QueryClientProvider>
     );
@@ -210,5 +214,35 @@ describe('native onboarding draft cleanup', () => {
         await waitFor(() => expect(result.current.isLoading).toBe(false));
         expect(clearOnboardingDraft).not.toHaveBeenCalled();
         expect(clearStoredTokens).not.toHaveBeenCalled();
+    });
+});
+
+describe('native offline workspace restoration', () => {
+    beforeEach(() => {
+        mockGetClientConfig.mockReset().mockResolvedValue({ server_version: '1.2.0' });
+        mockRefreshMobile.mockReset().mockResolvedValue(AUTH_PAYLOAD);
+    });
+    it.each(['network', 'provider'])('restores local tracking after restart during %s outage and reconnects', async (kind) => {
+        const cache = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+        cache.setQueryData(['mobile-metrics'], [{ id: 1, weight: 72000 }]);
+        await saveOfflineWorkspace('https://health.example', AUTH_PAYLOAD.user as never, cache);
+        if (kind === 'network') mockGetClientConfig.mockRejectedValueOnce(new TypeError('Network unavailable'));
+        else mockRefreshMobile.mockRejectedValueOnce(new (require('@calibrate/api-client').ApiError)(503, 'Authentication unavailable'));
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.user?.id).toBe(7);
+        expect(result.current.pendingReconnection).toBe(true);
+        expect(result.current.refreshToken).toBe('stored-refresh');
+        await act(async () => { await result.current.recheckClientCompatibility(); });
+        expect(result.current.pendingReconnection).toBe(false);
+        expect(result.current.user?.id).toBe(7);
+    });
+    it('does not resurrect a confirmed rejected session on a later offline restart', async () => {
+        await saveOfflineWorkspace('https://health.example', AUTH_PAYLOAD.user as never, new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }));
+        mockRefreshMobile.mockRejectedValueOnce(new (require('@calibrate/api-client').ApiError)(401, 'Revoked'));
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.user).toBeNull();
+        expect(await restoreOfflineWorkspace('https://health.example', new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }))).toBeNull();
     });
 });

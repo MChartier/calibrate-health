@@ -43,6 +43,8 @@ import {
 import { DEV_TEST_EMAIL, DEV_TEST_PASSWORD, shouldDevAutoLogin } from './devAutoLogin';
 import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type RegistrationLegalAcceptance } from './accountAccess';
 import { clearOnboardingDraft } from '../onboarding/draftStorage';
+import { clearOfflineWorkspace, restoreOfflineWorkspace, saveOfflineWorkspace } from './offlineWorkspace';
+import { isRetryableMutationError } from '../offline/retryability';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -53,6 +55,7 @@ type AuthContextValue = {
     serverUrl: string;
     isLoading: boolean;
     authError: string | null;
+    pendingReconnection: boolean;
     clientUpgradeRequired: ClientUpgradeRequirement | null;
     clientServerIncompatibility: ClientServerCompatibilityMismatch | null;
     accountDeletionCleanupNotice: AccountDeletionCleanupNotice | null;
@@ -90,11 +93,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const refreshTokenRef = useRef<string | null>(null);
     const serverTestRequestRef = useRef(0);
     const serverUrlRef = useRef('');
+    const [pendingReconnection, setPendingReconnection] = useState(false);
+    const localOnlyRef = useRef(false);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
 
     const clearSession = useCallback(async () => {
         const scope = accountScopeRef.current;
         accountScopeRef.current = null;
+        localOnlyRef.current = false;
+        setPendingReconnection(false);
+        const workspaceCleanup = serverUrlRef.current ? clearOfflineWorkspace(scope?.serverUrl ?? serverUrlRef.current) : Promise.resolve();
         const draftCleanup = scope ? clearOnboardingDraft(scope.serverUrl, scope.userId) : Promise.resolve();
         setUser(null);
         setAccessToken(null);
@@ -104,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setClientUpgradeRequired(null);
         setClientServerIncompatibility(null);
         queryClient.clear();
-        await Promise.all([clearStoredTokens(), draftCleanup]);
+        await Promise.all([clearStoredTokens(), draftCleanup, workspaceCleanup]);
     }, [queryClient]);
 
     const handleClientUpgradeRequired = useCallback((requirement: ClientUpgradeRequirement) => {
@@ -124,6 +132,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
         }
         if (accountScopeRef.current !== nextScope) return;
+        if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== nextScope.serverUrl)) queryClient.clear();
+        localOnlyRef.current = false;
+        setPendingReconnection(false);
+        setAuthError(null);
         setUser(payload.user);
         setAccessToken(payload.access_token);
         setRefreshToken(payload.refresh_token);
@@ -135,7 +147,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             accessToken: payload.access_token,
             refreshToken: payload.refresh_token
         });
-    }, []);
+        if (accountScopeRef.current === nextScope) await saveOfflineWorkspace(nextScope.serverUrl, payload.user, queryClient).catch(() => undefined);
+    }, [queryClient]);
 
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
         const currentRefreshToken = refreshTokenRef.current;
@@ -148,10 +161,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         try {
             const refreshed = await refreshClient.refreshMobile<MobileAuthResponse>(currentRefreshToken);
+            if (accountScopeRef.current && refreshed.user.id !== accountScopeRef.current.userId) return false;
             await persistAuthPayload(refreshed);
             return true;
         } catch (error) {
             if (error instanceof ApiError && error.status === 401) return false;
+            if (isRetryableMutationError(error)) {
+                localOnlyRef.current = true;
+                setPendingReconnection(true);
+            }
             throw error;
         }
     }, [handleClientUpgradeRequired, persistAuthPayload, serverUrl]);
@@ -163,6 +181,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 clientIdentity: MOBILE_CLIENT_IDENTITY,
                 onClientUpgradeRequired: handleClientUpgradeRequired,
                 getAccessToken: () => accessTokenRef.current,
+                fetchImpl: (input, init) => {
+                    if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
+                    return globalThis.fetch(input, init).then((response) => {
+                        if (response.status === 503) setPendingReconnection(true);
+                        return response;
+                    }).catch((error: unknown) => {
+                        if (isRetryableMutationError(error)) {
+                            localOnlyRef.current = true;
+                            setPendingReconnection(true);
+                        }
+                        throw error;
+                    });
+                },
                 refreshAccessToken,
                 onUnauthorized: clearSession
             }),
@@ -256,7 +287,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         }
                         return;
                     } catch (refreshError) {
-                        if (!shouldDevAutoLogin(storedServerUrl)) {
+                        if (!shouldDevAutoLogin(storedServerUrl) || !(refreshError instanceof ApiError) || refreshError.status !== 401) {
                             throw refreshError;
                         }
                         await clearStoredTokens();
@@ -271,6 +302,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             } catch (error) {
                 if (isMounted) {
+                    if (isRetryableMutationError(error) && refreshTokenRef.current) {
+                        const cached = await restoreOfflineWorkspace(serverUrlRef.current, queryClient).catch(() => null);
+                        if (!isMounted) return;
+                        if (cached) {
+                            accountScopeRef.current = { serverUrl: serverUrlRef.current, userId: cached.id };
+                            localOnlyRef.current = true;
+                            setPendingReconnection(true);
+                            setUser(cached);
+                        }
+                    }
                     setAuthError(getSessionRestoreErrorMessage(error));
                     // Only a rejected refresh invalidates stored credentials; offline startup should be retryable.
                     if (error instanceof ApiError && error.status === 401) {
@@ -293,7 +334,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const recheckClientCompatibility = useCallback(async (): Promise<boolean> => {
         try {
-            const config = await api.getClientConfig({ cache: 'no-store' });
+            const recovery = new CalibrateApiClient({ baseUrl: serverUrlRef.current, clientIdentity: MOBILE_CLIENT_IDENTITY });
+            const config = await recovery.getClientConfig({ cache: 'no-store' });
             const compatibilityMismatch = getClientServerCompatibilityMismatch(
                 MOBILE_SERVER_RELEASE_VERSION,
                 config.server_version
@@ -302,9 +344,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setClientServerIncompatibility(compatibilityMismatch);
                 return false;
             }
-            if (!user && refreshTokenRef.current) {
+            if ((!user || pendingReconnection || localOnlyRef.current) && refreshTokenRef.current) {
                 const restored = await refreshAccessToken();
-                if (!restored) await clearSession();
+                if (!restored) {
+                    await clearSession();
+                    return false;
+                }
             } else {
                 setClientServerIncompatibility(null);
             }
@@ -314,7 +359,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (error instanceof ApiError && error.status === 426) return false;
             throw error;
         }
-    }, [api, clearSession, refreshAccessToken, user]);
+    }, [clearSession, pendingReconnection, refreshAccessToken, user]);
 
     const probeServerUrl = useCallback(async (value: string): Promise<ServerConnectionResult> => {
         const requestId = serverTestRequestRef.current + 1;
@@ -471,6 +516,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAccountDeletionCleanupNotice(null);
     }, []);
 
+    useEffect(() => {
+        if (!user || !serverUrl) return;
+        return queryClient.getQueryCache().subscribe((event) => {
+            if (event.type !== 'updated' || event.action.type !== 'success') return;
+            const scope = accountScopeRef.current;
+            if (scope?.userId === user.id && scope.serverUrl === serverUrl) {
+                void saveOfflineWorkspace(serverUrl, user, queryClient).catch(() => undefined);
+            }
+        });
+    }, [queryClient, serverUrl, user]);
+
     const value = useMemo<AuthContextValue>(
         () => ({
             api,
@@ -481,6 +537,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             serverUrl,
             isLoading,
             authError,
+            pendingReconnection,
             clientUpgradeRequired,
             clientServerIncompatibility,
             accountDeletionCleanupNotice,
@@ -496,7 +553,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             persistAccountDeletionCleanupNotice,
             acknowledgeAccountDeletionCleanupNotice
         }),
-        [accessToken, accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice, api, authError, clearSession, clientServerIncompatibility, clientUpgradeRequired, deviceId, isLoading, login, logout, persistAccountDeletionCleanupNotice, recheckClientCompatibility, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
+        [pendingReconnection, accessToken, accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice, api, authError, clearSession, clientServerIncompatibility, clientUpgradeRequired, deviceId, isLoading, login, logout, persistAccountDeletionCleanupNotice, recheckClientCompatibility, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

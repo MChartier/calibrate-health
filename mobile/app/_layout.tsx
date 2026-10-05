@@ -11,6 +11,7 @@ import { useNotificationTapRouting } from '../src/notifications/useNotificationT
 import { invalidateNotificationQueries } from '../src/notifications/query';
 import { createQueuedMutationExecutor } from '../src/offline/operations';
 import { OfflineOutboxProvider } from '../src/offline/provider';
+import { OfflineWorkspaceStatus } from '../src/offline/OfflineWorkspaceStatus';
 import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvalidation';
 import { useAppTheme } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
@@ -85,7 +86,7 @@ const AuthenticatedRuntime: React.FC<{ children: React.ReactNode }> = ({ childre
     );
     return (
         <OfflineOutboxProvider executeMutation={executeMutation} onReplayCompleted={onReplayCompleted}>
-            <HealthConnectProvider>{children}</HealthConnectProvider>
+            <HealthConnectProvider><OfflineWorkspaceStatus />{children}</HealthConnectProvider>
         </OfflineOutboxProvider>
     );
 };
