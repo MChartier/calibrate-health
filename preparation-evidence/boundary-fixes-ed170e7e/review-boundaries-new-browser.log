@@ -1,0 +1,13 @@
+[WebServer] (node:27044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 3 tests using 1 worker
+
+(node:13708) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:436:5 ΓÇ║ a stale second tab queues day completion after durable food intent (2.5s)
+  ok 2 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:480:5 ΓÇ║ logout still clears the UI and revokes the browser session when intent storage rejects writes (947ms)
+  ok 3 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:498:5 ΓÇ║ logout warns when storage and revocation fail and retries from memory after reconnect (1.0s)
+
+  3 passed (6.0s)

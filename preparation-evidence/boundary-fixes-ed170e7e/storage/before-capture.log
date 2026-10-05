@@ -1,0 +1,52 @@
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 1 test using 1 worker
+
+  x  1 [desktop-chrome] › e2e\expo-web\logout-storage-capture.spec.ts:6:5 › matched unavailable sign-out storage (1.1s)
+
+
+  1) [desktop-chrome] › e2e\expo-web\logout-storage-capture.spec.ts:6:5 › matched unavailable sign-out storage 
+
+    Error: Browser errors; route=/login viewport=1440x1000 project=desktop-chrome last_failed_request=POST /auth/logout (503)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "pageerror: Request failed with status 503",
+    + ]
+
+       at fixtures.ts:890
+
+      888 |       console.error(`[expo-web failure] ${failureContext}`);
+      889 |     }
+    > 890 |     expect.soft(diagnostics.browserErrors, `Browser errors; ${failureContext}`).toEqual([]);
+          |                                                                                 ^
+      891 |     expect.soft(diagnostics.unexpectedApiRequests, `Unhandled API requests; ${failureContext}`).toEqual([]);
+      892 |   }, { auto: true }],
+      893 |   ux: async ({ page, context }, use) => {
+        at Object.exports.test._test.test.extend.diagnostics.auto (C:\Users\MChar\Documents\Codex\2026-10-05\task-2\offline-baseline-421\e2e\expo-web\fixtures.ts:890:81)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\logout-storage-capture-matched-unavailable-sign-out-storage-desktop-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\logout-storage-capture-matched-unavailable-sign-out-storage-desktop-chrome\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\logout-storage-capture-matched-unavailable-sign-out-storage-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\logout-storage-capture-matched-unavailable-sign-out-storage-desktop-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop-chrome] › e2e\expo-web\logout-storage-capture.spec.ts:6:5 › matched unavailable sign-out storage 
+[WebServer] (node:3340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:34032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

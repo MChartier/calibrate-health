@@ -1,0 +1,3 @@
+@codex review
+
+Both prior substantive findings4188919005 and4188919012 are now fixed at ed170e7e8a716e6a1b71b726bb49a0a184c01ad6; detailed dispositions are in their threads. This request reviews actual changes, not a replacement for unresolved feedback. Current master remains acc8a30d6cde7477f08f0b7ace23df4047d21354. Full mobile224 suites/1169 tests, typecheck/Knip, and targeted real two-tab/storage-failure browser scenarios pass. Exact committed build, refreshed affected evidence and normal CI are in progress. Draft only; no readiness or live Firebase actions.

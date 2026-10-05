@@ -1,0 +1,25 @@
+{
+  "source": "ed170e7e8a716e6a1b71b726bb49a0a184c01ad6",
+  "tree": "f900c26b0f3e690c649b9cd81a5f16494ab81bae",
+  "capturedAt": "2026-10-05T21:36:48.235Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "deviceScale": 1,
+  "finalUrl": "http://127.0.0.1:4174/today",
+  "assets": [
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-6685fe9af3c3c56d4591632786cfaa50.js",
+      "sha256": "bddbe6bb23712e2495982d5f26edd4e7deca6324374dcfe962bf7d1a1ea65374"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-6685fe9af3c3c56d4591632786cfaa50.js",
+      "sha256": "bddbe6bb23712e2495982d5f26edd4e7deca6324374dcfe962bf7d1a1ea65374"
+    }
+  ],
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "harnessSha256": "94380c354ff710287bac3bdf1d06d8b6841f37bbab78601fca02a16ebc19361a",
+  "imageSha256": "5f1b0f2fd0dd46b7a14c9cd8ded7b5d5f8498cdd59103f17ff0338c0b5d273fd"
+}

@@ -1,0 +1,11 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/offline/mutationLock.web.test.ts src/components/FoodTrackingStatus.test.tsx src/components/WeightEntrySheet.test.tsx
+PASS src/offline/mutationLock.web.test.ts
+PASS src/components/FoodTrackingStatus.test.tsx
+PASS src/components/WeightEntrySheet.test.tsx
+
+Test Suites: 3 passed, 3 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        4.338 s
+Ran all test suites matching /src\\offline\\mutationLock.web.test.ts|src\\components\\FoodTrackingStatus.test.tsx|src\\components\\WeightEntrySheet.test.tsx/i.
