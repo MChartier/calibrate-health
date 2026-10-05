@@ -1,0 +1,107 @@
+{
+  "ref": "2c5bb788a08002b954c1c9288c45637d5fed95ea",
+  "checkedAt": "2026-10-05T23:37:22.061Z",
+  "files": [
+    {
+      "name": ".gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "name": "all-transition-copy-browser.log",
+      "sha256": "f22a2f6f276182980f406e022ec4da34135233e61cff2f833253fe06ba6cdad8"
+    },
+    {
+      "name": "all-transition-copy-focused-final.log",
+      "sha256": "4017af42f01c3e16a96cd6df55f9d25ecba10488c05ddac08568b02ef5aedbf9"
+    },
+    {
+      "name": "all-transition-copy-focused-fixed.log",
+      "sha256": "9bc72ffb979b1c73d0412726c183d436c81fc7331981fb88745dd9aaa0b18906"
+    },
+    {
+      "name": "all-transition-final-build.log",
+      "sha256": "1c424f485efe80edaab79408f3638a5da857fc462a14600597851d09473b5178"
+    },
+    {
+      "name": "all-transition-final-knip.log",
+      "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+    },
+    {
+      "name": "all-transition-final-typecheck.log",
+      "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+    },
+    {
+      "name": "all-transition-full-mobile-final.log",
+      "sha256": "e95de8f0475b99cf96492d5f699d0426d6a32e7e2a8dd568243c5e552bd5cc82"
+    },
+    {
+      "name": "all-transition-full-mobile.log",
+      "sha256": "df706cd260d239a6b3bff0a07400101793febddb856f143f0d620200095c4f77"
+    },
+    {
+      "name": "commit-inventory.txt",
+      "sha256": "c9dd23d70cf3af228759a4a652f3ed9cf5755a41da9a4d7056e25fb02aab3e8d"
+    },
+    {
+      "name": "complete-merge.diff",
+      "sha256": "dda80777d20da9e8b68271d079d6c4fcb14c5b92966fec198a731456d41901ab"
+    },
+    {
+      "name": "merge-diff-inventory.json",
+      "sha256": "704447be386fa1c0d5f2a624214c509d379411f58360b97fa6e176e0153fc232"
+    },
+    {
+      "name": "presentation886-evidence-api-verification.json",
+      "sha256": "8b876c254b603486ed2a38c5c466b11b33a9999d88ae7f597e74a48f4272e338"
+    },
+    {
+      "name": "README.md",
+      "sha256": "69e0842ccb249d847e94201ca62c2b84cccd4be71a80c892b285834210120a62"
+    },
+    {
+      "name": "run-transition-browser.cjs",
+      "sha256": "df05957366255dc75d8541d7cb25590c04e31276296a31133bda06ee307e3e0f"
+    },
+    {
+      "name": "transition-final-browser.log",
+      "sha256": "1f19bb506afc396f68e2f2a0315fbcc4981fb564780dd979f7d9964be3b642f1"
+    },
+    {
+      "name": "transition-running-build.json",
+      "sha256": "19929a838d28869b99cfbc821a8c0b212168b85bf048cc2ca1af0c3b0178246a"
+    },
+    {
+      "name": "verify-transition-build.cjs",
+      "sha256": "245f1e5d1bd467b161b510ac457d0bad76009069844a66824ad26a13952e8702"
+    },
+    {
+      "name": "export/sw.js",
+      "sha256": "fb8c6c48d787e43a0ffb947a78cf85ab116e23932c3f4b3be13d94602b357101"
+    },
+    {
+      "name": "export/_expo/static/js/web/ImagePicker-7db0a3c9e24ce5309a75dc64ce5310a4.js",
+      "sha256": "f23fbe8f92eb1c72f6de6c04f299b75133eb070dc7daf654410bd9e63b65498f"
+    },
+    {
+      "name": "export/_expo/static/js/web/index-03f8b81491ae5b482882388ee32c01ec.js",
+      "sha256": "a3a556c3eef0a4139939224a40a665a49d647fe696ef9691ddaac41f49d341b0"
+    },
+    {
+      "name": "export/_expo/static/js/web/index-7132d46430e459253ae10abf0e8139ef.js",
+      "sha256": "b8301174c0f7d65c005248543be9740dc26fdecee1d6d9589d0a9e25ad3c908f"
+    },
+    {
+      "name": "export/_expo/static/js/web/index-7aa4e65b620fb0cbbf48329fd004485a.js",
+      "sha256": "db7f716d2488e2b4c31687f1791a89050e1701bc0cb5dfd9d6750126d0d32d32"
+    },
+    {
+      "name": "export/_expo/static/js/web/index-b897401131fa5c2f58e6d14f91db5505.js",
+      "sha256": "f5dbbaace8ec6a7456e39af5281162ff8f6df7b2fe4a0a28403fb4d3d8be3b3e"
+    },
+    {
+      "name": "export/_expo/static/js/web/ProgressExpansionContent-98443778e0dcf09c06d3d316ebf46528.js",
+      "sha256": "b6eb179f13db2e77768a0757cb651f318dfc07bce5d4a8bfb2c3cc885d3b0bc1"
+    }
+  ],
+  "verified": true
+}

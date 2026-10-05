@@ -1,0 +1,57 @@
+[WebServer] (node:8136) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 1 test using 1 worker
+
+(node:27976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/food-log viewport=1440x1000 project=desktop-chrome last_failed_request=POST /api/v1/food (503)
+  x  1 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:560:5 ΓÇ║ a stale second tab cannot copy server food before another tabs saved food replays (11.7s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:560:5 ΓÇ║ a stale second tab cannot copy server food before another tabs saved food replays 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog', { name: 'Copy day', exact: true })
+    Expected substring: "Synchronize saved changes before copying food."
+    Received string:    "∩ëèCopy dayCopy all meals from Jul 21, 2026.Copy to dateUnable to copy food.∩ëèCancel∩èÉCopy day"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for getByRole('dialog', { name: 'Copy day', exact: true })
+        24 ├ù locator resolved to <div role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="_r_8_" aria-describedby="_r_9_" data-testid="adaptive-dialog-panel" class="css-g5y9jx r-9j3s6g r-1vc7r5o r-1uv9fpa r-92sni r-5kkj8d r-jw4u7h r-1udh08x r-bnwqim r-184en5c r-a1yn9n r-rs99b7">ΓÇª</div>
+           - unexpected value "∩ëèCopy dayCopy all meals from Jul 21, 2026.Copy to dateUnable to copy food.∩ëèCancel∩èÉCopy day"
+
+
+      581 |     await copy.getByLabel('Copy to date').fill('2026-07-20');
+      582 |     await copy.getByRole('button', { name: 'Copy day', exact: true }).click();
+    > 583 |     await expect(copy).toContainText('Synchronize saved changes before copying food.');
+          |                        ^
+      584 |     expect(copies).toBe(0); await other.close();
+      585 | });
+      586 |
+        at C:\Users\MChar\Documents\Codex\2026-10-05\task-2\firebase-421\e2e\expo-web\offline-workspace.spec.ts:583:24
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--86fd4-her-tabs-saved-food-replays-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    attachment #2: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--86fd4-her-tabs-saved-food-replays-desktop-chrome\test-failed-2.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--86fd4-her-tabs-saved-food-replays-desktop-chrome\error-context.md
+
+    attachment #5: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--86fd4-her-tabs-saved-food-replays-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\offline-workspace-a-stale--86fd4-her-tabs-saved-food-replays-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  1 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:560:5 ΓÇ║ a stale second tab cannot copy server food before another tabs saved food replays 

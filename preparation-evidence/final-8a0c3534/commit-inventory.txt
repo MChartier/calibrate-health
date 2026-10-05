@@ -1,0 +1,37 @@
+d8a2ac141173ad6b9729602e0c528475c9b8ecd2 Prepare offline Firebase migration planning and safety contracts
+77dfa235ed7f75f854649af86a12c820b373adcc Persist migration checkpoints and refuse unsafe journal recovery
+74242b19ca03f543c817b5aa52518aeceaecff73 Add immutable Firebase mapping and local credential security version
+fc997b45558c7f3ca610e947e800c9424f43b5ce Respect Firebase password length after credential migration
+f1aece8e2cf719997fd9aac49417d7281898b44a Preserve scoped offline tracking and pending sync across auth outages
+f08a0e28cae1c344b73624e7920731a80b0e83a0 Keep offline notice within the measured browser viewport
+e24c3f1cd85756e3fc15d1ea9cc7ec8a03a08ad2 Persist outbox-backed tracking intent while the device is offline
+62cfa5f755a9737f0e6fa66e064e381ff4a4cac7 Persist verified user updates and observe complete retryable API failures
+a10c00649a338849190b0433e20b85aade7415f8 Preserve exported route shells and fonts through offline restart
+b277ec16b7d0f2a87abcec06d1ba0ecaa1b00776 Show durable pending tracking values after offline restart
+8e227d6b049e465a060ea407d306bb84c0de1d05 Project durable offline tracking and preserve cold-start cache
+ba69edf2672d2b3fe5edf5cbd17d2bc0e49511d0 Keep local creation reference type internal
+c0d09474233d90df213f1fc760a9bee00beb2010 Scope offline query holds and preserve receipt identities on refresh
+09e42246f326fabdad4a5807ef1385337c65f8ea Preserve queued day order and explicitly resolve failed local food
+86c902330964ad9fb77c6938d53d26fde4c557f6 Route failed food deletion to selective recovery
+2ccff558633c9fd743162687bc404cfc2d81822d Honor explicit offline logout and retry session revocation
+e807e9e872e0fe00279bb3c437bc3eb23aa6de52 Revoke sessions even when local logout cleanup fails
+61610d538ebd7f4ff7a6a3c568354e7220e9f1dc Recover failed food edits without queuing unreachable corrections
+503670b85cbb95f83c6598753a867e75b92800c8 Keep browser replay receipt bound to fixture entry
+184021ee3d9780162580fd845c1a54869892dd7e Follow food recovery UI punctuation and label conventions
+cc57a8f602760b1958d4942956888cbbcc449a14 Enforce shared failed-intent recovery for weight and tracking queues
+319f44b7273cf09144ac9317d62deecd2b698efd Complete synthetic provider recovery mock contract
+afa5dc7669251b4a0bee6c093f677048dd2af45e Integrate human-merged calendar foundation and combined migration ledger
+c5f96440c15fe0b0f8b223ed6deaf030dd407c85 Remove trailing blank line from mutation kind registry
+ed170e7e8a716e6a1b71b726bb49a0a184c01ad6 Serialize durable tracking dispatch and continue logout through storage failure
+7ff6937c9cd43fea1e239b537b6f77adfcbf1dda Keep day reopening and dependent food under one dispatch lock
+b1495731a13105b9067936ff8ae4c3b2763671bb Inspect durable queued day status before compound food dispatch
+82d916b61c7c41ca404c32277ed5777aa69cf43d Enforce shared queued food-day transitions across dispatch and storage
+856cc30b0d28e6d8510244c984dc4c5e36959f89 Retain acknowledged day state and serialize replay ownership across tabs
+472b2a1600fc3be122d3bdebbb380b3adc11a8a8 Reconcile current server control state after idempotent replay
+709f4545bdcad2627b54308b368958d45c95b715 Verify every pause control and reconcile persisted pause state
+c44b5f7850288b94b24e8ca773584a4fa25937b9 Preserve failed mutation barriers across lifecycle recovery
+0651fdae64abefb6d9e74958e8dd3059c2db75cb Reconcile ordinary pause reads with durable control receipts
+8868e649f5d53ea62b33f66455d5bebae1ecd90f Unify pause intent projection and coalesce repeated queued resumes
+7b9f9ba412af61541037a9ec7ade0588c04c4921 Validate all durable pause transitions and serialize food copy
+e0ccc5753010151cabd45602b7ed2bb29b0dc3d4 Consult durable day state before all food submission guards
+8a0c35345d572bb4ef45534ca770493623ea9742 Exercise persisted resume receipts through food submission

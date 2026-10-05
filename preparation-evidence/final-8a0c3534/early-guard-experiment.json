@@ -1,0 +1,9 @@
+{
+  "before": "7b9f9ba412af61541037a9ec7ade0588c04c4921",
+  "checkedAt": "2026-10-05T23:43:29.412Z",
+  "exitCode": 1,
+  "beforeSha256": "b7e732ac97d3db64d9df2bda0fdfb64832ce1e220807e82cd7e7f5282b61cf15",
+  "restoredSha256": "fb46b198580fab9e7966760e32af2352a7c619ab81c19f6046299ad273c44e2c",
+  "originalSha256": "fb46b198580fab9e7966760e32af2352a7c619ab81c19f6046299ad273c44e2c",
+  "testSha256": "6c4fb7ecc788ffc9a6de732871ed677ad35bd476f1199dc15dfcf24028b0646f"
+}

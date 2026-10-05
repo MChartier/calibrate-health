@@ -1,0 +1,202 @@
+<h2 dir="auto">Summary</h2>
+<p dir="auto">Existing-account Firebase migration needs a way to preserve Calibrate account IDs, owned health data and password access before changing credential authority. Authentication outages also interrupt cached tracking, and failed queued writes can leave users saving corrections that cannot reach the server.</p>
+<p dir="auto">This draft adds dry-run-first migration preparation, immutable identity mapping and credential-version safeguards while retaining local authentication and self-hosting defaults. Cached food and weight tracking survives temporary outages and restart. Failed requests require explicit retry or scoped discard before related corrections; durable dispatch preserves ordering across browser tabs. Saved pause changes survive restart and refetch; stale conflicting commands are rejected before entering the queue. Copy waits until durable saved changes synchronize. Explicit logout keeps the app signed out and retries server revocation, including an honest warning when storage and connectivity both fail.</p>
+<p dir="auto">Issue: <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5715870761" data-permission-text="Title is private" data-url="https://github.com/MChartier/calibrate-health/issues/421" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/421/hovercard" href="https://github.com/MChartier/calibrate-health/issues/421">#421</a>. <strong>Preparation only:</strong> Firebase runtime lifecycle/session/Wear integration and real-project rehearsal remain unfinished. This does not close <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5715870761" data-permission-text="Title is private" data-url="https://github.com/MChartier/calibrate-health/issues/421" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/421/hovercard" href="https://github.com/MChartier/calibrate-health/issues/421">#421</a> or make <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5715877730" data-permission-text="Title is private" data-url="https://github.com/MChartier/calibrate-health/issues/422" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/422/hovercard" href="https://github.com/MChartier/calibrate-health/issues/422">#422</a> ready. No provisioning, live-account access, import, cutover or deployment occurred.</p>
+<p dir="auto">Target master: <code class="notranslate">acc8a30d6cde7477f08f0b7ace23df4047d21354</code>. Proposed head: <code class="notranslate">7b9f9ba412af61541037a9ec7ade0588c04c4921</code>. No unmerged parent; the human-merged calendar foundation and both migrations are retained. Other owners' branches are untouched. PR426 separately owns pause-visibility work; the shared pause hook/helpers were reused from its pinned4fe107e source into this prerequisite, and its owner still needs to integrate the remaining calendar-range projection after coordinated dependency pinning.</p>
+<h2 dir="auto">Test plan and behavior evidence</h2>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Starting state and action</th>
+<th>Intended outcome</th>
+<th>Actual observation and evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reload a verified synthetic workspace while /auth/me returns503; save food/weight offline, edit, restart, delete and reconnect.</td>
+<td>Keep cached tracking available and replay durable intent for the same account.</td>
+<td>Baseline redirects to Sign in; final retains Today. Local weights and repeated food edits survive restart, then replay in order. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/transition-final-browser.log">17 final desktop browser scenarios</a>.</td>
+</tr>
+<tr>
+<td>Fail a food or weight write, attempt a related correction, then retry the original request or confirm scoped discard.</td>
+<td>Do not claim an unreachable correction was saved or lose unrelated intent.</td>
+<td>Save/Delete are guarded; confirmation lists affected intent. Recovery preserves unrelated next-day weight, original retry IDs and food projections. Connectivity, visibility and foreground events preserve failed barriers; only explicit retry or scoped discard releases them. Same browser log and matched images below; <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/review-boundaries-focused.log">focused regression results</a>.</td>
+</tr>
+<tr>
+<td>Leave a second tab's outbox view stale, queue food in the first, then complete the day in the second.</td>
+<td>Durable state governs dispatch, preserving food before completion.</td>
+<td>Actual two-tab browser scenario observes food then completion. Browsers without Web Locks queue instead of dispatching directly; native uses one-runtime serialization. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/transition-final-browser.log">Final browser evidence</a>, <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/review-boundaries-focused.log">component/store checks</a>.</td>
+</tr>
+<tr>
+<td>Keep a second tab stale while another saves food, then copy a meal/day; repeat with an empty outbox.</td>
+<td>Copy must read synchronized server food and retain producer ordering.</td>
+<td>Stale copy shows synchronization guidance and sends zero copy requests. Existing successful copy passes. The store concurrency check observes copy before a later enqueue. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/transition-final-browser.log">Final browser evidence</a>, <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/all-transition-copy-focused-fixed.log">focused tests</a>.</td>
+</tr>
+<tr>
+<td>Queue start/update/resume, repeat identical commands, attempt conflicting transitions, close/reopen and replay two cycles.</td>
+<td>Preserve valid explicit intent and original IDs without creating unreachable rows.</td>
+<td>Identical final requests coalesce; invalid active/inactive transitions and failed barriers reject. Six valid commands replay after restart with no failed barrier. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/README.md">Observable contract</a>.</td>
+</tr>
+<tr>
+<td>Hold a day reopen, enqueue competing completion, then release the dependent food submission.</td>
+<td>Keep reopen and food together under one dispatch lock.</td>
+<td>Maintained component regression observes OPEN,food.create,COMPLETE. <a href="https://github.com/MChartier/calibrate-health/blob/616c378c8c7c82303afba7625b4a74905622f1a1/preparation-evidence/compound-dispatch-7ff6937c/README.md">Component ordering contract</a>. Existing actual calendar reopening/edit/completion browser flow also passes; compound concurrency is not claimed as browser evidence.</td>
+</tr>
+<tr>
+<td>Queue completion/pause in one producer while another retains OPEN; attempt create/update/delete, explicitly reopen/resume, repeat and reopen the persisted store.</td>
+<td>Preserve explicit control intent across every food action and restart.</td>
+<td>Shared matrix rejects closed-day food actions without adding unreachable rows, accepts explicit reopen/resume, and preserves two repeated complete/reopen/add cycles through IndexedDB reopen and ordered replay with unchanged IDs. Actual pause.start/resume forms and earlier-date isolation are covered. <a href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/README.md">Shared matrix and final full-suite record</a>. Add Food retains its existing submit-to-reopen behavior; edits/deletes/barcode never silently reopen.</td>
+</tr>
+<tr>
+<td>Replay a completion/pause, remove its queue row, reopen storage and submit from a stale OPEN context; overlap two reconcilers and a slow day read.</td>
+<td>Keep acknowledged control state after replay and prevent a second tab from reclaiming an active request.</td>
+<td>Receipts guard stale create/edit/delete after restart, isolate accounts, and reconcile newer authoritative day and ordinary pause reads under the same namespace lock. A failed pause read preserves state; a fresh inactive read removes stale projections while pending pause intent survives. Mount/foreground refetch and slow-read ordering are tested. Persistence failure retains original request IDs. Final two-tab browser replay applies food then completion once. <a href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/README.md">Receipt/replay contracts and running-build identity</a>.</td>
+</tr>
+<tr>
+<td>Replay completion/reopen, legacy status, pause start/update/resume after a lost response or unavailable verification read; change state from another client and restart.</td>
+<td>Preserve original request identity and current server authority without trapping successful controls or resurrecting stale pause state.</td>
+<td>All control forms verify state independently of mutation response bodies. Current inactive pause clears obsolete pause projections; a newer active pause and separately verified completed/paused days survive. Original IDs persist through retry and restart. <a href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/README.md">Maintained transition and receipt evidence</a>.</td>
+</tr>
+<tr>
+<td>Resume a due pause during503, reload twice and refetch, then reconnect; repeat the saved action at the durable boundary.</td>
+<td>Preserve the explicit resume once and prevent a duplicate NO_ACTIVE_PAUSE barrier.</td>
+<td>Actual browser keeps the prompt hidden across both reloads, then observes one request identity and one server write. Shared metadata layers acknowledged snapshots then pending intent. Same-date duplicates reuse the existing ID; a different date requires resolving it. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/transition-final-browser.log">15 final browser scenarios</a>, sixth matched pair below.</td>
+</tr>
+<tr>
+<td>Explicitly log out offline, reconnect and reload; repeat with synthetic storage-write failure and logout503.</td>
+<td>Stay locally signed out and complete revocation when possible; disclose persistence limits.</td>
+<td>Baseline restores Today with zero revocations; final remains Sign in with one. Storage-only failure still revokes. Combined storage/network failure shows pending server-sign-out warning and retries from memory after an actual offline-to-online transition. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/transition-final-browser.log">Final browser scenarios</a>, matched pairs below.</td>
+</tr>
+<tr>
+<td>Exercise account/server mismatch, confirmed rejection, late refresh and retryable API failures.</td>
+<td>Cached data never authorizes server requests or crosses account boundaries; explicit logout wins.</td>
+<td>Maintained auth/cache/provider checks pass. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/all-transition-full-mobile-final.log">Final full mobile suite: 231 suites/1,218 tests</a>.</td>
+</tr>
+<tr>
+<td>Run synthetic migration inventory/import-engine/journal inputs with collisions, source drift, partial/ambiguous results and interruption.</td>
+<td>Preserve User.id, omit credentials from dry-run plans, resume confirmed checkpoints and hold uncertain retries.</td>
+<td>Controlled CLI/provider/journal scenarios pass; mocks do not establish real Firebase compatibility. <a href="https://github.com/MChartier/calibrate-health/blob/7afdb6f0bcbdec9d85f18c74aec610c0eb9d76a2/preparation-evidence/fc997b45-record.md">Foundation observable contracts</a>.</td>
+</tr>
+<tr>
+<td>Upgrade populated synthetic PostgreSQL; attempt identity reassignment, password-version changes, stale MCP approval and deletion.</td>
+<td>Preserve owned data/password hashes while enforcing additive identity and credential invariants.</td>
+<td>Combined47-migration CI passes mapping/cascade/security-version checks, rollback and re-upgrade. <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/ci-ed170e7e-database.log">Successful SQL execution</a>, <a href="https://github.com/MChartier/calibrate-health/actions/runs/37389186807">current final-head database run</a>.</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h3 dir="auto">Matched Before / After application evidence</h3>
+<p dir="auto">The first five pairs use actual exported application builds. <strong>Before:</strong> <code class="notranslate">acc8a30d6cde7477f08f0b7ace23df4047d21354</code>, the actual target master. <strong>After:</strong> <code class="notranslate">ed170e7e8a716e6a1b71b726bb49a0a184c01ad6</code>. Final head adds shared queued/applied day and pause transition guards, compound Add Food ordering, serialized replay recovery, authoritative post-replay pause snapshots, and preservation of failed barriers across lifecycle events, and locked ordinary pause-read reconciliation. None of these five captured flows has preceding closed-day or pause control intent; their displayed behavior is unchanged. Final browser tests pass and served/exported bytes match seven retained JavaScript assets. The captured states remain applicable, and are not relabeled as final-head captures. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/README.md">Explicit impact assessment</a>.</p>
+<p dir="auto">Matched synthetic user17/fixtures, July21 2026 clock, Chrome154.0.8037.95,1440x1000,scale1,light,en-US,America/Los_Angeles. Shared normalization suppresses unrelated transient PWA notices; the compared UI is unaltered. No image editing. Recovery confirmations exist only in After, so focus differs naturally. <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/README.md">Immutable source/build/fixture/harness provenance and pixel observations</a>, <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/artifact-sha256.json">exact artifact SHA-256 inventory</a>. Evidence commit: <code class="notranslate">3990f461abdc28d9d3091cb001f65f72c9264368</code>;59 artifacts were verified against repository API bytes. Per-pair manifests bind running JavaScript responses to retained bundles.</p>
+<h4 dir="auto">Authentication outage after restart</h4>
+<p dir="auto">The same503 response sends baseline to Sign in; After preserves cached Today with a pending-reconnection notice.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before - Tracking inaccessible</th>
+<th>After - Cached tracking available</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/before.png?raw=true" alt="Before: Tracking inaccessible" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/after.png?raw=true" alt="After: Cached tracking available" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/before-manifest.json">Before manifest</a> · <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/after-manifest.json">After manifest</a></p>
+<h4 dir="auto">Explicit offline logout followed by reconnect</h4>
+<p dir="auto">Baseline restores Today with zero successful revocations; After stays signed out with one. Baseline also emits its genuine unhandled offline-fetch error after capture; that log is retained and not reported as a passing test.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before - Session restored after logout</th>
+<th>After - Signed out and revocation completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/logout/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/logout/before.png?raw=true" alt="Before: Session restored after logout" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/logout/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/logout/after.png?raw=true" alt="After: Signed out and revocation completed" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/logout/before-manifest.json">Before manifest</a> · <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/logout/after-manifest.json">After manifest</a></p>
+<h4 dir="auto">Failed existing-food edit</h4>
+<p dir="auto">Identical failed400/pending450kcal intent leaves baseline Save enabled at server360kcal. After preserves450kcal, guards Save and offers original retry or explicit entry-scoped discard.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before - No failed-write recovery</th>
+<th>After - Local intent and explicit recovery</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/before.png?raw=true" alt="Before: No failed-write recovery" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/after.png?raw=true" alt="After: Local intent and explicit recovery" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/before-manifest.json">Before manifest</a> · <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/after-manifest.json">After manifest</a></p>
+<h4 dir="auto">Failed weigh-in and attempted correction</h4>
+<p dir="auto">Both enter89kg over failed87.9/pending88.5kg intent. Baseline permits Log weight; After guards Save/Delete and lists the queued weights before confirmed discard.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before - Correction allowed behind failure</th>
+<th>After - Explicit recovery required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/weight/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/weight/before.png?raw=true" alt="Before: Correction allowed behind failure" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/weight/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/weight/after.png?raw=true" alt="After: Explicit recovery required" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/weight/before-manifest.json">Before manifest</a> · <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/weight/after-manifest.json">After manifest</a></p>
+<h4 dir="auto">Storage and network failure during logout</h4>
+<p dir="auto">Both reach Sign in. After visibly explains that server sign-out is pending and to reconnect before closing. Baseline lacks the new intent write and reports its genuine unhandled503 after capture; its failure is preserved, not claimed green. With persistent storage unavailable, memory retry cannot survive app closure.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before - No pending-revocation explanation</th>
+<th>After - Visible persistence limitation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/storage/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/storage/before.png?raw=true" alt="Before: No pending-revocation explanation" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/storage/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/storage/after.png?raw=true" alt="After: Visible persistence limitation" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/storage/before-manifest.json">Before manifest</a> · <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/storage/after-manifest.json">After manifest</a></p>
+<h4 dir="auto">Resume intent after restart</h4>
+<p dir="auto">After submitting a resume while the endpoint returns503, both builds reload twice against the same still-active canonical pause. Before offers Resume tracking again; After retains one pending change and shows resumed tracking without a duplicate action. The maintained browser scenario also reconnects and verifies one request identity and one server write.</p>
+<p dir="auto">Before source: <code class="notranslate">acc8a30d6cde7477f08f0b7ace23df4047d21354</code> (actual target master). After captured source: <code class="notranslate">8868e649f5d53ea62b33f66455d5bebae1ecd90f</code>. Identical synthetic paused fixture/user17, frozen July21 clock,1440x1000/scale1/light/Chrome154/en-US/America/Los_Angeles; both suppress only unrelated transient PWA notices. Actual served JavaScript hashes match retained exports. Both capture runs passed; original pixels are unedited. Current head also validates all pause transitions and serializes copy; this single valid queued-resume state is unchanged, as confirmed by the final browser scenario.</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before - Resume prompt returns</th>
+<th>After - One saved resume survives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/resume/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/resume/before.png?raw=true" alt="Before: Resume confirmation returns after restart" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/resume/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/resume/after.png?raw=true" alt="After: Pending resume suppresses duplicate action" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/resume/before-manifest.json">Before manifest</a> · <a href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/resume/after-manifest.json">After manifest</a> · <a href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/README.md">Source/build/fixture/harness provenance</a> · <a href="https://github.com/MChartier/calibrate-health/blob/fa5b60870be938da789d3a086e97628b1e98b120/preparation-evidence/final-8868e649/artifact-sha256.json">Exact artifact identities</a>. Provenance commit: <code class="notranslate">fa5b60870be938da789d3a086e97628b1e98b120</code>.</p>
+<p dir="auto">Migration tooling, SQL and credential adapters have no changed UI flow; their CLI/journal/database observable contracts are covered above.</p>
+<h2 dir="auto">Supporting checks and limitations</h2>
+<ul dir="auto">
+<li>Final source passes 231 mobile suites/1,218 tests, maintained matrix/store/component and receipt/replay/provider regressions, mobile typecheck, Knip, web export and 17 desktop browser scenarios including calendar and successful copy flows. Exact scopes, observed failures and reproduction details are retained in the <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/README.md">final checkpoint</a>. Earlier backend/API-client/ledger checks remain in linked historical evidence. Final-head CI/configured-review completion is recorded separately in PR checks and the operational checkpoint; independent readiness QA is pending.</li>
+<li>Offline access covers previously cached resources and supported outbox operations. Uncached data, searches and security completion require connectivity; server-calculated trends/targets wait for synchronization. Browser storage can be cleared. Retry preserves request identity; discard abandons only listed intent and never undoes server records. Ambiguous outcomes are not silently converted into new requests. Browsers without Web Locks preserve queued work but cannot safely replay it; synchronization requires a supported secure browser context. No native emulator/physical-device UI or actual SQLite runtime certification is claimed.</li>
+<li>Firebase registration/login/recovery/verification/deletion/session/Wear runtime integration, cross-store deletion tombstones, external credential-event enforcement and separately authorized existing-test-project import rehearsal remain outstanding. The journal coordinates cooperating local writers only. <a href="https://github.com/MChartier/calibrate-health/blob/7b9f9ba412af61541037a9ec7ade0588c04c4921/docs/firebase-migration-preparation.md">Maintained staged runbook</a>.</li>
+<li>Complete actual-base scope: <strong>35 branch-only commits;107 files,+5317/-240</strong>. <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/commit-inventory.txt">Every commit</a>, <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/merge-diff-inventory.json">every file</a>, <a href="https://github.com/MChartier/calibrate-health/blob/2c5bb788a08002b954c1c9288c45637d5fed95ea/preparation-evidence/final-7b9f9ba4/complete-merge.diff">complete net diff</a>. Product code/tooling, required schema, maintained regressions and operator documentation remain; all one-off capture/output/bundle evidence is retained separately on the nonmerged evidence ref. Historical identities are preserved.</li>
+<li>Direct private GitHub-page inspection is unavailable. Local rendering of the exact API-read-back body with verified images supports presentation review but is not direct GitHub UI inspection or a waiver. Draft only; no readiness, merge, release or cutover approval.</li>
+</ul>

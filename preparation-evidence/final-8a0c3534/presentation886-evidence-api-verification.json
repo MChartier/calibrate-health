@@ -1,0 +1,75 @@
+{
+  "ref": "fa2f9f278ce398f66f8a00c0db73f6b49745a212",
+  "checkedAt": "2026-10-05T23:34:43.342Z",
+  "files": [
+    {
+      "name": ".gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "name": "ci.json",
+      "sha256": "72bca2f8535b3369970de3c9b6d6a95431ee2c56e8eb738185432c653654ec3f"
+    },
+    {
+      "name": "pr.json",
+      "sha256": "3dc300387e43e0a5ade41c470e096688e8b615066fe07237fc0460d56ae01ce3"
+    },
+    {
+      "name": "README.md",
+      "sha256": "ff0ea521a095ba05b7451bf0f92e86e85c5d3f41a367c6ddafbd114f2b36a8da"
+    },
+    {
+      "name": "review.json",
+      "sha256": "14e67fbc6f587a7abf6b8e3cc1d69cbab4e836fddcfd00e99d0e3d60bd0ba406"
+    },
+    {
+      "name": "render/body.md",
+      "sha256": "927ec648db873d120ed9e9b2544f6835b47f9f805b2702de5532a80ee7e3f973"
+    },
+    {
+      "name": "render/embedded-failure.png",
+      "sha256": "808103840bc916c7bb786ed08742c4137a0db520db91ee02a14eaf171f778fa8"
+    },
+    {
+      "name": "render/embedded-local-values.png",
+      "sha256": "fa4f31afd69921e1b838d76625be00cd622c8e0612c26f094741d426d9b6410d"
+    },
+    {
+      "name": "render/embedded-logout-pair.png",
+      "sha256": "20fd84e9c94108ade9d607b7430631da693db67378188f73756d93c177e58d7d"
+    },
+    {
+      "name": "render/embedded-pair.png",
+      "sha256": "d1c0e91339a08d0778e97c9ebcc039d40d525ef6b052aea72ebe61db6376e024"
+    },
+    {
+      "name": "render/embedded-resume.png",
+      "sha256": "7a2dc5306760983423c173143d350e69cb5e39a9d25eab5af5b7b36b50fc07d6"
+    },
+    {
+      "name": "render/embedded-storage.png",
+      "sha256": "8b233c15d4fc7174c1454d43113e8b484b74db6f6817d67353058e5c8b223fa0"
+    },
+    {
+      "name": "render/full.png",
+      "sha256": "5dfa97d10c50392af496ee2702248e6a4291c6babbaf401d1062fac3fea3297a"
+    },
+    {
+      "name": "render/github-markdown.html",
+      "sha256": "fee957141a6e5b61cb1d469952ec4cdb307e8627ac818c74dd828aa189432dc8"
+    },
+    {
+      "name": "render/manifest.json",
+      "sha256": "6f0c5bbc6750d84c778aa28dc5d2a7302cf49f9c8c17c74da32ef4ea0dfca377"
+    },
+    {
+      "name": "render/rendered.html",
+      "sha256": "5f6fdf957f380f31b13797e78e8b1f6fc8e911438f93ac0b47e5ef5934964952"
+    },
+    {
+      "name": "render/renderer.cjs",
+      "sha256": "5c2570f5678663fce8cf14d155ff7d9e58327b1c3e609125eeedbd1b353472f0"
+    }
+  ],
+  "verified": true
+}

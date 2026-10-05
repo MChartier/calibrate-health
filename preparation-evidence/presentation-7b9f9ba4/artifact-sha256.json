@@ -1,0 +1,70 @@
+[
+  {
+    "name": ".gitattributes",
+    "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+  },
+  {
+    "name": "ci.json",
+    "sha256": "9071187854d761bb7f73047247b82dd098c90d26c59d9f7f2ba3629be7269c5b"
+  },
+  {
+    "name": "pr.json",
+    "sha256": "b4253d6d6b61b4cfabd6853e524bb772e3734981e48450a3e06af60f7abff1de"
+  },
+  {
+    "name": "README.md",
+    "sha256": "fe7e7fd84aef3ffb1d6ff29adfe43cc37a7dea37fe4b238dd3ac716ee16295fc"
+  },
+  {
+    "name": "review.json",
+    "sha256": "42d33db43b5c7c96f38e654b369a062a1a5066d139fe7b98fef4493e3b157b28"
+  },
+  {
+    "name": "render/body.md",
+    "sha256": "630d8d947e91523478a83d177eba02b35558c94afd6ef2adb409e323924340a2"
+  },
+  {
+    "name": "render/embedded-failure.png",
+    "sha256": "808103840bc916c7bb786ed08742c4137a0db520db91ee02a14eaf171f778fa8"
+  },
+  {
+    "name": "render/embedded-local-values.png",
+    "sha256": "fa4f31afd69921e1b838d76625be00cd622c8e0612c26f094741d426d9b6410d"
+  },
+  {
+    "name": "render/embedded-logout-pair.png",
+    "sha256": "20fd84e9c94108ade9d607b7430631da693db67378188f73756d93c177e58d7d"
+  },
+  {
+    "name": "render/embedded-pair.png",
+    "sha256": "d1c0e91339a08d0778e97c9ebcc039d40d525ef6b052aea72ebe61db6376e024"
+  },
+  {
+    "name": "render/embedded-resume.png",
+    "sha256": "7a2dc5306760983423c173143d350e69cb5e39a9d25eab5af5b7b36b50fc07d6"
+  },
+  {
+    "name": "render/embedded-storage.png",
+    "sha256": "8b233c15d4fc7174c1454d43113e8b484b74db6f6817d67353058e5c8b223fa0"
+  },
+  {
+    "name": "render/full.png",
+    "sha256": "c8e0d0c18d623a7e43a11f26ee805391c059be3cf04af5e8293304b1c813dfac"
+  },
+  {
+    "name": "render/github-markdown.html",
+    "sha256": "84716359e184d6c26b07a365e5dbe88bedc1f92908f5c37495c99d575604147b"
+  },
+  {
+    "name": "render/manifest.json",
+    "sha256": "2ba740e83e87631dd890ca93cc34f9691261b15ba98d1f90f25a143832bd0902"
+  },
+  {
+    "name": "render/rendered.html",
+    "sha256": "058f255f8ddc722f0c7a451936bf430ad208ab444da7440e1a29db14432f3352"
+  },
+  {
+    "name": "render/renderer.cjs",
+    "sha256": "d5d360a91df15eadabd7737e4d05728332c665cfe61bd60c4ee40f5e8c6c98b5"
+  }
+]
