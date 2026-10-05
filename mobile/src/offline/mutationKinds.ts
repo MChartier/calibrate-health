@@ -13,4 +13,3 @@ export const OFFLINE_MUTATION_OPERATIONS = {
 
 export type OfflineMutationOperation =
     typeof OFFLINE_MUTATION_OPERATIONS[keyof typeof OFFLINE_MUTATION_OPERATIONS];
-
