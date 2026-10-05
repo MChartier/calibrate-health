@@ -12,7 +12,7 @@ const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex
 
 async function install(page: Page, ux: UxHarness, target: string | null = '2026-08-03', active = true) {
     await ux.install('populated', { foodEntries: [] });
-    const state = { active, target, startsOn: '2026-07-20', resumedOn: null as string | null, failResume: false, queueResume: false, failUpdate: false, failRead: false, resumeAttempts: 0, overrides: new Map<string, string>(), rangeRequests: [] as string[] };
+    const state = { active, target, startsOn: '2026-07-20', resumedOn: null as string | null, failResume: false, queueResume: false, failUpdate: false, failRead: false, resumeAttempts: 0, dayReads: 0, overrides: new Map<string, string>(), rangeRequests: [] as string[] };
     const pause = () => ({ active: state.active, id: 9, starts_on: state.startsOn, expected_resume_on: state.target, resumed_on: state.resumedOn, started_at: '2026-07-20T12:00:00Z', resumed_at: null, materialized_through: today, resume_confirmation_due: state.active && state.target !== null && state.target <= today });
     const day = (date: string) => {
         let status = state.overrides.get(date) ?? ((date >= state.startsOn && (state.active || (state.resumedOn !== null && date < state.resumedOn))) ? 'PAUSED' : 'OPEN');
@@ -39,7 +39,7 @@ async function install(page: Page, ux: UxHarness, target: string | null = '2026-
         state.active = false; state.resumedOn = route.request().postDataJSON().resumed_on;
         return route.fulfill({ json: { pause: pause(), day: day(today) } });
     });
-    await page.route('**/api/v1/food-days?*', route => route.fulfill({ json: day(new URL(route.request().url()).searchParams.get('date')!) }));
+    await page.route('**/api/v1/food-days?*', route => { state.dayReads++; return route.fulfill({ json: day(new URL(route.request().url()).searchParams.get('date')!) }); });
     await page.route('**/api/v1/food-days', async route => {
         if (route.request().method() !== 'PATCH') return route.fallback();
         const payload = route.request().postDataJSON(); state.overrides.set(payload.date, payload.status);
@@ -294,4 +294,35 @@ test('offline cached plan and accepted queued resume converge after real browser
     await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
     await capture(page, info, 'replayed-resume');
+});
+
+
+test('matched accepted queued resume before replay', async ({ page, ux }, info) => {
+    const state = await install(page, ux); await open(page);
+    const initialReads = state.dayReads;
+    state.queueResume = true;
+    expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/resume', status: 503 });
+    await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => new Promise<number>((resolve, reject) => {
+        const request = indexedDB.open('calibrate-offline');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            const db = request.result;
+            const records = db.transaction('queued_mutations', 'readonly').objectStore('queued_mutations').getAll();
+            records.onsuccess = () => { resolve(records.result.filter(record => record.operation === 'food-tracking-pause.resume').length); db.close(); };
+            records.onerror = () => { reject(records.error); db.close(); };
+        };
+    }))).toBe(1);
+    expect(state.active).toBe(true);
+    if (before) {
+        await expect.poll(() => state.dayReads).toBeGreaterThan(initialReads);
+        await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
+    } else {
+        await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+        await expect(page.getByText('Tracking paused', { exact: true })).toHaveCount(0);
+    }
+    await capture(page, info, 'queued-resume');
+    await activateFixtureOffline(page); state.queueResume = false; await page.context().setOffline(false);
+    await expect.poll(() => state.active).toBe(false);
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
 });
