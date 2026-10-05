@@ -1,0 +1,25 @@
+{
+  "source": "62cfa5f755a9737f0e6fa66e064e381ff4a4cac7",
+  "tree": "c2840d10bc8a86d7ff3a91ce29352a33aaa2bc07",
+  "capturedAt": "2026-10-05T18:23:16.706Z",
+  "browser": "154.0.8037.95",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "deviceScale": 1,
+  "finalUrl": "http://127.0.0.1:4174/today",
+  "assets": [
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-b42979445efdc8f29455c175047a7682.js",
+      "sha256": "89b7de32bae32b8d0b5e957b40871dd4dfd2f5dcd8f3650d0a9f12d8b94d4fb7"
+    },
+    {
+      "url": "http://127.0.0.1:4174/_expo/static/js/web/index-b42979445efdc8f29455c175047a7682.js",
+      "sha256": "89b7de32bae32b8d0b5e957b40871dd4dfd2f5dcd8f3650d0a9f12d8b94d4fb7"
+    }
+  ],
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "harnessSha256": "94380c354ff710287bac3bdf1d06d8b6841f37bbab78601fca02a16ebc19361a",
+  "imageSha256": "ab8b6022ffb46752587ed9d5fd40d0e30abcfdb419edcb5246e56cdfbcbf7bf7"
+}

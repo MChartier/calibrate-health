@@ -1,0 +1,13 @@
+[WebServer] (node:10680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 3 tests using 1 worker
+
+(node:36848) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace-capture.spec.ts:6:5 ΓÇ║ matched auth outage reload capture (1.4s)
+  ok 2 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:3:5 ΓÇ║ auth outage retains a local weigh-in across reload and replays after reconnection (2.9s)
+  ok 3 [desktop-chrome] ΓÇ║ e2e\expo-web\offline-workspace.spec.ts:39:5 ΓÇ║ network loss still persists a local weigh-in immediately (1.4s)
+
+  3 passed (7.1s)
