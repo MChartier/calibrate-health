@@ -408,7 +408,7 @@ test('installed shell reports connection loss and recovery', async ({ page }) =>
   await activateFixtureOffline(page);
   await expect(page.getByText("You're offline", { exact: true })).toBeVisible();
   await expect(page.getByText(
-    'Some information may be out of date. Reconnect before making changes.',
+    'Some information may be out of date. Keep tracking locally; pending changes sync after reconnection.',
     { exact: true }
   )).toBeVisible();
 

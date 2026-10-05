@@ -40,6 +40,7 @@ test('network loss still persists a local weigh-in immediately', async ({ page, 
     await ux.install('populated');
     await page.goto('/today');
     await expect(page.getByRole('heading', { name: 'Daily balance', exact: true })).toBeVisible();
+    await page.evaluate(async () => { await navigator.serviceWorker.ready; });
     await activateFixtureOffline(page);
     await page.getByRole('button', { name: "Today's weight. Weigh in. Log weight", exact: true }).click();
     const sheet = page.getByRole('dialog', { name: 'Weight entry' });
@@ -47,5 +48,9 @@ test('network loss still persists a local weigh-in immediately', async ({ page, 
     await sheet.getByRole('button', { name: 'Log weight', exact: true }).click();
     await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Done', exact: true }).click();
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+    await page.route('**/auth/me', (route) => route.abort('internetdisconnected'));
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
     await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
 });

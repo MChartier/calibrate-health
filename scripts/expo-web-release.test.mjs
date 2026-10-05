@@ -142,11 +142,14 @@ test('service-worker enhancement is stable, scoped, and changes with artifact co
   const distDir = createFixture();
   t.after(() => fs.rmSync(distDir, { recursive: true, force: true }));
   fs.writeFileSync(path.join(distDir, 'privacy.html'), '<!doctype html><title>Privacy</title>');
+  fs.mkdirSync(path.join(distDir, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(distDir, 'assets', 'Ionicons.abcdef123456.ttf'), 'synthetic font');
   const first = enhanceExpoWebServiceWorker(distDir);
   const second = enhanceExpoWebServiceWorker(distDir);
   assert.equal(second.cacheVersion, first.cacheVersion);
   assert.ok(first.precachePaths.includes('/index.html'));
-  assert.ok(!first.precachePaths.includes('/privacy.html'));
+  assert.ok(first.precachePaths.includes('/privacy.html'));
+  assert.ok(first.precachePaths.includes('/assets/Ionicons.abcdef123456.ttf'));
   const generatedWorker = fs.readFileSync(path.join(distDir, 'sw.js'), 'utf8');
   assert.match(generatedWorker, /const CACHE_NAME = SHELL_CACHE_PREFIX \+ '[a-f0-9]{12}';/);
   assert.doesNotMatch(generatedWorker, /\$\{CACHE_PREFIX\}/);
@@ -154,7 +157,7 @@ test('service-worker enhancement is stable, scoped, and changes with artifact co
   fs.appendFileSync(path.join(distDir, '_expo', 'static', 'js', 'web', 'index-a1b2c3.js'), '\n// update');
   const changed = enhanceExpoWebServiceWorker(distDir);
   assert.notEqual(changed.cacheVersion, first.cacheVersion);
-  assert.equal(inspectExpoWebExport(distDir).precacheCount, 7);
+  assert.equal(inspectExpoWebExport(distDir).precacheCount, 9);
 });
 
 test('rejects a release artifact missing required PWA files', (t) => {

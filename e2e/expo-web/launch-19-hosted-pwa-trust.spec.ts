@@ -442,7 +442,7 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
   const offlineNotice = page.getByTestId('pwa-offline');
   await expect(advanced.getByRole('button', { name: 'Save connection' })).toHaveCount(0);
   await expect(offlineNotice).toContainText("You're offline");
-  await expect(offlineNotice).toContainText('Some information may be out of date. Reconnect before making changes.');
+  await expect(offlineNotice).toContainText('Some information may be out of date. Keep tracking locally; pending changes sync after reconnection.');
   await expect(offlineNotice.getByRole('button')).toHaveCount(0);
   await expectCompactNoticePlacement(page, 'pwa-offline');
   await expectNoHorizontalOverflow(page);

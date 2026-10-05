@@ -22,7 +22,7 @@ function isBackendPath(pathname) {
 
 function isVersionedStaticAsset(pathname) {
   return /^\/_expo\/static\/(?:js|css)\/.+-[0-9a-f]{8,}\.(?:js|css)$/.test(pathname)
-    || /^\/assets\/.+-[0-9a-f]{8,}\.[a-z0-9]+$/i.test(pathname);
+    || /^\/assets\/.+[.-][0-9a-f]{8,}\.[a-z0-9]+$/i.test(pathname);
 }
 
 function isExplicitShellAsset(pathname) {
@@ -189,7 +189,10 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).catch(async () => {
       const cache = await caches.open(CACHE_NAME);
-      return (await cache.match('/index.html')) ?? Response.error();
+      // Only build-time exported HTML is cached; never store authenticated navigation responses.
+      const routePath = url.pathname === '/' ? '/index.html'
+        : url.pathname.endsWith('.html') ? url.pathname : `${url.pathname.replace(/\/$/, '')}.html`;
+      return (await cache.match(routePath)) ?? (await cache.match('/index.html')) ?? Response.error();
     }));
     return;
   }
