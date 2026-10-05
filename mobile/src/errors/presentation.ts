@@ -1,3 +1,4 @@
+import { OfflineMutationConflict } from '../offline/mutationConflict';
 import { ApiError } from '@calibrate/api-client';
 
 export type ErrorPresentation = {
@@ -67,6 +68,7 @@ export function getErrorPresentation(error: unknown, resourceLabel: string): Err
 }
 
 export function getSafeActionErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof OfflineMutationConflict) return error.message;
     if (looksLikeConnectivityFailure(error)) return 'Check your connection and try again.';
     if (error instanceof ApiError) {
         if (error.status === 401) return 'Your session expired. Sign in again.';

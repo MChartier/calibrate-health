@@ -556,3 +556,30 @@ test('queued resume stays resolved through reload and refetch and replays one re
     expect(writes).toBe(1); expect(new Set(ids).size).toBe(1);
     await expect(prompt).toHaveCount(0);
 });
+
+test('a stale second tab cannot copy server food before another tabs saved food replays', async ({ page, context, ux }) => {
+    await ux.install('populated'); await page.goto('/food-log');
+    await expect(page.getByRole('button', { name: 'Copy day', exact: true })).toBeEnabled();
+    const other = await context.newPage(); await ux.installOnPage(other); await other.goto('/food-log');
+    await other.evaluate(() => { const original = crypto.randomUUID.bind(crypto); Object.defineProperty(crypto, 'randomUUID', { configurable: true, value: () => original().replace(/^00000000/, '00000002') }); });
+    for (const tab of [page, other]) {
+        expectApiFailure(tab, { method: 'POST', pathname: '/api/v1/food', status: 503 });
+        await tab.route('**/api/v1/food', route => route.request().method() === 'POST' ? route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } }) : route.fallback());
+    }
+    let copies = 0;
+    await page.route('**/api/v1/food/copy', route => { copies++; return route.fulfill({ json: { copied_count: 1, target_date: '2026-07-20' } }); });
+    await other.getByRole('button', { name: 'Add food', exact: true }).click();
+    const add = other.getByRole('dialog', { name: 'Add food', exact: true });
+    await add.getByRole('radio', { name: 'Quick', exact: true }).click();
+    await add.getByRole('textbox', { name: 'Calories', exact: true }).fill('200');
+    await add.getByRole('textbox', { name: 'Food name (optional)', exact: true }).fill('Unreplayed oats');
+    await add.getByRole('button', { name: 'Add & close', exact: true }).click();
+    await expect(other.getByRole('button', { name: 'Edit Unreplayed oats', exact: true })).toBeVisible();
+    await expect(page.getByTestId('offline-workspace-status')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Copy day', exact: true }).click();
+    const copy = page.getByRole('dialog', { name: 'Copy day', exact: true });
+    await copy.getByLabel('Copy to date').fill('2026-07-20');
+    await copy.getByRole('button', { name: 'Copy day', exact: true }).click();
+    await expect(copy).toContainText('Synchronize saved changes before copying food.');
+    expect(copies).toBe(0); await other.close();
+});

@@ -1,0 +1,16 @@
+const messages = {
+    "failed": "Resolve the failed pause change in Review saved changes before trying again.",
+    "active": "Tracking is already paused. Update or resume the saved pause before starting another.",
+    "pending": "A resume is already saved. Synchronize or resolve it before changing the pause.",
+    "inactive": "Tracking is already resumed. Refresh before changing the pause.",
+    "duplicate": "This pause change is already saved. Wait for synchronization or use its existing recovery action.",
+    "copy": "Synchronize saved changes before copying food."
+} as const;
+
+/** Only bounded local validation messages may bypass generic action error copy. */
+export class OfflineMutationConflict extends Error {
+    constructor(reason: keyof typeof messages) {
+        super(messages[reason]);
+        this.name = 'OfflineMutationConflict';
+    }
+}

@@ -1,3 +1,5 @@
+import { OfflineMutationConflict } from '../offline/mutationConflict';
+import { copyFoodWhenSynchronized } from './copyFoodWhenSynchronized';
 import { findFailedFood } from '../offline/failedCreation';
 import { localTarget } from '../offline/trackingProjection';
 import { useTrackingFood } from '../offline/useTrackingQueries';
@@ -181,7 +183,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                 }];
             }
             await deleteRecovery.flush();
-            return api.copyFoodLogs(payload);
+            return copyFoodWhenSynchronized(outbox.withOutbox, () => api.copyFoodLogs(payload));
         },
         onSuccess: async (response) => {
             copyOperationRef.current = null;
@@ -194,7 +196,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
             await invalidateLogQueries([response.target_date]);
         },
         onError: (error) => {
-            reportClientOperationFailure('food_copy', error);
+            if (!(error instanceof OfflineMutationConflict)) reportClientOperationFailure('food_copy', error);
         }
     });
 

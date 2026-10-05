@@ -209,8 +209,9 @@ it('keeps a second-client active pause after replaying an old resume and later e
     try {
         await recordFoodDayReceipt('account', 'food-tracking-pause.resume', { resumed_on: '2026-08-11' }, 'obsolete-resume');
         await store.enqueue({ id: 'old-resume', operation: 'food-tracking-pause.resume', payload: { resumed_on: date } });
+        expect((await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile()).replayed).toBe(1);
         await store.enqueue({ id: 'expectation', operation: 'food-tracking-pause.update', payload: { expected_resume_on: null } });
-        expect((await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile()).replayed).toBe(2);
+        expect((await new OutboxReconciler(store, createQueuedMutationExecutor(api), 'account').reconcile()).replayed).toBe(1);
         const rows = await readFoodDayReceipts('account');
         expect(queuedFoodDayStatus(rows, date)).toBe('OPEN');
         expect(queuedFoodDayStatus(rows, '2026-08-10', 'OPEN')).toBe('PAUSED');
