@@ -101,7 +101,7 @@ const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) =
     useBrowserNotificationStream({ enabled: Boolean(user && hasFullAccountAccess(user)), serverUrl, queryClient });
     return (
         <OfflineOutboxProvider executeMutation={executeMutation} onReplayCompleted={onReplayCompleted}>
-            <HealthConnectProvider><OfflineWorkspaceStatus />{children}</HealthConnectProvider>
+            <HealthConnectProvider>{children}</HealthConnectProvider>
         </OfflineOutboxProvider>
     );
 };
@@ -159,6 +159,7 @@ const WebRootRuntime: React.FC = () => {
                                         { height: visualViewportHeight }
                                     ]}
                                 >
+                                    <OfflineWorkspaceStatus />
                                     <Slot />
                                 </View>
                             </BrowserRuntime>
