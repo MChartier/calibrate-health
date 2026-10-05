@@ -8,6 +8,7 @@ import type { ReconcileResult } from './reconciler';
 import type { QueuedMutation } from './queuedMutation';
 
 const mockOutbox = {
+    discardFailedMutation: jest.fn(async (_id: string) => undefined),
     recoverInterrupted: jest.fn(async () => undefined),
     list: jest.fn(async (): Promise<QueuedMutation[]> => []),
     clear: jest.fn(async () => undefined)
@@ -48,6 +49,15 @@ jest.mock('./reconciler', () => ({
 jest.mock('../wear/syncInvalidation', () => ({ queueWearSyncInvalidation: jest.fn() }));
 
 describe('native offline outbox provider recovery', () => {
+    it('reconciles remaining work after successful scoped discard', async () => {
+        const wrapper = ({ children }: { children: React.ReactNode }) => <OfflineOutboxProvider executeMutation={async () => undefined}>{children}</OfflineOutboxProvider>;
+        const { result } = renderHook(() => useOfflineOutbox(), { wrapper });
+        await waitFor(() => expect(result.current.isReady).toBe(true));
+        mockReconcile.mockClear();
+        await act(async () => { await result.current.discardFailedMutation('failed'); });
+        expect(mockOutbox.discardFailedMutation).toHaveBeenCalledWith('failed');
+        expect(mockReconcile).toHaveBeenCalledTimes(1);
+    });
     beforeEach(() => {
         jest.clearAllMocks();
         mockOutboxesByNamespace.clear();

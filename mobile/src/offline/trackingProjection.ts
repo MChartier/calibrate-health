@@ -1,3 +1,4 @@
+import { findFailedMetric, metricMutationDate } from './failedMutationRecovery';
 import { findFailedFood } from './failedCreation';
 import type { FoodLogEntry, MetricEntry, FoodLogCreatePayload } from '@calibrate/api-client';
 import type { QueuedMutation } from './queuedMutation';
@@ -78,7 +79,7 @@ export function projectMetrics(entries: readonly MetricEntry[] | undefined, muta
             const reference: LocalCreation = prior?.localCreation ?? { operationId: mutation.id, localId: -mutation.sequence, operation: 'metric.add', payload: p };
             const entry = { id: prior?.id ?? reference.localId, date: p.date, weight: p.weight, ...(prior && !prior.localCreation ? {} : { localCreation: reference }) };
             result = [...result.filter(row => row.date.slice(0, 10) !== p.date), entry];
-        } else if (mutation.operation === 'metric.delete' && mutation.state !== 'failed') {
+        } else if (mutation.operation === 'metric.delete' && mutation.state !== 'failed' && !findFailedMetric(mutations, metricMutationDate(p) ?? result?.find(row => row.id === p.id)?.date.slice(0, 10) ?? '')) {
             result = result?.filter(row => row.id !== p.id && (!p.localCreation || row.date.slice(0, 10) !== fields(fields(p.localCreation).payload).date));
         }
     }

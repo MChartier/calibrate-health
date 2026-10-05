@@ -66,6 +66,29 @@ describe('IndexedDbOutbox', () => {
         expect((await outbox.claimNext())?.id).toBe('other-date');
     });
 
+    it.each(['metric.add', 'metric.delete'])('atomically refuses trapped corrections after failed %s and preserves original retry/day isolation', async operation => {
+        const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE);
+        const other = new IndexedDbOutbox(database, SECOND_NAMESPACE);
+        const payload = operation === 'metric.add' ? { date: '2026-07-21', weight: 88 } : { id: 42, date: '2026-07-21' };
+        await outbox.enqueue({ id: 'failed', operation, payload });
+        await outbox.enqueue({ id: 'old-correction', operation: 'metric.add', payload: { date: '2026-07-21', weight: 89 } });
+        await outbox.claimNext(); await outbox.fail('failed', 'Rejected');
+        await expect(outbox.enqueue({ id: 'trapped', operation: 'metric.add', payload: { date: '2026-07-21', weight: 90 } })).rejects.toThrow('Resolve');
+        expect((await outbox.list()).map(row => row.id)).toEqual(['failed', 'old-correction']);
+        await outbox.enqueue({ id: 'other-day', operation: 'metric.add', payload: { date: '2026-07-22', weight: 91 } });
+        await other.enqueue({ id: 'other-account', operation: 'metric.add', payload: { date: '2026-07-21', weight: 95 } });
+        await outbox.retryFailed('failed');
+        expect(await outbox.claimNext()).toEqual(expect.objectContaining({ id: 'failed', payload, attemptCount: 2 }));
+        await outbox.fail('failed', 'Still rejected');
+        await outbox.discardFailedMutation('failed');
+        expect((await outbox.list()).map(row => row.id)).toEqual(['other-day']);
+        expect(await other.list()).toHaveLength(1);
+        expect((await outbox.claimNext())?.id).toBe('other-day');
+        await outbox.complete('other-day');
+        await outbox.enqueue({ id: 'replacement', operation: 'metric.add', payload: { date: '2026-07-21', weight: 92 } });
+        expect((await outbox.claimNext())?.id).toBe('replacement');
+    });
+
     it('persists all supported write shapes in insertion order with stable operation IDs', async () => {
         const outbox = new IndexedDbOutbox(database, FIRST_NAMESPACE, () => 'unused', () => 100);
         const writes = [

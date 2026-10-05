@@ -74,6 +74,22 @@ describe('browser offline outbox provider', () => {
 
     afterEach(() => database.close());
 
+    it('resumes remaining ordered intent immediately after explicit failed-weight discard', async () => {
+        const queue = new IndexedDbOutbox(database, createOutboxNamespace('https://health.example', 7));
+        await queue.enqueue({ id: 'failed', operation: 'metric.add', payload: { date: '2026-07-21', weight: 88 } });
+        await queue.enqueue({ id: 'next-day', operation: 'metric.add', payload: { date: '2026-07-22', weight: 90 } });
+        await queue.claimNext(); await queue.fail('failed', 'Rejected');
+        const executeMutation = jest.fn(async () => undefined);
+        const wrapper = ({ children }: { children: React.ReactNode }) => <OfflineOutboxProvider executeMutation={executeMutation} openDatabase={openDatabase}>{children}</OfflineOutboxProvider>;
+        const { result } = renderHook(() => useOfflineOutbox(), { wrapper });
+        await waitFor(() => expect(result.current.mutations).toHaveLength(2));
+        expect(executeMutation).not.toHaveBeenCalled();
+        await act(async () => { await result.current.discardFailedMutation('failed'); });
+        expect(executeMutation).toHaveBeenCalledTimes(1);
+        expect(executeMutation).toHaveBeenCalledWith(expect.objectContaining({ id: 'next-day' }));
+        expect(await queue.list()).toEqual([]);
+    });
+
     it('does not open or replay the browser outbox while account access is restricted', async () => {
         mockAuthState = {
             serverUrl: 'https://health.example',

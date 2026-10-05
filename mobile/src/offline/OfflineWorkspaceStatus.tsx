@@ -1,3 +1,4 @@
+import { FailedMutationRecovery } from './FailedChangeRecoveryPanel';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, View } from 'react-native';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
@@ -64,10 +65,11 @@ export function OfflineWorkspaceStatus() {
             recoveryRef.current = () => undefined;
         };
     }, [serverUrl, pendingReconnection, queryClient, recheckClientCompatibility, reconcile, user?.id]);
+    const hasFailure = mutations.some(row => row.state === 'failed');
     if (!user || (!pendingReconnection && mutations.length === 0)) return null;
     return <><AppNotice accessibilityLiveRegion="polite" testID="offline-workspace-status">
         <AppText variant="card">{pendingReconnection ? 'Pending reconnection' : 'Changes pending sync'}</AppText>
-        <AppText>Keep tracking on this device. {mutations.length} pending changes will sync after your connection and account access are verified.</AppText>
+        <AppText>{hasFailure ? 'A saved change needs attention before synchronization can continue. Unrelated changes remain saved on this device. Open Review saved changes to recover.' : `Keep tracking on this device. ${mutations.length} pending changes will sync after your connection and account access are verified.`}</AppText>
         {mutations.length > 0 ? <AppButton title="Review saved changes" onPress={() => setReviewing(true)} /> : null}
         {pendingReconnection ? <AppButton title={retrying ? 'Reconnecting...' : 'Retry connection'} disabled={retrying} onPress={() => recoveryRef.current()} /> : null}
     </AppNotice>
@@ -79,6 +81,7 @@ export function OfflineWorkspaceStatus() {
                     <AppText variant="card">{description.title}</AppText>
                     {description.details.map((detail, index) => <AppText key={index}>{detail}</AppText>)}
                     <AppText>{mutation.state === 'failed' ? 'Needs attention before synchronization' : 'Pending synchronization'}</AppText>
+                    {mutation.state === 'failed' && <FailedMutationRecovery mutation={mutation} />}
                 </View>;
             })}
             <AppText>You can edit or delete local entries in your tracking views. Changes synchronize in the order saved.</AppText>

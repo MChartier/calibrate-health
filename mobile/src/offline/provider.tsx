@@ -18,6 +18,7 @@ type OfflineOutboxContextValue = {
     retryFailed: (id?: string) => Promise<ReconcileResult>;
     discardAll: () => Promise<void>;
     discardFailedFood: (id: string) => Promise<void>;
+    discardFailedMutation: (id: string) => Promise<void>;
     refresh: () => Promise<void>;
 };
 
@@ -125,10 +126,14 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         return result;
     }, [notifyAfterReplay, reconciler, refresh]);
 
-    const discardFailedFood = useCallback(async (id: string) => {
-        await requireOutbox().discardFailedFood(id);
+    const discardFailedMutation = useCallback(async (id: string) => {
+        await requireOutbox().discardFailedMutation(id);
         await refresh();
-    }, [refresh, requireOutbox]);
+        // Removing a failed barrier should resume remaining intent without waiting for another lifecycle event.
+        await reconcile().catch(() => undefined);
+    }, [reconcile, refresh, requireOutbox]);
+
+    const discardFailedFood = discardFailedMutation;
 
     const discardAll = useCallback(async () => {
         await requireOutbox().clear();
@@ -208,8 +213,9 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         retryFailed,
         discardAll,
         discardFailedFood,
+        discardFailedMutation,
         refresh
-    }), [discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

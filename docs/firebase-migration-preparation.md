@@ -276,8 +276,27 @@ A queued deletion behind a failed edit leaves the entry visible for recovery. Th
 editor blocks Save and redirects Delete into recovery while that entry has a failed
 intent. Unrelated offline writes remain durable behind the existing ordered queue
 barrier and are visibly pending; recovery does not reorder them or silently replay
-a changed request. Metric and day-state operations retain their existing original-ID
-retry and ordered-barrier contracts; food discard never removes those operations.
+a changed request. All ten supported mutation kinds share an insertion-time failure guard in the same
+SQLite/IndexedDB transaction as enqueue. A related correction is rejected before
+acknowledgement while its earlier request is failed. Unrelated local work remains
+durable and visibly blocked behind the ordered failure barrier; the notice does not
+promise reconnection alone will repair a nonretryable request.
+
+Weight upserts and deletions recover by calendar day, including optimistic records.
+New queued deletions retain their date. A legacy deletion without a known date
+conservatively blocks weight corrections until recovery, but scoped discard never
+removes unrelated dated records. Failed weight edits/deletions keep the entry visible
+and expose retry or explicit discard in the weight sheet.
+
+The shared saved-changes sheet provides original-request retry and a confirmation
+listing the exact related intent for every failed kind. Food recovery groups one
+entry; weight recovery groups one day; tracking-day and pause/resume requests are
+reviewed together because a pause can span multiple days. Control discard explicitly
+lists all affected queued controls and preserves food/weight records. Transactions
+reject stale recovery after retry or active replay. Successful scoped discard starts
+reconciliation immediately, so remaining eligible intent does not wait for another
+foreground/reload event; network failures retain the usual bounded retry behavior. Neither retry nor discard
+silently rewrites an ambiguous request or claims to undo server changes.
 
 Maintained client tests cover startup network/auth outages, confirmed rejection,
 account/server isolation, durable outbox restart and true-offline weigh-in intent.

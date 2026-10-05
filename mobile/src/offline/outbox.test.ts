@@ -34,7 +34,7 @@ function row(overrides: Partial<TestRow> = {}): TestRow {
 }
 
 function databaseMock(overrides: Partial<OutboxDatabase> = {}): OutboxDatabase {
-    return {
+    const database = {
         execAsync: jest.fn(async () => undefined),
         getAllAsync: jest.fn(async () => []),
         getFirstAsync: jest.fn(async () => null),
@@ -42,6 +42,8 @@ function databaseMock(overrides: Partial<OutboxDatabase> = {}): OutboxDatabase {
         withExclusiveTransactionAsync: jest.fn(async () => undefined),
         ...overrides
     } as OutboxDatabase;
+    if (!overrides.withExclusiveTransactionAsync) database.withExclusiveTransactionAsync = jest.fn(async task => task(database as never));
+    return database;
 }
 
 describe('SqliteOutbox', () => {
@@ -84,6 +86,15 @@ describe('SqliteOutbox', () => {
             100,
             100
         ]);
+    });
+
+    it('rejects a same-day metric correction inside the insertion transaction without losing existing work', async () => {
+        const transaction = databaseMock({ getAllAsync: jest.fn(async () => [row({ operation: 'metric.delete', state: 'failed', payload_json: '{"id":42,"date":"2026-07-21"}' })]) });
+        const database = databaseMock({ withExclusiveTransactionAsync: jest.fn(async task => task(transaction as never)) });
+        const outbox = new SqliteOutbox(database, namespace);
+        await expect(outbox.enqueue({ operation: 'metric.add', payload: { date: '2026-07-21', weight: 88 } })).rejects.toThrow('Resolve');
+        expect(transaction.runAsync).not.toHaveBeenCalled();
+        expect(database.getFirstAsync).not.toHaveBeenCalled();
     });
 
     it('claims the oldest pending mutation and records its replay attempt atomically', async () => {

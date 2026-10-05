@@ -351,3 +351,83 @@ test('failed edits on a server row require explicit recovery before correction o
     await expect(page.getByTestId('offline-workspace-status')).toHaveCount(0);
     expect(writes).toEqual([expect.objectContaining({ calories: 500 })]);
 });
+
+
+for (const failedOperation of ['metric.add', 'metric.delete']) {
+    test('failed weight recovery blocks trapped corrections for ' + failedOperation, async ({ page, ux }) => {
+        await ux.install('populated');
+        const existing = failedOperation === 'metric.delete';
+        if (existing) await page.route('**/api/v1/metrics', route => route.request().method() === 'GET'
+            ? route.fulfill({ json: [{ id: 900, date: '2026-07-21', weight: 88 }] }) : route.fallback());
+        await page.goto('/weight');
+        const weight = page.getByRole('dialog', { name: 'Weight entry' });
+        await expect(weight.getByRole('textbox', { name: 'Weight in kilograms', exact: true })).toBeVisible();
+        await page.evaluate(({ operation, existing }) => new Promise<void>((resolve, reject) => {
+            const open = indexedDB.open('calibrate-offline');
+            open.onsuccess = () => { const db = open.result; const tx = db.transaction('queued_mutations', 'readwrite'); const store = tx.objectStore('queued_mutations');
+                const base = { namespace: location.origin + '::user:17', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1 };
+                store.add({ ...base, id: 'failed-weight', operation, payloadJson: JSON.stringify(existing ? { id: 900, date: '2026-07-21' } : { date: '2026-07-21', weight: 87.9 }), state: 'failed', attemptCount: 1, lastError: 'Rejected' });
+                store.add({ ...base, id: 'old-correction', operation: 'metric.add', payloadJson: JSON.stringify({ date: '2026-07-21', weight: 88.5 }), state: 'pending' });
+                store.add({ ...base, id: 'other-date', operation: 'metric.add', payloadJson: JSON.stringify({ date: '2026-07-22', weight: 90 }), state: 'pending' });
+                tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
+            open.onerror = () => reject(open.error);
+        }), { operation: failedOperation, existing });
+        expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 503 });
+        const outage = async (route: import('@playwright/test').Route) => route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } });
+        await page.route('**/auth/me', outage); await page.reload();
+        await expect(weight).toContainText('Related corrections cannot synchronize');
+        await weight.getByRole('textbox', { name: 'Weight in kilograms', exact: true }).fill('89');
+        await expect(weight.getByRole('button', { name: /^(Log|Save) weight$/ })).toBeDisabled();
+        await expect(weight.getByRole('button', { name: 'Delete weigh-in', exact: true })).toBeDisabled();
+        await weight.getByRole('button', { name: 'Discard related queued changes', exact: true }).click();
+        await expect(weight).toContainText('This does not undo anything that reached the server.');
+        await weight.getByRole('button', { name: 'Confirm discard related changes', exact: true }).click();
+        await expect(weight.getByRole('button', { name: 'Retry original request', exact: true })).toHaveCount(0);
+        await page.reload();
+        await weight.getByRole('textbox', { name: 'Weight in kilograms', exact: true }).fill('89');
+        await weight.getByRole('button', { name: /^(Log|Save) weight$/ }).click();
+        await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
+        await page.goto('/today');
+        await expect(page.getByTestId('offline-workspace-status')).toContainText('2 pending changes');
+        const writes: Array<{ date: string; weight: number }> = [];
+        await page.route('**/api/v1/metrics', route => {
+            if (route.request().method() !== 'POST') return route.fallback();
+            const payload = route.request().postDataJSON(); writes.push(payload);
+            return route.fulfill({ json: { id: payload.date === '2026-07-21' ? 900 : 901, ...payload } });
+        });
+        await page.unroute('**/auth/me', outage);
+        await page.getByRole('button', { name: 'Retry connection', exact: true }).click();
+        await expect(page.getByTestId('offline-workspace-status')).toHaveCount(0);
+        expect(writes).toEqual([{ date: '2026-07-22', weight: 90 }, { date: '2026-07-21', weight: 89 }]);
+    });
+}
+
+
+test('failed tracking controls have explicit shared recovery without losing unrelated weight', async ({ page, ux }) => {
+    await ux.install('populated'); await page.goto('/today');
+    await expect(page.getByRole('heading', { name: 'Daily balance', exact: true })).toBeVisible();
+    await page.evaluate(() => new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('calibrate-offline');
+        open.onsuccess = () => { const db = open.result; const tx = db.transaction('queued_mutations', 'readwrite'); const store = tx.objectStore('queued_mutations');
+            const base = { namespace: location.origin + '::user:17', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1 };
+            store.add({ ...base, id: 'failed-pause', operation: 'food-tracking-pause.start', payloadJson: JSON.stringify({ starts_on: '2026-07-21', expected_resume_on: '2026-07-25' }), state: 'failed', attemptCount: 1, lastError: 'Rejected' });
+            store.add({ ...base, id: 'later-status', operation: 'food-day.set-status', payloadJson: JSON.stringify({ date: '2026-07-22', status: 'OPEN' }), state: 'pending' });
+            store.add({ ...base, id: 'keep-weight', operation: 'metric.add', payloadJson: JSON.stringify({ date: '2026-07-23', weight: 90 }), state: 'pending' });
+            tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
+        open.onerror = () => reject(open.error);
+    }));
+    expectApiFailure(page, { method: 'GET', pathname: '/auth/me', status: 503 });
+    await page.route('**/auth/me', route => route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } }));
+    await page.reload();
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('needs attention before synchronization can continue');
+    await page.getByRole('button', { name: 'Review saved changes', exact: true }).click();
+    const review = page.getByRole('dialog', { name: 'Saved on this device', exact: true });
+    await review.getByRole('button', { name: 'Discard related queued changes', exact: true }).click();
+    await expect(review).toContainText('Other changes and accounts are kept.');
+    await review.getByRole('button', { name: 'Confirm discard related changes', exact: true }).click();
+    await expect(review.getByRole('button', { name: 'Retry original request', exact: true })).toHaveCount(0);
+    await expect(review).toContainText('Weight: 90 kg');
+    await review.getByRole('button', { name: /close/i }).click();
+    await page.reload();
+    await expect(page.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+});

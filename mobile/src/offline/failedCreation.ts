@@ -1,9 +1,11 @@
 import type { QueuedMutation } from './queuedMutation';
 
 type FoodTarget = { id?: number; date?: string; localCreation?: { operationId?: string; payload?: { date?: unknown } } };
-const target = (row: QueuedMutation): FoodTarget => row.operation === 'food.create'
-    ? { date: (row.payload as FoodTarget).date, localCreation: { operationId: row.id } }
-    : row.payload as FoodTarget;
+const target = (row: QueuedMutation): FoodTarget => {
+    const payload = row.payload && typeof row.payload === 'object' && !Array.isArray(row.payload) ? row.payload as FoodTarget : {};
+    if (row.operation === 'food.create') return { date: payload.date, localCreation: { operationId: row.id } };
+    return payload;
+};
 function sameTarget(a: FoodTarget, b: FoodTarget): boolean {
     const firstDate = a.date ?? a.localCreation?.payload?.date;
     const secondDate = b.date ?? b.localCreation?.payload?.date;

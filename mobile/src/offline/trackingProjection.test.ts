@@ -56,3 +56,11 @@ it('keeps an entry visible when deletion is trapped behind its failed edit', () 
     const deletion = mutation(2, 'food.delete', { id: 5, date });
     expect(projectFood([entry], [update, deletion], date)).toEqual([expect.objectContaining({ id: 5, calories: 300 })]);
 });
+
+it('retains optimistic and existing weight rows when deletion is behind a failed same-day upsert', () => {
+    const add = { ...mutation(1, 'metric.add', { date, weight: 88 }), state: 'failed' as const };
+    const optimistic = projectMetrics([], [add])![0];
+    expect(projectMetrics([], [add, mutation(2, 'metric.delete', { ...localTarget(optimistic), date })])).toEqual([expect.objectContaining({ weight: 88 })]);
+    const existing = { id: 42, date, weight: 90 };
+    expect(projectMetrics([existing], [add, mutation(2, 'metric.delete', { id: 42, date })])).toEqual([expect.objectContaining({ id: 42, weight: 88 })]);
+});
