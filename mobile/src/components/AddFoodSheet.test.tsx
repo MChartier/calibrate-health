@@ -1,3 +1,5 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+import { recordFoodDayReceipt } from '../offline/foodDayReceipts';
 import { createOutboxDispatch, type OutboxDispatch } from '../offline/mutationDispatch';
 import type { QueuedMutation } from '../offline/queuedMutation';
 import React from 'react';
@@ -252,7 +254,11 @@ describe('AddFoodSheet async resource states', () => {
         const rows: QueuedMutation[] = [{ id: kind === 'receipt' ? 'receipt:resume' : 'resume', namespace: 'test', sequence: 1, state: kind === 'failed' ? 'failed' : 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-tracking-pause.resume', payload: { resumed_on: resumedOn } }];
         if (kind === 'later-pause') rows.push({ ...rows[0], id: 'later-pause', sequence: 2, operation: 'food-tracking-pause.start', payload: { starts_on: '2026-08-08' } });
         const write = jest.fn(async () => undefined);
-        mockWithOutbox = createOutboxDispatch('resume-boundary-' + kind + resumedOn, async () => rows, write, () => true);
+        const namespace = 'resume-boundary-' + kind + resumedOn;
+        if (kind === 'receipt') {
+            await recordFoodDayReceipt(namespace, 'food-tracking-pause.resume', { resumed_on: resumedOn }, 'applied-resume');
+        }
+        mockWithOutbox = createOutboxDispatch(namespace, async () => kind === 'receipt' ? [] : rows, write, () => true, true);
         const screen = renderSheet(client => client.setQueryData(['mobile-food-day', '2026-08-08'], { date: '2026-08-08', status: 'PAUSED' }));
         fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
         fireEvent.changeText(screen.getByLabelText('Calories'), '120');
