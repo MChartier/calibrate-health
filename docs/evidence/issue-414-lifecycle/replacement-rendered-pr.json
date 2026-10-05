@@ -1,0 +1,78 @@
+{
+  "checkedAtUtc": "2026-10-05T22:43:34.380Z",
+  "url": "https://github.com/MChartier/calibrate-health/pull/426",
+  "browser": "154.0.8037.95",
+  "pairs": 5,
+  "images": [
+    {
+      "alt": "Before: generic paused Today",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/before-compact-phone-chrome-dated-today-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "afd567d9858931bdf34dfeeeef5300f6e0fec4904efa6a90bcf66a7d5994e0ef"
+    },
+    {
+      "alt": "After: Saved expectation on Today",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/after-compact-phone-chrome-dated-today-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "df7d0d188ae23a104ecdf5a5b8a10a392aa3aab03bb632e8bd4732e6deef7fae"
+    },
+    {
+      "alt": "Before: future dates unmarked and next month disabled",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/before-compact-phone-chrome-calendar-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+    },
+    {
+      "alt": "After: Future planned days, view only",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/after-compact-phone-chrome-calendar-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+    },
+    {
+      "alt": "Before: resume error keeps tracking paused",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/before-compact-phone-chrome-matched-failed-resume.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "d59651dc105f16fdb892086b50868265d867162ed3723b8519cd5c50ea929c06"
+    },
+    {
+      "alt": "After: Failed resume retains expectation",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/after-compact-phone-chrome-matched-failed-resume.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "cc5744220c33b0f318c291b88fd01a24faa5bd1727f4047c36efb616fe514e6a"
+    },
+    {
+      "alt": "Before: queued resume returns to paused UI",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/before-compact-phone-chrome-queued-resume.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "5189273cdbd63ed7bd2765115debf7279ade46acfc0441e001bee8ff3cdcc740"
+    },
+    {
+      "alt": "After: accepted local resume remains pending sync",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/after-compact-phone-chrome-queued-resume.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "a3663de9669d1536f08e30fc245e94a42fe8229068d9ce6dd69a08e77f7897a8"
+    },
+    {
+      "alt": "Before: queued pause has no future calendar markers",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/before-compact-phone-chrome-queued-start-calendar.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "a2fc9a7f90dcbd69b45f93833819bc699d5c6e51fb16f3665f9c606382b3af35"
+    },
+    {
+      "alt": "After: queued planned pause survives calendar reads",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/4aef4cc41e50b69c4887961f716107529490a954/docs/evidence/issue-414-lifecycle/after-compact-phone-chrome-queued-start-calendar.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "70ebbd60710592eea963912d846bf207a29d778449980ecc5a25c627c694ad29"
+    }
+  ]
+}
