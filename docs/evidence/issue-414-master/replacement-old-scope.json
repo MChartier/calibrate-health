@@ -1,0 +1,2006 @@
+{
+  "checkedAtUtc": "2026-10-05T22:01:46.810Z",
+  "repo": "MChartier/calibrate-health",
+  "pr": 419,
+  "baseRef": "master",
+  "baseSha": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "headSha": "35c1be606810069b4418f6c6f8093d2087ab4f8b",
+  "mergeBase": "6fadbcc6a6437609ae6e2d49d73ed3da95a94b47",
+  "commits": [
+    {
+      "sha": "1d5e4315af27f741fad26d8a163867fda903a44b",
+      "parents": [
+        "d8e55c105834093f889b2cff2a5c96d224cc6e80"
+      ],
+      "message": "Show expected resume and display-only planned pause days",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "added",
+          "additions": 189,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/components/FoodTrackingStatus.tsx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 6
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+          "status": "modified",
+          "additions": 27,
+          "deletions": 2
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.tsx",
+          "status": "modified",
+          "additions": 52,
+          "deletions": 13
+        },
+        {
+          "path": "mobile/src/food/plannedPause.test.ts",
+          "status": "added",
+          "additions": 57,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/food/plannedPause.ts",
+          "status": "added",
+          "additions": 37,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/food/queryKeys.ts",
+          "status": "added",
+          "additions": 1,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/food/useFoodTrackingPause.ts",
+          "status": "added",
+          "additions": 13,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.test.ts",
+          "status": "modified",
+          "additions": 12,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.ts",
+          "status": "modified",
+          "additions": 13,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.test.tsx",
+          "status": "added",
+          "additions": 46,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.tsx",
+          "status": "modified",
+          "additions": 19,
+          "deletions": 0
+        }
+      ]
+    },
+    {
+      "sha": "0f997b40182b70f486514a0b670581c576bccea4",
+      "parents": [
+        "1d5e4315af27f741fad26d8a163867fda903a44b"
+      ],
+      "message": "Refresh plan while browsing and preserve replay concurrency",
+      "files": [
+        {
+          "path": "docs/evidence/issue-414/build.mjs",
+          "status": "added",
+          "additions": 26,
+          "deletions": 0
+        },
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "modified",
+          "additions": 58,
+          "deletions": 2
+        },
+        {
+          "path": "mobile/src/components/FoodTrackingStatus.test.tsx",
+          "status": "modified",
+          "additions": 35,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+          "status": "modified",
+          "additions": 6,
+          "deletions": 1
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.tsx",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 0
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.ts",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 8
+        }
+      ]
+    },
+    {
+      "sha": "4fde62eec9e6aa8c564823c320139279da6a3bd6",
+      "parents": [
+        "0f997b40182b70f486514a0b670581c576bccea4"
+      ],
+      "message": "Normalize Windows host identity in evidence recorder",
+      "files": [
+        {
+          "path": "docs/evidence/issue-414/build.mjs",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1
+        }
+      ]
+    },
+    {
+      "sha": "78b27ec05126d1e17fd12b4ba1c7cde67d1e7415",
+      "parents": [
+        "4fde62eec9e6aa8c564823c320139279da6a3bd6"
+      ],
+      "message": "Verify durable browser replay and bind capture harness identity",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "modified",
+          "additions": 16,
+          "deletions": 1
+        }
+      ]
+    },
+    {
+      "sha": "69db73fa18b7069b580e347c9891e876214b82a3",
+      "parents": [
+        "78b27ec05126d1e17fd12b4ba1c7cde67d1e7415"
+      ],
+      "message": "Exercise overdue plans, stale recovery and disabled activation",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "modified",
+          "additions": 33,
+          "deletions": 0
+        }
+      ]
+    },
+    {
+      "sha": "382d279ccff26901551f7b41b174c1069895aa25",
+      "parents": [
+        "69db73fa18b7069b580e347c9891e876214b82a3"
+      ],
+      "message": "Keep resume expectation within the existing paused heading space",
+      "files": [
+        {
+          "path": "mobile/src/today/PausedDayMessage.tsx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 2
+        }
+      ]
+    },
+    {
+      "sha": "1604cc874bccbea451bda5756bda040dfdad211a",
+      "parents": [
+        "382d279ccff26901551f7b41b174c1069895aa25"
+      ],
+      "message": "Protect full weight-row visibility in matched pause captures",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 0
+        }
+      ]
+    },
+    {
+      "sha": "46b2e1bd5a5016a379378f96cf97bbb34c7a4efc",
+      "parents": [
+        "1604cc874bccbea451bda5756bda040dfdad211a"
+      ],
+      "message": "Document evidence provenance and assert visible weight labels",
+      "files": [
+        {
+          "path": "docs/evidence/issue-414/README.md",
+          "status": "added",
+          "additions": 57,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/assemble.mjs",
+          "status": "added",
+          "additions": 40,
+          "deletions": 0
+        },
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 1
+        }
+      ]
+    },
+    {
+      "sha": "df7f420e7d37ef9c42215d41fe3631b5e6de4776",
+      "parents": [
+        "46b2e1bd5a5016a379378f96cf97bbb34c7a4efc"
+      ],
+      "message": "Wait for the due prompt before exercising dismissal",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 0
+        }
+      ]
+    },
+    {
+      "sha": "fba1baf2175b7c4ad2c2c47ccbe373d618404393",
+      "parents": [
+        "df7f420e7d37ef9c42215d41fe3631b5e6de4776"
+      ],
+      "message": "Retain matched planned-pause evidence and verified provenance",
+      "files": [
+        {
+          "path": "docs/evidence/issue-414/after-build.json",
+          "status": "added",
+          "additions": 708,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-build.log",
+          "status": "added",
+          "additions": 156,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-update.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-update.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-large-text.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-large-text.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-failed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-failed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-recovered-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-recovered-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-offline-saved-plan.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-offline-saved-plan.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-open-ended-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-open-ended-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-overdue-today.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-overdue-today.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-replayed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-replayed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-resumed-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-resumed-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-stale-plan.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-stale-plan.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-unavailable-metadata.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-unavailable-metadata.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-year-boundary.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-year-boundary.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-update.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-update.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-failed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-failed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-recovered-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-recovered-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-offline-saved-plan.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-offline-saved-plan.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-open-ended-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-open-ended-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-overdue-today.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-overdue-today.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-replayed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-replayed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-resumed-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-resumed-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-stale-plan.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-stale-plan.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-unavailable-metadata.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-unavailable-metadata.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-year-boundary.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-year-boundary.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/backend-pause-final.log",
+          "status": "added",
+          "additions": 13,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-build.json",
+          "status": "added",
+          "additions": 708,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-build.log",
+          "status": "added",
+          "additions": 154,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-failed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-failed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-recovered-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-recovered-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-dark.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-dark.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-light.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-light.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-failed-resume.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-failed-resume.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-recovered-calendar.json",
+          "status": "added",
+          "additions": 47,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-recovered-calendar.png",
+          "status": "added",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/browser-baseline.log",
+          "status": "added",
+          "additions": 15,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/browser-existing.log",
+          "status": "added",
+          "additions": 30,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/browser-final.log",
+          "status": "added",
+          "additions": 36,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/lint-final.log",
+          "status": "added",
+          "additions": 44,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/manifest.json",
+          "status": "added",
+          "additions": 572,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/mobile-tests-final.log",
+          "status": "added",
+          "additions": 250,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/release-final.log",
+          "status": "added",
+          "additions": 26,
+          "deletions": 0
+        }
+      ]
+    },
+    {
+      "sha": "cb8b4ce8c2f1eed0c9c3ff0813d85c9bde953c74",
+      "parents": [
+        "fba1baf2175b7c4ad2c2c47ccbe373d618404393",
+        "6fadbcc6a6437609ae6e2d49d73ed3da95a94b47"
+      ],
+      "message": "Merge cleaned calendar parent into planned pause branch",
+      "files": [
+        {
+          "path": "docs/pr-screenshots/issue-408/README.md",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 81
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/android-phone-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/android-phone-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/README.md",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 45
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/after-desktop-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/after-phone-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/before-desktop-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/before-phone-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/capture.spec.ts",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 48
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/fixture.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 317
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/before-after/manifest.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 176
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/calendar-food-edit.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/calendar-large-text-days.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/calendar-large-text-legend.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/calendar-recompleted-after-edit.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/calendar-request-failure.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/compact-phone-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/compact-phone-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/README.md",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 52
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/after-desktop-light.capture.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 270
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/after-desktop-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/after-phone-dark.capture.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 270
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/after-phone-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/android-phone-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/android-phone-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/before-desktop-light.capture.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 270
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/before-desktop-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/before-phone-dark.capture.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 270
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/before-phone-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/behavior-captures.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 79
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/calendar-food-edit.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/calendar-large-text-days.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/calendar-large-text-legend.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/calendar-recompleted-after-edit.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/calendar-request-failure.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/capture.spec.ts",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 62
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/compact-phone-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/compact-phone-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/desktop-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/desktop-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/fixture.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 317
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/manifest.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 1190
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/tablet-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/date-only/tablet-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/desktop-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/desktop-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/manifest.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 62
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/tablet-chrome-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/pr-screenshots/issue-408/tablet-chrome-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "e2e/expo-web/completed-calendar.spec.ts",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 13
+        }
+      ]
+    },
+    {
+      "sha": "35c1be606810069b4418f6c6f8093d2087ab4f8b",
+      "parents": [
+        "cb8b4ce8c2f1eed0c9c3ff0813d85c9bde953c74"
+      ],
+      "message": "Keep planned pause merge diff focused on product and regression tests",
+      "files": [
+        {
+          "path": "docs/evidence/issue-414/README.md",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 57
+        },
+        {
+          "path": "docs/evidence/issue-414/after-build.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 708
+        },
+        {
+          "path": "docs/evidence/issue-414/after-build.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 156
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-calendar-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-dated-today-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-update.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-failed-update.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-large-text.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-large-text.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-failed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-failed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-recovered-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-matched-recovered-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-offline-saved-plan.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-offline-saved-plan.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-open-ended-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-open-ended-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-overdue-today.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-overdue-today.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-replayed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-replayed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-resumed-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-resumed-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-stale-plan.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-stale-plan.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-target-month-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-unavailable-metadata.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-unavailable-metadata.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-year-boundary.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-compact-phone-chrome-year-boundary.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-calendar-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-dated-today-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-update.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-failed-update.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-failed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-failed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-recovered-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-matched-recovered-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-offline-saved-plan.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-offline-saved-plan.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-open-ended-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-open-ended-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-overdue-today.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-overdue-today.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-replayed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-replayed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-resumed-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-resumed-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-stale-plan.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-stale-plan.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-target-month-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-unavailable-metadata.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-unavailable-metadata.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-year-boundary.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/after-desktop-chrome-year-boundary.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/assemble.mjs",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 40
+        },
+        {
+          "path": "docs/evidence/issue-414/backend-pause-final.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 13
+        },
+        {
+          "path": "docs/evidence/issue-414/before-build.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 708
+        },
+        {
+          "path": "docs/evidence/issue-414/before-build.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 154
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-calendar-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-dated-today-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-failed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-failed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-recovered-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-compact-phone-chrome-matched-recovered-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-calendar-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-dark.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-dark.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-light.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-dated-today-light.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-failed-resume.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-failed-resume.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-recovered-calendar.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 47
+        },
+        {
+          "path": "docs/evidence/issue-414/before-desktop-chrome-matched-recovered-calendar.png",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 0
+        },
+        {
+          "path": "docs/evidence/issue-414/browser-baseline.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 15
+        },
+        {
+          "path": "docs/evidence/issue-414/browser-existing.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 30
+        },
+        {
+          "path": "docs/evidence/issue-414/browser-final.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 36
+        },
+        {
+          "path": "docs/evidence/issue-414/build.mjs",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 26
+        },
+        {
+          "path": "docs/evidence/issue-414/lint-final.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 44
+        },
+        {
+          "path": "docs/evidence/issue-414/manifest.json",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 572
+        },
+        {
+          "path": "docs/evidence/issue-414/mobile-tests-final.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 250
+        },
+        {
+          "path": "docs/evidence/issue-414/release-final.log",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 26
+        },
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "status": "modified",
+          "additions": 21,
+          "deletions": 72
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "e2e/expo-web/planned-pause.spec.ts",
+      "status": "added",
+      "additions": 246,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/components/FoodTrackingStatus.test.tsx",
+      "status": "modified",
+      "additions": 35,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/components/FoodTrackingStatus.tsx",
+      "status": "modified",
+      "additions": 10,
+      "deletions": 6
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+      "status": "modified",
+      "additions": 32,
+      "deletions": 2
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.tsx",
+      "status": "modified",
+      "additions": 55,
+      "deletions": 13
+    },
+    {
+      "path": "mobile/src/food/plannedPause.test.ts",
+      "status": "added",
+      "additions": 57,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/food/plannedPause.ts",
+      "status": "added",
+      "additions": 37,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/food/queryKeys.ts",
+      "status": "added",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/food/useFoodTrackingPause.ts",
+      "status": "added",
+      "additions": 13,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.test.ts",
+      "status": "modified",
+      "additions": 12,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.ts",
+      "status": "modified",
+      "additions": 12,
+      "deletions": 3
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.test.tsx",
+      "status": "added",
+      "additions": 46,
+      "deletions": 0
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.tsx",
+      "status": "modified",
+      "additions": 19,
+      "deletions": 1
+    }
+  ]
+}
