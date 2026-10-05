@@ -324,5 +324,7 @@ test('matched accepted queued resume before replay', async ({ page, ux }, info) 
     await capture(page, info, 'queued-resume');
     await activateFixtureOffline(page); state.queueResume = false; await page.context().setOffline(false);
     await expect.poll(() => state.active).toBe(false);
-    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+    if (before) await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
+    else await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+    await capture(page, info, 'queued-replayed');
 });
