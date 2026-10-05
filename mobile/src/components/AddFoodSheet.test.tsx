@@ -244,6 +244,25 @@ describe('AddFoodSheet async resource states', () => {
         expect(mockApi.createFoodLog).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ['pending', '2026-08-07', true], ['pending', '2026-08-08', true], ['pending', '2026-08-09', false],
+        ['receipt', '2026-08-07', true], ['receipt', '2026-08-08', true], ['receipt', '2026-08-09', false],
+        ['failed', '2026-08-08', false], ['later-pause', '2026-08-08', false]
+    ] as const)('consults locked %s resume on %s before rejecting cached PAUSED food', async (kind, resumedOn, allowed) => {
+        const rows: QueuedMutation[] = [{ id: kind === 'receipt' ? 'receipt:resume' : 'resume', namespace: 'test', sequence: 1, state: kind === 'failed' ? 'failed' : 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-tracking-pause.resume', payload: { resumed_on: resumedOn } }];
+        if (kind === 'later-pause') rows.push({ ...rows[0], id: 'later-pause', sequence: 2, operation: 'food-tracking-pause.start', payload: { starts_on: '2026-08-08' } });
+        const write = jest.fn(async () => undefined);
+        mockWithOutbox = createOutboxDispatch('resume-boundary-' + kind + resumedOn, async () => rows, write, () => true);
+        const screen = renderSheet(client => client.setQueryData(['mobile-food-day', '2026-08-08'], { date: '2026-08-08', status: 'PAUSED' }));
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+        fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+        if (allowed) await waitFor(() => expect(write).toHaveBeenCalledWith('food.create', expect.objectContaining({ date: '2026-08-08', calories: 120 }), 'food-operation-id'));
+        else { await screen.findByRole('alert'); expect(write).not.toHaveBeenCalled(); }
+        expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
+        expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+    });
+
     it('does not add food when reopening is rejected', async () => {
         onlineManager.setOnline(true);
         mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status: 'COMPLETE' });
