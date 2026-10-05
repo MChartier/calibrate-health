@@ -1,0 +1,26 @@
+✔ local compatibility works without Firebase configuration (146.7653ms)
+✔ Firebase password authentication returns only a boolean and binds verified project and UID (0.608ms)
+✔ wrong configured project and missing configuration never call the network or local bcrypt fallback (0.3811ms)
+✔ enumeration-safe credential failures differ from retryable network/configuration failures (0.7527ms)
+✔ timeout covers hanging transport and token verification (38.2193ms)
+✔ forged response, verifier rejection and oversized input cannot create an authenticated result (0.5493ms)
+✔ offline CLI reports synthetic inventory and holds collisions without disclosing input (2840.5513ms)
+✔ offline CLI refuses apply and exposes a usable help contract (1883.3449ms)
+✔ inventory accounts for every row, holds both sides of collisions and exposes no credentials (1.6672ms)
+✔ mapping is deterministic and source/installation/project scoped (0.2602ms)
+✔ default dry run reads source only and never calls destination or persists progress (0.4335ms)
+✔ bounded import preserves encoded BCRYPT and verification, and resume never reimports successful records (0.5283ms)
+✔ partial failure records exact failed indexes and stops all automatic retries (0.4898ms)
+✔ timeout after possible success leaves durable ambiguity and suppresses provider details (0.3195ms)
+✔ failed intent persistence prevents any network mutation (0.1968ms)
+✔ wrong project, source drift, destination conflicts and malformed checkpoints fail closed (1.4121ms)
+✔ malformed provider partial-result indexes remain ambiguous (0.3222ms)
+✔ synthetic bcrypt variants, Unicode and 72-byte boundaries retain password bytes locally (1309.1038ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5714.2574
