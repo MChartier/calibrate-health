@@ -21,6 +21,7 @@ import {
 } from '../services/foodTracking';
 import { resolveInactiveReminderNotificationsForUser } from '../services/inAppNotifications';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
+import { captureFoodDayComparison } from '../services/foodDayComparison';
 
 const router = express.Router();
 router.use(requireAuthenticatedUser);
@@ -215,7 +216,7 @@ router.patch('/', async (req, res) => {
       operationKind,
       requestPayload: req.body,
       mutate: async (tx, claimedOperationId) => {
-        const updated = await tx.foodLogDay.upsert({
+        let updated = await tx.foodLogDay.upsert({
           where: { user_id_local_date: { user_id: user.id, local_date: parsed.dateValue } },
           update: { status, origin: 'USER', completed_at: completedAt },
           create: {
@@ -226,6 +227,7 @@ router.patch('/', async (req, res) => {
             completed_at: completedAt
           }
         });
+        if (completedAt) updated = await captureFoodDayComparison(tx, updated, completedAt);
         const body = serializeFoodDayStatus({
           date: updated.local_date,
           status: updated.status as FoodDayStatus,

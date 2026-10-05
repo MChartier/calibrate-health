@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 8;
+export const ACCOUNT_EXPORT_VERSION = 9;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. User-visible account, tracking, and derived plan history is exported.
@@ -150,6 +150,9 @@ export type AccountExport = {
     origin: string;
     is_complete: boolean;
     completed_at: string | null;
+    comparison_target_kcal: number | null;
+    comparison_maintenance_kcal: number | null;
+    comparison_captured_at: string | null;
     created_at: string;
     updated_at: string;
   }>;
@@ -377,6 +380,9 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       origin: day.origin ?? 'USER',
       is_complete: status === 'COMPLETE',
       completed_at: day.completed_at ? toIsoDateTime(day.completed_at) : null,
+      comparison_target_kcal: day.comparison_target_kcal ?? null,
+      comparison_maintenance_kcal: day.comparison_maintenance_kcal ?? null,
+      comparison_captured_at: day.comparison_captured_at ? toIsoDateTime(day.comparison_captured_at) : null,
       created_at: toIsoDateTime(day.created_at),
       updated_at: toIsoDateTime(day.updated_at)
     };

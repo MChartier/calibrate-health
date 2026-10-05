@@ -34,9 +34,9 @@ export const ROLLBACK_BASE = Object.freeze({
 });
 
 export const ROLLBACK_CANDIDATE = Object.freeze({
-  migrationCount: 45,
-  lastMigration: '0041_server_settings',
-  ledgerSha256: '8823a76dda39bf70814f95643dab14bd657d9baca3ce6d1c0d3debe42f13be86',
+  migrationCount: 46,
+  lastMigration: '0043_food_day_comparison',
+  ledgerSha256: '1027392ee1b83a12d6be7aadba9bae3d4e6504ceb701508858478b335d91f7b1',
 });
 
 export const ROLLBACK_RESULT_PATH = path.join(
@@ -983,6 +983,15 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
   assert.equal(rows.length, 1);
   for (const [check, passed] of Object.entries(rows[0])) {
     assert.equal(passed, true, `Candidate schema check failed: ${check}`);
+  }
+  const comparisonRows = await queryRows(client, `SELECT
+    "comparison_target_kcal", "comparison_maintenance_kcal", "comparison_captured_at"
+    FROM ${schema}."FoodLogDay"`);
+  assert.ok(comparisonRows.length > 0, 'Legacy food-day fixture must survive upgrade.');
+  for (const day of comparisonRows) {
+    assert.deepEqual(day, {
+      comparison_target_kcal: null, comparison_maintenance_kcal: null, comparison_captured_at: null,
+    }, 'Legacy plan history must remain unknown after upgrade.');
   }
   const newTables = await queryRows(client, `SELECT "table_name" FROM information_schema.tables
     WHERE "table_schema" = $1 AND "table_name" = ANY($2::text[]) ORDER BY "table_name"`, [

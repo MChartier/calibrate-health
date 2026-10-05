@@ -1946,7 +1946,7 @@ components:
           const: calibrate-account-export
         version:
           type: integer
-          const: 8
+          const: 9
         exported_at:
           type: string
           format: date-time
@@ -2084,7 +2084,7 @@ components:
         created_at: { type: string, format: date-time }
     AccountExportFoodLogDay:
       type: object
-      required: [id, local_date, status, origin, is_complete, completed_at, created_at, updated_at]
+      required: [id, local_date, status, origin, is_complete, completed_at, comparison_target_kcal, comparison_maintenance_kcal, comparison_captured_at, created_at, updated_at]
       properties:
         id: { type: integer }
         local_date: { type: string, format: date }
@@ -2092,6 +2092,9 @@ components:
         origin: { type: string, enum: [USER, PAUSE, IMPORT] }
         is_complete: { type: boolean }
         completed_at: { type: [string, 'null'], format: date-time }
+        comparison_target_kcal: { type: [integer, 'null'] }
+        comparison_maintenance_kcal: { type: [integer, 'null'] }
+        comparison_captured_at: { type: [string, 'null'], format: date-time }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
     AccountExportFoodTrackingPause:
@@ -2143,11 +2146,25 @@ components:
         food_logs:
           type: array
           items: { $ref: '#/components/schemas/AccountExportFoodLog' }
+    FoodDayCalorieComparison:
+      type: object
+      additionalProperties: false
+      required: [consumed_kcal, target_kcal, maintenance_kcal, captured_at]
+      properties:
+        consumed_kcal: { type: integer, minimum: 0 }
+        target_kcal: { type: integer, minimum: 1 }
+        maintenance_kcal: { type: integer, minimum: 1 }
+        captured_at: { type: string, format: date-time }
     FoodLogDay:
       type: object
       additionalProperties: false
       required: [date, status, origin, source, is_representative, is_complete, completed_at, updated_at]
       properties:
+        calorie_comparison:
+          description: Range-only comparison against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs.
+          oneOf:
+            - $ref: '#/components/schemas/FoodDayCalorieComparison'
+            - { type: 'null' }
         date: { type: string, format: date }
         status: { type: string, enum: [OPEN, COMPLETE, INCOMPLETE, PAUSED] }
         origin: { type: [string, 'null'], enum: [USER, PAUSE, IMPORT, null] }

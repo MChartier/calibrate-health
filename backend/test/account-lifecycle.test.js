@@ -250,7 +250,7 @@ test('account export returns canonical versioned tracking data without credentia
   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
 
   assert.equal(result.format, 'calibrate-account-export');
-  assert.equal(result.version, 8);
+  assert.equal(result.version, 9);
   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
   assert.equal(result.account.date_of_birth, '1990-05-03');
   assert.equal(result.account.email_verified_at, '2025-01-02T12:00:00.000Z');
@@ -331,4 +331,23 @@ test('account deletion removes only the selected account root', async () => {
 
   assert.equal(await deleteAccountData(7), true);
   assert.deepEqual(deleteArgs, { where: { id: 7 } });
+});
+
+test('portable export preserves captured and unavailable day plans through JSON serialization', async () => {
+  const captured = at('2025-01-04T01:00:00.000Z');
+  for (const snapshot of [
+    { comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: captured },
+    { comparison_target_kcal: null, comparison_maintenance_kcal: null, comparison_captured_at: captured },
+    { comparison_target_kcal: null, comparison_maintenance_kcal: null, comparison_captured_at: null }
+  ]) {
+    const row = { ...exportRow, food_log_days: [{ ...exportRow.food_log_days[0], status: 'OPEN', ...snapshot }] };
+    const { exportAccountData } = loadAccountLifecycle({ user: { findUnique: async () => row } });
+    const exported = JSON.parse(JSON.stringify(await exportAccountData(7)));
+    const day = exported.food_log_days[0];
+    assert.equal(exported.version, 9);
+    assert.equal(day.status, 'OPEN');
+    assert.equal(day.comparison_target_kcal, snapshot.comparison_target_kcal);
+    assert.equal(day.comparison_maintenance_kcal, snapshot.comparison_maintenance_kcal);
+    assert.equal(day.comparison_captured_at, snapshot.comparison_captured_at?.toISOString() ?? null);
+  }
 });

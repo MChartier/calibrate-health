@@ -9,6 +9,7 @@ import {
     getCalendarMonthRange,
     getCalendarWeeks,
     getFoodDayCalendarMarker,
+    getFoodDayCalendarLabel,
     getMonthKey,
     shiftMonth,
     type FoodDayCalendarMarker
@@ -43,18 +44,24 @@ function formatMonth(monthKey: string): string {
     );
 }
 
-function markerLabel(marker: FoodDayCalendarMarker): string {
+const COMPLETED_MARKERS = {
+    'complete-target': { label: 'Complete: target met' },
+    'complete-between': { label: 'Complete: toward target from maintenance' },
+    'complete-beyond': { label: 'Complete: beyond maintenance' },
+    'complete-unavailable': { label: 'Complete: comparison unavailable' }
+} as const;
+
+function completedMarker(marker: FoodDayCalendarMarker) {
+    if (marker in COMPLETED_MARKERS) return COMPLETED_MARKERS[marker as keyof typeof COMPLETED_MARKERS];
+    return null;
+}
+
+function completedColors(marker: FoodDayCalendarMarker, theme: AppTheme) {
     switch (marker) {
-        case 'complete':
-            return 'completed';
-        case 'incomplete':
-            return 'incomplete';
-        case 'not-started':
-            return 'not started';
-        case 'paused':
-            return 'tracking paused';
-        default:
-            return 'in progress';
+        case 'complete-target': return { backgroundColor: theme.colors.success, color: theme.colors.onSuccess };
+        case 'complete-between': return { backgroundColor: theme.colors.calendarBetween, color: theme.colors.onCalendarBetween };
+        case 'complete-beyond': return { backgroundColor: theme.colors.calendarBeyond, color: theme.colors.onCalendarBeyond };
+        default: return { backgroundColor: theme.colors.surfaceContainerHigh, color: theme.colors.onSurfaceVariant };
     }
 }
 
@@ -66,7 +73,11 @@ const CalendarMarker: React.FC<{
     if (marker === 'paused') {
         return <Ionicons name="pause" size={13} color={theme.colors.onSurfaceVariant} />;
     }
-    if (marker === 'complete') return <View testID="calendar-marker-complete" style={styles.completeMarker} />;
+    const complete = completedMarker(marker);
+    if (complete) {
+        const colors = completedColors(marker, theme);
+        return <View style={[styles.completeMarker, { backgroundColor: colors.backgroundColor }]} />;
+    }
     if (marker === 'incomplete') return <View testID="calendar-marker-incomplete" style={styles.incompleteMarker} />;
     if (marker === 'not-started') return <View testID="calendar-marker-not-started" style={styles.notStartedMarker} />;
     return <View style={styles.markerPlaceholder} />;
@@ -82,7 +93,7 @@ const LegendItem: React.FC<{
         <View style={styles.legendMarker}>
             <CalendarMarker marker={marker} theme={theme} styles={styles} />
         </View>
-        <AppText variant="caption">{label}</AppText>
+        <AppText variant="caption" style={styles.legendLabel}>{label}</AppText>
     </View>
 );
 
@@ -131,7 +142,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                 <View style={styles.heading}>
                     <View style={styles.headingCopy}>
                         <AppText variant="subtitle">Choose a day</AppText>
-                        <AppText variant="caption">Review historical tracking status before opening a day.</AppText>
+                        <AppText variant="caption">Completing your log is worth recognizing.</AppText>
                     </View>
                     <Pressable
                         accessibilityRole="button"
@@ -206,11 +217,14 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                 const marker = getFoodDayCalendarMarker(day, maxDate);
                                 const isSelected = date === selectedDate;
                                 const isToday = date === maxDate;
-                                const statusLabel = markerLabel(marker);
+                                const statusLabel = getFoodDayCalendarLabel(day, maxDate);
+                                const complete = completedMarker(marker);
+                                const colors = completedColors(marker, theme);
                                 const accessibilityLabel = [
                                     formatDateOnlyForDisplay(date),
                                     isToday ? 'today' : null,
-                                    statusLabel
+                                    statusLabel,
+                                    isSelected ? 'selected' : null
                                 ].filter(Boolean).join(', ');
                                 return (
                                     <Pressable
@@ -232,7 +246,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                             testID={`calendar-date-badge-${date}`}
                                             style={[
                                                 styles.dateBadge,
-                                                marker === 'complete' && styles.completeDateBadge,
+                                                complete && { backgroundColor: colors.backgroundColor },
                                                 marker === 'incomplete' && styles.incompleteDateBadge,
                                                 marker === 'not-started' && styles.notStartedDateBadge,
                                                 marker === 'paused' && styles.pausedDateBadge
@@ -244,7 +258,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                                     styles.dayNumber,
                                                     isToday && styles.todayNumber,
                                                     isSelected && marker === 'none' && styles.selectedDayNumber,
-                                                    marker === 'complete' && styles.completeDayNumber,
+                                                    complete && [styles.completeDayNumber, { color: colors.color }],
                                                     marker === 'incomplete' && styles.incompleteDayNumber,
                                                     marker === 'not-started' && styles.notStartedDayNumber,
                                                     marker === 'paused' && styles.pausedDayNumber
@@ -267,8 +281,11 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     ))}
                         </View>
 
+                        <AppText variant="caption">When target is at/below maintenance, target met means at/below target and beyond means above maintenance. When target is above maintenance, target met means at/above target and beyond means below maintenance.</AppText>
                         <View style={styles.legend}>
-                            <LegendItem label="Complete" marker="complete" theme={theme} styles={styles} />
+                            {Object.entries(COMPLETED_MARKERS).map(([marker, complete]) => (
+                                <LegendItem key={marker} label={complete.label} marker={marker as FoodDayCalendarMarker} theme={theme} styles={styles} />
+                            ))}
                             <LegendItem label="Incomplete" marker="incomplete" theme={theme} styles={styles} />
                             <LegendItem label="Not started" marker="not-started" theme={theme} styles={styles} />
                             <LegendItem label="Paused" marker="paused" theme={theme} styles={styles} />
@@ -330,7 +347,8 @@ function createStyles(theme: AppTheme) {
         },
         dayCell: {
             flex: 1,
-            height: CALENDAR_DAY_HEIGHT,
+            minHeight: CALENDAR_DAY_HEIGHT,
+            paddingVertical: theme.spacing.xs,
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: theme.radius.sm,
@@ -346,14 +364,11 @@ function createStyles(theme: AppTheme) {
             lineHeight: 20
         },
         dateBadge: {
-            width: CALENDAR_STATUS_BADGE_SIZE,
-            height: CALENDAR_STATUS_BADGE_SIZE,
+            minWidth: CALENDAR_STATUS_BADGE_SIZE,
+            minHeight: CALENDAR_STATUS_BADGE_SIZE,
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: CALENDAR_STATUS_BADGE_SIZE / 2
-        },
-        completeDateBadge: {
-            backgroundColor: theme.colors.success
         },
         incompleteDateBadge: {
             borderWidth: 2,
@@ -375,7 +390,6 @@ function createStyles(theme: AppTheme) {
             color: theme.colors.onPrimaryContainer
         },
         completeDayNumber: {
-            color: theme.colors.onSuccess,
             fontWeight: '800'
         },
         incompleteDayNumber: {
@@ -397,8 +411,7 @@ function createStyles(theme: AppTheme) {
         completeMarker: {
             width: CALENDAR_LEGEND_MARKER_SIZE,
             height: CALENDAR_LEGEND_MARKER_SIZE,
-            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2,
-            backgroundColor: theme.colors.success
+            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2
         },
         incompleteMarker: {
             width: CALENDAR_LEGEND_MARKER_SIZE,
@@ -428,11 +441,12 @@ function createStyles(theme: AppTheme) {
         legendItem: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: theme.spacing.xs
+            gap: theme.spacing.xs,
+            flexShrink: 1
         },
+        legendLabel: { flexShrink: 1 },
         legendMarker: {
-            width: 14,
-            height: 14,
+            minWidth: theme.spacing.md,
             alignItems: 'center',
             justifyContent: 'center'
         },
