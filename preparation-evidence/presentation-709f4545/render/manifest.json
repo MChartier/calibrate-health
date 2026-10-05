@@ -1,0 +1,101 @@
+{
+  "head": "709f4545bdcad2627b54308b368958d45c95b715",
+  "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "bodySha256": "e8408145d6d32e6bc2abb65a6832e6bc7ffc7558a0e17113804c18f1944a73bb",
+  "checkedAt": "2026-10-05T22:48:28.912Z",
+  "browser": "154.0.8037.95",
+  "images": [
+    {
+      "alt": "Before: Tracking inaccessible",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Cached tracking available",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Session restored after logout",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Signed out and revocation completed",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: No failed-write recovery",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Local intent and explicit recovery",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Correction allowed behind failure",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Explicit recovery required",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: No pending-revocation explanation",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Visible persistence limitation",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "files": [
+    {
+      "name": "body.md",
+      "sha256": "e8408145d6d32e6bc2abb65a6832e6bc7ffc7558a0e17113804c18f1944a73bb"
+    },
+    {
+      "name": "embedded-failure.png",
+      "sha256": "2cca3f030d9afa06b3acda6953c8ea5d6a359c47388d450f0ed336c5d055fbd8"
+    },
+    {
+      "name": "embedded-local-values.png",
+      "sha256": "1b8afcc817f15e3be0f2feffa8341fe39494e062daa9c151f2e47b9219a1c218"
+    },
+    {
+      "name": "embedded-logout-pair.png",
+      "sha256": "b82c70ee85b743f3b0c2c8d7d08c79b54ebf104605d5da559183e6eae486141a"
+    },
+    {
+      "name": "embedded-pair.png",
+      "sha256": "c4c7e770de120c4287cf49738e97aa95c98b7d8fefc7f20806802a2b6e57be13"
+    },
+    {
+      "name": "embedded-storage.png",
+      "sha256": "717d2744d11feaad0a50bb65d2a820a205f6c8d3a4fed1dc29e98f1494eb4b7d"
+    },
+    {
+      "name": "full.png",
+      "sha256": "4eee84848342ea5eaf21b9cc1bf4d49b8e90b559aa392949630104240e6e44b6"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "6456ce798f4e3a8917cd2f42bb3c4795a35f733a91d215e937cdec2a6d4e7c64"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "63150bfa343b6c788a446ea564c46185bf7185bd7407bbbe8943ca700bf00408"
+    },
+    {
+      "name": "renderer.cjs",
+      "sha256": "6bfffbac5a05ba45462dd62c64e101211bcb241c04dd6e1580fa907d930a48aa"
+    }
+  ]
+}
