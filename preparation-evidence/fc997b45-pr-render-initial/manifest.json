@@ -1,0 +1,22 @@
+{
+  "bodySha256": "fb0a06288c0d5024c47f429b8671f08952cbbb4ab219e628d5bfa7539cf739f7",
+  "rendererSha256": "aaeb2da972ce8e4ef33736612b7a12c5528a253eeba80df6e523b48ad0be01c6",
+  "renderer": "Local Sharp/Pango document renderer; headings, paragraphs, lists and tables; not GitHub UI",
+  "sharpVersion": "0.35.4",
+  "width": 1440,
+  "height": 2218,
+  "images": [
+    {
+      "name": "full.png",
+      "sha256": "d5713af2ac6d7eec69edbdabe9ff588b9ad20dd6c7f11c0122380084b07d4257"
+    },
+    {
+      "name": "page-1.png",
+      "sha256": "a2d8504eb0b2a68c52c47d4d743b6af541a1f83075ea095d55f10c84d1cbc734"
+    },
+    {
+      "name": "page-2.png",
+      "sha256": "79301e76b107e7be624e473511c10eb4d1c5346f37b7e5f3fb793868a8c380fe"
+    }
+  ]
+}
