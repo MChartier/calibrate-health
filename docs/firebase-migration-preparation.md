@@ -407,3 +407,7 @@ Primary contracts checked during preparation:
 and [export limitations](https://firebase.google.com/docs/cli/auth).
 
 Food/day dispatch folds ordered durable status and pause/resume intent under the dispatch lock. Add Food retains its explicit submit-to-reopen behavior and keeps reopening plus creation together. Other food actions reject queued closed/paused days and ask the user to reopen or resume explicitly; both storage implementations enforce the same insertion guard. No background replay manufactures reopening intent.
+
+Replay interruption recovery shares the same namespace lock as dispatch, so one tab cannot reclaim another tab's in-flight request. Browsers without Web Locks retain queued changes but cannot safely replay them; use a supported secure browser context. Native uses a per-runtime namespace lock. This is not a distributed lease or a live Firebase readiness claim.
+
+Acknowledged day and pause/resume controls are retained as account/server-scoped local receipts, separate from pending writes. A stale dispatcher consults these receipts even after replay removes its queue row. Authoritative day reads reconcile receipts under the same lock; offline startup projects them onto the cached day. They authorize no server request and retain no credentials. Receipt-write failure keeps the original control request ID available for idempotent recovery. Receipt keys compact repeated changes for the same day or pause/resume date; they remain local like the account-scoped outbox.

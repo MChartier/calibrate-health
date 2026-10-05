@@ -1,3 +1,4 @@
+import { queuedFoodDayStatus } from '../offline/foodDayIntent';
 import { useScopedTrackingMutations } from '../offline/useTrackingQueries';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AppState, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
@@ -73,18 +74,15 @@ function useRefreshTrackingState(date?: string) {
 export function useFoodDayStatus(date: string, enabled = true) {
     const { api } = useAuth();
     const mutations = useScopedTrackingMutations();
+    const { dayIntents = [], readFoodDay } = useOfflineOutbox();
     const query = useQuery({
         queryKey: foodDayQueryKey(date),
-        queryFn: () => api.getFoodDay(date),
+        queryFn: () => readFoodDay ? readFoodDay(date, () => api.getFoodDay(date)) : api.getFoodDay(date),
         enabled
     });
     let data = query.data;
-    for (const mutation of mutations) {
-        const payload = mutation.payload as { date?: string; status?: FoodLogDayStatus; is_complete?: boolean } | null;
-        if (payload?.date !== date || mutation.state === 'failed') continue;
-        if (mutation.operation === 'food-day.set-status' && payload.status) data = storedDay(date, payload.status);
-        if (mutation.operation === 'food-day.update') data = storedDay(date, payload.is_complete ? 'COMPLETE' : 'OPEN');
-    }
+    const status = queuedFoodDayStatus([...dayIntents, ...mutations].filter(row => row.state !== 'failed'), date, data?.status);
+    if (status && status !== data?.status) data = storedDay(date, status);
     return { ...query, data };
 }
 

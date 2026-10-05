@@ -1,3 +1,5 @@
+import type { FoodLogDay } from '@calibrate/api-client';
+import { readFoodDayReceipts, readAndRecordFoodDay } from './foodDayReceipts';
 import { createOutboxDispatch, type OutboxDispatch } from './mutationDispatch';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { onlineManager } from '@tanstack/react-query';
@@ -13,6 +15,8 @@ import { queueWearSyncInvalidation } from '../wear/syncInvalidation';
 type OfflineOutboxContextValue = {
     isReady: boolean;
     withOutbox: OutboxDispatch;
+    dayIntents: QueuedMutation[];
+    readFoodDay: (date: string, fetch: () => Promise<FoodLogDay>) => Promise<FoodLogDay>;
     initializationError: string | null;
     mutations: QueuedMutation[];
     enqueue: (operation: string, payload: unknown, operationId?: string) => Promise<QueuedMutation>;
@@ -37,6 +41,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
     const { serverUrl, user } = useAuth();
     const userId = hasFullAccountAccess(user) ? user?.id : undefined;
     const [outbox, setOutbox] = useState<SqliteOutbox | null>(null);
+    const [dayIntents, setDayIntents] = useState<QueuedMutation[]>([]);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [newEnqueue, setNewEnqueue] = useState<{ store: SqliteOutbox } | null>(null);
     const [initializationError, setInitializationError] = useState<string | null>(null);
@@ -48,17 +53,19 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         let active = true;
         setOutbox(null);
         setMutations([]);
+        setDayIntents([]);
         setInitializationError(null);
         if (userId === undefined) return () => { active = false; };
 
         const namespace = createOutboxNamespace(serverUrl, userId);
         void openOutboxDatabase().then(async (database) => {
             const nextOutbox = new SqliteOutbox(database, namespace);
-            await nextOutbox.recoverInterrupted();
+            const receipts = await readFoodDayReceipts(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId));
             const nextMutations = await nextOutbox.list();
             if (active) {
                 setOutbox(nextOutbox);
                 setMutations(nextMutations);
+                setDayIntents(receipts);
             }
         }).catch((error: unknown) => {
             if (active) {
@@ -70,8 +77,8 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
     }, [serverUrl, userId]);
 
     const reconciler = useMemo(
-        () => outbox ? new OutboxReconciler(outbox, executeMutation) : null,
-        [executeMutation, outbox]
+        () => outbox ? new OutboxReconciler(outbox, executeMutation, userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId)) : null,
+        [executeMutation, outbox, serverUrl, userId]
     );
 
     const requireOutbox = useCallback(() => {
@@ -88,7 +95,8 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         };
         if (!isCurrentBinding()) return;
         const nextMutations = await sourceOutbox.list();
-        if (isCurrentBinding()) setMutations(nextMutations);
+        const receipts = await readFoodDayReceipts(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId));
+        if (isCurrentBinding()) { setMutations(nextMutations); setDayIntents(receipts); }
     }, [requireOutbox, serverUrl, userId]);
 
     const notifyWearAfterReplay = useCallback((result: ReconcileResult) => {
@@ -113,8 +121,14 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
 
     const withOutbox = useMemo(() => createOutboxDispatch(
         userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId), () => requireOutbox().list(), enqueueUnlocked,
-        () => currentBindingRef.current.serverUrl === serverUrl && currentBindingRef.current.userId === userId && currentBindingRef.current.outbox === outbox
+        () => currentBindingRef.current.serverUrl === serverUrl && currentBindingRef.current.userId === userId && currentBindingRef.current.outbox === outbox, true, setDayIntents
     ), [serverUrl, userId, outbox, requireOutbox, enqueueUnlocked]);
+    const readFoodDay = useCallback(async (date: string, fetch: () => Promise<FoodLogDay>) => {
+        const result = await readAndRecordFoodDay(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId), date, fetch);
+        const receipts = await readFoodDayReceipts(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId));
+        if (currentBindingRef.current.serverUrl === serverUrl && currentBindingRef.current.userId === userId) setDayIntents(receipts);
+        return result;
+    }, [serverUrl, userId]);
     const enqueue = useCallback((operation: string, payload: unknown, operationId?: string) =>
         withOutbox(write => write(operation, payload, operationId)) as Promise<QueuedMutation>, [withOutbox]);
 
@@ -226,13 +240,15 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         mutations,
         enqueue,
         withOutbox,
+        dayIntents,
+        readFoodDay,
         reconcile,
         retryFailed,
         discardAll,
         discardFailedFood,
         discardFailedMutation,
         refresh
-    }), [withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [dayIntents, readFoodDay, withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

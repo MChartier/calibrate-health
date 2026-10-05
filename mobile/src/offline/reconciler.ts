@@ -1,3 +1,5 @@
+import { recordFoodDayReceipt } from './foodDayReceipts';
+import { withMutationLock } from './mutationLock';
 import type { OutboxStore } from './outbox';
 import type { QueuedMutation } from './queuedMutation';
 import { isRetryableMutationError } from './retryability';
@@ -43,13 +45,18 @@ export class OutboxReconciler {
 
     constructor(
         private readonly outbox: OutboxStore,
-        private readonly executeMutation: QueuedMutationExecutor
+        private readonly executeMutation: QueuedMutationExecutor,
+        private readonly namespace?: string
     ) {}
 
     reconcile(): Promise<ReconcileResult> {
         if (this.activeReconciliation) return this.activeReconciliation;
 
-        const reconciliation = this.runReconciliation().finally(() => {
+        const run = () => this.runReconciliation();
+        const reconciliation = (this.namespace ? withMutationLock(this.namespace, async exclusive => {
+            if (!exclusive) throw new Error('Safe synchronization requires browser Web Locks. Open this server in a supported secure browser context. Saved changes remain on this device.');
+            return run();
+        }) : run()).finally(() => {
             if (this.activeReconciliation === reconciliation) {
                 this.activeReconciliation = null;
             }
@@ -82,6 +89,7 @@ export class OutboxReconciler {
 
             try {
                 await this.executeMutation(mutation);
+                if (this.namespace) await recordFoodDayReceipt(this.namespace, mutation.operation, mutation.payload, mutation.id);
                 await this.outbox.complete(mutation.id);
                 replayed += 1;
                 replayedOperations.push(mutation.operation);

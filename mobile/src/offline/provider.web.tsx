@@ -1,3 +1,5 @@
+import type { FoodLogDay } from '@calibrate/api-client';
+import { readFoodDayReceipts, readAndRecordFoodDay } from './foodDayReceipts';
 import { createOutboxDispatch, type OutboxDispatch } from './mutationDispatch';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
@@ -9,6 +11,8 @@ import { createOutboxNamespace, type QueuedMutation } from './queuedMutation';
 type OfflineOutboxContextValue = {
     isReady: boolean;
     withOutbox: OutboxDispatch;
+    dayIntents: QueuedMutation[];
+    readFoodDay: (date: string, fetch: () => Promise<FoodLogDay>) => Promise<FoodLogDay>;
     initializationError: string | null;
     mutations: QueuedMutation[];
     enqueue: (operation: string, payload: unknown, operationId?: string) => Promise<QueuedMutation>;
@@ -88,6 +92,7 @@ export function OfflineOutboxProvider({
     const userId = hasFullAccountAccess(user) ? user?.id : undefined;
     const namespace = useMemo(() => getNamespace(serverUrl, userId), [serverUrl, userId]);
     const [binding, setBinding] = useState<{ namespace: string; outbox: IndexedDbOutbox } | null>(null);
+    const [dayIntents, setDayIntents] = useState<QueuedMutation[]>([]);
     const [mutations, setMutations] = useState<QueuedMutation[]>([]);
     const [newEnqueue, setNewEnqueue] = useState<{ store: IndexedDbOutbox } | null>(null);
     const [initializationError, setInitializationError] = useState<string | null>(null);
@@ -100,16 +105,18 @@ export function OfflineOutboxProvider({
         let active = true;
         setBinding(null);
         setMutations([]);
+        setDayIntents([]);
         setInitializationError(namespace.error);
         if (!namespace.value) return () => { active = false; };
 
         void openDatabase().then(async (database) => {
             const nextOutbox = new IndexedDbOutbox(database, namespace.value!);
-            await nextOutbox.recoverInterrupted();
+            const receipts = await readFoodDayReceipts(namespace.value ?? 'unavailable');
             const nextMutations = await nextOutbox.list();
             if (active) {
                 setBinding({ namespace: namespace.value!, outbox: nextOutbox });
                 setMutations(nextMutations);
+                setDayIntents(receipts);
             }
         }).catch((error: unknown) => {
             if (active) {
@@ -123,8 +130,8 @@ export function OfflineOutboxProvider({
     }, [namespace.error, namespace.value, openDatabase]);
 
     const reconciler = useMemo(
-        () => outbox ? new OutboxReconciler(outbox, executeMutation) : null,
-        [executeMutation, outbox]
+        () => outbox ? new OutboxReconciler(outbox, executeMutation, namespace.value ?? 'unavailable') : null,
+        [executeMutation, outbox, namespace.value]
     );
 
     const requireOutbox = useCallback(() => {
@@ -143,7 +150,8 @@ export function OfflineOutboxProvider({
         };
         if (!isCurrentBinding()) return;
         const nextMutations = await sourceOutbox.list();
-        if (isCurrentBinding()) setMutations(nextMutations);
+        const receipts = await readFoodDayReceipts(namespace.value ?? 'unavailable');
+        if (isCurrentBinding()) { setMutations(nextMutations); setDayIntents(receipts); }
     }, [namespace.value, requireOutbox]);
 
     const notifyAfterReplay = useCallback(async (result: ReconcileResult) => {
@@ -161,8 +169,14 @@ export function OfflineOutboxProvider({
 
     const withOutbox = useMemo(() => createOutboxDispatch(
         namespace.value ?? 'unavailable', () => requireOutbox().list(), enqueueUnlocked,
-        () => currentBindingRef.current.namespace === namespace.value && currentBindingRef.current.outbox === outbox
+        () => currentBindingRef.current.namespace === namespace.value && currentBindingRef.current.outbox === outbox, true, setDayIntents
     ), [namespace.value, outbox, requireOutbox, enqueueUnlocked]);
+    const readFoodDay = useCallback(async (date: string, fetch: () => Promise<FoodLogDay>) => {
+        const result = await readAndRecordFoodDay(namespace.value ?? 'unavailable', date, fetch);
+        const receipts = await readFoodDayReceipts(namespace.value ?? 'unavailable');
+        if (currentBindingRef.current.namespace === namespace.value) setDayIntents(receipts);
+        return result;
+    }, [namespace.value]);
     const enqueue = useCallback((operation: string, payload: unknown, operationId?: string) =>
         withOutbox(write => write(operation, payload, operationId)) as Promise<QueuedMutation>, [withOutbox]);
 
@@ -275,13 +289,15 @@ export function OfflineOutboxProvider({
         mutations,
         enqueue,
         withOutbox,
+        dayIntents,
+        readFoodDay,
         reconcile,
         retryFailed,
         discardAll,
         discardFailedFood,
         discardFailedMutation,
         refresh
-    }), [withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [dayIntents, readFoodDay, withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

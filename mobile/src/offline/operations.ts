@@ -24,6 +24,7 @@ type ExecuteOrQueueOptions<T> = {
     operation: OfflineMutationOperation;
     forceQueue?: boolean;
     withOutbox?: OutboxDispatch;
+    recordControl?: (operation: string, payload: unknown, id: string) => Promise<void>;
     payload: unknown;
     execute: (operationId: string) => Promise<T>;
     enqueue: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>;
@@ -51,14 +52,15 @@ export async function executeOrQueueMutation<T>({
     operation,
     forceQueue = false,
     withOutbox,
+    recordControl,
     payload,
     execute,
     enqueue,
     createOperationId = Crypto.randomUUID
 }: ExecuteOrQueueOptions<T>): Promise<OutboxMutationResult<T>> {
-    if (withOutbox) return withOutbox((durableEnqueue, mustQueue, pending) => {
+    if (withOutbox) return withOutbox((durableEnqueue, mustQueue, pending, record) => {
         assertQueuedFoodDayOpen(pending, operation, payload);
-        return executeOrQueueMutation({ operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId });
+        return executeOrQueueMutation({ operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId, recordControl: record });
     });
     const operationId = createOperationId();
     if (forceQueue || !onlineManager.isOnline() || (isRecord(payload) && payload.localCreation)) {
@@ -66,7 +68,10 @@ export async function executeOrQueueMutation<T>({
         return { disposition: 'queued', operationId };
     }
     try {
-        return { disposition: 'synced', operationId, value: await execute(operationId) };
+        const value = await execute(operationId);
+        try { await recordControl?.(operation, payload, operationId); }
+        catch { await enqueue(operation, payload, operationId); return { disposition: 'queued', operationId }; }
+        return { disposition: 'synced', operationId, value };
     } catch (error) {
         if (!isRetryableMutationError(error)) throw error;
         await enqueue(operation, payload, operationId);

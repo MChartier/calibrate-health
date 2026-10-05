@@ -1,3 +1,4 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 import { ApiError } from '@calibrate/api-client';
 import type { OutboxStore } from './outbox';
 import {
@@ -261,4 +262,31 @@ describe('OutboxReconciler', () => {
             retryAfterMs: null
         });
     });
+});
+
+
+it('serializes interrupted recovery across two reconcilers sharing a durable namespace', async () => {
+    const store = new MemoryOutbox();
+    await store.enqueue({ operation: 'food.create', payload: {} });
+    await store.enqueue({ operation: 'food-day.set-status', payload: { status: 'COMPLETE' } });
+    let release!: () => void; let entered!: () => void;
+    const barrier = new Promise<void>(resolve => { release = resolve; });
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    const calls: string[] = [];
+    const execute = async (mutation: QueuedMutation) => {
+        calls.push(mutation.operation);
+        if (mutation.operation === 'food.create') { entered(); await barrier; }
+    };
+    const recover = jest.spyOn(store, 'recoverInterrupted');
+    const first = new OutboxReconciler(store, execute, 'shared-replay').reconcile();
+    await started;
+    const second = new OutboxReconciler(store, execute, 'shared-replay').reconcile();
+    await Promise.resolve();
+    expect(recover).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual(['food.create']);
+    release();
+    const results = await Promise.all([first, second]);
+    expect(results.map(result => result.replayed)).toEqual([2, 0]);
+    expect(calls).toEqual(['food.create', 'food-day.set-status']);
+    expect(await store.list()).toEqual([]);
 });

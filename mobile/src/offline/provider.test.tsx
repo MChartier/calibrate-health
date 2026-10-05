@@ -1,3 +1,5 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import { onlineManager } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
@@ -58,7 +60,8 @@ describe('native offline outbox provider recovery', () => {
         expect(mockOutbox.discardFailedMutation).toHaveBeenCalledWith('failed');
         expect(mockReconcile).toHaveBeenCalledTimes(1);
     });
-    beforeEach(() => {
+    beforeEach(async () => {
+        await AsyncStorage.clear();
         jest.clearAllMocks();
         mockOutboxesByNamespace.clear();
         mockOutbox.list.mockReset().mockResolvedValue([]);

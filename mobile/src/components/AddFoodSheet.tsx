@@ -226,7 +226,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         const day = foodDayQuery.data;
         if (!day) throw new Error('Day status is unavailable. Try again.');
         if (day.status === 'PAUSED') throw new Error('Resume tracking before adding food.');
-        const submit = async (write: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>, mustQueue: boolean, pending: readonly QueuedMutation[]) => {
+        const submit = async (write: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>, mustQueue: boolean, pending: readonly QueuedMutation[], recordControl?: (operation: string, payload: unknown, id: string) => Promise<void>) => {
             const status = queuedFoodDayStatus(pending, payload.date, day.status);
             if (status === 'PAUSED') throw new Error('Resume tracking before adding food.');
             // Reopening and its dependent food write share one dispatch lock, including queued fallback.
@@ -234,6 +234,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
                 const reopenPayload = { date: payload.date, status: 'OPEN' as const };
                 const reopened = await executeOrQueueMutation({
                     forceQueue: mustQueue,
+                    recordControl,
                     operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
                     payload: reopenPayload,
                     execute: (operationId) => api.setFoodDayStatus(reopenPayload, operationId),

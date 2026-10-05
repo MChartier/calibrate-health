@@ -1,3 +1,5 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import { ApiError } from '@calibrate/api-client';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
@@ -64,6 +66,7 @@ describe('browser offline outbox provider', () => {
     let openDatabase: jest.Mock<Promise<IDBDatabase>, []>;
 
     beforeEach(async () => {
+        await AsyncStorage.clear();
         mockAuthState = { serverUrl: 'https://health.example', user: { id: 7 } };
         database = await openIndexedDbOutboxDatabase({
             factory: new IDBFactory(),
