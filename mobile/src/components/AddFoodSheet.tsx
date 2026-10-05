@@ -224,33 +224,33 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({
         const day = foodDayQuery.data;
         if (!day) throw new Error('Day status is unavailable. Try again.');
         if (day.status === 'PAUSED') throw new Error('Resume tracking before adding food.');
-        // Browsing keeps a signed-off day intact. Only a submitted food entry reopens it.
-        if (day.status !== 'OPEN') {
-            const reopenPayload = { date: payload.date, status: 'OPEN' as const };
-            const reopened = await executeOrQueueMutation({
-                withOutbox,
-                forceQueue: mutations.length > 0,
-                operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
-                payload: reopenPayload,
-                execute: (operationId) => api.setFoodDayStatus(reopenPayload, operationId),
-                enqueue
-            });
-            if (reopened.disposition === 'queued') {
-                // Queue the dependent entry after its reopen instead of racing the server's closed day.
-                await enqueue(OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG, queuedPayload);
-                return;
+        const submit = async (write: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>, mustQueue: boolean) => {
+            // Reopening and its dependent food write share one dispatch lock, including queued fallback.
+            if (day.status !== 'OPEN') {
+                const reopenPayload = { date: payload.date, status: 'OPEN' as const };
+                const reopened = await executeOrQueueMutation({
+                    forceQueue: mustQueue,
+                    operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
+                    payload: reopenPayload,
+                    execute: (operationId) => api.setFoodDayStatus(reopenPayload, operationId),
+                    enqueue: write
+                });
+                if (reopened.disposition === 'queued') {
+                    await write(OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG, queuedPayload);
+                    return;
+                }
+                queryClient.setQueryData(foodDayQueryKey(payload.date), reopened.value);
             }
-            queryClient.setQueryData(foodDayQueryKey(payload.date), reopened.value);
-        }
-        return executeOrQueueMutation({
-                withOutbox,
-            forceQueue: mutations.length > 0,
+            return executeOrQueueMutation({
+                forceQueue: mustQueue,
                 operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
-            payload: queuedPayload,
-            execute: (operationId) => api.createFoodLog(payload, operationId),
-            enqueue
-        });
-    }, [api, enqueue, foodDayQuery.data, queryClient, savedFoods, mutations.length]);
+                payload: queuedPayload,
+                execute: (operationId) => api.createFoodLog(payload, operationId),
+                enqueue: write
+            });
+        };
+        return withOutbox ? withOutbox(submit) : submit(enqueue, mutations.length > 0);
+    }, [api, enqueue, withOutbox, foodDayQuery.data, queryClient, savedFoods, mutations.length]);
 
     async function invalidateLogQueries() {
         await Promise.all([

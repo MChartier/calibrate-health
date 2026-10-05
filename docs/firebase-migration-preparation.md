@@ -264,7 +264,9 @@ Day-status changes queue behind existing writes. Every producer reads the durabl
 outbox under an account/server dispatch lock before deciding to execute directly.
 Browser Web Locks serialize tabs; without them, writes always enter the durable
 queue. Native dispatches serialize within the application runtime. A stale React
-snapshot cannot let day completion overtake another tab's queued food. A new
+snapshot cannot let day completion overtake another tab's queued food. Reopening
+a signed-off day and its dependent food creation hold the same dispatch lock
+across both steps, including retryable failure and queued fallback. A new
 enqueue requests eligible replay without waiting for a separate lifecycle event;
 unchanged deferred work retains its existing backoff. Failed food creations, updates and deletions
 must be retried or explicitly discarded before a correction or deletion is accepted. The

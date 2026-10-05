@@ -1,3 +1,5 @@
+import { createOutboxDispatch, type OutboxDispatch } from '../offline/mutationDispatch';
+import type { QueuedMutation } from '../offline/queuedMutation';
 import React from 'react';
 import { Dimensions, Keyboard, Platform } from 'react-native';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
@@ -58,8 +60,9 @@ jest.mock('../auth/AuthContext', () => ({
 }));
 
 const mockEnqueue = jest.fn();
+let mockWithOutbox: OutboxDispatch | undefined;
 jest.mock('../offline/provider', () => ({
-    useOfflineOutbox: () => ({ enqueue: mockEnqueue })
+    useOfflineOutbox: () => ({ enqueue: mockEnqueue, withOutbox: mockWithOutbox })
 }));
 
 jest.mock('./BottomSheetModal', () => {
@@ -147,6 +150,7 @@ describe('AddFoodSheet async resource states', () => {
         mockApi.setFoodDayStatus.mockReset().mockResolvedValue({ date: '2026-08-08', status: 'OPEN' });
         mockApi.createFoodLog.mockReset().mockResolvedValue({});
         mockEnqueue.mockReset().mockResolvedValue(undefined);
+        mockWithOutbox = undefined;
         mockApi.getRecentFoods.mockResolvedValue({ items: [] });
         mockApi.searchFood.mockResolvedValue({ items: [] });
         mockApi.getMyFoods.mockResolvedValue([]);
@@ -185,6 +189,34 @@ describe('AddFoodSheet async resource states', () => {
         await waitFor(() => expect(mockEnqueue).toHaveBeenCalledTimes(2));
         expect(mockEnqueue.mock.calls[0]).toEqual(['food-day.set-status', { date: '2026-08-08', status: 'OPEN' }, expect.any(String)]);
         expect(mockEnqueue.mock.calls[1]).toEqual(['food.create', expect.objectContaining({ date: '2026-08-08', calories: 120 })]);
+        expect(mockApi.createFoodLog).not.toHaveBeenCalled();
+    });
+
+    it('keeps queued reopen and food ahead of a competing day completion', async () => {
+        onlineManager.setOnline(true);
+        mockApi.getFoodDay.mockResolvedValue({ date: '2026-08-08', status: 'COMPLETE' });
+        const rows: QueuedMutation[] = []; const order: string[] = [];
+        let release!: () => void;
+        const barrier = new Promise<void>(resolve => { release = resolve; });
+        const write = async (operation: string, payload: unknown) => {
+            const status = (payload as { status?: string }).status;
+            order.push(status ?? operation);
+            rows.push({ operation, payload } as QueuedMutation);
+            if (status === 'OPEN') await barrier;
+        };
+        const dispatch = createOutboxDispatch('reopen-regression', async () => rows, write, () => true);
+        mockWithOutbox = dispatch;
+        mockEnqueue.mockImplementation((operation: string, payload: unknown) => dispatch(enqueue => enqueue(operation, payload)));
+        const screen = renderSheet();
+        await screen.findByText('Adding food reopens this day so you can complete it again.');
+        onlineManager.setOnline(false);
+        fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+        fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+        fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+        await waitFor(() => expect(order).toEqual(['OPEN']));
+        const competing = dispatch(enqueue => enqueue('food-day.set-status', { date: '2026-08-08', status: 'COMPLETE' }));
+        release(); await competing;
+        await waitFor(() => expect(order).toEqual(['OPEN', 'food.create', 'COMPLETE']));
         expect(mockApi.createFoodLog).not.toHaveBeenCalled();
     });
 
