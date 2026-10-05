@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { foodDayCalorieComparison, type FoodDayCalorieComparison } from './foodDayComparison';
 import {
   addUtcDays,
   formatDateToLocalDateString,
@@ -19,6 +20,7 @@ export type FoodDaySource =
   | 'BEFORE_TRACKING_START';
 
 export type FoodDayWire = {
+  calorie_comparison?: FoodDayCalorieComparison | null;
   date: string;
   status: FoodDayStatus;
   origin: FoodDayOrigin | null;
@@ -274,19 +276,29 @@ export async function getEffectiveFoodDayRange(
     }),
     db.foodLog.findMany({
       where: { user_id: userId, local_date: { gte: startDate, lte: endDate } },
-      select: { local_date: true },
-      distinct: ['local_date']
+      select: { local_date: true, calories: true }
     })
   ]);
   const storedByDate = new Map(storedDays.map((day) => [formatDateKey(day.local_date), day]));
   const foodDateKeys = new Set(foodDates.map((row) => formatDateKey(row.local_date)));
+  const totals = new Map<string, number>();
+  for (const food of foodDates) {
+    const key = formatDateKey(food.local_date);
+    const calories = Number.isSafeInteger(food.calories) && food.calories >= 0 ? food.calories : NaN;
+    totals.set(key, (totals.get(key) ?? 0) + calories);
+  }
   const today = getSafeUtcTodayDateOnlyInTimeZone(trackingStart.timezone, now);
   const days: FoodDayWire[] = [];
   for (let cursor = startDate; cursor <= endDate; cursor = addUtcDays(cursor, 1)) {
     const dateKey = formatDateKey(cursor);
     const stored = storedByDate.get(dateKey);
     if (stored) {
-      days.push(serializeStoredDay(stored));
+      days.push({
+        ...serializeStoredDay(stored),
+        calorie_comparison: stored.status === 'COMPLETE'
+          ? foodDayCalorieComparison(stored, totals.get(dateKey) ?? 0)
+          : null
+      });
       continue;
     }
     const pause = coveringPauses.find(

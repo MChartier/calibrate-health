@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodLogDaySource, FoodLogDayStatus } from '@calibrate/api-client';
@@ -106,16 +106,16 @@ describe('HistoricalDatePicker', () => {
 
         expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-11').props.style)).toEqual(
             expect.objectContaining({
-                width: 34,
-                height: 34,
+                minWidth: 34,
+                minHeight: 34,
                 borderRadius: 17,
-                backgroundColor: themes.light.colors.success
+                backgroundColor: themes.light.colors.surfaceContainerHigh
             })
         );
         expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style)).toEqual(
             expect.objectContaining({
-                width: 34,
-                height: 34,
+                minWidth: 34,
+                minHeight: 34,
                 borderWidth: 2,
                 borderColor: themes.light.colors.success
             })
@@ -194,4 +194,35 @@ describe('HistoricalDatePicker', () => {
         screen.unmount();
         queryClient.clear();
     });
+});
+
+it('keeps completed circles date-only with factual accessible meanings and an explanatory legend', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    const comparisons = [
+        { consumed_kcal: 2000, target_kcal: 2000, maintenance_kcal: 2500 },
+        { consumed_kcal: 2500, target_kcal: 2000, maintenance_kcal: 2500 },
+        { consumed_kcal: 2501, target_kcal: 2000, maintenance_kcal: 2500 },
+        { consumed_kcal: 2499, target_kcal: 3000, maintenance_kcal: 2500 }
+    ];
+    mockGetFoodDays.mockResolvedValue({ ...RANGE_RESPONSE, days: comparisons.map((value, index) => ({
+        ...day('2026-07-' + (11 + index), 'COMPLETE', 'STORED'),
+        calorie_comparison: { ...value, captured_at: '2026-07-11T18:00:00Z' }
+    })) });
+    const screen = renderPicker(queryClient);
+    expect(await screen.findByLabelText(/Jul 11, 2026, completed, at or below target/)).toBeTruthy();
+    expect(screen.getByLabelText(/Jul 12, 2026, completed, above target, at or below maintenance/)).toBeTruthy();
+    expect(screen.getByLabelText(/Jul 13, 2026, completed, above maintenance/)).toBeTruthy();
+    expect(screen.getByLabelText(/Jul 14, 2026, completed, below maintenance/)).toBeTruthy();
+    expect(screen.getByText('Complete: comparison unavailable')).toBeTruthy();
+    for (const number of [11, 12, 13, 14]) {
+        const badge = within(screen.getByTestId('calendar-date-badge-2026-07-' + number));
+        expect(badge.getByText(String(number))).toBeTruthy();
+        expect(badge.queryByText(/^[TMB?]$/, { includeHiddenElements: true })).toBeNull();
+    }
+    for (const label of ['Complete: target met', 'Complete: toward target from maintenance', 'Complete: beyond maintenance']) {
+        expect(screen.getByText(label)).toBeTruthy();
+    }
+    expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style).backgroundColor).toBe(themes.light.colors.calendarBetween);
+    expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-13').props.style).backgroundColor).toBe(themes.light.colors.calendarBeyond);
+    screen.unmount(); queryClient.clear();
 });

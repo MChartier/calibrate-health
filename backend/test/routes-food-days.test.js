@@ -171,7 +171,7 @@ test('food-days route: GET /range returns inclusive day statuses for start/end',
       },
       {
         date: '2025-01-02', status: 'COMPLETE', origin: 'USER', source: 'STORED',
-        is_representative: true, is_complete: true, completed_at: completedAt, updated_at: completedAt
+        is_representative: true, is_complete: true, completed_at: completedAt, updated_at: completedAt, calorie_comparison: null
       },
       {
         date: '2025-01-03', status: 'INCOMPLETE', origin: null, source: 'INFERRED_EMPTY',
@@ -241,4 +241,39 @@ test('food-days route: GET /range validates query shape', async () => {
   await handler(missingStartReq, missingStartRes);
   assert.equal(missingStartRes.statusCode, 400);
   assert.deepEqual(missingStartRes.body, { message: 'Provide start and end dates' });
+});
+
+
+test('PATCH completion captures its local-day plan once and reopening/recompletion retains it', async () => {
+  const now = new Date();
+  const dateKey = now.toISOString().slice(0, 10);
+  let stored = null;
+  const goal = { id: 1, user_id: 7, start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500, calorie_plan_review_status: 'CLEAR', created_at: now };
+  const prismaStub = {
+    user: { findUnique: async () => ({ id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' }) },
+    goal: { findFirst: async () => goal },
+    bodyMetric: { findFirst: async () => ({ weight_grams: 90000 }) },
+    caloriePlanRevision: { findFirst: async () => null, findMany: async () => [] },
+    foodLogDay: {
+      upsert: async ({create, update}) => { stored = { id: 1, updated_at: now, ...(stored ?? create), ...(stored ? update : {}) }; return stored; },
+      update: async ({data}) => { stored = { ...stored, ...data, updated_at: new Date(now.getTime() + 1) }; return stored; }
+    }
+  };
+  const router = loadFoodDaysRouter(prismaStub);
+  const handler = getRouteHandler(router, 'patch', '/');
+  const change = async status => {
+    const res = createRes();
+    await handler({ user: { id: 7 }, headers: {}, body: { date: dateKey, status } }, res);
+    assert.equal(res.statusCode, 200);
+    return res.body;
+  };
+  const complete = await change('COMPLETE');
+  assert.equal(complete.is_complete, true);
+  assert.equal(complete.updated_at, stored.updated_at);
+  assert.equal(stored.comparison_maintenance_kcal - stored.comparison_target_kcal, 500);
+  const snapshot = stored.comparison_target_kcal;
+  assert.equal((await change('OPEN')).is_complete, false);
+  goal.daily_deficit = -500;
+  assert.equal((await change('COMPLETE')).is_complete, true);
+  assert.equal(stored.comparison_target_kcal, snapshot);
 });

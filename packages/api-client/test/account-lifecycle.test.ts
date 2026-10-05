@@ -13,7 +13,8 @@ const createClient = (requests: CapturedRequest[]): CalibrateApiClient =>
             const isDelete = init?.method === 'DELETE';
             return new Response(isDelete ? null : JSON.stringify({
                 format: 'calibrate-account-export',
-                version: 8
+                version: 9,
+                food_log_days: [{ comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: '2026-07-21T19:00:00.000Z' }]
             }), {
                 status: isDelete ? 204 : 200,
                 headers: isDelete ? undefined : { 'content-type': 'application/json' }
@@ -28,6 +29,8 @@ test('exportAccount requests the versioned authenticated endpoint', async () => 
     const result = await client.exportAccount();
 
     assert.equal(result.format, 'calibrate-account-export');
+    assert.equal(result.version, 9);
+    assert.deepEqual(result.food_log_days[0], { comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: '2026-07-21T19:00:00.000Z' });
     assert.equal(requests[0]?.url, 'https://calibrate.example/api/v1/user/account/export');
     assert.equal(new Headers(requests[0]?.init.headers).get('authorization'), 'Bearer access-token');
 });
