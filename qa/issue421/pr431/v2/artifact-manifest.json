@@ -1,0 +1,22 @@
+[
+  {
+    "path": "verdict.json",
+    "sha256": "20e011d16ad6f6e3f9bf5d3340d9229cca1dab444472427029957f802b388a91"
+  },
+  {
+    "path": "impact.json",
+    "sha256": "8a06124aa4d225780c8e7a6c8c690d95b07e818973ec74a9e1625d5f648b25c2"
+  },
+  {
+    "path": "base-change.diff",
+    "sha256": "b1587aad831017299b0539a7a90df9a3d0dadd2918cee69ab609583324b755c9"
+  },
+  {
+    "path": "integration-product.diff",
+    "sha256": "9f61cbfc77d8466a1db85ba6c807072fb54c9e418a8f570e76933786fe355522"
+  },
+  {
+    "path": "README.md",
+    "sha256": "8df642f1c8ed8b67b6dabef69de7170b7ba7861f8c63d0a618129221019a77a6"
+  }
+]

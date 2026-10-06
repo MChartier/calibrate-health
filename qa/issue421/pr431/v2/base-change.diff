@@ -1,0 +1,119 @@
+diff --git a/backend/package-lock.json b/backend/package-lock.json
+index 9379f99d..b5d33a33 100644
+--- a/backend/package-lock.json
++++ b/backend/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "backend",
+-  "version": "0.37.0",
++  "version": "0.38.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "backend",
+-      "version": "0.37.0",
++      "version": "0.38.0",
+       "license": "ISC",
+       "dependencies": {
+         "@modelcontextprotocol/sdk": "^1.30.0",
+diff --git a/backend/package.json b/backend/package.json
+index 3c2270aa..8793702f 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "backend",
+-  "version": "0.37.0",
++  "version": "0.38.0",
+   "scripts": {
+     "prebuild": "npm run prisma:generate",
+     "build": "tsc -p tsconfig.build.json",
+diff --git a/docs/openapi/v1.yaml b/docs/openapi/v1.yaml
+index ed598f21..8bb2f735 100644
+--- a/docs/openapi/v1.yaml
++++ b/docs/openapi/v1.yaml
+@@ -2905,7 +2905,7 @@ components:
+           pattern: '^(?:[a-fA-F0-9]{16,64}|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})$'
+       allOf:
+         - oneOf:
+-            - properties: { platform: { const: web }, version: { enum: [0.37.0, 0.36.0] } }
++            - properties: { platform: { const: web }, version: { enum: [0.38.0, 0.37.0] } }
+             - properties: { platform: { const: android_phone }, version: { enum: [0.2.7, 0.2.6, 0.2.5, 0.2.4, 0.2.3, 0.2.2, 0.2.1, 0.1.0] } }
+             - properties: { platform: { const: ios }, version: { enum: [0.2.7, 0.2.6] } }
+             - properties: { platform: { const: wear_os }, version: { enum: [0.2.7, 0.2.6, 0.2.5, 0.2.3, 0.2.2, 0.2.1, 0.2.0] } }
+diff --git a/package-lock.json b/package-lock.json
+index a3785d00..ba121bf8 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "cal-io",
+-  "version": "0.37.0",
++  "version": "0.38.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "cal-io",
+-      "version": "0.37.0",
++      "version": "0.38.0",
+       "license": "ISC",
+       "workspaces": [
+         "mobile",
+diff --git a/package.json b/package.json
+index c8797419..d8f2919b 100755
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "cal-io",
+-  "version": "0.37.0",
++  "version": "0.38.0",
+   "private": true,
+   "description": "",
+   "workspaces": [
+diff --git a/packages/api-client/src/generated/v1.ts b/packages/api-client/src/generated/v1.ts
+index b502f405..cacfde30 100644
+--- a/packages/api-client/src/generated/v1.ts
++++ b/packages/api-client/src/generated/v1.ts
+@@ -1979,7 +1979,7 @@ export interface components {
+             /** @constant */
+             platform?: "web";
+             /** @enum {unknown} */
+-            version?: "0.37.0" | "0.36.0";
++            version?: "0.38.0" | "0.37.0";
+         } | {
+             /** @constant */
+             platform?: "android_phone";
+diff --git a/shared/client-diagnostic-versions.json b/shared/client-diagnostic-versions.json
+index fc6444b5..3c8ea2ba 100644
+--- a/shared/client-diagnostic-versions.json
++++ b/shared/client-diagnostic-versions.json
+@@ -1,10 +1,10 @@
+ {
+   "schema_version": 1,
+-  "previous_web_release": "0.36.0",
++  "previous_web_release": "0.37.0",
+   "supported_versions": {
+     "web": [
+-      "0.37.0",
+-      "0.36.0"
++      "0.38.0",
++      "0.37.0"
+     ],
+     "android_phone": [
+       "0.2.7",
+diff --git a/shared/release.json b/shared/release.json
+index cd34536d..1beefc66 100644
+--- a/shared/release.json
++++ b/shared/release.json
+@@ -1,7 +1,7 @@
+ {
+   "schema_version": 1,
+   "server": {
+-    "version": "0.37.0",
++    "version": "0.38.0",
+     "api": {
+       "current": "v1",
+       "supported": [

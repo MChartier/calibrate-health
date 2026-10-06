@@ -1,0 +1,228 @@
+{
+  "checkedAtUtc": "2026-10-06T17:58:53.020Z",
+  "actualTargetSha": "6b803fbc5ecd833cc4de5039e8ce495812a97e86",
+  "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "mergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "syntheticIntegrationTree": "428bd64817f3567ec81f655aa1550ce872716407",
+  "originalAndIntegratedPatchSha256": "9f61cbfc77d8466a1db85ba6c807072fb54c9e418a8f570e76933786fe355522",
+  "exactPatchEqual": true,
+  "baseChangedPaths": [
+    "backend/package-lock.json",
+    "backend/package.json",
+    "docs/openapi/v1.yaml",
+    "package-lock.json",
+    "package.json",
+    "packages/api-client/src/generated/v1.ts",
+    "shared/client-diagnostic-versions.json",
+    "shared/release.json"
+  ],
+  "overlappingPaths": [],
+  "baseCommitsAndParents": [
+    "6b803fbc5ecd833cc4de5039e8ce495812a97e86 2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b 5ac6be5aa46fbbce274620ea44c2e310ab169032 Release v0.38.0 (#432)",
+    "5ac6be5aa46fbbce274620ea44c2e310ab169032 2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b Prepare release v0.38.0"
+  ],
+  "mergeSecondParentTreeEqual": true,
+  "files": [
+    {
+      "path": "backend/scripts/lib/credentialProvider.ts",
+      "blob": "1446ee461dd409fb48c341a1d656bb82ff598ddb",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/index.ts",
+      "blob": "da4504772fcb3517a0eeb5f1d697006fb3706815",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "blob": "2374a3145fdb52ffe7bd854f90b5a96eb786fe40",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/routes/user.ts",
+      "blob": "10810ad6087436f8e564e4fb16c7e4efaa8c7f95",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/services/credentialVerification.ts",
+      "blob": "b441397ef14c01836044ce0dc85759ab110fc259",
+      "status": "added"
+    },
+    {
+      "path": "backend/src/services/mcpOAuth.ts",
+      "blob": "6bb8246e6cbb94ef1e0792808c1c26d575730f7a",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/credential-provider.test.js",
+      "blob": "39e35f03317cd6629f289d996a1d4f171010b242",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-account-recovery.test.js",
+      "blob": "3259e143f4103fae7c261ed0721127bff2d15ac7",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "blob": "d8e4013536eb9b1f1cec39236bcd8df2206ace20",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-auth.test.js",
+      "blob": "b9528c490947ec8fc60f6de47ed7b12dbdca977c",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-user.test.js",
+      "blob": "d546ee371fbd0eb357553f2bf6c148582e1e4985",
+      "status": "modified"
+    },
+    {
+      "path": "docs/firebase-migration-preparation.md",
+      "blob": "d68b50fcadd3c281bec4b3f478b158a8c590750f",
+      "status": "modified"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "parents": [
+        "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+      ]
+    }
+  ],
+  "pages": {
+    "files": [
+      12,
+      0
+    ],
+    "commits": [
+      1,
+      0
+    ]
+  },
+  "ci": [
+    {
+      "name": "Android Emulator End-to-End",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Wear Release Emulator Smoke",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Native Two-Emulator Package Upgrade",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "UX Accessibility and Visual Regression",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Web Critical Smoke",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Mobile Build",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Wear Build and JVM Tests",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Six-State Data-Backed Route Acceptance",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Full Exported Web and PWA End-to-End",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Release Configuration",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Expo Web Build",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "iOS Build",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Backend Build",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "High and Critical Vulnerabilities",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Mobile Tests",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Populated Postgres Upgrade",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "conclusion": "skipped",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Backend Tests",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Production Image Inputs",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Build Inputs",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Database Inputs",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Test Inputs",
+      "conclusion": "success",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    }
+  ],
+  "assessment": "Complete base diff inspected. Four package manifests/locks change only version, not dependencies. Server release advances 0.37.0 to 0.38.0. Web diagnostic allowlist and matching OpenAPI/generated types advance current/previous versions; native versions unchanged. clientDiagnostics consumes the allowlist for diagnostic payload validation on a separate route, not credential verification/session authorization. Credential service/callers and tests retain exact blobs. No impacted credential boundary identified; earlier 59 focused tests and current-head CI remain applicable. This is source/tree integration evidence, not a new integration runtime test or release certification."
+}
