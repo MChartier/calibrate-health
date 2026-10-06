@@ -40,8 +40,8 @@ describe('route metadata', () => {
         expect(resolveRouteMetadata('/privacy', { authenticated: false }).robots).toBe(ROUTE_ROBOTS_POLICIES.PUBLIC);
     });
 
-    it('does not invent a canonical URL for an unknown route', () => {
-        expect(resolveRouteMetadata('/missing', { authenticated: false })).toEqual({
+    it.each(['/missing', '/notifications'])('does not invent a canonical URL for unknown route %s', (pathname) => {
+        expect(resolveRouteMetadata(pathname, { authenticated: false })).toEqual({
             title: 'Page not found - Calibrate',
             description: 'The requested Calibrate page could not be found.',
             canonicalPath: null,

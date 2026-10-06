@@ -5,6 +5,55 @@ import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtu
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-07');
 
+for (const missing of ['/notifications', '/notifications?cursor=old#history', '/notifications/obsolete', '/missing/deep/page?stale=true#section']) {
+  test(`unknown address ${missing} replaces itself with Today without a history loop`, async ({ page, ux }) => {
+    await ux.install('populated');
+    const historyRequests: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.searchParams.get('view') === 'history' || url.pathname.endsWith('/notifications/in-app/read-all')) {
+        historyRequests.push(request.url());
+      }
+    });
+    await page.goto('/progress');
+    await expect(page.locator('#route-focus-title')).toHaveText('Progress');
+    expectApiFailure(page, { method: 'GET', pathname: new URL(missing, 'http://localhost').pathname, status: 404 });
+    await page.goto(missing);
+    await expect(page).toHaveURL((url) => url.pathname === '/today' && !url.search && !url.hash);
+    await expect(page).toHaveTitle('Today - Calibrate');
+    await expect(page.getByTestId('notification-history')).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId('notifications-button')).toBeVisible();
+    await expect(page).toHaveURL((url) => url.pathname === '/today');
+    for (let count = 0; count < 2; count += 1) {
+      await page.goBack();
+      await expect(page.getByTestId('notifications-button')).toBeVisible();
+      await expect(page.locator('#route-focus-title')).toHaveText('Progress');
+      await expect(page).toHaveURL((url) => url.pathname === '/progress');
+      await page.goForward();
+      await expect(page.getByTestId('notifications-button')).toBeVisible();
+      await expect(page.locator('#route-focus-title')).toHaveText('Today');
+      await expect(page).toHaveURL((url) => url.pathname === '/today');
+    }
+    expect(historyRequests).toEqual([]);
+  });
+}
+
+test('signed-in legal pages retain Settings navigation without the history shortcut', async ({ page, ux }) => {
+  await ux.install('populated');
+  for (const route of ['/privacy', '/terms']) {
+    await page.goto(route);
+    const header = page.getByTestId('legal-app-header');
+    await expect(header.getByRole('button', { name: 'Open notifications' })).toHaveCount(0);
+    await header.getByRole('button', { name: 'Account & settings', exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+    await page.goBack();
+    await expect(page).toHaveURL((url) => url.pathname === route);
+    await header.getByRole('button', { name: 'Back to Settings', exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname === '/settings');
+  }
+});
+
 async function expectNoHorizontalOverflow(page: Page) {
   const widths = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -114,19 +163,17 @@ test('Saved Foods is discoverable from Settings and returns through real history
   await expect(page).toHaveURL((url) => url.pathname === '/settings');
 });
 
-test('signed-in not-found recovery returns to Today', async ({ page, ux }) => {
+test('signed-in unknown addresses automatically open Today on a compact phone', async ({ page, ux }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await ux.install('populated');
   expectApiFailure(page, { method: 'GET', pathname: '/missing-signed-in-page', status: 404 });
   await page.goto('/missing-signed-in-page');
 
-  await expectDirectEntryTitle(page, 'Page not found', 'Page not found - Calibrate');
-  await hideTransientPwaNotices(page);
-  await page.getByRole('button', { name: 'Go to Today', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/today');
+  await expectFocusedRouteTitle(page, 'Today', 'Today - Calibrate');
 });
 
-test('signed-out not-found recovery returns to the hosted home', async ({ page, ux }) => {
+test('signed-out unknown addresses automatically reach sign-in on a compact phone', async ({ page, ux }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await ux.install('signed-out');
   expectApiFailure(page, { method: 'GET', pathname: '/missing-signed-out-page', status: 404 });
@@ -143,7 +190,6 @@ test('signed-out not-found recovery returns to the hosted home', async ({ page, 
   }));
   await page.goto('/missing-signed-out-page');
 
-  await expectDirectEntryTitle(page, 'Page not found', 'Page not found - Calibrate');
-  await page.getByRole('button', { name: 'Go to Calibrate home', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.pathname === '/');
+  await expect(page).toHaveURL((url) => url.pathname === '/login');
+  await expect(page.getByTestId('notifications-button')).toHaveCount(0);
 });

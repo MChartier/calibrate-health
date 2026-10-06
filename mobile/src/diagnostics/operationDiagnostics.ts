@@ -10,7 +10,6 @@ type FeatureOperation = Extract<
     | 'onboarding_complete'
     | 'food_copy'
     | 'saved_foods_load'
-    | 'notification_history_page'
     | 'weight_trend_load'
 >;
 
@@ -18,7 +17,6 @@ const FEATURE_OPERATION_ROUTES: Record<FeatureOperation, ClientDiagnosticRoute> 
     onboarding_complete: 'onboarding',
     food_copy: 'today',
     saved_foods_load: 'saved_foods',
-    notification_history_page: 'notifications',
     weight_trend_load: 'progress'
 };
 
@@ -36,7 +34,7 @@ export function reportClientOperationFailure(operation: FeatureOperation, error:
 }
 
 type QueryFailureDiagnostic = {
-    operation: Extract<FeatureOperation, 'saved_foods_load' | 'notification_history_page' | 'weight_trend_load'>;
+    operation: Extract<FeatureOperation, 'saved_foods_load' | 'weight_trend_load'>;
     isError: boolean;
     error: unknown;
     errorUpdatedAt: number;

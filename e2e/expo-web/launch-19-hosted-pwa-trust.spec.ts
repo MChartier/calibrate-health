@@ -363,17 +363,13 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
 
     expectApiFailure(page, { method: 'GET', pathname: '/missing-launch-19-authenticated', status: 404 });
     await page.goto('/missing-launch-19-authenticated');
-    await expect(page.getByTestId('route-not-found')).toBeVisible();
-    await expect(page.getByTestId('route-recovery-actions')).toContainText('Go to Today');
-    await expect(page.getByTestId('route-recovery-actions')).toContainText('Open Settings');
+    await expect(page).toHaveURL((url) => url.pathname === '/today');
     await expectRouteMetadata(page, {
-      title: 'Page not found - Calibrate',
-      description: 'The requested Calibrate page could not be found.',
-      canonicalPath: null,
+      title: 'Today - Calibrate',
+      description: 'Today in Calibrate, your private food, weight, activity, and goal tracker.',
+      canonicalPath: '/today',
       robots: 'noindex, nofollow',
     });
-    await page.getByRole('button', { name: 'Go to Today' }).click();
-    await expect(page).toHaveURL((url) => url.pathname === '/today');
     await expectNoHorizontalOverflow(page);
     return;
   }
@@ -412,11 +408,8 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
 
     expectApiFailure(page, { method: 'GET', pathname: '/missing-launch-19-signed-out', status: 404 });
     await page.goto('/missing-launch-19-signed-out');
-    await expect(page.getByTestId('route-not-found')).toBeVisible();
-    await expect(page.getByTestId('route-recovery-actions')).toContainText('Go to Calibrate home');
-    await expect(page.getByTestId('route-recovery-actions')).toContainText('Sign in');
-    await page.getByRole('button', { name: 'Go to Calibrate home' }).click();
-    await expect(page).toHaveURL((url) => url.pathname === '/');
+    await expect(page).toHaveURL((url) => url.pathname === '/login');
+    await expect(page.getByTestId('notifications-button')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     return;
   }

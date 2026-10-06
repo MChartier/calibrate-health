@@ -151,20 +151,6 @@ const SAVED_FOOD = {
   is_pinned: true,
 };
 
-const NOTIFICATION = {
-  id: 91,
-  type: 'LOG_WEIGHT_REMINDER',
-  local_date: LOCAL_DATE,
-  title: 'Matrix reminder',
-  body: 'Keep your weight trend current.',
-  action_url: '/weight',
-  read_at: null,
-  dismissed_at: null,
-  resolved_at: null,
-  created_at: '2026-07-21T18:45:00.000Z',
-  updated_at: '2026-07-21T18:45:00.000Z',
-};
-
 function foodDay(url: URL, status: 'OPEN' | 'INCOMPLETE') {
   return {
     date: url.searchParams.get('date') ?? LOCAL_DATE,
@@ -431,20 +417,6 @@ export const LAUNCH_24_DATA_ROUTE_CASES = [
     errorText: "Can't load saved foods",
     staleText: "Couldn't refresh saved foods",
     terminalEmptyText: 'No saved foods yet. Create a food or recipe to reuse it when logging.',
-  }),
-  routeCase('notifications', {
-    resource: {
-      pathname: '/api/v1/notifications/in-app',
-      content: { notifications: [NOTIFICATION], unread_count: 1, next_cursor: null },
-      empty: { notifications: [], unread_count: 0, next_cursor: null },
-      matches: (url) => url.searchParams.get('view') === 'history',
-    },
-    loading: { kind: 'testId', value: 'notification-history-loading' },
-    content: { kind: 'text', value: 'Matrix reminder' },
-    empty: { kind: 'text', value: 'No notification history yet' },
-    errorText: "Can't load notification history",
-    staleText: "Couldn't refresh notification history",
-    terminalEmptyText: 'No notification history yet',
   }),
   routeCase('weight', {
     resource: {

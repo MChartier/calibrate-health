@@ -49,7 +49,7 @@ describe('fixed client operation diagnostics', () => {
         const secondError = { requestId: '2222222222222222', message: 'private food payload' };
         const { rerender } = renderHook(
             (props: { error: unknown; errorUpdatedAt: number }) => useClientQueryFailureDiagnostic({
-                operation: 'notification_history_page',
+                operation: 'saved_foods_load',
                 isError: true,
                 error: props.error,
                 errorUpdatedAt: props.errorUpdatedAt
@@ -64,7 +64,7 @@ describe('fixed client operation diagnostics', () => {
         rerender({ error: secondError, errorUpdatedAt: 200 });
         await waitFor(() => expect(mockReportClientDiagnostic).toHaveBeenCalledTimes(2));
         expect(mockReportClientDiagnostic).toHaveBeenLastCalledWith(expect.objectContaining({
-            operation: 'notification_history_page',
+            operation: 'saved_foods_load',
             request_id: '2222222222222222'
         }));
     });
