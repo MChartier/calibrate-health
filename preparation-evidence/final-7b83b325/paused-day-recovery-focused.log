@@ -1,0 +1,11 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/offline/failedMutationRecovery.test.ts src/offline/foodDayIntent.web.test.ts src/components/FoodTrackingStatus.test.tsx
+PASS src/offline/failedMutationRecovery.test.ts
+PASS src/components/FoodTrackingStatus.test.tsx
+PASS src/offline/foodDayIntent.web.test.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       36 passed, 36 total
+Snapshots:   0 total
+Time:        3.319 s
+Ran all test suites matching /src\\offline\\failedMutationRecovery.test.ts|src\\offline\\foodDayIntent.web.test.ts|src\\components\\FoodTrackingStatus.test.tsx/i.
