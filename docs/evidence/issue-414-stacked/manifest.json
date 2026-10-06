@@ -8,7 +8,7 @@
     "head": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
     "state": "open draft; review quota blocked"
   },
-  "harnessCommit": "9d6138cd3e1b631af97e0157bff9169359499b53",
+  "harnessCommit": "928dd9e4612f505028cbdcc170ce49234f8f8249",
   "captureRuns": {
     "before": "10 passed",
     "after": "11 passed, 1 deliberate desktop enlarged-text skip"
@@ -1153,7 +1153,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "89f563365a458acb7faa4ca02ae97506fe8242a25029cfb20c1bcf590757a1e3"
+      "sha256": "0d21c04b4b551c993b86251a4164806960f5b53afcea491ce8fb4505b2381ce1"
     },
     {
       "path": "harness/playwright.expo-web.config.ts",
@@ -1223,5 +1223,11 @@
       "path": "harness/e2e/expo-web/ux-a11y.ts",
       "sha256": "33babe0c39c04dd979a9518896c9da00b7b747192c1b2e6c4baae94668ba7158"
     }
-  ]
+  ],
+  "provenanceCorrection": {
+    "checkedAtUtc": "2026-10-06T00:40:02.827Z",
+    "supersedesCommit": "cdd408bd61eedbaf2431fed7495e64b72ce58a6d",
+    "supersedesManifestSha256": "4a649abfa1ac02500f369c7ab1514e926d1cc9b966fc9c3e74259c9b00f93907",
+    "reason": "Correct README browser prose to154.0.8037.98 as already recorded in every original capture; identify the exact capture-time harness commit. Source/build/fixtures/image bytes unchanged."
+  }
 }
