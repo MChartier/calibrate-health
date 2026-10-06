@@ -315,18 +315,18 @@ test('matched accepted queued resume before replay', async ({ page, ux }, info) 
         };
     }))).toBe(1);
     expect(state.active).toBe(true);
-    if (before) {
-        await expect.poll(() => state.dayReads).toBeGreaterThan(initialReads);
-        await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
-    } else {
-        await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
-        await expect(page.getByText('Tracking paused', { exact: true })).toHaveCount(0);
-    }
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeVisible();
+    await expect(page.getByText('Tracking paused', { exact: true })).toHaveCount(0);
+    await page.reload(); await hideTransientPwaNotices(page);
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeVisible();
     await capture(page, info, 'queued-resume');
+    await calendar(page);
+    await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(before ? /tracking paused/ : /in progress/);
+    await capture(page, info, 'queued-resume-calendar');
+    await page.getByRole('button', { name: 'Close date picker', exact: true }).click();
     await activateFixtureOffline(page); state.queueResume = false; await page.context().setOffline(false);
     await expect.poll(() => state.active).toBe(false);
-    if (before) await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
-    else await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
     await capture(page, info, 'queued-replayed');
 });
 
@@ -351,11 +351,13 @@ test('matched queued pause metadata survives calendar reads', async ({ page, ux 
     }))).toBe(1);
 
     expect(state.active).toBe(false);
-    if (before) await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
-    else await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
+    await page.reload(); await hideTransientPwaNotices(page);
+    await expect(page.getByText('Tracking paused', { exact: true })).toBeVisible();
+    if (!before) await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
     await capture(page, info, 'queued-start-today');
     await calendar(page);
     if (before) await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
     else await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
+    await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(before ? /in progress/ : /tracking paused/);
     await capture(page, info, 'queued-start-calendar');
 });
