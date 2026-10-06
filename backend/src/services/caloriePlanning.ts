@@ -15,6 +15,7 @@ type PlanningDatabase = MutationDatabase;
 type StoredPlanningRevision = {
   id: number;
   recommendation_id: number | null;
+  configured_daily_deficit: number | null;
   target_adjustment_kcal: number;
   calorie_plan_review_status: 'CLEAR' | 'REQUIRES_REVIEW';
   calorie_plan_review_reason: string | null;
@@ -75,7 +76,7 @@ export async function buildStoredCaloriePlanningSnapshot(
 
   const localToday = localDateInTimeZone(now, user.timezone);
   const localTodayDate = localToday ? parseLocalDateOnly(localToday) : null;
-  const goal = await database.goal.findFirst({
+  const storedGoal = await database.goal.findFirst({
     where: { user_id: userId },
     orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
     select: {
@@ -91,6 +92,8 @@ export async function buildStoredCaloriePlanningSnapshot(
     }
   });
 
+  const goal = storedGoal ? { ...storedGoal } : null;
+
   const latestMetric = localTodayDate ? await database.bodyMetric.findFirst({
     where: { user_id: userId, date: { lte: localTodayDate } },
     orderBy: [{ date: 'desc' }, { id: 'desc' }],
@@ -100,6 +103,7 @@ export async function buildStoredCaloriePlanningSnapshot(
   const revisionSelect = {
     id: true,
     recommendation_id: true,
+    configured_daily_deficit: true,
     target_adjustment_kcal: true,
     calorie_plan_review_status: true,
     calorie_plan_review_reason: true,
@@ -117,6 +121,15 @@ export async function buildStoredCaloriePlanningSnapshot(
       select: revisionSelect
     })
   ]) : [null, []];
+  // Resolve pace separately so a later calibration correction cannot restore an obsolete deficit.
+  const paceRevision = goal && localTodayDate ? await database.caloriePlanRevision.findFirst({
+    where: { user_id: userId, source_goal_id: goal.id, configured_daily_deficit: { not: null }, effective_local_date: { lte: localTodayDate } },
+    orderBy: [{ effective_local_date: 'desc' }, { id: 'desc' }],
+    select: revisionSelect
+  }) : null;
+  if (goal && typeof paceRevision?.configured_daily_deficit === 'number') {
+    goal.daily_deficit = paceRevision.configured_daily_deficit;
+  }
   const nextRevision = futureRevisions[0] ?? null;
 
   const currentEvaluation = evaluateCaloriePlan({

@@ -1,3 +1,4 @@
+import { lockCaloriePlanningInputs } from './caloriePlanningLock';
 import type { MutationDatabase } from './clientOperations';
 import { buildStoredCaloriePlanningSnapshot, type StoredCaloriePlanningSnapshot } from './caloriePlanning';
 
@@ -7,6 +8,9 @@ export async function markCurrentCaloriePlanForReviewIfUnsafe(
   userId: number,
   now: Date = new Date()
 ): Promise<StoredCaloriePlanningSnapshot | null> {
+  // Weight/profile writers hold this guard through commit; pace saves use the same
+  // guard before reading, so safety checks cannot miss a concurrent accepted pace.
+  await lockCaloriePlanningInputs(database, userId);
   const snapshot = await buildStoredCaloriePlanningSnapshot(database, userId, now);
   if (!snapshot?.goal || snapshot.evaluation.status !== 'requires_review') return snapshot;
 
