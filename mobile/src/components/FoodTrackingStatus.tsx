@@ -1,3 +1,7 @@
+import { useFoodTrackingPause } from '../food/useFoodTrackingPause';
+import { foodTrackingPauseQueryKey } from '../food/queryKeys';
+import { queuedFoodDayStatus } from '../offline/foodDayIntent';
+import { useScopedTrackingMutations } from '../offline/useTrackingQueries';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AppState, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -21,7 +25,7 @@ import { SectionHeader } from './SectionHeader';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 
 export const foodDayQueryKey = (date: string) => ['mobile-food-day', date] as const;
-const foodTrackingPauseQueryKey = ['mobile-food-tracking-pause'] as const;
+
 
 const EXPANDED_STATUS_CONTENT_MAX_WIDTH = 520; // Keeps the status message readable on wide dashboards.
 const EXPANDED_STATUS_ACTION_MAX_WIDTH = 320; // Keeps the primary action prominent without spanning a desktop card.
@@ -71,11 +75,17 @@ function useRefreshTrackingState(date?: string) {
 
 export function useFoodDayStatus(date: string, enabled = true) {
     const { api } = useAuth();
-    return useQuery({
+    const mutations = useScopedTrackingMutations();
+    const { dayIntents = [], readFoodDay } = useOfflineOutbox();
+    const query = useQuery({
         queryKey: foodDayQueryKey(date),
-        queryFn: () => api.getFoodDay(date),
+        queryFn: () => readFoodDay ? readFoodDay(date, () => api.getFoodDay(date)) : api.getFoodDay(date),
         enabled
     });
+    let data = query.data;
+    const status = queuedFoodDayStatus([...dayIntents, ...mutations].filter(row => row.state !== 'failed'), date, data?.status);
+    if (status && status !== data?.status) data = storedDay(date, status);
+    return { ...query, data };
 }
 
 export const DayStatusCard: React.FC<{
@@ -92,7 +102,7 @@ export const DayStatusCard: React.FC<{
     style?: StyleProp<ViewStyle>;
 }> = ({ date, isToday, failed = false, loading = false, stackActions = false, compact = false, expanded = false, presentation = 'section', onAddFood, onActionComplete, style }) => {
     const { api } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const { width, fontScale } = useWindowDimensions();
@@ -104,11 +114,16 @@ export const DayStatusCard: React.FC<{
     const [showExpectedDate, setShowExpectedDate] = useState(false);
 
     const setStatus = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: (status: Exclude<FoodLogDayStatus, 'PAUSED'>) => {
             const payload = { date, status };
+            const intent = status === 'OPEN' && !isToday && dayQuery.data?.status === 'PAUSED'
+                ? { ...payload, explicitPausedBackfill: true } : payload;
             return executeOrQueueMutation({
+                withOutbox,
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
-                payload,
+                payload: intent,
                 execute: (operationId) => api.setFoodDayStatus(payload, operationId),
                 enqueue
             });
@@ -121,9 +136,12 @@ export const DayStatusCard: React.FC<{
     });
 
     const startPause = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: (resumeOn: string | null) => {
             const payload = { starts_on: date, expected_resume_on: resumeOn };
             return executeOrQueueMutation({
+                withOutbox,
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.START_FOOD_TRACKING_PAUSE,
                 payload,
                 execute: (operationId) => api.startFoodTrackingPause(payload, operationId),
@@ -148,9 +166,12 @@ export const DayStatusCard: React.FC<{
     });
 
     const resume = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             const payload = { resumed_on: date };
             return executeOrQueueMutation({
+                withOutbox,
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING,
                 payload,
                 execute: (operationId) => api.resumeFoodTracking(payload, operationId),
@@ -412,16 +433,12 @@ export const DayStatusCard: React.FC<{
 
 export const ResumeTrackingPrompt: React.FC = () => {
     const { api, user } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const today = getTodayDate(user?.timezone);
-    const pauseQuery = useQuery({
-        queryKey: foodTrackingPauseQueryKey,
-        queryFn: () => api.getFoodTrackingPause(),
-        enabled: Boolean(user)
-    });
+    const pauseQuery = useFoodTrackingPause();
     const [dismissedThisForeground, setDismissedThisForeground] = useState(false);
     const [showExtend, setShowExtend] = useState(false);
     const [customDate, setCustomDate] = useState('');
@@ -437,9 +454,12 @@ export const ResumeTrackingPrompt: React.FC = () => {
 
     const refresh = useRefreshTrackingState(today);
     const resume = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             const payload = { resumed_on: today };
             return executeOrQueueMutation({
+                withOutbox,
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING,
                 payload,
                 execute: (operationId) => api.resumeFoodTracking(payload, operationId),
@@ -454,9 +474,12 @@ export const ResumeTrackingPrompt: React.FC = () => {
         }
     });
     const extend = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: (expectedResumeOn: string | null) => {
             const payload = { expected_resume_on: expectedResumeOn };
             return executeOrQueueMutation({
+                withOutbox,
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_TRACKING_PAUSE,
                 payload,
                 execute: (operationId) => api.updateFoodTrackingPause(payload, operationId),

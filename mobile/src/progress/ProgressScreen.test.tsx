@@ -1,3 +1,4 @@
+jest.mock('../offline/provider', () => ({ useOfflineOutbox: () => ({ mutations: [] }) }));
 import React from 'react';
 import { router } from 'expo-router';
 import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';

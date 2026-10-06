@@ -9,7 +9,7 @@ import {
     usePwaStatus
 } from './runtime.web';
 
-export const BROWSER_OFFLINE_MESSAGE = 'Some information may be out of date. Reconnect before making changes.';
+export const BROWSER_OFFLINE_MESSAGE = 'Some information may be out of date. Keep tracking locally; pending changes sync after reconnection.';
 const DESKTOP_NOTICE_BREAKPOINT = 1024;
 const NOTICE_EDGE_OFFSET = 16;
 const DESKTOP_ACTION_CLEARANCE = 104; // Keeps persistent notices clear of the app bar and bottom contextual action.

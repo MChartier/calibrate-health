@@ -13,27 +13,35 @@ export type StoredTokens = {
     refreshToken: string | null;
 };
 
-export async function readStoredTokens(): Promise<StoredTokens> {
-    const [accessToken, refreshToken] = await Promise.all([
-        SecureStore.getItemAsync(ACCESS_TOKEN_KEY),
-        SecureStore.getItemAsync(REFRESH_TOKEN_KEY)
-    ]);
+let tokenUpdates: Promise<unknown> = Promise.resolve();
+function serializeTokens<T>(work: () => Promise<T>): Promise<T> {
+    const task = tokenUpdates.then(work);
+    tokenUpdates = task.catch(() => undefined);
+    return task;
+}
 
-    return { accessToken, refreshToken };
+export async function readStoredTokens(): Promise<StoredTokens> {
+    return serializeTokens(async () => {
+        const [accessToken, refreshToken] = await Promise.all([
+            SecureStore.getItemAsync(ACCESS_TOKEN_KEY),
+            SecureStore.getItemAsync(REFRESH_TOKEN_KEY)
+        ]);
+        return { accessToken, refreshToken };
+    });
 }
 
 export async function writeStoredTokens(tokens: { accessToken: string; refreshToken: string }): Promise<void> {
-    await Promise.all([
+    await serializeTokens(() => Promise.all([
         SecureStore.setItemAsync(ACCESS_TOKEN_KEY, tokens.accessToken),
         SecureStore.setItemAsync(REFRESH_TOKEN_KEY, tokens.refreshToken)
-    ]);
+    ]));
 }
 
 export async function clearStoredTokens(): Promise<void> {
-    await Promise.all([
+    await serializeTokens(() => Promise.all([
         SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
         SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY)
-    ]);
+    ]));
 }
 
 export async function getOrCreateDeviceId(): Promise<string> {

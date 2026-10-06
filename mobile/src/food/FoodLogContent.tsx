@@ -1,9 +1,14 @@
+import { OfflineMutationConflict } from '../offline/mutationConflict';
+import { copyFoodWhenSynchronized } from './copyFoodWhenSynchronized';
+import { findFailedFood } from '../offline/failedCreation';
+import { localTarget } from '../offline/trackingProjection';
+import { useTrackingFood } from '../offline/useTrackingQueries';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Crypto from 'expo-crypto';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { FoodLogCopyPayload, FoodLogEntry, FoodLogUpdatePayload } from '@calibrate/api-client';
 import type { MealPeriod } from '@calibrate/shared';
 import { AddFoodSheet } from '../components/AddFoodSheet';
@@ -62,6 +67,26 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     const [editAmount, setEditAmount] = useState('');
     const [editAmountDirty, setEditAmountDirty] = useState(false);
     const [editCaloriesOverridden, setEditCaloriesOverridden] = useState(false);
+    const [confirmDiscard, setConfirmDiscard] = useState(false);
+    const failedFood = editEntry ? findFailedFood(outbox.mutations, { ...localTarget(editEntry), date: selectedDate }) : undefined;
+    const failedCreation = failedFood?.operation === 'food.create';
+    const discardLabels = failedCreation
+        ? { initial: 'Discard failed entry', confirm: 'Confirm discard failed entry' }
+        : { initial: 'Discard queued changes', confirm: 'Confirm discard queued changes' };
+    const discardButtonLabel = confirmDiscard ? discardLabels.confirm : discardLabels.initial;
+    const discardFailed = useMutation({
+        networkMode: 'always',
+        mutationFn: async () => {
+            if (!failedFood) throw new Error('The failed entry changed.');
+            await outbox.discardFailedFood(failedFood.id);
+        },
+        onSuccess: async () => { setEditEntry(null); await invalidateLogQueries(); }
+    });
+    const retryFailedFood = useMutation({
+        networkMode: 'always',
+        mutationFn: async () => { if (failedFood) await outbox.retryFailed(failedFood.id); },
+        onSuccess: () => { setConfirmDiscard(false); }
+    });
     const [editError, setEditError] = useState<string | null>(null);
     const [isEditMealSelectorOpen, setIsEditMealSelectorOpen] = useState(false);
     const [recipeDraftMeal, setRecipeDraftMeal] = useState<MealPeriod | null>(null);
@@ -74,7 +99,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     const styles = React.useMemo(() => createStyles(theme), [theme]);
     usePrefetchPreviousFoodLog(selectedDate, dateNavigation.minDate);
 
-    const foodQuery = useQuery({ queryKey: ['mobile-food', selectedDate], queryFn: () => api.getFoodLog(selectedDate) });
+    const foodQuery = useTrackingFood(selectedDate);
     const foodDayQuery = useFoodDayStatus(selectedDate);
     const isOnline = useOnlineStatus();
     const foodState = useAsyncResourceState(foodQuery, (entries) => entries.length === 0);
@@ -127,6 +152,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
 
     const deleteRecovery = useFoodDeleteRecovery({
         entries: foodQuery.data,
+        date: selectedDate,
         deleteFoodLog: (id, operationId) => api.deleteFoodLog(id, operationId),
         outbox,
         onCommitted: async () => {
@@ -157,7 +183,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                 }];
             }
             await deleteRecovery.flush();
-            return api.copyFoodLogs(payload);
+            return copyFoodWhenSynchronized(outbox.withOutbox, () => api.copyFoodLogs(payload));
         },
         onSuccess: async (response) => {
             copyOperationRef.current = null;
@@ -170,13 +196,16 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
             await invalidateLogQueries([response.target_date]);
         },
         onError: (error) => {
-            reportClientOperationFailure('food_copy', error);
+            if (!(error instanceof OfflineMutationConflict)) reportClientOperationFailure('food_copy', error);
         }
     });
 
     const updateFood = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
             if (!editEntry) throw new Error('Choose a food entry to edit.');
+
+            if (findFailedFood(outbox.mutations, { ...localTarget(editEntry), date: selectedDate })) throw new Error('Resolve the failed queued changes before saving a correction.');
 
             const payload: FoodLogUpdatePayload = {
                 name: editName.trim(),
@@ -192,8 +221,10 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                 payload.calories = Number(editCalories);
             }
 
-            const queuedPayload = { id: editEntry.id, update: payload };
+            const queuedPayload = { ...localTarget(editEntry), date: selectedDate, update: payload };
             return executeOrQueueMutation({
+                withOutbox: outbox.withOutbox,
+                forceQueue: outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_LOG,
                 payload: queuedPayload,
                 execute: (operationId) => api.updateFoodLog(editEntry.id, payload, operationId),
@@ -216,7 +247,15 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
         setCopySource(source);
     }
 
+    function requestDelete(entry: FoodLogEntry) {
+        if (findFailedFood(outbox.mutations, { ...localTarget(entry), date: selectedDate })) openEditEntry(entry);
+        else deleteRecovery.requestDelete(entry);
+    }
+
     function openEditEntry(entry: FoodLogEntry) {
+        setConfirmDiscard(false);
+        discardFailed.reset();
+        retryFailedFood.reset();
         const amountConfig = getFoodLogEditableAmount(entry);
         setEditEntry(entry);
         setEditName(entry.name);
@@ -249,6 +288,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     }
 
     function handleSaveEdit() {
+        if (failedCreation) { setEditError('Resolve the failed local entry before saving corrections.'); return; }
         if (!editName.trim()) {
             setEditError('Food name is required.');
             return;
@@ -287,9 +327,9 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                         title={embedded ? null : 'Meals'}
                         entries={deleteRecovery.visibleEntries}
                         disabled={!canEditFood}
-                        copyDisabled={!isOnline}
+                        copyDisabled={!isOnline || outbox.mutations.length > 0}
                         onEditEntry={openEditEntry}
-                        onDeleteEntry={deleteRecovery.requestDelete}
+                        onDeleteEntry={requestDelete}
                         onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
                         onCopyDay={() => openCopy({ kind: 'day' })}
                     />
@@ -301,16 +341,16 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     title={embedded ? null : 'Meals'}
                     entries={deleteRecovery.visibleEntries}
                     disabled={!canEditFood}
-                    copyDisabled={!isOnline}
+                    copyDisabled={!isOnline || outbox.mutations.length > 0}
                     onEditEntry={openEditEntry}
-                    onDeleteEntry={deleteRecovery.requestDelete}
+                    onDeleteEntry={requestDelete}
                     onCopyMeal={(meal) => openCopy({ kind: 'meal', meal })}
                     onCopyDay={() => openCopy({ kind: 'day' })}
-                    onSaveMealAsRecipe={(meal, entries) => {
+                    onSaveMealAsRecipe={isOnline && outbox.mutations.length === 0 ? (meal, entries) => {
                         setRecipeSavedMessage(null);
                         setRecipeDraftMeal(meal);
                         setRecipeDraftEntries(entries);
-                    }}
+                    } : undefined}
                 />
             </AsyncStateBoundary>
 
@@ -404,6 +444,14 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     setEditEntry(null);
                 }}
             >
+                {failedFood && <>
+                    <AppButton title="Retry original change" disabled={retryFailedFood.isPending || discardFailed.isPending} variant="secondary" onPress={() => retryFailedFood.mutate()} />
+                    {retryFailedFood.error && <AppText accessibilityRole="alert">Unable to retry. Your queued changes are still on this device.</AppText>}
+                    <AppText accessibilityRole="alert">{failedCreation ? 'This local entry could not sync. Retry it in Settings > Offline changes, or discard it here before adding a corrected entry. A correction cannot pass the failed write.' : 'This entry has failed queued changes. Retry the original request or discard its queued changes before editing or deleting it. Saving another correction cannot pass the failed write.'}</AppText>
+                    {confirmDiscard && <AppText>{failedCreation ? 'Discard this local entry and its pending edits? Other queued changes are kept. This does not delete any server record.' : 'Discard all queued edits and deletion for this entry? Other entries are kept. This does not delete or undo any server record; refresh when connected to see what reached the server.'}</AppText>}
+                    <AppButton title={discardButtonLabel} disabled={discardFailed.isPending || retryFailedFood.isPending} variant="secondary" onPress={() => confirmDiscard ? discardFailed.mutate() : setConfirmDiscard(true)} />
+                    {discardFailed.error && <AppText accessibilityRole="alert">Unable to discard this entry. Its sync state may have changed; close and reopen it to review.</AppText>}
+                </>}
                 <TextField label="Food name" value={editName} onChangeText={setEditName} />
                 {editAmountConfig && (
                     <NumberStepperField
@@ -457,7 +505,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
                     />
                     <AppButton
                         title={updateFood.isPending ? 'Saving...' : 'Save'}
-                        disabled={updateFood.isPending}
+                        disabled={updateFood.isPending || Boolean(failedFood)}
                         leftIcon={<Ionicons name="checkmark" size={18} color={theme.colors.onPrimary} />}
                         onPress={handleSaveEdit}
                         style={styles.rowButton}

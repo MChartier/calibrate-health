@@ -32,9 +32,9 @@ describe('PwaStatusBanner placement', () => {
         });
         expect(resolvePwaNoticePlacement(320, false).bottom).toBeUndefined();
     });
-    it('does not promise queued writes while offline', () => {
+    it('explains local tracking and deferred synchronization while offline', () => {
         expect(BROWSER_OFFLINE_MESSAGE).toBe(
-            'Some information may be out of date. Reconnect before making changes.'
+            'Some information may be out of date. Keep tracking locally; pending changes sync after reconnection.'
         );
     });
 

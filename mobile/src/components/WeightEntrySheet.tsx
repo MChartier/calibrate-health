@@ -1,3 +1,7 @@
+import { findFailedMetric } from '../offline/failedMutationRecovery';
+import { FailedMutationRecovery } from '../offline/FailedChangeRecoveryPanel';
+import { useTrackingMetrics } from '../offline/useTrackingQueries';
+import { localTarget } from '../offline/trackingProjection';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     AccessibilityInfo,
@@ -81,7 +85,8 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     const footerRowStyle = [styles.footerRow, fontScale >= 1.3 && styles.footerRowStacked];
     const { colors } = theme;
     const { api, user } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
+    const failedWeight = findFailedMetric(mutations, date);
     const queryClient = useQueryClient();
     const reduceMotion = useReducedMotionPreference();
     const isOnline = useOnlineStatus();
@@ -93,11 +98,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     const [result, setResult] = useState<ResultState | null>(null);
     const weightUnit = formatWeightUnit(user?.weight_unit);
 
-    const metricsQuery = useQuery({
-        queryKey: ['mobile-metrics'],
-        queryFn: () => api.getMetrics(),
-        enabled: visible
-    });
+    const metricsQuery = useTrackingMetrics(visible);
     const trendQuery = useQuery({
         queryKey: ['mobile-metrics-trend', 'month'],
         queryFn: () => api.getTrendMetrics({ range: 'month' }),
@@ -125,7 +126,9 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     }, [queryClient]);
 
     const addWeight = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
+            if (failedWeight) throw new Error('Resolve the failed weight change before saving a correction.');
             const parsedWeight = parseWeightInput(weight);
             if (parsedWeight === null) throw new Error('Enter a valid weight greater than zero.');
             if (!isWeightWithinPolicy(parsedWeight, user?.weight_unit)) {
@@ -133,6 +136,8 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             }
             const payload = { weight: parsedWeight, date };
             return executeOrQueueMutation<MetricSaveResponse>({
+                withOutbox,
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.ADD_METRIC,
                 payload,
                 execute: (operationId) => api.addMetric(payload, operationId),
@@ -159,10 +164,14 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
     });
 
     const deleteWeight = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: () => {
+            if (failedWeight) throw new Error('Resolve the failed weight change before deleting this weigh-in.');
             if (!existingMetric) throw new Error('No weight entry exists for this day.');
-            const payload = { id: existingMetric.id };
+            const payload = { ...localTarget(existingMetric), date };
             return executeOrQueueMutation({
+                withOutbox,
+                forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC,
                 payload,
                 execute: (operationId) => api.deleteMetric(existingMetric.id, operationId),
@@ -232,7 +241,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         && parsedWeight !== null
         && Math.abs(parsedWeight - existingMetric.weight) < WEIGHT_INPUT_INCREMENT / 2
     );
-    const canSave = parsedWeight !== null && weightRangeError === null && !isUnchanged;
+    const canSave = !failedWeight && parsedWeight !== null && weightRangeError === null && !isUnchanged;
     const isBusy = phase === 'saving' || addWeight.isPending || deleteWeight.isPending;
     const initialWeight = prefillMetric ? formatWeightInput(prefillMetric.weight) : '';
     const hasUnsavedWeight = phase === 'editing' && weight !== initialWeight;
@@ -451,7 +460,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
                     <AppButton
                         title="Delete weigh-in"
                         variant="ghost"
-                        disabled={isBusy}
+                        disabled={isBusy || Boolean(failedWeight)}
                         leftIcon={<Ionicons name="trash-outline" size={18} color={colors.danger} />}
                         onPress={() => setPhase('delete-confirm')}
                     />
@@ -479,14 +488,14 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
         footer = (
             <View style={footerRowStyle}>
                 <AppButton title="Go back" variant="secondary" onPress={() => setPhase('editing')} style={styles.footerButton} />
-                <AppButton title={`Save ${formatWeight(parsedWeight, user?.weight_unit)}`} onPress={mutateWeight} style={styles.footerButton} />
+                <AppButton title={`Save ${formatWeight(parsedWeight, user?.weight_unit)}`} disabled={Boolean(failedWeight)} onPress={mutateWeight} style={styles.footerButton} />
             </View>
         );
     } else if (phase === 'delete-confirm') {
         footer = (
             <View style={footerRowStyle}>
                 <AppButton title="Keep weigh-in" variant="secondary" onPress={() => setPhase('editing')} style={styles.footerButton} />
-                <AppButton title="Delete" variant="danger" onPress={handleDelete} style={styles.footerButton} />
+                <AppButton title="Delete" variant="danger" disabled={Boolean(failedWeight)} onPress={handleDelete} style={styles.footerButton} />
             </View>
         );
     } else if (phase === 'saving') {
@@ -518,6 +527,7 @@ export const WeightEntrySheet: React.FC<WeightEntrySheetProps> = ({ visible, dat
             footer={footer}
             onRequestClose={handleClose}
         >
+            {failedWeight && <FailedMutationRecovery key={failedWeight.id} mutation={failedWeight} onRecovered={() => { refreshWeightQueries(); setPhase('loading'); }} />}
             {content}
         </BottomSheetModal>
     );

@@ -11,7 +11,7 @@ const DEFAULT_EXPO_WEB_DIST = path.join(SCRIPT_DIR, '..', 'mobile', 'dist');
 const ENTRY_BUNDLE_PATTERN = /^_expo\/static\/js\/web\/index-[a-f0-9]+\.js$/;
 const PWA_FILES = ['manifest.webmanifest', 'sw.js', 'calibrate-icon.svg', 'calibrate-icon-192.png', 'calibrate-icon-512.png', 'calibrate-icon-maskable-512.png'];
 const PRECACHE_SHELL_FILES = PWA_FILES.filter((fileName) => fileName !== 'sw.js');
-const VERSIONED_STATIC_ASSET_PATTERN = /^(?:_expo\/static\/(?:js|css)\/.+-[a-f0-9]{6,}\.(?:js|css)|assets\/.+-[a-f0-9]{6,}\.[a-z0-9]+)$/i;
+const VERSIONED_STATIC_ASSET_PATTERN = /^(?:_expo\/static\/(?:js|css)\/.+-[a-f0-9]{6,}\.(?:js|css)|assets\/.+[.-][a-f0-9]{6,}\.[a-z0-9]+)$/i;
 
 function readRequiredFile(filePath, label) {
   if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
@@ -75,7 +75,7 @@ function expectedPrecachePaths(distDir) {
   return [
     '/index.html',
     ...listFiles(distDir)
-      .filter((filePath) => PRECACHE_SHELL_FILES.includes(filePath) || VERSIONED_STATIC_ASSET_PATTERN.test(filePath))
+      .filter((filePath) => filePath !== 'index.html' && (filePath.endsWith('.html') || PRECACHE_SHELL_FILES.includes(filePath) || VERSIONED_STATIC_ASSET_PATTERN.test(filePath)))
       .map((filePath) => `/${filePath}`),
   ];
 }

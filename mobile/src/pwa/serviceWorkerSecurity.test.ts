@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 type ServiceWorkerHandler = (event: any) => void;
 
-function loadWorker(options: { cacheKeys?: string[] } = {}) {
+function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
     const handlers = new Map<string, ServiceWorkerHandler>();
     const deleted: string[] = [];
@@ -20,7 +20,7 @@ function loadWorker(options: { cacheKeys?: string[] } = {}) {
     };
     const cache = {
         addAll: async () => undefined,
-        match: async () => undefined,
+        match: async (key: string) => options.cachedRoutes?.[key] ? new Response(options.cachedRoutes[key]) : undefined,
         put: async () => undefined
     };
     vm.runInNewContext(source, {
@@ -33,7 +33,7 @@ function loadWorker(options: { cacheKeys?: string[] } = {}) {
             keys: async () => options.cacheKeys ?? [],
             delete: async (key: string) => { deleted.push(key); return true; }
         },
-        fetch: async () => new Response('asset'),
+        fetch: async () => { if (options.offline) throw new TypeError('offline'); return new Response('asset'); },
         console
     });
     return { source, handlers, deleted };
@@ -64,7 +64,7 @@ describe('service worker cache security', () => {
         expect(respondWith).toHaveBeenCalledTimes(1);
     });
 
-    it('uses a static index shell for offline navigation without runtime-caching navigation responses', () => {
+    it('uses exported static shells for offline navigation without runtime-caching navigation responses', () => {
         const { source } = loadWorker();
         expect(source).toMatch(/const APP_SHELL = \[\s*'\/index\.html'/);
         const navigationBlock = source.slice(
@@ -73,6 +73,15 @@ describe('service worker cache security', () => {
         );
         expect(navigationBlock).toMatch(/cache\.match\('\/index\.html'\)/);
         expect(navigationBlock).not.toMatch(/cache\.put/);
+    });
+
+    it('restores the matching exported route offline to preserve hydration', async () => {
+        const { handlers } = loadWorker({ offline: true, cachedRoutes: { '/index.html': 'landing', '/today.html': 'today' } });
+        for (const pathname of ['/today', '/today/', '/today.html']) {
+            let result: Promise<Response> | undefined;
+            handlers.get('fetch')?.({ request: { url: 'https://calibrate.example' + pathname, method: 'GET', mode: 'navigate' }, respondWith: (value: Promise<Response>) => { result = value; } });
+            expect(await (await result)?.text()).toBe('today');
+        }
     });
 
     it('purges only user-scoped caches through an identity-free message', async () => {

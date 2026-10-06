@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
-import type { FoodLogDay } from '@calibrate/api-client';
+import { useOfflineOutbox } from '../offline/provider';
+import { createOutboxNamespace } from '../offline/queuedMutation';
+import { calendarDayWithIntent } from './calendarIntent';
 import { useAuth } from '../auth/AuthContext';
 import {
     foodDayRangeQueryKey,
@@ -20,6 +22,8 @@ import { AppText } from '../components/AppText';
 import { AsyncStateBoundary, useAsyncResourceState, useOnlineStatus } from '../components/AsyncStateBoundary';
 import { CalendarModal } from '../components/CalendarModal';
 import { isNeverEmpty } from '../asyncState/resolveAsyncState';
+import { useFoodTrackingPause } from './useFoodTrackingPause';
+import { getActivePausePlan, getPauseBrowseMonth, isPlannedPauseDate } from './plannedPause';
 
 type HistoricalDatePickerProps = {
     visible: boolean;
@@ -106,20 +110,38 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
     onRequestClose,
     footer
 }) => {
-    const { api } = useAuth();
+    const { api, user, serverUrl } = useAuth();
+    const { dayIntents = [], mutations = [], readFoodDays } = useOfflineOutbox();
+    const namespace = user && serverUrl ? createOutboxNamespace(serverUrl, user.id) : null;
+    const dayIntent = [...dayIntents, ...mutations].filter(row => row.namespace === namespace && row.state !== 'failed');
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [visibleMonth, setVisibleMonth] = useState(() => getMonthKey(selectedDate));
+    const pauseQuery = useFoodTrackingPause(visible);
+    const pausePlan = getActivePausePlan(pauseQuery.data?.pause, maxDate);
+    const lastBrowseMonth = getPauseBrowseMonth(maxDate, pausePlan);
 
     useEffect(() => {
+        setVisibleMonth(month => month > lastBrowseMonth ? lastBrowseMonth : month);
+    }, [lastBrowseMonth]);
+
+    useLayoutEffect(() => {
         if (visible) setVisibleMonth(getMonthKey(selectedDate));
     }, [selectedDate, visible]);
 
-    const monthRange = getCalendarMonthRange(visibleMonth, minDate, maxDate);
+    const displayMonth = visibleMonth > lastBrowseMonth ? lastBrowseMonth : visibleMonth;
+    useEffect(() => {
+        if (visible) void pauseQuery.refetch();
+    }, [visible, displayMonth, pauseQuery.refetch]);
+    const monthRange = getCalendarMonthRange(displayMonth, minDate, maxDate);
+    const hasHistory = monthRange.startDate <= monthRange.endDate;
     const rangeQuery = useQuery({
         queryKey: foodDayRangeQueryKey(monthRange.startDate, monthRange.endDate),
-        queryFn: () => api.getFoodDays(monthRange.startDate, monthRange.endDate),
-        enabled: visible && monthRange.startDate <= monthRange.endDate
+        queryFn: () => {
+            const fetch = () => api.getFoodDays(monthRange.startDate, monthRange.endDate);
+            return readFoodDays ? readFoodDays(fetch) : fetch();
+        },
+        enabled: visible && hasHistory
     });
     const isOnline = useOnlineStatus();
     const rangeState = useAsyncResourceState(rangeQuery, isNeverEmpty);
@@ -127,11 +149,23 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
         () => new Map((rangeQuery.data?.days ?? []).map((day) => [day.date, day])),
         [rangeQuery.data?.days]
     );
-    const weeks = useMemo(() => getCalendarWeeks(visibleMonth), [visibleMonth]);
-    const canGoPrevious = visibleMonth > getMonthKey(minDate);
-    const canGoNext = visibleMonth < getMonthKey(maxDate);
+    const weeks = useMemo(() => getCalendarWeeks(displayMonth), [displayMonth]);
+    const hasLocalHistory = weeks.flat().some(date => date && date >= minDate && date <= maxDate
+        && calendarDayWithIntent(date, undefined, dayIntent) !== undefined);
+    const localHistoryOnly = !rangeQuery.data && hasLocalHistory;
+    const visibleRangeState = localHistoryOnly && rangeState.kind === 'error'
+        ? { ...rangeState, kind: 'degraded' as const }
+        : localHistoryOnly ? { kind: 'content' as const, error: null } : rangeState;
+    const canGoPrevious = displayMonth > getMonthKey(minDate);
+    const canGoNext = displayMonth < lastBrowseMonth;
+    let planNotice: string | null = null;
+    if (!isOnline) planNotice = pausePlan ? 'Offline - showing saved pause plan.' : 'Pause plan unavailable offline.';
+    else if (pauseQuery.isError) planNotice = pausePlan ? 'Could not refresh the saved pause plan.' : 'Pause plan unavailable.';
+    else if (pauseQuery.isPending) planNotice = 'Loading pause plan...';
+    else if (pauseQuery.data?.pause.active && !pausePlan) planNotice = 'Pause plan unavailable.';
 
     function selectDate(date: string) {
+        if (date < minDate || date > maxDate) return;
         onSelectDate(date);
         onRequestClose();
     }
@@ -169,7 +203,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     >
                         <Ionicons name="chevron-back" size={22} color={theme.colors.onSurface} />
                     </Pressable>
-                    <AppText variant="subtitle" style={styles.monthLabel}>{formatMonth(visibleMonth)}</AppText>
+                    <AppText variant="subtitle" style={styles.monthLabel}>{formatMonth(displayMonth)}</AppText>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Next month"
@@ -186,8 +220,10 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     </Pressable>
                 </View>
 
+                {localHistoryOnly && <AppText variant="caption">Showing saved tracking changes. Other history is unavailable.</AppText>}
+                {planNotice && <AppText variant="caption" accessibilityLiveRegion="polite">{planNotice}</AppText>}
                 <AsyncStateBoundary
-                    state={rangeState}
+                    state={hasHistory ? visibleRangeState : { kind: 'content', error: null }}
                     resourceLabel="tracking history"
                     loading={(
                         <View style={styles.queryLoading}>
@@ -213,11 +249,14 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                             {week.map((date, dayIndex) => {
                                 if (!date) return <View key={`empty-${dayIndex}`} style={styles.dayCell} />;
                                 const disabled = date < minDate || date > maxDate;
-                                const day = dayByDate.get(date) as FoodLogDay | undefined;
+                                const day = date <= maxDate ? calendarDayWithIntent(date, dayByDate.get(date), dayIntent) : undefined;
+                                const planned = isPlannedPauseDate(date, maxDate, pausePlan);
                                 const marker = getFoodDayCalendarMarker(day, maxDate);
                                 const isSelected = date === selectedDate;
                                 const isToday = date === maxDate;
-                                const statusLabel = getFoodDayCalendarLabel(day, maxDate);
+                                let statusLabel = localHistoryOnly && !day ? 'tracking status unavailable' : getFoodDayCalendarLabel(day, maxDate);
+                                if (date > maxDate) statusLabel = planned ? 'planned tracking pause' : 'future date';
+                                if (planned && pausePlan?.expectedResumeOn === null) statusLabel += ', until resumed';
                                 const complete = completedMarker(marker);
                                 const colors = completedColors(marker, theme);
                                 const accessibilityLabel = [
@@ -238,7 +277,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                         style={({ pressed }) => [
                                             styles.dayCell,
                                             isSelected && styles.selectedDay,
-                                            disabled && styles.disabled,
+                                            disabled && !planned && styles.disabled,
                                             pressed && styles.pressed
                                         ]}
                                     >
@@ -249,7 +288,8 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                                 complete && { backgroundColor: colors.backgroundColor },
                                                 marker === 'incomplete' && styles.incompleteDateBadge,
                                                 marker === 'not-started' && styles.notStartedDateBadge,
-                                                marker === 'paused' && styles.pausedDateBadge
+                                                marker === 'paused' && styles.pausedDateBadge,
+                                                planned && styles.plannedDateBadge
                                             ]}
                                         >
                                             <AppText
@@ -261,12 +301,12 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                                     complete && [styles.completeDayNumber, { color: colors.color }],
                                                     marker === 'incomplete' && styles.incompleteDayNumber,
                                                     marker === 'not-started' && styles.notStartedDayNumber,
-                                                    marker === 'paused' && styles.pausedDayNumber
+                                                    (marker === 'paused' || planned) && styles.pausedDayNumber
                                                 ]}
                                             >
                                                 {Number(date.slice(-2))}
                                             </AppText>
-                                            {marker === 'paused' && (
+                                            {(marker === 'paused' || planned) && (
                                                 <Ionicons
                                                     name="pause"
                                                     size={9}
@@ -283,6 +323,10 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
 
                         <AppText variant="caption">When target is at/below maintenance, target met means at/below target and beyond means above maintenance. When target is above maintenance, target met means at/above target and beyond means below maintenance.</AppText>
                         <View style={styles.legend}>
+                            {pausePlan && <View style={styles.legendItem}>
+                                <View style={styles.plannedLegendMarker}><Ionicons name="pause" size={13} color={theme.colors.onSurfaceVariant} /></View>
+                                <AppText variant="caption" style={styles.legendLabel}>Planned pause{pausePlan.expectedResumeOn === null ? ': until resumed' : ''} (future, view only)</AppText>
+                            </View>}
                             {Object.entries(COMPLETED_MARKERS).map(([marker, complete]) => (
                                 <LegendItem key={marker} label={complete.label} marker={marker as FoodDayCalendarMarker} theme={theme} styles={styles} />
                             ))}
@@ -381,6 +425,19 @@ function createStyles(theme: AppTheme) {
             borderWidth: theme.stroke.control,
             borderColor: theme.colors.outline,
             backgroundColor: theme.colors.surfaceContainerHigh
+        },
+        plannedDateBadge: {
+            borderWidth: theme.stroke.control,
+            borderStyle: 'dashed',
+            borderColor: theme.colors.outline,
+            backgroundColor: theme.colors.surface
+        },
+        plannedLegendMarker: {
+            borderWidth: theme.stroke.control,
+            borderStyle: 'dashed',
+            borderColor: theme.colors.outline,
+            borderRadius: theme.radius.sm,
+            padding: theme.spacing.xs
         },
         todayNumber: {
             color: theme.colors.primary,

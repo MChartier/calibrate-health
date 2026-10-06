@@ -1,3 +1,5 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import { ApiError } from '@calibrate/api-client';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
@@ -64,6 +66,7 @@ describe('browser offline outbox provider', () => {
     let openDatabase: jest.Mock<Promise<IDBDatabase>, []>;
 
     beforeEach(async () => {
+        await AsyncStorage.clear();
         mockAuthState = { serverUrl: 'https://health.example', user: { id: 7 } };
         database = await openIndexedDbOutboxDatabase({
             factory: new IDBFactory(),
@@ -73,6 +76,22 @@ describe('browser offline outbox provider', () => {
     });
 
     afterEach(() => database.close());
+
+    it('resumes remaining ordered intent immediately after explicit failed-weight discard', async () => {
+        const queue = new IndexedDbOutbox(database, createOutboxNamespace('https://health.example', 7));
+        await queue.enqueue({ id: 'failed', operation: 'metric.add', payload: { date: '2026-07-21', weight: 88 } });
+        await queue.enqueue({ id: 'next-day', operation: 'metric.add', payload: { date: '2026-07-22', weight: 90 } });
+        await queue.claimNext(); await queue.fail('failed', 'Rejected');
+        const executeMutation = jest.fn(async () => undefined);
+        const wrapper = ({ children }: { children: React.ReactNode }) => <OfflineOutboxProvider executeMutation={executeMutation} openDatabase={openDatabase}>{children}</OfflineOutboxProvider>;
+        const { result } = renderHook(() => useOfflineOutbox(), { wrapper });
+        await waitFor(() => expect(result.current.mutations).toHaveLength(2));
+        expect(executeMutation).not.toHaveBeenCalled();
+        await act(async () => { await result.current.discardFailedMutation('failed'); });
+        expect(executeMutation).toHaveBeenCalledTimes(1);
+        expect(executeMutation).toHaveBeenCalledWith(expect.objectContaining({ id: 'next-day' }));
+        expect(await queue.list()).toEqual([]);
+    });
 
     it('does not open or replay the browser outbox while account access is restricted', async () => {
         mockAuthState = {
@@ -193,7 +212,7 @@ describe('browser offline outbox provider', () => {
             operation: 'food-day.update',
             payload: { date: '2026-07-18', is_complete: true }
         });
-        const executeMutation = jest.fn(async () => undefined);
+        const executeMutation = jest.fn(async () => ({ currentControl: { day: { date: '2026-07-18', status: 'COMPLETE' as const } } }));
         const onReplayCompleted = jest.fn(async () => undefined);
         const connectivity = createConnectivity(true);
         const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -221,7 +240,7 @@ describe('browser offline outbox provider', () => {
         });
     });
 
-    it('retries a durable startup failure when the browser comes online', async () => {
+    it('preserves durable failed intent across connectivity and visibility until explicit retry', async () => {
         const namespace = createOutboxNamespace(mockAuthState.serverUrl, mockAuthState.user!.id);
         await new IndexedDbOutbox(database, namespace).enqueue({
             id: 'retry-operation',
@@ -233,11 +252,13 @@ describe('browser offline outbox provider', () => {
             if (shouldFail) throw new Error('network unavailable');
         });
         const connectivity = createConnectivity(true);
+        const visibility = createVisibility(true);
         const wrapper = ({ children }: { children: React.ReactNode }) => (
             <OfflineOutboxProvider
                 executeMutation={executeMutation}
                 openDatabase={openDatabase}
                 connectivity={connectivity.value}
+                visibility={visibility.value}
             >
                 {children}
             </OfflineOutboxProvider>
@@ -248,7 +269,11 @@ describe('browser offline outbox provider', () => {
         ]));
 
         shouldFail = false;
-        act(() => connectivity.goOnline());
+        await act(async () => { connectivity.goOnline(); await new Promise(resolve => setTimeout(resolve, 30)); });
+        await act(async () => { visibility.hide(); visibility.show(); await new Promise(resolve => setTimeout(resolve, 30)); });
+        expect(executeMutation).toHaveBeenCalledTimes(1);
+        expect(result.current.mutations).toEqual([expect.objectContaining({ id: 'retry-operation', state: 'failed', attemptCount: 1 })]);
+        await act(async () => { await result.current.retryFailed('retry-operation'); });
         await waitFor(() => expect(result.current.mutations).toEqual([]));
         expect(executeMutation).toHaveBeenCalledTimes(2);
     });

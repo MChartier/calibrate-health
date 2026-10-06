@@ -1,3 +1,4 @@
+import { assertRecoverableEnqueue, failedMutationDiscardIds } from './failedMutationRecovery';
 import * as Crypto from 'expo-crypto';
 import type { OutboxDatabase } from './database';
 import {
@@ -66,20 +67,17 @@ export class SqliteOutbox implements OutboxStore {
 
         const id = mutation.id ?? this.createId();
         const timestamp = this.now();
-        await this.database.runAsync(
-            `INSERT INTO queued_mutations
-                (id, namespace, operation, payload_json, state, attempt_count, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
-            [
-                id,
-                this.namespace,
-                operation,
-                serializeMutationPayload(mutation.payload),
-                OUTBOX_MUTATION_STATES.PENDING,
-                timestamp,
-                timestamp
-            ]
-        );
+        await this.database.withExclusiveTransactionAsync(async transaction => {
+            const rows = await transaction.getAllAsync<QueuedMutationRow>('SELECT * FROM queued_mutations WHERE namespace = ? ORDER BY sequence ASC', [this.namespace]);
+            assertRecoverableEnqueue(rows.map(mapRow), { ...mutation, operation, id }, this.namespace);
+            await transaction.runAsync(
+                `INSERT INTO queued_mutations
+                    (id, namespace, operation, payload_json, state, attempt_count, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+                [id, this.namespace, operation, serializeMutationPayload(mutation.payload),
+                    OUTBOX_MUTATION_STATES.PENDING, timestamp, timestamp]
+            );
+        });
 
         const created = await this.getById(id);
         if (!created) throw new Error('Queued mutation could not be read after insertion.');
@@ -207,6 +205,18 @@ export class SqliteOutbox implements OutboxStore {
             params
         );
     }
+
+    async discardFailedMutation(id: string): Promise<void> {
+        await this.database.withExclusiveTransactionAsync(async transaction => {
+            const rows = await transaction.getAllAsync<QueuedMutationRow>('SELECT * FROM queued_mutations WHERE namespace = ? ORDER BY sequence ASC', [this.namespace]);
+            const ids = failedMutationDiscardIds(rows.map(mapRow), id);
+            for (const target of ids) {
+                await transaction.runAsync('DELETE FROM queued_mutations WHERE id = ? AND namespace = ?', [target, this.namespace]);
+            }
+        });
+    }
+
+    discardFailedFood(id: string): Promise<void> { return this.discardFailedMutation(id); }
 
     async clear(): Promise<void> {
         await this.database.runAsync('DELETE FROM queued_mutations WHERE namespace = ?', [this.namespace]);

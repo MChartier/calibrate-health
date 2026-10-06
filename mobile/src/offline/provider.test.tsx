@@ -1,3 +1,5 @@
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import { onlineManager } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
@@ -8,6 +10,7 @@ import type { ReconcileResult } from './reconciler';
 import type { QueuedMutation } from './queuedMutation';
 
 const mockOutbox = {
+    discardFailedMutation: jest.fn(async (_id: string) => undefined),
     recoverInterrupted: jest.fn(async () => undefined),
     list: jest.fn(async (): Promise<QueuedMutation[]> => []),
     clear: jest.fn(async () => undefined)
@@ -48,7 +51,17 @@ jest.mock('./reconciler', () => ({
 jest.mock('../wear/syncInvalidation', () => ({ queueWearSyncInvalidation: jest.fn() }));
 
 describe('native offline outbox provider recovery', () => {
-    beforeEach(() => {
+    it('reconciles remaining work after successful scoped discard', async () => {
+        const wrapper = ({ children }: { children: React.ReactNode }) => <OfflineOutboxProvider executeMutation={async () => undefined}>{children}</OfflineOutboxProvider>;
+        const { result } = renderHook(() => useOfflineOutbox(), { wrapper });
+        await waitFor(() => expect(result.current.isReady).toBe(true));
+        mockReconcile.mockClear();
+        await act(async () => { await result.current.discardFailedMutation('failed'); });
+        expect(mockOutbox.discardFailedMutation).toHaveBeenCalledWith('failed');
+        expect(mockReconcile).toHaveBeenCalledTimes(1);
+    });
+    beforeEach(async () => {
+        await AsyncStorage.clear();
         jest.clearAllMocks();
         mockOutboxesByNamespace.clear();
         mockOutbox.list.mockReset().mockResolvedValue([]);
@@ -63,7 +76,7 @@ describe('native offline outbox provider recovery', () => {
         jest.restoreAllMocks();
     });
 
-    it('preserves the startup barrier and retries failed writes after foreground recovery', async () => {
+    it('preserves failed barriers through foreground recovery until explicit retry', async () => {
         let appStateListener: ((state: string) => void) | null = null;
         const remove = jest.fn();
         jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
@@ -88,7 +101,10 @@ describe('native offline outbox provider recovery', () => {
         act(() => appStateListener?.('background'));
         expect(mockRetryFailed).not.toHaveBeenCalled();
         act(() => appStateListener?.('active'));
-        await waitFor(() => expect(mockRetryFailed).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(2));
+        expect(mockRetryFailed).not.toHaveBeenCalled();
+        await act(async () => { await result.current.retryFailed('chosen-failure'); });
+        expect(mockRetryFailed).toHaveBeenCalledWith('chosen-failure');
         await waitFor(() => expect(onReplayCompleted).toHaveBeenCalledWith({
             replayed: 1,
             replayedOperations: ['metric.add'],
@@ -204,7 +220,8 @@ describe('native offline outbox provider recovery', () => {
             expect(mockRetryFailed).not.toHaveBeenCalled();
 
             act(() => onlineManager.setOnline(true));
-            await waitFor(() => expect(mockRetryFailed).toHaveBeenCalledTimes(1));
+            await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(2));
+            expect(mockRetryFailed).not.toHaveBeenCalled();
         } finally {
             jest.useRealTimers();
         }
@@ -246,6 +263,7 @@ describe('native offline outbox provider recovery', () => {
             const currentOutbox = {
                 recoverInterrupted: jest.fn(async () => undefined),
                 list: jest.fn(async () => [currentDeferred]),
+                discardFailedMutation: jest.fn(async (_id: string) => undefined),
                 clear: jest.fn(async () => undefined)
             };
             mockOutboxesByNamespace.set('https://health.example::user:9', currentOutbox);

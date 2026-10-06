@@ -11,8 +11,10 @@ const options = { goal, expected_plan_version: 'a'.repeat(64), effective_local_d
 const mockApi = { getGoalPaceOptions: jest.fn(), adjustGoalPace: jest.fn() };
 let mockOnline = true;
 let mockPending = false;
+let mockReconnection = false;
+const mockRecheck = jest.fn();
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'stable-operation-001') }));
-jest.mock('../auth/AuthContext', () => ({ useAuth: () => ({ api: mockApi, user: { weight_unit: 'KG', timezone: 'UTC' } }) }));
+jest.mock('../auth/AuthContext', () => ({ useAuth: () => ({ api: mockApi, pendingReconnection: mockReconnection, recheckClientCompatibility: mockRecheck, user: { weight_unit: 'KG', timezone: 'UTC' } }) }));
 jest.mock('../offline/usePendingWeightMutation', () => ({ usePendingWeightMutation: () => mockPending }));
 jest.mock('../components/AsyncStateBoundary', () => ({ useOnlineStatus: () => mockOnline }));
 jest.mock('../components/confirmDiscardChanges', () => ({ confirmDiscardChanges: jest.fn(async () => true) }));
@@ -37,6 +39,8 @@ beforeEach(() => {
     jest.clearAllMocks();
     mockOnline = true;
     mockPending = false;
+    mockReconnection = false;
+    mockRecheck.mockResolvedValue(true);
     mockApi.getGoalPaceOptions.mockResolvedValue(options);
     mockApi.adjustGoalPace.mockResolvedValue({ ...goal, daily_deficit: 250 });
 });
@@ -166,6 +170,26 @@ test('manual refresh of an unchanged plan retains the unsaved draft', async () =
     fireEvent.press(screen.getByText('Save pace'));
     await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
     expect(mockApi.adjustGoalPace.mock.calls[0][1]).toEqual({ daily_deficit: 250, expected_plan_version: 'a'.repeat(64) });
+    screen.unmount();
+    screen.client.clear();
+});
+
+ test.each([false, true])('pace retry requires verified reconnection (%s) and preserves the operation', async (verified) => {
+    const screen = setup();
+    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
+    fireEvent.press(screen.getByText('Choose 250'));
+    mockApi.adjustGoalPace.mockRejectedValueOnce(new TypeError('Lost response'));
+    fireEvent.press(screen.getByText('Save pace'));
+    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText('Save pace')).toBeEnabled());
+    mockReconnection = true;
+    mockRecheck.mockResolvedValue(verified);
+    screen.rerender(<QueryClientProvider client={screen.client}><GoalPaceSheet goal={goal} onClose={screen.close} onStartNewGoal={screen.startNewGoal}/></QueryClientProvider>);
+    fireEvent.press(screen.getByText('Save pace'));
+    await waitFor(() => expect(mockRecheck).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText(verified ? 'Retry refresh' : 'Save pace')).toBeTruthy());
+    expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(verified ? 2 : 1);
+    if (verified) expect(mockApi.adjustGoalPace.mock.calls[1]).toEqual(mockApi.adjustGoalPace.mock.calls[0]);
     screen.unmount();
     screen.client.clear();
 });

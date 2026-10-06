@@ -1,3 +1,6 @@
+import type { OutboxDispatch } from '../offline/mutationDispatch';
+import { findFailedFood } from '../offline/failedCreation';
+import { localTarget } from '../offline/trackingProjection';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -18,6 +21,7 @@ import {
 } from './foodDeleteRecovery';
 
 type FoodDeleteOutboxBindings = {
+    withOutbox?: OutboxDispatch;
     enqueue: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>;
     mutations: readonly QueuedMutation[];
     retryFailed: (operationId?: string) => Promise<unknown>;
@@ -31,6 +35,7 @@ export type FoodDeleteRecoveryFailure = Readonly<{
 }>;
 
 export type UseFoodDeleteRecoveryOptions = {
+    date?: string;
     entries?: readonly FoodLogEntry[];
     deleteFoodLog: (entryId: number, operationId: string) => Promise<void>;
     outbox: FoodDeleteOutboxBindings;
@@ -54,8 +59,10 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
         commit: (ticket) => {
             const current = optionsRef.current;
             return executeOrQueueMutation({
+                withOutbox: current.outbox.withOutbox,
+                forceQueue: current.outbox.mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.DELETE_FOOD_LOG,
-                payload: { id: ticket.entry.id },
+                payload: { ...localTarget(ticket.entry), ...(current.date ? { date: current.date } : {}) },
                 execute: () => current.deleteFoodLog(ticket.entry.id, ticket.operationId),
                 enqueue: current.outbox.enqueue,
                 createOperationId: () => ticket.operationId
@@ -84,8 +91,11 @@ export function useFoodDeleteRecovery(options: UseFoodDeleteRecoveryOptions) {
     }, [controller]);
 
     const queuedDeleteIds = useMemo(
-        () => getQueuedFoodDeleteIds(options.outbox.mutations),
-        [options.outbox.mutations]
+        () => getQueuedFoodDeleteIds(options.outbox.mutations).filter(id => {
+            const entry = options.entries?.find(row => row.id === id);
+            return !findFailedFood(options.outbox.mutations, { ...(entry ? localTarget(entry) : { id }), date: options.date });
+        }),
+        [options.outbox.mutations, options.entries, options.date]
     );
     const failedQueuedDeletes = useMemo(
         () => getFailedQueuedFoodDeletes(options.outbox.mutations),

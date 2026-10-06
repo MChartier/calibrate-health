@@ -1,3 +1,5 @@
+import { createOutboxDispatch, type OutboxDispatch } from '../offline/mutationDispatch';
+import type { QueuedMutation } from '../offline/queuedMutation';
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppState, Dimensions, StyleSheet } from 'react-native';
@@ -10,8 +12,11 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
 
 const mockEnqueue = jest.fn();
+let mockWithOutbox: OutboxDispatch | undefined;
+const mockReadFoodPause = jest.fn((fetch: () => Promise<unknown>) => fetch());
+let mockMutations: unknown[] = [];
 jest.mock('../offline/provider', () => ({
-    useOfflineOutbox: () => ({ enqueue: mockEnqueue })
+    useOfflineOutbox: () => ({ enqueue: mockEnqueue, withOutbox: mockWithOutbox, mutations: mockMutations, readFoodPause: mockReadFoodPause })
 }));
 
 const mockApi = {
@@ -25,7 +30,7 @@ const mockApi = {
 jest.mock('../auth/AuthContext', () => ({
     useAuth: () => ({
         api: mockApi,
-        user: { id: 7, timezone: 'UTC' }
+        user: { id: 7, timezone: 'UTC' }, serverUrl: 'https://example.test'
     })
 }));
 
@@ -125,6 +130,8 @@ describe('food tracking day resolution', () => {
     beforeEach(() => {
         act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 1 } }));
         jest.clearAllMocks();
+        mockMutations = [];
+        mockWithOutbox = undefined;
         foregroundListener = undefined;
         appStateSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_, listener) => {
             foregroundListener = listener as (state: string) => void;
@@ -135,6 +142,29 @@ describe('food tracking day resolution', () => {
     afterEach(() => {
         appStateSpy.mockRestore();
         act(() => Dimensions.set({ window: originalWindow }));
+    });
+
+    it('queues day completion behind existing food intent even with healthy authentication', async () => {
+        mockMutations = [{ id: 'pending-food', operation: 'food.create' }];
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay('OPEN'));
+        const screen = renderWithQuery(<DayStatusCard date="2026-07-23" isToday />);
+        await waitFor(() => expect(screen.getByText('Complete day')).toBeTruthy());
+        fireEvent.press(screen.getByText('Complete day'));
+        await waitFor(() => expect(mockEnqueue).toHaveBeenCalledWith('food-day.set-status', { date: '2026-07-23', status: 'COMPLETE' }, 'tracking-operation-id'));
+        expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
+    });
+
+    it.each([true, false])('distinguishes stale completed-day reopen from explicit paused historical backfill: stale=%s', async stale => {
+        const date = '2026-07-23';
+        const rows = [{ id: 'pause', namespace: 'test', sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-tracking-pause.start', payload: { starts_on: date } } as QueuedMutation];
+        mockWithOutbox = createOutboxDispatch('day-override-' + stale, async () => rows, mockEnqueue, () => true);
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay(stale ? 'COMPLETE' : 'PAUSED'));
+        const screen = renderWithQuery(<DayStatusCard date={date} isToday={stale} />);
+        const button = await screen.findByRole('button', { name: stale ? 'Edit or backfill' : 'Backfill this day' });
+        fireEvent.press(button);
+        if (stale) { await screen.findByRole('alert'); expect(mockEnqueue).not.toHaveBeenCalled(); }
+        else await waitFor(() => expect(mockEnqueue).toHaveBeenCalledWith('food-day.set-status', { date, status: 'OPEN', explicitPausedBackfill: true }, 'tracking-operation-id'));
+        expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
     });
 
     it('stacks completion and pause targets when native text is enlarged', async () => {
@@ -343,4 +373,28 @@ describe('food tracking day resolution', () => {
             'tracking-operation-id'
         ));
     });
+it('routes ordinary pause queries and refetch through the receipt-aware reader', async () => {
+    mockApi.getFoodTrackingPause.mockResolvedValue({ pause: { active: false } });
+    const before = mockReadFoodPause.mock.calls.length;
+    const screen = renderWithQuery(<ResumeTrackingPrompt />);
+    await waitFor(() => expect(mockReadFoodPause.mock.calls.length).toBeGreaterThan(before));
+    await act(async () => { foregroundListener?.('active'); });
+    await waitFor(() => expect(mockReadFoodPause.mock.calls.length).toBeGreaterThan(before + 1));
+    screen.unmount();
+});
+
+    it('keeps a persisted queued resume hidden after remount and foreground refetch', async () => {
+        mockMutations = [{ id: 'saved-resume', namespace: 'https://example.test::user:7', sequence: 1, operation: 'food-tracking-pause.resume', payload: { resumed_on: '2026-07-23' }, state: 'pending' }];
+        mockApi.getFoodTrackingPause.mockResolvedValue({ pause: duePause });
+        for (let restart = 0; restart < 2; restart++) {
+            const screen = renderWithQuery(<ResumeTrackingPrompt />);
+            await waitFor(() => expect(mockReadFoodPause).toHaveBeenCalled());
+            await act(async () => { foregroundListener?.('active'); });
+            expect(screen.queryByText('Resume tracking')).toBeNull();
+            expect(mockApi.resumeFoodTracking).not.toHaveBeenCalled();
+            expect(mockEnqueue).not.toHaveBeenCalled();
+            screen.unmount();
+        }
+    });
+
 });

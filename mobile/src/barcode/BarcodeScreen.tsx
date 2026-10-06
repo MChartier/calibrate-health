@@ -1,3 +1,5 @@
+import { queuedFoodDayStatus } from '../offline/foodDayIntent';
+import type { QueuedMutation } from '../offline/queuedMutation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
@@ -85,7 +87,7 @@ export default function BarcodeScreen() {
     const styles = useMemo(() => createStyles(theme), [theme]);
     const routeParams = useLocalSearchParams<BarcodeWorkflowRouteParams>();
     const { api, user, isLoading: isAuthLoading, clearLocalSession } = useAuth();
-    const { enqueue } = useOfflineOutbox();
+    const { enqueue, withOutbox, mutations = [] } = useOfflineOutbox();
     const queryClient = useQueryClient();
     const isOnline = useOnlineStatus();
     const [permission, requestPermission, refreshPermission] = useCameraPermissions();
@@ -183,16 +185,21 @@ export default function BarcodeScreen() {
         onSettled: () => requestGate.current.finish()
     });
     const logFood = useMutation({
+        networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: ({ payload }: FoodSelectionSubmitRequest) => {
-            if (foodDayQuery.data?.status !== 'OPEN') {
-                throw new Error('Backfill this day before adding food.');
-            }
-            return executeOrQueueMutation({
-                operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
-                payload,
-                execute: (operationId) => api.createFoodLog(payload, operationId),
-                enqueue
-            });
+            const submit = (write: (operation: string, payload: unknown, operationId?: string) => Promise<unknown>, mustQueue: boolean, pending: readonly QueuedMutation[]) => {
+                if (queuedFoodDayStatus(pending, payload.date, foodDayQuery.data?.status) !== 'OPEN') {
+                    throw new Error('Backfill this day before adding food.');
+                }
+                return executeOrQueueMutation({
+                    forceQueue: mustQueue,
+                    operation: OFFLINE_MUTATION_OPERATIONS.CREATE_FOOD_LOG,
+                    payload,
+                    execute: (operationId) => api.createFoodLog(payload, operationId),
+                    enqueue: write
+                });
+            };
+            return withOutbox ? withOutbox(submit) : submit(enqueue, mutations.length > 0, mutations);
         },
         onError: () => submissionGate.current.fail(),
         onSuccess: async (_result, request) => {

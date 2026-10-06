@@ -1,3 +1,4 @@
+import { useTrackingMetrics } from '../../../src/offline/useTrackingQueries';
 import { GoalPaceSheet } from '../../../src/progress/GoalPaceSheet';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useWindowDimensions, AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
@@ -92,7 +93,7 @@ export default function ProgressScreen() {
     const queryClient = useQueryClient();
     const goalQuery = useQuery({ queryKey: ['mobile-goal'], queryFn: () => api.getGoals() });
     const profileQuery = useQuery({ queryKey: ['mobile-profile'], queryFn: () => api.getUserProfile() });
-    const metricsQuery = useQuery({ queryKey: ['mobile-metrics'], queryFn: () => api.getMetrics() });
+    const metricsQuery = useTrackingMetrics();
     const trendSummaryQuery = useQuery({
         queryKey: ['mobile-metrics-trend', 'summary'],
         queryFn: () => api.getTrendMetrics({ range: 'month' })

@@ -1,7 +1,8 @@
+import type { QueuedMutation } from '../offline/queuedMutation';
 import React from 'react';
 import { AccessibilityInfo } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MetricSaveResponse, TrendMetricsResponse } from '@calibrate/api-client';
 import { WeightEntrySheet } from './WeightEntrySheet';
 
@@ -14,8 +15,11 @@ jest.mock('expo-router', () => ({
 }));
 
 const mockEnqueue = jest.fn();
+const mockMutations: QueuedMutation[] = [];
+const mockRetryFailed = jest.fn(async () => undefined);
+const mockDiscardFailed = jest.fn(async () => undefined);
 jest.mock('../offline/provider', () => ({
-    useOfflineOutbox: () => ({ enqueue: mockEnqueue })
+    useOfflineOutbox: () => ({ enqueue: mockEnqueue, mutations: mockMutations, retryFailed: mockRetryFailed, discardFailedMutation: mockDiscardFailed })
 }));
 
 const mockTriggerWeightHaptic = jest.fn();
@@ -156,6 +160,7 @@ describe('WeightEntrySheet', () => {
     });
 
     beforeEach(() => {
+        mockMutations.length = 0;
         jest.clearAllMocks();
         mockUser.haptics_enabled = true;
         mockApi.getMetrics.mockResolvedValue([{ id: 1, date: '2026-08-02', weight: 170 }]);
@@ -213,6 +218,19 @@ describe('WeightEntrySheet', () => {
         });
     });
 
+    it('persists a weigh-in when the network manager is offline instead of pausing the mutation', async () => {
+        const screen = renderSheet();
+        await waitFor(() => expect(screen.getByLabelText('Weight in pounds')).toBeTruthy());
+        act(() => onlineManager.setOnline(false));
+        try {
+            fireEvent.changeText(screen.getByLabelText('Weight in pounds'), '169.5');
+            fireEvent.press(screen.getByRole('button', { name: 'Log weight' }));
+            await waitFor(() => expect(screen.getByText('Saved on this device')).toBeTruthy());
+            expect(mockEnqueue).toHaveBeenCalled();
+            expect(mockApi.addMetric).not.toHaveBeenCalled();
+        } finally { act(() => onlineManager.setOnline(true)); }
+    });
+
     it('shows a neutral queued result without authoritative progress or confetti', async () => {
         mockApi.addMetric.mockRejectedValue(new TypeError('Network unavailable'));
         const screen = renderSheet();
@@ -254,4 +272,21 @@ describe('WeightEntrySheet', () => {
         expect(mockApi.deleteMetric).toHaveBeenCalledWith(2, 'weight-operation-id');
         expect(screen.onClose).not.toHaveBeenCalled();
     });
+    it.each(['metric.add', 'metric.delete'])('does not claim save/delete success behind failed %s and exposes explicit recovery', async operation => {
+        mockApi.getMetrics.mockResolvedValue([{ id: 2, date: '2026-08-03', weight: 170 }]);
+        mockMutations.push({ id: 'failed-weight', operation, payload: { id: 2, date: '2026-08-03', weight: 170 }, namespace: 'https://health.example::user:7', sequence: 1, state: 'failed', attemptCount: 1, lastError: 'Rejected', createdAt: 1, updatedAt: 1 });
+        const screen = renderSheet();
+        await waitFor(() => expect(screen.getByLabelText('Weight in pounds')).toBeTruthy());
+        fireEvent.changeText(screen.getByLabelText('Weight in pounds'), '169.5');
+        expect(screen.getByRole('button', { name: 'Save weight' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Delete weigh-in' })).toBeDisabled();
+        expect(screen.queryByText('Saved on this device')).toBeNull();
+        expect(mockEnqueue).not.toHaveBeenCalled();
+        fireEvent.press(screen.getByRole('button', { name: 'Discard related queued changes' }));
+        expect(mockDiscardFailed).not.toHaveBeenCalled();
+        expect(screen.getByText(/This does not undo anything/)).toBeTruthy();
+        fireEvent.press(screen.getByRole('button', { name: 'Confirm discard related changes' }));
+        await waitFor(() => expect(mockDiscardFailed).toHaveBeenCalledWith('failed-weight'));
+    });
+
 });

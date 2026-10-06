@@ -1,8 +1,12 @@
+import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
+import { recordFoodDayReceipt, recordCurrentPauseReceipt } from './foodDayReceipts';
+import { withMutationLock } from './mutationLock';
 import type { OutboxStore } from './outbox';
 import type { QueuedMutation } from './queuedMutation';
 import { isRetryableMutationError } from './retryability';
 
-export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void>;
+type CurrentControlState = { day?: Pick<FoodLogDay, 'date' | 'status'>; pause?: FoodTrackingPause };
+export type QueuedMutationExecutor = (mutation: QueuedMutation) => Promise<void | { currentControl: CurrentControlState }>;
 
 export const OUTBOX_RETRY_BASE_DELAY_MS = 5_000;
 export const OUTBOX_RETRY_MAX_DELAY_MS = 15 * 60_000;
@@ -43,13 +47,18 @@ export class OutboxReconciler {
 
     constructor(
         private readonly outbox: OutboxStore,
-        private readonly executeMutation: QueuedMutationExecutor
+        private readonly executeMutation: QueuedMutationExecutor,
+        private readonly namespace?: string
     ) {}
 
     reconcile(): Promise<ReconcileResult> {
         if (this.activeReconciliation) return this.activeReconciliation;
 
-        const reconciliation = this.runReconciliation().finally(() => {
+        const run = () => this.runReconciliation();
+        const reconciliation = (this.namespace ? withMutationLock(this.namespace, async exclusive => {
+            if (!exclusive) throw new Error('Safe synchronization requires browser Web Locks. Open this server in a supported secure browser context. Saved changes remain on this device.');
+            return run();
+        }) : run()).finally(() => {
             if (this.activeReconciliation === reconciliation) {
                 this.activeReconciliation = null;
             }
@@ -81,7 +90,14 @@ export class OutboxReconciler {
             }
 
             try {
-                await this.executeMutation(mutation);
+                const result = await this.executeMutation(mutation);
+                if (this.namespace && (mutation.operation.startsWith('food-day.') || mutation.operation.startsWith('food-tracking-pause.'))) {
+                    if (!result?.currentControl) throw new Error('Current tracking state was not verified after replay.');
+                    const { day, pause } = result.currentControl;
+                    // Cached idempotency responses prove the request was accepted, not that its old state is current.
+                    if (pause) await recordCurrentPauseReceipt(this.namespace, pause, 'server-read:replay:' + mutation.id);
+                    if (day) await recordFoodDayReceipt(this.namespace, 'food-day.set-status', { date: day.date, status: day.status }, 'server-read:replay:' + mutation.id);
+                }
                 await this.outbox.complete(mutation.id);
                 replayed += 1;
                 replayedOperations.push(mutation.operation);

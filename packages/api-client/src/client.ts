@@ -154,6 +154,8 @@ export type ApiClientOptions = {
     /** Refresh native credentials after a protected request returns 401. */
     refreshAccessToken?: () => boolean | Promise<boolean>;
     onUnauthorized?: () => void | Promise<void>;
+    /** Observes completed failures, including parsed server errors and client-generated timeouts. */
+    onRequestError?: (error: unknown) => void;
     fetchImpl?: typeof fetch;
     requestTimeoutMs?: number;
     /** Browser clients opt in explicitly when the API uses an HttpOnly cookie session. */
@@ -261,6 +263,7 @@ export class CalibrateApiClient {
     private readonly onClientUpgradeRequired?: ApiClientOptions['onClientUpgradeRequired'];
     private readonly refreshAccessToken?: ApiClientOptions['refreshAccessToken'];
     private readonly onUnauthorized?: ApiClientOptions['onUnauthorized'];
+    private readonly onRequestError?: ApiClientOptions['onRequestError'];
     private readonly fetchImpl: typeof fetch;
     private readonly requestTimeoutMs: number;
     private readonly requestCredentials?: RequestCredentials;
@@ -274,6 +277,7 @@ export class CalibrateApiClient {
         this.getAccessToken = options.getAccessToken;
         this.refreshAccessToken = options.refreshAccessToken;
         this.onUnauthorized = options.onUnauthorized;
+        this.onRequestError = options.onRequestError;
         // Preserve the browser global as fetch's receiver; some web hosts reject detached Window.fetch calls.
         this.fetchImpl = options.fetchImpl ?? ((input, init) => globalThis.fetch(input, init));
         this.requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
@@ -299,6 +303,15 @@ export class CalibrateApiClient {
     }
 
     private async request<T>(path: string, options: RequestOptions = {}, allowRefresh = true): Promise<T> {
+        try {
+            return await this.requestInternal<T>(path, options, allowRefresh);
+        } catch (error) {
+            try { this.onRequestError?.(error); } catch { /* Observers cannot replace the request's error. */ }
+            throw error;
+        }
+    }
+
+    private async requestInternal<T>(path: string, options: RequestOptions, allowRefresh: boolean): Promise<T> {
         const requestRefreshGeneration = this.refreshGeneration;
         const {
             auth = true,

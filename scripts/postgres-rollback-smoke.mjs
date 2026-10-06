@@ -34,9 +34,9 @@ export const ROLLBACK_BASE = Object.freeze({
 });
 
 export const ROLLBACK_CANDIDATE = Object.freeze({
-  migrationCount: 47,
-  lastMigration: '0044_goal_pace_history',
-  ledgerSha256: '203890a6e9d7ddcad77e032b78dd3daaa3f1d247e7a126caa151c64789d3862e',
+  migrationCount: 48,
+  lastMigration: '0045_firebase_identity_foundation',
+  ledgerSha256: '699a788ed48ce95cee69c890cd0434f60b2498c7bd311924ba368c615f1a2f28',
 });
 
 export const ROLLBACK_RESULT_PATH = path.join(

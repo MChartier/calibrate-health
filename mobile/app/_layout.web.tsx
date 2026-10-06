@@ -11,8 +11,9 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/auth/AuthContext';
 import { hasFullAccountAccess } from '../src/auth/accountAccess';
 import { NativePushRegistrationProvider } from '../src/hooks/useNativePushRegistration';
-import { createQueuedMutationExecutor } from '../src/offline/operations';
+import { useOfflineReplayExecutor } from '../src/offline/useOfflineReplayExecutor';
 import { OfflineOutboxProvider } from '../src/offline/provider';
+import { OfflineWorkspaceStatus } from '../src/offline/OfflineWorkspaceStatus';
 import { invalidateQueriesAfterOfflineReplay } from '../src/offline/replayInvalidation';
 import { useAppTheme } from '../src/theme';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
@@ -89,9 +90,9 @@ const WebSkipLink: React.FC = () => {
 
 /** Web keeps native-only notification, Health Connect, and Wear runtime hooks out of startup. */
 const BrowserRuntime: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { api, serverUrl, user } = useAuth();
+    const { serverUrl, user } = useAuth();
     const queryClient = useQueryClient();
-    const executeMutation = React.useMemo(() => createQueuedMutationExecutor(api), [api]);
+    const executeMutation = useOfflineReplayExecutor();
     const onReplayCompleted = React.useCallback(
         (result: Parameters<typeof invalidateQueriesAfterOfflineReplay>[1]) =>
             invalidateQueriesAfterOfflineReplay(queryClient, result),
@@ -158,6 +159,7 @@ const WebRootRuntime: React.FC = () => {
                                         { height: visualViewportHeight }
                                     ]}
                                 >
+                                    <OfflineWorkspaceStatus />
                                     <Slot />
                                 </View>
                             </BrowserRuntime>
