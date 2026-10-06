@@ -1,0 +1,1142 @@
+{
+  "run": {
+    "id": 37411275572,
+    "name": "Builds",
+    "node_id": "WFR_kwLOQbBgUs8AAAAIteLDNA",
+    "head_branch": "mchartier/firebase-migration-preparation",
+    "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+    "path": ".github/workflows/builds.yml",
+    "display_title": "Preserve offline tracking and prepare existing-account Firebase migration",
+    "run_number": 1094,
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "workflow_id": 225150648,
+    "check_suite_id": 101334576265,
+    "check_suite_node_id": "CS_kwDOQbBgUs8AAAAXmALsiQ",
+    "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+    "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572",
+    "pull_requests": [
+      {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/423",
+        "id": 4748390782,
+        "number": 423,
+        "head": {
+          "ref": "mchartier/firebase-migration-preparation",
+          "sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+          "repo": {
+            "id": 1102078034,
+            "url": "https://api.github.com/repos/MChartier/calibrate-health",
+            "name": "calibrate-health"
+          }
+        },
+        "base": {
+          "ref": "master",
+          "sha": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+          "repo": {
+            "id": 1102078034,
+            "url": "https://api.github.com/repos/MChartier/calibrate-health",
+            "name": "calibrate-health"
+          }
+        }
+      }
+    ],
+    "created_at": "2026-10-06T03:55:38Z",
+    "updated_at": "2026-10-06T03:58:54Z",
+    "actor": {
+      "login": "MChartier",
+      "id": 1258197,
+      "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MChartier",
+      "html_url": "https://github.com/MChartier",
+      "followers_url": "https://api.github.com/users/MChartier/followers",
+      "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+      "organizations_url": "https://api.github.com/users/MChartier/orgs",
+      "repos_url": "https://api.github.com/users/MChartier/repos",
+      "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MChartier/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "run_attempt": 1,
+    "referenced_workflows": [],
+    "run_started_at": "2026-10-06T03:55:38Z",
+    "triggering_actor": {
+      "login": "MChartier",
+      "id": 1258197,
+      "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MChartier",
+      "html_url": "https://github.com/MChartier",
+      "followers_url": "https://api.github.com/users/MChartier/followers",
+      "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+      "organizations_url": "https://api.github.com/users/MChartier/orgs",
+      "repos_url": "https://api.github.com/users/MChartier/repos",
+      "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MChartier/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "jobs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572/jobs",
+    "logs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572/logs",
+    "check_suite_url": "https://api.github.com/repos/MChartier/calibrate-health/check-suites/101334576265",
+    "artifacts_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572/artifacts",
+    "cancel_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572/cancel",
+    "rerun_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572/rerun",
+    "previous_attempt_url": null,
+    "workflow_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/workflows/225150648",
+    "head_commit": {
+      "id": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+      "tree_id": "06a6e4a6cc6a720378502fdc7574c3c5f50e42e2",
+      "message": "Verify reconnection before retrying goal pace changes",
+      "timestamp": "2026-10-06T03:55:01Z",
+      "author": {
+        "name": "MChartier",
+        "email": "MChartier@users.noreply.github.com"
+      },
+      "committer": {
+        "name": "MChartier",
+        "email": "MChartier@users.noreply.github.com"
+      }
+    },
+    "repository": {
+      "id": 1102078034,
+      "node_id": "R_kgDOQbBgUg",
+      "name": "calibrate-health",
+      "full_name": "MChartier/calibrate-health",
+      "private": false,
+      "owner": {
+        "login": "MChartier",
+        "id": 1258197,
+        "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/MChartier",
+        "html_url": "https://github.com/MChartier",
+        "followers_url": "https://api.github.com/users/MChartier/followers",
+        "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+        "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+        "organizations_url": "https://api.github.com/users/MChartier/orgs",
+        "repos_url": "https://api.github.com/users/MChartier/repos",
+        "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/MChartier/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/MChartier/calibrate-health",
+      "description": "calibrate is a responsive calorie tracker (desktop + mobile web) for people who want to lose (or maintain) weight by logging food and weight.",
+      "fork": false,
+      "url": "https://api.github.com/repos/MChartier/calibrate-health",
+      "forks_url": "https://api.github.com/repos/MChartier/calibrate-health/forks",
+      "keys_url": "https://api.github.com/repos/MChartier/calibrate-health/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/MChartier/calibrate-health/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/MChartier/calibrate-health/teams",
+      "hooks_url": "https://api.github.com/repos/MChartier/calibrate-health/hooks",
+      "issue_events_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/MChartier/calibrate-health/events",
+      "assignees_url": "https://api.github.com/repos/MChartier/calibrate-health/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/MChartier/calibrate-health/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/MChartier/calibrate-health/tags",
+      "blobs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/MChartier/calibrate-health/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/MChartier/calibrate-health/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/MChartier/calibrate-health/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/MChartier/calibrate-health/languages",
+      "stargazers_url": "https://api.github.com/repos/MChartier/calibrate-health/stargazers",
+      "contributors_url": "https://api.github.com/repos/MChartier/calibrate-health/contributors",
+      "subscribers_url": "https://api.github.com/repos/MChartier/calibrate-health/subscribers",
+      "subscription_url": "https://api.github.com/repos/MChartier/calibrate-health/subscription",
+      "commits_url": "https://api.github.com/repos/MChartier/calibrate-health/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/MChartier/calibrate-health/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/MChartier/calibrate-health/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/MChartier/calibrate-health/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/MChartier/calibrate-health/merges",
+      "archive_url": "https://api.github.com/repos/MChartier/calibrate-health/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/MChartier/calibrate-health/downloads",
+      "issues_url": "https://api.github.com/repos/MChartier/calibrate-health/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/MChartier/calibrate-health/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/MChartier/calibrate-health/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/MChartier/calibrate-health/labels{/name}",
+      "releases_url": "https://api.github.com/repos/MChartier/calibrate-health/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/MChartier/calibrate-health/deployments"
+    },
+    "head_repository": {
+      "id": 1102078034,
+      "node_id": "R_kgDOQbBgUg",
+      "name": "calibrate-health",
+      "full_name": "MChartier/calibrate-health",
+      "private": false,
+      "owner": {
+        "login": "MChartier",
+        "id": 1258197,
+        "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/MChartier",
+        "html_url": "https://github.com/MChartier",
+        "followers_url": "https://api.github.com/users/MChartier/followers",
+        "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+        "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+        "organizations_url": "https://api.github.com/users/MChartier/orgs",
+        "repos_url": "https://api.github.com/users/MChartier/repos",
+        "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/MChartier/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/MChartier/calibrate-health",
+      "description": "calibrate is a responsive calorie tracker (desktop + mobile web) for people who want to lose (or maintain) weight by logging food and weight.",
+      "fork": false,
+      "url": "https://api.github.com/repos/MChartier/calibrate-health",
+      "forks_url": "https://api.github.com/repos/MChartier/calibrate-health/forks",
+      "keys_url": "https://api.github.com/repos/MChartier/calibrate-health/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/MChartier/calibrate-health/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/MChartier/calibrate-health/teams",
+      "hooks_url": "https://api.github.com/repos/MChartier/calibrate-health/hooks",
+      "issue_events_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/MChartier/calibrate-health/events",
+      "assignees_url": "https://api.github.com/repos/MChartier/calibrate-health/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/MChartier/calibrate-health/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/MChartier/calibrate-health/tags",
+      "blobs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/MChartier/calibrate-health/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/MChartier/calibrate-health/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/MChartier/calibrate-health/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/MChartier/calibrate-health/languages",
+      "stargazers_url": "https://api.github.com/repos/MChartier/calibrate-health/stargazers",
+      "contributors_url": "https://api.github.com/repos/MChartier/calibrate-health/contributors",
+      "subscribers_url": "https://api.github.com/repos/MChartier/calibrate-health/subscribers",
+      "subscription_url": "https://api.github.com/repos/MChartier/calibrate-health/subscription",
+      "commits_url": "https://api.github.com/repos/MChartier/calibrate-health/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/MChartier/calibrate-health/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/MChartier/calibrate-health/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/MChartier/calibrate-health/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/MChartier/calibrate-health/merges",
+      "archive_url": "https://api.github.com/repos/MChartier/calibrate-health/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/MChartier/calibrate-health/downloads",
+      "issues_url": "https://api.github.com/repos/MChartier/calibrate-health/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/MChartier/calibrate-health/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/MChartier/calibrate-health/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/MChartier/calibrate-health/labels{/name}",
+      "releases_url": "https://api.github.com/repos/MChartier/calibrate-health/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/MChartier/calibrate-health/deployments"
+    }
+  },
+  "jobs": {
+    "total_count": 16,
+    "jobs": [
+      {
+        "id": 112100024521,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa6gyQ",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100024521",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100024521",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-06T03:55:38Z",
+        "started_at": "2026-10-06T03:55:40Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Classify Build Inputs",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-06T03:55:42Z",
+            "completed_at": "2026-10-06T03:55:42Z"
+          },
+          {
+            "name": "Detect affected build surfaces",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-06T03:55:42Z",
+            "completed_at": "2026-10-06T03:55:43Z"
+          },
+          {
+            "name": "Detect changes outside generated release mirrors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-06T03:55:43Z",
+            "completed_at": "2026-10-06T03:55:45Z"
+          },
+          {
+            "name": "Validate manual native upgrade baseline",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 4,
+            "started_at": "2026-10-06T03:55:45Z",
+            "completed_at": "2026-10-06T03:55:45Z"
+          },
+          {
+            "name": "Select build surfaces",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-06T03:55:45Z",
+            "completed_at": "2026-10-06T03:55:45Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-10-06T03:55:45Z",
+            "completed_at": "2026-10-06T03:55:45Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100024521",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": 1000014370,
+        "runner_name": "GitHub Actions 1000014370",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 112100059266,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8ogg",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100059266",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100059266",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-06T03:55:47Z",
+        "started_at": "2026-10-06T03:55:49Z",
+        "completed_at": "2026-10-06T03:56:45Z",
+        "name": "android Runtime Bundle",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:50Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:52Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-06T03:55:52Z",
+            "completed_at": "2026-10-06T03:55:58Z"
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-06T03:55:58Z",
+            "completed_at": "2026-10-06T03:56:09Z"
+          },
+          {
+            "name": "Test installed mobile build tools",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-06T03:56:09Z",
+            "completed_at": "2026-10-06T03:56:10Z"
+          },
+          {
+            "name": "Export the android Metro bundle",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-10-06T03:56:10Z",
+            "completed_at": "2026-10-06T03:56:43Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-06T03:56:43Z",
+            "completed_at": "2026-10-06T03:56:43Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-10-06T03:56:43Z",
+            "completed_at": "2026-10-06T03:56:43Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-10-06T03:56:43Z",
+            "completed_at": "2026-10-06T03:56:43Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100059266",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": 1000014377,
+        "runner_name": "GitHub Actions 1000014377",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 112100059273,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8oiQ",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100059273",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100059273",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-06T03:55:47Z",
+        "started_at": "2026-10-06T03:55:49Z",
+        "completed_at": "2026-10-06T03:57:57Z",
+        "name": "Expo Web Build",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:50Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:56Z"
+          },
+          {
+            "name": "Setup reviewed bundle Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-06T03:55:56Z",
+            "completed_at": "2026-10-06T03:56:12Z"
+          },
+          {
+            "name": "Install deps",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-06T03:56:12Z",
+            "completed_at": "2026-10-06T03:56:44Z"
+          },
+          {
+            "name": "Build and validate Expo web",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-06T03:56:44Z",
+            "completed_at": "2026-10-06T03:57:53Z"
+          },
+          {
+            "name": "Post Setup reviewed bundle Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-10-06T03:57:53Z",
+            "completed_at": "2026-10-06T03:57:53Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-10-06T03:57:53Z",
+            "completed_at": "2026-10-06T03:57:56Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-06T03:57:56Z",
+            "completed_at": "2026-10-06T03:57:56Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100059273",
+        "labels": [
+          "windows-latest"
+        ],
+        "runner_id": 1000014379,
+        "runner_name": "GitHub Actions 1000014379",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 112100059291,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8omw",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100059291",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100059291",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-06T03:55:47Z",
+        "started_at": "2026-10-06T03:55:49Z",
+        "completed_at": "2026-10-06T03:56:16Z",
+        "name": "Backend Build",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:50Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:52Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-06T03:55:52Z",
+            "completed_at": "2026-10-06T03:55:57Z"
+          },
+          {
+            "name": "Install deps",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-06T03:55:57Z",
+            "completed_at": "2026-10-06T03:56:04Z"
+          },
+          {
+            "name": "Build backend",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-06T03:56:04Z",
+            "completed_at": "2026-10-06T03:56:14Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-10-06T03:56:14Z",
+            "completed_at": "2026-10-06T03:56:14Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-10-06T03:56:14Z",
+            "completed_at": "2026-10-06T03:56:14Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-06T03:56:14Z",
+            "completed_at": "2026-10-06T03:56:14Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100059291",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": 1000014378,
+        "runner_name": "GitHub Actions 1000014378",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 112100059314,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8osg",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100059314",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100059314",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-06T03:55:47Z",
+        "started_at": "2026-10-06T03:55:49Z",
+        "completed_at": "2026-10-06T03:58:53Z",
+        "name": "Web Critical Smoke",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:50Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:58Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-06T03:55:58Z",
+            "completed_at": "2026-10-06T03:56:13Z"
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-06T03:56:13Z",
+            "completed_at": "2026-10-06T03:56:47Z"
+          },
+          {
+            "name": "Install pinned Playwright Chromium",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-06T03:56:47Z",
+            "completed_at": "2026-10-06T03:57:06Z"
+          },
+          {
+            "name": "Exercise critical production Web journeys on desktop and phone",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-10-06T03:57:06Z",
+            "completed_at": "2026-10-06T03:58:49Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-06T03:58:49Z",
+            "completed_at": "2026-10-06T03:58:49Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-10-06T03:58:49Z",
+            "completed_at": "2026-10-06T03:58:51Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-10-06T03:58:51Z",
+            "completed_at": "2026-10-06T03:58:51Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100059314",
+        "labels": [
+          "windows-latest"
+        ],
+        "runner_id": 1000014380,
+        "runner_name": "GitHub Actions 1000014380",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 112100059328,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8owA",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100059328",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100059328",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-06T03:55:47Z",
+        "started_at": "2026-10-06T03:55:49Z",
+        "completed_at": "2026-10-06T03:56:03Z",
+        "name": "Release Configuration",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:50Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:52Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-06T03:55:52Z",
+            "completed_at": "2026-10-06T03:55:56Z"
+          },
+          {
+            "name": "Validate versions and quality-gate tests",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-06T03:55:56Z",
+            "completed_at": "2026-10-06T03:56:01Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-10-06T03:56:01Z",
+            "completed_at": "2026-10-06T03:56:01Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-10-06T03:56:01Z",
+            "completed_at": "2026-10-06T03:56:02Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-10-06T03:56:02Z",
+            "completed_at": "2026-10-06T03:56:02Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100059328",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": 1000014381,
+        "runner_name": "GitHub Actions 1000014381",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 112100059398,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8pBg",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100059398",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100059398",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-06T03:55:47Z",
+        "started_at": "2026-10-06T03:55:49Z",
+        "completed_at": "2026-10-06T03:56:47Z",
+        "name": "ios Runtime Bundle",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:50Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-06T03:55:50Z",
+            "completed_at": "2026-10-06T03:55:52Z"
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-06T03:55:52Z",
+            "completed_at": "2026-10-06T03:55:58Z"
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-06T03:55:58Z",
+            "completed_at": "2026-10-06T03:56:10Z"
+          },
+          {
+            "name": "Test installed mobile build tools",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-06T03:56:10Z",
+            "completed_at": "2026-10-06T03:56:10Z"
+          },
+          {
+            "name": "Export the ios Metro bundle",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-10-06T03:56:10Z",
+            "completed_at": "2026-10-06T03:56:45Z"
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-06T03:56:45Z",
+            "completed_at": "2026-10-06T03:56:45Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-10-06T03:56:45Z",
+            "completed_at": "2026-10-06T03:56:45Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-10-06T03:56:45Z",
+            "completed_at": "2026-10-06T03:56:45Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100059398",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": 1000014382,
+        "runner_name": "GitHub Actions 1000014382",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 112100060153,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8r-Q",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060153",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060153",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:47Z",
+        "started_at": "2026-10-06T03:55:47Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Native Two-Emulator Package Upgrade",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060153",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100060241,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8sUQ",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060241",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060241",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "UX Accessibility and Visual Regression",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060241",
+        "labels": [
+          "windows-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100060247,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8sVw",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060247",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060247",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "iOS Build",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060247",
+        "labels": [
+          "macos-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100060248,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8sWA",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060248",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060248",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Full Exported Web and PWA End-to-End",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060248",
+        "labels": [
+          "windows-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100060289,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8sgQ",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060289",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060289",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Mobile Build",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060289",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100060294,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8shg",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060294",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060294",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Six-State Data-Backed Route Acceptance",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060294",
+        "labels": [
+          "windows-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100060590,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8trg",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060590",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060590",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Wear Build and JVM Tests",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060590",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100060983,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8vNw",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100060983",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100060983",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Android Emulator End-to-End",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100060983",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 112100061040,
+        "run_id": 37411275572,
+        "workflow_name": "Builds",
+        "head_branch": "mchartier/firebase-migration-preparation",
+        "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37411275572",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOQbBgUs8AAAAaGa8vcA",
+        "head_sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/112100061040",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37411275572/job/112100061040",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-10-06T03:55:48Z",
+        "started_at": "2026-10-06T03:55:48Z",
+        "completed_at": "2026-10-06T03:55:47Z",
+        "name": "Wear Release Emulator Smoke",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/112100061040",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      }
+    ]
+  }
+}

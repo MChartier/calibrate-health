@@ -1,0 +1,1213 @@
+﻿2026-10-06T03:56:03.4368533Z Current runner version: '2.337.0'
+2026-10-06T03:56:03.4416231Z ##[group]Runner Image Provisioner
+2026-10-06T03:56:03.4417161Z Hosted Compute Agent
+2026-10-06T03:56:03.4417890Z Version: 20260901.588
+2026-10-06T03:56:03.4418552Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-06T03:56:03.4419329Z Build Date: 2026-09-01T19:56:44Z
+2026-10-06T03:56:03.4420096Z Worker ID: {59cf2915-d789-4114-9741-6b586516e4c1}
+2026-10-06T03:56:03.4421114Z Azure Region: centralus
+2026-10-06T03:56:03.4421829Z ##[endgroup]
+2026-10-06T03:56:03.4423573Z ##[group]Operating System
+2026-10-06T03:56:03.4424224Z Ubuntu
+2026-10-06T03:56:03.4424853Z 24.04.5
+2026-10-06T03:56:03.4425762Z LTS
+2026-10-06T03:56:03.4426435Z ##[endgroup]
+2026-10-06T03:56:03.4427039Z ##[group]Runner Image
+2026-10-06T03:56:03.4427671Z Image: ubuntu-24.04
+2026-10-06T03:56:03.4428364Z Version: 20260927.320.1
+2026-10-06T03:56:03.4429700Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-06T03:56:03.4431323Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-06T03:56:03.4432309Z ##[endgroup]
+2026-10-06T03:56:03.4433505Z ##[group]GITHUB_TOKEN Permissions
+2026-10-06T03:56:03.4436039Z Contents: read
+2026-10-06T03:56:03.4436800Z Metadata: read
+2026-10-06T03:56:03.4437530Z ##[endgroup]
+2026-10-06T03:56:03.4440082Z Secret source: Actions
+2026-10-06T03:56:03.4441110Z Cache mode: write
+2026-10-06T03:56:03.4442133Z Prepare workflow directory
+2026-10-06T03:56:03.4790377Z Prepare all required actions
+2026-10-06T03:56:03.4838341Z Getting action download info
+2026-10-06T03:56:03.7460471Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-06T03:56:03.8581809Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-06T03:56:04.0493261Z Complete job name: Mobile Tests
+2026-10-06T03:56:04.1360945Z ##[group]Run actions/checkout@v4
+2026-10-06T03:56:04.1361881Z with:
+2026-10-06T03:56:04.1362383Z   ref: 75578e5ac57a05ba0f06146598b314a01eafb2ae
+2026-10-06T03:56:04.1363038Z   repository: MChartier/calibrate-health
+2026-10-06T03:56:04.1367627Z   token: ***
+2026-10-06T03:56:04.1368125Z   ssh-strict: true
+2026-10-06T03:56:04.1368594Z   ssh-user: git
+2026-10-06T03:56:04.1369068Z   persist-credentials: true
+2026-10-06T03:56:04.1369596Z   clean: true
+2026-10-06T03:56:04.1370073Z   sparse-checkout-cone-mode: true
+2026-10-06T03:56:04.1370614Z   fetch-depth: 1
+2026-10-06T03:56:04.1371084Z   fetch-tags: false
+2026-10-06T03:56:04.1371572Z   show-progress: true
+2026-10-06T03:56:04.1372042Z   lfs: false
+2026-10-06T03:56:04.1372479Z   submodules: false
+2026-10-06T03:56:04.1372952Z   set-safe-directory: true
+2026-10-06T03:56:04.1373498Z   allow-unsafe-pr-checkout: false
+2026-10-06T03:56:04.1374492Z ##[endgroup]
+2026-10-06T03:56:04.2407630Z Syncing repository: MChartier/calibrate-health
+2026-10-06T03:56:04.2410227Z ##[group]Getting Git version info
+2026-10-06T03:56:04.2411489Z Working directory is '/home/runner/work/calibrate-health/calibrate-health'
+2026-10-06T03:56:04.2413279Z [command]/usr/bin/git version
+2026-10-06T03:56:04.2491576Z git version 2.55.0
+2026-10-06T03:56:04.2526370Z ##[endgroup]
+2026-10-06T03:56:04.2534581Z Temporarily overriding HOME='/home/runner/work/_temp/7d5f93cc-c789-4c18-a4f1-5a5b80054822' before making global git config changes
+2026-10-06T03:56:04.2537401Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-06T03:56:04.2539638Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+2026-10-06T03:56:04.2594524Z Deleting the contents of '/home/runner/work/calibrate-health/calibrate-health'
+2026-10-06T03:56:04.2599286Z ##[group]Initializing the repository
+2026-10-06T03:56:04.2603096Z [command]/usr/bin/git init /home/runner/work/calibrate-health/calibrate-health
+2026-10-06T03:56:04.2730191Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-06T03:56:04.2732206Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-06T03:56:04.2733934Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-06T03:56:04.2735602Z hint: call:
+2026-10-06T03:56:04.2736292Z hint:
+2026-10-06T03:56:04.2737081Z hint: 	git config --global init.defaultBranch <name>
+2026-10-06T03:56:04.2738175Z hint:
+2026-10-06T03:56:04.2739142Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-06T03:56:04.2740548Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-06T03:56:04.2741381Z hint:
+2026-10-06T03:56:04.2741856Z hint: 	git branch -m <name>
+2026-10-06T03:56:04.2742393Z hint:
+2026-10-06T03:56:04.2743107Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-06T03:56:04.2744351Z Initialized empty Git repository in /home/runner/work/calibrate-health/calibrate-health/.git/
+2026-10-06T03:56:04.2759865Z [command]/usr/bin/git remote add origin https://github.com/MChartier/calibrate-health
+2026-10-06T03:56:04.2803940Z ##[endgroup]
+2026-10-06T03:56:04.2804776Z ##[group]Disabling automatic garbage collection
+2026-10-06T03:56:04.2807781Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-06T03:56:04.2840932Z ##[endgroup]
+2026-10-06T03:56:04.2842146Z ##[group]Setting up auth
+2026-10-06T03:56:04.2848190Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-06T03:56:04.2882134Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-06T03:56:04.3294932Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-06T03:56:04.3333911Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-06T03:56:04.3557248Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-06T03:56:04.3591386Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-06T03:56:04.3810819Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-06T03:56:04.3850905Z ##[endgroup]
+2026-10-06T03:56:04.3851741Z ##[group]Fetching the repository
+2026-10-06T03:56:04.3860714Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 75578e5ac57a05ba0f06146598b314a01eafb2ae
+2026-10-06T03:56:05.1998648Z From https://github.com/MChartier/calibrate-health
+2026-10-06T03:56:05.2002731Z  * branch            75578e5ac57a05ba0f06146598b314a01eafb2ae -> FETCH_HEAD
+2026-10-06T03:56:05.2007756Z ##[endgroup]
+2026-10-06T03:56:05.2009747Z ##[group]Determining the checkout info
+2026-10-06T03:56:05.2011820Z ##[endgroup]
+2026-10-06T03:56:05.2015651Z [command]/usr/bin/git sparse-checkout disable
+2026-10-06T03:56:05.2072712Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-06T03:56:05.2151057Z ##[group]Checking out the ref
+2026-10-06T03:56:05.2153766Z [command]/usr/bin/git checkout --progress --force 75578e5ac57a05ba0f06146598b314a01eafb2ae
+2026-10-06T03:56:05.4136368Z Note: switching to '75578e5ac57a05ba0f06146598b314a01eafb2ae'.
+2026-10-06T03:56:05.4137352Z 
+2026-10-06T03:56:05.4137957Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-06T03:56:05.4139280Z changes and commit them, and you can discard any commits you make in this
+2026-10-06T03:56:05.4140588Z state without impacting any branches by switching back to a branch.
+2026-10-06T03:56:05.4141339Z 
+2026-10-06T03:56:05.4142007Z If you want to create a new branch to retain commits you create, you may
+2026-10-06T03:56:05.4143242Z do so (now or later) by using -c with the switch command. Example:
+2026-10-06T03:56:05.4144285Z 
+2026-10-06T03:56:05.4144678Z   git switch -c <new-branch-name>
+2026-10-06T03:56:05.4145595Z 
+2026-10-06T03:56:05.4146194Z Or undo this operation with:
+2026-10-06T03:56:05.4147022Z 
+2026-10-06T03:56:05.4147536Z   git switch -
+2026-10-06T03:56:05.4148160Z 
+2026-10-06T03:56:05.4149079Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-06T03:56:05.4150586Z 
+2026-10-06T03:56:05.4151941Z HEAD is now at 75578e5 Verify reconnection before retrying goal pace changes
+2026-10-06T03:56:05.4156897Z ##[endgroup]
+2026-10-06T03:56:05.4202528Z [command]/usr/bin/git log -1 --format=%H
+2026-10-06T03:56:05.4231396Z 75578e5ac57a05ba0f06146598b314a01eafb2ae
+2026-10-06T03:56:05.4662964Z ##[group]Run actions/setup-node@v4
+2026-10-06T03:56:05.4664196Z with:
+2026-10-06T03:56:05.4665116Z   node-version: 22.13.0
+2026-10-06T03:56:05.4666307Z   cache: npm
+2026-10-06T03:56:05.4667647Z   cache-dependency-path: package-lock.json
+backend/package-lock.json
+
+2026-10-06T03:56:05.4669255Z   always-auth: false
+2026-10-06T03:56:05.4670270Z   check-latest: false
+2026-10-06T03:56:05.4680129Z   token: ***
+2026-10-06T03:56:05.4681061Z ##[endgroup]
+2026-10-06T03:56:05.6082823Z Attempting to download 22.13.0...
+2026-10-06T03:56:05.6180706Z (node:2455) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-06T03:56:05.6185626Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-06T03:56:06.4329998Z Acquiring 22.13.0 - x64 from https://github.com/actions/node-versions/releases/download/22.13.0-12683784390/node-22.13.0-linux-x64.tar.gz
+2026-10-06T03:56:06.9741501Z Extracting ...
+2026-10-06T03:56:06.9868914Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/153f0975-5038-4439-a6f9-9ff37a0ce311 -f /home/runner/work/_temp/e22ac941-180d-4df7-8ebd-6da05f313482
+2026-10-06T03:56:08.1586986Z Adding to the cache ...
+2026-10-06T03:56:10.2387924Z ##[group]Environment details
+2026-10-06T03:56:10.4577881Z node: v22.13.0
+2026-10-06T03:56:10.4578336Z npm: 10.9.2
+2026-10-06T03:56:10.4578986Z yarn: 1.22.22
+2026-10-06T03:56:10.4579863Z ##[endgroup]
+2026-10-06T03:56:10.4601247Z [command]/opt/hostedtoolcache/node/22.13.0/x64/bin/npm config get cache
+2026-10-06T03:56:10.5521858Z /home/runner/.npm
+2026-10-06T03:56:10.7032722Z Cache hit for: node-cache-Linux-x64-npm-56b6c65642594e30b8bb9945a1f82e6a88cceb3c4783be7baf01442ba9b34efe
+2026-10-06T03:56:10.7193590Z (node:2455) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-06T03:56:11.8926310Z Received 134217728 of 335049032 (40.1%), 123.6 MBs/sec
+2026-10-06T03:56:12.7697347Z Received 335049032 of 335049032 (100.0%), 166.9 MBs/sec
+2026-10-06T03:56:12.7698647Z Cache Size: ~320 MB (335049032 B)
+2026-10-06T03:56:12.7735881Z [command]/usr/bin/tar -xf /home/runner/work/_temp/f58d04f6-6ad0-4b75-b7ca-cd4374a79afd/cache.tzst -P -C /home/runner/work/calibrate-health/calibrate-health --use-compress-program unzstd
+2026-10-06T03:56:13.4292954Z Cache restored successfully
+2026-10-06T03:56:13.4440767Z Cache restored from key: node-cache-Linux-x64-npm-56b6c65642594e30b8bb9945a1f82e6a88cceb3c4783be7baf01442ba9b34efe
+2026-10-06T03:56:13.4655940Z ##[group]Run npm ci --no-audit --fund=false
+2026-10-06T03:56:13.4656410Z [36;1mnpm ci --no-audit --fund=false[0m
+2026-10-06T03:56:13.4944497Z shell: /usr/bin/bash -e {0}
+2026-10-06T03:56:13.4944854Z ##[endgroup]
+2026-10-06T03:56:17.5832096Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-10-06T03:56:17.8729079Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-06T03:56:17.8756530Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-06T03:56:17.8761815Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-06T03:56:17.8786876Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-06T03:56:25.3857727Z 
+2026-10-06T03:56:25.3858491Z added 889 packages in 12s
+2026-10-06T03:56:25.5066059Z ##[group]Run npm ci --prefix backend --no-audit --fund=false
+2026-10-06T03:56:25.5066597Z [36;1mnpm ci --prefix backend --no-audit --fund=false[0m
+2026-10-06T03:56:25.5130863Z shell: /usr/bin/bash -e {0}
+2026-10-06T03:56:25.5131135Z ##[endgroup]
+2026-10-06T03:56:31.7030964Z 
+2026-10-06T03:56:31.7031990Z added 430 packages in 6s
+2026-10-06T03:56:31.7527291Z ##[group]Run npm run api:contract:check
+2026-10-06T03:56:31.7527660Z [36;1mnpm run api:contract:check[0m
+2026-10-06T03:56:31.7591395Z shell: /usr/bin/bash -e {0}
+2026-10-06T03:56:31.7591700Z ##[endgroup]
+2026-10-06T03:56:31.8572120Z 
+2026-10-06T03:56:31.8572856Z > cal-io@0.37.0 api:contract:check
+2026-10-06T03:56:31.8573979Z > npm run api:generate && git diff --exit-code -- packages/api-client/src/generated/v1.ts
+2026-10-06T03:56:31.8574644Z 
+2026-10-06T03:56:31.9512062Z 
+2026-10-06T03:56:31.9512578Z > cal-io@0.37.0 api:generate
+2026-10-06T03:56:31.9513996Z > node backend/node_modules/openapi-typescript/bin/cli.js docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts
+2026-10-06T03:56:31.9514963Z 
+2026-10-06T03:56:32.5181892Z ✨ openapi-typescript 7.13.0
+2026-10-06T03:56:32.8157452Z 🚀 docs/openapi/v1.yaml → packages/api-client/src/generated/v1.ts [298.8ms]
+2026-10-06T03:56:33.0146480Z ##[group]Run npm run test:api-client
+2026-10-06T03:56:33.0146846Z [36;1mnpm run test:api-client[0m
+2026-10-06T03:56:33.0211137Z shell: /usr/bin/bash -e {0}
+2026-10-06T03:56:33.0211412Z ##[endgroup]
+2026-10-06T03:56:33.1181378Z 
+2026-10-06T03:56:33.1182061Z > cal-io@0.37.0 test:api-client
+2026-10-06T03:56:33.1182617Z > npm --prefix packages/api-client test
+2026-10-06T03:56:33.1182874Z 
+2026-10-06T03:56:33.2113920Z 
+2026-10-06T03:56:33.2114441Z > @calibrate/api-client@0.0.0 pretest
+2026-10-06T03:56:33.2115134Z > npm --prefix ../../shared run build
+2026-10-06T03:56:33.2115560Z 
+2026-10-06T03:56:33.3063289Z 
+2026-10-06T03:56:33.3064022Z > @calibrate/shared@0.0.0 build
+2026-10-06T03:56:33.3064497Z > tsc -p tsconfig.build.json
+2026-10-06T03:56:33.3064804Z 
+2026-10-06T03:56:34.3012404Z 
+2026-10-06T03:56:34.3013136Z > @calibrate/api-client@0.0.0 test
+2026-10-06T03:56:34.3013932Z > node --experimental-strip-types --test test/*.test.ts
+2026-10-06T03:56:34.3014377Z 
+2026-10-06T03:56:34.3363730Z (node:2651) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.3364885Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:34.3546334Z TAP version 13
+2026-10-06T03:56:34.3687465Z # (node:2657) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.3716611Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:34.6645139Z # Subtest: registration sends explicit legal versions and acceptance
+2026-10-06T03:56:34.6677030Z ok 1 - registration sends explicit legal versions and acceptance
+2026-10-06T03:56:34.6686773Z   ---
+2026-10-06T03:56:34.6700454Z   duration_ms: 45.130988
+2026-10-06T03:56:34.6706475Z   ...
+2026-10-06T03:56:34.6707385Z # Subtest: email verification endpoints remain usable before full account access
+2026-10-06T03:56:34.6708539Z ok 2 - email verification endpoints remain usable before full account access
+2026-10-06T03:56:34.6709208Z   ---
+2026-10-06T03:56:34.6709551Z   duration_ms: 1.635661
+2026-10-06T03:56:34.6709923Z   ...
+2026-10-06T03:56:34.6710751Z # Subtest: password recovery uses generic public endpoints and the new_password wire field
+2026-10-06T03:56:34.6712000Z ok 3 - password recovery uses generic public endpoints and the new_password wire field
+2026-10-06T03:56:34.6712724Z   ---
+2026-10-06T03:56:34.6713060Z   duration_ms: 1.175443
+2026-10-06T03:56:34.6713437Z   ...
+2026-10-06T03:56:34.6714031Z # Subtest: legal status and acceptance use authenticated v1 routes
+2026-10-06T03:56:34.6714886Z ok 4 - legal status and acceptance use authenticated v1 routes
+2026-10-06T03:56:34.6715685Z   ---
+2026-10-06T03:56:34.6716023Z   duration_ms: 1.437883
+2026-10-06T03:56:34.6716361Z   ...
+2026-10-06T03:56:34.6780231Z # (node:2658) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.6781731Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:34.6782920Z # Subtest: exportAccount requests the versioned authenticated endpoint
+2026-10-06T03:56:34.6784050Z ok 5 - exportAccount requests the versioned authenticated endpoint
+2026-10-06T03:56:34.6784842Z   ---
+2026-10-06T03:56:34.6796083Z   duration_ms: 38.282004
+2026-10-06T03:56:34.6826419Z   ...
+2026-10-06T03:56:34.6856450Z # Subtest: deleteAccount sends the current password and accepts an empty 204 response
+2026-10-06T03:56:34.6857965Z ok 6 - deleteAccount sends the current password and accepts an empty 204 response
+2026-10-06T03:56:34.6858859Z   ---
+2026-10-06T03:56:34.6859224Z   duration_ms: 0.466761
+2026-10-06T03:56:34.6859694Z   ...
+2026-10-06T03:56:34.6860733Z # (node:2664) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.6861981Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:34.6863543Z # Subtest: unified account-session methods use the locked list and revocation wire
+2026-10-06T03:56:34.6864727Z ok 7 - unified account-session methods use the locked list and revocation wire
+2026-10-06T03:56:34.6865684Z   ---
+2026-10-06T03:56:34.6866048Z   duration_ms: 36.817172
+2026-10-06T03:56:34.6866446Z   ...
+2026-10-06T03:56:34.6978330Z # (node:2690) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.6997479Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:34.9736785Z # Subtest: activity day query uses versioned date parameters
+2026-10-06T03:56:34.9766503Z ok 8 - activity day query uses versioned date parameters
+2026-10-06T03:56:34.9777197Z   ---
+2026-10-06T03:56:34.9814129Z   duration_ms: 41.771624
+2026-10-06T03:56:34.9825826Z   ...
+2026-10-06T03:56:34.9826655Z # Subtest: Health Connect sync carries its operation id and atomic checkpoint payload
+2026-10-06T03:56:34.9827798Z ok 9 - Health Connect sync carries its operation id and atomic checkpoint payload
+2026-10-06T03:56:34.9828571Z   ---
+2026-10-06T03:56:34.9829250Z   duration_ms: 2.93744
+2026-10-06T03:56:34.9829688Z   ...
+2026-10-06T03:56:34.9896834Z # (node:2691) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.9901224Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:34.9902607Z # Subtest: uses the versioned calibration status, apply, and cancel routes
+2026-10-06T03:56:34.9903948Z ok 10 - uses the versioned calibration status, apply, and cancel routes
+2026-10-06T03:56:34.9904784Z   ---
+2026-10-06T03:56:34.9905281Z   duration_ms: 36.889727
+2026-10-06T03:56:34.9906692Z   ...
+2026-10-06T03:56:34.9907826Z # (node:2697) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.9909221Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:34.9910586Z # Subtest: root-render failure remains anonymous and normal diagnostics do not request keepalive
+2026-10-06T03:56:34.9912086Z ok 11 - root-render failure remains anonymous and normal diagnostics do not request keepalive
+2026-10-06T03:56:34.9913022Z   ---
+2026-10-06T03:56:34.9913581Z   duration_ms: 35.643863
+2026-10-06T03:56:34.9914109Z   ...
+2026-10-06T03:56:34.9915167Z # Subtest: native feature diagnostics attach bearer identity and use the normal 401 refresh path
+2026-10-06T03:56:34.9916936Z ok 12 - native feature diagnostics attach bearer identity and use the normal 401 refresh path
+2026-10-06T03:56:34.9918002Z   ---
+2026-10-06T03:56:34.9947343Z   duration_ms: 2.266989
+2026-10-06T03:56:34.9948962Z   ...
+2026-10-06T03:56:34.9949840Z # Subtest: web-vital diagnostics use authenticated unload-safe transport
+2026-10-06T03:56:34.9950990Z ok 13 - web-vital diagnostics use authenticated unload-safe transport
+2026-10-06T03:56:34.9951741Z   ---
+2026-10-06T03:56:34.9952207Z   duration_ms: 0.974157
+2026-10-06T03:56:34.9952704Z   ...
+2026-10-06T03:56:34.9953827Z # (node:2723) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:34.9955175Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.2828872Z # Subtest: createFoodLog sends the caller operation ID
+2026-10-06T03:56:35.2846546Z ok 14 - createFoodLog sends the caller operation ID
+2026-10-06T03:56:35.2860146Z   ---
+2026-10-06T03:56:35.2860826Z   duration_ms: 51.946667
+2026-10-06T03:56:35.2861546Z   ...
+2026-10-06T03:56:35.2862573Z # Subtest: addMetric sends the caller operation ID for metric upserts
+2026-10-06T03:56:35.2863931Z ok 15 - addMetric sends the caller operation ID for metric upserts
+2026-10-06T03:56:35.2864942Z   ---
+2026-10-06T03:56:35.2865862Z   duration_ms: 0.790264
+2026-10-06T03:56:35.2866577Z   ...
+2026-10-06T03:56:35.2867696Z # Subtest: updateFoodDay sends the caller operation ID for completion changes
+2026-10-06T03:56:35.2869140Z ok 16 - updateFoodDay sends the caller operation ID for completion changes
+2026-10-06T03:56:35.2870177Z   ---
+2026-10-06T03:56:35.2871211Z   duration_ms: 0.909296
+2026-10-06T03:56:35.2871930Z   ...
+2026-10-06T03:56:35.2873137Z # Subtest: day status and pause lifecycle methods preserve caller operation IDs and local dates
+2026-10-06T03:56:35.2874877Z ok 17 - day status and pause lifecycle methods preserve caller operation IDs and local dates
+2026-10-06T03:56:35.2876328Z   ---
+2026-10-06T03:56:35.2877017Z   duration_ms: 2.013175
+2026-10-06T03:56:35.2877715Z   ...
+2026-10-06T03:56:35.2878532Z # Subtest: createGoal sends the caller operation ID
+2026-10-06T03:56:35.2889904Z ok 18 - createGoal sends the caller operation ID
+2026-10-06T03:56:35.2946152Z   ---
+2026-10-06T03:56:35.2958890Z   duration_ms: 0.701168
+2026-10-06T03:56:35.2986494Z   ...
+2026-10-06T03:56:35.2987425Z # Subtest: updatePreferences sends the caller operation ID
+2026-10-06T03:56:35.2988588Z ok 19 - updatePreferences sends the caller operation ID
+2026-10-06T03:56:35.2989453Z   ---
+2026-10-06T03:56:35.2990040Z   duration_ms: 0.693283
+2026-10-06T03:56:35.2990661Z   ...
+2026-10-06T03:56:35.2991481Z # Subtest: updateFoodLog sends the caller operation ID
+2026-10-06T03:56:35.2992507Z ok 20 - updateFoodLog sends the caller operation ID
+2026-10-06T03:56:35.2993223Z   ---
+2026-10-06T03:56:35.2993816Z   duration_ms: 1.634368
+2026-10-06T03:56:35.2994483Z   ...
+2026-10-06T03:56:35.2995510Z # Subtest: deleteFoodLog sends the caller operation ID
+2026-10-06T03:56:35.2996577Z ok 21 - deleteFoodLog sends the caller operation ID
+2026-10-06T03:56:35.2997351Z   ---
+2026-10-06T03:56:35.2997926Z   duration_ms: 0.882075
+2026-10-06T03:56:35.2998499Z   ...
+2026-10-06T03:56:35.2999203Z # Subtest: deleteMetric sends the caller operation ID
+2026-10-06T03:56:35.3000776Z ok 22 - deleteMetric sends the caller operation ID
+2026-10-06T03:56:35.3001473Z   ---
+2026-10-06T03:56:35.3002162Z   duration_ms: 0.93274
+2026-10-06T03:56:35.3002614Z   ...
+2026-10-06T03:56:35.3003359Z # Subtest: operation ID header is omitted when callers do not provide one
+2026-10-06T03:56:35.3004374Z ok 23 - operation ID header is omitted when callers do not provide one
+2026-10-06T03:56:35.3004981Z   ---
+2026-10-06T03:56:35.3005518Z   duration_ms: 0.915328
+2026-10-06T03:56:35.3005903Z   ...
+2026-10-06T03:56:35.3157302Z # (node:2729) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.3167183Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.3199451Z # Subtest: copyFoodLogs sends the atomic copy payload and returns the committed receipt
+2026-10-06T03:56:35.3200899Z ok 24 - copyFoodLogs sends the atomic copy payload and returns the committed receipt
+2026-10-06T03:56:35.3201794Z   ---
+2026-10-06T03:56:35.3202211Z   duration_ms: 66.319177
+2026-10-06T03:56:35.3202715Z   ...
+2026-10-06T03:56:35.3203775Z # (node:2736) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.3205167Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.3206973Z # Subtest: normalizes legacy completion without inventing comparison data and preserves additive range values
+2026-10-06T03:56:35.3208743Z ok 25 - normalizes legacy completion without inventing comparison data and preserves additive range values
+2026-10-06T03:56:35.3209796Z   ---
+2026-10-06T03:56:35.3210266Z   duration_ms: 33.488542
+2026-10-06T03:56:35.3210759Z   ...
+2026-10-06T03:56:35.5493217Z # (node:2756) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.5536815Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.5538448Z # Subtest: pace preview bypasses cache and adjustment retries retain operation and expected version
+2026-10-06T03:56:35.5540199Z ok 26 - pace preview bypasses cache and adjustment retries retain operation and expected version
+2026-10-06T03:56:35.5541430Z   ---
+2026-10-06T03:56:35.5542003Z   duration_ms: 35.397823
+2026-10-06T03:56:35.5542592Z   ...
+2026-10-06T03:56:35.6127703Z # (node:2763) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.6156504Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.6158063Z # Subtest: updateMyFood patches the owned resource with a typed snapshot definition
+2026-10-06T03:56:35.6186477Z ok 27 - updateMyFood patches the owned resource with a typed snapshot definition
+2026-10-06T03:56:35.6206223Z   ---
+2026-10-06T03:56:35.6206892Z   duration_ms: 45.449944
+2026-10-06T03:56:35.6207482Z   ...
+2026-10-06T03:56:35.6208376Z # Subtest: deleteMyFood deletes the resource and accepts an empty response
+2026-10-06T03:56:35.6209637Z ok 28 - deleteMyFood deletes the resource and accepts an empty response
+2026-10-06T03:56:35.6210472Z   ---
+2026-10-06T03:56:35.6210980Z   duration_ms: 0.612543
+2026-10-06T03:56:35.6211529Z   ...
+2026-10-06T03:56:35.6212458Z # Subtest: createRecipeFromFoodLogs posts the ordered food log snapshot request
+2026-10-06T03:56:35.6213839Z ok 29 - createRecipeFromFoodLogs posts the ordered food log snapshot request
+2026-10-06T03:56:35.6214731Z   ---
+2026-10-06T03:56:35.6215238Z   duration_ms: 1.132673
+2026-10-06T03:56:35.6227965Z   ...
+2026-10-06T03:56:35.6256788Z # Subtest: external recipe ingredient types preserve serving snapshots for editing
+2026-10-06T03:56:35.6286250Z ok 30 - external recipe ingredient types preserve serving snapshots for editing
+2026-10-06T03:56:35.6293946Z   ---
+2026-10-06T03:56:35.6294524Z   duration_ms: 0.276566
+2026-10-06T03:56:35.6295115Z   ...
+2026-10-06T03:56:35.6397128Z # (node:2765) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.6399648Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.6405961Z # Subtest: getMyFoodsLibrary encodes filters and returns the paged envelope
+2026-10-06T03:56:35.6407445Z ok 31 - getMyFoodsLibrary encodes filters and returns the paged envelope
+2026-10-06T03:56:35.6408363Z   ---
+2026-10-06T03:56:35.6408995Z   duration_ms: 32.680154
+2026-10-06T03:56:35.6409657Z   ...
+2026-10-06T03:56:35.6410458Z # Subtest: getMyFoodsLibrary omits absent query parameters
+2026-10-06T03:56:35.6411513Z ok 32 - getMyFoodsLibrary omits absent query parameters
+2026-10-06T03:56:35.6412303Z   ---
+2026-10-06T03:56:35.6412833Z   duration_ms: 0.751041
+2026-10-06T03:56:35.6413410Z   ...
+2026-10-06T03:56:35.8547657Z # (node:2789) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.8570306Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.8616551Z # Subtest: setMyFoodPinned sends an ownership-safe resource patch payload
+2026-10-06T03:56:35.8676832Z ok 33 - setMyFoodPinned sends an ownership-safe resource patch payload
+2026-10-06T03:56:35.8692085Z   ---
+2026-10-06T03:56:35.8726144Z   duration_ms: 49.776938
+2026-10-06T03:56:35.8757905Z   ...
+2026-10-06T03:56:35.8816648Z # (node:2793) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.8876390Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.8926571Z # Subtest: notification methods preserve legacy reads and send additive paging/read-all requests
+2026-10-06T03:56:35.8976763Z ok 34 - notification methods preserve legacy reads and send additive paging/read-all requests
+2026-10-06T03:56:35.9015916Z   ---
+2026-10-06T03:56:35.9062000Z   duration_ms: 35.428551
+2026-10-06T03:56:35.9105933Z   ...
+2026-10-06T03:56:35.9467340Z # (node:2812) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:35.9501307Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:35.9528482Z # Subtest: label scans send authenticated multipart data to the versioned API and leave null fields intact
+2026-10-06T03:56:35.9556695Z ok 35 - label scans send authenticated multipart data to the versioned API and leave null fields intact
+2026-10-06T03:56:35.9561823Z   ---
+2026-10-06T03:56:35.9562431Z   duration_ms: 39.490629
+2026-10-06T03:56:35.9563038Z   ...
+2026-10-06T03:56:36.1828035Z # (node:2823) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:36.1916574Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:36.1918156Z # Subtest: atomic completion sends one complete payload and a stable operation ID
+2026-10-06T03:56:36.1946999Z ok 36 - atomic completion sends one complete payload and a stable operation ID
+2026-10-06T03:56:36.1972992Z   ---
+2026-10-06T03:56:36.2011501Z   duration_ms: 58.173942
+2026-10-06T03:56:36.2014983Z   ...
+2026-10-06T03:56:36.2302492Z # (node:2829) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:36.2316343Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:36.2346629Z # Subtest: getRecentFoods includes selected meal context in the query string
+2026-10-06T03:56:36.2376406Z ok 37 - getRecentFoods includes selected meal context in the query string
+2026-10-06T03:56:36.2397944Z   ---
+2026-10-06T03:56:36.2405998Z   duration_ms: 39.707743
+2026-10-06T03:56:36.2426052Z   ...
+2026-10-06T03:56:36.2897489Z # (node:2845) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:36.2932813Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:36.3076772Z # Subtest: default browser transport preserves the global fetch receiver
+2026-10-06T03:56:36.3078353Z ok 38 - default browser transport preserves the global fetch receiver
+2026-10-06T03:56:36.3079669Z   ---
+2026-10-06T03:56:36.3080227Z   duration_ms: 40.619235
+2026-10-06T03:56:36.3080829Z   ...
+2026-10-06T03:56:36.3081677Z # Subtest: client configuration forwards an explicit cache policy
+2026-10-06T03:56:36.3082809Z ok 39 - client configuration forwards an explicit cache policy
+2026-10-06T03:56:36.3083632Z   ---
+2026-10-06T03:56:36.3084194Z   duration_ms: 0.823065
+2026-10-06T03:56:36.3084777Z   ...
+2026-10-06T03:56:36.3186565Z # Subtest: request timeout reports a connection timeout rather than a caller abort
+2026-10-06T03:56:36.3206259Z ok 40 - request timeout reports a connection timeout rather than a caller abort
+2026-10-06T03:56:36.3265833Z   ---
+2026-10-06T03:56:36.3287934Z   duration_ms: 29.007633
+2026-10-06T03:56:36.3315880Z   ...
+2026-10-06T03:56:36.3815607Z # Subtest: request timeout settles even when the fetch implementation ignores abort
+2026-10-06T03:56:36.3906671Z ok 41 - request timeout settles even when the fetch implementation ignores abort
+2026-10-06T03:56:36.4026156Z   ---
+2026-10-06T03:56:36.4186851Z   duration_ms: 5.206262
+2026-10-06T03:56:36.4306148Z   ...
+2026-10-06T03:56:36.4307022Z # Subtest: caller abort remains an AbortError and is not rewritten as a timeout
+2026-10-06T03:56:36.4308225Z ok 42 - caller abort remains an AbortError and is not rewritten as a timeout
+2026-10-06T03:56:36.4336063Z   ---
+2026-10-06T03:56:36.4366042Z   duration_ms: 1.050099
+2026-10-06T03:56:36.4470536Z   ...
+2026-10-06T03:56:36.4476287Z # Subtest: a signal aborted before the request reaches fetch is still honored
+2026-10-06T03:56:36.4564072Z ok 43 - a signal aborted before the request reaches fetch is still honored
+2026-10-06T03:56:36.4623748Z   ---
+2026-10-06T03:56:36.4636103Z   duration_ms: 0.719703
+2026-10-06T03:56:36.4726152Z   ...
+2026-10-06T03:56:36.4739366Z # Subtest: non-JSON error body is retained without masking HTTP status: upstream unavailable
+2026-10-06T03:56:36.4767778Z ok 44 - non-JSON error body is retained without masking HTTP status: upstream unavailable
+2026-10-06T03:56:36.4776117Z   ---
+2026-10-06T03:56:36.4856520Z   duration_ms: 3.509766
+2026-10-06T03:56:36.4894217Z   ...
+2026-10-06T03:56:36.4921246Z # Subtest: non-JSON error body is retained without masking HTTP status: <html><body>Bad gate
+2026-10-06T03:56:36.4983789Z ok 45 - non-JSON error body is retained without masking HTTP status: <html><body>Bad gate
+2026-10-06T03:56:36.4984930Z   ---
+2026-10-06T03:56:36.4985884Z   duration_ms: 0.618694
+2026-10-06T03:56:36.4986636Z   ...
+2026-10-06T03:56:36.4988340Z # Subtest: non-JSON error body is retained without masking HTTP status: {"message":
+2026-10-06T03:56:36.4989633Z ok 46 - non-JSON error body is retained without masking HTTP status: {"message":
+2026-10-06T03:56:36.4990544Z   ---
+2026-10-06T03:56:36.4991152Z   duration_ms: 1.044789
+2026-10-06T03:56:36.4991672Z   ...
+2026-10-06T03:56:36.4992528Z # Subtest: standard API errors expose typed metadata and prefer the response request ID
+2026-10-06T03:56:36.4993813Z ok 47 - standard API errors expose typed metadata and prefer the response request ID
+2026-10-06T03:56:36.4994739Z   ---
+2026-10-06T03:56:36.4995229Z   duration_ms: 2.306142
+2026-10-06T03:56:36.4996092Z   ...
+2026-10-06T03:56:36.4997036Z # Subtest: legacy message-only API errors remain compatible without invented metadata
+2026-10-06T03:56:36.4998432Z ok 48 - legacy message-only API errors remain compatible without invented metadata
+2026-10-06T03:56:36.4999372Z   ---
+2026-10-06T03:56:36.4999949Z   duration_ms: 0.844224
+2026-10-06T03:56:36.5000672Z   ...
+2026-10-06T03:56:36.5001776Z # Subtest: malformed API error metadata is ignored instead of entering typed client state
+2026-10-06T03:56:36.5003285Z ok 49 - malformed API error metadata is ignored instead of entering typed client state
+2026-10-06T03:56:36.5004295Z   ---
+2026-10-06T03:56:36.5004864Z   duration_ms: 0.781398
+2026-10-06T03:56:36.5005750Z   ...
+2026-10-06T03:56:36.5006808Z # Subtest: API error metadata bounds field fanout and rejects display-hostile tokens
+2026-10-06T03:56:36.5008588Z ok 50 - API error metadata bounds field fanout and rejects display-hostile tokens
+2026-10-06T03:56:36.5009613Z   ---
+2026-10-06T03:56:36.5010262Z   duration_ms: 0.705296
+2026-10-06T03:56:36.5010905Z   ...
+2026-10-06T03:56:36.5012028Z # Subtest: one successful refresh retries the original request with the replacement token
+2026-10-06T03:56:36.5013617Z ok 51 - one successful refresh retries the original request with the replacement token
+2026-10-06T03:56:36.5014557Z   ---
+2026-10-06T03:56:36.5015067Z   duration_ms: 2.432057
+2026-10-06T03:56:36.5015924Z   ...
+2026-10-06T03:56:36.5016957Z # Subtest: a late 401 from the previous access token reuses the completed refresh
+2026-10-06T03:56:36.5018395Z ok 52 - a late 401 from the previous access token reuses the completed refresh
+2026-10-06T03:56:36.5019418Z   ---
+2026-10-06T03:56:36.5020000Z   duration_ms: 2.020088
+2026-10-06T03:56:36.5020617Z   ...
+2026-10-06T03:56:36.5021437Z # Subtest: a retried 401 does not start another refresh loop
+2026-10-06T03:56:36.5022499Z ok 53 - a retried 401 does not start another refresh loop
+2026-10-06T03:56:36.5023221Z   ---
+2026-10-06T03:56:36.5023708Z   duration_ms: 1.025984
+2026-10-06T03:56:36.5024215Z   ...
+2026-10-06T03:56:36.5025188Z # Subtest: native identity is attached to public and authenticated requests and cannot be overridden
+2026-10-06T03:56:36.5026865Z ok 54 - native identity is attached to public and authenticated requests and cannot be overridden
+2026-10-06T03:56:36.5027856Z   ---
+2026-10-06T03:56:36.5028354Z   duration_ms: 1.114459
+2026-10-06T03:56:36.5028882Z   ...
+2026-10-06T03:56:36.5029633Z # Subtest: legacy food-day responses remain open and editable
+2026-10-06T03:56:36.5030591Z ok 55 - legacy food-day responses remain open and editable
+2026-10-06T03:56:36.5031296Z   ---
+2026-10-06T03:56:36.5031793Z   duration_ms: 0.862018
+2026-10-06T03:56:36.5032323Z   ...
+2026-10-06T03:56:36.5033412Z # Subtest: browser cookie transport uses session endpoints without native or bearer credentials
+2026-10-06T03:56:36.5035005Z ok 56 - browser cookie transport uses session endpoints without native or bearer credentials
+2026-10-06T03:56:36.5036482Z   ---
+2026-10-06T03:56:36.5037155Z   duration_ms: 1.937906
+2026-10-06T03:56:36.5045836Z   ...
+2026-10-06T03:56:36.5046922Z # Subtest: browser Lose It uploads submit a real Blob instead of a React Native URI descriptor
+2026-10-06T03:56:36.5048439Z ok 57 - browser Lose It uploads submit a real Blob instead of a React Native URI descriptor
+2026-10-06T03:56:36.5049213Z   ---
+2026-10-06T03:56:36.5049565Z   duration_ms: 1.472757
+2026-10-06T03:56:36.5049947Z   ...
+2026-10-06T03:56:36.5050570Z # Subtest: browser Lose It object URLs are hydrated before upload
+2026-10-06T03:56:36.5051452Z ok 58 - browser Lose It object URLs are hydrated before upload
+2026-10-06T03:56:36.5052053Z   ---
+2026-10-06T03:56:36.5052394Z   duration_ms: 5.128567
+2026-10-06T03:56:36.5052773Z   ...
+2026-10-06T03:56:36.5053654Z # Subtest: native Lose It URIs remain FormData descriptors even when React Native exposes window
+2026-10-06T03:56:36.5054654Z ok 59 - native Lose It URIs remain FormData descriptors even when React Native exposes window
+2026-10-06T03:56:36.5055759Z   ---
+2026-10-06T03:56:36.5056089Z   duration_ms: 0.985648
+2026-10-06T03:56:36.5056456Z   ...
+2026-10-06T03:56:36.5057168Z # Subtest: a per-request credential policy overrides the browser client default
+2026-10-06T03:56:36.5058235Z ok 60 - a per-request credential policy overrides the browser client default
+2026-10-06T03:56:36.5058870Z   ---
+2026-10-06T03:56:36.5059091Z   duration_ms: 0.515552
+2026-10-06T03:56:36.5059318Z   ...
+2026-10-06T03:56:36.5059735Z # Subtest: browser push methods use the versioned cookie-session endpoints
+2026-10-06T03:56:36.5060311Z ok 61 - browser push methods use the versioned cookie-session endpoints
+2026-10-06T03:56:36.5060672Z   ---
+2026-10-06T03:56:36.5060871Z   duration_ms: 3.470364
+2026-10-06T03:56:36.5061088Z   ...
+2026-10-06T03:56:36.5061554Z # Subtest: upgrade-required responses notify the native shell without triggering auth logout
+2026-10-06T03:56:36.5062499Z ok 62 - upgrade-required responses notify the native shell without triggering auth logout
+2026-10-06T03:56:36.5062931Z   ---
+2026-10-06T03:56:36.5063123Z   duration_ms: 9.219999
+2026-10-06T03:56:36.5063340Z   ...
+2026-10-06T03:56:36.5063819Z # Subtest: malformed upgrade bodies cannot inject unbounded compatibility UI content
+2026-10-06T03:56:36.5064454Z ok 63 - malformed upgrade bodies cannot inject unbounded compatibility UI content
+2026-10-06T03:56:36.5064849Z   ---
+2026-10-06T03:56:36.5065035Z   duration_ms: 8.965495
+2026-10-06T03:56:36.5065245Z   ...
+2026-10-06T03:56:36.5250026Z # (node:2856) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:36.5256524Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:36.5298261Z # Subtest: watch snapshot uses the versioned restricted surface
+2026-10-06T03:56:36.5310753Z ok 64 - watch snapshot uses the versioned restricted surface
+2026-10-06T03:56:36.5311694Z   ---
+2026-10-06T03:56:36.5312503Z   duration_ms: 61.684329
+2026-10-06T03:56:36.5313384Z   ...
+2026-10-06T03:56:36.5314579Z # Subtest: watch snapshot contract exposes unit and revisions needed for offline actions
+2026-10-06T03:56:36.5316254Z ok 65 - watch snapshot contract exposes unit and revisions needed for offline actions
+2026-10-06T03:56:36.5317321Z   ---
+2026-10-06T03:56:36.5317915Z   duration_ms: 0.280884
+2026-10-06T03:56:36.5318520Z   ...
+2026-10-06T03:56:36.5319508Z # Subtest: watch snapshot sends If-None-Match and returns 304 metadata without throwing
+2026-10-06T03:56:36.5320952Z ok 66 - watch snapshot sends If-None-Match and returns 304 metadata without throwing
+2026-10-06T03:56:36.5321934Z   ---
+2026-10-06T03:56:36.5322476Z   duration_ms: 0.978125
+2026-10-06T03:56:36.5323083Z   ...
+2026-10-06T03:56:36.5323905Z # Subtest: watch mutation always carries its client operation id
+2026-10-06T03:56:36.5324984Z ok 67 - watch mutation always carries its client operation id
+2026-10-06T03:56:36.5326055Z   ---
+2026-10-06T03:56:36.5326594Z   duration_ms: 1.09344
+2026-10-06T03:56:36.5327137Z   ...
+2026-10-06T03:56:36.5434648Z # (node:2863) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+2026-10-06T03:56:36.5436425Z # (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-06T03:56:36.5438401Z # Subtest: phone pairing issuance is authenticated and carries the selected self-hosted origin
+2026-10-06T03:56:36.5439945Z ok 68 - phone pairing issuance is authenticated and carries the selected self-hosted origin
+2026-10-06T03:56:36.5441044Z   ---
+2026-10-06T03:56:36.5441560Z   duration_ms: 39.245601
+2026-10-06T03:56:36.5441967Z   ...
+2026-10-06T03:56:36.5442801Z # Subtest: Wear exchange is unauthenticated and sends the server-bound one-time credential
+2026-10-06T03:56:36.5444049Z ok 69 - Wear exchange is unauthenticated and sends the server-bound one-time credential
+2026-10-06T03:56:36.5444784Z   ---
+2026-10-06T03:56:36.5445134Z   duration_ms: 1.010154
+2026-10-06T03:56:36.5445706Z   ...
+2026-10-06T03:56:36.5446021Z 1..69
+2026-10-06T03:56:36.5446331Z # tests 69
+2026-10-06T03:56:36.5446651Z # suites 0
+2026-10-06T03:56:36.5446969Z # pass 69
+2026-10-06T03:56:36.5447285Z # fail 0
+2026-10-06T03:56:36.5447561Z # cancelled 0
+2026-10-06T03:56:36.5447770Z # skipped 0
+2026-10-06T03:56:36.5447967Z # todo 0
+2026-10-06T03:56:36.5448180Z # duration_ms 2215.496461
+2026-10-06T03:56:36.5725085Z ##[group]Run npm --prefix mobile test
+2026-10-06T03:56:36.5727565Z [36;1mnpm --prefix mobile test[0m
+2026-10-06T03:56:36.5810151Z shell: /usr/bin/bash -e {0}
+2026-10-06T03:56:36.5810694Z ##[endgroup]
+2026-10-06T03:56:36.7335902Z 
+2026-10-06T03:56:36.7336391Z > mobile@0.2.7 test
+2026-10-06T03:56:36.7337133Z > jest
+2026-10-06T03:56:36.7337463Z 
+2026-10-06T03:56:40.3134658Z PASS src/offline/foodDayReceipts.test.ts
+2026-10-06T03:56:41.1703005Z PASS src/offline/provider.web.test.tsx
+2026-10-06T03:56:41.1836132Z   ● Console
+2026-10-06T03:56:41.1837122Z 
+2026-10-06T03:56:41.1837353Z     console.warn
+2026-10-06T03:56:41.1838007Z       An error occurred in the <OfflineOutboxProvider> component.
+2026-10-06T03:56:41.1838600Z       
+2026-10-06T03:56:41.1839327Z       Consider adding an error boundary to your tree to customize error handling behavior.
+2026-10-06T03:56:41.1840479Z       Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+2026-10-06T03:56:41.1841175Z 
+2026-10-06T03:56:41.1841976Z       at defaultOnUncaughtError (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6400:15)
+2026-10-06T03:56:41.1843500Z       at logUncaughtError (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6460:11)
+2026-10-06T03:56:41.1845005Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:41.1846798Z       at lane.callback (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6490:9)
+2026-10-06T03:56:41.1848314Z       at callCallback (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4625:16)
+2026-10-06T03:56:41.1849847Z       at commitCallbacks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4645:11)
+2026-10-06T03:56:41.1851414Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:41.1853022Z       at commitLayoutEffectOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10103:15)
+2026-10-06T03:56:41.1854620Z       at flushLayoutEffects (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13774:15)
+2026-10-06T03:56:41.1856421Z       at commitRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13697:9)
+2026-10-06T03:56:41.1857849Z       at commitRootWhenReady (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12444:7)
+2026-10-06T03:56:41.1859319Z       at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12391:15)
+2026-10-06T03:56:41.1860838Z       at performSyncWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2923:7)
+2026-10-06T03:56:41.1862466Z       at flushSyncWorkAcrossRoots_impl (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2764:21)
+2026-10-06T03:56:41.1864094Z       at flushPendingEffects (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14128:11)
+2026-10-06T03:56:41.1869405Z       at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2896:11)
+2026-10-06T03:56:41.1871297Z       at Immediate.performWorkUntilDeadline [as _onImmediate] (../node_modules/scheduler/cjs/scheduler.native.development.js:45:48)
+2026-10-06T03:56:41.1872238Z 
+2026-10-06T03:56:42.2137081Z PASS src/auth/AuthContext.test.tsx
+2026-10-06T03:56:44.2052828Z PASS src/components/WeightTrendCard.test.tsx
+2026-10-06T03:56:44.4922641Z PASS src/components/FoodTrackingStatus.test.tsx
+2026-10-06T03:56:44.8466726Z PASS src/wear/pairing.test.ts
+2026-10-06T03:56:45.4538149Z PASS src/healthConnect/sync.test.ts
+2026-10-06T03:56:45.5578261Z PASS src/food/foodLogSelection.test.ts
+2026-10-06T03:56:45.7656349Z PASS src/diagnostics/webVitals.web.test.ts
+2026-10-06T03:56:46.8994320Z PASS src/components/PlanCheckCard.test.tsx
+2026-10-06T03:56:47.4585854Z PASS src/components/progress/WeightTrendPreviewCard.test.tsx
+2026-10-06T03:56:47.7503063Z PASS src/offline/provider.test.tsx
+2026-10-06T03:56:48.1572297Z PASS src/onboarding/useOnboardingController.test.tsx
+2026-10-06T03:56:48.2878320Z PASS src/offline/reconciler.test.ts
+2026-10-06T03:56:48.4489314Z PASS src/offline/indexedDbOutbox.web.test.ts
+2026-10-06T03:56:49.5152392Z PASS src/components/AddFoodSheet.test.tsx (11.401 s)
+2026-10-06T03:56:49.5787931Z   ● Console
+2026-10-06T03:56:49.5788195Z 
+2026-10-06T03:56:49.5788459Z     console.error
+2026-10-06T03:56:49.5789167Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:49.5790376Z       
+2026-10-06T03:56:49.5791058Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:49.5791749Z       
+2026-10-06T03:56:49.5792051Z       act(() => {
+2026-10-06T03:56:49.5792494Z         /* fire events that update state */
+2026-10-06T03:56:49.5792972Z       });
+2026-10-06T03:56:49.5793371Z       /* assert on the output */
+2026-10-06T03:56:49.5793796Z       
+2026-10-06T03:56:49.5794874Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:49.5796031Z 
+2026-10-06T03:56:49.5796689Z     [0m [90m 212 |[39m         [36mconst[39m screen [33m=[39m renderSheet()[33m;[39m
+2026-10-06T03:56:49.5797918Z      [90m 213 |[39m         [36mawait[39m screen[33m.[39mfindByText([32m'Adding food reopens this day so you can complete it again.'[39m)[33m;[39m
+2026-10-06T03:56:49.5798864Z     [31m[1m>[22m[39m[90m 214 |[39m         onlineManager[33m.[39msetOnline([36mfalse[39m)[33m;[39m
+2026-10-06T03:56:49.5799472Z      [90m     |[39m                       [31m[1m^[22m[39m
+2026-10-06T03:56:49.5800312Z      [90m 215 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'radio'[39m[33m,[39m { name[33m:[39m [32m'Quick'[39m }))[33m;[39m
+2026-10-06T03:56:49.5801388Z      [90m 216 |[39m         fireEvent[33m.[39mchangeText(screen[33m.[39mgetByLabelText([32m'Calories'[39m)[33m,[39m [32m'120'[39m)[33m;[39m
+2026-10-06T03:56:49.5802498Z      [90m 217 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'button'[39m[33m,[39m { name[33m:[39m [32m'Add & close'[39m }))[33m;[39m[0m
+2026-10-06T03:56:49.5803025Z 
+2026-10-06T03:56:49.5803350Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:49.5804102Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:49.5804999Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:49.5806094Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:49.5806928Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+2026-10-06T03:56:49.5807654Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+2026-10-06T03:56:49.5808220Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+2026-10-06T03:56:49.5808624Z           at Set.forEach (<anonymous>)
+2026-10-06T03:56:49.5809128Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+2026-10-06T03:56:49.5809719Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+2026-10-06T03:56:49.5810309Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+2026-10-06T03:56:49.5810902Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+2026-10-06T03:56:49.5811200Z 
+2026-10-06T03:56:49.5811289Z     console.error
+2026-10-06T03:56:49.5811645Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:49.5812219Z       
+2026-10-06T03:56:49.5812628Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:49.5813043Z       
+2026-10-06T03:56:49.5813222Z       act(() => {
+2026-10-06T03:56:49.5813470Z         /* fire events that update state */
+2026-10-06T03:56:49.5813742Z       });
+2026-10-06T03:56:49.5813975Z       /* assert on the output */
+2026-10-06T03:56:49.5814213Z       
+2026-10-06T03:56:49.5814808Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:49.5816003Z 
+2026-10-06T03:56:49.5816412Z     [0m [90m 212 |[39m         [36mconst[39m screen [33m=[39m renderSheet()[33m;[39m
+2026-10-06T03:56:49.5817320Z      [90m 213 |[39m         [36mawait[39m screen[33m.[39mfindByText([32m'Adding food reopens this day so you can complete it again.'[39m)[33m;[39m
+2026-10-06T03:56:49.5818221Z     [31m[1m>[22m[39m[90m 214 |[39m         onlineManager[33m.[39msetOnline([36mfalse[39m)[33m;[39m
+2026-10-06T03:56:49.5818783Z      [90m     |[39m                       [31m[1m^[22m[39m
+2026-10-06T03:56:49.5819589Z      [90m 215 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'radio'[39m[33m,[39m { name[33m:[39m [32m'Quick'[39m }))[33m;[39m
+2026-10-06T03:56:49.5820652Z      [90m 216 |[39m         fireEvent[33m.[39mchangeText(screen[33m.[39mgetByLabelText([32m'Calories'[39m)[33m,[39m [32m'120'[39m)[33m;[39m
+2026-10-06T03:56:49.5821756Z      [90m 217 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'button'[39m[33m,[39m { name[33m:[39m [32m'Add & close'[39m }))[33m;[39m[0m
+2026-10-06T03:56:49.5822290Z 
+2026-10-06T03:56:49.5822610Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:49.5823374Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:49.5824261Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:49.5825167Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:49.5826632Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+2026-10-06T03:56:49.5827958Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+2026-10-06T03:56:49.5829032Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+2026-10-06T03:56:49.5829692Z           at Set.forEach (<anonymous>)
+2026-10-06T03:56:49.5830548Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+2026-10-06T03:56:49.5831570Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+2026-10-06T03:56:49.5832573Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+2026-10-06T03:56:49.5833592Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+2026-10-06T03:56:49.5834112Z 
+2026-10-06T03:56:49.5834263Z     console.error
+2026-10-06T03:56:49.5834836Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:49.5835718Z       
+2026-10-06T03:56:49.5836392Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:49.5837112Z       
+2026-10-06T03:56:49.5837432Z       act(() => {
+2026-10-06T03:56:49.5837843Z         /* fire events that update state */
+2026-10-06T03:56:49.5838374Z       });
+2026-10-06T03:56:49.5838734Z       /* assert on the output */
+2026-10-06T03:56:49.5839129Z       
+2026-10-06T03:56:49.5840145Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:49.5841041Z 
+2026-10-06T03:56:49.5841895Z     [0m [90m 212 |[39m         [36mconst[39m screen [33m=[39m renderSheet()[33m;[39m
+2026-10-06T03:56:49.5843481Z      [90m 213 |[39m         [36mawait[39m screen[33m.[39mfindByText([32m'Adding food reopens this day so you can complete it again.'[39m)[33m;[39m
+2026-10-06T03:56:49.5845034Z     [31m[1m>[22m[39m[90m 214 |[39m         onlineManager[33m.[39msetOnline([36mfalse[39m)[33m;[39m
+2026-10-06T03:56:49.5846235Z      [90m     |[39m                       [31m[1m^[22m[39m
+2026-10-06T03:56:49.5847661Z      [90m 215 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'radio'[39m[33m,[39m { name[33m:[39m [32m'Quick'[39m }))[33m;[39m
+2026-10-06T03:56:49.5849769Z      [90m 216 |[39m         fireEvent[33m.[39mchangeText(screen[33m.[39mgetByLabelText([32m'Calories'[39m)[33m,[39m [32m'120'[39m)[33m;[39m
+2026-10-06T03:56:49.5851723Z      [90m 217 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'button'[39m[33m,[39m { name[33m:[39m [32m'Add & close'[39m }))[33m;[39m[0m
+2026-10-06T03:56:49.5852626Z 
+2026-10-06T03:56:49.5853165Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:49.5854472Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:49.5856267Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:49.5857862Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:49.5859312Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+2026-10-06T03:56:49.5860593Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+2026-10-06T03:56:49.5861574Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+2026-10-06T03:56:49.5862235Z           at Set.forEach (<anonymous>)
+2026-10-06T03:56:49.5863098Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+2026-10-06T03:56:49.5864082Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+2026-10-06T03:56:49.5865063Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+2026-10-06T03:56:49.5866283Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+2026-10-06T03:56:49.5866798Z 
+2026-10-06T03:56:49.5866956Z     console.error
+2026-10-06T03:56:49.5867531Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:49.5868090Z       
+2026-10-06T03:56:49.5868710Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:49.5869382Z       
+2026-10-06T03:56:49.5869674Z       act(() => {
+2026-10-06T03:56:49.5870094Z         /* fire events that update state */
+2026-10-06T03:56:49.5870535Z       });
+2026-10-06T03:56:49.5870897Z       /* assert on the output */
+2026-10-06T03:56:49.5871299Z       
+2026-10-06T03:56:49.5872329Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:49.5873206Z 
+2026-10-06T03:56:49.5873779Z     [0m [90m 212 |[39m         [36mconst[39m screen [33m=[39m renderSheet()[33m;[39m
+2026-10-06T03:56:49.5875498Z      [90m 213 |[39m         [36mawait[39m screen[33m.[39mfindByText([32m'Adding food reopens this day so you can complete it again.'[39m)[33m;[39m
+2026-10-06T03:56:49.5877047Z     [31m[1m>[22m[39m[90m 214 |[39m         onlineManager[33m.[39msetOnline([36mfalse[39m)[33m;[39m
+2026-10-06T03:56:49.5878013Z      [90m     |[39m                       [31m[1m^[22m[39m
+2026-10-06T03:56:49.5879626Z      [90m 215 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'radio'[39m[33m,[39m { name[33m:[39m [32m'Quick'[39m }))[33m;[39m
+2026-10-06T03:56:49.5881482Z      [90m 216 |[39m         fireEvent[33m.[39mchangeText(screen[33m.[39mgetByLabelText([32m'Calories'[39m)[33m,[39m [32m'120'[39m)[33m;[39m
+2026-10-06T03:56:49.5883417Z      [90m 217 |[39m         fireEvent[33m.[39mpress(screen[33m.[39mgetByRole([32m'button'[39m[33m,[39m { name[33m:[39m [32m'Add & close'[39m }))[33m;[39m[0m
+2026-10-06T03:56:49.5884325Z 
+2026-10-06T03:56:49.5884869Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:49.5886572Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:49.5888140Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:49.5889731Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:49.5891198Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+2026-10-06T03:56:49.5892774Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+2026-10-06T03:56:49.5893971Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+2026-10-06T03:56:49.5894786Z           at Set.forEach (<anonymous>)
+2026-10-06T03:56:49.5896229Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+2026-10-06T03:56:49.5897404Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+2026-10-06T03:56:49.5898682Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+2026-10-06T03:56:49.5899901Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+2026-10-06T03:56:49.5900519Z 
+2026-10-06T03:56:49.5900683Z     console.error
+2026-10-06T03:56:49.5901528Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:49.5902267Z       
+2026-10-06T03:56:49.5903124Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:49.5904052Z       
+2026-10-06T03:56:49.5920671Z       act(() => {
+2026-10-06T03:56:49.5921198Z         /* fire events that update state */
+2026-10-06T03:56:49.5921689Z       });
+2026-10-06T03:56:49.5922175Z       /* assert on the output */
+2026-10-06T03:56:49.5922584Z       
+2026-10-06T03:56:49.5923592Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:49.5924460Z 
+2026-10-06T03:56:49.5924806Z     [0m [90m 283 |[39m         }[33m,[39m
+2026-10-06T03:56:49.5925992Z      [90m 284 |[39m         onSuccess[33m:[39m [36masync[39m (closeAfterLogging) [33m=>[39m {
+2026-10-06T03:56:49.5927092Z     [31m[1m>[22m[39m[90m 285 |[39m             setSelection([36mnull[39m)[33m;[39m
+2026-10-06T03:56:49.5927881Z      [90m     |[39m             [31m[1m^[22m[39m
+2026-10-06T03:56:49.5928629Z      [90m 286 |[39m             setQuickCalories([32m''[39m)[33m;[39m
+2026-10-06T03:56:49.5929462Z      [90m 287 |[39m             setQuickName([32m''[39m)[33m;[39m
+2026-10-06T03:56:49.5930500Z      [90m 288 |[39m             [36mawait[39m confirmLogged(closeAfterLogging)[33m;[39m[0m
+2026-10-06T03:56:49.5931067Z 
+2026-10-06T03:56:49.5931657Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:49.5933002Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:49.5934616Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:49.5936739Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:49.5938167Z       at dispatchSetStateInternal (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+2026-10-06T03:56:49.5939609Z       at dispatchSetState (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+2026-10-06T03:56:49.5940695Z       at Object.setSelection (src/components/AddFoodSheet.tsx:285:13)
+2026-10-06T03:56:49.5941698Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+2026-10-06T03:56:49.5942703Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+2026-10-06T03:56:49.5943719Z       at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+2026-10-06T03:56:49.5944666Z       at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+2026-10-06T03:56:49.5945886Z       at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+2026-10-06T03:56:49.5946821Z       at Mutation.execute (../node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+2026-10-06T03:56:49.5947411Z 
+2026-10-06T03:56:49.5947574Z     console.error
+2026-10-06T03:56:49.5948239Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:49.5948884Z       
+2026-10-06T03:56:49.5949633Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:49.5950368Z       
+2026-10-06T03:56:49.5950703Z       act(() => {
+2026-10-06T03:56:49.5951152Z         /* fire events that update state */
+2026-10-06T03:56:49.5951654Z       });
+2026-10-06T03:56:49.5952051Z       /* assert on the output */
+2026-10-06T03:56:49.5952481Z       
+2026-10-06T03:56:49.5953571Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:49.5954509Z 
+2026-10-06T03:56:49.5955269Z     [0m [90m 284 |[39m         onSuccess[33m:[39m [36masync[39m (closeAfterLogging) [33m=>[39m {
+2026-10-06T03:56:49.5956588Z      [90m 285 |[39m             setSelection([36mnull[39m)[33m;[39m
+2026-10-06T03:56:49.5957630Z     [31m[1m>[22m[39m[90m 286 |[39m             setQuickCalories([32m''[39m)[33m;[39m
+2026-10-06T03:56:49.5958520Z      [90m     |[39m             [31m[1m^[22m[39m
+2026-10-06T03:56:49.5959337Z      [90m 287 |[39m             setQuickName([32m''[39m)[33m;[39m
+2026-10-06T03:56:49.5960384Z      [90m 288 |[39m             [36mawait[39m confirmLogged(closeAfterLogging)[33m;[39m
+2026-10-06T03:56:49.5961213Z      [90m 289 |[39m         }[0m
+2026-10-06T03:56:49.5961525Z 
+2026-10-06T03:56:49.5962102Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:49.5963498Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:49.5965194Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:49.5967091Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:49.5968702Z       at dispatchSetStateInternal (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+2026-10-06T03:56:49.5970245Z       at dispatchSetState (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+2026-10-06T03:56:49.5971455Z       at Object.setQuickCalories (src/components/AddFoodSheet.tsx:286:13)
+2026-10-06T03:56:49.5972555Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+2026-10-06T03:56:49.5973654Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+2026-10-06T03:56:49.5974601Z       at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+2026-10-06T03:56:49.5976057Z       at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+2026-10-06T03:56:49.5977173Z       at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+2026-10-06T03:56:49.5978230Z       at Mutation.execute (../node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+2026-10-06T03:56:49.5978767Z 
+2026-10-06T03:56:49.5978913Z     console.error
+2026-10-06T03:56:49.5979497Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:49.5980112Z       
+2026-10-06T03:56:49.5980748Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:49.5981713Z       
+2026-10-06T03:56:49.5982055Z       act(() => {
+2026-10-06T03:56:49.5982504Z         /* fire events that update state */
+2026-10-06T03:56:49.5982995Z       });
+2026-10-06T03:56:49.5983401Z       /* assert on the output */
+2026-10-06T03:56:49.5983807Z       
+2026-10-06T03:56:49.5984860Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:49.5986108Z 
+2026-10-06T03:56:49.5986683Z     [0m [90m 285 |[39m             setSelection([36mnull[39m)[33m;[39m
+2026-10-06T03:56:49.5987673Z      [90m 286 |[39m             setQuickCalories([32m''[39m)[33m;[39m
+2026-10-06T03:56:49.5988705Z     [31m[1m>[22m[39m[90m 287 |[39m             setQuickName([32m''[39m)[33m;[39m
+2026-10-06T03:56:49.5989604Z      [90m     |[39m             [31m[1m^[22m[39m
+2026-10-06T03:56:49.5990606Z      [90m 288 |[39m             [36mawait[39m confirmLogged(closeAfterLogging)[33m;[39m
+2026-10-06T03:56:49.5991485Z      [90m 289 |[39m         }
+2026-10-06T03:56:49.5992099Z      [90m 290 |[39m     })[33m;[39m[0m
+2026-10-06T03:56:49.5992444Z 
+2026-10-06T03:56:49.5993054Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:49.5994483Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:49.5996492Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:49.5998167Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:49.5999783Z       at dispatchSetStateInternal (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+2026-10-06T03:56:49.6001323Z       at dispatchSetState (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+2026-10-06T03:56:49.6002500Z       at Object.setQuickName (src/components/AddFoodSheet.tsx:287:13)
+2026-10-06T03:56:49.6003585Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+2026-10-06T03:56:49.6004683Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+2026-10-06T03:56:49.6005881Z       at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+2026-10-06T03:56:49.6006963Z       at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+2026-10-06T03:56:49.6008047Z       at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+2026-10-06T03:56:49.6009089Z       at Mutation.execute (../node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+2026-10-06T03:56:49.6009686Z 
+2026-10-06T03:56:49.7114194Z PASS src/config/server.test.ts
+2026-10-06T03:56:49.8432921Z PASS src/offline/operations.test.ts
+2026-10-06T03:56:50.1016788Z PASS src/components/WeightEntrySheet.test.tsx
+2026-10-06T03:56:50.1020181Z   ● Console
+2026-10-06T03:56:50.1037108Z 
+2026-10-06T03:56:50.1037334Z     console.error
+2026-10-06T03:56:50.1037835Z       An update to WeightEntrySheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:50.1038242Z       
+2026-10-06T03:56:50.1038874Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:50.1039660Z       
+2026-10-06T03:56:50.1040007Z       act(() => {
+2026-10-06T03:56:50.1040890Z         /* fire events that update state */
+2026-10-06T03:56:50.1041448Z       });
+2026-10-06T03:56:50.1041859Z       /* assert on the output */
+2026-10-06T03:56:50.1042304Z       
+2026-10-06T03:56:50.1043411Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:50.1044353Z 
+2026-10-06T03:56:50.1044966Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:50.1046631Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:50.1048584Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:50.1050290Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:50.1051864Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+2026-10-06T03:56:50.1053267Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+2026-10-06T03:56:50.1054344Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:73:11
+2026-10-06T03:56:50.1055586Z       at notifyFn (../node_modules/@tanstack/query-core/src/notifyManager.ts:21:5)
+2026-10-06T03:56:50.1056878Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:44:13
+2026-10-06T03:56:50.1057628Z           at Array.forEach (<anonymous>)
+2026-10-06T03:56:50.1064449Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:43:25
+2026-10-06T03:56:50.1065074Z       at batchNotifyFn (../node_modules/@tanstack/query-core/src/notifyManager.ts:24:5)
+2026-10-06T03:56:50.1065981Z       at Timeout._onTimeout (../node_modules/@tanstack/query-core/src/notifyManager.ts:42:9)
+2026-10-06T03:56:50.1066355Z 
+2026-10-06T03:56:50.1066452Z     console.error
+2026-10-06T03:56:50.1066860Z       An update to WeightEntrySheet inside a test was not wrapped in act(...).
+2026-10-06T03:56:50.1067253Z       
+2026-10-06T03:56:50.1067659Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:50.1068070Z       
+2026-10-06T03:56:50.1068253Z       act(() => {
+2026-10-06T03:56:50.1068513Z         /* fire events that update state */
+2026-10-06T03:56:50.1068791Z       });
+2026-10-06T03:56:50.1069301Z       /* assert on the output */
+2026-10-06T03:56:50.1069863Z       
+2026-10-06T03:56:50.1070925Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:50.1071573Z 
+2026-10-06T03:56:50.1072418Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:50.1073714Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:50.1074668Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:50.1075878Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:50.1076729Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+2026-10-06T03:56:50.1077455Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+2026-10-06T03:56:50.1078031Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:73:11
+2026-10-06T03:56:50.1078557Z       at notifyFn (../node_modules/@tanstack/query-core/src/notifyManager.ts:21:5)
+2026-10-06T03:56:50.1079068Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:44:13
+2026-10-06T03:56:50.1079474Z           at Array.forEach (<anonymous>)
+2026-10-06T03:56:50.1080352Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:43:25
+2026-10-06T03:56:50.1081396Z       at batchNotifyFn (../node_modules/@tanstack/query-core/src/notifyManager.ts:24:5)
+2026-10-06T03:56:50.1082474Z       at Timeout._onTimeout (../node_modules/@tanstack/query-core/src/notifyManager.ts:42:9)
+2026-10-06T03:56:50.1083062Z 
+2026-10-06T03:56:50.5286745Z PASS src/progress/GoalPaceSheet.test.tsx
+2026-10-06T03:56:50.6763143Z PASS src/diagnostics/clientDiagnostics.test.ts
+2026-10-06T03:56:50.9481842Z PASS src/progress/ProgressScreen.test.tsx
+2026-10-06T03:56:51.2046286Z PASS src/auth/AuthContext.web.test.tsx
+2026-10-06T03:56:51.6216693Z PASS src/hooks/useNativePushRegistration.web.test.tsx
+2026-10-06T03:56:51.6369205Z PASS src/auth/authScreenNavigation.test.tsx
+2026-10-06T03:56:51.8236249Z PASS src/offline/foodDayIntent.web.test.ts
+2026-10-06T03:56:52.0516604Z PASS src/food/HistoricalDatePicker.test.tsx
+2026-10-06T03:56:52.0719754Z PASS src/account/accountData.test.ts
+2026-10-06T03:56:52.1502450Z PASS src/weightTrend/presentation.test.ts
+2026-10-06T03:56:52.2589459Z PASS src/components/GoalProgressCard.test.tsx
+2026-10-06T03:56:52.3696640Z PASS src/wear/handoff.test.ts
+2026-10-06T03:56:52.4636511Z PASS src/auth/apiClientAuth.test.ts
+2026-10-06T03:56:52.5727065Z PASS src/offline/outbox.test.ts
+2026-10-06T03:56:52.9876758Z PASS src/components/AppErrorBoundary.test.tsx
+2026-10-06T03:56:53.0309134Z PASS src/settings/SettingsCategoryPage.test.tsx
+2026-10-06T03:56:53.1896770Z PASS src/pwa/runtime.web.test.ts
+2026-10-06T03:56:53.2876509Z PASS src/food/serving.test.ts
+2026-10-06T03:56:53.3111777Z PASS src/food/useFoodDeleteRecovery.test.tsx
+2026-10-06T03:56:53.5136823Z PASS src/components/BottomSheetModal.test.tsx
+2026-10-06T03:56:53.8249186Z PASS src/screens/ActivityScreen.test.tsx
+2026-10-06T03:56:54.0905148Z PASS src/components/RecipeIngredientEditor.test.tsx
+2026-10-06T03:56:54.2672097Z PASS src/components/NotificationsDrawer.test.tsx
+2026-10-06T03:56:54.5934480Z PASS src/savedFoods/SavedFoodsLibrary.test.tsx
+2026-10-06T03:56:54.6901371Z PASS src/onboarding/completionState.test.ts
+2026-10-06T03:56:54.8482557Z PASS src/notifications/NotificationHistory.test.tsx
+2026-10-06T03:56:54.8488659Z   ● Console
+2026-10-06T03:56:54.8488893Z 
+2026-10-06T03:56:54.8489058Z     console.error
+2026-10-06T03:56:54.8489749Z       An update to NotificationHistory inside a test was not wrapped in act(...).
+2026-10-06T03:56:54.8490449Z       
+2026-10-06T03:56:54.8491156Z       When testing, code that causes React state updates should be wrapped into act(...):
+2026-10-06T03:56:54.8491888Z       
+2026-10-06T03:56:54.8492227Z       act(() => {
+2026-10-06T03:56:54.8492732Z         /* fire events that update state */
+2026-10-06T03:56:54.8493218Z       });
+2026-10-06T03:56:54.8493614Z       /* assert on the output */
+2026-10-06T03:56:54.8494036Z       
+2026-10-06T03:56:54.8495109Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+2026-10-06T03:56:54.8496344Z 
+2026-10-06T03:56:54.8496953Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+2026-10-06T03:56:54.8498320Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+2026-10-06T03:56:54.8499968Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+2026-10-06T03:56:54.8501715Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+2026-10-06T03:56:54.8503257Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+2026-10-06T03:56:54.8504670Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+2026-10-06T03:56:54.8505926Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:73:11
+2026-10-06T03:56:54.8506883Z       at notifyFn (../node_modules/@tanstack/query-core/src/notifyManager.ts:21:5)
+2026-10-06T03:56:54.8508163Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:44:13
+2026-10-06T03:56:54.8508910Z           at Array.forEach (<anonymous>)
+2026-10-06T03:56:54.8509649Z       at ../node_modules/@tanstack/query-core/src/notifyManager.ts:43:25
+2026-10-06T03:56:54.8510641Z       at batchNotifyFn (../node_modules/@tanstack/query-core/src/notifyManager.ts:24:5)
+2026-10-06T03:56:54.8511768Z       at Timeout._onTimeout (../node_modules/@tanstack/query-core/src/notifyManager.ts:42:9)
+2026-10-06T03:56:54.8512397Z 
+2026-10-06T03:56:54.8712001Z PASS src/components/AsyncStateBoundary.test.tsx
+2026-10-06T03:56:55.0304401Z PASS src/components/accessibilityPrimitives.test.tsx
+2026-10-06T03:56:55.1289933Z PASS src/wear/syncInvalidation.test.ts
+2026-10-06T03:56:55.2466175Z PASS src/nutritionLabel/NutritionLabelScreen.test.tsx
+2026-10-06T03:56:55.3347223Z PASS src/food/FoodDeleteRecoveryController.test.ts
+2026-10-06T03:56:55.3492732Z PASS src/components/Combobox.test.tsx
+2026-10-06T03:56:55.3923997Z PASS src/barcode/workflow.test.ts
+2026-10-06T03:56:55.4456832Z PASS src/auth/logoutIntentStore.test.ts
+2026-10-06T03:56:55.5866654Z PASS src/onboarding/useOnboardingDraft.test.tsx
+2026-10-06T03:56:55.6652402Z PASS src/components/FoodLogTimelineCard.test.tsx
+2026-10-06T03:56:55.7706738Z PASS src/screens/AdvancedSettingsScreen.test.tsx
+2026-10-06T03:56:55.9063140Z PASS src/components/DatePickerField.test.tsx
+2026-10-06T03:56:55.9284193Z PASS src/components/AppChoiceGroup.test.tsx
+2026-10-06T03:56:55.9938753Z PASS src/theme.test.ts
+2026-10-06T03:56:56.0008576Z PASS src/barcode/state.test.ts
+2026-10-06T03:56:56.0564881Z PASS src/offline/trackingProjection.test.ts
+2026-10-06T03:56:56.1096910Z PASS src/navigation/routeRegistry.test.ts
+2026-10-06T03:56:56.1867913Z PASS src/hooks/useModalFocusManagement.test.ts
+2026-10-06T03:56:56.1985747Z PASS src/offline/pauseIntent.test.ts
+2026-10-06T03:56:56.3038576Z PASS src/components/DateNavigation.web.test.tsx
+2026-10-06T03:56:56.3316802Z PASS src/components/ServerUrlControl.test.tsx
+2026-10-06T03:56:56.4069076Z PASS src/updates/appUpdate.test.ts
+2026-10-06T03:56:56.4735197Z PASS src/weightTrend/geometry.test.ts
+2026-10-06T03:56:56.5581829Z PASS src/components/DateNavigationHeader.test.tsx
+2026-10-06T03:56:56.5606723Z PASS src/serverSettings/ServerSettingsScreen.test.tsx
+2026-10-06T03:56:56.6493782Z PASS src/food/calendar.test.ts
+2026-10-06T03:56:56.7510455Z PASS src/components/SegmentedControl.test.tsx
+2026-10-06T03:56:56.8609301Z PASS src/healthConnect/presentation.test.ts
+2026-10-06T03:56:56.8630996Z PASS src/components/PageExpansion.test.tsx
+2026-10-06T03:56:56.8760854Z PASS src/hooks/useConfirmDiscardNavigation.test.ts
+2026-10-06T03:56:56.9316702Z PASS src/notifications/workflow.test.ts
+2026-10-06T03:56:56.9526630Z PASS src/pwa/serviceWorkerSecurity.test.ts
+2026-10-06T03:56:57.0796830Z PASS src/navigation/WebNavigationRail.test.tsx
+2026-10-06T03:56:57.0960427Z PASS plugins/withHealthConnect.test.ts
+2026-10-06T03:56:57.1516008Z PASS src/diagnostics/webVitals.takeRecords.web.test.ts
+2026-10-06T03:56:57.2079595Z PASS src/settings/AccountSessionsPanel.test.tsx
+2026-10-06T03:56:57.2626650Z PASS src/navigation/useBrowserRouteFocus.test.ts
+2026-10-06T03:56:57.2764560Z PASS src/settings/SettingsHome.test.tsx
+2026-10-06T03:56:57.3404535Z PASS src/barcode/workflowRecovery.test.ts
+2026-10-06T03:56:57.4003046Z PASS src/auth/offlineWorkspace.test.ts
+2026-10-06T03:56:57.4258652Z PASS src/auth/serverSwitch.test.ts
+2026-10-06T03:56:57.4842800Z PASS src/diagnostics/webVitals.lifecycle.web.test.ts
+2026-10-06T03:56:57.4964609Z PASS src/notifications/query.test.ts
+2026-10-06T03:56:57.5896160Z PASS src/components/SaveMealAsRecipeSheet.test.tsx
+2026-10-06T03:56:57.6048476Z PASS src/auth/devAutoLogin.test.ts
+2026-10-06T03:56:57.6776701Z PASS src/offline/failedMutationRecovery.test.ts
+2026-10-06T03:56:57.6842623Z PASS src/components/progress/PlanCheckSummary.test.tsx
+2026-10-06T03:56:57.7426291Z PASS src/diagnostics/ClientWebVitalsRuntime.web.test.tsx
+2026-10-06T03:56:57.7927014Z PASS src/diagnostics/operationDiagnostics.test.tsx
+2026-10-06T03:56:57.8279401Z PASS src/utils/goals.test.ts
+2026-10-06T03:56:57.8985021Z PASS src/notifications/useBrowserNotificationStream.web.test.ts
+2026-10-06T03:56:57.9127178Z PASS src/components/CalorieBalanceCard.test.tsx
+2026-10-06T03:56:58.0024852Z PASS src/components/KeyboardAwareScrollView.test.tsx
+2026-10-06T03:56:58.1328866Z PASS src/components/legal/PublicLegalPage.test.tsx
+2026-10-06T03:56:58.1398267Z PASS src/components/HealthConnectConnectionAction.test.tsx
+2026-10-06T03:56:58.1838965Z PASS src/healthConnect/normalize.test.ts
+2026-10-06T03:56:58.2004435Z PASS src/utils/myFoodEditing.test.ts
+2026-10-06T03:56:58.3096207Z PASS src/components/WeightValueInput.test.tsx
+2026-10-06T03:56:58.3736521Z PASS src/food/pendingPause.test.ts
+2026-10-06T03:56:58.4340891Z PASS src/food/useFoodTrackingPause.test.tsx
+2026-10-06T03:56:58.4940484Z PASS src/components/accessibilityFoundation.test.tsx
+2026-10-06T03:56:58.5026971Z PASS src/auth/accountTrustRoutes.test.tsx
+2026-10-06T03:56:58.5143103Z PASS src/onboarding/draftStorage.test.ts
+2026-10-06T03:56:58.6451382Z PASS src/components/FormField.test.tsx
+2026-10-06T03:56:58.6626074Z PASS src/components/CopyFoodSheet.test.tsx
+2026-10-06T03:56:58.6736214Z PASS src/navigation/GuardedTabButton.test.tsx
+2026-10-06T03:56:58.8252562Z PASS src/offline/useTrackingQueries.test.tsx
+2026-10-06T03:56:58.8450099Z PASS src/barcode/BarcodeRecoveryComponents.test.tsx
+2026-10-06T03:56:58.9198951Z PASS src/onboarding/unitDefaults.test.ts
+2026-10-06T03:56:59.0156705Z PASS src/food/foodDeleteRecovery.test.ts
+2026-10-06T03:56:59.0507061Z PASS src/components/TodayWeightCard.test.tsx
+2026-10-06T03:56:59.0898587Z PASS src/food/dayPresentation.test.ts
+2026-10-06T03:56:59.1465149Z PASS src/pwa/serviceWorkerContract.test.ts
+2026-10-06T03:56:59.1640749Z PASS src/asyncState/resolveAsyncState.test.ts
+2026-10-06T03:56:59.1724770Z PASS src/settings/PreferencesSettingsScreen.test.tsx
+2026-10-06T03:56:59.2686812Z PASS src/wear/pairingPoll.test.ts
+2026-10-06T03:56:59.2776535Z PASS src/wear/accountCleanup.test.ts
+2026-10-06T03:56:59.3490963Z PASS src/food/foodLogAmount.test.ts
+2026-10-06T03:56:59.3940618Z PASS src/updates/useAppUpdateController.test.tsx
+2026-10-06T03:56:59.4666824Z PASS src/components/ClientServerIncompatibleScreen.test.tsx
+2026-10-06T03:56:59.5738056Z PASS src/today/TodayFoodPreview.test.tsx
+2026-10-06T03:56:59.6137215Z PASS src/weightEntry/presentation.test.ts
+2026-10-06T03:56:59.7026667Z PASS src/components/Screen.test.tsx
+2026-10-06T03:56:59.7163779Z PASS src/components/CalendarModal.web.test.tsx
+2026-10-06T03:56:59.8325258Z PASS src/navigation/routeMetadata.test.ts
+2026-10-06T03:56:59.9052281Z PASS src/today/dashboardState.test.ts
+2026-10-06T03:56:59.9122412Z PASS src/components/ClientUpgradeRequiredScreen.test.tsx
+2026-10-06T03:56:59.9398923Z PASS src/onboarding/OnboardingAuthHydration.test.tsx
+2026-10-06T03:56:59.9766683Z PASS src/activity/presentation.test.ts
+2026-10-06T03:57:00.0022665Z PASS src/utils/timezones.test.ts
+2026-10-06T03:57:00.0516655Z PASS src/barcode/authReturn.test.ts
+2026-10-06T03:57:00.0856702Z PASS src/offline/mutationDispatch.test.ts
+2026-10-06T03:57:00.0886086Z PASS src/barcode/context.test.ts
+2026-10-06T03:57:00.2656701Z PASS src/pwa/manifestContract.test.ts
+2026-10-06T03:57:00.2709736Z PASS src/settings/ConnectedAppsPanel.test.tsx
+2026-10-06T03:57:00.3836816Z PASS src/barcode/useBarcodeCameraLifecycle.test.tsx
+2026-10-06T03:57:00.3906242Z PASS src/screens/AboutScreen.test.tsx
+2026-10-06T03:57:00.4019825Z PASS src/settings/ReminderSettingsPanel.test.tsx
+2026-10-06T03:57:00.4794063Z PASS src/offline/replayCalibrationEvidence.test.ts
+2026-10-06T03:57:00.5277603Z PASS src/components/CardHeader.test.tsx
+2026-10-06T03:57:00.5356203Z PASS src/components/NotificationCard.test.tsx
+2026-10-06T03:57:00.5496484Z PASS src/account/accountDeletionNotice.test.ts
+2026-10-06T03:57:00.6001854Z PASS src/notifications/presentation.test.ts
+2026-10-06T03:57:00.6057885Z PASS plugins/withOptionalCameraHardware.test.ts
+2026-10-06T03:57:00.6517371Z PASS src/barcode/useBarcodeSearchHandoff.test.tsx
+2026-10-06T03:57:00.6551169Z PASS src/offline/failedCreation.test.ts
+2026-10-06T03:57:00.7050121Z PASS src/pwa/PwaStatusBanner.web.test.ts
+2026-10-06T03:57:00.7537476Z PASS src/offline/replayInvalidation.test.ts
+2026-10-06T03:57:00.7783460Z PASS src/nutritionLabel/imagePicker.test.ts
+2026-10-06T03:57:00.8596960Z PASS src/diagnostics/ClientDiagnosticsRuntime.test.tsx
+2026-10-06T03:57:00.8906715Z PASS src/auth/hostedRoot.test.tsx
+2026-10-06T03:57:00.9098955Z PASS src/weightEntry/input.test.ts
+2026-10-06T03:57:00.9629668Z PASS src/platform/browserBoundaries.test.tsx
+2026-10-06T03:57:01.0180365Z PASS src/components/ActivitySummaryCard.test.tsx
+2026-10-06T03:57:01.0471392Z PASS src/offline/trackingReceipts.test.ts
+2026-10-06T03:57:01.0506331Z PASS src/navigation/addFoodRoute.test.tsx
+2026-10-06T03:57:01.0644203Z PASS src/settings/reminderWallClock.test.ts
+2026-10-06T03:57:01.1199667Z PASS src/offline/queuedMutation.test.ts
+2026-10-06T03:57:01.1209880Z PASS src/barcode/manualDraft.test.ts
+2026-10-06T03:57:01.1533394Z PASS src/food/copyFoodWhenSynchronized.test.ts
+2026-10-06T03:57:01.2031309Z PASS src/components/AppActionRow.test.tsx
+2026-10-06T03:57:01.2623831Z PASS src/components/NumberStepperField.test.tsx
+2026-10-06T03:57:01.2822013Z PASS src/healthConnect/accountCleanup.test.ts
+2026-10-06T03:57:01.3376608Z PASS src/healthConnect/provider.web.test.ts
+2026-10-06T03:57:01.3425788Z PASS src/utils/haptics.test.ts
+2026-10-06T03:57:01.3693656Z PASS src/components/TimeZonePickerField.test.tsx
+2026-10-06T03:57:01.3848675Z PASS src/auth/accountAccess.test.ts
+2026-10-06T03:57:01.4086905Z PASS src/utils/profileCompletion.test.ts
+2026-10-06T03:57:01.4511846Z PASS src/platform/deviceLocale.native.test.ts
+2026-10-06T03:57:01.5271417Z PASS src/auth/storage.test.ts
+2026-10-06T03:57:01.5466864Z PASS src/settings/AndroidIntegrationSettingsScreens.test.tsx
+2026-10-06T03:57:01.5526677Z PASS plugins/withSharedAndroidSigning.test.ts
+2026-10-06T03:57:01.6628866Z PASS src/savedFoods/cachedFoods.test.ts
+2026-10-06T03:57:01.6826690Z PASS src/offline/pendingChangePresentation.test.ts
+2026-10-06T03:57:01.7196146Z PASS src/components/legal/LegalConsentFields.test.tsx
+2026-10-06T03:57:01.7496773Z PASS src/navigation/routePresentation.test.ts
+2026-10-06T03:57:01.7526415Z PASS src/connectivity/queryOnlineManager.native.test.ts
+2026-10-06T03:57:01.7809955Z PASS src/utils/dates.test.ts
+2026-10-06T03:57:01.8341880Z PASS src/offline/mutationLock.web.test.ts
+2026-10-06T03:57:01.8582592Z PASS src/components/DatePickerField.web.test.tsx
+2026-10-06T03:57:01.8969424Z PASS src/components/profile/ActivityLevelSelector.test.tsx
+2026-10-06T03:57:01.9330575Z PASS src/barcode/BarcodeSearchHandoffPersistence.test.tsx
+2026-10-06T03:57:01.9734789Z PASS src/legal/publicLegalContent.test.ts
+2026-10-06T03:57:01.9871559Z PASS src/components/confirmAction.test.ts
+2026-10-06T03:57:01.9926391Z PASS src/navigation/contextualFab.test.ts
+2026-10-06T03:57:02.0316776Z PASS src/healthConnect/provider.test.ts
+2026-10-06T03:57:02.0350745Z PASS src/healthConnect/permissions.test.ts
+2026-10-06T03:57:02.0524636Z PASS src/errors/presentation.test.ts
+2026-10-06T03:57:02.0756365Z PASS src/caloriePlanning/presentation.test.ts
+2026-10-06T03:57:02.1024964Z PASS src/auth/authErrors.test.ts
+2026-10-06T03:57:02.1135305Z PASS src/layout/adaptiveLayout.test.ts
+2026-10-06T03:57:02.1177353Z PASS src/platform/nativePlatform.test.ts
+2026-10-06T03:57:02.1612027Z PASS src/utils/numericInput.test.ts
+2026-10-06T03:57:02.1660105Z PASS src/utils/myFoods.test.ts
+2026-10-06T03:57:02.2050751Z PASS src/healthConnect/native.test.ts
+2026-10-06T03:57:02.2261735Z PASS src/today/foodPreview.test.ts
+2026-10-06T03:57:02.2590351Z PASS src/pwa/cacheIsolation.web.test.ts
+2026-10-06T03:57:02.2726406Z PASS src/hooks/useReducedMotionPreference.test.tsx
+2026-10-06T03:57:02.3129306Z PASS src/caloriePlanning/heightInput.test.ts
+2026-10-06T03:57:02.3213018Z PASS src/components/TabScreen.test.tsx
+2026-10-06T03:57:02.3362178Z PASS src/auth/oneTimeToken.test.ts
+2026-10-06T03:57:02.3713062Z PASS src/config/androidSecurityConfig.test.ts
+2026-10-06T03:57:02.3717155Z PASS src/notifications/expoProject.test.ts
+2026-10-06T03:57:02.4053680Z PASS src/platform/deviceLocale.test.ts
+2026-10-06T03:57:02.4120037Z PASS src/notifications/browserPush.web.test.ts
+2026-10-06T03:57:02.4526689Z PASS src/offline/pendingCalibrationEvidence.test.ts
+2026-10-06T03:57:02.4803287Z PASS src/nutritionLabel/draft.test.ts
+2026-10-06T03:57:02.5051216Z PASS src/components/FormErrorSummary.test.tsx
+2026-10-06T03:57:02.5556272Z PASS src/utils/myFoodFormValidation.test.ts
+2026-10-06T03:57:02.5627056Z PASS src/offline/reconcilerOwnership.web.test.ts
+2026-10-06T03:57:02.5916738Z PASS src/components/auth/AuthBrand.test.tsx
+2026-10-06T03:57:02.6004646Z PASS src/healthConnect/storageScope.test.ts
+2026-10-06T03:57:02.6231857Z PASS src/caloriePlanning/queryInvalidation.test.ts
+2026-10-06T03:57:02.6587255Z PASS src/components/ProgressBar.test.tsx
+2026-10-06T03:57:02.7146762Z PASS src/offline/pendingWeight.test.ts
+2026-10-06T03:57:02.7276257Z PASS src/onboarding/OnboardingProgress.test.tsx
+2026-10-06T03:57:02.7394913Z PASS src/navigation/weightTrendRoute.test.tsx
+2026-10-06T03:57:02.7665627Z PASS src/caloriePlanning/dateBounds.test.ts
+2026-10-06T03:57:02.7742473Z PASS src/auth/authServerDraft.test.ts
+2026-10-06T03:57:02.7996424Z PASS src/config/releaseEntry.test.ts
+2026-10-06T03:57:02.8331072Z PASS src/food/quantityInput.test.ts
+2026-10-06T03:57:02.8359720Z PASS src/components/AppCard.test.tsx
+2026-10-06T03:57:02.8653756Z PASS src/utils/keyboard.test.ts
+2026-10-06T03:57:02.8928274Z PASS src/onboarding/steps.test.ts
+2026-10-06T03:57:02.9075126Z PASS src/components/PageHeader.test.tsx
+2026-10-06T03:57:02.9097605Z PASS src/config/keyboardLayoutConfig.test.ts
+2026-10-06T03:57:02.9417156Z PASS src/barcode/cameraRuntime.test.ts
+2026-10-06T03:57:03.0484289Z 
+2026-10-06T03:57:03.0488507Z Test Suites: 232 passed, 232 total
+2026-10-06T03:57:03.0489185Z Tests:       1243 passed, 1243 total
+2026-10-06T03:57:03.0489701Z Snapshots:   0 total
+2026-10-06T03:57:03.0490176Z Time:        25.746 s
+2026-10-06T03:57:03.0490624Z Ran all test suites.
+2026-10-06T03:57:03.0708822Z Post job cleanup.
+2026-10-06T03:57:03.1952900Z (node:2955) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-06T03:57:03.1954444Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-06T03:57:03.1958579Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-56b6c65642594e30b8bb9945a1f82e6a88cceb3c4783be7baf01442ba9b34efe, not saving cache.
+2026-10-06T03:57:03.2130821Z Post job cleanup.
+2026-10-06T03:57:03.2966938Z [command]/usr/bin/git version
+2026-10-06T03:57:03.3011295Z git version 2.55.0
+2026-10-06T03:57:03.3053638Z Temporarily overriding HOME='/home/runner/work/_temp/aff22021-a445-4252-b43d-bd05cf32be2f' before making global git config changes
+2026-10-06T03:57:03.3055236Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-06T03:57:03.3060003Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+2026-10-06T03:57:03.3099550Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-06T03:57:03.3136467Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-06T03:57:03.3389606Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-06T03:57:03.3419004Z http.https://github.com/.extraheader
+2026-10-06T03:57:03.3440096Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-06T03:57:03.3475930Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-06T03:57:03.3760274Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-06T03:57:03.3812885Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-06T03:57:03.4313550Z Cleaning up orphan processes
+2026-10-06T03:57:03.4646863Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
