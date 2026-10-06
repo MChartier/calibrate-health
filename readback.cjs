@@ -9,7 +9,7 @@ const pr = api('pulls/429');
 const commits = pages('pulls/429/commits');
 const files = pages('pulls/429/files');
 if (commits.length !== pr.commits || files.length !== pr.changed_files) throw new Error('Incomplete published scope inventory');
-const evidenceCommit = '47e83f1d6b26cbb5d39f6ce82f120758c625e1eb';
+const evidenceCommit = '9ed5d2c23c2a9445ee2db904723da022b768d565';
 const evidence = ['README.md', 'observe.cjs', 'observation.json'].map((file) => {
   const remote = execFileSync('gh', ['api', `repos/MChartier/calibrate-health/contents/${file}?ref=${evidenceCommit}`, '-H', 'Accept: application/vnd.github.raw+json']);
   const local = execFileSync('git', ['show', `${evidenceCommit}:${file}`], { cwd: __dirname });

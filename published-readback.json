@@ -1,0 +1,262 @@
+{
+  "checkedAtUtc": "2026-10-06T06:13:28.947Z",
+  "repository": "MChartier/calibrate-health",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/429",
+  "head": "7892c7a8193c5e64c37e92a06e3e0fd360de9a43",
+  "base": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "baseRef": "mchartier/firebase-migration-preparation",
+  "ultimateTarget": "master",
+  "parent": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "mergeBase": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "prBodySha256": "f93a52c65b57d656f78d9f724832469e7133aff08fb85655683574173cbca7ca",
+  "draft": true,
+  "commits": [
+    {
+      "sha": "3b2ccd7d3a79cc880e163bf6b157be9d56476c9f",
+      "parents": [
+        "75578e5ac57a05ba0f06146598b314a01eafb2ae"
+      ],
+      "message": "Add bounded shared SQL connection configuration"
+    },
+    {
+      "sha": "7892c7a8193c5e64c37e92a06e3e0fd360de9a43",
+      "parents": [
+        "3b2ccd7d3a79cc880e163bf6b157be9d56476c9f"
+      ],
+      "message": "Include shared Prisma connection resolver in production image"
+    }
+  ],
+  "files": [
+    {
+      "filename": "Dockerfile.app",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "filename": "README.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "filename": "backend/prisma.config.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 65
+    },
+    {
+      "filename": "backend/src/config/database.ts",
+      "status": "modified",
+      "additions": 11,
+      "deletions": 19
+    },
+    {
+      "filename": "backend/src/config/databaseUtils.ts",
+      "status": "modified",
+      "additions": 73,
+      "deletions": 1
+    },
+    {
+      "filename": "backend/test/database-pool.test.js",
+      "status": "added",
+      "additions": 124,
+      "deletions": 0
+    },
+    {
+      "filename": "backend/test/database-utils.test.js",
+      "status": "modified",
+      "additions": 105,
+      "deletions": 1
+    },
+    {
+      "filename": "docs/database-connections.md",
+      "status": "added",
+      "additions": 73,
+      "deletions": 0
+    }
+  ],
+  "totals": {
+    "commits": 2,
+    "files": 8,
+    "additions": 390,
+    "deletions": 86
+  },
+  "evidenceCommit": "9ed5d2c23c2a9445ee2db904723da022b768d565",
+  "evidence": [
+    {
+      "file": "README.md",
+      "sha256": "69f6779c41fdcd32453ab1a4638b4717b1e64850bec1dbbbc001a0545c849fad"
+    },
+    {
+      "file": "observe.cjs",
+      "sha256": "93055972a1627f88331b593ff6869ba86518d4e26674974d57e0f5e401feb066"
+    },
+    {
+      "file": "observation.json",
+      "sha256": "788ca7465cc00fecda64020bfab575822858940df52ed071fb28c6062fab9588"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Mobile Tests",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088221/job/112133555542"
+    },
+    {
+      "name": "Backend Tests",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088221/job/112133553745"
+    },
+    {
+      "name": "Classify Test Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088221/job/112133529078"
+    },
+    {
+      "name": "Full Exported Web and PWA End-to-End",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133499310"
+    },
+    {
+      "name": "Android Emulator End-to-End",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133499018"
+    },
+    {
+      "name": "Native Two-Emulator Package Upgrade",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133498446"
+    },
+    {
+      "name": "Release Configuration",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133498268"
+    },
+    {
+      "name": "UX Accessibility and Visual Regression",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133498128"
+    },
+    {
+      "name": "Six-State Data-Backed Route Acceptance",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133498067"
+    },
+    {
+      "name": "Wear Build and JVM Tests",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133498048"
+    },
+    {
+      "name": "iOS Build",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133497934"
+    },
+    {
+      "name": "Web Critical Smoke",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133497864"
+    },
+    {
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133497807"
+    },
+    {
+      "name": "Wear Release Emulator Smoke",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133497714"
+    },
+    {
+      "name": "Mobile Build",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133497686"
+    },
+    {
+      "name": "Expo Web Build",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133497640"
+    },
+    {
+      "name": "Backend Build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133496501"
+    },
+    {
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088238/job/112133488584"
+    },
+    {
+      "name": "Populated Postgres Upgrade",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088238/job/112133487602"
+    },
+    {
+      "name": "High and Critical Vulnerabilities",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088297/job/112133486950"
+    },
+    {
+      "name": "Classify Production Image Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088297/job/112133460205"
+    },
+    {
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088287/job/112133460186"
+    },
+    {
+      "name": "Classify Database Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088238/job/112133460001"
+    },
+    {
+      "name": "Classify Build Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37422088239/job/112133459931"
+    }
+  ],
+  "reviewComments": [],
+  "reviews": [],
+  "comments": [
+    {
+      "id": 6010420168,
+      "body": "@codex review",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010420168"
+    },
+    {
+      "id": 6010422188,
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010422188"
+    }
+  ],
+  "presentation": "Public GitHub HTML text read back via web tool: concise summary, behavior table, evidence and guide links accessible. Browser pixel inspection unavailable: cua kernel sandbox deny-read ACL startup failure. Non-UI configuration change; no application screenshots required.",
+  "independentQa": "Required; not performed by implementation owner."
+}
