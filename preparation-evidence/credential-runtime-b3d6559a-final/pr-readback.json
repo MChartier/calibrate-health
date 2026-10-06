@@ -1,0 +1,281 @@
+{
+  "baseRefOid": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "body": "## Summary\n\nPreparing existing accounts for Firebase must preserve password access across browser/native login, account changes and MCP authorization. The current runtime has no shared credential-verification boundary for that preparation. This checkpoint introduces that boundary while preserving local authentication, caller-owned validation, authorization and session issuance.\n\nFirebase remains disabled. No account IDs, data ownership, session formats, offline behavior or database schema change. Related to #421; this bounded checkpoint does not complete or close the migration. Base: `2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b`. No unmerged parent dependency; earlier preparation PR423 is merged.\n\n## Test plan and behavior evidence\n\nThis is a non-UI runtime refactor; there is no changed visual flow. [Source-bound inputs, complete diff, test output and limitations](https://github.com/MChartier/calibrate-health/blob/9b22a1c9714e5ca6a3dfed7769d57c0f81c6b3d1/preparation-evidence/credential-runtime-b3d6559a/README.md) are retained outside the product diff.\n\n| Scenario | Intended behavior and observation |\n| --- | --- |\n| Local account or unknown-account password comparison | Valid bcrypt credentials remain valid; unknown accounts do a dummy comparison and never authenticate. Real bcrypt regression tests pass. Existing reauthentication byte handling is preserved; MCP retains its explicit byte limit. |\n| Browser/native login, password change/deletion and MCP approval | Existing route/service tests exercise the shared helper while retaining account lookup, access checks and session/security-version guards. All 765 backend tests passed on the proposed head. |\n| Injected synthetic Firebase adapter | Wrong project or incomplete mapping makes no request; bad credentials remain distinct from retryable provider failure; forged claims and hanging transport/verifier fail closed. These tests do not establish real Firebase readiness. |\n\n## Supporting checks and limitations\n\nBackend typecheck and Knip passed locally. All 765 backend tests passed. All five exact-head CI workflows passed; unrelated mobile/device and database-upgrade scenarios were skipped by the existing path classifiers. [Configured engineering review returned a quota refusal](https://github.com/MChartier/calibrate-health/pull/431#issuecomment-6021318904); no completed bot review is claimed. No Firebase project, credentials, import rehearsal, live-user data, deployment or release was used. Real-provider integration and full account lifecycle migration remain future work. Independent readiness QA has not run for this checkpoint.\r\n",
+  "comments": [
+    {
+      "id": "IC_kwDOQbBgUs8AAAABZuX5lA",
+      "author": {
+        "login": "MChartier"
+      },
+      "authorAssociation": "OWNER",
+      "body": "@codex review",
+      "createdAt": "2026-10-06T17:02:34Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/MChartier/calibrate-health/pull/431#issuecomment-6021314964",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOQbBgUs8AAAABZuYI-A",
+      "author": {
+        "login": "chatgpt-codex-connector"
+      },
+      "authorAssociation": "NONE",
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "createdAt": "2026-10-06T17:02:47Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/MChartier/calibrate-health/pull/431#issuecomment-6021318904",
+      "viewerDidAuthor": false
+    }
+  ],
+  "headRefOid": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "isDraft": true,
+  "reviews": [],
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:30Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395668367",
+      "name": "Classify Build Inputs",
+      "startedAt": "2026-10-06T17:02:24Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:27Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416379/job/112395667895",
+      "name": "Classify Database Inputs",
+      "startedAt": "2026-10-06T17:02:23Z",
+      "status": "COMPLETED",
+      "workflowName": "Database Upgrade"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:03:26Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416315/job/112395668378",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "startedAt": "2026-10-06T17:02:23Z",
+      "status": "COMPLETED",
+      "workflowName": "Lint"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:29Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416382/job/112395668940",
+      "name": "Classify Production Image Inputs",
+      "startedAt": "2026-10-06T17:02:23Z",
+      "status": "COMPLETED",
+      "workflowName": "Production Container Scan"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:27Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416178/job/112395667271",
+      "name": "Classify Test Inputs",
+      "startedAt": "2026-10-06T17:02:24Z",
+      "status": "COMPLETED",
+      "workflowName": "Tests"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395745358",
+      "name": "Release Configuration",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:27Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416379/job/112395717333",
+      "name": "Populated Postgres Upgrade",
+      "startedAt": "2026-10-06T17:02:27Z",
+      "status": "COMPLETED",
+      "workflowName": "Database Upgrade"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:05:17Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416382/job/112395730616",
+      "name": "High and Critical Vulnerabilities",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Production Container Scan"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:07:01Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416178/job/112395716671",
+      "name": "Backend Tests",
+      "startedAt": "2026-10-06T17:02:30Z",
+      "status": "COMPLETED",
+      "workflowName": "Tests"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:27Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416379/job/112395716805",
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "startedAt": "2026-10-06T17:02:27Z",
+      "status": "COMPLETED",
+      "workflowName": "Database Upgrade"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:27Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416178/job/112395718643",
+      "name": "Mobile Tests",
+      "startedAt": "2026-10-06T17:02:27Z",
+      "status": "COMPLETED",
+      "workflowName": "Tests"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:03:01Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395743241",
+      "name": "Backend Build",
+      "startedAt": "2026-10-06T17:02:33Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395745291",
+      "name": "Expo Web Build",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395746141",
+      "name": "Web Critical Smoke",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395745440",
+      "name": "Full Exported Web and PWA End-to-End",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395745497",
+      "name": "Six-State Data-Backed Route Acceptance",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395746347",
+      "name": "UX Accessibility and Visual Regression",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395745970",
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395746075",
+      "name": "Mobile Build",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395745201",
+      "name": "iOS Build",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395745913",
+      "name": "Wear Build and JVM Tests",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395746747",
+      "name": "Wear Release Emulator Smoke",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395746512",
+      "name": "Native Two-Emulator Package Upgrade",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-06T17:02:31Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/MChartier/calibrate-health/actions/runs/37500416338/job/112395748693",
+      "name": "Android Emulator End-to-End",
+      "startedAt": "2026-10-06T17:02:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Builds"
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+Skip to content
+Navigation Menu
+Platform
+Solutions
+Resources
+Open Source
+Enterprise
+Pricing
+Search
+/
+Sign in
+Sign up
+MChartier
+/
+calibrate-health
+Public
+Notifications
+Fork 0
+ Star 1
+Code
+Issues
+12
+Pull requests
+4
+Actions
+Projects
+Security and quality
+Insights
+Share runtime local credential verification for Firebase preparation
+- #431
+#431
+Draft
+MChartier
+wants to merge 1 commit into
+master
+from
+mchartier/credential-verification-421
++168
+-100
+Lines changed: 168 additions & 100 deletions
+Conversation2
+ (2)
+Commits1
+ (1)
+Checks24
+ (24)
+Files changed12
+ (12)
+Conversation
+MChartier
+commented
+• 
+edited 
+Owner
+Summary
+
+Preparing existing accounts for Firebase must preserve password access across browser/native login, account changes and MCP authorization. The current runtime has no shared credential-verification boundary for that preparation. This checkpoint introduces that boundary while preserving local authentication, caller-owned validation, authorization and session issuance.
+
+Firebase remains disabled. No account IDs, data ownership, session formats, offline behavior or database schema change. Related to #421; this bounded checkpoint does not complete or close the migration. Base: 2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b. No unmerged parent dependency; earlier preparation PR423 is merged.
+
+Test plan and behavior evidence
+
+This is a non-UI runtime refactor; there is no changed visual flow. Source-bound inputs, complete diff, test output and limitations are retained outside the product diff.
+
+Scenario	Intended behavior and observation
+Local account or unknown-account password comparison	Valid bcrypt credentials remain valid; unknown accounts do a dummy comparison and never authenticate. Real bcrypt regression tests pass. Existing reauthentication byte handling is preserved; MCP retains its explicit byte limit.
+Browser/native login, password change/deletion and MCP approval	Existing route/service tests exercise the shared helper while retaining account lookup, access checks and session/security-version guards. All 765 backend tests passed on the proposed head.
+Injected synthetic Firebase adapter	Wrong project or incomplete mapping makes no request; bad credentials remain distinct from retryable provider failure; forged claims and hanging transport/verifier fail closed. These tests do not establish real Firebase readiness.
+Supporting checks and limitations
+
+Backend typecheck and Knip passed locally. All 765 backend tests passed. All five exact-head CI workflows passed; unrelated mobile/device and database-upgrade scenarios were skipped by the existing path classifiers. Configured engineering review returned a quota refusal; no completed bot review is claimed. No Firebase project, credentials, import rehearsal, live-user data, deployment or release was used. Real-provider integration and full account lifecycle migration remain future work. Independent readiness QA has not run for this checkpoint.
+
+refactor(auth): share local credential verification boundary
+b3d6559
+MChartier
+commented
+Owner
+Author
+
+@codex review
+
+chatgpt-codex-connector Bot
+commented
+
+You have reached your Codex usage limits for code reviews. You can see your limits in the Codex usage dashboard.
+To continue using code reviews, add credits to your account and enable them for code reviews in your settings.
+
+ MChartier mentioned this pull request 
+Migrate existing accounts to Firebase Auth while preserving access and history #421
+Open
+This branch has not been deployed
+No deployments
+Sign up for free to join this conversation on GitHub. Already have an account? Sign in to comment
+Reviewers
+No reviews
+Assignees
+No one assigned
+Labels
+None yet
+Projects
+None yet
+Milestone
+No milestone
+Development
+
+Successfully merging this pull request may close these issues.
+
+None yet
+
+1 participant
+Footer
+© 2026 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Community
+Docs
+Contact
+Manage cookies
+Do not share my personal information
