@@ -54,7 +54,12 @@ the operator must separately provide and validate the authenticated encrypted
 socket transport. No proxy, connector, credential or endpoint is provisioned.
 Conflicting TCP/socket settings fail rather than changing the destination.
 
-Existing SSL semantics are preserved: `DB_SSLMODE` overrides the URL value,
+An explicit blank/whitespace SSL setting is rejected rather than disabling TLS;
+omit the override to use the URL setting. Conflicting duplicate URL SSL modes
+are rejected, while a nonblank `DB_SSLMODE` takes precedence. Selected modes are
+trimmed and normalized consistently in runtime and CLI. Unknown modes are rejected;
+accepted modes are `disable`, `require`, `verify-ca`, `verify-full`, `prefer`, `allow`.
+Existing explicit SSL semantics are preserved: `DB_SSLMODE` overrides the URL value,
 `disable` disables TLS, explicit `require` encrypts without certificate
 verification, and `verify-ca`/`verify-full` retain pg certificate verification.
 Component composition still defaults to `require`; use a verified transport

@@ -140,23 +140,38 @@ export function parseDatabaseUrlToPgConfig(databaseUrl: string): PgConnectionCon
  * can fail against managed Postgres unless you provide the provider CA bundle. For `require` we
  * intentionally disable verification to match libpq semantics.
  */
+function resolveSslMode(databaseUrl: string, env: NodeJS.ProcessEnv): string | undefined {
+  let values: string[];
+  if (env.DB_SSLMODE !== undefined) {
+    values = [env.DB_SSLMODE];
+  } else {
+    try {
+      values = new URL(databaseUrl).searchParams.getAll('sslmode');
+    } catch {
+      return undefined;
+    }
+  }
+  const modes = values.map((value) => value.trim().toLowerCase());
+  if (modes.some((mode) => !mode)) {
+    throw new Error('DB_SSLMODE / sslmode must not be blank; omit it or specify an explicit SSL mode.');
+  }
+  const supportedModes = ['disable', 'require', 'verify-ca', 'verify-full', 'prefer', 'allow'];
+  if (modes.some((mode) => !supportedModes.includes(mode))) {
+    throw new Error(`DB_SSLMODE / sslmode must be one of: ${supportedModes.join(', ')}.`);
+  }
+  if (modes.some((mode) => mode !== modes[0])) {
+    throw new Error('Conflicting sslmode URL settings.');
+  }
+  return modes[0];
+}
+
 export function resolvePgSslConfig(
   databaseUrl: string,
   env: NodeJS.ProcessEnv = process.env
 ): PgSslConfig | undefined {
-  const sslmodeRaw =
-    env.DB_SSLMODE ?? (() => {
-      try {
-        return new URL(databaseUrl).searchParams.get('sslmode') ?? undefined;
-      } catch {
-        return undefined;
-      }
-    })();
-
-  if (!sslmodeRaw) return undefined;
-
-  const sslmode = String(sslmodeRaw).trim().toLowerCase();
-  if (!sslmode || sslmode === 'disable') return false;
+  const sslmode = resolveSslMode(databaseUrl, env);
+  if (sslmode === undefined) return undefined;
+  if (sslmode === 'disable') return false;
 
   if (sslmode === 'require') {
     return { rejectUnauthorized: false };
@@ -183,7 +198,8 @@ export function resolveDatabaseConnection(env: NodeJS.ProcessEnv = process.env):
   const ssl = resolvePgSslConfig(databaseUrl, env);
   const poolConfig: PoolConfig = { ...fields, ssl, ...buildPgOptionsForSchema(schema) };
   if (schema) url.searchParams.set('schema', schema);
-  if (env.DB_SSLMODE !== undefined) url.searchParams.set('sslmode', env.DB_SSLMODE.trim().toLowerCase() || 'disable');
+  const sslmode = resolveSslMode(databaseUrl, env);
+  if (sslmode !== undefined) url.searchParams.set('sslmode', sslmode);
 
   // Seconds keep Prisma's integer URL settings and pg's millisecond settings exact.
   const settings = [

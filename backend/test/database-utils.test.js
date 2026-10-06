@@ -114,6 +114,41 @@ test('resolvePgSslConfig maps sslmode values', () => {
 
 const tcpEnv = { DATABASE_URL: 'postgresql://user:p%40ss@localhost:5433/app?schema=private&sslmode=verify-full' };
 
+test('blank SSL values cannot silently weaken URL TLS in runtime or CLI', () => {
+  for (const blank of ['', ' ', '\t\r\n']) {
+    const env = { ...tcpEnv, DB_SSLMODE: blank, PGSSLMODE: 'verify-full' };
+    assert.throws(() => resolvePgSslConfig(env.DATABASE_URL, env), /must not be blank/);
+    assert.throws(() => resolveDatabaseConnection(env), /must not be blank/);
+    assert.throws(() => resolvePrismaCliUrl(env, ['migrate', 'deploy']), /must not be blank/);
+    assert.throws(() => resolveDatabaseConnection({ DATABASE_URL: `postgresql://localhost/app?sslmode=${encodeURIComponent(blank)}` }), /must not be blank/);
+    assert.throws(() => resolveDatabaseConnection({ DB_HOST: 'localhost', DB_NAME: 'app', DB_USER: 'user', DB_PASS: 'pass', DB_SSLMODE: blank }), /must not be blank/);
+  }
+});
+
+test('explicit SSL modes keep precedence and normalize identically for runtime and CLI', () => {
+  const modes = { disable: false, require: { rejectUnauthorized: false }, 'verify-ca': true, 'verify-full': true, prefer: true, allow: true };
+  for (const [mode, ssl] of Object.entries(modes)) {
+    for (const urlMode of [undefined, ...Object.keys(modes)]) {
+      const DATABASE_URL = `postgresql://localhost/app${urlMode ? `?sslmode=${urlMode}` : ''}`;
+      const env = { DATABASE_URL, DB_SSLMODE: ` ${mode.toUpperCase()} ` };
+      const resolved = resolveDatabaseConnection(env);
+      assert.deepEqual(resolved.poolConfig.ssl, ssl);
+      assert.equal(new URL(resolvePrismaCliUrl(env, ['migrate'])).searchParams.get('sslmode'), mode);
+    }
+    const urlOnly = resolveDatabaseConnection({ DATABASE_URL: `postgresql://localhost/app?sslmode=${encodeURIComponent(` ${mode.toUpperCase()} `)}` });
+    assert.deepEqual(urlOnly.poolConfig.ssl, ssl);
+    assert.equal(new URL(urlOnly.url).searchParams.get('sslmode'), mode);
+  }
+  assert.throws(() => resolveDatabaseConnection({ DATABASE_URL: 'postgresql://localhost/app?sslmode=verify-full&sslmode=disable' }), /Conflicting sslmode/);
+  assert.equal(new URL(resolveDatabaseConnection({ DATABASE_URL: 'postgresql://localhost/app?sslmode=VERIFY-FULL&sslmode=verify-full' }).url).searchParams.getAll('sslmode').length, 1);
+  assert.equal(resolveDatabaseConnection({ DATABASE_URL: 'postgresql://localhost/app' }).poolConfig.ssl, undefined);
+  for (const mode of ['verifyfull', 'false', '0']) {
+    assert.throws(() => resolveDatabaseConnection({ ...tcpEnv, DB_SSLMODE: mode }), /must be one of/);
+    assert.throws(() => resolvePrismaCliUrl({ DATABASE_URL: `postgresql://localhost/app?sslmode=${mode}` }, ['migrate']), /must be one of/);
+  }
+  assert.throws(() => resolveDatabaseConnection({ ...tcpEnv, DB_SOCKET_DIR: '/socket', DB_SSLMODE: ' ' }), /must not be blank/);
+});
+
 test('shared configuration preserves TCP, schema, SSL and unset pg defaults', () => {
   const { poolConfig, schema, url } = resolveDatabaseConnection(tcpEnv);
   assert.deepEqual(poolConfig, {
@@ -200,7 +235,8 @@ test('actual Prisma config entrypoint matches runtime settings and supports cred
   const scenarios = [
     { ...tcpEnv, DB_POOL_MAX: '3', DB_POOL_ACQUIRE_TIMEOUT_SECONDS: '5', DB_POOL_IDLE_TIMEOUT_SECONDS: '30' },
     { DB_SOCKET_DIR: '/cloudsql/example:region:db', DB_NAME: 'app', DB_USER: 'user', DB_PASS: 'p@ss', DB_SSLMODE: 'disable' },
-    {}
+    {},
+    ...['disable', 'require', 'verify-ca', 'verify-full', 'prefer', 'allow'].map((mode) => ({ ...tcpEnv, DB_SSLMODE: ` ${mode.toUpperCase()} ` }))
   ];
   for (const env of scenarios) {
     const args = Object.keys(env).length ? ['migrate', 'deploy'] : ['generate'];
@@ -211,5 +247,13 @@ test('actual Prisma config entrypoint matches runtime settings and supports cred
     });
     assert.equal(result.status, 0, result.stderr);
     assert.equal(JSON.parse(result.stdout).url, resolvePrismaCliUrl(env, args));
+  }
+  for (const blank of ['', ' \t']) {
+    const result = spawnSync(process.execPath, ['-r', 'ts-node/register', '-e', "process.argv = ['node', 'prisma', 'migrate', 'deploy']; require('./prisma.config');"], {
+      cwd: path.resolve(__dirname, '..'), encoding: 'utf8',
+      env: { ...baseEnv, ...tcpEnv, DB_SSLMODE: blank, PGSSLMODE: 'verify-full', DOTENV_CONFIG_PATH: path.join(__dirname, 'nonexistent-synthetic.env') }
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /must not be blank/);
   }
 });
