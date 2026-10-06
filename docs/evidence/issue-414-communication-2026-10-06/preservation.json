@@ -1,0 +1,12 @@
+{
+  "preservedAtUtc": "2026-10-06T02:55:06.962Z",
+  "purpose": "Preserve original issue requirements/history and exact prior PR description before the direct concise-summary amendment. Existing source/capture/provenance identities remain unchanged.",
+  "issue": 414,
+  "pr": 428,
+  "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "baseSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "issueBodySha256": "64d8c8a7bc8c6a89d50894549d6145240fbca73f20727b59751978e72fd9e35b",
+  "prBodySha256": "19930f28ef6b47d04567efbd3369f138d281e2ec96bcd3beb898b881a755c912",
+  "retention": "MChartier/coordinator-owned nonmerged record; retain for lifetime of linked reviews.",
+  "priorQaCommentId": 6008169378
+}
