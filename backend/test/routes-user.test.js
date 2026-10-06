@@ -12,6 +12,9 @@ function stubModule(resolvedPath, exports) {
 function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuthStub }) {
   const dbPath = require.resolve('../src/config/database');
   const bcryptPath = require.resolve('bcryptjs');
+  const credentialPath = require.resolve('../src/services/credentialVerification');
+  const previousCredential = require.cache[credentialPath];
+  delete require.cache[credentialPath];
   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
   const browserSessionsPath = require.resolve('../src/services/browserSessions');
   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
@@ -66,6 +69,9 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
   });
 
   const loaded = require('../src/routes/user');
+
+  if (previousCredential) require.cache[credentialPath] = previousCredential;
+  else delete require.cache[credentialPath];
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];

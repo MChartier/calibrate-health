@@ -155,7 +155,12 @@ an operator must not silently omit difficult accounts to produce a green plan.
 
 ## Provider adapter preparation
 
-`backend/scripts/lib/credentialProvider.ts` is isolated from server startup. Its
+`backend/src/services/credentialVerification.ts` now supplies the shared local
+password check for browser/native login, password reauthentication and MCP approval.
+Callers retain SQL account lookup, access checks, session issuance and the MCP
+security-version transaction guard. The scripts path remains a compatibility export.
+Firebase activation is still prohibited by startup configuration; its injected
+preparation adapter is not selected by any runtime endpoint. Its
 local branch uses bcrypt; its Firebase branch uses email/password REST sign-in,
 then requires a verifier bound to the expected project/UID and recent `auth_time`.
 The future verifier must call Admin SDK `verifyIdToken(token, true)` against the

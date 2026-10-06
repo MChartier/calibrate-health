@@ -1,3 +1,4 @@
+import { verifyLocalPassword } from '../services/credentialVerification';
 import express from 'express';
 import prisma from '../config/database';
 import bcrypt from 'bcryptjs';
@@ -221,7 +222,7 @@ router.patch('/password', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const isMatch = await bcrypt.compare(parsed.currentPassword, dbUser.password_hash);
+    const isMatch = await verifyLocalPassword(parsed.currentPassword, dbUser.password_hash);
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
@@ -286,7 +287,7 @@ router.delete('/account', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const passwordMatches = await bcrypt.compare(currentPassword, dbUser.password_hash);
+    const passwordMatches = await verifyLocalPassword(currentPassword, dbUser.password_hash);
     if (!passwordMatches) {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }

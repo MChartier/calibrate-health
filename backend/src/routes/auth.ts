@@ -1,8 +1,9 @@
+import { verifyLocalPassword } from '../services/credentialVerification';
 import express from 'express';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
-import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
+import { normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
 import {
     serializeUserForClient,
     USER_CLIENT_SELECT,
@@ -419,7 +420,7 @@ router.post('/mobile/login', async (req, res) => {
             where: { email: { equals: email, mode: 'insensitive' } },
             select: { ...USER_CLIENT_SELECT, password_hash: true }
         });
-        const isMatch = await bcrypt.compare(password, user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH);
+        const isMatch = await verifyLocalPassword(password, user?.password_hash);
         if (!user || !isMatch) {
             return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
         }

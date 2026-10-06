@@ -1,6 +1,6 @@
 import 'dotenv/config';
+import { verifyLocalPassword } from './services/credentialVerification';
 
-import bcrypt from 'bcryptjs';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -54,7 +54,7 @@ import {
 import { startReminderScheduler } from './services/reminderScheduler';
 import { createCalibrateMcpHttpApp, isCalibrateMcpPath } from './mcp/server';
 import { checkDatabaseReadiness } from './services/readiness';
-import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
+import { normalizeEmailCredential } from './utils/authCredentials';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
 import { USER_CLIENT_SELECT } from './utils/userSerialization';
@@ -240,7 +240,7 @@ const bootstrap = async (): Promise<void> => {
           orderBy: { id: 'asc' },
           select: { ...USER_CLIENT_SELECT, password_hash: true },
         });
-        const isMatch = await bcrypt.compare(password, user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH);
+        const isMatch = await verifyLocalPassword(password, user?.password_hash);
         if (!user || !isMatch) {
           return done(null, false, { message: 'Invalid email or password' });
         }

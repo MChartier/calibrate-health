@@ -20,6 +20,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   const dbPath = require.resolve('../src/config/database');
   const passportPath = require.resolve('passport');
   const bcryptPath = require.resolve('bcryptjs');
+  const credentialPath = require.resolve('../src/services/credentialVerification');
+  const previousCredential = require.cache[credentialPath];
+  delete require.cache[credentialPath];
   const authPath = require.resolve('../src/routes/auth');
 
   const previousDbModule = require.cache[dbPath];
@@ -33,6 +36,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   stubModule(bcryptPath, bcryptStub);
 
   const loaded = require('../src/routes/auth');
+
+  if (previousCredential) require.cache[credentialPath] = previousCredential;
+  else delete require.cache[credentialPath];
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];

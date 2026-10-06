@@ -1,13 +1,9 @@
+import { verifyLocalPassword } from './credentialVerification';
 import { createHash, randomBytes } from 'node:crypto';
-import bcrypt from 'bcryptjs';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import prisma from '../config/database';
 import { ACCOUNT_ACCESS_SELECT, serializeAccountAccess } from './accountAccess';
-import {
-  DUMMY_AUTH_PASSWORD_HASH,
-  normalizeEmailCredential,
-  validateBcryptPasswordByteLength
-} from '../utils/authCredentials';
+import { normalizeEmailCredential, validateBcryptPasswordByteLength } from '../utils/authCredentials';
 
 export const MCP_OAUTH_AUTHORIZATION_REQUEST_TTL_MS = 10 * 60 * 1000;
 export const MCP_OAUTH_AUTHORIZATION_CODE_TTL_MS = 5 * 60 * 1000;
@@ -221,10 +217,7 @@ export class McpOAuthService {
       select: APPROVAL_USER_SELECT
     }) : null;
     const passwordWithinLimit = validateBcryptPasswordByteLength(input.password) === null;
-    const passwordMatches = await bcrypt.compare(
-      passwordWithinLimit ? input.password : '',
-      user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH
-    );
+    const passwordMatches = await verifyLocalPassword(passwordWithinLimit ? input.password : '', user?.password_hash);
     if (!user || !passwordWithinLimit || !passwordMatches) {
       await this.recordFailedApproval(requestHash, now);
       throw new McpOAuthError('invalid_credentials');
