@@ -1,3 +1,4 @@
+import { OfflineMutationConflict } from './mutationConflict';
 import type { QueuedMutation } from './queuedMutation';
 
 type DayStatus = 'OPEN' | 'COMPLETE' | 'INCOMPLETE' | 'PAUSED';
@@ -15,6 +16,9 @@ export function queuedFoodDayStatus(rows: readonly QueuedMutation[], date: strin
         if (row.state === 'failed') throw new Error('Resolve the failed tracking change in Review saved changes before changing food.');
         if (pause) status = 'PAUSED';
         if (resume && (date === p.resumed_on || status === 'PAUSED' || status === undefined)) status = 'OPEN';
+        // Only a deliberate paused-day backfill or fresh server receipt may override a pause.
+        const explicitBackfill = row.operation === 'food-day.set-status' && p.status === 'OPEN' && p.explicitPausedBackfill === true;
+        if (dayControl && status === 'PAUSED' && !row.id.startsWith('receipt:') && !explicitBackfill) continue;
         if (dayControl && row.operation === 'food-day.update') status = p.is_complete ? 'COMPLETE' : 'OPEN';
         if (dayControl && row.operation === 'food-day.set-status' && ['OPEN', 'COMPLETE', 'INCOMPLETE', 'PAUSED'].includes(String(p.status))) status = p.status as DayStatus;
     }
@@ -32,4 +36,14 @@ export function assertQueuedFoodDayOpen(rows: readonly QueuedMutation[], operati
     }
     const status = queuedFoodDayStatus(rows, date);
     if (status && status !== 'OPEN') throw new Error('The day changed in another action. Reopen or resume the day explicitly before changing food.');
+}
+
+/** A stale day button cannot silently override a pause saved by another producer. */
+export function assertQueuedDayTransition(rows: readonly QueuedMutation[], operation: string, payload: unknown): void {
+    if (!['food-day.set-status', 'food-day.update'].includes(operation)) return;
+    const p = fields(payload);
+    if (typeof p.date !== 'string') return;
+    if (queuedFoodDayStatus(rows, p.date) !== 'PAUSED') return;
+    if (operation === 'food-day.set-status' && p.status === 'OPEN' && p.explicitPausedBackfill === true) return;
+    throw new OfflineMutationConflict('pausedDay');
 }

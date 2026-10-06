@@ -1,3 +1,5 @@
+import { createOutboxDispatch, type OutboxDispatch } from '../offline/mutationDispatch';
+import type { QueuedMutation } from '../offline/queuedMutation';
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppState, Dimensions, StyleSheet } from 'react-native';
@@ -10,10 +12,11 @@ jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'tracking-operation-id') }));
 
 const mockEnqueue = jest.fn();
+let mockWithOutbox: OutboxDispatch | undefined;
 const mockReadFoodPause = jest.fn((fetch: () => Promise<unknown>) => fetch());
 let mockMutations: unknown[] = [];
 jest.mock('../offline/provider', () => ({
-    useOfflineOutbox: () => ({ enqueue: mockEnqueue, mutations: mockMutations, readFoodPause: mockReadFoodPause })
+    useOfflineOutbox: () => ({ enqueue: mockEnqueue, withOutbox: mockWithOutbox, mutations: mockMutations, readFoodPause: mockReadFoodPause })
 }));
 
 const mockApi = {
@@ -128,6 +131,7 @@ describe('food tracking day resolution', () => {
         act(() => Dimensions.set({ window: { ...originalWindow, width: 320, fontScale: 1 } }));
         jest.clearAllMocks();
         mockMutations = [];
+        mockWithOutbox = undefined;
         foregroundListener = undefined;
         appStateSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_, listener) => {
             foregroundListener = listener as (state: string) => void;
@@ -147,6 +151,19 @@ describe('food tracking day resolution', () => {
         await waitFor(() => expect(screen.getByText('Complete day')).toBeTruthy());
         fireEvent.press(screen.getByText('Complete day'));
         await waitFor(() => expect(mockEnqueue).toHaveBeenCalledWith('food-day.set-status', { date: '2026-07-23', status: 'COMPLETE' }, 'tracking-operation-id'));
+        expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
+    });
+
+    it.each([true, false])('distinguishes stale completed-day reopen from explicit paused historical backfill: stale=%s', async stale => {
+        const date = '2026-07-23';
+        const rows = [{ id: 'pause', namespace: 'test', sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1, operation: 'food-tracking-pause.start', payload: { starts_on: date } } as QueuedMutation];
+        mockWithOutbox = createOutboxDispatch('day-override-' + stale, async () => rows, mockEnqueue, () => true);
+        mockApi.getFoodDay.mockResolvedValue(resolvedDay(stale ? 'COMPLETE' : 'PAUSED'));
+        const screen = renderWithQuery(<DayStatusCard date={date} isToday={stale} />);
+        const button = await screen.findByRole('button', { name: stale ? 'Edit or backfill' : 'Backfill this day' });
+        fireEvent.press(button);
+        if (stale) { await screen.findByRole('alert'); expect(mockEnqueue).not.toHaveBeenCalled(); }
+        else await waitFor(() => expect(mockEnqueue).toHaveBeenCalledWith('food-day.set-status', { date, status: 'OPEN', explicitPausedBackfill: true }, 'tracking-operation-id'));
         expect(mockApi.setFoodDayStatus).not.toHaveBeenCalled();
     });
 

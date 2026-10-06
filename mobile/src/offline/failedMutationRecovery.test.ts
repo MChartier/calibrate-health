@@ -11,7 +11,7 @@ it.each(Object.values(OFFLINE_MUTATION_OPERATIONS))('enforces failed-head recove
     if (operation === 'food-tracking-pause.start') correction = { operation: 'food-tracking-pause.resume', payload: { resumed_on: '2026-07-21' } };
     if (operation === 'food-tracking-pause.update') correction = { operation, payload: { expected_resume_on: '2026-07-22' } };
     if (operation === 'food-tracking-pause.resume') correction = { operation: 'food-tracking-pause.start', payload: { starts_on: '2026-07-22', expected_resume_on: null } };
-    expect(() => assertRecoverableEnqueue([parent], correction, ns)).toThrow(/Resolve the failed (related|pause) change/);
+    expect(() => assertRecoverableEnqueue([parent], correction, ns)).toThrow(/Resolve the failed (related|pause|tracking) change/);
     expect(() => assertRecoverableEnqueue([parent], correction, 'https://other.example::user:7')).not.toThrow();
     expect(() => assertRecoverableEnqueue([{ ...parent, state: 'pending' }], correction, ns)).not.toThrow();
     expect(parent.payload).toEqual({ id: 42, date: '2026-07-21', weight: 88 });

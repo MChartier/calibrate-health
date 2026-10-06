@@ -117,11 +117,13 @@ export const DayStatusCard: React.FC<{
         networkMode: 'always', // Persist local intent even when React Query knows the network is offline.
         mutationFn: (status: Exclude<FoodLogDayStatus, 'PAUSED'>) => {
             const payload = { date, status };
+            const intent = status === 'OPEN' && !isToday && dayQuery.data?.status === 'PAUSED'
+                ? { ...payload, explicitPausedBackfill: true } : payload;
             return executeOrQueueMutation({
                 withOutbox,
                 forceQueue: mutations.length > 0,
                 operation: OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS,
-                payload,
+                payload: intent,
                 execute: (operationId) => api.setFoodDayStatus(payload, operationId),
                 enqueue
             });

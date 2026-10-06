@@ -583,3 +583,28 @@ test('a stale second tab cannot copy server food before another tabs saved food 
     await expect(copy).toContainText('Synchronize saved changes before copying food.');
     expect(copies).toBe(0); await other.close();
 });
+
+test('a stale completed-day action cannot reopen a pause queued in another tab', async ({ page, context, ux }) => {
+    const options: import('./fixtures').AuthenticatedApiOptions = { foodDayStatus: 'COMPLETE' };
+    await ux.install('populated', options); await page.goto('/today');
+    await expect(page.getByRole('button', { name: 'Day completed', exact: true })).toBeVisible();
+    const other = await context.newPage(); await ux.installOnPage(other); await other.goto('/today');
+    await other.evaluate(() => { const original = crypto.randomUUID.bind(crypto); Object.defineProperty(crypto, 'randomUUID', { configurable: true, value: () => original().replace(/^00000000/, '00000003') }); });
+    await other.route('**/api/v1/food-days', route => { options.foodDayStatus = 'OPEN'; return route.fulfill({ json: { date: '2026-07-21', status: 'OPEN' } }); });
+    await other.getByRole('button', { name: 'Day completed', exact: true }).click();
+    await other.getByRole('button', { name: 'Choose date', exact: true }).click();
+    await expect(other.getByRole('button', { name: 'Pause tracking', exact: true })).toBeVisible();
+    expectApiFailure(other, { method: 'POST', pathname: '/api/v1/food-days/pause', status: 503 });
+    await other.route('**/api/v1/food-days/pause', route => route.request().method() === 'POST' ? route.fulfill({ status: 503, json: { error: 'Unavailable', retryable: true } }) : route.fallback());
+    await other.getByRole('button', { name: 'Pause tracking', exact: true }).click();
+    await other.getByRole('button', { name: 'Until I resume', exact: true }).click();
+    await expect(other.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+    await expect(page.getByRole('button', { name: 'Day completed', exact: true })).toBeVisible();
+    let writes = 0;
+    await page.route('**/api/v1/food-days**', route => { if (route.request().method() !== 'GET') writes++; return route.fallback(); });
+    await page.getByRole('button', { name: 'Day completed', exact: true }).click();
+    await expect(page.getByText('Tracking changed to paused. Resume tracking or explicitly backfill this day before changing its status.', { exact: true })).toBeVisible();
+    expect(writes).toBe(0);
+    await expect(other.getByTestId('offline-workspace-status')).toContainText('1 pending changes');
+    await other.close();
+});

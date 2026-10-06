@@ -1,5 +1,5 @@
 import { validatePauseTransition } from './pauseIntent';
-import { assertQueuedFoodDayOpen } from './foodDayIntent';
+import { assertQueuedDayTransition, assertQueuedFoodDayOpen } from './foodDayIntent';
 import type { OutboxDispatch } from './mutationDispatch';
 import type { QueuedMutation } from './queuedMutation';
 import { foodWirePayload } from './trackingProjection';
@@ -62,6 +62,7 @@ export async function executeOrQueueMutation<T>({
     if (withOutbox) return withOutbox((durableEnqueue, mustQueue, pending, record) => {
         const existing = validatePauseTransition(pending, operation, payload);
         if (existing) return Promise.resolve({ disposition: 'queued' as const, operationId: existing.id });
+        assertQueuedDayTransition(pending, operation, payload);
         assertQueuedFoodDayOpen(pending, operation, payload);
         return executeOrQueueMutation({ operation, forceQueue: forceQueue || mustQueue, payload, execute, enqueue: durableEnqueue, createOperationId, recordControl: record });
     });

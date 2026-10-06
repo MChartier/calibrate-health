@@ -1,6 +1,6 @@
 import { OfflineMutationConflict } from './mutationConflict';
 import { validatePauseTransition } from './pauseIntent';
-import { assertQueuedFoodDayOpen } from './foodDayIntent';
+import { assertQueuedDayTransition, assertQueuedFoodDayOpen } from './foodDayIntent';
 import type { NewQueuedMutation, QueuedMutation } from './queuedMutation';
 import type { OfflineMutationOperation } from './mutationKinds';
 import { failedFoodDiscardIds } from './failedCreation';
@@ -45,6 +45,7 @@ export function failedMutationDiscardIds(rows: readonly QueuedMutation[], id: st
 /** Runs inside the same transaction as insertion. Never acknowledge an unreachable correction as saved. */
 export function assertRecoverableEnqueue(rows: readonly QueuedMutation[], mutation: NewQueuedMutation, namespace: string): void {
     if (validatePauseTransition(rows.filter(row => row.namespace === namespace), mutation.operation, mutation.payload)) throw new OfflineMutationConflict('duplicate');
+    assertQueuedDayTransition(rows.filter(row => row.namespace === namespace), mutation.operation, mutation.payload);
     assertQueuedFoodDayOpen(rows.filter(row => row.namespace === namespace), mutation.operation, mutation.payload);
     const candidate = { id: mutation.id ?? '__new__', namespace, operation: mutation.operation, payload: mutation.payload, state: 'pending' } as QueuedMutation;
     const failed = rows.find(row => row.state === 'failed' && row.namespace === namespace && (

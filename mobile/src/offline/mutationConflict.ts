@@ -1,4 +1,5 @@
 const messages = {
+    pausedDay: 'Tracking changed to paused. Resume tracking or explicitly backfill this day before changing its status.',
     "failed": "Resolve the failed pause change in Review saved changes before trying again.",
     "active": "Tracking is already paused. Update or resume the saved pause before starting another.",
     "pending": "A resume is already saved. Synchronize or resolve it before changing the pause.",

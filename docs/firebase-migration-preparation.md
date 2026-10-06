@@ -419,3 +419,5 @@ Every queued control, including pause expectation updates, verifies current stat
 Ordinary pause metadata reads also reconcile the acknowledged pause snapshot under the namespace lock. Pending controls remain a separate ordered overlay, so a pre-replay server read cannot erase explicit queued pause/resume intent.
 
 Pause metadata consumers share useFoodTrackingPause: acknowledged scoped snapshots are applied first, then ordered pending start/update/resume intent. Canonical refetch cannot resurrect a prompt for an already queued resume. Repeated same-date resumes reuse the durable original request; choosing another date requires resolving the existing resume first.
+
+Day-status commands also validate durable pause state before dispatch and transactional insertion. A stale reopen/completion cannot override a pause saved by another producer. The existing historical Backfill action carries local explicit intent; only that deliberate OPEN action or a fresh authoritative server-day receipt can override a covering pause. The backfill marker stays in local intent and is omitted from API payloads. Today still requires Resume tracking.
