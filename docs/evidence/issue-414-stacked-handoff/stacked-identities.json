@@ -1,0 +1,278 @@
+{
+  "checkedAtUtc": "2026-10-06T00:40:44.783Z",
+  "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "baseSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "baseRef": "mchartier/firebase-migration-preparation",
+  "mergeBase": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "parent": {
+    "pr": 423,
+    "headSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+    "contractCommentId": 6006157504,
+    "review": "quota-blocked"
+  },
+  "ultimateTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "prBodySha256": "19930f28ef6b47d04567efbd3369f138d281e2ec96bcd3beb898b881a755c912",
+  "draft": true,
+  "labels": [],
+  "scopeSha256": "184792570acd4bc59a1fcde13bd4dc1bf17f5a896ad1ccacc2157c71be04f348",
+  "ci": [
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793083/job/112048266180",
+      "name": "Mobile Tests",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793083/job/112048267608",
+      "name": "Backend Tests",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793083/job/112048073180",
+      "name": "Classify Test Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048106838",
+      "name": "Web Critical Smoke",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048106961",
+      "name": "ios Runtime Bundle",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048106937",
+      "name": "android Runtime Bundle",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048106785",
+      "name": "Expo Web Build",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394792893/job/112048102564",
+      "name": "High and Critical Vulnerabilities",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108360",
+      "name": "iOS Build",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108376",
+      "name": "Mobile Build",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048109649",
+      "name": "Android Emulator End-to-End",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108810",
+      "name": "Native Two-Emulator Package Upgrade",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048109083",
+      "name": "Wear Release Emulator Smoke",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108278",
+      "name": "Wear Build and JVM Tests",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108374",
+      "name": "Full Exported Web and PWA End-to-End",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108405",
+      "name": "Six-State Data-Backed Route Acceptance",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048109132",
+      "name": "UX Accessibility and Visual Regression",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108787",
+      "name": "Backend Build",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048108479",
+      "name": "Release Configuration",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793011/job/112048101240",
+      "name": "Populated Postgres Upgrade",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793011/job/112048100585",
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129/job/112048073227",
+      "name": "Classify Build Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793171/job/112048073286",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394793011/job/112048072708",
+      "name": "Classify Database Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37394792893/job/112048072289",
+      "name": "Classify Production Image Inputs",
+      "state": "SUCCESS"
+    }
+  ],
+  "runs": [
+    {
+      "id": "37394793083",
+      "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37394793083"
+    },
+    {
+      "id": "37394793129",
+      "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37394793129"
+    },
+    {
+      "id": "37394792893",
+      "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37394792893"
+    },
+    {
+      "id": "37394793011",
+      "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37394793011"
+    },
+    {
+      "id": "37394793171",
+      "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37394793171"
+    }
+  ],
+  "review": {
+    "requestCommentId": 6006632427,
+    "quotaRefusalCommentId": 6006636132,
+    "bodySha256": "e39b189a2ed6388c9d919876a2893ca0216a023301e11d788df190b4366991b9",
+    "status": "blocked; single request, no retry"
+  },
+  "evidence": {
+    "commitSha": "484afc6b4a0c6359251f5ffce5c3d048f684749c",
+    "manifestPath": "docs/evidence/issue-414-stacked/manifest.json",
+    "sha256": "aad12355b16f33bc1cc6774a474e431fbf8b9582e06c4973f7ed115b6be24e67",
+    "pairs": 22,
+    "captures": 49,
+    "remoteArtifactsVerified": 123
+  },
+  "rendered": {
+    "checkedAtUtc": "2026-10-06T00:40:40.166Z",
+    "url": "https://github.com/MChartier/calibrate-health/pull/428",
+    "browser": "154.0.8037.98",
+    "pairs": 5,
+    "images": [
+      {
+        "alt": "Before: Saved expectation on Today",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-dated-today-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "afd567d9858931bdf34dfeeeef5300f6e0fec4904efa6a90bcf66a7d5994e0ef"
+      },
+      {
+        "alt": "After: Saved expectation on Today",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-dated-today-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "df7d0d188ae23a104ecdf5a5b8a10a392aa3aab03bb632e8bd4732e6deef7fae"
+      },
+      {
+        "alt": "Before: Future plan and recorded history",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-calendar-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+      },
+      {
+        "alt": "After: Future plan and recorded history",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-calendar-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+      },
+      {
+        "alt": "Before: Failed resume retains the plan",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-matched-failed-resume.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "d59651dc105f16fdb892086b50868265d867162ed3723b8519cd5c50ea929c06"
+      },
+      {
+        "alt": "After: Failed resume retains the plan",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-matched-failed-resume.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "cc5744220c33b0f318c291b88fd01a24faa5bd1727f4047c36efb616fe514e6a"
+      },
+      {
+        "alt": "Before: Queued start survives calendar reload",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-queued-start-calendar.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "d16331948bb758e90679a39eb2bc0c5d32a332dc35ae07c916d88cdf1b5d378e"
+      },
+      {
+        "alt": "After: Queued start survives calendar reload",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-queued-start-calendar.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "cc37e8111c6c634779d2aa6964dd001ac5baab0a6efa22340d89c50e891baa8f"
+      },
+      {
+        "alt": "Before: Queued resume with unavailable history",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-queued-resume-calendar.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "7dbc652a533b8121d6ac4cd2399a05019e296489b05fe6ff92b94dbfc723fe17"
+      },
+      {
+        "alt": "After: Queued resume with unavailable history",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-queued-resume-calendar.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "e870474eefe64a0e4df08ce43c26e6445de1bbecf2041fe8d7c0653403d1d23b"
+      }
+    ]
+  }
+}

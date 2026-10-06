@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-06T00:36:18.113Z",
+  "actualTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "mchartier/firebase-migration-preparation",
+    "sha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+  },
+  "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "mergeBase": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "declaredParent": {
+    "pr": 423,
+    "ref": "mchartier/firebase-migration-preparation",
+    "sha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+    "state": "open",
+    "draft": true,
+    "review": "Quota blocked; not certified by this child",
+    "contract": "https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6006157504"
+  },
+  "ultimateTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "remoteTotals": {
+    "commits": 4,
+    "files": 15,
+    "additions": 763,
+    "deletions": 32
+  },
+  "pagination": "All live PR ordered commits, changed files and per-commit files retrieved through all pages with per_page100; totals reconciled.",
+  "commits": [
+    {
+      "sha": "35bbbf1cd5c4f6654dd2e000f685c40ff9450bf0",
+      "parents": [
+        "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      ],
+      "subject": "Show planned pauses using durable calendar intent and locked range reads",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "7a1176b3668377c78239072d9bbc7555169a40d2",
+          "additions": 296,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "8c67125c01dfac42f071509f9a3c30705683ec9e",
+          "additions": 68,
+          "deletions": 2,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "a010a9f413ccaa2be49efa468b2bff578318c74d",
+          "additions": 66,
+          "deletions": 16,
+          "scope": "Display-only future projection, target-month browsing, disabled future selection and honest saved-intent/error recovery."
+        },
+        {
+          "path": "mobile/src/food/calendarIntent.test.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "f269b45000edc1d78d25f45d562bd371d211a778",
+          "additions": 28,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/calendarIntent.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "a40e04a6607a5f9ec17872ee421563dfb0fa1956",
+          "additions": 14,
+          "deletions": 0,
+          "scope": "Project acknowledged receipts then pending explicit controls on present or absent calendar dates."
+        },
+        {
+          "path": "mobile/src/food/plannedPause.test.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "148db35c78d72bc47d4bf2cb042229098e84f731",
+          "additions": 57,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/plannedPause.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "9fa61566d49f365c772b5a922729078e8699b5b8",
+          "additions": 37,
+          "deletions": 0,
+          "scope": "Validated date-only intention copy and finite/open-ended forecast boundaries."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "0e3c10fd926f19abdefa1a09bbacca3f346801bf",
+          "additions": 21,
+          "deletions": 1,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "ea8749d07f8c2f0e09441821fcdc9c7e6394deb3",
+          "additions": 14,
+          "deletions": 1,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        },
+        {
+          "path": "mobile/src/offline/provider.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "219095232a5117c0be51cd3bf57d3d0f5fa42f4d",
+          "additions": 11,
+          "deletions": 3,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        },
+        {
+          "path": "mobile/src/offline/provider.web.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "6ccc69d2672a4b8bcc1b23ed99dddaa5df2ee626",
+          "additions": 11,
+          "deletions": 3,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "2bdf3771ee860b0c91cfb5baf4f835a464fcc6b7",
+          "additions": 12,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "c6509969f4922680b2dc3c31c0df1cdf7aabcef9",
+          "additions": 12,
+          "deletions": 3,
+          "scope": "Refresh pause/day/calendar after existing durable outbox replay."
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.test.tsx",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "46534101376c947784ad602f55f1e781875e5452",
+          "additions": 48,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "865928e71db92a788f6c93024a84e5514558673c",
+          "additions": 19,
+          "deletions": 1,
+          "scope": "Display expected resume on current paused Today without attributing it to historical days."
+        }
+      ]
+    },
+    {
+      "sha": "682d8d0315bada0a885c5075777284bf5a6e5a0b",
+      "parents": [
+        "35bbbf1cd5c4f6654dd2e000f685c40ff9450bf0"
+      ],
+      "subject": "Preserve authoritative day receipts during pause refresh",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "4b1d90184c20e07c7f114ec168baf1288d2e414c",
+          "additions": 4,
+          "deletions": 4,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "8153479885b904d4f30f2752b5039c8083a31055",
+          "additions": 13,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "c3ad83b10deb68658d0abda73c61de72dc3202ca",
+          "additions": 6,
+          "deletions": 1,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        }
+      ]
+    },
+    {
+      "sha": "5566696aff5a48dc92da965677e4db08e2d91155",
+      "parents": [
+        "682d8d0315bada0a885c5075777284bf5a6e5a0b"
+      ],
+      "subject": "Keep saved calendar intent visible when history reads are unavailable",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "cd87ef161ec8f00eb73a2bc2cd540dbf45390826",
+          "additions": 6,
+          "deletions": 3,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "55562b3a1ee51c28f32801e82618b81077a51202",
+          "additions": 14,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "fe64d4ada93048ef43a3e7575f9736d00b1f0e50",
+          "additions": 11,
+          "deletions": 4,
+          "scope": "Display-only future projection, target-month browsing, disabled future selection and honest saved-intent/error recovery."
+        }
+      ]
+    },
+    {
+      "sha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+      "parents": [
+        "5566696aff5a48dc92da965677e4db08e2d91155"
+      ],
+      "subject": "Isolate due-resume fixture from in-flight expectation removal",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "7a87a34e878d583903433a4907bbbafcd46f359f",
+          "additions": 10,
+          "deletions": 5,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "e2e/expo-web/planned-pause.spec.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "7a87a34e878d583903433a4907bbbafcd46f359f",
+      "additions": 304,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "55562b3a1ee51c28f32801e82618b81077a51202",
+      "additions": 82,
+      "deletions": 2,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "fe64d4ada93048ef43a3e7575f9736d00b1f0e50",
+      "additions": 74,
+      "deletions": 17,
+      "scope": "Display-only future projection, target-month browsing, disabled future selection and honest saved-intent/error recovery."
+    },
+    {
+      "path": "mobile/src/food/calendarIntent.test.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "f269b45000edc1d78d25f45d562bd371d211a778",
+      "additions": 28,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/calendarIntent.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "a40e04a6607a5f9ec17872ee421563dfb0fa1956",
+      "additions": 14,
+      "deletions": 0,
+      "scope": "Project acknowledged receipts then pending explicit controls on present or absent calendar dates."
+    },
+    {
+      "path": "mobile/src/food/plannedPause.test.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "148db35c78d72bc47d4bf2cb042229098e84f731",
+      "additions": 57,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/plannedPause.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "9fa61566d49f365c772b5a922729078e8699b5b8",
+      "additions": 37,
+      "deletions": 0,
+      "scope": "Validated date-only intention copy and finite/open-ended forecast boundaries."
+    },
+    {
+      "path": "mobile/src/offline/foodDayReceipts.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "8153479885b904d4f30f2752b5039c8083a31055",
+      "additions": 34,
+      "deletions": 1,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/offline/foodDayReceipts.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "c3ad83b10deb68658d0abda73c61de72dc3202ca",
+      "additions": 20,
+      "deletions": 2,
+      "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+    },
+    {
+      "path": "mobile/src/offline/provider.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "219095232a5117c0be51cd3bf57d3d0f5fa42f4d",
+      "additions": 11,
+      "deletions": 3,
+      "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+    },
+    {
+      "path": "mobile/src/offline/provider.web.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "6ccc69d2672a4b8bcc1b23ed99dddaa5df2ee626",
+      "additions": 11,
+      "deletions": 3,
+      "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "2bdf3771ee860b0c91cfb5baf4f835a464fcc6b7",
+      "additions": 12,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "c6509969f4922680b2dc3c31c0df1cdf7aabcef9",
+      "additions": 12,
+      "deletions": 3,
+      "scope": "Refresh pause/day/calendar after existing durable outbox replay."
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.test.tsx",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "46534101376c947784ad602f55f1e781875e5452",
+      "additions": 48,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "865928e71db92a788f6c93024a84e5514558673c",
+      "additions": 19,
+      "deletions": 1,
+      "scope": "Display expected resume on current paused Today without attributing it to historical days."
+    }
+  ],
+  "exclusions": "No evidence/capture archive, copied parent pause hooks, add/delete development artifacts, parent/sibling merges, migration or unrelated Firebase work in the child review range."
+}

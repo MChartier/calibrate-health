@@ -1,0 +1,78 @@
+{
+  "checkedAtUtc": "2026-10-06T00:40:40.166Z",
+  "url": "https://github.com/MChartier/calibrate-health/pull/428",
+  "browser": "154.0.8037.98",
+  "pairs": 5,
+  "images": [
+    {
+      "alt": "Before: Saved expectation on Today",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-dated-today-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "afd567d9858931bdf34dfeeeef5300f6e0fec4904efa6a90bcf66a7d5994e0ef"
+    },
+    {
+      "alt": "After: Saved expectation on Today",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-dated-today-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "df7d0d188ae23a104ecdf5a5b8a10a392aa3aab03bb632e8bd4732e6deef7fae"
+    },
+    {
+      "alt": "Before: Future plan and recorded history",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-calendar-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+    },
+    {
+      "alt": "After: Future plan and recorded history",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-calendar-light.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+    },
+    {
+      "alt": "Before: Failed resume retains the plan",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-matched-failed-resume.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "d59651dc105f16fdb892086b50868265d867162ed3723b8519cd5c50ea929c06"
+    },
+    {
+      "alt": "After: Failed resume retains the plan",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-matched-failed-resume.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "cc5744220c33b0f318c291b88fd01a24faa5bd1727f4047c36efb616fe514e6a"
+    },
+    {
+      "alt": "Before: Queued start survives calendar reload",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-queued-start-calendar.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "d16331948bb758e90679a39eb2bc0c5d32a332dc35ae07c916d88cdf1b5d378e"
+    },
+    {
+      "alt": "After: Queued start survives calendar reload",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-queued-start-calendar.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "cc37e8111c6c634779d2aa6964dd001ac5baab0a6efa22340d89c50e891baa8f"
+    },
+    {
+      "alt": "Before: Queued resume with unavailable history",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/before-compact-phone-chrome-queued-resume-calendar.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "7dbc652a533b8121d6ac4cd2399a05019e296489b05fe6ff92b94dbfc723fe17"
+    },
+    {
+      "alt": "After: Queued resume with unavailable history",
+      "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/484afc6b4a0c6359251f5ffce5c3d048f684749c/docs/evidence/issue-414-stacked/after-compact-phone-chrome-queued-resume-calendar.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "e870474eefe64a0e4df08ce43c26e6445de1bbecf2041fe8d7c0653403d1d23b"
+    }
+  ]
+}
