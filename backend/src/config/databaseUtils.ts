@@ -16,7 +16,7 @@ export function resolveDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string
   const directUrl = env.DATABASE_URL;
   if (directUrl) return directUrl;
 
-  const host = env.DB_HOST;
+  const host = env.DB_SOCKET_DIR ? 'localhost' : env.DB_HOST;
   const port = env.DB_PORT ?? '5432';
   const dbName = env.DB_NAME;
   const username = env.DB_USER ?? env.DB_USERNAME;
@@ -164,4 +164,76 @@ export function resolvePgSslConfig(
 
   // For verify-ca/verify-full/etc, fall back to pg's default verification behavior.
   return true;
+}
+
+/** One allowlisted connection contract for the shared pg pool and Prisma CLI. */
+export function resolveDatabaseConnection(env: NodeJS.ProcessEnv = process.env): {
+  url: string;
+  schema: string | undefined;
+  poolConfig: PoolConfig;
+} {
+  const socket = env.DB_SOCKET_DIR;
+  if (socket !== undefined && (!socket.startsWith('/') || socket.trim() !== socket || /[\x00\r\n\\]/.test(socket))) {
+    throw new Error('DB_SOCKET_DIR must be an absolute POSIX socket directory.');
+  }
+  const databaseUrl = resolveDatabaseUrl(env);
+  const fields = parseDatabaseUrlToPgConfig(databaseUrl);
+  const url = new URL(databaseUrl);
+  const schema = resolvePrismaSchema(databaseUrl, env);
+  const ssl = resolvePgSslConfig(databaseUrl, env);
+  const poolConfig: PoolConfig = { ...fields, ssl, ...buildPgOptionsForSchema(schema) };
+  if (schema) url.searchParams.set('schema', schema);
+  if (env.DB_SSLMODE !== undefined) url.searchParams.set('sslmode', env.DB_SSLMODE.trim().toLowerCase() || 'disable');
+
+  // Seconds keep Prisma's integer URL settings and pg's millisecond settings exact.
+  const settings = [
+    { env: 'DB_POOL_MAX', params: ['connection_limit'], key: 'max', limit: 100, scale: 1 },
+    { env: 'DB_POOL_ACQUIRE_TIMEOUT_SECONDS', params: ['pool_timeout', 'connect_timeout'], key: 'connectionTimeoutMillis', limit: 300, scale: 1000 },
+    { env: 'DB_POOL_IDLE_TIMEOUT_SECONDS', params: ['max_idle_connection_lifetime'], key: 'idleTimeoutMillis', limit: 3600, scale: 1000 }
+  ] as const;
+  for (const setting of settings) {
+    const values = [env[setting.env], ...setting.params.flatMap((param) => url.searchParams.getAll(param))]
+      .filter((value): value is string => value !== undefined);
+    if (!values.length) continue;
+    const numbers = values.map((value) => {
+      const number = Number(value);
+      if (!/^[0-9]+$/.test(value) || !Number.isSafeInteger(number) || number < 1 || number > setting.limit) {
+        throw new Error(`${setting.env} / ${setting.params.join(', ')} must be an integer from 1 to ${setting.limit}.`);
+      }
+      return number;
+    });
+    if (numbers.some((number) => number !== numbers[0])) {
+      throw new Error(`Conflicting ${setting.env} / ${setting.params.join(', ')} settings.`);
+    }
+    poolConfig[setting.key] = numbers[0] * setting.scale;
+    for (const param of setting.params) url.searchParams.set(param, String(numbers[0]));
+  }
+
+  const urlHosts = url.searchParams.getAll('host');
+  if (socket !== undefined) {
+    if ((!env.DATABASE_URL && env.DB_HOST) || fields.host !== 'localhost' || urlHosts.some((host) => host !== socket)) {
+      throw new Error('DB_SOCKET_DIR conflicts with TCP host or DATABASE_URL host; use localhost as the socket URL placeholder.');
+    }
+    if (ssl !== false) {
+      throw new Error('DB_SOCKET_DIR requires explicit sslmode=disable (or DB_SSLMODE=disable); transport security belongs to the socket provider.');
+    }
+    poolConfig.host = socket;
+    url.searchParams.set('host', socket);
+  } else if (urlHosts.length || decodeURIComponent(fields.host ?? '').startsWith('/')) {
+    throw new Error('Socket/query host requires explicit DB_SOCKET_DIR opt-in. Use the URL authority for TCP.');
+  }
+
+  return { url: url.toString(), schema, poolConfig };
+}
+
+/** Schema-only commands remain usable without any live database credentials. */
+export function resolvePrismaCliUrl(
+  env: NodeJS.ProcessEnv = process.env,
+  argv: string[] = process.argv
+): string {
+  const schemaOnly = argv.some((arg) => ['generate', 'format', 'validate'].includes(arg.toLowerCase()));
+  if (!env.DATABASE_URL && schemaOnly) {
+    return 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public';
+  }
+  return resolveDatabaseConnection(env).url;
 }
