@@ -1,0 +1,82 @@
+[
+  {
+    "name": ".gitattributes",
+    "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+  },
+  {
+    "name": "ci.json",
+    "sha256": "afa6feb6a9786c13b1efb4355035f280a4a2f58128469b0b968c2110426c0870"
+  },
+  {
+    "name": "configured-review-blocker.json",
+    "sha256": "a55c3ea2edd748c714adddf54e4f712a14345f6eeb4a769e9cb6a29f68164035"
+  },
+  {
+    "name": "database.log",
+    "sha256": "a638904d10efb4c3146ae81bdafb9f7cfb8fb5ca2b5fa2d2474d645f56beed80"
+  },
+  {
+    "name": "paused-final-api-verification.json",
+    "sha256": "3d26e610a86e307aff1c6f07b68def8aea895e0c8b4df9af7108c43906e48557"
+  },
+  {
+    "name": "paused-review-request-readback.json",
+    "sha256": "95875ea7e9f83c2e62a5fc05a00ee6bcda1c35614f435430d54ab9f61bb6c6f0"
+  },
+  {
+    "name": "README.md",
+    "sha256": "fb7fec9bd2140b4477b8ab94a8917b945e379ab04233c33517ea586593d190d4"
+  },
+  {
+    "name": "receipt.json",
+    "sha256": "f44ab3cfcff532ac2fe3dfa81263d7792fd1bc2511d9e7f9ec6de930f2e0e449"
+  },
+  {
+    "name": "render/body.md",
+    "sha256": "7a4e9afe33a9e5272bb4ab28b2b2ca0757f924d2042c177c3d9d08f71f2a2fb3"
+  },
+  {
+    "name": "render/embedded-failure.png",
+    "sha256": "808103840bc916c7bb786ed08742c4137a0db520db91ee02a14eaf171f778fa8"
+  },
+  {
+    "name": "render/embedded-local-values.png",
+    "sha256": "fa4f31afd69921e1b838d76625be00cd622c8e0612c26f094741d426d9b6410d"
+  },
+  {
+    "name": "render/embedded-logout-pair.png",
+    "sha256": "20fd84e9c94108ade9d607b7430631da693db67378188f73756d93c177e58d7d"
+  },
+  {
+    "name": "render/embedded-pair.png",
+    "sha256": "d1c0e91339a08d0778e97c9ebcc039d40d525ef6b052aea72ebe61db6376e024"
+  },
+  {
+    "name": "render/embedded-resume.png",
+    "sha256": "7a2dc5306760983423c173143d350e69cb5e39a9d25eab5af5b7b36b50fc07d6"
+  },
+  {
+    "name": "render/embedded-storage.png",
+    "sha256": "8b233c15d4fc7174c1454d43113e8b484b74db6f6817d67353058e5c8b223fa0"
+  },
+  {
+    "name": "render/full.png",
+    "sha256": "165e8a21e12a43bc407524b4cd8ca865ccf11c36537484c53eec5f8e33028500"
+  },
+  {
+    "name": "render/github-markdown.html",
+    "sha256": "e9db073480bae8d7105f8ee5e3adaa251f5a52f5c08a0034670a13e15e2094ca"
+  },
+  {
+    "name": "render/manifest.json",
+    "sha256": "706cdbb859d9da48dff16015a0dd62d0cdd0673d57fb2c2d94ad7b8a041ec2a5"
+  },
+  {
+    "name": "render/rendered.html",
+    "sha256": "c12bb735f18d073ed9108eeba2caad8e22b3a6377970f0091e8cce4e1273d82d"
+  },
+  {
+    "name": "render/renderer.cjs",
+    "sha256": "31e20bdb920de2e807cf2652135a5fbbf373004960ad6ab640e7866cd980f403"
+  }
+]

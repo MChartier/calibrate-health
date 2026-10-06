@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-10-06T00:07:57.257Z",
+  "owner": "01a10cfe-a79f-7198-9e8f-2b4dc6703031",
+  "host": "mchartier_zbook",
+  "pr": "https://github.com/MChartier/calibrate-health/pull/423",
+  "head": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "parentRevisions": [],
+  "prBodySha256": "a13d0013b5dd860e043ca4a4c16a94ebae775e3d601d4a7fc6d664bff38f85fd",
+  "draft": true,
+  "readiness": false,
+  "ownerState": "clean idle; sole owner retained; resume for current-head configured review when quota permits",
+  "ci": "all five completed successfully",
+  "configuredReview": "quota-blocked; current head not reviewed",
+  "reviewRequestCommentId": 6006045757,
+  "reviewBlockerCommentId": 6006048888,
+  "independentQa": "not started; configured review is required first",
+  "evidenceCommit": "2b993b5670d60b3f5b1e239d19980bfe6ddd4ba6",
+  "pr426": {
+    "head": "4fe107e06bc8c615fe1f003fd824451fc8fe8076",
+    "branch": "mchartier/planned-pause-visibility-clean",
+    "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+  },
+  "clarification": "preserve explicit historical Backfill; no product decision hold",
+  "limitations": [
+    "Firebase runtime lifecycle/session/Wear and deletion/externalcredential integration unfinished",
+    "No authorized existing-project rehearsal or live Firebase actions",
+    "No actual native SQLite/emulator/device certification",
+    "Direct private GitHub UI inspection unavailable; no waiver",
+    "Configured review quota blocked and independent readiness QA not started"
+  ]
+}

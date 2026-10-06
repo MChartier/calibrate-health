@@ -1,0 +1,115 @@
+{
+  "head": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "bodySha256": "a13d0013b5dd860e043ca4a4c16a94ebae775e3d601d4a7fc6d664bff38f85fd",
+  "checkedAt": "2026-10-06T00:05:42.298Z",
+  "browser": "154.0.8037.98",
+  "images": [
+    {
+      "alt": "Before: Tracking inaccessible",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Cached tracking available",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Session restored after logout",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Signed out and revocation completed",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: No failed-write recovery",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Local intent and explicit recovery",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Correction allowed behind failure",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Explicit recovery required",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: No pending-revocation explanation",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Visible persistence limitation",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: Resume confirmation returns after restart",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: Pending resume suppresses duplicate action",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "files": [
+    {
+      "name": "body.md",
+      "sha256": "a13d0013b5dd860e043ca4a4c16a94ebae775e3d601d4a7fc6d664bff38f85fd"
+    },
+    {
+      "name": "embedded-failure.png",
+      "sha256": "808103840bc916c7bb786ed08742c4137a0db520db91ee02a14eaf171f778fa8"
+    },
+    {
+      "name": "embedded-local-values.png",
+      "sha256": "fa4f31afd69921e1b838d76625be00cd622c8e0612c26f094741d426d9b6410d"
+    },
+    {
+      "name": "embedded-logout-pair.png",
+      "sha256": "20fd84e9c94108ade9d607b7430631da693db67378188f73756d93c177e58d7d"
+    },
+    {
+      "name": "embedded-pair.png",
+      "sha256": "d1c0e91339a08d0778e97c9ebcc039d40d525ef6b052aea72ebe61db6376e024"
+    },
+    {
+      "name": "embedded-resume.png",
+      "sha256": "7a2dc5306760983423c173143d350e69cb5e39a9d25eab5af5b7b36b50fc07d6"
+    },
+    {
+      "name": "embedded-storage.png",
+      "sha256": "8b233c15d4fc7174c1454d43113e8b484b74db6f6817d67353058e5c8b223fa0"
+    },
+    {
+      "name": "full.png",
+      "sha256": "d21f148ba16e131b369ba531889efa2abb660b5589a6b0803c21c96084b5fa21"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "4078b592733913f09d9e6a1cebc97a2a80f38b836716efb6cce7d926cc8f6042"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "647882629f0eefffe694fadff24f52728aa666f530caf01454394a9995468146"
+    },
+    {
+      "name": "renderer.cjs",
+      "sha256": "59a9054f25beb600761f93e6f038d49b5f07cbdef20eba4e64bd2503a317cd28"
+    }
+  ]
+}

@@ -1,0 +1,1386 @@
+{
+  "checkedAt": "2026-10-06T00:07:57.257Z",
+  "head": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "runs": [
+    {
+      "conclusion": "success",
+      "databaseId": 37391836642,
+      "headSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+      "jobs": [
+        {
+          "completedAt": "2026-10-06T00:02:36Z",
+          "conclusion": "success",
+          "databaseId": 112038480555,
+          "name": "Classify Database Inputs",
+          "startedAt": "2026-10-06T00:02:30Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:32Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Detect affected database surfaces",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:32Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Select database execution",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:33Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836642/job/112038480555"
+        },
+        {
+          "completedAt": "2026-10-06T00:03:16Z",
+          "conclusion": "success",
+          "databaseId": 112038519836,
+          "name": "v0.14.0 Upgrade and Encrypted Rollback",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:40Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:39Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:43Z",
+              "conclusion": "success",
+              "name": "Checkout candidate C with immutable base tag",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:40Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:49Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:43Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:55Z",
+              "conclusion": "success",
+              "name": "Install backend dependencies",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:49Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:56Z",
+              "conclusion": "success",
+              "name": "Validate rollback rehearsal helpers",
+              "number": 5,
+              "startedAt": "2026-10-06T00:02:55Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:14Z",
+              "conclusion": "success",
+              "name": "Upgrade from v0.14.0, restore, and re-upgrade",
+              "number": 6,
+              "startedAt": "2026-10-06T00:02:56Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:14Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 11,
+              "startedAt": "2026-10-06T00:03:14Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:14Z",
+              "conclusion": "success",
+              "name": "Post Checkout candidate C with immutable base tag",
+              "number": 12,
+              "startedAt": "2026-10-06T00:03:14Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:14Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 13,
+              "startedAt": "2026-10-06T00:03:14Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836642/job/112038519836"
+        },
+        {
+          "completedAt": "2026-10-06T00:03:10Z",
+          "conclusion": "success",
+          "databaseId": 112038519868,
+          "name": "Populated Postgres Upgrade",
+          "startedAt": "2026-10-06T00:02:38Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:39Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:39Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:46Z",
+              "conclusion": "success",
+              "name": "Initialize containers",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:39Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:47Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:46Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:52Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:47Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:57Z",
+              "conclusion": "success",
+              "name": "Install backend dependencies",
+              "number": 5,
+              "startedAt": "2026-10-06T00:02:52Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:59Z",
+              "conclusion": "success",
+              "name": "Generate Prisma client",
+              "number": 6,
+              "startedAt": "2026-10-06T00:02:57Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:59Z",
+              "conclusion": "success",
+              "name": "Validate upgrade-smoke helpers",
+              "number": 7,
+              "startedAt": "2026-10-06T00:02:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:02Z",
+              "conclusion": "success",
+              "name": "Upgrade populated schema from 0020 through current",
+              "number": 8,
+              "startedAt": "2026-10-06T00:02:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:04Z",
+              "conclusion": "success",
+              "name": "Serialize concurrent weight-trend materialization",
+              "number": 9,
+              "startedAt": "2026-10-06T00:03:02Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:05Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 16,
+              "startedAt": "2026-10-06T00:03:04Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:05Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 17,
+              "startedAt": "2026-10-06T00:03:05Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:09Z",
+              "conclusion": "success",
+              "name": "Stop containers",
+              "number": 18,
+              "startedAt": "2026-10-06T00:03:05Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:09Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 19,
+              "startedAt": "2026-10-06T00:03:09Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836642/job/112038519868"
+        }
+      ],
+      "name": "Database Upgrade",
+      "status": "completed",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836642"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37391837106,
+      "headSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+      "jobs": [
+        {
+          "completedAt": "2026-10-06T00:02:36Z",
+          "conclusion": "success",
+          "databaseId": 112038481552,
+          "name": "Classify Production Image Inputs",
+          "startedAt": "2026-10-06T00:02:31Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Detect affected production image surfaces",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Select scan execution",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:33Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391837106/job/112038481552"
+        },
+        {
+          "completedAt": "2026-10-06T00:05:23Z",
+          "conclusion": "success",
+          "databaseId": 112038520178,
+          "name": "High and Critical Vulnerabilities",
+          "startedAt": "2026-10-06T00:02:40Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:43Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:54Z",
+              "conclusion": "success",
+              "name": "Initialize containers",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:43Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:56Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:54Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:58Z",
+              "conclusion": "success",
+              "name": "Build production image",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:56Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:05:02Z",
+              "conclusion": "success",
+              "name": "Smoke production startup and readiness",
+              "number": 5,
+              "startedAt": "2026-10-06T00:04:58Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:05:02Z",
+              "conclusion": "success",
+              "name": "Remove runtime smoke container",
+              "number": 6,
+              "startedAt": "2026-10-06T00:05:02Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:05:14Z",
+              "conclusion": "success",
+              "name": "Scan production image",
+              "number": 7,
+              "startedAt": "2026-10-06T00:05:02Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:05:19Z",
+              "conclusion": "success",
+              "name": "Post Scan production image",
+              "number": 12,
+              "startedAt": "2026-10-06T00:05:14Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:05:19Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 13,
+              "startedAt": "2026-10-06T00:05:19Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:05:21Z",
+              "conclusion": "success",
+              "name": "Stop containers",
+              "number": 14,
+              "startedAt": "2026-10-06T00:05:19Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:05:21Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 15,
+              "startedAt": "2026-10-06T00:05:21Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391837106/job/112038520178"
+        }
+      ],
+      "name": "Production Container Scan",
+      "status": "completed",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391837106"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37391836105,
+      "headSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+      "jobs": [
+        {
+          "completedAt": "2026-10-06T00:03:36Z",
+          "conclusion": "success",
+          "databaseId": 112038478438,
+          "name": "Backend, Shared, API Client, and Mobile Typecheck",
+          "startedAt": "2026-10-06T00:02:30Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:32Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:35Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:47Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:35Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:59Z",
+              "conclusion": "success",
+              "name": "Install workspace deps",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:47Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:05Z",
+              "conclusion": "success",
+              "name": "Install backend deps",
+              "number": 5,
+              "startedAt": "2026-10-06T00:02:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:28Z",
+              "conclusion": "success",
+              "name": "Type-check all TypeScript surfaces",
+              "number": 6,
+              "startedAt": "2026-10-06T00:03:05Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:33Z",
+              "conclusion": "success",
+              "name": "Check for dead code",
+              "number": 7,
+              "startedAt": "2026-10-06T00:03:28Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:33Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 13,
+              "startedAt": "2026-10-06T00:03:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:34Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 14,
+              "startedAt": "2026-10-06T00:03:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:34Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 15,
+              "startedAt": "2026-10-06T00:03:34Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836105/job/112038478438"
+        }
+      ],
+      "name": "Lint",
+      "status": "completed",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836105"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37391835754,
+      "headSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+      "jobs": [
+        {
+          "completedAt": "2026-10-06T00:02:37Z",
+          "conclusion": "success",
+          "databaseId": 112038477225,
+          "name": "Classify Build Inputs",
+          "startedAt": "2026-10-06T00:02:30Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:32Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:33Z",
+              "conclusion": "success",
+              "name": "Detect affected build surfaces",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:32Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:34Z",
+              "conclusion": "success",
+              "name": "Detect changes outside generated release mirrors",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:34Z",
+              "conclusion": "skipped",
+              "name": "Validate manual native upgrade baseline",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:34Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:34Z",
+              "conclusion": "success",
+              "name": "Select build surfaces",
+              "number": 5,
+              "startedAt": "2026-10-06T00:02:34Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:34Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 6,
+              "startedAt": "2026-10-06T00:02:34Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038477225"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:55Z",
+          "conclusion": "success",
+          "databaseId": 112038528208,
+          "name": "Release Configuration",
+          "startedAt": "2026-10-06T00:02:40Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:42Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:45Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:49Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:45Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:52Z",
+              "conclusion": "success",
+              "name": "Validate versions and quality-gate tests",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:49Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:52Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 7,
+              "startedAt": "2026-10-06T00:02:52Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:52Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 8,
+              "startedAt": "2026-10-06T00:02:52Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:52Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 9,
+              "startedAt": "2026-10-06T00:02:52Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038528208"
+        },
+        {
+          "completedAt": "2026-10-06T00:04:41Z",
+          "conclusion": "success",
+          "databaseId": 112038528239,
+          "name": "Expo Web Build",
+          "startedAt": "2026-10-06T00:02:40Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:41Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:47Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:15Z",
+              "conclusion": "success",
+              "name": "Setup reviewed bundle Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:47Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:42Z",
+              "conclusion": "success",
+              "name": "Install deps",
+              "number": 4,
+              "startedAt": "2026-10-06T00:03:15Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:38Z",
+              "conclusion": "success",
+              "name": "Build and validate Expo web",
+              "number": 5,
+              "startedAt": "2026-10-06T00:03:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:38Z",
+              "conclusion": "success",
+              "name": "Post Setup reviewed bundle Node",
+              "number": 9,
+              "startedAt": "2026-10-06T00:04:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:40Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 10,
+              "startedAt": "2026-10-06T00:04:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:40Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 11,
+              "startedAt": "2026-10-06T00:04:40Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038528239"
+        },
+        {
+          "completedAt": "2026-10-06T00:04:32Z",
+          "conclusion": "success",
+          "databaseId": 112038528295,
+          "name": "Web Critical Smoke",
+          "startedAt": "2026-10-06T00:02:40Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:41Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:40Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:45Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:59Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:45Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:17Z",
+              "conclusion": "success",
+              "name": "Install dependencies",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:59Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:27Z",
+              "conclusion": "success",
+              "name": "Install pinned Playwright Chromium",
+              "number": 5,
+              "startedAt": "2026-10-06T00:03:17Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:29Z",
+              "conclusion": "success",
+              "name": "Exercise critical production Web journeys on desktop and phone",
+              "number": 6,
+              "startedAt": "2026-10-06T00:03:27Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:29Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 11,
+              "startedAt": "2026-10-06T00:04:29Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:31Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 12,
+              "startedAt": "2026-10-06T00:04:29Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:04:31Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 13,
+              "startedAt": "2026-10-06T00:04:31Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038528295"
+        },
+        {
+          "completedAt": "2026-10-06T00:03:33Z",
+          "conclusion": "success",
+          "databaseId": 112038528324,
+          "name": "android Runtime Bundle",
+          "startedAt": "2026-10-06T00:02:40Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:41Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:43Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:51Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:43Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:00Z",
+              "conclusion": "success",
+              "name": "Install dependencies",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:51Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:01Z",
+              "conclusion": "success",
+              "name": "Test installed mobile build tools",
+              "number": 5,
+              "startedAt": "2026-10-06T00:03:00Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:30Z",
+              "conclusion": "success",
+              "name": "Export the android Metro bundle",
+              "number": 6,
+              "startedAt": "2026-10-06T00:03:01Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:30Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 11,
+              "startedAt": "2026-10-06T00:03:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:31Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 12,
+              "startedAt": "2026-10-06T00:03:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:31Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 13,
+              "startedAt": "2026-10-06T00:03:31Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038528324"
+        },
+        {
+          "completedAt": "2026-10-06T00:03:09Z",
+          "conclusion": "success",
+          "databaseId": 112038528356,
+          "name": "Backend Build",
+          "startedAt": "2026-10-06T00:02:40Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:42Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:44Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:51Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:44Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:57Z",
+              "conclusion": "success",
+              "name": "Install deps",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:51Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:07Z",
+              "conclusion": "success",
+              "name": "Build backend",
+              "number": 5,
+              "startedAt": "2026-10-06T00:02:57Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:07Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 9,
+              "startedAt": "2026-10-06T00:03:07Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:07Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 10,
+              "startedAt": "2026-10-06T00:03:07Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:07Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 11,
+              "startedAt": "2026-10-06T00:03:07Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038528356"
+        },
+        {
+          "completedAt": "2026-10-06T00:03:35Z",
+          "conclusion": "success",
+          "databaseId": 112038528377,
+          "name": "ios Runtime Bundle",
+          "startedAt": "2026-10-06T00:02:40Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:42Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:45Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:52Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:45Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:02Z",
+              "conclusion": "success",
+              "name": "Install dependencies",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:52Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:02Z",
+              "conclusion": "success",
+              "name": "Test installed mobile build tools",
+              "number": 5,
+              "startedAt": "2026-10-06T00:03:02Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:33Z",
+              "conclusion": "success",
+              "name": "Export the ios Metro bundle",
+              "number": 6,
+              "startedAt": "2026-10-06T00:03:02Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:33Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 11,
+              "startedAt": "2026-10-06T00:03:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:33Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 12,
+              "startedAt": "2026-10-06T00:03:33Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:33Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 13,
+              "startedAt": "2026-10-06T00:03:33Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038528377"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038533190,
+          "name": "Six-State Data-Backed Route Acceptance",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038533190"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038533776,
+          "name": "UX Accessibility and Visual Regression",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038533776"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038533838,
+          "name": "Full Exported Web and PWA End-to-End",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038533838"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038533844,
+          "name": "Wear Build and JVM Tests",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038533844"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038533942,
+          "name": "iOS Build",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038533942"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038534287,
+          "name": "Mobile Build",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038534287"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038534439,
+          "name": "Wear Release Emulator Smoke",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038534439"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038534456,
+          "name": "Native Two-Emulator Package Upgrade",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038534456"
+        },
+        {
+          "completedAt": "2026-10-06T00:02:38Z",
+          "conclusion": "skipped",
+          "databaseId": 112038534735,
+          "name": "Android Emulator End-to-End",
+          "startedAt": "2026-10-06T00:02:39Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754/job/112038534735"
+        }
+      ],
+      "name": "Builds",
+      "status": "completed",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391835754"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37391836212,
+      "headSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+      "jobs": [
+        {
+          "completedAt": "2026-10-06T00:02:33Z",
+          "conclusion": "success",
+          "databaseId": 112038479186,
+          "name": "Classify Test Inputs",
+          "startedAt": "2026-10-06T00:02:30Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:31Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:32Z",
+              "conclusion": "success",
+              "name": "Detect affected test surfaces",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:32Z",
+              "conclusion": "success",
+              "name": "Select test surfaces",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:32Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:32Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:32Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836212/job/112038479186"
+        },
+        {
+          "completedAt": "2026-10-06T00:06:27Z",
+          "conclusion": "success",
+          "databaseId": 112038507684,
+          "name": "Backend Tests",
+          "startedAt": "2026-10-06T00:02:36Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:37Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:49Z",
+              "conclusion": "success",
+              "name": "Initialize containers",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:50Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:49Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:55Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:50Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:02Z",
+              "conclusion": "success",
+              "name": "Install deps",
+              "number": 5,
+              "startedAt": "2026-10-06T00:02:55Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:04Z",
+              "conclusion": "success",
+              "name": "Verify fresh database migrations",
+              "number": 6,
+              "startedAt": "2026-10-06T00:03:02Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:06:25Z",
+              "conclusion": "success",
+              "name": "Run tests",
+              "number": 7,
+              "startedAt": "2026-10-06T00:03:04Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:06:25Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 12,
+              "startedAt": "2026-10-06T00:06:25Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:06:25Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 13,
+              "startedAt": "2026-10-06T00:06:25Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:06:25Z",
+              "conclusion": "success",
+              "name": "Stop containers",
+              "number": 14,
+              "startedAt": "2026-10-06T00:06:25Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:06:25Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 15,
+              "startedAt": "2026-10-06T00:06:25Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836212/job/112038507684"
+        },
+        {
+          "completedAt": "2026-10-06T00:03:45Z",
+          "conclusion": "success",
+          "databaseId": 112038507846,
+          "name": "Mobile Tests",
+          "startedAt": "2026-10-06T00:02:36Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-06T00:02:38Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-06T00:02:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:41Z",
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "startedAt": "2026-10-06T00:02:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:02:51Z",
+              "conclusion": "success",
+              "name": "Setup Node",
+              "number": 3,
+              "startedAt": "2026-10-06T00:02:41Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:03Z",
+              "conclusion": "success",
+              "name": "Install mobile deps",
+              "number": 4,
+              "startedAt": "2026-10-06T00:02:51Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:10Z",
+              "conclusion": "success",
+              "name": "Install API generator deps",
+              "number": 5,
+              "startedAt": "2026-10-06T00:03:03Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:11Z",
+              "conclusion": "success",
+              "name": "Validate API contract",
+              "number": 6,
+              "startedAt": "2026-10-06T00:03:10Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:15Z",
+              "conclusion": "success",
+              "name": "Run API client tests",
+              "number": 7,
+              "startedAt": "2026-10-06T00:03:11Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:42Z",
+              "conclusion": "success",
+              "name": "Run mobile tests",
+              "number": 8,
+              "startedAt": "2026-10-06T00:03:15Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:42Z",
+              "conclusion": "success",
+              "name": "Post Setup Node",
+              "number": 15,
+              "startedAt": "2026-10-06T00:03:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:42Z",
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 16,
+              "startedAt": "2026-10-06T00:03:42Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-06T00:03:42Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "startedAt": "2026-10-06T00:03:42Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836212/job/112038507846"
+        }
+      ],
+      "name": "Tests",
+      "status": "completed",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37391836212"
+    }
+  ]
+}
