@@ -1,0 +1,94 @@
+{
+  "checkedAtUtc": "2026-10-06T02:56:20.280Z",
+  "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "baseSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "prBodySha256": "8f095da07d619c96c85cb6e0ca2f2cfcbeead2b643c021c3281898502d084358",
+  "issueBodySha256": "29630d42574795da93a439ad2575bd03fad21b7738a8bd0f3778d66116db9375",
+  "preservedCommit": "078d8f8b8c124f96b0161d87a8eed2fec031837c",
+  "priorQaCommentId": 6008169378,
+  "impact": "Communication only; prior QA communication assessment is historical until same-QA rereads. Product, base, tests and original capture/provenance identities unchanged.",
+  "rendered": [
+    {
+      "kind": "pr",
+      "url": "https://github.com/MChartier/calibrate-health/pull/428",
+      "time": "2026-10-06T02:56:50.805Z",
+      "pairs": 3,
+      "images": 6
+    },
+    {
+      "kind": "issue",
+      "url": "https://github.com/MChartier/calibrate-health/issues/414",
+      "time": "2026-10-06T02:56:52.361Z",
+      "pairs": 1,
+      "images": 2
+    }
+  ],
+  "pixelInspection": "Read the actual rendered issue and PR. Concise openings explain the problem/solution; behavior table states expected and observed outcomes. All representative original image pixels inspected: Today date, future markers/recorded colors, known queued state amid terminal history failure. Images loaded and matched original hashes.",
+  "unchanged": "Source/head/base, product/test files, existing evidence URLs/capture/provenance/image identities; no test reruns, labels, readiness or prior verdict edits.",
+  "artifacts": [
+    {
+      "path": ".gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "path": "concise-identities.json",
+      "sha256": "7ac23fdc076bbd4f4aee73a3bf002ea81f2b239182d8c306582ec47dbd2eb259"
+    },
+    {
+      "path": "concise-issue-opening.png",
+      "sha256": "ba429c18fc71a003e9597618996357ef047444bb09ae02ccbb8712d2f3bcef2a"
+    },
+    {
+      "path": "concise-issue-pair-1.png",
+      "sha256": "b5ad037ebca592556c5ad7b966e3f63490dccd92baa62f9393ebd108386c989c"
+    },
+    {
+      "path": "concise-issue-validation.png",
+      "sha256": "7fad576096592a9b80dda390d2f786249b5d0be47b34f8c77e90172c9410cdea"
+    },
+    {
+      "path": "concise-pr-opening.png",
+      "sha256": "84ec7b0157c38b61c1a465be20b326632a07a10cf57c489b87cdda19447743a5"
+    },
+    {
+      "path": "concise-pr-pair-1.png",
+      "sha256": "c8ec09968932dc7e983c86084a089f4a449b9b561b6f748721f5a7df85594c71"
+    },
+    {
+      "path": "concise-pr-pair-2.png",
+      "sha256": "b5ad037ebca592556c5ad7b966e3f63490dccd92baa62f9393ebd108386c989c"
+    },
+    {
+      "path": "concise-pr-pair-3.png",
+      "sha256": "32e4c78be1acf41471cdb99526b31230a360d8d4b31b61b3fe50b373804f1901"
+    },
+    {
+      "path": "concise-pr-validation.png",
+      "sha256": "84ec7b0157c38b61c1a465be20b326632a07a10cf57c489b87cdda19447743a5"
+    },
+    {
+      "path": "concise-rendered.json",
+      "sha256": "d232820b18b20c96678a3a9856a666fcf27daea6c6ca43cfa5769700ea10ed76"
+    },
+    {
+      "path": "issue-after.md",
+      "sha256": "29630d42574795da93a439ad2575bd03fad21b7738a8bd0f3778d66116db9375"
+    },
+    {
+      "path": "issue-before.md",
+      "sha256": "64d8c8a7bc8c6a89d50894549d6145240fbca73f20727b59751978e72fd9e35b"
+    },
+    {
+      "path": "pr-after.md",
+      "sha256": "8f095da07d619c96c85cb6e0ca2f2cfcbeead2b643c021c3281898502d084358"
+    },
+    {
+      "path": "pr-before.md",
+      "sha256": "19930f28ef6b47d04567efbd3369f138d281e2ec96bcd3beb898b881a755c912"
+    },
+    {
+      "path": "preservation.json",
+      "sha256": "2a1a24fa7499a00fc3c1e35cba5447b6b5782ba320f4f31d22bbdbeac9c8aa3c"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "checkedAtUtc": "2026-10-06T02:56:20.280Z",
+  "headSha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "baseSha": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "prBodySha256": "8f095da07d619c96c85cb6e0ca2f2cfcbeead2b643c021c3281898502d084358",
+  "issueBodySha256": "29630d42574795da93a439ad2575bd03fad21b7738a8bd0f3778d66116db9375",
+  "preservedCommit": "078d8f8b8c124f96b0161d87a8eed2fec031837c",
+  "priorQaCommentId": 6008169378,
+  "impact": "Communication only; prior QA communication assessment is historical until same-QA rereads. Product, base, tests and original capture/provenance identities unchanged."
+}
