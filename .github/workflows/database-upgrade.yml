@@ -113,6 +113,9 @@ jobs:
 
       - name: Serialize concurrent weight-trend materialization
         run: node scripts/postgres-weight-trend-concurrency-smoke.mjs
+      - name: Verify goal pace continuity and concurrent saves
+        run: node scripts/postgres-goal-pace-smoke.mjs
+
   release-upgrade-rollback:
     name: v0.14.0 Upgrade and Encrypted Rollback
     needs: changes

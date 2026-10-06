@@ -585,6 +585,8 @@ model CaloriePlanRevision {
   source_goal            Goal                       @relation(fields: [source_goal_id], references: [id], onDelete: Cascade)
   recommendation_id      Int?                       @unique
   recommendation         CalibrationRecommendation? @relation(fields: [recommendation_id], references: [id], onDelete: SetNull)
+  /// Non-null only for an intentional pace change; calibration rows inherit the dated pace.
+  configured_daily_deficit Int?
   target_adjustment_kcal Int
   calorie_plan_review_status CaloriePlanReviewStatus @default(CLEAR)
   calorie_plan_review_reason String?

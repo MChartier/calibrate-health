@@ -65,6 +65,7 @@ let mockSearchParams: { openNextGoal?: string } = {};
 let mockWeightChangePending = false;
 let mockTrendPreviewProps: { onPress: () => void; onLogWeight: () => void } | null = null;
 let mockPlanSummaryProps: { onPress: () => void; planAvailable?: boolean } | null = null;
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'test-operation-001' }));
 jest.mock('expo-router', () => ({
     router: { push: jest.fn() },
     useLocalSearchParams: () => mockSearchParams,

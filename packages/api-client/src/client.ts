@@ -29,6 +29,8 @@ import type {
     FoodLogUpdatePayload,
     FoodSearchResponse,
     GoalEntry,
+    GoalPaceOptions,
+    GoalPaceRequest,
     HealthConnectSyncPayload,
     HealthConnectSyncResponse,
     InAppNotificationPageResponse,
@@ -683,6 +685,16 @@ export class CalibrateApiClient {
             method: 'PATCH',
             headers: buildOperationHeaders(operationId),
             json: payload
+        });
+    }
+
+    getGoalPaceOptions(): Promise<GoalPaceOptions> {
+        return this.request<GoalPaceOptions>('/api/goals/pace-options', { cache: 'no-store' });
+    }
+
+    adjustGoalPace(id: number, payload: GoalPaceRequest, operationId: string): Promise<GoalEntry> {
+        return this.request<GoalEntry>(`/api/goals/${encodeURIComponent(String(id))}/pace`, {
+            method: 'PATCH', headers: buildOperationHeaders(operationId), json: payload
         });
     }
 
