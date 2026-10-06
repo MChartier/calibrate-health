@@ -1,0 +1,18 @@
+[
+  {
+    "path": "verdict.json",
+    "sha256": "9be24c5a79b5bff8e81af0d95c50d814c0b440061e274b2d0d995f3fa413fa4f"
+  },
+  {
+    "path": "pr-body.md",
+    "sha256": "fa417b92bad9bf9e2adfc267a091a705ac0b56593e6df667a042b02b42f3a927"
+  },
+  {
+    "path": "issue-body.md",
+    "sha256": "f06dbdfbf31286c8f9fff816f35f37d3d0005a64f103a94108e396747d930ede"
+  },
+  {
+    "path": "README.md",
+    "sha256": "a695d25d07d6478eda373d740c3b8768bd5aafb9b8657f11bad7ed0cae56b462"
+  }
+]
