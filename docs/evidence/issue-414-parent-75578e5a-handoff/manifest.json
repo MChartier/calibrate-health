@@ -1,0 +1,93 @@
+{
+  "createdAtUtc": "2026-10-06T04:17:50.088Z",
+  "artifacts": [
+    {
+      "path": ".gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "path": "inspect-propagation.cjs",
+      "sha256": "2fa14ed91f85e9581b7fdb9e15563ed2f471d3f9aeb1692528327c5256e0c9cb"
+    },
+    {
+      "path": "inventory-propagation.cjs",
+      "sha256": "052776c43774f545fb97becf1783eac001949b3f740275569305d95fa43ec94a"
+    },
+    {
+      "path": "propagation-ci-tests.log",
+      "sha256": "19cdaca8125777f16cbca4500a771ba972cddbbf67b2fb0bb970cbb5bab24be5"
+    },
+    {
+      "path": "propagation-identities.json",
+      "sha256": "e410b8be3cae09b32c48cc95ab7d148eee3275e7774d84062515681e17c8b757"
+    },
+    {
+      "path": "propagation-issue-api-body.md",
+      "sha256": "07b6b26d5ef71453700e389e08459326def558cd6dd1a4532ea9bfda2d723250"
+    },
+    {
+      "path": "propagation-issue-before.md",
+      "sha256": "29630d42574795da93a439ad2575bd03fad21b7738a8bd0f3778d66116db9375"
+    },
+    {
+      "path": "propagation-issue-opening.png",
+      "sha256": "99bda3214892d47cd8926f413d60f76557dc17cca0f16cfb754f9ac778f6c73d"
+    },
+    {
+      "path": "propagation-issue-pair-1.png",
+      "sha256": "b5ad037ebca592556c5ad7b966e3f63490dccd92baa62f9393ebd108386c989c"
+    },
+    {
+      "path": "propagation-issue-validation.png",
+      "sha256": "c28ce97b178357a48473586662c76c3b0367236d5c22b8879e8b976df7deeb3d"
+    },
+    {
+      "path": "propagation-pr-api-body.md",
+      "sha256": "c74621d2396c21957ac535b59b924f1a4ddbece4d6d761204de04af37c2a6800"
+    },
+    {
+      "path": "propagation-pr-before.md",
+      "sha256": "8f095da07d619c96c85cb6e0ca2f2cfcbeead2b643c021c3281898502d084358"
+    },
+    {
+      "path": "propagation-pr-opening.png",
+      "sha256": "9258a6f1c2422de795c59a600c920c5a415040c247eff33d11389b9986832db5"
+    },
+    {
+      "path": "propagation-pr-pair-1.png",
+      "sha256": "7f340730f76dbe2bf6d279576ae869da6dc591bb88f80d362e3f50fdaae53451"
+    },
+    {
+      "path": "propagation-pr-pair-2.png",
+      "sha256": "b5ad037ebca592556c5ad7b966e3f63490dccd92baa62f9393ebd108386c989c"
+    },
+    {
+      "path": "propagation-pr-pair-3.png",
+      "sha256": "32e4c78be1acf41471cdb99526b31230a360d8d4b31b61b3fe50b373804f1901"
+    },
+    {
+      "path": "propagation-pr-validation.png",
+      "sha256": "9258a6f1c2422de795c59a600c920c5a415040c247eff33d11389b9986832db5"
+    },
+    {
+      "path": "propagation-prepush.md",
+      "sha256": "9555c60e06dc79b94373eb0f7c7b2e415ee206794324bf3715011690b9ed0353"
+    },
+    {
+      "path": "propagation-rendered.json",
+      "sha256": "61936263d3e4c5a3ea26cbdcb8221488e60698d8b7271a1efedd8ce73310cd59"
+    },
+    {
+      "path": "propagation-scope.json",
+      "sha256": "d18255f8c603f6e9bdc5fc9e7c7678c3b6741c83e0fde33342452fe4e6f73cf7"
+    },
+    {
+      "path": "README.md",
+      "sha256": "73ce2c6935497eaa877432b1fc7fb248587323b0cab4ec47bda85cd5ebd8fed6"
+    },
+    {
+      "path": "refine-propagation-scope.cjs",
+      "sha256": "b67db8a2f3c2a91bed444824362f6e580212d0c02dc0e70169af8ce1c0d89992"
+    }
+  ]
+}

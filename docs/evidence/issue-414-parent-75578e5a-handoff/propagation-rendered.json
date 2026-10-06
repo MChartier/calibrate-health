@@ -1,0 +1,76 @@
+[
+  {
+    "kind": "pr",
+    "url": "https://github.com/MChartier/calibrate-health/pull/428",
+    "checkedAtUtc": "2026-10-06T04:15:38.989Z",
+    "browser": "154.0.8037.98",
+    "pairs": 3,
+    "images": [
+      {
+        "alt": "Before: paused Today",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-dated-today-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "8a315410c426bebf26fa66d6464d392a2fd46cf8dad947cc352e1bebbd53fc2d"
+      },
+      {
+        "alt": "After: paused Today",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-dated-today-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "9ed3217d0154787ac07df8ec195490d1c9ae230cb0b59d06849f14bf80520c01"
+      },
+      {
+        "alt": "Before: calendar",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-calendar-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+      },
+      {
+        "alt": "After: calendar",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-calendar-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+      },
+      {
+        "alt": "Before: history-read recovery",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-queued-resume-calendar.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "7dbc652a533b8121d6ac4cd2399a05019e296489b05fe6ff92b94dbfc723fe17"
+      },
+      {
+        "alt": "After: history-read recovery",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-queued-resume-calendar.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "e870474eefe64a0e4df08ce43c26e6445de1bbecf2041fe8d7c0653403d1d23b"
+      }
+    ]
+  },
+  {
+    "kind": "issue",
+    "url": "https://github.com/MChartier/calibrate-health/issues/414",
+    "checkedAtUtc": "2026-10-06T04:15:40.723Z",
+    "browser": "154.0.8037.98",
+    "pairs": 1,
+    "images": [
+      {
+        "alt": "Before: calendar",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-calendar-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+      },
+      {
+        "alt": "After: calendar",
+        "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-calendar-light.png",
+        "width": 320,
+        "height": 720,
+        "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+      }
+    ]
+  }
+]

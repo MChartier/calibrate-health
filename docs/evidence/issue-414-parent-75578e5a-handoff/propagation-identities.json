@@ -1,0 +1,288 @@
+{
+  "checkedAtUtc": "2026-10-06T04:17:23.105Z",
+  "host": "MCHARTIER_ZBOOK",
+  "implementationTaskId": "01a10851-157c-744a-ae61-5a7724a800dc",
+  "standard": "workflow-v3 / pr-review-v3 / queue-v1 with supplied amendments",
+  "headSha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+  "baseSha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "baseRef": "mchartier/firebase-migration-preparation",
+  "mergeBase": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "parent": {
+    "pr": 423,
+    "headSha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+    "contractCommentId": 6009082987
+  },
+  "ultimateTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed"
+  },
+  "prBodySha256": "c74621d2396c21957ac535b59b924f1a4ddbece4d6d761204de04af37c2a6800",
+  "issueBodySha256": "07b6b26d5ef71453700e389e08459326def558cd6dd1a4532ea9bfda2d723250",
+  "draft": true,
+  "labels": [],
+  "scopeSha256": "d18255f8c603f6e9bdc5fc9e7c7678c3b6741c83e0fde33342452fe4e6f73cf7",
+  "ci": [
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104496719",
+      "name": "ios Runtime Bundle",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704910/job/112104495712",
+      "name": "Mobile Tests",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104496693",
+      "name": "Web Critical Smoke",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104496669",
+      "name": "android Runtime Bundle",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104496643",
+      "name": "Expo Web Build",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104498114",
+      "name": "Mobile Build",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104497905",
+      "name": "Six-State Data-Backed Route Acceptance",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104498041",
+      "name": "UX Accessibility and Visual Regression",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412705035/job/112104494299",
+      "name": "High and Critical Vulnerabilities",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104498140",
+      "name": "iOS Build",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704894/job/112104501836",
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704894/job/112104501572",
+      "name": "Populated Postgres Upgrade",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104498849",
+      "name": "Android Emulator End-to-End",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104498033",
+      "name": "Wear Build and JVM Tests",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104497486",
+      "name": "Release Configuration",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104497584",
+      "name": "Backend Build",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704910/job/112104496970",
+      "name": "Backend Tests",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104497695",
+      "name": "Native Two-Emulator Package Upgrade",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104497774",
+      "name": "Wear Release Emulator Smoke",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104497725",
+      "name": "Full Exported Web and PWA End-to-End",
+      "state": "SKIPPED"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704910/job/112104472250",
+      "name": "Classify Test Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704847/job/112104471351",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972/job/112104473128",
+      "name": "Classify Build Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412705035/job/112104472001",
+      "name": "Classify Production Image Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37412704894/job/112104471804",
+      "name": "Classify Database Inputs",
+      "state": "SUCCESS"
+    }
+  ],
+  "runs": [
+    {
+      "id": "37412704972",
+      "headSha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37412704972"
+    },
+    {
+      "id": "37412704910",
+      "headSha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37412704910"
+    },
+    {
+      "id": "37412705035",
+      "headSha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37412705035"
+    },
+    {
+      "id": "37412704894",
+      "headSha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37412704894"
+    },
+    {
+      "id": "37412704847",
+      "headSha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37412704847"
+    }
+  ],
+  "tests": {
+    "focused": "87 / 8 suites passed",
+    "browser": "40 passed / 4 deliberate skips",
+    "mobileExactHeadCI": "1274 tests / 235 suites passed",
+    "typechecks": "all passed",
+    "captures": "2 Before + 2 After scenarios passed"
+  },
+  "review": {
+    "requestCommentId": 6006632427,
+    "quotaRefusalCommentId": 6006636132,
+    "bodySha256": "e39b189a2ed6388c9d919876a2893ca0216a023301e11d788df190b4366991b9",
+    "status": "unavailable, nonblocking quota-only amendment6006523068; not a review pass; no redundant request"
+  },
+  "evidence": {
+    "commitSha": "6e0438abb1fcdc6893741128dfa5d17c984cb6c3",
+    "manifestPath": "docs/evidence/issue-414-parent-75578e5a/manifest.json",
+    "sha256": "14f2033dd7d3178708df1e6c2ede2ff6da86375b2af60b78d3e0cd47d25e254d",
+    "pairs": 5,
+    "captures": 11,
+    "remoteArtifactsVerified": 41
+  },
+  "rendered": [
+    {
+      "kind": "pr",
+      "url": "https://github.com/MChartier/calibrate-health/pull/428",
+      "checkedAtUtc": "2026-10-06T04:15:38.989Z",
+      "browser": "154.0.8037.98",
+      "pairs": 3,
+      "images": [
+        {
+          "alt": "Before: paused Today",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-dated-today-light.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "8a315410c426bebf26fa66d6464d392a2fd46cf8dad947cc352e1bebbd53fc2d"
+        },
+        {
+          "alt": "After: paused Today",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-dated-today-light.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "9ed3217d0154787ac07df8ec195490d1c9ae230cb0b59d06849f14bf80520c01"
+        },
+        {
+          "alt": "Before: calendar",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-calendar-light.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+        },
+        {
+          "alt": "After: calendar",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-calendar-light.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+        },
+        {
+          "alt": "Before: history-read recovery",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-queued-resume-calendar.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "7dbc652a533b8121d6ac4cd2399a05019e296489b05fe6ff92b94dbfc723fe17"
+        },
+        {
+          "alt": "After: history-read recovery",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-queued-resume-calendar.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "e870474eefe64a0e4df08ce43c26e6445de1bbecf2041fe8d7c0653403d1d23b"
+        }
+      ]
+    },
+    {
+      "kind": "issue",
+      "url": "https://github.com/MChartier/calibrate-health/issues/414",
+      "checkedAtUtc": "2026-10-06T04:15:40.723Z",
+      "browser": "154.0.8037.98",
+      "pairs": 1,
+      "images": [
+        {
+          "alt": "Before: calendar",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/before-compact-phone-chrome-calendar-light.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+        },
+        {
+          "alt": "After: calendar",
+          "src": "https://raw.githubusercontent.com/MChartier/calibrate-health/6e0438abb1fcdc6893741128dfa5d17c984cb6c3/docs/evidence/issue-414-parent-75578e5a/after-compact-phone-chrome-calendar-light.png",
+          "width": 320,
+          "height": 720,
+          "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+        }
+      ]
+    }
+  ],
+  "pixelInspection": "Original six embedded images and rendered opening/three PR pairs inspected directly: saved date, inherited divider, unchanged completed colors, planned dashed symbols, same terminal history failure with known-state recovery; labels and pairing clear.",
+  "limitations": "Synthetic browser only; no native device/emulator/hardware screen reader or live DB. Parent migrations/provider rollout not certified. Independent QA must reassess new source/base/body/evidence; no readiness awarded."
+}

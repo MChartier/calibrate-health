@@ -1,0 +1,754 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-06T04:14:45.797Z",
+  "actualTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "mchartier/firebase-migration-preparation",
+    "sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae"
+  },
+  "headSha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+  "mergeBase": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "declaredParent": {
+    "pr": 423,
+    "ref": "mchartier/firebase-migration-preparation",
+    "sha": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+    "state": "open",
+    "draft": true,
+    "review": "Bot quota unavailable and nonblocking under amendment6006523068; not certified by this child",
+    "contract": "https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6009082987"
+  },
+  "ultimateTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed"
+  },
+  "remoteTotals": {
+    "commits": 5,
+    "files": 15,
+    "additions": 763,
+    "deletions": 32
+  },
+  "pagination": "All live PR ordered commits, changed files and per-commit files retrieved through all pages with per_page100; totals reconciled.",
+  "commits": [
+    {
+      "sha": "35bbbf1cd5c4f6654dd2e000f685c40ff9450bf0",
+      "parents": [
+        "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      ],
+      "subject": "Show planned pauses using durable calendar intent and locked range reads",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "7a1176b3668377c78239072d9bbc7555169a40d2",
+          "additions": 296,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "8c67125c01dfac42f071509f9a3c30705683ec9e",
+          "additions": 68,
+          "deletions": 2,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "a010a9f413ccaa2be49efa468b2bff578318c74d",
+          "additions": 66,
+          "deletions": 16,
+          "scope": "Display-only future projection, target-month browsing, disabled future selection and honest saved-intent/error recovery."
+        },
+        {
+          "path": "mobile/src/food/calendarIntent.test.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "f269b45000edc1d78d25f45d562bd371d211a778",
+          "additions": 28,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/calendarIntent.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "a40e04a6607a5f9ec17872ee421563dfb0fa1956",
+          "additions": 14,
+          "deletions": 0,
+          "scope": "Project acknowledged receipts then pending explicit controls on present or absent calendar dates."
+        },
+        {
+          "path": "mobile/src/food/plannedPause.test.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "148db35c78d72bc47d4bf2cb042229098e84f731",
+          "additions": 57,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/plannedPause.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "9fa61566d49f365c772b5a922729078e8699b5b8",
+          "additions": 37,
+          "deletions": 0,
+          "scope": "Validated date-only intention copy and finite/open-ended forecast boundaries."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "0e3c10fd926f19abdefa1a09bbacca3f346801bf",
+          "additions": 21,
+          "deletions": 1,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "ea8749d07f8c2f0e09441821fcdc9c7e6394deb3",
+          "additions": 14,
+          "deletions": 1,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        },
+        {
+          "path": "mobile/src/offline/provider.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "219095232a5117c0be51cd3bf57d3d0f5fa42f4d",
+          "additions": 11,
+          "deletions": 3,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        },
+        {
+          "path": "mobile/src/offline/provider.web.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "6ccc69d2672a4b8bcc1b23ed99dddaa5df2ee626",
+          "additions": 11,
+          "deletions": 3,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "2bdf3771ee860b0c91cfb5baf4f835a464fcc6b7",
+          "additions": 12,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/replayInvalidation.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "c6509969f4922680b2dc3c31c0df1cdf7aabcef9",
+          "additions": 12,
+          "deletions": 3,
+          "scope": "Refresh pause/day/calendar after existing durable outbox replay."
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.test.tsx",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "46534101376c947784ad602f55f1e781875e5452",
+          "additions": 48,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/today/PausedDayMessage.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "865928e71db92a788f6c93024a84e5514558673c",
+          "additions": 19,
+          "deletions": 1,
+          "scope": "Display expected resume on current paused Today without attributing it to historical days."
+        }
+      ]
+    },
+    {
+      "sha": "682d8d0315bada0a885c5075777284bf5a6e5a0b",
+      "parents": [
+        "35bbbf1cd5c4f6654dd2e000f685c40ff9450bf0"
+      ],
+      "subject": "Preserve authoritative day receipts during pause refresh",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "4b1d90184c20e07c7f114ec168baf1288d2e414c",
+          "additions": 4,
+          "deletions": 4,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "8153479885b904d4f30f2752b5039c8083a31055",
+          "additions": 13,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/offline/foodDayReceipts.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "c3ad83b10deb68658d0abda73c61de72dc3202ca",
+          "additions": 6,
+          "deletions": 1,
+          "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+        }
+      ]
+    },
+    {
+      "sha": "5566696aff5a48dc92da965677e4db08e2d91155",
+      "parents": [
+        "682d8d0315bada0a885c5075777284bf5a6e5a0b"
+      ],
+      "subject": "Keep saved calendar intent visible when history reads are unavailable",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "cd87ef161ec8f00eb73a2bc2cd540dbf45390826",
+          "additions": 6,
+          "deletions": 3,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "55562b3a1ee51c28f32801e82618b81077a51202",
+          "additions": 14,
+          "deletions": 0,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        },
+        {
+          "path": "mobile/src/food/HistoricalDatePicker.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "fe64d4ada93048ef43a3e7575f9736d00b1f0e50",
+          "additions": 11,
+          "deletions": 4,
+          "scope": "Display-only future projection, target-month browsing, disabled future selection and honest saved-intent/error recovery."
+        }
+      ]
+    },
+    {
+      "sha": "0ee7d098589beb218c4f34b370ba556f25de4498",
+      "parents": [
+        "5566696aff5a48dc92da965677e4db08e2d91155"
+      ],
+      "subject": "Isolate due-resume fixture from in-flight expectation removal",
+      "scope": "Issue414 visibility and necessary integration/maintained regressions against the explicitly pinned offline contract.",
+      "files": [
+        {
+          "path": "e2e/expo-web/planned-pause.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "7a87a34e878d583903433a4907bbbafcd46f359f",
+          "additions": 10,
+          "deletions": 5,
+          "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+        }
+      ]
+    },
+    {
+      "sha": "abebe4aa3156b06aaa1ac49d0a768421d988e73a",
+      "parents": [
+        "0ee7d098589beb218c4f34b370ba556f25de4498",
+        "75578e5ac57a05ba0f06146598b314a01eafb2ae"
+      ],
+      "subject": "Merge pinned parent423 preserving planned pause visibility",
+      "scope": "Necessary additive propagation of pinned parent423; per-commit files are inherited parent differences versus first parent, while live PR diff excludes those ancestor changes.",
+      "files": [
+        {
+          "path": ".github/workflows/database-upgrade.yml",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "5b4a73ceb7590eeec51039fa5d6c66b59d216a10",
+          "additions": 3,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/prisma/migrations/0044_goal_pace_history/migration.sql",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "91e431568edb0992064e716f256bad1513af5733",
+          "additions": 1,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/prisma/schema.prisma",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "65728454cc16b0c49d84c336022a5f8499a4cd69",
+          "additions": 2,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/routes/goals.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "247abe7f3d7e784a55487aea7c0c9fe076508a84",
+          "additions": 85,
+          "deletions": 10,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/routes/user.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "2dedb290a94cca21382cf6fc3c66e2276f4e5812",
+          "additions": 7,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/services/accountLifecycle.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "1b4d2d77eaa854b77e20c3e3977d7955c23ca61e",
+          "additions": 3,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/services/calibration.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "a2f81597d8f3028679eff7d81aafe327bbeb1dec",
+          "additions": 9,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/services/caloriePlanReview.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "21c35e51e9f1995a28597f9bc9657305c9250c40",
+          "additions": 4,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/services/caloriePlanning.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "dde548374d377d4ccc2ff7e00e937ddfe2e9e42f",
+          "additions": 14,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/services/caloriePlanningLock.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "d4136775b0dbea1bb9068cdbcddfc8a815ce3727",
+          "additions": 25,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/src/services/goalPace.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "ed6f40231de24dd0ecc2434ce9b3f9ff1073e24a",
+          "additions": 52,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/account-lifecycle.test.js",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "265ff72eda8011a39e835f3cffe9577d68025eca",
+          "additions": 15,
+          "deletions": 2,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/calibration-service.test.js",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "1112b788afefd2659ccf5c255b55ed57c48b70d7",
+          "additions": 13,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/calorie-planning.test.js",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "42f9b3d572efce1bb891a5f732e6aa787687e37e",
+          "additions": 2,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/goal-pace.test.js",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "7e920354e41aa99eec57b19b9bd2f8d651fb1660",
+          "additions": 188,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/routes-goals.test.js",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "0268e7316bda471d7bd1d221b963895171d0774d",
+          "additions": 1,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/routes-metrics.test.js",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "7bc6036a9b5b9bddc44084bbfc07b146b7639d5b",
+          "additions": 1,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/routes-user.test.js",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "491d234b64e8179fb105ea8f9bd6bd4ed782b38e",
+          "additions": 16,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "backend/test/watch-service.test.js",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "cf7471d0c250ba88ab6b18fa4428eb3eef4d438c",
+          "additions": 1,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "docs/openapi/v1.yaml",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "ed598f21b3c987eea6b49234e0de01811b57612f",
+          "additions": 72,
+          "deletions": 2,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "docs/visual-design.md",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "39b12fd00b80f9a2d9df516858af4a822b838aec",
+          "additions": 1,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "e2e/expo-web/goal-pace.spec.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "21a7e70c95114e3d91d637a58dd42badce5d7ff7",
+          "additions": 145,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "e2e/expo-web/today-paused.spec.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "620b611df6b79e6871eebb2bd3636fef9a708020",
+          "additions": 24,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "mobile/app/(tabs)/(progress)/progress.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "c7d42fedf548581e0472ee368fba6eea3633993a",
+          "additions": 21,
+          "deletions": 2,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "mobile/app/(tabs)/(today)/today.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "8a7038fb15860aea6964e9bdebc505a0208778da",
+          "additions": 8,
+          "deletions": 5,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "mobile/src/food/dayPresentation.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "1c17a0c7f02c0a0396a32d4bb05ecfe5051d755b",
+          "additions": 11,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "mobile/src/food/dayPresentation.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "f688d14778073e70477aec2575a0ef191d6ee778",
+          "additions": 12,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "mobile/src/progress/GoalPaceSheet.test.tsx",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "a41f1b7a158f0f7ac92abd516a2abef0b86c656d",
+          "additions": 195,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "mobile/src/progress/GoalPaceSheet.tsx",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "c4673fe316be9f99217684ecb74accd0647fb2d6",
+          "additions": 149,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "mobile/src/progress/ProgressScreen.test.tsx",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "3c668701ab1e2ffdcee25eaf098e0ae43507a8a1",
+          "additions": 1,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "packages/api-client/src/client.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "7d6fb969990fa99ac0735b7d33b237fc5092b671",
+          "additions": 12,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "packages/api-client/src/generated/v1.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "b502f405430c9da8635f5365f81e7c54421157c1",
+          "additions": 131,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "packages/api-client/src/types.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "34ed1c7d34634ef830d7620eaf60ad8a3a9a6601",
+          "additions": 9,
+          "deletions": 1,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "packages/api-client/test/account-lifecycle.test.ts",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "e99a10d29618938b5e582ca804d655b09641ef4d",
+          "additions": 4,
+          "deletions": 2,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "packages/api-client/test/goal-pace.test.ts",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "bf66e0b32e3f5c9e6967f47cfbd08211bcf4a42a",
+          "additions": 24,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "scripts/postgres-goal-pace-smoke.mjs",
+          "previousPath": null,
+          "status": "added",
+          "blobSha": "961d595fff3996e551e5b930ece546f4294a4ef7",
+          "additions": 193,
+          "deletions": 0,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        },
+        {
+          "path": "scripts/postgres-rollback-smoke.mjs",
+          "previousPath": null,
+          "status": "modified",
+          "blobSha": "b171ddc99d34136f819b9c690debc46705180960",
+          "additions": 3,
+          "deletions": 2,
+          "scope": "Inherited settled parent423 change, included only by the additive merge versus its first parent; excluded from the child-relative PR diff. Parent owns goal-pace, saved targets, divider and related schema/client/tests."
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "e2e/expo-web/planned-pause.spec.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "7a87a34e878d583903433a4907bbbafcd46f359f",
+      "additions": 304,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "55562b3a1ee51c28f32801e82618b81077a51202",
+      "additions": 82,
+      "deletions": 2,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "fe64d4ada93048ef43a3e7575f9736d00b1f0e50",
+      "additions": 74,
+      "deletions": 17,
+      "scope": "Display-only future projection, target-month browsing, disabled future selection and honest saved-intent/error recovery."
+    },
+    {
+      "path": "mobile/src/food/calendarIntent.test.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "f269b45000edc1d78d25f45d562bd371d211a778",
+      "additions": 28,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/calendarIntent.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "a40e04a6607a5f9ec17872ee421563dfb0fa1956",
+      "additions": 14,
+      "deletions": 0,
+      "scope": "Project acknowledged receipts then pending explicit controls on present or absent calendar dates."
+    },
+    {
+      "path": "mobile/src/food/plannedPause.test.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "148db35c78d72bc47d4bf2cb042229098e84f731",
+      "additions": 57,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/food/plannedPause.ts",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "9fa61566d49f365c772b5a922729078e8699b5b8",
+      "additions": 37,
+      "deletions": 0,
+      "scope": "Validated date-only intention copy and finite/open-ended forecast boundaries."
+    },
+    {
+      "path": "mobile/src/offline/foodDayReceipts.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "8153479885b904d4f30f2752b5039c8083a31055",
+      "additions": 34,
+      "deletions": 1,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/offline/foodDayReceipts.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "c3ad83b10deb68658d0abda73c61de72dc3202ca",
+      "additions": 20,
+      "deletions": 2,
+      "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+    },
+    {
+      "path": "mobile/src/offline/provider.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "219095232a5117c0be51cd3bf57d3d0f5fa42f4d",
+      "additions": 11,
+      "deletions": 3,
+      "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+    },
+    {
+      "path": "mobile/src/offline/provider.web.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "6ccc69d2672a4b8bcc1b23ed99dddaa5df2ee626",
+      "additions": 11,
+      "deletions": 3,
+      "scope": "Locked authoritative calendar range reads and preservation of later verified day/backfill receipts during same-pause refresh; necessary for consistent day/calendar intent."
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "2bdf3771ee860b0c91cfb5baf4f835a464fcc6b7",
+      "additions": 12,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/offline/replayInvalidation.ts",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "c6509969f4922680b2dc3c31c0df1cdf7aabcef9",
+      "additions": 12,
+      "deletions": 3,
+      "scope": "Refresh pause/day/calendar after existing durable outbox replay."
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.test.tsx",
+      "previousPath": null,
+      "status": "added",
+      "blobSha": "46534101376c947784ad602f55f1e781875e5452",
+      "additions": 48,
+      "deletions": 0,
+      "scope": "Maintained issue414 date/forecast, receipt-order, accessibility and real browser failure/recovery regressions."
+    },
+    {
+      "path": "mobile/src/today/PausedDayMessage.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "blobSha": "865928e71db92a788f6c93024a84e5514558673c",
+      "additions": 19,
+      "deletions": 1,
+      "scope": "Display expected resume on current paused Today without attributing it to historical days."
+    }
+  ],
+  "exclusions": "Net parent-relative range is exactly the 15 issue414 paths. Four retained feature commits plus one necessary additive merge propagate settled parent423. That merge has 37 inherited parent paths relative to its first parent, including goal pace and divider; these are already ancestors of the actual PR target and add no child-relative scope. No parent branch rewrite, evidence archive, sibling feature copy or new child backend migration."
+}
