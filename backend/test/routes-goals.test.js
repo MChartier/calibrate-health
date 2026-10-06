@@ -23,6 +23,7 @@ function loadGoalsRouter(prismaStub) {
   delete require.cache[caloriePlanningPath];
 
   const normalizedPrismaStub = {
+    $executeRaw: async () => 1,
     ...prismaStub,
     user: {
       findUnique: async () => ({

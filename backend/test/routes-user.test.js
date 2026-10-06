@@ -41,6 +41,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
   delete require.cache[mcpOAuthPath];
 
   const normalizedPrismaStub = {
+    $executeRaw: async () => 1,
     ...prismaStub,
     caloriePlanRevision: {
       findFirst: async () => null,
@@ -716,6 +717,7 @@ test('user route: PATCH /profile fails invalid legacy timezones closed and marks
     calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
   };
   const prismaStub = {
+    $executeRaw: async () => { assert.equal(inTransaction, true); return 1; },
     user: { findUnique: async () => storedUser, update: async ({ data }) => ({ ...storedUser, ...data }) },
     goal: {
       findFirst: async () => goal,
@@ -744,4 +746,18 @@ test('user route: PATCH /profile fails invalid legacy timezones closed and marks
   assert.deepEqual(goalReview, { calorie_plan_review_status: 'REQUIRES_REVIEW', calorie_plan_review_reason: 'TIMEZONE_INVALID' });
   assert.deepEqual(revisionReview, { calorie_plan_review_status: 'REQUIRES_REVIEW', calorie_plan_review_reason: 'PLAN_REVISION_UNSAFE' });
   assert.deepEqual(staleRecommendations, { status: 'STALE' });
+});
+
+test('user route: a profile serialization conflict returns a retryable conflict', async () => {
+  const { Prisma } = require('@prisma/client');
+  const router = loadUserRouter({ prismaStub: {
+    $transaction: async () => { throw new Prisma.PrismaClientKnownRequestError('concurrent pace', {
+      code: 'P2034', clientVersion: 'test'
+    }); }
+  }, bcryptStub: {} });
+  const res = createRes();
+  await getRouteHandler(router, 'patch', '/profile')({ user: { id: 7 }, body: { timezone: 'UTC' } }, res);
+  assert.equal(res.statusCode, 409);
+  assert.equal(res.body.code, 'PROFILE_PLAN_CHANGED');
+  assert.equal(res.body.retryable, true);
 });

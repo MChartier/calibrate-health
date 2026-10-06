@@ -1,4 +1,8 @@
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
 import express from 'express';
+import { Prisma } from '@prisma/client';
+import { goalWire, goalPaceOptions, goalPaceVersion } from '../services/goalPace';
+import { parseLocalDateOnly } from '../utils/date';
 import { parseDailyDeficit } from '../utils/goalDeficit';
 import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/units';
 import { validateGoalWeightsForDailyDeficit } from '../utils/goalValidation';
@@ -27,16 +31,7 @@ router.get('/', async (req, res) => {
         const snapshot = await getStoredCaloriePlanningSnapshot(user.id);
         if (!snapshot) return res.status(404).json({ message: 'User not found' });
         if (!snapshot.goal) return res.json(null);
-        const goal = snapshot.goal;
-        const { start_weight_grams: startWeightGrams, target_weight_grams: targetWeightGrams, ...goalFields } = goal;
-        return res.json({
-            ...goalFields,
-            start_weight: gramsToWeight(startWeightGrams, snapshot.user.weight_unit),
-            target_weight: gramsToWeight(targetWeightGrams, snapshot.user.weight_unit),
-            plan_status: snapshot.evaluation.status,
-            plan_reason_code: snapshot.evaluation.reasonCode,
-            projection: projectionWire(snapshot.projection!)
-        });
+        return res.json(goalWire(snapshot));
     } catch {
         return res.status(500).json({ message: 'Server error' });
     }
@@ -94,8 +89,10 @@ router.post('/', async (req, res) => {
             userId: user.id,
             operationId,
             operationKind: 'goal.create',
+            transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                await lockCaloriePlanningInputs(tx, user.id);
                 const snapshot = await buildStoredCaloriePlanningSnapshot(tx, user.id);
                 if (!snapshot) return { status: 404, body: { message: 'User not found' } };
                 const evaluation = evaluateCaloriePlan({
@@ -183,7 +180,85 @@ router.post('/', async (req, res) => {
                 retryable: err.code === 'OPERATION_IN_PROGRESS'
             });
         }
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') {
+            return res.status(409).json({
+                message: 'Your plan changed during saving. Review the current goal and try again.',
+                code: 'GOAL_PLAN_CHANGED', retryable: true
+            });
+        }
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// This preview always uses stored profile/weight and corrections, never a caller-supplied baseline.
+router.get('/pace-options', async (req, res) => {
+    try {
+        const snapshot = await getStoredCaloriePlanningSnapshot(getAuthenticatedUser(req).id);
+        if (!snapshot?.goal) return res.status(404).json({ message: 'No current goal' });
+        res.set('Cache-Control', 'no-store');
+        return res.json(goalPaceOptions(snapshot));
+    } catch {
+        return res.status(500).json({ message: 'Unable to check the current goal. Retry the plan check.' });
+    }
+});
+
+router.patch('/:id/pace', async (req, res) => {
+    const user = getAuthenticatedUser(req);
+    const operationId = parseClientOperationId(req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']);
+    const deficit = parseDailyDeficit(req.body?.daily_deficit);
+    const goalId = Number(req.params.id);
+    const version = req.body?.expected_plan_version;
+    if (!operationId || !Number.isSafeInteger(goalId) || goalId <= 0 || deficit === null ||
+        typeof version !== 'string' || !/^[a-f0-9]{64}$/.test(version) ||
+        Object.keys(req.body).some(key => !['daily_deficit', 'expected_plan_version'].includes(key))) {
+        return res.status(400).json({ message: 'Refresh the plan check and choose an available daily calorie change.',
+            code: 'CALORIE_PLAN_OPTION_UNAVAILABLE', retryable: false });
+    }
+    try {
+        const result = await executeIdempotentMutation<unknown>({
+            userId: user.id, operationId, operationKind: 'goal.adjust_pace',
+            requestPayload: { goal_id: goalId, daily_deficit: deficit, expected_plan_version: version },
+            transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+            mutate: async (tx, claimedOperationId) => {
+                await lockCaloriePlanningInputs(tx, user.id);
+                const now = new Date();
+                const snapshot = await buildStoredCaloriePlanningSnapshot(tx, user.id, now);
+                if (!snapshot?.goal || snapshot.goal.id !== goalId || goalPaceVersion(snapshot) !== version) {
+                    return { status: 409, body: { message: 'Your goal or calorie plan changed. Refresh the plan check before saving.',
+                        code: 'GOAL_PLAN_CHANGED', retryable: false } };
+                }
+                const option = goalPaceOptions(snapshot, now).planOptions.find(item => item.dailyDeficit === deficit);
+                if (!option?.available || !snapshot.localToday) {
+                    return { status: 400, body: { message: 'That calorie plan option is unavailable. Review the current plan before adjusting its pace.',
+                        code: 'CALORIE_PLAN_OPTION_UNAVAILABLE', retryable: false } };
+                }
+                if (snapshot.goal.daily_deficit === deficit) return { status: 200, body: goalWire(snapshot) };
+                const revision = await tx.caloriePlanRevision.create({ data: {
+                    user_id: user.id, source_goal_id: goalId, configured_daily_deficit: deficit,
+                    target_adjustment_kcal: snapshot.effectiveRevision?.target_adjustment_kcal ?? 0,
+                    effective_local_date: parseLocalDateOnly(snapshot.localToday)
+                } });
+                await tx.calibrationRecommendation.updateMany({
+                    where: { user_id: user.id, status: 'PENDING' }, data: { status: 'STALE' }
+                });
+                const updated = await buildStoredCaloriePlanningSnapshot(tx, user.id, now);
+                const body = goalWire(updated!);
+                await recordSyncChange({ tx, userId: user.id, entityType: 'goal', entityId: goalId,
+                    action: 'upsert', operationId: claimedOperationId, payload: updated!.goal });
+                await recordSyncChange({ tx, userId: user.id, entityType: 'calorie_plan_revision', entityId: revision.id,
+                    action: 'upsert', operationId: claimedOperationId, payload: revision });
+                return { status: 200, body };
+            }
+        });
+        return res.status(result.status).json(result.body);
+    } catch (error) {
+        if (error instanceof ClientOperationConflictError) {
+            return res.status(409).json({ message: error.message, code: error.code, retryable: error.code === 'OPERATION_IN_PROGRESS' });
+        }
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+            return res.status(409).json({ message: 'Your plan changed during saving. Refresh the plan check and try again.', code: 'GOAL_PLAN_CHANGED', retryable: false });
+        }
+        return res.status(500).json({ message: 'Unable to confirm the saved pace. Retry to check the same change.', retryable: true });
     }
 });
 
