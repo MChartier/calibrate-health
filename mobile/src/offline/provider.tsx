@@ -1,5 +1,5 @@
-import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
-import { readFoodDayReceipts, readAndRecordFoodDay, readAndRecordFoodPause } from './foodDayReceipts';
+import type { FoodLogDay, FoodLogDayRange, FoodTrackingPause } from '@calibrate/api-client';
+import { readFoodDayReceipts, readAndRecordFoodDay, readAndRecordFoodDays, readAndRecordFoodPause } from './foodDayReceipts';
 import { createOutboxDispatch, type OutboxDispatch } from './mutationDispatch';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { onlineManager } from '@tanstack/react-query';
@@ -17,6 +17,7 @@ type OfflineOutboxContextValue = {
     withOutbox: OutboxDispatch;
     dayIntents: QueuedMutation[];
     readFoodPause: (fetch: () => Promise<{ pause: FoodTrackingPause }>) => Promise<{ pause: FoodTrackingPause }>;
+    readFoodDays: (fetch: () => Promise<FoodLogDayRange>) => Promise<FoodLogDayRange>;
     readFoodDay: (date: string, fetch: () => Promise<FoodLogDay>) => Promise<FoodLogDay>;
     initializationError: string | null;
     mutations: QueuedMutation[];
@@ -126,6 +127,12 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
     ), [serverUrl, userId, outbox, requireOutbox, enqueueUnlocked]);
     const readFoodDay = useCallback(async (date: string, fetch: () => Promise<FoodLogDay>) => {
         const result = await readAndRecordFoodDay(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId), date, fetch);
+        const receipts = await readFoodDayReceipts(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId));
+        if (currentBindingRef.current.serverUrl === serverUrl && currentBindingRef.current.userId === userId) setDayIntents(receipts);
+        return result;
+    }, [serverUrl, userId]);
+    const readFoodDays = useCallback(async (fetch: () => Promise<FoodLogDayRange>) => {
+        const result = await readAndRecordFoodDays(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId), fetch);
         const receipts = await readFoodDayReceipts(userId === undefined ? 'unavailable' : createOutboxNamespace(serverUrl, userId));
         if (currentBindingRef.current.serverUrl === serverUrl && currentBindingRef.current.userId === userId) setDayIntents(receipts);
         return result;
@@ -247,6 +254,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         withOutbox,
         dayIntents,
         readFoodDay,
+        readFoodDays,
         readFoodPause,
         reconcile,
         retryFailed,
@@ -254,7 +262,7 @@ export function OfflineOutboxProvider({ children, executeMutation, onReplayCompl
         discardFailedFood,
         discardFailedMutation,
         refresh
-    }), [dayIntents, readFoodPause, readFoodDay, withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
+    }), [dayIntents, readFoodPause, readFoodDays, readFoodDay, withOutbox, discardFailedMutation, discardFailedFood, discardAll, enqueue, initializationError, mutations, outbox, reconcile, refresh, retryFailed]);
 
     return <OfflineOutboxContext.Provider value={value}>{children}</OfflineOutboxContext.Provider>;
 }

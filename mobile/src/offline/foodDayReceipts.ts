@@ -2,7 +2,7 @@ const storage = (): typeof import('@react-native-async-storage/async-storage').d
     const module = require('@react-native-async-storage/async-storage');
     return module.default ?? module;
 };
-import type { FoodLogDay, FoodTrackingPause } from '@calibrate/api-client';
+import type { FoodLogDay, FoodLogDayRange, FoodTrackingPause } from '@calibrate/api-client';
 import type { QueuedMutation } from './queuedMutation';
 import { withMutationLock } from './mutationLock';
 
@@ -63,5 +63,18 @@ export function readAndRecordFoodPause(namespace: string, fetch: () => Promise<{
         const result = await fetch();
         if (exclusive) await recordCurrentPauseReceipt(namespace, result.pause, 'server-read:pause:' + Date.now());
         return result;
+    });
+}
+
+/** Range snapshots obey the same lock and receipt ordering as individual day reads. */
+export function readAndRecordFoodDays(namespace: string, fetch: () => Promise<FoodLogDayRange>): Promise<FoodLogDayRange> {
+    return withMutationLock(namespace, async exclusive => {
+        const range = await fetch();
+        if (exclusive) {
+            for (const day of range.days) {
+                await recordFoodDayReceipt(namespace, 'food-day.set-status', { date: day.date, status: day.status }, 'server-read:range:' + Date.now() + ':' + day.status);
+            }
+        }
+        return range;
     });
 }

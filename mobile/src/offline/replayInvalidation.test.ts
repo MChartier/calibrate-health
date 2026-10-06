@@ -15,6 +15,18 @@ function replayResult(replayedOperations: string[]) {
 
 describe('offline replay query invalidation', () => {
     it.each([
+        OFFLINE_MUTATION_OPERATIONS.START_FOOD_TRACKING_PAUSE,
+        OFFLINE_MUTATION_OPERATIONS.UPDATE_FOOD_TRACKING_PAUSE,
+        OFFLINE_MUTATION_OPERATIONS.RESUME_FOOD_TRACKING,
+        OFFLINE_MUTATION_OPERATIONS.SET_FOOD_DAY_STATUS
+    ])('refreshes the shared pause, actual day and history after %s replays', async operation => {
+        const invalidateQueries = jest.fn(async () => undefined);
+        await invalidateQueriesAfterOfflineReplay({ invalidateQueries } as never, replayResult([operation]));
+        for (const queryKey of [['mobile-food-tracking-pause'], ['mobile-food-day'], ['mobile-food-days']]) {
+            expect(invalidateQueries).toHaveBeenCalledWith({ queryKey });
+        }
+    });
+    it.each([
         OFFLINE_MUTATION_OPERATIONS.ADD_METRIC,
         OFFLINE_MUTATION_OPERATIONS.DELETE_METRIC
     ])('refreshes metric-derived and notification state after %s', async (operation) => {

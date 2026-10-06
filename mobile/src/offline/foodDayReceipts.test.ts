@@ -7,7 +7,7 @@ import { IndexedDbOutbox, openIndexedDbOutboxDatabase } from './indexedDbOutbox.
 import { createOutboxDispatch } from './mutationDispatch';
 import { executeOrQueueMutation, createQueuedMutationExecutor } from './operations';
 import { OutboxReconciler } from './reconciler';
-import { readAndRecordFoodDay, readAndRecordFoodPause, readFoodDayReceipts, recordFoodDayReceipt } from './foodDayReceipts';
+import { readAndRecordFoodDay, readAndRecordFoodDays, readAndRecordFoodPause, readFoodDayReceipts, recordFoodDayReceipt } from './foodDayReceipts';
 import { queuedFoodDayStatus } from './foodDayIntent';
 
 beforeEach(async () => { await AsyncStorage.clear(); });
@@ -275,3 +275,23 @@ it('coalesces repeated resume after storage restart and replays a lost response 
         expect(ids).toEqual(['original-resume', 'original-resume']); expect(writes).toBe(1); expect(await store.list()).toEqual([]);
     } finally { database.close(); }
 });
+
+ it('serializes calendar reads before later controls and keeps failed reads from erasing receipts', async () => {
+    let release!: () => void; let entered!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    const reading = readAndRecordFoodDays('account', async () => {
+        entered(); await gate;
+        return { start_date: date, end_date: date, days: [{ date, status: 'OPEN' } as FoodLogDay] };
+    });
+    await started;
+    const dispatch = createOutboxDispatch('account', async () => [], async () => undefined, () => true, true);
+    const pausing = executeOrQueueMutation({ withOutbox: dispatch, operation: 'food-tracking-pause.start', payload: { starts_on: date }, execute: async () => undefined, enqueue: async () => undefined });
+    release(); await Promise.all([reading, pausing]);
+    expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date)).toBe('PAUSED');
+    await expect(readAndRecordFoodDays('account', async () => { throw new Error('range unavailable'); })).rejects.toThrow('range unavailable');
+    expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date)).toBe('PAUSED');
+    await readAndRecordFoodDays('account', async () => ({ start_date: date, end_date: date, days: [{ date, status: 'OPEN' } as FoodLogDay] }));
+    expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date)).toBe('OPEN');
+    expect(await readFoodDayReceipts('other')).toEqual([]);
+ });

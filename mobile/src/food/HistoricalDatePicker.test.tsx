@@ -1,5 +1,10 @@
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'id' }));
+jest.mock('../offline/provider', () => ({ useOfflineOutbox: () => mockOutbox }));
+import type { QueuedMutation } from '../offline/queuedMutation';
+import { createOutboxNamespace } from '../offline/queuedMutation';
+const mockOutbox = { mutations: [] as QueuedMutation[], dayIntents: [] as QueuedMutation[], readFoodDays: jest.fn((fetch: () => Promise<unknown>) => fetch()) };
 import React from 'react';
-import { fireEvent, render, waitFor, within } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { FoodLogDay, FoodLogDaySource, FoodLogDayStatus } from '@calibrate/api-client';
@@ -8,10 +13,11 @@ import { foodDayRangeQueryKey } from './calendar';
 import { HistoricalDatePicker } from './HistoricalDatePicker';
 
 const mockGetFoodDays = jest.fn();
+const mockGetPause = jest.fn().mockResolvedValue({ pause: { active: false } });
 
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
 jest.mock('../auth/AuthContext', () => ({
-    useAuth: () => ({ api: { getFoodDays: mockGetFoodDays } })
+    useAuth: () => ({ user: { id: 1 }, serverUrl: 'https://example.test', api: { getFoodDays: mockGetFoodDays, getFoodTrackingPause: mockGetPause } })
 }));
 jest.mock('../components/BottomSheetModal', () => {
     const ReactModule = require('react') as typeof import('react');
@@ -70,6 +76,7 @@ describe('HistoricalDatePicker', () => {
     beforeEach(() => {
         onlineManager.setOnline(true);
         mockGetFoodDays.mockReset();
+        mockGetPause.mockResolvedValue({ pause: { active: false } });
         mockGetFoodDays.mockResolvedValue(RANGE_RESPONSE);
     });
 
@@ -196,6 +203,34 @@ describe('HistoricalDatePicker', () => {
     });
 });
 
+it('browses the target month without requesting future history or enabling future selection, and clamps a shortened plan', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    const pause = { active: true, starts_on: '2026-07-17', expected_resume_on: '2027-01-02', resumed_on: null };
+    mockGetPause.mockResolvedValue({ pause });
+    mockGetFoodDays.mockClear();
+    mockGetFoodDays.mockResolvedValue(RANGE_RESPONSE);
+    const screen = renderPicker(queryClient);
+    await waitFor(() => expect(screen.getByLabelText('Next month')).not.toBeDisabled());
+    expect(screen.getByTestId('calendar-day-2026-07-19').props.accessibilityLabel).toMatch(/planned tracking pause/);
+    expect(screen.getByTestId('calendar-day-2026-07-19')).toBeDisabled();
+    for (let month = 0; month < 6; month++) fireEvent.press(screen.getByLabelText('Next month'));
+    expect(screen.getByTestId('calendar-day-2027-01-01').props.accessibilityLabel).toMatch(/planned tracking pause/);
+    expect(screen.getByTestId('calendar-day-2027-01-02').props.accessibilityLabel).toMatch(/future date/);
+    expect(screen.getByLabelText('Next month')).toBeDisabled();
+    expect(mockGetFoodDays).toHaveBeenCalledTimes(1);
+    mockGetPause.mockResolvedValue({ pause: { ...pause, expected_resume_on: null } });
+    await act(async () => {
+        await queryClient.cancelQueries({ queryKey: ['mobile-food-tracking-pause'] });
+        queryClient.setQueryData(['mobile-food-tracking-pause'], { pause: { ...pause, expected_resume_on: null } });
+    });
+    await waitFor(() => expect(screen.getByTestId('calendar-day-2026-07-31').props.accessibilityLabel).toMatch(/planned tracking pause, until resumed/));
+    expect(screen.getByLabelText('Next month')).toBeDisabled();
+    mockGetPause.mockResolvedValue({ pause: { ...pause, active: false } });
+    await act(async () => { queryClient.setQueryData(['mobile-food-tracking-pause'], { pause: { ...pause, active: false } }); });
+    await waitFor(() => expect(screen.getByTestId('calendar-day-2026-07-19').props.accessibilityLabel).not.toMatch(/planned/));
+    screen.unmount(); queryClient.clear();
+});
+
 it('keeps completed circles date-only with factual accessible meanings and an explanatory legend', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
     const comparisons = [
@@ -225,4 +260,35 @@ it('keeps completed circles date-only with factual accessible meanings and an ex
     expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style).backgroundColor).toBe(themes.light.colors.calendarBetween);
     expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-13').props.style).backgroundColor).toBe(themes.light.colors.calendarBeyond);
     screen.unmount(); queryClient.clear();
+});
+
+it('projects durable receipts then pending controls on absent range dates across refetch and remount', async () => {
+    const namespace = createOutboxNamespace('https://example.test', 1);
+    const row = (operation: string, payload: QueuedMutation['payload'], id: string): QueuedMutation => ({ namespace, id, operation, payload, sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1 });
+    mockGetFoodDays.mockResolvedValue({ ...RANGE_RESPONSE, days: [] });
+    mockGetPause.mockResolvedValue({ pause: { active: false } });
+    mockOutbox.dayIntents = [row('food-tracking-pause.start', { starts_on: '2026-07-17' }, 'receipt:pause')];
+    mockOutbox.mutations = [row('food-tracking-pause.resume', { resumed_on: '2026-07-18' }, 'resume')];
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    let screen = renderPicker(client);
+    await waitFor(() => expect(screen.getByTestId('calendar-day-2026-07-17').props.accessibilityLabel).toMatch(/tracking paused/));
+    expect(screen.getByTestId('calendar-day-2026-07-18').props.accessibilityLabel).toMatch(/in progress/);
+    await act(async () => { await client.refetchQueries({ queryKey: ['mobile-food-days'] }); });
+    expect(mockOutbox.readFoodDays).toHaveBeenCalled();
+    screen.unmount(); screen = renderPicker(client);
+    await waitFor(() => expect(screen.getByTestId('calendar-day-2026-07-18').props.accessibilityLabel).toMatch(/in progress/));
+    screen.unmount(); client.clear(); mockOutbox.dayIntents = []; mockOutbox.mutations = [];
+});
+it('excludes failed and foreign-account projection without changing completed history', async () => {
+    const namespace = createOutboxNamespace('https://example.test', 1);
+    mockOutbox.mutations = [
+        { namespace, id: 'failed', operation: 'food-tracking-pause.start', payload: { starts_on: '2026-07-11' }, sequence: 1, state: 'failed', attemptCount: 1, lastError: null, createdAt: 1, updatedAt: 1 },
+        { namespace: 'other', id: 'foreign', operation: 'food-tracking-pause.start', payload: { starts_on: '2026-07-11' }, sequence: 2, state: 'pending', attemptCount: 0, lastError: null, createdAt: 2, updatedAt: 2 }
+    ] as QueuedMutation[];
+    mockGetFoodDays.mockResolvedValue(RANGE_RESPONSE); mockGetPause.mockResolvedValue({ pause: { active: false } });
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    const screen = renderPicker(client);
+    await waitFor(() => expect(screen.getByTestId('calendar-day-2026-07-11').props.accessibilityLabel).toMatch(/completed/));
+    expect(screen.getByTestId('calendar-day-2026-07-18').props.accessibilityLabel).not.toMatch(/paused/);
+    screen.unmount(); client.clear(); mockOutbox.mutations = [];
 });
