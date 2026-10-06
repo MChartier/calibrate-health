@@ -1,0 +1,1401 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-06T04:04:49.461Z",
+  "target": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "refs/heads/master",
+    "sha": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed"
+  },
+  "head": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+  "capturedAfter": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+  "mergeBase": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+  "parentRevisions": [],
+  "sourceTrees": {
+    "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed": "dd560c91c5d82643872f69572217cf1cc0974981",
+    "c0013ea26d33f513f23cf9323c5e0de6ec8ca605": "b3c6ce3e0756f015df835e472309cfbbe4d21763",
+    "95c4ce82a9591155026655ebbc7f9e84bf00c2e6": "5ac802671839924f75db4a80b6037d594ccff832"
+  },
+  "captureApplicability": {
+    "capturedAfter": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+    "finalHead": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+    "changedPaths": [
+      "e2e/expo-web/nested-route-stacks.spec.ts"
+    ],
+    "assessment": "Only the maintained browser test organization changed after capture. All product files, build inputs and synthetic fixture/harness bytes used by the capture are unchanged; the existing export and images remain applicable without relabeling their captured source."
+  },
+  "retention": {
+    "ref": "refs/heads/evidence/pr427-general-route-95c4ce82",
+    "owner": "MChartier / same issue412 implementation owner",
+    "lifetime": "All reviews/receipts; never rewrite/delete/merge"
+  },
+  "priorEvidence": [
+    {
+      "ref": "refs/heads/evidence/issue412-master-c5f149a",
+      "commit": "dd9b611ded286189cb1d49e2f202638061d5048c"
+    },
+    {
+      "ref": "refs/heads/evidence/pr417-reviewed-736a86c",
+      "commit": "736a86caa519ec929a5fda79d42793c8ff915a6f"
+    },
+    {
+      "ref": "refs/heads/evidence/pr417-guard-recovery-4dcad2c",
+      "commit": "c7646821a1f2f4142a5d7c41a1026302b7c40e16"
+    },
+    {
+      "ref": "refs/heads/evidence/pr417-offline-recovery-3c743b4",
+      "commit": "772dd261c6bcc3697bcd01a965497c74a9865e87"
+    },
+    {
+      "ref": "refs/heads/evidence/pr417-refresh-recovery-123bab9",
+      "commit": "f3195813a3148f65c57ee27ab4eb6c59ac9cfff7"
+    },
+    {
+      "ref": "refs/heads/evidence/issue412-communication-archive-20261006",
+      "commit": "9f79d97b6bb6a66f061c21494dc7b9a60e9369e2"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "docs/expo-web.md",
+      "gitBlob": "89c15531cc9d46d607302c2b504dd0d376db7c81",
+      "sha256": "0065b711e426028ae355e50102c3336e2e25998fc9888887be3ebd80ada722dd"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "gitBlob": "f0fcd329dfc0fe21c6bf8d76340d48501350bdc7",
+      "sha256": "70400e1eba1b3b53c7a2a32692179cc6dc70d3e571291e39de1379ecab0404a8"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "gitBlob": "53c8d11bd8f426d53beb9fea8a369c5d2963239a",
+      "sha256": "e4ce8578222af887022588e08d55986c8b9e8af3dfb32e6e28fcd1019ad844d3"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "gitBlob": "274a27eb868aaa8949fc79cebf691fa0e66b75dc",
+      "sha256": "9d119a0112370c7c1f79f17c4b453e67ed6b8c1e8ae30a7d66c83150afd83ad2"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/launch-24-data-state-matrix.ts",
+      "gitBlob": "e4fe39ecf5d1af52d736ce58b4e7740dc03e8eaa",
+      "sha256": "a2bb75f2ea7d9e41b931bac6e8ccaa7ecddd4caf82d50bab9089c03d2d491547"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+      "gitBlob": "b287bdbf23c54fbe84d433205d7c727f4b27adf4",
+      "sha256": "4f62039571efb8846b7ab9f67616007c070d254b4ec8c25addcac463a8f70743"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/app/(tabs)/(today)/notifications.tsx",
+      "gitBlob": "692b3b2a575b48de71bab8bb289a6a97b2d594b3",
+      "sha256": "140d1f9dea7581826738a9b959a18e9757ffceec336fd2086c12911d62a18a48"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "gitBlob": "5df1812b6a18e11cb04c68f95f274e289e0f490f",
+      "sha256": "5152f110c1f645f1b2fdb0b87ff33ff8349b7953ee590e587aa06f0d354d46e8"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/app/+not-found.tsx",
+      "gitBlob": "e53b4fd89ddabaddab3ac6123109885e18504b13",
+      "sha256": "3bb422f91c7ddf4953c043b2d070ce1da527763d0dedf74dcd808c9b840094d1"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/components/NotificationCard.test.tsx",
+      "gitBlob": "b00a8c73451815a817874b910c871d240e143a52",
+      "sha256": "a99e5d345333b383c08fdc486a782f655e52b53ddf0e5a0693cf0b4806b09dbe"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/components/NotificationCard.tsx",
+      "gitBlob": "0ec944c1d6796b03edaeeb7d1f154695eda13498",
+      "sha256": "bfbe358eb66a32c6cad42ade9bd23994967f8ffd5802db862c64d42809409801"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/components/NotificationsDrawer.test.tsx",
+      "gitBlob": "ad9442f2c0bde298194c60f00eb6940ae4dfc499",
+      "sha256": "3fc996dbece9233df7c83d7464ad6945b6bb461a5517f633a842b1ab1fa6c454"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/components/NotificationsDrawer.tsx",
+      "gitBlob": "e1e348826beec0ccd041ffc9fb6c2dd8535c9761",
+      "sha256": "b58e210d77b650d275b13c6b93d25276222e8e2afa59dbd10d82df39ef366bcb"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/components/legal/PublicLegalPage.test.tsx",
+      "gitBlob": "23b1035c60892810ebd998d7a659fd3e90692698",
+      "sha256": "ef1c0f3bab41ea182133fc65984cc001fed5e09ae679a47e9a971d0cb5c5f73a"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/components/legal/PublicLegalPage.tsx",
+      "gitBlob": "883b11d0667d99f7a7a1b75081c27db37339f52f",
+      "sha256": "7b3fe4d92f530ec6e0adec7b314e03d796c5751049e0d41a83f304214fbf17c0"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+      "gitBlob": "f86016b514f81658c8f5275052b2c66e57d09e8e",
+      "sha256": "c0bee3a2893495d74e7a149a3445684865fd6e01f7e992b5dc620471501e108c"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/diagnostics/operationDiagnostics.ts",
+      "gitBlob": "1c776a0ab61bd8ce68a8c80b01c482ec44244aa4",
+      "sha256": "a6bf426aee9323a5953f5b28b1ca2f170af22d7e1097a0260a3987f7781a4070"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+      "gitBlob": "5960f36bb4bacc31ffee7c8e2cc715800c5b95fe",
+      "sha256": "b44c105013533d251e33b62f1035043e23b73ed43ddf176782a0a2f090f0b6b6"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "gitBlob": "6ff041ce91df8b9d1cd9a3031880bb17927f2342",
+      "sha256": "03db18582f23bea0427cd06e9604c9bb6a9407d360b922509ddda705e29a59c2"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "gitBlob": "0f902c21e505d6ab709911494d9eca452981fc14",
+      "sha256": "46606fd11b69d1e8925b1292997c78aad698bb0a1391c7ef829dd0eb07f8f75c"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/navigation/routeMetadata.test.ts",
+      "gitBlob": "9781a47e6c104a3346fc9b96fbfdf8daef1ebffa",
+      "sha256": "6a5a323f77e559bfe1d38c910bf6839bf9acb8f1bce34edc8894a660510465f2"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/navigation/routeRegistry.test.ts",
+      "gitBlob": "92c787f5c10a5fb8a35eeefd4027b5c9d1d6f887",
+      "sha256": "dbea8f985a67fd98751c21fb742aeaacddd97cfe1487aafe1c7fa0e43ed61701"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "gitBlob": "bba8d5d7b15288b52418d95322c722e9988bb2f3",
+      "sha256": "b74834578d26c174608be01e76ce0985147704d46c57a4a6fe2dd0e0a23a2699"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/notifications/NotificationHistory.test.tsx",
+      "gitBlob": "39d6885745b09669f8554b31fd831adf60dc9883",
+      "sha256": "9120fd499b0c54aaa2cab0e89d6c0a538d0fe0516bd4193caa63a5c6c4459f9d"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/notifications/NotificationHistory.tsx",
+      "gitBlob": "d9fb4f11773c98734758f3eaf6f1ba97418cf381",
+      "sha256": "c9691357cf941450aab444d77708b104b65756d631723231899c246f00a5ff6c"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/notifications/presentation.test.ts",
+      "gitBlob": "3799a2b29b1bcf79cb62ad222e2b9a9fe14cdb54",
+      "sha256": "bf00da6e3bd716c6e8d6c305c0abf99f61f8fb47fc9cab8f1ac970a002aea59b"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/notifications/presentation.ts",
+      "gitBlob": "5e78c567b6a4199eab0bf4d1d07e0e93c5e0bced",
+      "sha256": "df2136292db2d9dec8ff0835b809b15efc669990ed3d44f82a7b28532cd36a57"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/notifications/query.test.ts",
+      "gitBlob": "ac412b5e878f91130c1d1b84a58de42e27e8116b",
+      "sha256": "e9802be8b9ecac25ebb3bc6773228f8f8f034354da9c1bff4aa7d8132d20e179"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/notifications/query.ts",
+      "gitBlob": "80735cc122c9d6e8793514494b7b02ad37b0b7e0",
+      "sha256": "d97462d50fbb0c67079d65d20e85062540ce42f8983be0e6796e48c637fa397d"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/settings/PreferencesSettingsScreen.test.tsx",
+      "gitBlob": "77d482b9aa53d7010ed63b9c3b7806a3e4c36c1c",
+      "sha256": "76990383525932ea646ad283272dbd5a8372a6c1ddbf9a869e1030ea3109237d"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/fixtures.ts",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/nested-settings-routes.spec.ts",
+      "gitBlob": "93e6f70c16d5e3b0b509d93e63b3837c2bbc6437",
+      "sha256": "e34c240d292c236c68bd607e9c61e7ccc36fab357e6adb9857824270b2434054"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/app/_layout.web.tsx",
+      "gitBlob": "91131822cfa7c917443556aa69a1813b90a7557d",
+      "sha256": "730e6f7074ee8d4e273a1ddb5ec11a89a5b5aff384a7d879312f6ca2a715cc7c"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/app/_layout.tsx",
+      "gitBlob": "6648c5cb4e42f6de966ba109fc57d3ba096704ce",
+      "sha256": "835aa583cce00d269653b35e2471f55d99b871c3ffda8784e4496a2008cfe26b"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/auth/accountAccess.ts",
+      "gitBlob": "2bc149df29a5ed34017a3e93e813a1dde354c9d4",
+      "sha256": "4124b3933a54f78a568973e479825f25443d385a29f692d136d6c9f1f3dae132"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "gitBlob": "a5534e0f8106bc197e399f6691b292fcd3c2c7d2",
+      "sha256": "b6e1dde6acd44c76434d1d563824e3bb81eedd564aa02d152d088f16129b9bf2"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/app/onboarding.tsx",
+      "gitBlob": "5127cb6383db106fd2bed6444f05ae134d5efed8",
+      "sha256": "81aff66cb01bf746e834362256634dcd6ed5df0a106d8727962836e754830985"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "scripts/expo-web-build.mjs",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "scripts/expo-web-static-server.mjs",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "scripts/expo-web-release.mjs",
+      "gitBlob": "cae076adf0d24bb969c3b470d443fc3162c3e304",
+      "sha256": "a7d1b1146296ec71a407dfe32ad165894367fe2eb7302d3f67f523442dbfba06"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "package-lock.json",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "mobile/package.json",
+      "gitBlob": "3969f5c162e2260fb096da0000217a72e3248c12",
+      "sha256": "a776b757edb0dad3d4fbee33eea3fc65b2106d30937b5d8117a889aba8ccafa3"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "playwright.expo-web.config.ts",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/today-paused.spec.ts",
+      "gitBlob": "620b611df6b79e6871eebb2bd3636fef9a708020",
+      "sha256": "e6e9b7c40401f3b023790fea5d7b1c9e77a9a8a2ff3510ba79312c057f636be2"
+    },
+    {
+      "commit": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "path": "e2e/expo-web/goal-pace.spec.ts",
+      "gitBlob": "21a7e70c95114e3d91d637a58dd42badce5d7ff7",
+      "sha256": "31dcb9ffaadccf215d55148b612b291ed54138778185c589f2c1850d1f77f868"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "docs/expo-web.md",
+      "gitBlob": "8db6e989d928b892f272cd8d8c6db911caefc57c",
+      "sha256": "94814a30fbde7e67303c57b7fe5ab56c8092686d0b4dd7de4f49281efce9ea81"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "gitBlob": "4ae3678cff38c7b34cd1d4bdbcc8fe3cb5bada1a",
+      "sha256": "deb20ad63260415c5f90bb82286f25c8bb9e11ca4e0f6ad58cfb38bd764df322"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "gitBlob": "eaec810c9b9e4ae6e94ab9526272b913d2ac701b",
+      "sha256": "1c71add529dfd2ba855c78a7bf7ac018f8648097fd3f0bd41ae7a3568458283c"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "gitBlob": "4950fd58861c5144b579651ed3eeacb6394bc51f",
+      "sha256": "c01f50f01314bbc2bee20d7a81e04dcd29c74e11a2e1adf9c9bfa963ea29aa45"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/launch-24-data-state-matrix.ts",
+      "gitBlob": "e75f18ecc8f62f73ea37e63650d0e1e3b5e41e1c",
+      "sha256": "3d2e2d6e4b1890f2b8f2211aa247e52304fdf8fbe05771d75534767756784e57"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+      "gitBlob": "3dc15eccf26f130294a8ecdb55ee1b81547ac6a8",
+      "sha256": "3f2b6445f0469fbf8a503c15e1989f8402a94f8c4ac514895fa5b5abb9492dcf"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "gitBlob": "7befd57041f7b009a7a02c7766db4487becd4529",
+      "sha256": "3e2918013a1d63c9edf2d4c77ab9c44f2e3fede02498f9c33574346f39573ca5"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/unknown-route-gates.spec.ts",
+      "gitBlob": "ecf644484a3aeb6822e7fe71cd1a0d2eade1d563",
+      "sha256": "4b9e384d5a48968b90690d653e33f2b232de8508f167f9bb00006e1eb9e9703b"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "gitBlob": "55b83dea49e4f9e87b7610b8fb12096d313e3128",
+      "sha256": "2a86bfd8d0d2bf922cbbdd65da26e45cd274cd38009d0a0f423832e093a15f74"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/app/+not-found.tsx",
+      "gitBlob": "ae897b7c3f69f85c2d8bd99009805dda2c7efe08",
+      "sha256": "1ed81f0431e017be9c6646d4575a9bd787fb43214ac689e1b7e0e20fc6862f21"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/components/NotificationCard.test.tsx",
+      "gitBlob": "e49e62362a898c9ec4ad5c128d6aadeb226fdcd9",
+      "sha256": "cbbb521a5d08ea0f4114ef71df8c6ef76179581297f7a81d5627c8f37053b1ef"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/components/NotificationCard.tsx",
+      "gitBlob": "b7b1a52f99987037ed0ef8e408ee5bd747b1730a",
+      "sha256": "335de0e2eeedd7e25ad9750d797c209b414eaad7a3a963ac349b780c36e0def1"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/components/NotificationsDrawer.test.tsx",
+      "gitBlob": "f0e5ff6bc025af7d2e9dafe9d88f10c5748c58b6",
+      "sha256": "9ebfc5ef3e14ed24f2e965946e92ccbd2ab87a55fe8d1289501c3abb2eee6fb6"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/components/NotificationsDrawer.tsx",
+      "gitBlob": "283ee7cb95c3b80eeeb979414a1cba8a282212b1",
+      "sha256": "dec89f274a0798798be0f303f3a14e61b9c4839300dc7f1810ee20d096ad9316"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/components/legal/PublicLegalPage.test.tsx",
+      "gitBlob": "ce42be0edc0e47ccb3455f5b9adb486171625543",
+      "sha256": "a7171075cedba6a839e9609ee1b9f9ad7140f87e83929c9bc65a1be58f5f40b5"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/components/legal/PublicLegalPage.tsx",
+      "gitBlob": "42c2ca4ef20c418d82a66c986d53eaa63514c57a",
+      "sha256": "0ba445be042cedda1a621f03ab56b7ae176431c7eeb66ef8611e6d3995bfed60"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+      "gitBlob": "2540d557ab0860c5af6486090b02e48cadfd823f",
+      "sha256": "3f6c2041f95daaafc23c76e45ed35563de2082b01476b98d52b1c04fa5467bfa"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/diagnostics/operationDiagnostics.ts",
+      "gitBlob": "a389e7815fdda7a4eb4a3c2d942c2385fab5a3af",
+      "sha256": "7b3718370db93e8a41c1bffbc6009c20f8f1fb2e70ef372e165eaa2afd3f8f11"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+      "gitBlob": "6e9dc1fab1b4647fb19717a26f15350f95dcce02",
+      "sha256": "5f9450457d2aedb8601a3be5854acc26713d6f4890ba977c0a4b79ac99286a18"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "gitBlob": "e95a7f2b36ffcbdc4f3deb4c7a81d50fe8f732e0",
+      "sha256": "155cabd4c5b2d1b03c518a3c5cdef50287d032f6d80742aee2cc4bd96c170781"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "gitBlob": "491b1544b30d6810a5f2aaf873eff7a5045cecff",
+      "sha256": "a0e87b389bf5294dd9bff724a36fcf7603c8ffc01639a1c1f81ece3dbdbd29e7"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/navigation/routeMetadata.test.ts",
+      "gitBlob": "07c7dae01e63c3261b91fdb735da8c3d3bbcf4ca",
+      "sha256": "55f6f475086e4c52554ee8e96df3fd3684b618c666081a5da1e3166a01a0f8d5"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/navigation/routeRegistry.test.ts",
+      "gitBlob": "4ee795e3ad3bc0b490f25073adf91cee5c3cee48",
+      "sha256": "a6abee90b9e60d74e5ec091c63adb39ff4a78cf5e0175a7f2e464e4bf8ded2cd"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "gitBlob": "2e4e28b68d0c62f3ef7be97a271d1c67c9838af4",
+      "sha256": "632ef0b0b983f75fbb9e929ee1075f8c1512f156a1e260508017f669c795c76e"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/notifications/presentation.test.ts",
+      "gitBlob": "63e3d284e3b9d9b2d6c7972e932b421fe2a258f9",
+      "sha256": "ec03ec3ddee778ac2705acf3d76934073b85b480fbcc42b60e659399a5dd5bf1"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/notifications/presentation.ts",
+      "gitBlob": "54866b233a5d98207a12314c448304f0f72f9c89",
+      "sha256": "d728225bff00dcf04e64872c1f228c1221b594c5dbd8631eaa62c1aa9b152f89"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/notifications/query.test.ts",
+      "gitBlob": "7702a8d9c2c89acde32b18c1f2ccf37c74bed80a",
+      "sha256": "cc3c8332535515c96622bc7dd601b493aaaff56e705e2dafae2e80e35ddd9692"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/notifications/query.ts",
+      "gitBlob": "98d0323d1535db9d6c77f7b6083636ab6a74a0de",
+      "sha256": "73fffa73732b18570dcb4e8b34628f9127fd060458cdcc37d0baa23551834493"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/settings/PreferencesSettingsScreen.test.tsx",
+      "gitBlob": "7c8f62f610cdc7430c9feb2136b2682fda4fd4f7",
+      "sha256": "0eefe49ac176d911302c45eaac416c29f96464dcbf7338c49d6082d39fe023bb"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/fixtures.ts",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/nested-settings-routes.spec.ts",
+      "gitBlob": "93e6f70c16d5e3b0b509d93e63b3837c2bbc6437",
+      "sha256": "e34c240d292c236c68bd607e9c61e7ccc36fab357e6adb9857824270b2434054"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/app/_layout.web.tsx",
+      "gitBlob": "91131822cfa7c917443556aa69a1813b90a7557d",
+      "sha256": "730e6f7074ee8d4e273a1ddb5ec11a89a5b5aff384a7d879312f6ca2a715cc7c"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/app/_layout.tsx",
+      "gitBlob": "6648c5cb4e42f6de966ba109fc57d3ba096704ce",
+      "sha256": "835aa583cce00d269653b35e2471f55d99b871c3ffda8784e4496a2008cfe26b"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/auth/accountAccess.ts",
+      "gitBlob": "2bc149df29a5ed34017a3e93e813a1dde354c9d4",
+      "sha256": "4124b3933a54f78a568973e479825f25443d385a29f692d136d6c9f1f3dae132"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "gitBlob": "a5534e0f8106bc197e399f6691b292fcd3c2c7d2",
+      "sha256": "b6e1dde6acd44c76434d1d563824e3bb81eedd564aa02d152d088f16129b9bf2"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/app/onboarding.tsx",
+      "gitBlob": "5127cb6383db106fd2bed6444f05ae134d5efed8",
+      "sha256": "81aff66cb01bf746e834362256634dcd6ed5df0a106d8727962836e754830985"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "scripts/expo-web-build.mjs",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "scripts/expo-web-static-server.mjs",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "scripts/expo-web-release.mjs",
+      "gitBlob": "cae076adf0d24bb969c3b470d443fc3162c3e304",
+      "sha256": "a7d1b1146296ec71a407dfe32ad165894367fe2eb7302d3f67f523442dbfba06"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "package-lock.json",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "mobile/package.json",
+      "gitBlob": "3969f5c162e2260fb096da0000217a72e3248c12",
+      "sha256": "a776b757edb0dad3d4fbee33eea3fc65b2106d30937b5d8117a889aba8ccafa3"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "playwright.expo-web.config.ts",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/today-paused.spec.ts",
+      "gitBlob": "620b611df6b79e6871eebb2bd3636fef9a708020",
+      "sha256": "e6e9b7c40401f3b023790fea5d7b1c9e77a9a8a2ff3510ba79312c057f636be2"
+    },
+    {
+      "commit": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "path": "e2e/expo-web/goal-pace.spec.ts",
+      "gitBlob": "21a7e70c95114e3d91d637a58dd42badce5d7ff7",
+      "sha256": "31dcb9ffaadccf215d55148b612b291ed54138778185c589f2c1850d1f77f868"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "docs/expo-web.md",
+      "gitBlob": "8db6e989d928b892f272cd8d8c6db911caefc57c",
+      "sha256": "94814a30fbde7e67303c57b7fe5ab56c8092686d0b4dd7de4f49281efce9ea81"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "gitBlob": "4ae3678cff38c7b34cd1d4bdbcc8fe3cb5bada1a",
+      "sha256": "deb20ad63260415c5f90bb82286f25c8bb9e11ca4e0f6ad58cfb38bd764df322"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "gitBlob": "eaec810c9b9e4ae6e94ab9526272b913d2ac701b",
+      "sha256": "1c71add529dfd2ba855c78a7bf7ac018f8648097fd3f0bd41ae7a3568458283c"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "gitBlob": "4950fd58861c5144b579651ed3eeacb6394bc51f",
+      "sha256": "c01f50f01314bbc2bee20d7a81e04dcd29c74e11a2e1adf9c9bfa963ea29aa45"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/launch-24-data-state-matrix.ts",
+      "gitBlob": "e75f18ecc8f62f73ea37e63650d0e1e3b5e41e1c",
+      "sha256": "3d2e2d6e4b1890f2b8f2211aa247e52304fdf8fbe05771d75534767756784e57"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+      "gitBlob": "9181ed563a99a4329ac025416178961207c57daa",
+      "sha256": "969174fb82112d283dd2be7e9e07e85ae2a1549576b39dfaa1b3fd2a7e0eb10b"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "gitBlob": "7befd57041f7b009a7a02c7766db4487becd4529",
+      "sha256": "3e2918013a1d63c9edf2d4c77ab9c44f2e3fede02498f9c33574346f39573ca5"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/unknown-route-gates.spec.ts",
+      "gitBlob": "ecf644484a3aeb6822e7fe71cd1a0d2eade1d563",
+      "sha256": "4b9e384d5a48968b90690d653e33f2b232de8508f167f9bb00006e1eb9e9703b"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "gitBlob": "55b83dea49e4f9e87b7610b8fb12096d313e3128",
+      "sha256": "2a86bfd8d0d2bf922cbbdd65da26e45cd274cd38009d0a0f423832e093a15f74"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/app/+not-found.tsx",
+      "gitBlob": "ae897b7c3f69f85c2d8bd99009805dda2c7efe08",
+      "sha256": "1ed81f0431e017be9c6646d4575a9bd787fb43214ac689e1b7e0e20fc6862f21"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/components/NotificationCard.test.tsx",
+      "gitBlob": "e49e62362a898c9ec4ad5c128d6aadeb226fdcd9",
+      "sha256": "cbbb521a5d08ea0f4114ef71df8c6ef76179581297f7a81d5627c8f37053b1ef"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/components/NotificationCard.tsx",
+      "gitBlob": "b7b1a52f99987037ed0ef8e408ee5bd747b1730a",
+      "sha256": "335de0e2eeedd7e25ad9750d797c209b414eaad7a3a963ac349b780c36e0def1"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/components/NotificationsDrawer.test.tsx",
+      "gitBlob": "f0e5ff6bc025af7d2e9dafe9d88f10c5748c58b6",
+      "sha256": "9ebfc5ef3e14ed24f2e965946e92ccbd2ab87a55fe8d1289501c3abb2eee6fb6"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/components/NotificationsDrawer.tsx",
+      "gitBlob": "283ee7cb95c3b80eeeb979414a1cba8a282212b1",
+      "sha256": "dec89f274a0798798be0f303f3a14e61b9c4839300dc7f1810ee20d096ad9316"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/components/legal/PublicLegalPage.test.tsx",
+      "gitBlob": "ce42be0edc0e47ccb3455f5b9adb486171625543",
+      "sha256": "a7171075cedba6a839e9609ee1b9f9ad7140f87e83929c9bc65a1be58f5f40b5"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/components/legal/PublicLegalPage.tsx",
+      "gitBlob": "42c2ca4ef20c418d82a66c986d53eaa63514c57a",
+      "sha256": "0ba445be042cedda1a621f03ab56b7ae176431c7eeb66ef8611e6d3995bfed60"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+      "gitBlob": "2540d557ab0860c5af6486090b02e48cadfd823f",
+      "sha256": "3f6c2041f95daaafc23c76e45ed35563de2082b01476b98d52b1c04fa5467bfa"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/diagnostics/operationDiagnostics.ts",
+      "gitBlob": "a389e7815fdda7a4eb4a3c2d942c2385fab5a3af",
+      "sha256": "7b3718370db93e8a41c1bffbc6009c20f8f1fb2e70ef372e165eaa2afd3f8f11"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+      "gitBlob": "6e9dc1fab1b4647fb19717a26f15350f95dcce02",
+      "sha256": "5f9450457d2aedb8601a3be5854acc26713d6f4890ba977c0a4b79ac99286a18"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "gitBlob": "e95a7f2b36ffcbdc4f3deb4c7a81d50fe8f732e0",
+      "sha256": "155cabd4c5b2d1b03c518a3c5cdef50287d032f6d80742aee2cc4bd96c170781"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "gitBlob": "491b1544b30d6810a5f2aaf873eff7a5045cecff",
+      "sha256": "a0e87b389bf5294dd9bff724a36fcf7603c8ffc01639a1c1f81ece3dbdbd29e7"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/navigation/routeMetadata.test.ts",
+      "gitBlob": "07c7dae01e63c3261b91fdb735da8c3d3bbcf4ca",
+      "sha256": "55f6f475086e4c52554ee8e96df3fd3684b618c666081a5da1e3166a01a0f8d5"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/navigation/routeRegistry.test.ts",
+      "gitBlob": "4ee795e3ad3bc0b490f25073adf91cee5c3cee48",
+      "sha256": "a6abee90b9e60d74e5ec091c63adb39ff4a78cf5e0175a7f2e464e4bf8ded2cd"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "gitBlob": "2e4e28b68d0c62f3ef7be97a271d1c67c9838af4",
+      "sha256": "632ef0b0b983f75fbb9e929ee1075f8c1512f156a1e260508017f669c795c76e"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/notifications/presentation.test.ts",
+      "gitBlob": "63e3d284e3b9d9b2d6c7972e932b421fe2a258f9",
+      "sha256": "ec03ec3ddee778ac2705acf3d76934073b85b480fbcc42b60e659399a5dd5bf1"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/notifications/presentation.ts",
+      "gitBlob": "54866b233a5d98207a12314c448304f0f72f9c89",
+      "sha256": "d728225bff00dcf04e64872c1f228c1221b594c5dbd8631eaa62c1aa9b152f89"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/notifications/query.test.ts",
+      "gitBlob": "7702a8d9c2c89acde32b18c1f2ccf37c74bed80a",
+      "sha256": "cc3c8332535515c96622bc7dd601b493aaaff56e705e2dafae2e80e35ddd9692"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/notifications/query.ts",
+      "gitBlob": "98d0323d1535db9d6c77f7b6083636ab6a74a0de",
+      "sha256": "73fffa73732b18570dcb4e8b34628f9127fd060458cdcc37d0baa23551834493"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/settings/PreferencesSettingsScreen.test.tsx",
+      "gitBlob": "7c8f62f610cdc7430c9feb2136b2682fda4fd4f7",
+      "sha256": "0eefe49ac176d911302c45eaac416c29f96464dcbf7338c49d6082d39fe023bb"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/fixtures.ts",
+      "gitBlob": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/nested-settings-routes.spec.ts",
+      "gitBlob": "93e6f70c16d5e3b0b509d93e63b3837c2bbc6437",
+      "sha256": "e34c240d292c236c68bd607e9c61e7ccc36fab357e6adb9857824270b2434054"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/app/_layout.web.tsx",
+      "gitBlob": "91131822cfa7c917443556aa69a1813b90a7557d",
+      "sha256": "730e6f7074ee8d4e273a1ddb5ec11a89a5b5aff384a7d879312f6ca2a715cc7c"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/app/_layout.tsx",
+      "gitBlob": "6648c5cb4e42f6de966ba109fc57d3ba096704ce",
+      "sha256": "835aa583cce00d269653b35e2471f55d99b871c3ffda8784e4496a2008cfe26b"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/auth/accountAccess.ts",
+      "gitBlob": "2bc149df29a5ed34017a3e93e813a1dde354c9d4",
+      "sha256": "4124b3933a54f78a568973e479825f25443d385a29f692d136d6c9f1f3dae132"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "gitBlob": "a5534e0f8106bc197e399f6691b292fcd3c2c7d2",
+      "sha256": "b6e1dde6acd44c76434d1d563824e3bb81eedd564aa02d152d088f16129b9bf2"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/app/onboarding.tsx",
+      "gitBlob": "5127cb6383db106fd2bed6444f05ae134d5efed8",
+      "sha256": "81aff66cb01bf746e834362256634dcd6ed5df0a106d8727962836e754830985"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "scripts/expo-web-build.mjs",
+      "gitBlob": "f437ae6934a50d40f095464ac4283d15b703aa59",
+      "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "scripts/expo-web-static-server.mjs",
+      "gitBlob": "2b86cdb4238ea33ce1a80dc46d45700265dada26",
+      "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "scripts/expo-web-release.mjs",
+      "gitBlob": "cae076adf0d24bb969c3b470d443fc3162c3e304",
+      "sha256": "a7d1b1146296ec71a407dfe32ad165894367fe2eb7302d3f67f523442dbfba06"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "package-lock.json",
+      "gitBlob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "mobile/package.json",
+      "gitBlob": "3969f5c162e2260fb096da0000217a72e3248c12",
+      "sha256": "a776b757edb0dad3d4fbee33eea3fc65b2106d30937b5d8117a889aba8ccafa3"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "playwright.expo-web.config.ts",
+      "gitBlob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/today-paused.spec.ts",
+      "gitBlob": "620b611df6b79e6871eebb2bd3636fef9a708020",
+      "sha256": "e6e9b7c40401f3b023790fea5d7b1c9e77a9a8a2ff3510ba79312c057f636be2"
+    },
+    {
+      "commit": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "path": "e2e/expo-web/goal-pace.spec.ts",
+      "gitBlob": "21a7e70c95114e3d91d637a58dd42badce5d7ff7",
+      "sha256": "31dcb9ffaadccf215d55148b612b291ed54138778185c589f2c1850d1f77f868"
+    }
+  ],
+  "logs": [
+    {
+      "path": "current-lint.log",
+      "rawSha256": "7dc71058ca9d6b4a471157dee8ca158968980d8d18d32a4571b738f48b934dbf",
+      "sha256": "2f326b84f5858584456205039ec026c7fd3def4cc29a45dbea16152d0c7a8eae",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-focused-mobile.log",
+      "rawSha256": "653b136646914a1d0a479f0e25f1e4036a857ec40a401f0d1f54ddeb2edbbf76",
+      "sha256": "703a61c937be8d43cb4f279a68e7292a91367a9039d3454806a318a4eab7e1d1",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-build-final.log",
+      "rawSha256": "cfc3daa43fed5ba2d7b594bb811dadb6d7e41dc96e3f639f4dac5ded7209d337",
+      "sha256": "1d29627b54982610be2836c44bab533d8c50df5fad4823a31605633975c6b07d",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "baseline-build.log",
+      "rawSha256": "f99c66f2f923611fb12078106fc350a62bddeeef514a8b679cf290705860b5c0",
+      "sha256": "6440262e55e5de85b8f3185f2b8c6d7acbcc0f609d779464e108541b46192b63",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-dead-code.log",
+      "rawSha256": "e4c42044a6216525ac9f5290cc22fa9ec7f37eb8519f76e6f800091d0301a0a2",
+      "sha256": "348269d5bf03de97f9eef9a9e81a3a8789df14140052878dc69ebbc132183011",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-release-contract.log",
+      "rawSha256": "866f438a5e734a7ea7a7f1f44547f81da77e3aab293f9bd03659ce788440668f",
+      "sha256": "5eb9ae8df13c0b95fc35cd4c7575dcea8bdaff4880920bc3f6e6018e84ff2e76",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-browser-initial.log",
+      "rawSha256": "769883f6590009192c9fb7b198edbd45755cf2d0f59345989be65eabd361fdf6",
+      "sha256": "e5fa204c641294ad4a28bbba20da93e95c139b008f97c1f74c2fe399d8d1ab6a",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-history-final.log",
+      "rawSha256": "88ef06dc4dd474c89e90d5a530e3569df2c432a0a0416ea34a77cfb0a496e6d6",
+      "sha256": "61a7e7652322f160ab64485e9118edc81295e77b4453e4323f1e8b35c4318b6a",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-pwa.log",
+      "rawSha256": "8d84cb4be97daec8ac2be66fe8fc6e936097d3b03b732cf04e57e4218f2bf6e2",
+      "sha256": "a596b3beb644a34958e201a6956d9801bdb969ee2c3d5b5d3f605993efd394da",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-base-integration.log",
+      "rawSha256": "fff1cd872890a490c8f4c785fa92d015d2fbc5dfeee6aeb5d64d9af0697653b0",
+      "sha256": "96d167c7ff6db9b4a3a25ce50b8fbab74155dd484bbaecb4465c7b5dfea75fd3",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "current-capture.log",
+      "rawSha256": "1345efb6e464c532fde59c83b58274e708165146048c1241f1d5bc0d960c0ba1",
+      "sha256": "e1936e3d61a1892f9045e891e165338b482a31abd75696d469c682eb0172acd3",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    },
+    {
+      "path": "baseline-capture.log",
+      "rawSha256": "300dc2633eb09b8f29381afdf3d380d4f218996b980485f87df3d08df99f01fb",
+      "sha256": "418e8f2fd29221bb148c8660b2421fd6bf7fb798080b75cb1b48083bf2dce3f3",
+      "normalization": "Only private worktree/task paths redacted and CRLF normalized."
+    }
+  ],
+  "captures": [
+    {
+      "name": "empty-desktop",
+      "side": "after",
+      "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceTree": "b3c6ce3e0756f015df835e472309cfbbe4d21763",
+      "harnessSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-06T03:56:58.505Z",
+      "browser": "154.0.8037.98",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/today",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "state": "empty reminders",
+        "expectedFooter": false
+      },
+      "image": "after-empty-desktop.png",
+      "imageSha256": "41ccb5b585001f4f23efc7dc7f8c65bda888c8a647202bc5632c6c5563071b14",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-af3b212627383f752fad04fcecf0f157.js",
+          "sha256": "fb8d8deba5faa7da60cb28da2adf760f674b078d2cb5afbb9659d0d7846a3f85"
+        }
+      ],
+      "captureHarnessSha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+    },
+    {
+      "name": "removed-address-desktop",
+      "side": "after",
+      "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceTree": "b3c6ce3e0756f015df835e472309cfbbe4d21763",
+      "harnessSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-06T03:56:59.241Z",
+      "browser": "154.0.8037.98",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/today",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "requestedRoute": "/notifications?legacy=1#archive",
+        "expectedRoute": "/today",
+        "mechanism": "No notifications route or alias; generic unknown-route fallback"
+      },
+      "image": "after-removed-address-desktop.png",
+      "imageSha256": "cac9d1633507575e047ed09688b515caada9908d954729b9c9898624419a974e",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-af3b212627383f752fad04fcecf0f157.js",
+          "sha256": "fb8d8deba5faa7da60cb28da2adf760f674b078d2cb5afbb9659d0d7846a3f85"
+        }
+      ],
+      "captureHarnessSha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+    },
+    {
+      "name": "unknown-address-desktop",
+      "side": "after",
+      "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceTree": "b3c6ce3e0756f015df835e472309cfbbe4d21763",
+      "harnessSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-06T03:56:59.976Z",
+      "browser": "154.0.8037.98",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/today",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "requestedRoute": "/missing/deep/page?old=1#section",
+        "expectedRoute": "/today",
+        "mechanism": "Automatic generic replacement to protected Today"
+      },
+      "image": "after-unknown-address-desktop.png",
+      "imageSha256": "cac9d1633507575e047ed09688b515caada9908d954729b9c9898624419a974e",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-af3b212627383f752fad04fcecf0f157.js",
+          "sha256": "fb8d8deba5faa7da60cb28da2adf760f674b078d2cb5afbb9659d0d7846a3f85"
+        }
+      ],
+      "captureHarnessSha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+    },
+    {
+      "name": "empty-desktop",
+      "side": "before",
+      "source": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "sourceTree": "dd560c91c5d82643872f69572217cf1cc0974981",
+      "harnessSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-06T03:57:34.627Z",
+      "browser": "154.0.8037.98",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/today",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "state": "empty reminders",
+        "expectedFooter": true
+      },
+      "image": "before-empty-desktop.png",
+      "imageSha256": "acfaef4a8532a2405aabe8d55cfae77b946fd306a9051aad0f4b5e32045a03fa",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-70e365a6a9b15ddb6473ed427c511ea0.js",
+          "sha256": "0d41fca0914132bfc06a335a6e07dd2e273d12f231236c58a176de25232baa2a"
+        }
+      ],
+      "captureHarnessSha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+    },
+    {
+      "name": "removed-address-desktop",
+      "side": "before",
+      "source": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "sourceTree": "dd560c91c5d82643872f69572217cf1cc0974981",
+      "harnessSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-06T03:57:35.307Z",
+      "browser": "154.0.8037.98",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/notifications",
+      "historyRequests": 1,
+      "actionRequests": 0,
+      "observation": {
+        "requestedRoute": "/notifications?legacy=1#archive",
+        "expectedRoute": "/notifications",
+        "mechanism": "Existing history screen"
+      },
+      "image": "before-removed-address-desktop.png",
+      "imageSha256": "2bde90faebf998fd6cf66cdbdd18018311eef7e6aff42141060661f8290760ee",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-70e365a6a9b15ddb6473ed427c511ea0.js",
+          "sha256": "0d41fca0914132bfc06a335a6e07dd2e273d12f231236c58a176de25232baa2a"
+        }
+      ],
+      "captureHarnessSha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+    },
+    {
+      "name": "unknown-address-desktop",
+      "side": "before",
+      "source": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+      "sourceTree": "dd560c91c5d82643872f69572217cf1cc0974981",
+      "harnessSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "sourceClean": true,
+      "capturedAtUtc": "2026-10-06T03:57:35.851Z",
+      "browser": "154.0.8037.98",
+      "host": "mchartier_zbook",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "theme": "light",
+      "scale": 1,
+      "locale": "en-US",
+      "timezone": "America/Los_Angeles",
+      "clock": "2026-07-21T19:00:00.000Z",
+      "reducedMotion": "reduce",
+      "serviceWorkers": "block",
+      "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+      "route": "/missing/deep/page",
+      "historyRequests": 0,
+      "actionRequests": 0,
+      "observation": {
+        "requestedRoute": "/missing/deep/page?old=1#section",
+        "expectedRoute": "/missing/deep/page",
+        "mechanism": "Manual not-found recovery"
+      },
+      "image": "before-unknown-address-desktop.png",
+      "imageSha256": "035f6c9e8d70867c3e679c51878dbe15826c0cd33f8cc6c381694ba231c3b6d5",
+      "servedAssets": [
+        {
+          "path": "_expo/static/js/web/index-70e365a6a9b15ddb6473ed427c511ea0.js",
+          "sha256": "0d41fca0914132bfc06a335a6e07dd2e273d12f231236c58a176de25232baa2a"
+        }
+      ],
+      "captureHarnessSha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464",
+      "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+    }
+  ],
+  "validation": {
+    "productSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+    "finalHead": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+    "finalHeadDiff": {
+      "capturedAfter": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "finalHead": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "changedPaths": [
+        "e2e/expo-web/nested-route-stacks.spec.ts"
+      ],
+      "assessment": "Only the maintained browser test organization changed after capture. All product files, build inputs and synthetic fixture/harness bytes used by the capture are unchanged; the existing export and images remain applicable without relabeling their captured source."
+    },
+    "unit": {
+      "passed": 58,
+      "suites": 8,
+      "sourceContent": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "note": "Typechecks and focused units ran on the working-tree bytes subsequently committed unchanged as c0013ea2."
+    },
+    "browser": {
+      "unchangedReminderGateEditor": {
+        "passed": 128,
+        "skipped": 4,
+        "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+      },
+      "finalRouteSuite": {
+        "passed": 44,
+        "source": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+        "servedProductSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+      },
+      "initialCombinedRouteCase": {
+        "failed": 4,
+        "reason": "Four URLs shared one 45-second test budget; context teardown exceeded it. Split into independent cases without changing assertions or raising timeout.",
+        "log": "current-browser-initial.log"
+      },
+      "hostedPwa": {
+        "passed": 2,
+        "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+      },
+      "mergedBaseFlows": {
+        "passed": 10,
+        "skipped": 2,
+        "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+      }
+    },
+    "releaseContracts": 16,
+    "deadCode": "5 contract tests and both Knip modes pass",
+    "captureScenariosPerSource": 3,
+    "limits": [
+      "Broader Today six-state matrix and duplicate previous-day Add Food findings remain earlier QA limitations; not rerun on this new base.",
+      "Browser APIs/SSE/permissions are synthetic; native Back/push taps are mocked, not physical-device delivery.",
+      "No device/emulator/release installation."
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "current-lint.log",
+      "bytes": 1420,
+      "sha256": "2f326b84f5858584456205039ec026c7fd3def4cc29a45dbea16152d0c7a8eae"
+    },
+    {
+      "path": "current-focused-mobile.log",
+      "bytes": 999,
+      "sha256": "703a61c937be8d43cb4f279a68e7292a91367a9039d3454806a318a4eab7e1d1"
+    },
+    {
+      "path": "current-build-final.log",
+      "bytes": 4413,
+      "sha256": "1d29627b54982610be2836c44bab533d8c50df5fad4823a31605633975c6b07d"
+    },
+    {
+      "path": "baseline-build.log",
+      "bytes": 4867,
+      "sha256": "6440262e55e5de85b8f3185f2b8c6d7acbcc0f609d779464e108541b46192b63"
+    },
+    {
+      "path": "current-dead-code.log",
+      "bytes": 848,
+      "sha256": "348269d5bf03de97f9eef9a9e81a3a8789df14140052878dc69ebbc132183011"
+    },
+    {
+      "path": "current-release-contract.log",
+      "bytes": 1596,
+      "sha256": "5eb9ae8df13c0b95fc35cd4c7575dcea8bdaff4880920bc3f6e6018e84ff2e76"
+    },
+    {
+      "path": "current-browser-initial.log",
+      "bytes": 42529,
+      "sha256": "e5fa204c641294ad4a28bbba20da93e95c139b008f97c1f74c2fe399d8d1ab6a"
+    },
+    {
+      "path": "current-history-final.log",
+      "bytes": 9141,
+      "sha256": "61a7e7652322f160ab64485e9118edc81295e77b4453e4323f1e8b35c4318b6a"
+    },
+    {
+      "path": "current-pwa.log",
+      "bytes": 772,
+      "sha256": "a596b3beb644a34958e201a6956d9801bdb969ee2c3d5b5d3f605993efd394da"
+    },
+    {
+      "path": "current-base-integration.log",
+      "bytes": 2714,
+      "sha256": "96d167c7ff6db9b4a3a25ce50b8fbab74155dd484bbaecb4465c7b5dfea75fd3"
+    },
+    {
+      "path": "current-capture.log",
+      "bytes": 471,
+      "sha256": "e1936e3d61a1892f9045e891e165338b482a31abd75696d469c682eb0172acd3"
+    },
+    {
+      "path": "baseline-capture.log",
+      "bytes": 472,
+      "sha256": "418e8f2fd29221bb148c8660b2421fd6bf7fb798080b75cb1b48083bf2dce3f3"
+    },
+    {
+      "path": "before-export-inventory.json",
+      "bytes": 29436,
+      "sha256": "8f76a0302fabdea5c9bb86b95ed0b2c5e651946bb4bd38b5ced2399f463d4d66"
+    },
+    {
+      "path": "after-export-inventory.json",
+      "bytes": 28830,
+      "sha256": "871e1bc3f827a4f0dd35814eed4948e7a76d08e6b28ef96aae8f00d23bf16aeb"
+    },
+    {
+      "path": "captures/after-empty-desktop.json",
+      "bytes": 1424,
+      "sha256": "175ff76f73c8c6cacfc31540403ac25cf374288cf35634178078f92bc540981d"
+    },
+    {
+      "path": "captures/after-empty-desktop.png",
+      "bytes": 46767,
+      "sha256": "41ccb5b585001f4f23efc7dc7f8c65bda888c8a647202bc5632c6c5563071b14"
+    },
+    {
+      "path": "captures/after-removed-address-desktop.json",
+      "bytes": 1555,
+      "sha256": "ecb1128da5c01d8409738422581b12bd369a748c4c263809ae3a33481c086e26"
+    },
+    {
+      "path": "captures/after-removed-address-desktop.png",
+      "bytes": 47952,
+      "sha256": "cac9d1633507575e047ed09688b515caada9908d954729b9c9898624419a974e"
+    },
+    {
+      "path": "captures/after-unknown-address-desktop.json",
+      "bytes": 1541,
+      "sha256": "d3c8c230da1920236c697f3243d97a65802c18ba2481f553ddc910174b295939"
+    },
+    {
+      "path": "captures/after-unknown-address-desktop.png",
+      "bytes": 47952,
+      "sha256": "cac9d1633507575e047ed09688b515caada9908d954729b9c9898624419a974e"
+    },
+    {
+      "path": "captures/before-empty-desktop.json",
+      "bytes": 1425,
+      "sha256": "ea02b2f83f9a2293ceb0985be3f71c230bedf2e385ffad2371cbe74b84b558ec"
+    },
+    {
+      "path": "captures/before-empty-desktop.png",
+      "bytes": 49579,
+      "sha256": "acfaef4a8532a2405aabe8d55cfae77b946fd306a9051aad0f4b5e32045a03fa"
+    },
+    {
+      "path": "captures/before-removed-address-desktop.json",
+      "bytes": 1533,
+      "sha256": "783d05c472411f840db08c65998f7292ba97921cf440cb7708c097d791f8bb04"
+    },
+    {
+      "path": "captures/before-removed-address-desktop.png",
+      "bytes": 56155,
+      "sha256": "2bde90faebf998fd6cf66cdbdd18018311eef7e6aff42141060661f8290760ee"
+    },
+    {
+      "path": "captures/before-unknown-address-desktop.json",
+      "bytes": 1544,
+      "sha256": "7eb8ed683dcf44effaa30109ea45a95cf70fd5c60492100c7606ba8c734e50e4"
+    },
+    {
+      "path": "captures/before-unknown-address-desktop.png",
+      "bytes": 23025,
+      "sha256": "035f6c9e8d70867c3e679c51878dbe15826c0cd33f8cc6c381694ba231c3b6d5"
+    },
+    {
+      "path": "capture.spec.ts",
+      "bytes": 6095,
+      "sha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464"
+    },
+    {
+      "path": "capture.config.cjs",
+      "bytes": 445,
+      "sha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+    },
+    {
+      "path": "scope-inventory.json",
+      "bytes": 57091,
+      "sha256": "8395cd2444a417697191d54664e2d5fbc8d9fb02fa2e50e39ef5901db8d526d4"
+    },
+    {
+      "path": "complete-merge.diff",
+      "bytes": 134330,
+      "sha256": "14bc467c9e079bbec49e84a65ea971822dbf4beffd3fa493a391599292c7e4d0"
+    },
+    {
+      "path": "prior-pr-body.md",
+      "bytes": 5178,
+      "sha256": "97e865e05f99049c68073f80b91d14ec9f97e3cec0f3ee263ca95b4a76ab8525"
+    },
+    {
+      "path": "prior-issue-body.md",
+      "bytes": 3421,
+      "sha256": "3ba2309e97ac43ed0b7ba0641d8ddb562cf32bacc026880eeef12db417fcb380"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 2171,
+      "sha256": "edb98cda53cf6e3d863c3ae0747b6c3eca93c3da0f59b9ca5a6531212c054654"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4323,
+      "sha256": "80ab901bfe3c99b3f8b5a12b166ea99c6255c00085cf0acd716acf8eaf21a7fa"
+    }
+  ]
+}

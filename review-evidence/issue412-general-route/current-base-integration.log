@@ -1,0 +1,26 @@
+
+Running 12 tests using 2 workers
+
+(node:35324) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34232) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (5.5s)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (6.4s)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light (2.3s)
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in dark (2.4s)
+  -   6 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:115:5 ΓÇ║ paused-day copy and actions remain reachable at 200% text on a short phone
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:83:5 ΓÇ║ a past paused day replaces an expanded food log and can be backfilled (1.8s)
+(node:38712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:24220) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  7 [android-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (7.9s)
+  ok  8 [android-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (8.2s)
+  ok  9 [android-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light (2.5s)
+  ok 10 [android-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in dark (2.5s)
+  -  12 [android-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:115:5 ΓÇ║ paused-day copy and actions remain reachable at 200% text on a short phone
+  ok 11 [android-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:83:5 ΓÇ║ a past paused day replaces an expanded food log and can be backfilled (1.9s)
+
+  2 skipped
+  10 passed (54.6s)

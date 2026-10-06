@@ -1,0 +1,52 @@
+{
+  "productSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+  "finalHead": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+  "finalHeadDiff": {
+    "capturedAfter": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+    "finalHead": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+    "changedPaths": [
+      "e2e/expo-web/nested-route-stacks.spec.ts"
+    ],
+    "assessment": "Only the maintained browser test organization changed after capture. All product files, build inputs and synthetic fixture/harness bytes used by the capture are unchanged; the existing export and images remain applicable without relabeling their captured source."
+  },
+  "unit": {
+    "passed": 58,
+    "suites": 8,
+    "sourceContent": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+    "note": "Typechecks and focused units ran on the working-tree bytes subsequently committed unchanged as c0013ea2."
+  },
+  "browser": {
+    "unchangedReminderGateEditor": {
+      "passed": 128,
+      "skipped": 4,
+      "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+    },
+    "finalRouteSuite": {
+      "passed": 44,
+      "source": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "servedProductSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+    },
+    "initialCombinedRouteCase": {
+      "failed": 4,
+      "reason": "Four URLs shared one 45-second test budget; context teardown exceeded it. Split into independent cases without changing assertions or raising timeout.",
+      "log": "current-browser-initial.log"
+    },
+    "hostedPwa": {
+      "passed": 2,
+      "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+    },
+    "mergedBaseFlows": {
+      "passed": 10,
+      "skipped": 2,
+      "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+    }
+  },
+  "releaseContracts": 16,
+  "deadCode": "5 contract tests and both Knip modes pass",
+  "captureScenariosPerSource": 3,
+  "limits": [
+    "Broader Today six-state matrix and duplicate previous-day Add Food findings remain earlier QA limitations; not rerun on this new base.",
+    "Browser APIs/SSE/permissions are synthetic; native Back/push taps are mocked, not physical-device delivery.",
+    "No device/emulator/release installation."
+  ]
+}

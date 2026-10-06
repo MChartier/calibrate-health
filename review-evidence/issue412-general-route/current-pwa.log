@@ -1,0 +1,11 @@
+
+Running 2 tests using 2 workers
+
+(node:23016) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [android-phone-chrome] ΓÇ║ e2e\expo-web\launch-19-hosted-pwa-trust.spec.ts:307:5 ΓÇ║ hosted and installed web keep public trust, route truth, and server-account caches isolated (1.6s)
+  ok 1 [tablet-chrome] ΓÇ║ e2e\expo-web\launch-19-hosted-pwa-trust.spec.ts:307:5 ΓÇ║ hosted and installed web keep public trust, route truth, and server-account caches isolated (2.0s)
+
+  2 passed (3.6s)

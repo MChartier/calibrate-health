@@ -1,0 +1,41 @@
+{
+  "name": "unknown-address-desktop",
+  "side": "after",
+  "source": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+  "sourceTree": "b3c6ce3e0756f015df835e472309cfbbe4d21763",
+  "harnessSource": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+  "sourceClean": true,
+  "capturedAtUtc": "2026-10-06T03:56:59.976Z",
+  "browser": "154.0.8037.98",
+  "host": "mchartier_zbook",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "theme": "light",
+  "scale": 1,
+  "locale": "en-US",
+  "timezone": "America/Los_Angeles",
+  "clock": "2026-07-21T19:00:00.000Z",
+  "reducedMotion": "reduce",
+  "serviceWorkers": "block",
+  "normalization": "Same synthetic fixtures and transient PWA-notice suppression on both sides; actual compared UI unaltered. Unedited viewport screenshot.",
+  "route": "/today",
+  "historyRequests": 0,
+  "actionRequests": 0,
+  "observation": {
+    "requestedRoute": "/missing/deep/page?old=1#section",
+    "expectedRoute": "/today",
+    "mechanism": "Automatic generic replacement to protected Today"
+  },
+  "image": "after-unknown-address-desktop.png",
+  "imageSha256": "cac9d1633507575e047ed09688b515caada9908d954729b9c9898624419a974e",
+  "servedAssets": [
+    {
+      "path": "_expo/static/js/web/index-af3b212627383f752fad04fcecf0f157.js",
+      "sha256": "fb8d8deba5faa7da60cb28da2adf760f674b078d2cb5afbb9659d0d7846a3f85"
+    }
+  ],
+  "captureHarnessSha256": "954fc8f78be2e951370b8ed31e9f834226057bfd22089099f9af9365ace51464",
+  "captureConfigSha256": "7f7bb9736a7e6d093d66f464efd7d2183c0a0f788e02fc0676516b8f5f238331"
+}

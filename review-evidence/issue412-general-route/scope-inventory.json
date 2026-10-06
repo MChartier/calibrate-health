@@ -1,0 +1,1331 @@
+{
+  "checkedAtUtc": "2026-10-06T04:02:27.470Z",
+  "repository": "MChartier/calibrate-health",
+  "target": {
+    "ref": "refs/heads/master",
+    "sha": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed"
+  },
+  "head": {
+    "ref": "refs/heads/mchartier/remove-notification-history-clean",
+    "sha": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6"
+  },
+  "mergeBase": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+  "declaredParent": null,
+  "parentState": "independent",
+  "ultimateTarget": {
+    "ref": "refs/heads/master",
+    "sha": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed"
+  },
+  "commits": [
+    {
+      "sha": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+      "parents": [
+        "acc8a30d6cde7477f08f0b7ace23df4047d21354"
+      ],
+      "subject": "Remove notification history while preserving current reminders",
+      "rationale": "Original issue412 removal and maintained reminder/compatibility regressions, under then-current requirements.",
+      "diffsToParents": [
+        {
+          "parent": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+          "files": [
+            {
+              "path": "docs/expo-web.md",
+              "status": "M",
+              "additions": 5,
+              "deletions": 0,
+              "rationale": "Maintain reminder/API preservation guidance and document the general Today fallback requested by the human."
+            },
+            {
+              "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+              "status": "M",
+              "additions": 351,
+              "deletions": 396,
+              "rationale": "Maintained active-reminder, count/action/recovery, guarded-editor and offline regression scenarios replacing mixed archive coverage."
+            },
+            {
+              "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+              "status": "M",
+              "additions": 2,
+              "deletions": 1,
+              "rationale": "Reuse existing transient-notice suppression for the retained phone Settings/Preferences regression; no product UI hiding."
+            },
+            {
+              "path": "e2e/expo-web/launch-24-data-state-matrix.ts",
+              "status": "M",
+              "additions": 0,
+              "deletions": 28,
+              "rationale": "Remove only retired history-route fixture/case; retain other route data-state coverage."
+            },
+            {
+              "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+              "status": "M",
+              "additions": 58,
+              "deletions": 0,
+              "rationale": "Maintain generic unknown-address replacement, query/hash cleanup, reload and repeated Back/Forward plus retained legal/shell navigation."
+            },
+            {
+              "path": "e2e/expo-web/notification-legacy-gates.spec.ts",
+              "status": "A",
+              "additions": 45,
+              "deletions": 0,
+              "rationale": "Originally maintained the former compatibility contract; deleted after the human superseded it with generic unknown-route handling."
+            },
+            {
+              "path": "e2e/expo-web/notification-reminders.fixture.ts",
+              "status": "A",
+              "additions": 256,
+              "deletions": 0,
+              "rationale": "Shared synthetic reminder fixture for active list/count/actions/SSE and controlled failures; rejects retired client history/read-all calls."
+            },
+            {
+              "path": "mobile/app/(tabs)/(today)/notifications.tsx",
+              "status": "M",
+              "additions": 2,
+              "deletions": 2,
+              "rationale": "Remove the retired route entirely under human review5423560928; no notification-specific compatibility file remains."
+            },
+            {
+              "path": "mobile/app/(tabs)/_layout.tsx",
+              "status": "M",
+              "additions": 14,
+              "deletions": 10,
+              "rationale": "Remove history entry wiring; preserve immediate reminder cache reconciliation and guarded open/failure/offline behavior; retain merged rail."
+            },
+            {
+              "path": "mobile/src/components/NotificationCard.test.tsx",
+              "status": "M",
+              "additions": 15,
+              "deletions": 7,
+              "rationale": "Retain current reminder rendering/actions coverage while removing archive-only state expectations."
+            },
+            {
+              "path": "mobile/src/components/NotificationCard.tsx",
+              "status": "M",
+              "additions": 2,
+              "deletions": 9,
+              "rationale": "Remove demonstrably dead archive-state presentation props and formatting; retain active reminder card."
+            },
+            {
+              "path": "mobile/src/components/NotificationsDrawer.test.tsx",
+              "status": "M",
+              "additions": 37,
+              "deletions": 9,
+              "rationale": "Maintain drawer accessibility/dismissal and accepted-pending-open guards; verify removed footer."
+            },
+            {
+              "path": "mobile/src/components/NotificationsDrawer.tsx",
+              "status": "M",
+              "additions": 10,
+              "deletions": 13,
+              "rationale": "Remove history footer; protect accepted pending navigation with visible busy state and modal dismissal guard."
+            },
+            {
+              "path": "mobile/src/components/legal/PublicLegalPage.test.tsx",
+              "status": "M",
+              "additions": 3,
+              "deletions": 3,
+              "rationale": "Verify retired history shortcut removal while preserving remaining legal-page navigation."
+            },
+            {
+              "path": "mobile/src/components/legal/PublicLegalPage.tsx",
+              "status": "M",
+              "additions": 0,
+              "deletions": 7,
+              "rationale": "Remove only obsolete direct history shortcut."
+            },
+            {
+              "path": "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+              "status": "M",
+              "additions": 2,
+              "deletions": 2,
+              "rationale": "Retarget diagnostic assertions to an existing live operation, preserving coverage."
+            },
+            {
+              "path": "mobile/src/diagnostics/operationDiagnostics.ts",
+              "status": "M",
+              "additions": 1,
+              "deletions": 3,
+              "rationale": "Remove unused history-only client operation mapping; shared/server contract unchanged."
+            },
+            {
+              "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+              "status": "M",
+              "additions": 44,
+              "deletions": 0,
+              "rationale": "Maintain failed-prerequisite draft preservation, duplicate guard protection and successful departure ordering."
+            },
+            {
+              "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+              "status": "M",
+              "additions": 7,
+              "deletions": 11,
+              "rationale": "Allow fallible reminder preparation after consent and before draft discard/navigation."
+            },
+            {
+              "path": "mobile/src/navigation/guardedNavigation.ts",
+              "status": "M",
+              "additions": 6,
+              "deletions": 3,
+              "rationale": "Carry optional fallible reminder preparation through existing guard API."
+            },
+            {
+              "path": "mobile/src/navigation/routeMetadata.test.ts",
+              "status": "M",
+              "additions": 5,
+              "deletions": 0,
+              "rationale": "Keep unknown routes non-canonical until their general fallback navigates; no history alias."
+            },
+            {
+              "path": "mobile/src/navigation/routeRegistry.test.ts",
+              "status": "M",
+              "additions": 8,
+              "deletions": 1,
+              "rationale": "Verify the removed notifications address is unregistered, alongside existing route/alias contracts."
+            },
+            {
+              "path": "mobile/src/navigation/routeRegistry.ts",
+              "status": "M",
+              "additions": 4,
+              "deletions": 13,
+              "rationale": "Remove notification history metadata and its temporary alias; other route registrations remain."
+            },
+            {
+              "path": "mobile/src/notifications/NotificationHistory.test.tsx",
+              "status": "D",
+              "additions": 0,
+              "deletions": 149,
+              "rationale": "Delete tests only for the removed component; retained permission/recovery coverage moves to Preferences."
+            },
+            {
+              "path": "mobile/src/notifications/NotificationHistory.tsx",
+              "status": "D",
+              "additions": 0,
+              "deletions": 268,
+              "rationale": "Delete requested historical client screen and its duplicate controls."
+            },
+            {
+              "path": "mobile/src/notifications/presentation.test.ts",
+              "status": "M",
+              "additions": 0,
+              "deletions": 15,
+              "rationale": "Remove only tests for dead history-only formatting."
+            },
+            {
+              "path": "mobile/src/notifications/presentation.ts",
+              "status": "M",
+              "additions": 0,
+              "deletions": 20,
+              "rationale": "Remove unused archive timestamp/state helpers; retain reminder date/text."
+            },
+            {
+              "path": "mobile/src/notifications/query.test.ts",
+              "status": "M",
+              "additions": 39,
+              "deletions": 75,
+              "rationale": "Maintain active cache read/dismiss/count/invalidation contracts; remove dead history cache assertions."
+            },
+            {
+              "path": "mobile/src/notifications/query.ts",
+              "status": "M",
+              "additions": 4,
+              "deletions": 81,
+              "rationale": "Remove client-only history pagination/read-all reconciliation; preserve active key/cache and invalidation."
+            },
+            {
+              "path": "mobile/src/settings/PreferencesSettingsScreen.test.tsx",
+              "status": "M",
+              "additions": 53,
+              "deletions": 3,
+              "rationale": "Retain permission/blocked/error/retry coverage on the existing Preferences home."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sha": "a472ce9acb57ff2cf9037954ab7b4ae5aa66f7fd",
+      "parents": [
+        "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+        "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed"
+      ],
+      "subject": "Merge current master for notification route follow-up",
+      "rationale": "A normal merge of the verified actual target preserves the existing published PR head/history without force-push and incorporates merged424/425 for current-base validation. No sibling dependency is introduced; incoming target paths must remain byte-identical to master.",
+      "diffsToParents": [
+        {
+          "parent": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+          "files": [
+            {
+              "path": ".github/workflows/database-upgrade.yml",
+              "status": "M",
+              "additions": 3,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/prisma/migrations/0044_goal_pace_history/migration.sql",
+              "status": "A",
+              "additions": 1,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/prisma/schema.prisma",
+              "status": "M",
+              "additions": 2,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/routes/goals.ts",
+              "status": "M",
+              "additions": 85,
+              "deletions": 10,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/routes/user.ts",
+              "status": "M",
+              "additions": 7,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/services/accountLifecycle.ts",
+              "status": "M",
+              "additions": 3,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/services/calibration.ts",
+              "status": "M",
+              "additions": 9,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/services/caloriePlanReview.ts",
+              "status": "M",
+              "additions": 4,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/services/caloriePlanning.ts",
+              "status": "M",
+              "additions": 14,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/services/caloriePlanningLock.ts",
+              "status": "A",
+              "additions": 25,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/src/services/goalPace.ts",
+              "status": "A",
+              "additions": 52,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/account-lifecycle.test.js",
+              "status": "M",
+              "additions": 15,
+              "deletions": 2,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/calibration-service.test.js",
+              "status": "M",
+              "additions": 13,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/calorie-planning.test.js",
+              "status": "M",
+              "additions": 2,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/goal-pace.test.js",
+              "status": "A",
+              "additions": 188,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/routes-goals.test.js",
+              "status": "M",
+              "additions": 1,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/routes-metrics.test.js",
+              "status": "M",
+              "additions": 1,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/routes-user.test.js",
+              "status": "M",
+              "additions": 16,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "backend/test/watch-service.test.js",
+              "status": "M",
+              "additions": 1,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "docs/openapi/v1.yaml",
+              "status": "M",
+              "additions": 72,
+              "deletions": 2,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "docs/visual-design.md",
+              "status": "M",
+              "additions": 1,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "e2e/expo-web/goal-pace.spec.ts",
+              "status": "A",
+              "additions": 145,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "e2e/expo-web/today-paused.spec.ts",
+              "status": "M",
+              "additions": 24,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "mobile/app/(tabs)/(progress)/progress.tsx",
+              "status": "M",
+              "additions": 21,
+              "deletions": 2,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "mobile/app/(tabs)/(today)/today.tsx",
+              "status": "M",
+              "additions": 8,
+              "deletions": 5,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "mobile/src/food/dayPresentation.test.ts",
+              "status": "M",
+              "additions": 11,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "mobile/src/food/dayPresentation.ts",
+              "status": "M",
+              "additions": 12,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "mobile/src/progress/GoalPaceSheet.test.tsx",
+              "status": "A",
+              "additions": 171,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "mobile/src/progress/GoalPaceSheet.tsx",
+              "status": "A",
+              "additions": 140,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "mobile/src/progress/ProgressScreen.test.tsx",
+              "status": "M",
+              "additions": 1,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "packages/api-client/src/client.ts",
+              "status": "M",
+              "additions": 12,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "packages/api-client/src/generated/v1.ts",
+              "status": "M",
+              "additions": 131,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "packages/api-client/src/types.ts",
+              "status": "M",
+              "additions": 9,
+              "deletions": 1,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "packages/api-client/test/account-lifecycle.test.ts",
+              "status": "M",
+              "additions": 4,
+              "deletions": 2,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "packages/api-client/test/goal-pace.test.ts",
+              "status": "A",
+              "additions": 24,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "scripts/postgres-goal-pace-smoke.mjs",
+              "status": "A",
+              "additions": 193,
+              "deletions": 0,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "scripts/postgres-rollback-smoke.mjs",
+              "status": "M",
+              "additions": 4,
+              "deletions": 3,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            },
+            {
+              "path": "scripts/postgres-rollback-smoke.test.mjs",
+              "status": "M",
+              "additions": 2,
+              "deletions": 2,
+              "rationale": "Unmodified target-master content included only by the explicitly justified base merge."
+            }
+          ]
+        },
+        {
+          "parent": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+          "files": [
+            {
+              "path": "docs/expo-web.md",
+              "status": "M",
+              "additions": 5,
+              "deletions": 0,
+              "rationale": "Maintain reminder/API preservation guidance and document the general Today fallback requested by the human."
+            },
+            {
+              "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+              "status": "M",
+              "additions": 351,
+              "deletions": 396,
+              "rationale": "Maintained active-reminder, count/action/recovery, guarded-editor and offline regression scenarios replacing mixed archive coverage."
+            },
+            {
+              "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+              "status": "M",
+              "additions": 2,
+              "deletions": 1,
+              "rationale": "Reuse existing transient-notice suppression for the retained phone Settings/Preferences regression; no product UI hiding."
+            },
+            {
+              "path": "e2e/expo-web/launch-24-data-state-matrix.ts",
+              "status": "M",
+              "additions": 0,
+              "deletions": 28,
+              "rationale": "Remove only retired history-route fixture/case; retain other route data-state coverage."
+            },
+            {
+              "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+              "status": "M",
+              "additions": 58,
+              "deletions": 0,
+              "rationale": "Maintain generic unknown-address replacement, query/hash cleanup, reload and repeated Back/Forward plus retained legal/shell navigation."
+            },
+            {
+              "path": "e2e/expo-web/notification-legacy-gates.spec.ts",
+              "status": "A",
+              "additions": 45,
+              "deletions": 0,
+              "rationale": "Originally maintained the former compatibility contract; deleted after the human superseded it with generic unknown-route handling."
+            },
+            {
+              "path": "e2e/expo-web/notification-reminders.fixture.ts",
+              "status": "A",
+              "additions": 256,
+              "deletions": 0,
+              "rationale": "Shared synthetic reminder fixture for active list/count/actions/SSE and controlled failures; rejects retired client history/read-all calls."
+            },
+            {
+              "path": "mobile/app/(tabs)/(today)/notifications.tsx",
+              "status": "M",
+              "additions": 2,
+              "deletions": 2,
+              "rationale": "Remove the retired route entirely under human review5423560928; no notification-specific compatibility file remains."
+            },
+            {
+              "path": "mobile/app/(tabs)/_layout.tsx",
+              "status": "M",
+              "additions": 14,
+              "deletions": 10,
+              "rationale": "Remove history entry wiring; preserve immediate reminder cache reconciliation and guarded open/failure/offline behavior; retain merged rail."
+            },
+            {
+              "path": "mobile/src/components/NotificationCard.test.tsx",
+              "status": "M",
+              "additions": 15,
+              "deletions": 7,
+              "rationale": "Retain current reminder rendering/actions coverage while removing archive-only state expectations."
+            },
+            {
+              "path": "mobile/src/components/NotificationCard.tsx",
+              "status": "M",
+              "additions": 2,
+              "deletions": 9,
+              "rationale": "Remove demonstrably dead archive-state presentation props and formatting; retain active reminder card."
+            },
+            {
+              "path": "mobile/src/components/NotificationsDrawer.test.tsx",
+              "status": "M",
+              "additions": 37,
+              "deletions": 9,
+              "rationale": "Maintain drawer accessibility/dismissal and accepted-pending-open guards; verify removed footer."
+            },
+            {
+              "path": "mobile/src/components/NotificationsDrawer.tsx",
+              "status": "M",
+              "additions": 10,
+              "deletions": 13,
+              "rationale": "Remove history footer; protect accepted pending navigation with visible busy state and modal dismissal guard."
+            },
+            {
+              "path": "mobile/src/components/legal/PublicLegalPage.test.tsx",
+              "status": "M",
+              "additions": 3,
+              "deletions": 3,
+              "rationale": "Verify retired history shortcut removal while preserving remaining legal-page navigation."
+            },
+            {
+              "path": "mobile/src/components/legal/PublicLegalPage.tsx",
+              "status": "M",
+              "additions": 0,
+              "deletions": 7,
+              "rationale": "Remove only obsolete direct history shortcut."
+            },
+            {
+              "path": "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+              "status": "M",
+              "additions": 2,
+              "deletions": 2,
+              "rationale": "Retarget diagnostic assertions to an existing live operation, preserving coverage."
+            },
+            {
+              "path": "mobile/src/diagnostics/operationDiagnostics.ts",
+              "status": "M",
+              "additions": 1,
+              "deletions": 3,
+              "rationale": "Remove unused history-only client operation mapping; shared/server contract unchanged."
+            },
+            {
+              "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+              "status": "M",
+              "additions": 44,
+              "deletions": 0,
+              "rationale": "Maintain failed-prerequisite draft preservation, duplicate guard protection and successful departure ordering."
+            },
+            {
+              "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+              "status": "M",
+              "additions": 7,
+              "deletions": 11,
+              "rationale": "Allow fallible reminder preparation after consent and before draft discard/navigation."
+            },
+            {
+              "path": "mobile/src/navigation/guardedNavigation.ts",
+              "status": "M",
+              "additions": 6,
+              "deletions": 3,
+              "rationale": "Carry optional fallible reminder preparation through existing guard API."
+            },
+            {
+              "path": "mobile/src/navigation/routeMetadata.test.ts",
+              "status": "M",
+              "additions": 5,
+              "deletions": 0,
+              "rationale": "Keep unknown routes non-canonical until their general fallback navigates; no history alias."
+            },
+            {
+              "path": "mobile/src/navigation/routeRegistry.test.ts",
+              "status": "M",
+              "additions": 8,
+              "deletions": 1,
+              "rationale": "Verify the removed notifications address is unregistered, alongside existing route/alias contracts."
+            },
+            {
+              "path": "mobile/src/navigation/routeRegistry.ts",
+              "status": "M",
+              "additions": 4,
+              "deletions": 13,
+              "rationale": "Remove notification history metadata and its temporary alias; other route registrations remain."
+            },
+            {
+              "path": "mobile/src/notifications/NotificationHistory.test.tsx",
+              "status": "D",
+              "additions": 0,
+              "deletions": 149,
+              "rationale": "Delete tests only for the removed component; retained permission/recovery coverage moves to Preferences."
+            },
+            {
+              "path": "mobile/src/notifications/NotificationHistory.tsx",
+              "status": "D",
+              "additions": 0,
+              "deletions": 268,
+              "rationale": "Delete requested historical client screen and its duplicate controls."
+            },
+            {
+              "path": "mobile/src/notifications/presentation.test.ts",
+              "status": "M",
+              "additions": 0,
+              "deletions": 15,
+              "rationale": "Remove only tests for dead history-only formatting."
+            },
+            {
+              "path": "mobile/src/notifications/presentation.ts",
+              "status": "M",
+              "additions": 0,
+              "deletions": 20,
+              "rationale": "Remove unused archive timestamp/state helpers; retain reminder date/text."
+            },
+            {
+              "path": "mobile/src/notifications/query.test.ts",
+              "status": "M",
+              "additions": 39,
+              "deletions": 75,
+              "rationale": "Maintain active cache read/dismiss/count/invalidation contracts; remove dead history cache assertions."
+            },
+            {
+              "path": "mobile/src/notifications/query.ts",
+              "status": "M",
+              "additions": 4,
+              "deletions": 81,
+              "rationale": "Remove client-only history pagination/read-all reconciliation; preserve active key/cache and invalidation."
+            },
+            {
+              "path": "mobile/src/settings/PreferencesSettingsScreen.test.tsx",
+              "status": "M",
+              "additions": 53,
+              "deletions": 3,
+              "rationale": "Retain permission/blocked/error/retry coverage on the existing Preferences home."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sha": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+      "parents": [
+        "a472ce9acb57ff2cf9037954ab7b4ae5aa66f7fd"
+      ],
+      "subject": "Use the general Today fallback for unknown app routes",
+      "rationale": "Address direct human review5423560928: delete notifications route/alias and use the general Today fallback with matching maintained regression coverage.",
+      "diffsToParents": [
+        {
+          "parent": "a472ce9acb57ff2cf9037954ab7b4ae5aa66f7fd",
+          "files": [
+            {
+              "path": "docs/expo-web.md",
+              "status": "M",
+              "additions": 2,
+              "deletions": 2,
+              "rationale": "Maintain reminder/API preservation guidance and document the general Today fallback requested by the human."
+            },
+            {
+              "path": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+              "status": "M",
+              "additions": 6,
+              "deletions": 13,
+              "rationale": "Update only signed-in/out unknown-route expectations in the maintained hosted/PWA suite; leave PR423 offline-copy hunk untouched."
+            },
+            {
+              "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+              "status": "M",
+              "additions": 9,
+              "deletions": 21,
+              "rationale": "Maintain generic unknown-address replacement, query/hash cleanup, reload and repeated Back/Forward plus retained legal/shell navigation."
+            },
+            {
+              "path": "e2e/expo-web/notification-legacy-gates.spec.ts",
+              "status": "D",
+              "additions": 0,
+              "deletions": 45,
+              "rationale": "Originally maintained the former compatibility contract; deleted after the human superseded it with generic unknown-route handling."
+            },
+            {
+              "path": "e2e/expo-web/unknown-route-gates.spec.ts",
+              "status": "A",
+              "additions": 71,
+              "deletions": 0,
+              "rationale": "Maintain sign-in, verification, legal acceptance, onboarding and delayed-session gates for removed and unrelated unknown URLs."
+            },
+            {
+              "path": "mobile/app/(tabs)/(today)/notifications.tsx",
+              "status": "D",
+              "additions": 0,
+              "deletions": 5,
+              "rationale": "Remove the retired route entirely under human review5423560928; no notification-specific compatibility file remains."
+            },
+            {
+              "path": "mobile/app/+not-found.tsx",
+              "status": "M",
+              "additions": 2,
+              "deletions": 64,
+              "rationale": "Use the existing catch-all for general replacement to protected Today instead of maintaining special-case dead routes."
+            },
+            {
+              "path": "mobile/src/navigation/routeMetadata.test.ts",
+              "status": "M",
+              "additions": 2,
+              "deletions": 7,
+              "rationale": "Keep unknown routes non-canonical until their general fallback navigates; no history alias."
+            },
+            {
+              "path": "mobile/src/navigation/routeRegistry.test.ts",
+              "status": "M",
+              "additions": 1,
+              "deletions": 7,
+              "rationale": "Verify the removed notifications address is unregistered, alongside existing route/alias contracts."
+            },
+            {
+              "path": "mobile/src/navigation/routeRegistry.ts",
+              "status": "M",
+              "additions": 1,
+              "deletions": 4,
+              "rationale": "Remove notification history metadata and its temporary alias; other route registrations remain."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sha": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+      "parents": [
+        "c0013ea26d33f513f23cf9323c5e0de6ec8ca605"
+      ],
+      "subject": "Isolate unknown-route browser history cases",
+      "rationale": "Split four history cases into independent tests after combined-case teardown exhausted its budget; preserve assertions and default timeout.",
+      "diffsToParents": [
+        {
+          "parent": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+          "files": [
+            {
+              "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+              "status": "M",
+              "additions": 13,
+              "deletions": 13,
+              "rationale": "Maintain generic unknown-address replacement, query/hash cleanup, reload and repeated Back/Forward plus retained legal/shell navigation."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/expo-web.md",
+      "status": "M",
+      "additions": 5,
+      "deletions": 0,
+      "rationale": "Maintain reminder/API preservation guidance and document the general Today fallback requested by the human."
+    },
+    {
+      "path": "e2e/expo-web/launch-17-notification-center.spec.ts",
+      "status": "M",
+      "additions": 351,
+      "deletions": 396,
+      "rationale": "Maintained active-reminder, count/action/recovery, guarded-editor and offline regression scenarios replacing mixed archive coverage."
+    },
+    {
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "status": "M",
+      "additions": 2,
+      "deletions": 1,
+      "rationale": "Reuse existing transient-notice suppression for the retained phone Settings/Preferences regression; no product UI hiding."
+    },
+    {
+      "path": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "status": "M",
+      "additions": 6,
+      "deletions": 13,
+      "rationale": "Update only signed-in/out unknown-route expectations in the maintained hosted/PWA suite; leave PR423 offline-copy hunk untouched."
+    },
+    {
+      "path": "e2e/expo-web/launch-24-data-state-matrix.ts",
+      "status": "M",
+      "additions": 0,
+      "deletions": 28,
+      "rationale": "Remove only retired history-route fixture/case; retain other route data-state coverage."
+    },
+    {
+      "path": "e2e/expo-web/nested-route-stacks.spec.ts",
+      "status": "M",
+      "additions": 54,
+      "deletions": 8,
+      "rationale": "Maintain generic unknown-address replacement, query/hash cleanup, reload and repeated Back/Forward plus retained legal/shell navigation."
+    },
+    {
+      "path": "e2e/expo-web/notification-reminders.fixture.ts",
+      "status": "A",
+      "additions": 256,
+      "deletions": 0,
+      "rationale": "Shared synthetic reminder fixture for active list/count/actions/SSE and controlled failures; rejects retired client history/read-all calls."
+    },
+    {
+      "path": "e2e/expo-web/unknown-route-gates.spec.ts",
+      "status": "A",
+      "additions": 71,
+      "deletions": 0,
+      "rationale": "Maintain sign-in, verification, legal acceptance, onboarding and delayed-session gates for removed and unrelated unknown URLs."
+    },
+    {
+      "path": "mobile/app/(tabs)/(today)/notifications.tsx",
+      "status": "D",
+      "additions": 0,
+      "deletions": 5,
+      "rationale": "Remove the retired route entirely under human review5423560928; no notification-specific compatibility file remains."
+    },
+    {
+      "path": "mobile/app/(tabs)/_layout.tsx",
+      "status": "M",
+      "additions": 14,
+      "deletions": 10,
+      "rationale": "Remove history entry wiring; preserve immediate reminder cache reconciliation and guarded open/failure/offline behavior; retain merged rail."
+    },
+    {
+      "path": "mobile/app/+not-found.tsx",
+      "status": "M",
+      "additions": 2,
+      "deletions": 64,
+      "rationale": "Use the existing catch-all for general replacement to protected Today instead of maintaining special-case dead routes."
+    },
+    {
+      "path": "mobile/src/components/NotificationCard.test.tsx",
+      "status": "M",
+      "additions": 15,
+      "deletions": 7,
+      "rationale": "Retain current reminder rendering/actions coverage while removing archive-only state expectations."
+    },
+    {
+      "path": "mobile/src/components/NotificationCard.tsx",
+      "status": "M",
+      "additions": 2,
+      "deletions": 9,
+      "rationale": "Remove demonstrably dead archive-state presentation props and formatting; retain active reminder card."
+    },
+    {
+      "path": "mobile/src/components/NotificationsDrawer.test.tsx",
+      "status": "M",
+      "additions": 37,
+      "deletions": 9,
+      "rationale": "Maintain drawer accessibility/dismissal and accepted-pending-open guards; verify removed footer."
+    },
+    {
+      "path": "mobile/src/components/NotificationsDrawer.tsx",
+      "status": "M",
+      "additions": 10,
+      "deletions": 13,
+      "rationale": "Remove history footer; protect accepted pending navigation with visible busy state and modal dismissal guard."
+    },
+    {
+      "path": "mobile/src/components/legal/PublicLegalPage.test.tsx",
+      "status": "M",
+      "additions": 3,
+      "deletions": 3,
+      "rationale": "Verify retired history shortcut removal while preserving remaining legal-page navigation."
+    },
+    {
+      "path": "mobile/src/components/legal/PublicLegalPage.tsx",
+      "status": "M",
+      "additions": 0,
+      "deletions": 7,
+      "rationale": "Remove only obsolete direct history shortcut."
+    },
+    {
+      "path": "mobile/src/diagnostics/operationDiagnostics.test.tsx",
+      "status": "M",
+      "additions": 2,
+      "deletions": 2,
+      "rationale": "Retarget diagnostic assertions to an existing live operation, preserving coverage."
+    },
+    {
+      "path": "mobile/src/diagnostics/operationDiagnostics.ts",
+      "status": "M",
+      "additions": 1,
+      "deletions": 3,
+      "rationale": "Remove unused history-only client operation mapping; shared/server contract unchanged."
+    },
+    {
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.test.ts",
+      "status": "M",
+      "additions": 44,
+      "deletions": 0,
+      "rationale": "Maintain failed-prerequisite draft preservation, duplicate guard protection and successful departure ordering."
+    },
+    {
+      "path": "mobile/src/hooks/useConfirmDiscardNavigation.ts",
+      "status": "M",
+      "additions": 7,
+      "deletions": 11,
+      "rationale": "Allow fallible reminder preparation after consent and before draft discard/navigation."
+    },
+    {
+      "path": "mobile/src/navigation/guardedNavigation.ts",
+      "status": "M",
+      "additions": 6,
+      "deletions": 3,
+      "rationale": "Carry optional fallible reminder preparation through existing guard API."
+    },
+    {
+      "path": "mobile/src/navigation/routeMetadata.test.ts",
+      "status": "M",
+      "additions": 2,
+      "deletions": 2,
+      "rationale": "Keep unknown routes non-canonical until their general fallback navigates; no history alias."
+    },
+    {
+      "path": "mobile/src/navigation/routeRegistry.test.ts",
+      "status": "M",
+      "additions": 2,
+      "deletions": 1,
+      "rationale": "Verify the removed notifications address is unregistered, alongside existing route/alias contracts."
+    },
+    {
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "status": "M",
+      "additions": 0,
+      "deletions": 12,
+      "rationale": "Remove notification history metadata and its temporary alias; other route registrations remain."
+    },
+    {
+      "path": "mobile/src/notifications/NotificationHistory.test.tsx",
+      "status": "D",
+      "additions": 0,
+      "deletions": 149,
+      "rationale": "Delete tests only for the removed component; retained permission/recovery coverage moves to Preferences."
+    },
+    {
+      "path": "mobile/src/notifications/NotificationHistory.tsx",
+      "status": "D",
+      "additions": 0,
+      "deletions": 268,
+      "rationale": "Delete requested historical client screen and its duplicate controls."
+    },
+    {
+      "path": "mobile/src/notifications/presentation.test.ts",
+      "status": "M",
+      "additions": 0,
+      "deletions": 15,
+      "rationale": "Remove only tests for dead history-only formatting."
+    },
+    {
+      "path": "mobile/src/notifications/presentation.ts",
+      "status": "M",
+      "additions": 0,
+      "deletions": 20,
+      "rationale": "Remove unused archive timestamp/state helpers; retain reminder date/text."
+    },
+    {
+      "path": "mobile/src/notifications/query.test.ts",
+      "status": "M",
+      "additions": 39,
+      "deletions": 75,
+      "rationale": "Maintain active cache read/dismiss/count/invalidation contracts; remove dead history cache assertions."
+    },
+    {
+      "path": "mobile/src/notifications/query.ts",
+      "status": "M",
+      "additions": 4,
+      "deletions": 81,
+      "rationale": "Remove client-only history pagination/read-all reconciliation; preserve active key/cache and invalidation."
+    },
+    {
+      "path": "mobile/src/settings/PreferencesSettingsScreen.test.tsx",
+      "status": "M",
+      "additions": 53,
+      "deletions": 3,
+      "rationale": "Retain permission/blocked/error/retry coverage on the existing Preferences home."
+    }
+  ],
+  "totals": {
+    "commits": 4,
+    "files": 32,
+    "additions": 988,
+    "deletions": 1218
+  },
+  "baseIntegration": {
+    "previousBase": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+    "actualBase": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+    "merge": "a472ce9acb57ff2cf9037954ab7b4ae5aa66f7fd",
+    "rationale": "A normal merge of the verified actual target preserves the existing published PR head/history without force-push and incorporates merged424/425 for current-base validation. No sibling dependency is introduced; incoming target paths must remain byte-identical to master.",
+    "noResolutionDelta": true,
+    "unchangedTargetFiles": [
+      {
+        "path": ".github/workflows/database-upgrade.yml",
+        "baseBlob": "5b4a73ceb7590eeec51039fa5d6c66b59d216a10",
+        "mergeBlob": "5b4a73ceb7590eeec51039fa5d6c66b59d216a10",
+        "finalBlob": "5b4a73ceb7590eeec51039fa5d6c66b59d216a10"
+      },
+      {
+        "path": "backend/prisma/migrations/0044_goal_pace_history/migration.sql",
+        "baseBlob": "91e431568edb0992064e716f256bad1513af5733",
+        "mergeBlob": "91e431568edb0992064e716f256bad1513af5733",
+        "finalBlob": "91e431568edb0992064e716f256bad1513af5733"
+      },
+      {
+        "path": "backend/prisma/schema.prisma",
+        "baseBlob": "ef478c6310eb3549c181e164fd5d00b0135649ed",
+        "mergeBlob": "ef478c6310eb3549c181e164fd5d00b0135649ed",
+        "finalBlob": "ef478c6310eb3549c181e164fd5d00b0135649ed"
+      },
+      {
+        "path": "backend/src/routes/goals.ts",
+        "baseBlob": "247abe7f3d7e784a55487aea7c0c9fe076508a84",
+        "mergeBlob": "247abe7f3d7e784a55487aea7c0c9fe076508a84",
+        "finalBlob": "247abe7f3d7e784a55487aea7c0c9fe076508a84"
+      },
+      {
+        "path": "backend/src/routes/user.ts",
+        "baseBlob": "2dedb290a94cca21382cf6fc3c66e2276f4e5812",
+        "mergeBlob": "2dedb290a94cca21382cf6fc3c66e2276f4e5812",
+        "finalBlob": "2dedb290a94cca21382cf6fc3c66e2276f4e5812"
+      },
+      {
+        "path": "backend/src/services/accountLifecycle.ts",
+        "baseBlob": "1b4d2d77eaa854b77e20c3e3977d7955c23ca61e",
+        "mergeBlob": "1b4d2d77eaa854b77e20c3e3977d7955c23ca61e",
+        "finalBlob": "1b4d2d77eaa854b77e20c3e3977d7955c23ca61e"
+      },
+      {
+        "path": "backend/src/services/calibration.ts",
+        "baseBlob": "a2f81597d8f3028679eff7d81aafe327bbeb1dec",
+        "mergeBlob": "a2f81597d8f3028679eff7d81aafe327bbeb1dec",
+        "finalBlob": "a2f81597d8f3028679eff7d81aafe327bbeb1dec"
+      },
+      {
+        "path": "backend/src/services/caloriePlanReview.ts",
+        "baseBlob": "21c35e51e9f1995a28597f9bc9657305c9250c40",
+        "mergeBlob": "21c35e51e9f1995a28597f9bc9657305c9250c40",
+        "finalBlob": "21c35e51e9f1995a28597f9bc9657305c9250c40"
+      },
+      {
+        "path": "backend/src/services/caloriePlanning.ts",
+        "baseBlob": "dde548374d377d4ccc2ff7e00e937ddfe2e9e42f",
+        "mergeBlob": "dde548374d377d4ccc2ff7e00e937ddfe2e9e42f",
+        "finalBlob": "dde548374d377d4ccc2ff7e00e937ddfe2e9e42f"
+      },
+      {
+        "path": "backend/src/services/caloriePlanningLock.ts",
+        "baseBlob": "d4136775b0dbea1bb9068cdbcddfc8a815ce3727",
+        "mergeBlob": "d4136775b0dbea1bb9068cdbcddfc8a815ce3727",
+        "finalBlob": "d4136775b0dbea1bb9068cdbcddfc8a815ce3727"
+      },
+      {
+        "path": "backend/src/services/goalPace.ts",
+        "baseBlob": "ed6f40231de24dd0ecc2434ce9b3f9ff1073e24a",
+        "mergeBlob": "ed6f40231de24dd0ecc2434ce9b3f9ff1073e24a",
+        "finalBlob": "ed6f40231de24dd0ecc2434ce9b3f9ff1073e24a"
+      },
+      {
+        "path": "backend/test/account-lifecycle.test.js",
+        "baseBlob": "265ff72eda8011a39e835f3cffe9577d68025eca",
+        "mergeBlob": "265ff72eda8011a39e835f3cffe9577d68025eca",
+        "finalBlob": "265ff72eda8011a39e835f3cffe9577d68025eca"
+      },
+      {
+        "path": "backend/test/calibration-service.test.js",
+        "baseBlob": "1112b788afefd2659ccf5c255b55ed57c48b70d7",
+        "mergeBlob": "1112b788afefd2659ccf5c255b55ed57c48b70d7",
+        "finalBlob": "1112b788afefd2659ccf5c255b55ed57c48b70d7"
+      },
+      {
+        "path": "backend/test/calorie-planning.test.js",
+        "baseBlob": "42f9b3d572efce1bb891a5f732e6aa787687e37e",
+        "mergeBlob": "42f9b3d572efce1bb891a5f732e6aa787687e37e",
+        "finalBlob": "42f9b3d572efce1bb891a5f732e6aa787687e37e"
+      },
+      {
+        "path": "backend/test/goal-pace.test.js",
+        "baseBlob": "7e920354e41aa99eec57b19b9bd2f8d651fb1660",
+        "mergeBlob": "7e920354e41aa99eec57b19b9bd2f8d651fb1660",
+        "finalBlob": "7e920354e41aa99eec57b19b9bd2f8d651fb1660"
+      },
+      {
+        "path": "backend/test/routes-goals.test.js",
+        "baseBlob": "0268e7316bda471d7bd1d221b963895171d0774d",
+        "mergeBlob": "0268e7316bda471d7bd1d221b963895171d0774d",
+        "finalBlob": "0268e7316bda471d7bd1d221b963895171d0774d"
+      },
+      {
+        "path": "backend/test/routes-metrics.test.js",
+        "baseBlob": "7bc6036a9b5b9bddc44084bbfc07b146b7639d5b",
+        "mergeBlob": "7bc6036a9b5b9bddc44084bbfc07b146b7639d5b",
+        "finalBlob": "7bc6036a9b5b9bddc44084bbfc07b146b7639d5b"
+      },
+      {
+        "path": "backend/test/routes-user.test.js",
+        "baseBlob": "491d234b64e8179fb105ea8f9bd6bd4ed782b38e",
+        "mergeBlob": "491d234b64e8179fb105ea8f9bd6bd4ed782b38e",
+        "finalBlob": "491d234b64e8179fb105ea8f9bd6bd4ed782b38e"
+      },
+      {
+        "path": "backend/test/watch-service.test.js",
+        "baseBlob": "cf7471d0c250ba88ab6b18fa4428eb3eef4d438c",
+        "mergeBlob": "cf7471d0c250ba88ab6b18fa4428eb3eef4d438c",
+        "finalBlob": "cf7471d0c250ba88ab6b18fa4428eb3eef4d438c"
+      },
+      {
+        "path": "docs/openapi/v1.yaml",
+        "baseBlob": "ed598f21b3c987eea6b49234e0de01811b57612f",
+        "mergeBlob": "ed598f21b3c987eea6b49234e0de01811b57612f",
+        "finalBlob": "ed598f21b3c987eea6b49234e0de01811b57612f"
+      },
+      {
+        "path": "docs/visual-design.md",
+        "baseBlob": "39b12fd00b80f9a2d9df516858af4a822b838aec",
+        "mergeBlob": "39b12fd00b80f9a2d9df516858af4a822b838aec",
+        "finalBlob": "39b12fd00b80f9a2d9df516858af4a822b838aec"
+      },
+      {
+        "path": "e2e/expo-web/goal-pace.spec.ts",
+        "baseBlob": "21a7e70c95114e3d91d637a58dd42badce5d7ff7",
+        "mergeBlob": "21a7e70c95114e3d91d637a58dd42badce5d7ff7",
+        "finalBlob": "21a7e70c95114e3d91d637a58dd42badce5d7ff7"
+      },
+      {
+        "path": "e2e/expo-web/today-paused.spec.ts",
+        "baseBlob": "620b611df6b79e6871eebb2bd3636fef9a708020",
+        "mergeBlob": "620b611df6b79e6871eebb2bd3636fef9a708020",
+        "finalBlob": "620b611df6b79e6871eebb2bd3636fef9a708020"
+      },
+      {
+        "path": "mobile/app/(tabs)/(progress)/progress.tsx",
+        "baseBlob": "68eecac4acfdce865316fc3ef243c397c62745f8",
+        "mergeBlob": "68eecac4acfdce865316fc3ef243c397c62745f8",
+        "finalBlob": "68eecac4acfdce865316fc3ef243c397c62745f8"
+      },
+      {
+        "path": "mobile/app/(tabs)/(today)/today.tsx",
+        "baseBlob": "be5f30cd6e5cf8fa4ed99f0aa2d4736fd2283f93",
+        "mergeBlob": "be5f30cd6e5cf8fa4ed99f0aa2d4736fd2283f93",
+        "finalBlob": "be5f30cd6e5cf8fa4ed99f0aa2d4736fd2283f93"
+      },
+      {
+        "path": "mobile/src/food/dayPresentation.test.ts",
+        "baseBlob": "1c17a0c7f02c0a0396a32d4bb05ecfe5051d755b",
+        "mergeBlob": "1c17a0c7f02c0a0396a32d4bb05ecfe5051d755b",
+        "finalBlob": "1c17a0c7f02c0a0396a32d4bb05ecfe5051d755b"
+      },
+      {
+        "path": "mobile/src/food/dayPresentation.ts",
+        "baseBlob": "f688d14778073e70477aec2575a0ef191d6ee778",
+        "mergeBlob": "f688d14778073e70477aec2575a0ef191d6ee778",
+        "finalBlob": "f688d14778073e70477aec2575a0ef191d6ee778"
+      },
+      {
+        "path": "mobile/src/progress/GoalPaceSheet.test.tsx",
+        "baseBlob": "5d03f8672751b8d67548392713d4366a8954c6b5",
+        "mergeBlob": "5d03f8672751b8d67548392713d4366a8954c6b5",
+        "finalBlob": "5d03f8672751b8d67548392713d4366a8954c6b5"
+      },
+      {
+        "path": "mobile/src/progress/GoalPaceSheet.tsx",
+        "baseBlob": "26896efbe120d195ddf4c1afd87574838a4b98fb",
+        "mergeBlob": "26896efbe120d195ddf4c1afd87574838a4b98fb",
+        "finalBlob": "26896efbe120d195ddf4c1afd87574838a4b98fb"
+      },
+      {
+        "path": "mobile/src/progress/ProgressScreen.test.tsx",
+        "baseBlob": "bd2d538eba293277188201e311d92ccafc4c1a22",
+        "mergeBlob": "bd2d538eba293277188201e311d92ccafc4c1a22",
+        "finalBlob": "bd2d538eba293277188201e311d92ccafc4c1a22"
+      },
+      {
+        "path": "packages/api-client/src/client.ts",
+        "baseBlob": "344b06186346006cdd58360778ac6aef8c730412",
+        "mergeBlob": "344b06186346006cdd58360778ac6aef8c730412",
+        "finalBlob": "344b06186346006cdd58360778ac6aef8c730412"
+      },
+      {
+        "path": "packages/api-client/src/generated/v1.ts",
+        "baseBlob": "b502f405430c9da8635f5365f81e7c54421157c1",
+        "mergeBlob": "b502f405430c9da8635f5365f81e7c54421157c1",
+        "finalBlob": "b502f405430c9da8635f5365f81e7c54421157c1"
+      },
+      {
+        "path": "packages/api-client/src/types.ts",
+        "baseBlob": "34ed1c7d34634ef830d7620eaf60ad8a3a9a6601",
+        "mergeBlob": "34ed1c7d34634ef830d7620eaf60ad8a3a9a6601",
+        "finalBlob": "34ed1c7d34634ef830d7620eaf60ad8a3a9a6601"
+      },
+      {
+        "path": "packages/api-client/test/account-lifecycle.test.ts",
+        "baseBlob": "e99a10d29618938b5e582ca804d655b09641ef4d",
+        "mergeBlob": "e99a10d29618938b5e582ca804d655b09641ef4d",
+        "finalBlob": "e99a10d29618938b5e582ca804d655b09641ef4d"
+      },
+      {
+        "path": "packages/api-client/test/goal-pace.test.ts",
+        "baseBlob": "bf66e0b32e3f5c9e6967f47cfbd08211bcf4a42a",
+        "mergeBlob": "bf66e0b32e3f5c9e6967f47cfbd08211bcf4a42a",
+        "finalBlob": "bf66e0b32e3f5c9e6967f47cfbd08211bcf4a42a"
+      },
+      {
+        "path": "scripts/postgres-goal-pace-smoke.mjs",
+        "baseBlob": "961d595fff3996e551e5b930ece546f4294a4ef7",
+        "mergeBlob": "961d595fff3996e551e5b930ece546f4294a4ef7",
+        "finalBlob": "961d595fff3996e551e5b930ece546f4294a4ef7"
+      },
+      {
+        "path": "scripts/postgres-rollback-smoke.mjs",
+        "baseBlob": "dd050b7135ffe24ab4c14fafb29f6a31e7b5cf27",
+        "mergeBlob": "dd050b7135ffe24ab4c14fafb29f6a31e7b5cf27",
+        "finalBlob": "dd050b7135ffe24ab4c14fafb29f6a31e7b5cf27"
+      },
+      {
+        "path": "scripts/postgres-rollback-smoke.test.mjs",
+        "baseBlob": "7ef12b867fbb9ad18aec3aec672e2c3e16b22264",
+        "mergeBlob": "7ef12b867fbb9ad18aec3aec672e2c3e16b22264",
+        "finalBlob": "7ef12b867fbb9ad18aec3aec672e2c3e16b22264"
+      }
+    ]
+  },
+  "captureApplicability": {
+    "capturedAfter": "c0013ea26d33f513f23cf9323c5e0de6ec8ca605",
+    "finalHead": "95c4ce82a9591155026655ebbc7f9e84bf00c2e6",
+    "changedPaths": [
+      "e2e/expo-web/nested-route-stacks.spec.ts"
+    ],
+    "assessment": "Only the maintained browser test organization changed after capture. All product files, build inputs and synthetic fixture/harness bytes used by the capture are unchanged; the existing export and images remain applicable without relabeling their captured source."
+  },
+  "overlapAssessment": {
+    "pr423": "Only shared file is launch-19-hosted-pwa-trust.spec.ts. Its offline-copy hunk near442 is separate from this change to unknown-route assertions near366/415; no source dependency or owner restructuring.",
+    "pr402": "Existing unrelated advanced/service route additions and phone settings work; removal of the Today notifications alias changes distinct lines. No branch absorbed."
+  }
+}

@@ -1,0 +1,65 @@
+
+Running 44 tests using 2 workers
+
+(node:37904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:21820) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications replaces itself with Today without a history loop (6.6s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications?cursor=old#history replaces itself with Today without a history loop (6.6s)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /missing/deep/page?stale=true#section replaces itself with Today without a history loop (7.3s)
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications/obsolete replaces itself with Today without a history loop (7.3s)
+  ok  6 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:89:5 ΓÇ║ Trend keeps the app shell and browser Back collapses into Progress (1.4s)
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:42:5 ΓÇ║ signed-in legal pages retain Settings navigation without the history shortcut (1.8s)
+  ok  7 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:112:5 ΓÇ║ Activity direct entry falls back to its registered Connections parent (1.0s)
+  ok  8 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:128:5 ΓÇ║ Food log returns to Today with browser Back on a compact phone (1.4s)
+  ok  9 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:146:5 ΓÇ║ Saved Foods is discoverable from Settings and returns through real history (1.2s)
+  ok 10 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:166:5 ΓÇ║ signed-in unknown addresses automatically open Today on a compact phone (873ms)
+  ok 11 [desktop-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:176:5 ΓÇ║ signed-out unknown addresses automatically reach sign-in on a compact phone (617ms)
+(node:26700) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 12 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications?cursor=old#history replaces itself with Today without a history loop (6.9s)
+  ok 13 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications replaces itself with Today without a history loop (7.1s)
+  ok 14 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications/obsolete replaces itself with Today without a history loop (7.4s)
+  ok 15 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /missing/deep/page?stale=true#section replaces itself with Today without a history loop (7.9s)
+  ok 16 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:42:5 ΓÇ║ signed-in legal pages retain Settings navigation without the history shortcut (1.8s)
+  ok 17 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:89:5 ΓÇ║ Trend keeps the app shell and browser Back collapses into Progress (1.2s)
+  ok 18 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:112:5 ΓÇ║ Activity direct entry falls back to its registered Connections parent (974ms)
+  ok 19 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:128:5 ΓÇ║ Food log returns to Today with browser Back on a compact phone (1.3s)
+  ok 20 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:146:5 ΓÇ║ Saved Foods is discoverable from Settings and returns through real history (1.1s)
+  ok 21 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:166:5 ΓÇ║ signed-in unknown addresses automatically open Today on a compact phone (833ms)
+  ok 22 [tablet-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:176:5 ΓÇ║ signed-out unknown addresses automatically reach sign-in on a compact phone (622ms)
+(node:4144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23072) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 24 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications replaces itself with Today without a history loop (6.4s)
+  ok 23 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications?cursor=old#history replaces itself with Today without a history loop (6.8s)
+  ok 25 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications/obsolete replaces itself with Today without a history loop (6.9s)
+  ok 26 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /missing/deep/page?stale=true#section replaces itself with Today without a history loop (6.7s)
+  ok 28 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:89:5 ΓÇ║ Trend keeps the app shell and browser Back collapses into Progress (1.4s)
+  ok 27 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:42:5 ΓÇ║ signed-in legal pages retain Settings navigation without the history shortcut (2.0s)
+  ok 29 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:112:5 ΓÇ║ Activity direct entry falls back to its registered Connections parent (993ms)
+  ok 30 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:128:5 ΓÇ║ Food log returns to Today with browser Back on a compact phone (1.4s)
+  ok 31 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:146:5 ΓÇ║ Saved Foods is discoverable from Settings and returns through real history (1.2s)
+  ok 32 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:166:5 ΓÇ║ signed-in unknown addresses automatically open Today on a compact phone (887ms)
+  ok 33 [android-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:176:5 ΓÇ║ signed-out unknown addresses automatically reach sign-in on a compact phone (612ms)
+(node:24596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:24076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 34 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications replaces itself with Today without a history loop (7.0s)
+  ok 35 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications?cursor=old#history replaces itself with Today without a history loop (7.0s)
+  ok 36 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /notifications/obsolete replaces itself with Today without a history loop (6.6s)
+  ok 37 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:9:7 ΓÇ║ unknown address /missing/deep/page?stale=true#section replaces itself with Today without a history loop (6.7s)
+  ok 39 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:89:5 ΓÇ║ Trend keeps the app shell and browser Back collapses into Progress (1.3s)
+  ok 38 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:42:5 ΓÇ║ signed-in legal pages retain Settings navigation without the history shortcut (1.8s)
+  ok 40 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:112:5 ΓÇ║ Activity direct entry falls back to its registered Connections parent (1.0s)
+  ok 41 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:128:5 ΓÇ║ Food log returns to Today with browser Back on a compact phone (1.3s)
+  ok 42 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:146:5 ΓÇ║ Saved Foods is discoverable from Settings and returns through real history (1.2s)
+  ok 43 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:166:5 ΓÇ║ signed-in unknown addresses automatically open Today on a compact phone (895ms)
+  ok 44 [compact-phone-chrome] ΓÇ║ e2e\expo-web\nested-route-stacks.spec.ts:176:5 ΓÇ║ signed-out unknown addresses automatically reach sign-in on a compact phone (616ms)
+
+  44 passed (2.3m)

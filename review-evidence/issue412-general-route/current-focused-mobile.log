@@ -1,0 +1,16 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand routeRegistry.test routeMetadata.test routePresentation.test NotificationsDrawer.test NotificationCard.test query.test PreferencesSettingsScreen.test useConfirmDiscardNavigation.test useNotificationTapRouting.test
+PASS src/settings/PreferencesSettingsScreen.test.tsx
+PASS src/components/NotificationsDrawer.test.tsx
+PASS src/hooks/useConfirmDiscardNavigation.test.ts
+PASS src/navigation/routeRegistry.test.ts
+PASS src/components/NotificationCard.test.tsx
+PASS src/navigation/routePresentation.test.ts
+PASS src/navigation/routeMetadata.test.ts
+PASS src/notifications/query.test.ts
+
+Test Suites: 8 passed, 8 total
+Tests:       58 passed, 58 total
+Snapshots:   0 total
+Time:        4.953 s
+Ran all test suites matching /routeRegistry.test|routeMetadata.test|routePresentation.test|NotificationsDrawer.test|NotificationCard.test|query.test|PreferencesSettingsScreen.test|useConfirmDiscardNavigation.test|useNotificationTapRouting.test/i.
