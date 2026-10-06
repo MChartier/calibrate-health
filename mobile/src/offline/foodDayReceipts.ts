@@ -49,7 +49,12 @@ export async function recordCurrentPauseReceipt(namespace: string, pause: FoodTr
     const sequence = journal.sequence + 1;
     const rows = journal.rows.filter(row => !row.operation.startsWith('food-tracking-pause.'));
     rows.push({ sequence, id: 'receipt:pause-snapshot', namespace, operation: 'food-tracking-pause.snapshot', payload: { pause }, state: 'pending', attemptCount: 0, lastError: null, receiptOperationId: id, createdAt: sequence, updatedAt: sequence });
-    if (pause.active && pause.starts_on) rows.push({
+    // Refreshing the same pause is not a new start command. Keep its position before
+    // later verified days/backfills; a direct new start already owns a later position.
+    const priorStart = journal.rows.findLastIndex(row => row.operation === 'food-tracking-pause.start'
+        && (row.payload as Record<string, unknown>).starts_on === pause.starts_on);
+    const insertion = priorStart < 0 ? 0 : journal.rows.slice(0, priorStart).filter(row => !row.operation.startsWith('food-tracking-pause.')).length;
+    if (pause.active && pause.starts_on) rows.splice(insertion, 0, {
         sequence, id: 'receipt:current-pause', namespace, operation: 'food-tracking-pause.start',
         payload: { starts_on: pause.starts_on }, state: 'pending', attemptCount: 0, lastError: null,
         receiptOperationId: id, createdAt: sequence, updatedAt: sequence

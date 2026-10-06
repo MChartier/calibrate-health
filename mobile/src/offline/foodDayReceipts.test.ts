@@ -295,3 +295,16 @@ it('coalesces repeated resume after storage restart and replays a lost response 
     expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date)).toBe('OPEN');
     expect(await readFoodDayReceipts('other')).toEqual([]);
  });
+
+it('pause refresh preserves later authoritative backfill while a new explicit start still wins', async () => {
+    const pause = { active: true, starts_on: date } as import('@calibrate/api-client').FoodTrackingPause;
+    await readAndRecordFoodDay('account', date, async () => ({ date, status: 'OPEN' } as FoodLogDay));
+    await recordFoodDayReceipt('account', 'food-tracking-pause.start', { starts_on: date }, 'start');
+    await readAndRecordFoodPause('account', async () => ({ pause }));
+    expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date)).toBe('PAUSED');
+    await readAndRecordFoodDays('account', async () => ({ start_date: date, end_date: date, days: [{ date, status: 'OPEN' } as FoodLogDay] }));
+    await readAndRecordFoodPause('account', async () => ({ pause }));
+    await readAndRecordFoodPause('account', async () => ({ pause }));
+    expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), date)).toBe('OPEN');
+    expect(queuedFoodDayStatus(await readFoodDayReceipts('account'), '2026-08-09')).toBe('PAUSED');
+});
