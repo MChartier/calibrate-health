@@ -27,7 +27,9 @@ migration-only rollback skips remain intentional; required classifier/configurat
 The candidate is merged through an action-created version-only PR only when `master` still points to the source commit
 selected at dispatch and the complete current CI inventory succeeds. A bounded 40-minute wait reports missing or
 approval-pending checks; failed, cancelled, stale, missing and zero-job results never authorize merge. The finalizer
-rechecks CI immediately before the SHA-locked PR merge API and verifies merged ancestry/tree afterward. Repository
+binds successful runs to the single intended PR and tested base/head; missing or ambiguous run associations fail closed.
+It rechecks CI and then rereads PR/master refs immediately before the SHA-locked PR merge API, and verifies merged
+ancestry/tree afterward. Repository
 required-status-check rules are still recommended as a separate administrator-controlled boundary: client polling
 and the merge API do not form an atomic CI-and-base transaction. Publishing tags the validated candidate
 commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate

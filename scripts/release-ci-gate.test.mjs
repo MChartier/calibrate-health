@@ -5,13 +5,16 @@ import { REQUIRED_CI, assertIdentity, evaluateRuns, githubApi, inspectCi, waitFo
 
 const identity = { repository: 'owner/repo', head: 'a'.repeat(40), base: 'b'.repeat(40), branch: 'release/v1.2.3', number: '12' };
 function fixture() {
-  const repo = { full_name: identity.repository };
+  const repo = { id: 123, full_name: identity.repository };
   const pull = { state: 'open', merged: false, draft: false,
     head: { sha: identity.head, ref: identity.branch, repo }, base: { sha: identity.base, ref: 'master', repo } };
   const master = { object: { sha: identity.base } };
   const runs = Object.entries(REQUIRED_CI).map(([file, names], index) => ({
     id: index + 1, path: `.github/workflows/${file}`, event: 'pull_request',
     head_sha: identity.head, head_branch: identity.branch, head_repository: repo,
+    pull_requests: [{ number: Number(identity.number),
+      head: { sha: identity.head, ref: identity.branch, repo },
+      base: { sha: identity.base, ref: 'master', repo } }],
     status: 'completed', conclusion: 'success', run_attempt: 1, html_url: `https://github.com/owner/repo/actions/runs/${index + 1}`,
     jobs: names.map(name => ({ name, status: 'completed', conclusion: 'success' })),
   }));
@@ -105,6 +108,47 @@ test('moved head/base/master, closed or draft PR cannot merge', () => {
     const f = fixture(); mutate(f);
     assert.throws(() => assertIdentity(f, identity), /changed/);
   }
+});
+
+test('final one-shot inspection rejects refs moving during CI reads', async () => {
+  for (const mutate of [f => f.master.object.sha = 'c'.repeat(40),
+    f => f.pull.head.sha = 'c'.repeat(40), f => f.pull.base.sha = 'c'.repeat(40)]) {
+    const f = fixture();
+    let changed = false;
+    const api = async (path, collection) => {
+      const result = structuredClone(await f.api(path, collection));
+      if (!changed && path.includes('/actions/runs?')) { mutate(f); changed = true; }
+      return result;
+    };
+    await assert.rejects(waitForCi(api, identity, { timeoutMs: 0, report() {} }), /changed/);
+  }
+});
+
+test('successful runs must identify this single PR and its tested base/head', async () => {
+  for (const mutate of [run => run.pull_requests = [], run => delete run.pull_requests,
+    run => run.pull_requests.push(structuredClone(run.pull_requests[0])),
+    run => run.pull_requests[0].number = 99,
+    run => run.pull_requests[0].base.sha = 'c'.repeat(40),
+    run => run.pull_requests[0].base.ref = 'other',
+    run => run.pull_requests[0].head.sha = 'c'.repeat(40),
+    run => run.pull_requests[0].head.ref = 'other',
+    run => run.pull_requests[0].base.repo = { id: 999 },
+    run => run.pull_requests[0].head.repo = { id: 999 }]) {
+    const f = fixture(); mutate(f.runs[0]);
+    await assert.rejects(inspectCi(f.api, identity), /PR\/base identity/);
+  }
+});
+
+test('fresh run read cannot change PR binding or hide a newer mismatched run', async () => {
+  const f = fixture();
+  await assert.rejects(inspectCi(async path => {
+    const result = structuredClone(await f.api(path));
+    if (path.endsWith('/runs/1')) result.pull_requests[0].base.sha = 'c'.repeat(40);
+    return result;
+  }, identity), /PR\/base identity/);
+  const newer = structuredClone(f.runs[0]);
+  newer.id = 100; newer.pull_requests[0].number = 99; f.runs.push(newer);
+  await assert.rejects(inspectCi(f.api, identity), /PR\/base identity/);
 });
 
 test('complete pagination, API denial and truncated inventory are handled explicitly', async () => {

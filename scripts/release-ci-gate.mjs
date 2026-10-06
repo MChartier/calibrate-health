@@ -31,6 +31,22 @@ export function assertIdentity({ pull, master }, identity) {
   }
 }
 
+function assertRunIdentity(run, identity) {
+  const associated = run.pull_requests;
+  const pull = associated?.[0];
+  const repositoryId = run.head_repository?.id;
+  if (!Array.isArray(associated) || associated.length !== 1 ||
+      !Number.isSafeInteger(repositoryId) || repositoryId <= 0 ||
+      pull?.number !== Number(identity.number) ||
+      pull.head?.sha !== identity.head || pull.head?.ref !== identity.branch ||
+      pull.base?.sha !== identity.base || pull.base?.ref !== 'master' ||
+      pull.head?.repo?.id !== repositoryId || pull.base?.repo?.id !== repositoryId ||
+      run.head_sha !== identity.head || run.head_branch !== identity.branch ||
+      run.head_repository?.full_name !== identity.repository || run.event !== 'pull_request') {
+    throw new Error(`CI run lacks the exact single PR/base identity: ${run.html_url}. No merge permitted.`);
+  }
+}
+
 export function evaluateRuns(runs, identity) {
   const selected = [];
   const pending = [];
@@ -46,6 +62,7 @@ export function evaluateRuns(runs, identity) {
     if (run.conclusion !== 'success') {
       throw new Error(`${file}: ${run.conclusion}; inspect ${run.html_url}, including approval/no-job annotations.`);
     }
+    assertRunIdentity(run, identity);
     const jobs = run.jobs ?? [];
     for (const name of requiredJobs) {
       if (!jobs.some(job => job.name === name && job.status === 'completed' && job.conclusion === 'success')) {
@@ -76,14 +93,22 @@ export async function inspectCi(api, identity) {
       run.head_branch === identity.branch && run.head_repository?.full_name === identity.repository)
       .sort((a, b) => b.id - a.id)[0];
     if (latest?.status === 'completed' && latest.conclusion === 'success') {
+      assertRunIdentity(latest, identity);
       latest.jobs = await api(`${root}/actions/runs/${latest.id}/attempts/${latest.run_attempt}/jobs?per_page=100`, 'jobs');
       const fresh = await api(`${root}/actions/runs/${latest.id}`);
+      assertRunIdentity(fresh, identity);
       if (fresh.run_attempt !== latest.run_attempt || fresh.status !== latest.status || fresh.conclusion !== latest.conclusion) {
         throw new Error(`CI attempt changed during inspection: ${latest.html_url}. Retry after CI settles.`);
       }
     }
   }
-  return evaluateRuns(runs, identity);
+  const result = evaluateRuns(runs, identity);
+  // CI inventory/attempt reads take time. Rebind refs afterward, including the
+  // final --once invocation immediately before the SHA-locked merge API.
+  const currentPull = await api(`${root}/pulls/${identity.number}`);
+  const currentMaster = await api(`${root}/git/ref/heads/master`);
+  assertIdentity({ pull: currentPull, master: currentMaster }, identity);
+  return result;
 }
 
 export async function waitForCi(api, identity, {
