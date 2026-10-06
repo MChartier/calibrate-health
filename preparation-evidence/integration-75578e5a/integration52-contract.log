@@ -1,0 +1,6 @@
+npm notice run cal-io@0.37.0 api:contract:check
+npm notice run npm run api:generate && git diff --exit-code -- packages/api-client/src/generated/v1.ts
+npm notice run cal-io@0.37.0 api:generate
+npm notice run node backend/node_modules/openapi-typescript/bin/cli.js docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts
+Γ£¿ openapi-typescript 7.13.0
+≡ƒÜÇ docs/openapi/v1.yaml ΓåÆ packages/api-client/src/generated/v1.ts [142.9ms]

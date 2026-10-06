@@ -1,0 +1,132 @@
+[WebServer] (node:18468) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 25 tests using 1 worker
+
+(node:33756) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] › e2e\expo-web\completed-calendar.spec.ts:66:5 › calendar refresh, uncached month failure, retry, and completion reopening stay honest (18.2s)
+[expo-web failure] route=/progress viewport=1440x1000 project=desktop-chrome last_failed_request=PATCH /api/v1/goals/7/pace (503)
+  x   2 [desktop-chrome] › e2e\expo-web\goal-pace.spec.ts:5:9 › pace adjustment preserves the goal and explicit new goal resets intentionally in light (12.3s)
+(node:8948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/progress viewport=1440x1000 project=desktop-chrome last_failed_request=PATCH /api/v1/goals/7/pace (503)
+  x   3 [desktop-chrome] › e2e\expo-web\goal-pace.spec.ts:5:9 › pace adjustment preserves the goal and explicit new goal resets intentionally in dark (12.2s)
+(node:32892) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  4 [desktop-chrome] › e2e\expo-web\launch-12-food-log-productivity.spec.ts:73:5 › Food Log supports fast add, edit, recoverable delete, and meal/day copy (2.7s)
+  ok  5 [desktop-chrome] › e2e\expo-web\launch-14-barcode-recovery.spec.ts:132:5 › Barcode logging recovers through manual success, no result, offline, and safe provider failure (2.6s)
+  ok  6 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:3:5 › auth outage retains a local weigh-in across reload and replays after reconnection (4.3s)
+  ok  7 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:64:5 › network loss still persists a local weigh-in immediately (4.8s)
+  ok  8 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:100:5 › offline food additions and repeated edits are visible after restart and replay once before deletion (17.6s)
+  ok  9 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:164:5 › a failed local creation offers explicit discard instead of saving unreachable corrections (2.7s)
+  ok 10 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:213:5 › logout terminates the browser session while tracking awaits reconnection (2.2s)
+  ok 11 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:238:5 › offline logout stays signed out through reload, revokes after reconnect and permits a different account (3.2s)
+  ok 12 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:302:5 › failed edits on a server row require explicit recovery before correction or deletion (13.4s)
+  ok 13 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:357:9 › failed weight recovery blocks trapped corrections for metric.add (4.0s)
+  ok 14 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:357:9 › failed weight recovery blocks trapped corrections for metric.delete (4.0s)
+  ok 15 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:406:5 › failed tracking controls have explicit shared recovery without losing unrelated weight (2.4s)
+  ok 16 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:436:5 › a stale second tab queues day completion after durable food intent (2.8s)
+  ok 17 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:480:5 › logout still clears the UI and revokes the browser session when intent storage rejects writes (2.0s)
+  ok 18 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:498:5 › logout warns when storage and revocation fail and retries from memory after reconnect (1.9s)
+  ok 19 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:525:5 › queued resume stays resolved through reload and refetch and replays one request identity (2.3s)
+  ok 20 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:560:5 › a stale second tab cannot copy server food before another tabs saved food replays (2.1s)
+  ok 21 [desktop-chrome] › e2e\expo-web\offline-workspace.spec.ts:587:5 › a stale completed-day action cannot reopen a pause queued in another tab (2.7s)
+  ok 22 [desktop-chrome] › e2e\expo-web\today-paused.spec.ts:27:7 › paused Today preserves weight entry and resumes with existing food in light (2.0s)
+  ok 23 [desktop-chrome] › e2e\expo-web\today-paused.spec.ts:27:7 › paused Today preserves weight entry and resumes with existing food in dark (2.0s)
+  ok 24 [desktop-chrome] › e2e\expo-web\today-paused.spec.ts:83:5 › a past paused day replaces an expanded food log and can be backfilled (1.8s)
+  -  25 [desktop-chrome] › e2e\expo-web\today-paused.spec.ts:115:5 › paused-day copy and actions remain reachable at 200% text on a short phone
+
+
+  1) [desktop-chrome] › e2e\expo-web\goal-pace.spec.ts:5:9 › pace adjustment preserves the goal and explicit new goal resets intentionally in light 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: 'Edit goal' })
+    Expected: 0
+    Received: 1
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 10000ms
+      - waiting for getByRole('dialog', { name: 'Edit goal' })
+        24 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      74 |         await expect(page.getByRole('alert').filter({ hasText: /Unable|Synthetic/ })).toBeVisible();
+      75 |         await page.getByRole('button', { name: 'Save pace', exact: true }).click();
+    > 76 |         await expect(sheet).toHaveCount(0);
+         |                             ^
+      77 |         expect(writes).toBe(1);
+      78 |         expect(operations[0]).toBe(operations[1]);
+      79 |         await expect(page.getByText('33% complete')).toBeVisible();
+        at C:\Users\MChar\Documents\Codex\2026-10-05\task-2\firebase-421\e2e\expo-web\goal-pace.spec.ts:76:29
+
+    attachment #1: accessibility-goal-pace.json (application/json) ─────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--18e44-sets-intentionally-in-light-desktop-chrome\attachments\accessibility-goal-pace-json-eab7ed2df2cc6569bf200b63d88ee72e63b90c18.json
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--18e44-sets-intentionally-in-light-desktop-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--18e44-sets-intentionally-in-light-desktop-chrome\error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--18e44-sets-intentionally-in-light-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--18e44-sets-intentionally-in-light-desktop-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop-chrome] › e2e\expo-web\goal-pace.spec.ts:5:9 › pace adjustment preserves the goal and explicit new goal resets intentionally in dark 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: 'Edit goal' })
+    Expected: 0
+    Received: 1
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 10000ms
+      - waiting for getByRole('dialog', { name: 'Edit goal' })
+        24 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      74 |         await expect(page.getByRole('alert').filter({ hasText: /Unable|Synthetic/ })).toBeVisible();
+      75 |         await page.getByRole('button', { name: 'Save pace', exact: true }).click();
+    > 76 |         await expect(sheet).toHaveCount(0);
+         |                             ^
+      77 |         expect(writes).toBe(1);
+      78 |         expect(operations[0]).toBe(operations[1]);
+      79 |         await expect(page.getByText('33% complete')).toBeVisible();
+        at C:\Users\MChar\Documents\Codex\2026-10-05\task-2\firebase-421\e2e\expo-web\goal-pace.spec.ts:76:29
+
+    attachment #1: accessibility-goal-pace.json (application/json) ─────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--89ce3-esets-intentionally-in-dark-desktop-chrome\attachments\accessibility-goal-pace-json-7e1854977110b48ade585f30de381ccf1f7e64ea.json
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--89ce3-esets-intentionally-in-dark-desktop-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--89ce3-esets-intentionally-in-dark-desktop-chrome\error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--89ce3-esets-intentionally-in-dark-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\goal-pace-pace-adjustment--89ce3-esets-intentionally-in-dark-desktop-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop-chrome] › e2e\expo-web\goal-pace.spec.ts:5:9 › pace adjustment preserves the goal and explicit new goal resets intentionally in light 
+    [desktop-chrome] › e2e\expo-web\goal-pace.spec.ts:5:9 › pace adjustment preserves the goal and explicit new goal resets intentionally in dark 
+  1 skipped
+  22 passed (3.0m)

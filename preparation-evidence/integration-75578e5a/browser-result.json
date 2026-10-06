@@ -1,0 +1,19 @@
+{
+  "head": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "passed": 24,
+  "failed": 0,
+  "skipped": 1,
+  "skipReason": "200% text short-phone scenario is explicitly restricted to compact-phone project; this run used desktop Chrome.",
+  "inspected": [
+    "paused-today-light.png",
+    "queued-resume-after-restart.png"
+  ],
+  "observation": "Paused weight entry has the human-merged boundary; queued resume restores open Today with one pending action and retained360kcal food.",
+  "fixtureSource": "75578e5ac57a05ba0f06146598b314a01eafb2ae:e2e/expo-web/fixtures.ts",
+  "testSources": [
+    "offline-workspace.spec.ts",
+    "today-paused.spec.ts",
+    "goal-pace.spec.ts"
+  ],
+  "environment": "Windows ZBook; desktop Chrome154;1440x1000;synthetic routed API; frozen fixture date July21,2026; America/Los_Angeles; light/dark; fixture hides only unrelated transient PWA notices; no pixel edits."
+}

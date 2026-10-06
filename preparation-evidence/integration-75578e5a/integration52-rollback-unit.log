@@ -1,0 +1,22 @@
+Γ£ö resource plan owns only generated Docker and database names (2.125ms)
+Γ£ö published database ports must be loopback-only and singular (0.2057ms)
+Γ£ö database URLs cannot escape the generated loopback target (0.3954ms)
+Γ£ö Postgres launch is private, disposable, labeled, and loopback-published (0.1839ms)
+Γ£ö migration contract pins exact v0.14.0 and candidate ledgers (6.572ms)
+Γ£ö hosted source binding accepts only the checked-out lowercase full SHA (0.1657ms)
+Γ£ö source resolver binds the actual checkout to the workflow candidate (0.1426ms)
+Γ£ö representative snapshots distinguish base from the intentional candidate transform (0.1733ms)
+Γ£ö diagnostics redact credentials and absolute host paths (0.3213ms)
+Γ£ö success evidence is sanitized, exact, and contains no resource target (0.3025ms)
+Γ£ö failed evidence remains bound to the checked-out candidate (0.1311ms)
+Γ£ö schema names, arguments, and evidence path are fixed and guarded (0.1309ms)
+Γ£ö command encoding defaults to text while preserving explicit spawn encodings (0.0621ms)
+Γ£ö script contract uses production backup/restore and cleanup without external DATABASE_URL (0.5065ms)
+Γä╣ tests 14
+Γä╣ suites 0
+Γä╣ pass 14
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 86.1022

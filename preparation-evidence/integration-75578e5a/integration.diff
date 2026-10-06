@@ -1,0 +1,2201 @@
+diff --git a/.github/workflows/database-upgrade.yml b/.github/workflows/database-upgrade.yml
+index c3da5e45..5b4a73ce 100644
+--- a/.github/workflows/database-upgrade.yml
++++ b/.github/workflows/database-upgrade.yml
+@@ -113,6 +113,9 @@ jobs:
+ 
+       - name: Serialize concurrent weight-trend materialization
+         run: node scripts/postgres-weight-trend-concurrency-smoke.mjs
++      - name: Verify goal pace continuity and concurrent saves
++        run: node scripts/postgres-goal-pace-smoke.mjs
++
+   release-upgrade-rollback:
+     name: v0.14.0 Upgrade and Encrypted Rollback
+     needs: changes
+diff --git a/backend/prisma/migrations/0044_goal_pace_history/migration.sql b/backend/prisma/migrations/0044_goal_pace_history/migration.sql
+new file mode 100644
+index 00000000..91e43156
+--- /dev/null
++++ b/backend/prisma/migrations/0044_goal_pace_history/migration.sql
+@@ -0,0 +1 @@
++ALTER TABLE "CaloriePlanRevision" ADD COLUMN "configured_daily_deficit" INTEGER;
+diff --git a/backend/prisma/schema.prisma b/backend/prisma/schema.prisma
+index 2b77d6ae..65728454 100755
+--- a/backend/prisma/schema.prisma
++++ b/backend/prisma/schema.prisma
+@@ -585,6 +585,8 @@ model CaloriePlanRevision {
+   source_goal            Goal                       @relation(fields: [source_goal_id], references: [id], onDelete: Cascade)
+   recommendation_id      Int?                       @unique
+   recommendation         CalibrationRecommendation? @relation(fields: [recommendation_id], references: [id], onDelete: SetNull)
++  /// Non-null only for an intentional pace change; calibration rows inherit the dated pace.
++  configured_daily_deficit Int?
+   target_adjustment_kcal Int
+   calorie_plan_review_status CaloriePlanReviewStatus @default(CLEAR)
+   calorie_plan_review_reason String?
+diff --git a/backend/src/routes/goals.ts b/backend/src/routes/goals.ts
+index c86f66f2..247abe7f 100755
+--- a/backend/src/routes/goals.ts
++++ b/backend/src/routes/goals.ts
+@@ -1,4 +1,8 @@
++import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
+ import express from 'express';
++import { Prisma } from '@prisma/client';
++import { goalWire, goalPaceOptions, goalPaceVersion } from '../services/goalPace';
++import { parseLocalDateOnly } from '../utils/date';
+ import { parseDailyDeficit } from '../utils/goalDeficit';
+ import { gramsToWeight, parseWeightToGrams, type WeightUnit } from '../utils/units';
+ import { validateGoalWeightsForDailyDeficit } from '../utils/goalValidation';
+@@ -27,16 +31,7 @@ router.get('/', async (req, res) => {
+         const snapshot = await getStoredCaloriePlanningSnapshot(user.id);
+         if (!snapshot) return res.status(404).json({ message: 'User not found' });
+         if (!snapshot.goal) return res.json(null);
+-        const goal = snapshot.goal;
+-        const { start_weight_grams: startWeightGrams, target_weight_grams: targetWeightGrams, ...goalFields } = goal;
+-        return res.json({
+-            ...goalFields,
+-            start_weight: gramsToWeight(startWeightGrams, snapshot.user.weight_unit),
+-            target_weight: gramsToWeight(targetWeightGrams, snapshot.user.weight_unit),
+-            plan_status: snapshot.evaluation.status,
+-            plan_reason_code: snapshot.evaluation.reasonCode,
+-            projection: projectionWire(snapshot.projection!)
+-        });
++        return res.json(goalWire(snapshot));
+     } catch {
+         return res.status(500).json({ message: 'Server error' });
+     }
+@@ -94,8 +89,10 @@ router.post('/', async (req, res) => {
+             userId: user.id,
+             operationId,
+             operationKind: 'goal.create',
++            transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+             requestPayload: req.body,
+             mutate: async (tx, claimedOperationId) => {
++                await lockCaloriePlanningInputs(tx, user.id);
+                 const snapshot = await buildStoredCaloriePlanningSnapshot(tx, user.id);
+                 if (!snapshot) return { status: 404, body: { message: 'User not found' } };
+                 const evaluation = evaluateCaloriePlan({
+@@ -183,8 +180,86 @@ router.post('/', async (req, res) => {
+                 retryable: err.code === 'OPERATION_IN_PROGRESS'
+             });
+         }
++        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') {
++            return res.status(409).json({
++                message: 'Your plan changed during saving. Review the current goal and try again.',
++                code: 'GOAL_PLAN_CHANGED', retryable: true
++            });
++        }
+         res.status(500).json({ message: 'Server error' });
+     }
+ });
+ 
++// This preview always uses stored profile/weight and corrections, never a caller-supplied baseline.
++router.get('/pace-options', async (req, res) => {
++    try {
++        const snapshot = await getStoredCaloriePlanningSnapshot(getAuthenticatedUser(req).id);
++        if (!snapshot?.goal) return res.status(404).json({ message: 'No current goal' });
++        res.set('Cache-Control', 'no-store');
++        return res.json(goalPaceOptions(snapshot));
++    } catch {
++        return res.status(500).json({ message: 'Unable to check the current goal. Retry the plan check.' });
++    }
++});
++
++router.patch('/:id/pace', async (req, res) => {
++    const user = getAuthenticatedUser(req);
++    const operationId = parseClientOperationId(req.get?.('x-client-operation-id') ?? req.headers?.['x-client-operation-id']);
++    const deficit = parseDailyDeficit(req.body?.daily_deficit);
++    const goalId = Number(req.params.id);
++    const version = req.body?.expected_plan_version;
++    if (!operationId || !Number.isSafeInteger(goalId) || goalId <= 0 || deficit === null ||
++        typeof version !== 'string' || !/^[a-f0-9]{64}$/.test(version) ||
++        Object.keys(req.body).some(key => !['daily_deficit', 'expected_plan_version'].includes(key))) {
++        return res.status(400).json({ message: 'Refresh the plan check and choose an available daily calorie change.',
++            code: 'CALORIE_PLAN_OPTION_UNAVAILABLE', retryable: false });
++    }
++    try {
++        const result = await executeIdempotentMutation<unknown>({
++            userId: user.id, operationId, operationKind: 'goal.adjust_pace',
++            requestPayload: { goal_id: goalId, daily_deficit: deficit, expected_plan_version: version },
++            transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
++            mutate: async (tx, claimedOperationId) => {
++                await lockCaloriePlanningInputs(tx, user.id);
++                const now = new Date();
++                const snapshot = await buildStoredCaloriePlanningSnapshot(tx, user.id, now);
++                if (!snapshot?.goal || snapshot.goal.id !== goalId || goalPaceVersion(snapshot) !== version) {
++                    return { status: 409, body: { message: 'Your goal or calorie plan changed. Refresh the plan check before saving.',
++                        code: 'GOAL_PLAN_CHANGED', retryable: false } };
++                }
++                const option = goalPaceOptions(snapshot, now).planOptions.find(item => item.dailyDeficit === deficit);
++                if (!option?.available || !snapshot.localToday) {
++                    return { status: 400, body: { message: 'That calorie plan option is unavailable. Review the current plan before adjusting its pace.',
++                        code: 'CALORIE_PLAN_OPTION_UNAVAILABLE', retryable: false } };
++                }
++                if (snapshot.goal.daily_deficit === deficit) return { status: 200, body: goalWire(snapshot) };
++                const revision = await tx.caloriePlanRevision.create({ data: {
++                    user_id: user.id, source_goal_id: goalId, configured_daily_deficit: deficit,
++                    target_adjustment_kcal: snapshot.effectiveRevision?.target_adjustment_kcal ?? 0,
++                    effective_local_date: parseLocalDateOnly(snapshot.localToday)
++                } });
++                await tx.calibrationRecommendation.updateMany({
++                    where: { user_id: user.id, status: 'PENDING' }, data: { status: 'STALE' }
++                });
++                const updated = await buildStoredCaloriePlanningSnapshot(tx, user.id, now);
++                const body = goalWire(updated!);
++                await recordSyncChange({ tx, userId: user.id, entityType: 'goal', entityId: goalId,
++                    action: 'upsert', operationId: claimedOperationId, payload: updated!.goal });
++                await recordSyncChange({ tx, userId: user.id, entityType: 'calorie_plan_revision', entityId: revision.id,
++                    action: 'upsert', operationId: claimedOperationId, payload: revision });
++                return { status: 200, body };
++            }
++        });
++        return res.status(result.status).json(result.body);
++    } catch (error) {
++        if (error instanceof ClientOperationConflictError) {
++            return res.status(409).json({ message: error.message, code: error.code, retryable: error.code === 'OPERATION_IN_PROGRESS' });
++        }
++        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
++            return res.status(409).json({ message: 'Your plan changed during saving. Refresh the plan check and try again.', code: 'GOAL_PLAN_CHANGED', retryable: false });
++        }
++        return res.status(500).json({ message: 'Unable to confirm the saved pace. Retry to check the same change.', retryable: true });
++    }
++});
++
+ export default router;
+diff --git a/backend/src/routes/user.ts b/backend/src/routes/user.ts
+index e93269a6..2dedb290 100644
+--- a/backend/src/routes/user.ts
++++ b/backend/src/routes/user.ts
+@@ -627,7 +627,13 @@ router.patch('/profile', async (req, res) => {
+       return { status: 200, body: { user: serializeUserForClient(updatedUser) } };
+     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
+     return res.status(result.status).json(result.body);
+-  } catch {
++  } catch (error) {
++    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
++      return res.status(409).json({
++        message: 'Your profile or calorie plan changed during saving. Refresh and try again.',
++        code: 'PROFILE_PLAN_CHANGED', retryable: true
++      });
++    }
+     return res.status(500).json({ message: 'Server error' });
+   }
+ });
+diff --git a/backend/src/services/accountLifecycle.ts b/backend/src/services/accountLifecycle.ts
+index 4b92b365..1b4d2d77 100644
+--- a/backend/src/services/accountLifecycle.ts
++++ b/backend/src/services/accountLifecycle.ts
+@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
+ import prisma from '../config/database';
+ 
+ export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
+-export const ACCOUNT_EXPORT_VERSION = 9;
++export const ACCOUNT_EXPORT_VERSION = 10;
+ 
+ // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
+ // deliberately absent. User-visible account, tracking, and derived plan history is exported.
+@@ -270,6 +270,7 @@ export type AccountExport = {
+     id: number;
+     source_goal_id: number;
+     recommendation_id: number | null;
++    configured_daily_deficit: number | null;
+     target_adjustment_kcal: number;
+     calorie_plan_review_status: string;
+     calorie_plan_review_reason: string | null;
+@@ -502,6 +503,7 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
+       id: revision.id,
+       source_goal_id: revision.source_goal_id,
+       recommendation_id: revision.recommendation_id,
++      configured_daily_deficit: revision.configured_daily_deficit ?? null,
+       target_adjustment_kcal: revision.target_adjustment_kcal,
+       calorie_plan_review_status: revision.calorie_plan_review_status,
+       calorie_plan_review_reason: revision.calorie_plan_review_reason,
+diff --git a/backend/src/services/calibration.ts b/backend/src/services/calibration.ts
+index 8d7e755f..a2f81597 100644
+--- a/backend/src/services/calibration.ts
++++ b/backend/src/services/calibration.ts
+@@ -1,3 +1,4 @@
++import { lockCaloriePlanningInputs } from './caloriePlanningLock';
+ import crypto from 'node:crypto';
+ import { Prisma } from '@prisma/client';
+ import {
+@@ -387,7 +388,12 @@ async function buildCalibrationStatusSnapshot(
+         };
+     }
+     const goalStartDate = formatDateToLocalDateString(goal.created_at, user.timezone);
+-    const revisionStartDate = currentPlan ? toDateKey(currentPlan.effectiveLocalDate) : goalStartDate;
++    // A manual pace change can occur after logging/completion; start new calibration evidence with the next full day.
++    const revisionStartDate = currentPlan
++        ? toDateKey(planning.effectiveRevision?.configured_daily_deficit != null
++            ? addUtcDays(currentPlan.effectiveLocalDate, 1)
++            : currentPlan.effectiveLocalDate)
++        : goalStartDate;
+     const planStartDate = goalStartDate > revisionStartDate ? goalStartDate : revisionStartDate;
+     const foodDays = buildFoodEvidence({ logs, completionDays, planStartDate, asOfDate: asOfDateKey });
+     const latestPausedDate = foodDays
+@@ -497,6 +503,7 @@ export async function applyCalibrationRecommendation(options: {
+             requestPayload: { recommendation_id: options.recommendationId },
+             transactionOptions: { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+             mutate: async (tx, claimedOperationId) => {
++                await lockCaloriePlanningInputs(tx, options.userId);
+                 const recommendation = await tx.calibrationRecommendation.findFirst({
+                     where: { id: options.recommendationId, user_id: options.userId },
+                     include: { plan_revision: true }
+@@ -626,6 +633,7 @@ export async function cancelScheduledCalibrationChange(options: {
+         operationKind: 'calibration_recommendation.cancel',
+         requestPayload: { recommendation_id: options.recommendationId },
+         mutate: async (tx, claimedOperationId) => {
++            await lockCaloriePlanningInputs(tx, options.userId);
+             const recommendation = await tx.calibrationRecommendation.findFirst({
+                 where: {
+                     id: options.recommendationId,
+diff --git a/backend/src/services/caloriePlanReview.ts b/backend/src/services/caloriePlanReview.ts
+index 99790831..21c35e51 100644
+--- a/backend/src/services/caloriePlanReview.ts
++++ b/backend/src/services/caloriePlanReview.ts
+@@ -1,3 +1,4 @@
++import { lockCaloriePlanningInputs } from './caloriePlanningLock';
+ import type { MutationDatabase } from './clientOperations';
+ import { buildStoredCaloriePlanningSnapshot, type StoredCaloriePlanningSnapshot } from './caloriePlanning';
+ 
+@@ -7,6 +8,9 @@ export async function markCurrentCaloriePlanForReviewIfUnsafe(
+   userId: number,
+   now: Date = new Date()
+ ): Promise<StoredCaloriePlanningSnapshot | null> {
++  // Weight/profile writers hold this guard through commit; pace saves use the same
++  // guard before reading, so safety checks cannot miss a concurrent accepted pace.
++  await lockCaloriePlanningInputs(database, userId);
+   const snapshot = await buildStoredCaloriePlanningSnapshot(database, userId, now);
+   if (!snapshot?.goal || snapshot.evaluation.status !== 'requires_review') return snapshot;
+ 
+diff --git a/backend/src/services/caloriePlanning.ts b/backend/src/services/caloriePlanning.ts
+index 94ab90d6..dde54837 100644
+--- a/backend/src/services/caloriePlanning.ts
++++ b/backend/src/services/caloriePlanning.ts
+@@ -15,6 +15,7 @@ type PlanningDatabase = MutationDatabase;
+ type StoredPlanningRevision = {
+   id: number;
+   recommendation_id: number | null;
++  configured_daily_deficit: number | null;
+   target_adjustment_kcal: number;
+   calorie_plan_review_status: 'CLEAR' | 'REQUIRES_REVIEW';
+   calorie_plan_review_reason: string | null;
+@@ -75,7 +76,7 @@ export async function buildStoredCaloriePlanningSnapshot(
+ 
+   const localToday = localDateInTimeZone(now, user.timezone);
+   const localTodayDate = localToday ? parseLocalDateOnly(localToday) : null;
+-  const goal = await database.goal.findFirst({
++  const storedGoal = await database.goal.findFirst({
+     where: { user_id: userId },
+     orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+     select: {
+@@ -91,6 +92,8 @@ export async function buildStoredCaloriePlanningSnapshot(
+     }
+   });
+ 
++  const goal = storedGoal ? { ...storedGoal } : null;
++
+   const latestMetric = localTodayDate ? await database.bodyMetric.findFirst({
+     where: { user_id: userId, date: { lte: localTodayDate } },
+     orderBy: [{ date: 'desc' }, { id: 'desc' }],
+@@ -100,6 +103,7 @@ export async function buildStoredCaloriePlanningSnapshot(
+   const revisionSelect = {
+     id: true,
+     recommendation_id: true,
++    configured_daily_deficit: true,
+     target_adjustment_kcal: true,
+     calorie_plan_review_status: true,
+     calorie_plan_review_reason: true,
+@@ -117,6 +121,15 @@ export async function buildStoredCaloriePlanningSnapshot(
+       select: revisionSelect
+     })
+   ]) : [null, []];
++  // Resolve pace separately so a later calibration correction cannot restore an obsolete deficit.
++  const paceRevision = goal && localTodayDate ? await database.caloriePlanRevision.findFirst({
++    where: { user_id: userId, source_goal_id: goal.id, configured_daily_deficit: { not: null }, effective_local_date: { lte: localTodayDate } },
++    orderBy: [{ effective_local_date: 'desc' }, { id: 'desc' }],
++    select: revisionSelect
++  }) : null;
++  if (goal && typeof paceRevision?.configured_daily_deficit === 'number') {
++    goal.daily_deficit = paceRevision.configured_daily_deficit;
++  }
+   const nextRevision = futureRevisions[0] ?? null;
+ 
+   const currentEvaluation = evaluateCaloriePlan({
+diff --git a/backend/src/services/caloriePlanningLock.ts b/backend/src/services/caloriePlanningLock.ts
+new file mode 100644
+index 00000000..d4136775
+--- /dev/null
++++ b/backend/src/services/caloriePlanningLock.ts
+@@ -0,0 +1,25 @@
++import { Prisma } from '@prisma/client';
++
++/** Serialize planning checks with input writes inside the same transaction. */
++export async function lockCaloriePlanningInputs(
++    tx: Pick<Prisma.TransactionClient, '$executeRaw'>,
++    userId: number
++): Promise<void> {
++    // A non-key no-op write both locks this account and invalidates older repeatable/
++    // serializable snapshots. A SELECT lock alone would leave a waited-on snapshot stale.
++    try {
++        await tx.$executeRaw`UPDATE "User" SET "timezone" = "timezone" WHERE "id" = ${userId}`;
++    } catch (error) {
++        // Prisma wraps raw SQL serialization/deadlock errors in P2010.
++        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2010') {
++            const adapterError = error.meta?.driverAdapterError as { cause?: { originalCode?: unknown } } | undefined;
++            const databaseCode = error.meta?.code ?? adapterError?.cause?.originalCode;
++            if (['40001', '40P01'].includes(String(databaseCode))) {
++                throw new Prisma.PrismaClientKnownRequestError('Planning inputs changed while saving.', {
++                    code: 'P2034', clientVersion: error.clientVersion
++                });
++            }
++        }
++        throw error;
++    }
++}
+diff --git a/backend/src/services/goalPace.ts b/backend/src/services/goalPace.ts
+new file mode 100644
+index 00000000..ed6f4023
+--- /dev/null
++++ b/backend/src/services/goalPace.ts
+@@ -0,0 +1,52 @@
++import crypto from 'node:crypto';
++import { evaluateCaloriePlan } from '../../../shared/caloriePolicy';
++import type { StoredCaloriePlanningSnapshot } from './caloriePlanning';
++import { projectionWire } from './caloriePlanning';
++import { gramsToWeight } from '../utils/units';
++export function goalWire(snapshot: StoredCaloriePlanningSnapshot) {
++    if (!snapshot.goal)
++        return null;
++    const { start_weight_grams, target_weight_grams, ...goal } = snapshot.goal;
++    return {
++        ...goal,
++        start_weight: gramsToWeight(start_weight_grams, snapshot.user.weight_unit),
++        target_weight: gramsToWeight(target_weight_grams, snapshot.user.weight_unit),
++        plan_status: snapshot.evaluation.status,
++        plan_reason_code: snapshot.evaluation.reasonCode,
++        projection: projectionWire(snapshot.projection!)
++    };
++}
++/** Bind the editor to authoritative inputs, including tomorrow's accepted corrections. */
++export function goalPaceVersion(snapshot: StoredCaloriePlanningSnapshot): string {
++    return crypto.createHash('sha256').update(JSON.stringify({
++        user: snapshot.user, goal: snapshot.goal, weight: snapshot.latestWeightGrams,
++        day: snapshot.localToday, current: snapshot.effectiveRevision, future: snapshot.futureRevisions
++    })).digest('hex');
++}
++export function goalPaceOptions(snapshot: StoredCaloriePlanningSnapshot, now: Date = new Date()) {
++    const { user, goal, evaluation } = snapshot;
++    const planOptions = evaluation.planOptions.map(option => {
++        const candidate = evaluateCaloriePlan({
++            profile: { timezone: user.timezone, dateOfBirth: user.date_of_birth, sex: user.sex,
++                heightMm: user.height_mm, activityLevel: user.activity_level },
++            latestWeightGrams: snapshot.latestWeightGrams,
++            goal: goal ? { startWeightGrams: goal.start_weight_grams, targetWeightGrams: goal.target_weight_grams,
++                dailyDeficit: option.dailyDeficit, reviewStatus: goal.calorie_plan_review_status,
++                reviewReason: goal.calorie_plan_review_reason } : null,
++            targetAdjustmentKcal: snapshot.effectiveRevision?.target_adjustment_kcal ?? 0,
++            now
++        });
++        const futureSafe = snapshot.futureRevisions.every(revision => revision.calorie_plan_review_status === 'CLEAR' && Number.isInteger(revision.target_adjustment_kcal) &&
++            candidate.tdee !== null && candidate.minimumDailyCalorieTarget !== null &&
++            Math.round(candidate.tdee - option.dailyDeficit + revision.target_adjustment_kcal) >= candidate.minimumDailyCalorieTarget);
++        const available = evaluation.status === 'available' && candidate.status === 'available' && futureSafe &&
++            goal !== null && Math.sign(option.dailyDeficit) === Math.sign(goal.daily_deficit);
++        return { dailyDeficit: option.dailyDeficit, available,
++            dailyCalorieTarget: available ? candidate.dailyCalorieTarget : null,
++            reasonCode: available ? null : (evaluation.reasonCode ?? candidate.reasonCode ?? 'PLAN_REVISION_UNSAFE') };
++    });
++    return { goal: goalWire(snapshot), expected_plan_version: goalPaceVersion(snapshot),
++        effective_local_date: snapshot.localToday,
++        eligibility: evaluation.eligibility, bmr: evaluation.bmr, tdee: evaluation.tdee,
++        minimumDailyCalorieTarget: evaluation.minimumDailyCalorieTarget, planOptions };
++}
+diff --git a/backend/test/account-lifecycle.test.js b/backend/test/account-lifecycle.test.js
+index 0653e3fd..265ff72e 100644
+--- a/backend/test/account-lifecycle.test.js
++++ b/backend/test/account-lifecycle.test.js
+@@ -228,6 +228,7 @@ const exportRow = {
+     user_id: 7,
+     source_goal_id: 2,
+     recommendation_id: 4,
++    configured_daily_deficit: 250,
+     target_adjustment_kcal: -125,
+     calorie_plan_review_status: 'REQUIRES_REVIEW',
+     calorie_plan_review_reason: 'PLAN_REVISION_UNSAFE',
+@@ -250,7 +251,7 @@ test('account export returns canonical versioned tracking data without credentia
+   const result = await exportAccountData(7, at('2026-07-11T20:00:00.000Z'));
+ 
+   assert.equal(result.format, 'calibrate-account-export');
+-  assert.equal(result.version, 9);
++  assert.equal(result.version, 10);
+   assert.equal(result.exported_at, '2026-07-11T20:00:00.000Z');
+   assert.equal(result.account.date_of_birth, '1990-05-03');
+   assert.equal(result.account.email_verified_at, '2025-01-02T12:00:00.000Z');
+@@ -280,6 +281,7 @@ test('account export returns canonical versioned tracking data without credentia
+   assert.equal(result.calibration_recommendations[0].input_fingerprint, undefined);
+   assert.equal(result.calorie_plan_revisions[0].effective_local_date, '2025-01-05');
+   assert.equal(result.calorie_plan_revisions[0].source_goal_id, 2);
++  assert.equal(JSON.parse(JSON.stringify(result)).calorie_plan_revisions[0].configured_daily_deficit, 250);
+   assert.equal(result.goals[0].calorie_plan_review_reason, 'HISTORICAL_PLAN_REQUIRES_REVIEW');
+   assert.equal(result.calorie_plan_revisions[0].calorie_plan_review_status, 'REQUIRES_REVIEW');
+   assert.equal(result.calorie_plan_revisions[0].calorie_plan_review_reason, 'PLAN_REVISION_UNSAFE');
+@@ -344,10 +346,21 @@ test('portable export preserves captured and unavailable day plans through JSON
+     const { exportAccountData } = loadAccountLifecycle({ user: { findUnique: async () => row } });
+     const exported = JSON.parse(JSON.stringify(await exportAccountData(7)));
+     const day = exported.food_log_days[0];
+-    assert.equal(exported.version, 9);
++    assert.equal(exported.version, 10);
+     assert.equal(day.status, 'OPEN');
+     assert.equal(day.comparison_target_kcal, snapshot.comparison_target_kcal);
+     assert.equal(day.comparison_maintenance_kcal, snapshot.comparison_maintenance_kcal);
+     assert.equal(day.comparison_captured_at, snapshot.comparison_captured_at?.toISOString() ?? null);
+   }
+ });
++
++test('export v10 retains both manual pace and nullable legacy revision provenance', async () => {
++  const row = { ...exportRow, calorie_plan_revisions: [
++    { ...exportRow.calorie_plan_revisions[0], configured_daily_deficit: 250 },
++    { ...exportRow.calorie_plan_revisions[0], id: 6, configured_daily_deficit: null }
++  ] };
++  const { exportAccountData } = loadAccountLifecycle({ user: { findUnique: async () => row } });
++  const wire = JSON.parse(JSON.stringify(await exportAccountData(7)));
++  assert.equal(wire.version, 10);
++  assert.deepEqual(wire.calorie_plan_revisions.map(revision => revision.configured_daily_deficit), [250, null]);
++});
+diff --git a/backend/test/calibration-service.test.js b/backend/test/calibration-service.test.js
+index 6487941b..1112b788 100644
+--- a/backend/test/calibration-service.test.js
++++ b/backend/test/calibration-service.test.js
+@@ -126,6 +126,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
+     }))
+   };
+   const prisma = {
++    $executeRaw: async () => 1,
+     user: { findUnique: async () => ({
+       id: 7,
+       timezone: 'UTC',
+@@ -530,3 +531,15 @@ test('calibration status returns Plan check assessments for maintenance and gain
+     assert.equal(harness.captured.upserts.length, 0);
+   }
+ });
++
++
++test('manual pace changes exclude the mixed adjustment day and invalidate earlier calibration evidence', async () => {
++  const harness = createHarness({ currentPlan: { targetAdjustmentKcal: 0, effectiveLocalDate: new Date('2026-07-30Z') } });
++  harness.planningState.current.effectiveRevision.configured_daily_deficit = 250;
++  harness.planningState.current.goal.daily_deficit = 250;
++  const status = await harness.service.buildCalibrationStatus(7, new Date('2026-08-01T12:00:00Z'));
++  assert.equal(status.evaluation.dataQuality.observationDays, 1);
++  assert.equal(status.recommendation, null);
++  assert.equal(status.evaluation.status, 'not_ready');
++  assert.equal(harness.planningState.current.goal.created_at.toISOString(), '2026-06-01T00:00:00.000Z');
++});
+diff --git a/backend/test/calorie-planning.test.js b/backend/test/calorie-planning.test.js
+index 2c41325d..42f9b3d5 100644
+--- a/backend/test/calorie-planning.test.js
++++ b/backend/test/calorie-planning.test.js
+@@ -51,6 +51,7 @@ test('stored planning marks a current-safe but scheduled-unsafe revision and fai
+     calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+   };
+   const database = {
++    $executeRaw: async () => 1,
+     user: { findUnique: async () => ({
+       id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), sex: 'MALE',
+       height_mm: 1750, activity_level: 'SEDENTARY', weight_unit: 'KG', height_unit: 'CM'
+@@ -92,6 +93,7 @@ test('a resolved stored prerequisite marker becomes historical review instead of
+     calorie_plan_review_status: 'REQUIRES_REVIEW', calorie_plan_review_reason: 'LATEST_WEIGHT_REQUIRED'
+   };
+   const database = {
++    $executeRaw: async () => 1,
+     user: { findUnique: async () => ({
+       id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01T00:00:00.000Z'), sex: 'MALE',
+       height_mm: 1750, activity_level: 'SEDENTARY', weight_unit: 'KG', height_unit: 'CM'
+diff --git a/backend/test/goal-pace.test.js b/backend/test/goal-pace.test.js
+new file mode 100644
+index 00000000..7e920354
+--- /dev/null
++++ b/backend/test/goal-pace.test.js
+@@ -0,0 +1,188 @@
++const test = require('node:test'), assert = require('node:assert/strict'), Module = require('node:module');
++const { Prisma } = require('@prisma/client');
++function fixture() {
++    const user = { id: 7, timezone: 'America/Los_Angeles', date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' };
++    const goal = { id: 4, user_id: 7, created_at: new Date('2025-01-01Z'), start_weight_grams: 90000, target_weight_grams: 75000, target_date: new Date('2027-02-01Z'), daily_deficit: 500, calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null };
++    const revisions = [], events = [], receipts = new Map();
++    let stale = 0, creates = 0, weight = 85000;
++    const matching = ({ where, orderBy }) => revisions.filter(r => r.source_goal_id === where.source_goal_id && (!where.configured_daily_deficit || r.configured_daily_deficit != null) && (!where.effective_local_date?.lte || r.effective_local_date <= where.effective_local_date.lte) && (!where.effective_local_date?.gt || r.effective_local_date > where.effective_local_date.gt)).sort((a, b) => orderBy[0].effective_local_date === 'desc' ? b.effective_local_date - a.effective_local_date || b.id - a.id : a.effective_local_date - b.effective_local_date || a.id - b.id);
++    const db = { $executeRaw: async () => 1, user: { findUnique: async () => ({ ...user }) }, goal: { findFirst: async () => ({ ...goal }), create: async ({ data }) => { creates++; return { ...data, id: 10, created_at: new Date() }; } }, bodyMetric: { findFirst: async () => weight === null ? null : { weight_grams: weight } }, caloriePlanRevision: { findFirst: async (args) => matching(args)[0] ?? null, findMany: async (args) => matching(args), create: async ({ data }) => { const r = { id: revisions.length + 1, recommendation_id: null, configured_daily_deficit: null, calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null, ...data }; revisions.push(r); return r; } }, calibrationRecommendation: { updateMany: async () => { stale++; return { count: 1 }; } }, syncChange: { create: async ({ data }) => { events.push(data); return { id: 1n }; } }, clientOperation: { create: async ({ data }) => { if (receipts.has(data.operation_id))
++                throw new Prisma.PrismaClientKnownRequestError('duplicate', { code: 'P2002', clientVersion: 'test' }); receipts.set(data.operation_id, { ...data, response_status: null, completed_at: null }); }, update: async ({ where, data }) => Object.assign(receipts.get(where.user_id_operation_id.operation_id), data), findUnique: async ({ where }) => receipts.get(where.user_id_operation_id.operation_id) }, $transaction: async (callback) => callback(db) };
++    const dbPath = require.resolve('../src/config/database'), stub = new Module(dbPath);
++    stub.exports = db;
++    stub.loaded = true;
++    require.cache[dbPath] = stub;
++    for (const file of ['caloriePlanning', 'goalPace', 'clientOperations'])
++        delete require.cache[require.resolve('../src/services/' + file)];
++    delete require.cache[require.resolve('../src/routes/goals')];
++    const router = require('../src/routes/goals').default, snapshot = require('../src/services/caloriePlanning').buildStoredCaloriePlanningSnapshot;
++    async function call(method, path, body, operation = 'operation-001') {
++        const res = { statusCode: 200, status(n) { this.statusCode = n; return this; }, set() { return this; }, json(body) { this.body = body; return this; } };
++        await router.stack.find(l => l.route?.path === path && l.route.methods[method]).route.stack[0].handle({ user, params: { id: String(goal.id) }, body, headers: { 'x-client-operation-id': operation } }, res);
++        return res;
++    }
++    return { user, goal, revisions, events, db, snapshot, call, setWeight: v => { weight = v; }, counts: () => ({ stale, creates }) };
++}
++test('adjustment preserves identity, baseline, target intent and 33% progress; replay and unchanged save are harmless', async () => {
++    const f = fixture(), original = JSON.stringify(f.goal), before = await f.call('get', '/pace-options');
++    const payload = { daily_deficit: 250, expected_plan_version: before.body.expected_plan_version };
++    const saved = await f.call('patch', '/:id/pace', payload);
++    assert.equal(saved.statusCode, 200);
++    assert.equal(saved.body.id, 4);
++    assert.equal(saved.body.start_weight, 90);
++    assert.equal(saved.body.target_weight, 75);
++    assert.equal(saved.body.daily_deficit, 250);
++    assert.equal(saved.body.created_at, '2025-01-01T00:00:00.000Z');
++    assert.equal(saved.body.target_date, '2027-02-01T00:00:00.000Z');
++    assert.equal(Math.round((90 - 85) / (90 - 75) * 100), 33);
++    assert.ok(saved.body.projection.projected_end_date > before.body.goal.projection.projected_end_date);
++    assert.deepEqual((await f.call('patch', '/:id/pace', payload)).body, saved.body);
++    assert.equal(JSON.stringify(f.goal), original);
++    assert.equal(f.revisions.length, 1);
++    assert.deepEqual(f.counts(), { stale: 1, creates: 0 });
++    assert.equal(f.events.length, 2);
++    assert.equal((await f.call('get', '/')).body.daily_deficit, 250);
++    const same = await f.call('get', '/pace-options');
++    assert.equal((await f.call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: same.body.expected_plan_version }, 'operation-002')).statusCode, 200);
++    assert.equal(f.revisions.length, 1);
++    const next = await f.call('patch', '/:id/pace', { daily_deficit: 500, expected_plan_version: same.body.expected_plan_version }, 'operation-003');
++    assert.equal(next.body.start_weight, 90);
++    assert.equal(f.revisions.length, 2);
++});
++test('local year boundary and same-day ordering preserve earlier pace; scheduled calibration inherits new pace', async () => {
++    const f = fixture();
++    f.revisions.push({ id: 1, source_goal_id: 4, configured_daily_deficit: 250, target_adjustment_kcal: 0, effective_local_date: new Date('2026-01-01Z'), calorie_plan_review_status: 'CLEAR' }, { id: 2, source_goal_id: 4, configured_daily_deficit: 750, target_adjustment_kcal: 0, effective_local_date: new Date('2026-01-01Z'), calorie_plan_review_status: 'CLEAR' }, { id: 3, source_goal_id: 4, configured_daily_deficit: null, target_adjustment_kcal: 100, effective_local_date: new Date('2026-01-02Z'), calorie_plan_review_status: 'CLEAR' });
++    const prior = await f.snapshot(f.db, 7, new Date('2026-01-01T07:59:59Z')), day = await f.snapshot(f.db, 7, new Date('2026-01-01T08:00:00Z')), later = await f.snapshot(f.db, 7, new Date('2026-01-02T08:00:00Z'));
++    assert.equal(prior.localToday, '2025-12-31');
++    assert.equal(prior.goal.daily_deficit, 500);
++    assert.equal(day.goal.daily_deficit, 750);
++    assert.equal(later.goal.daily_deficit, 750);
++    assert.equal(later.evaluation.targetAdjustment, 100);
++});
++test('stale editor, changed profile, another goal and reused operation never overwrite a newer plan', async () => {
++    const f = fixture(), preview = await f.call('get', '/pace-options'), body = { daily_deficit: 250, expected_plan_version: preview.body.expected_plan_version };
++    f.user.height_mm = 1810;
++    assert.equal((await f.call('patch', '/:id/pace', body)).statusCode, 409);
++    assert.equal(f.revisions.length, 0);
++    f.goal.id = 6;
++    assert.equal((await f.call('patch', '/:id/pace', body, 'operation-002')).statusCode, 409);
++    assert.equal((await f.call('patch', '/:id/pace', { ...body, daily_deficit: 750 })).body.code, 'OPERATION_ID_REUSED');
++});
++test('missing weight, unsafe/review plan, unsupported values and direction changes have no partial domain writes', async () => {
++    for (const kind of ['weight', 'review', 'unsupported', 'direction', 'floor']) {
++        const f = fixture();
++        if (kind === 'weight')
++            f.setWeight(null);
++        if (kind === 'review')
++            f.goal.calorie_plan_review_status = 'REQUIRES_REVIEW';
++        if (kind === 'floor')
++            f.user.activity_level = 'SEDENTARY';
++        const p = await f.call('get', '/pace-options');
++        const deficit = kind === 'unsupported' ? 123 : kind === 'direction' ? -250 : kind === 'floor' ? 1000 : 250;
++        const r = await f.call('patch', '/:id/pace', { daily_deficit: deficit, expected_plan_version: p.body.expected_plan_version });
++        assert.equal(r.statusCode, 400, kind);
++        assert.equal(f.revisions.length, 0);
++        assert.equal(f.events.length, 0);
++    }
++});
++test('gain adjustment preserves negative direction; intentional new goal still creates a fresh identity', async () => {
++    const f = fixture();
++    f.goal.start_weight_grams = 70000;
++    f.goal.target_weight_grams = 90000;
++    f.goal.daily_deficit = -500;
++    const p = await f.call('get', '/pace-options');
++    const r = await f.call('patch', '/:id/pace', { daily_deficit: -250, expected_plan_version: p.body.expected_plan_version });
++    assert.equal(r.statusCode, 200);
++    assert.equal(r.body.daily_deficit, -250);
++    assert.equal(r.body.start_weight, 70);
++    const created = await f.call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 }, 'new-goal-operation');
++    assert.equal(created.statusCode, 200);
++    assert.equal(created.body.id, 10);
++    assert.equal(created.body.start_weight, 85);
++    assert.equal(f.counts().creates, 1);
++});
++test('effective and scheduled corrections are retained; unsafe future combination is disabled', async () => {
++    const f = fixture();
++    const tomorrow = new Date();
++    tomorrow.setUTCDate(tomorrow.getUTCDate() + 2);
++    tomorrow.setUTCHours(0, 0, 0, 0);
++    f.revisions.push({ id: 1, source_goal_id: 4, configured_daily_deficit: null, target_adjustment_kcal: 100,
++        effective_local_date: new Date('2025-02-01Z'), calorie_plan_review_status: 'CLEAR' }, { id: 2, source_goal_id: 4, configured_daily_deficit: null, target_adjustment_kcal: -400,
++        effective_local_date: tomorrow, calorie_plan_review_status: 'CLEAR' });
++    const oldHistory = JSON.stringify(f.revisions);
++    const preview = await f.call('get', '/pace-options');
++    assert.equal(preview.body.planOptions.find(option => option.dailyDeficit === 750).available, false);
++    const saved = await f.call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: preview.body.expected_plan_version });
++    assert.equal(saved.statusCode, 200);
++    assert.equal(JSON.stringify(f.revisions.slice(0, 2)), oldHistory);
++    const later = await f.snapshot(f.db, 7, new Date(tomorrow.getTime() + 12 * 3600000));
++    assert.equal(later.goal.daily_deficit, 250);
++    assert.equal(later.evaluation.targetAdjustment, -400);
++});
++test('existing completion provenance survives manual pace and recompletion; a new day captures the new plan', async () => {
++    const f = fixture();
++    delete require.cache[require.resolve('../src/services/foodDayComparison')];
++    const { captureFoodDayComparison, foodDayCalorieComparison } = require('../src/services/foodDayComparison');
++    const now = new Date();
++    const snapshot = await f.snapshot(f.db, 7, now);
++    const day = { id: 1, user_id: 7, status: 'COMPLETE', local_date: new Date(snapshot.localToday + 'T00:00:00Z') };
++    f.db.foodLogDay = { update: async ({ data }) => Object.assign(day, data) };
++    await captureFoodDayComparison(f.db, day, now);
++    const comparison = foodDayCalorieComparison(day, 2000);
++    const preview = await f.call('get', '/pace-options');
++    await f.call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: preview.body.expected_plan_version });
++    day.status = 'OPEN';
++    await captureFoodDayComparison(f.db, day, now);
++    day.status = 'COMPLETE';
++    await captureFoodDayComparison(f.db, day, now);
++    assert.deepEqual(foodDayCalorieComparison(day, 2000), comparison);
++    const plan = await f.snapshot(f.db, 7, now);
++    assert.equal(plan.evaluation.dailyCalorieTarget, comparison.target_kcal + 250);
++    assert.equal(plan.evaluation.tdee, snapshot.evaluation.tdee);
++});
++
++test('new-goal serialization conflict is recoverable and retry keeps its operation ID', async () => {
++    const f = fixture();
++    const originalTransaction = f.db.$transaction;
++    f.db.$transaction = async () => { throw new Prisma.PrismaClientKnownRequestError('serialization conflict', { code: 'P2034', clientVersion: 'test' }); };
++    const payload = { start_weight: 85, target_weight: 75, daily_deficit: 250 };
++    const conflict = await f.call('post', '/', payload, 'new-goal-retry');
++    assert.equal(conflict.statusCode, 409);
++    assert.equal(conflict.body.code, 'GOAL_PLAN_CHANGED');
++    assert.equal(conflict.body.retryable, true);
++    assert.equal(f.counts().creates, 0);
++    f.db.$transaction = originalTransaction;
++    const saved = await f.call('post', '/', payload, 'new-goal-retry');
++    assert.equal(saved.statusCode, 200);
++    assert.deepEqual((await f.call('post', '/', payload, 'new-goal-retry')).body, saved.body);
++    assert.equal(f.counts().creates, 1);
++});
++
++test('missing and non-object pace request bodies return structured 400 before mutation', async () => {
++    const f = fixture();
++    for (const body of [undefined, null, '', [], {}]) {
++        const result = await f.call('patch', '/:id/pace', body);
++        assert.equal(result.statusCode, 400);
++        assert.equal(result.body.code, 'CALORIE_PLAN_OPTION_UNAVAILABLE');
++        assert.equal(result.body.retryable, false);
++    }
++    assert.equal(f.revisions.length, 0);
++    assert.equal(f.events.length, 0);
++});
++
++test('raw SQL serialization and deadlock conflicts return recoverable plan conflicts without a revision', async () => {
++    for (const meta of [{ code: '40001' }, { code: '40P01' },
++        { driverAdapterError: { cause: { originalCode: '40001', kind: 'TransactionWriteConflict' } } },
++        { driverAdapterError: { cause: { originalCode: '40P01', kind: 'postgres' } } }]) {
++        const f = fixture();
++        const preview = await f.call('get', '/pace-options');
++        f.db.$executeRaw = async () => { throw new Prisma.PrismaClientKnownRequestError('concurrent writer', {
++            code: 'P2010', clientVersion: 'test', meta
++        }); };
++        const result = await f.call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: preview.body.expected_plan_version });
++        assert.equal(result.statusCode, 409);
++        assert.equal(result.body.code, 'GOAL_PLAN_CHANGED');
++        assert.equal(f.revisions.length, 0);
++        assert.equal(f.events.length, 0);
++    }
++});
+diff --git a/backend/test/routes-goals.test.js b/backend/test/routes-goals.test.js
+index 0e6384fb..0268e731 100644
+--- a/backend/test/routes-goals.test.js
++++ b/backend/test/routes-goals.test.js
+@@ -23,6 +23,7 @@ function loadGoalsRouter(prismaStub) {
+   delete require.cache[caloriePlanningPath];
+ 
+   const normalizedPrismaStub = {
++    $executeRaw: async () => 1,
+     ...prismaStub,
+     user: {
+       findUnique: async () => ({
+diff --git a/backend/test/routes-metrics.test.js b/backend/test/routes-metrics.test.js
+index a4a4bd39..7bc6036a 100644
+--- a/backend/test/routes-metrics.test.js
++++ b/backend/test/routes-metrics.test.js
+@@ -45,6 +45,7 @@ function loadMetricsRouter(prismaStub) {
+   delete require.cache[caloriePlanReviewPath];
+ 
+   const normalizedPrismaStub = {
++    $executeRaw: async () => 1,
+     ...prismaStub,
+     $queryRaw: prismaStub.$queryRaw ?? (async () => []),
+     $transaction: prismaStub.$transaction ?? (async (callback) => callback(normalizedPrismaStub)),
+diff --git a/backend/test/routes-user.test.js b/backend/test/routes-user.test.js
+index 0ffe4476..491d234b 100644
+--- a/backend/test/routes-user.test.js
++++ b/backend/test/routes-user.test.js
+@@ -41,6 +41,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
+   delete require.cache[mcpOAuthPath];
+ 
+   const normalizedPrismaStub = {
++    $executeRaw: async () => 1,
+     ...prismaStub,
+     caloriePlanRevision: {
+       findFirst: async () => null,
+@@ -716,6 +717,7 @@ test('user route: PATCH /profile fails invalid legacy timezones closed and marks
+     calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+   };
+   const prismaStub = {
++    $executeRaw: async () => { assert.equal(inTransaction, true); return 1; },
+     user: { findUnique: async () => storedUser, update: async ({ data }) => ({ ...storedUser, ...data }) },
+     goal: {
+       findFirst: async () => goal,
+@@ -745,3 +747,17 @@ test('user route: PATCH /profile fails invalid legacy timezones closed and marks
+   assert.deepEqual(revisionReview, { calorie_plan_review_status: 'REQUIRES_REVIEW', calorie_plan_review_reason: 'PLAN_REVISION_UNSAFE' });
+   assert.deepEqual(staleRecommendations, { status: 'STALE' });
+ });
++
++test('user route: a profile serialization conflict returns a retryable conflict', async () => {
++  const { Prisma } = require('@prisma/client');
++  const router = loadUserRouter({ prismaStub: {
++    $transaction: async () => { throw new Prisma.PrismaClientKnownRequestError('concurrent pace', {
++      code: 'P2034', clientVersion: 'test'
++    }); }
++  }, bcryptStub: {} });
++  const res = createRes();
++  await getRouteHandler(router, 'patch', '/profile')({ user: { id: 7 }, body: { timezone: 'UTC' } }, res);
++  assert.equal(res.statusCode, 409);
++  assert.equal(res.body.code, 'PROFILE_PLAN_CHANGED');
++  assert.equal(res.body.retryable, true);
++});
+diff --git a/backend/test/watch-service.test.js b/backend/test/watch-service.test.js
+index 3416f0ac..cf7471d0 100644
+--- a/backend/test/watch-service.test.js
++++ b/backend/test/watch-service.test.js
+@@ -33,6 +33,7 @@ function loadWatchService({ prismaStub, recentItems = [] }) {
+ }
+ 
+ function loadWatchMutationService(tx) {
++  tx.$executeRaw ??= async () => 1;
+   const dbPath = require.resolve('../src/config/database');
+   const recentPath = require.resolve('../src/services/recentFoods');
+   const operationsPath = require.resolve('../src/services/clientOperations');
+diff --git a/docs/openapi/v1.yaml b/docs/openapi/v1.yaml
+index 4ddde4b8..ed598f21 100644
+--- a/docs/openapi/v1.yaml
++++ b/docs/openapi/v1.yaml
+@@ -175,6 +175,11 @@ paths:
+               schema: { $ref: '#/components/schemas/ApiError' }
+         '401':
+           $ref: '#/components/responses/Unauthorized'
++        '409':
++          description: Concurrent profile or calorie-plan change. No profile fields were saved; refresh and retry.
++          content:
++            application/json:
++              schema: { $ref: '#/components/schemas/ApiError' }
+   /api/v1/user/preferences:
+     patch:
+       operationId: updateUserPreferences
+@@ -208,6 +213,48 @@ paths:
+           content:
+             application/json:
+               schema: { $ref: '#/components/schemas/ApiError' }
++  /api/v1/goals/pace-options:
++    get:
++      operationId: getGoalPaceOptions
++      responses:
++        '200':
++          description: Authoritative current pace, dated plan version and safety options including calibration corrections. Never cached.
++          content:
++            application/json:
++              schema: { $ref: '#/components/schemas/GoalPaceOptions' }
++        '401':
++          $ref: '#/components/responses/Unauthorized'
++        '404':
++          description: No current goal.
++  /api/v1/goals/{id}/pace:
++    patch:
++      operationId: adjustGoalPace
++      parameters:
++        - name: id
++          in: path
++          required: true
++          schema: { type: integer, minimum: 1 }
++        - name: x-client-operation-id
++          in: header
++          required: true
++          schema: { type: string, minLength: 8, maxLength: 128 }
++      requestBody:
++        required: true
++        content:
++          application/json:
++            schema: { $ref: '#/components/schemas/GoalPaceRequest' }
++      responses:
++        '200':
++          description: Same goal and baseline with new pace, effective today. Saved completed-day comparisons remain unchanged. Same-day latest revision wins. Identical operation retries replay their receipt.
++          content:
++            application/json:
++              schema: { $ref: '#/components/schemas/GoalEntry' }
++        '400':
++          description: Invalid, unsafe, unavailable or direction-changing pace. No domain mutation.
++        '401':
++          $ref: '#/components/responses/Unauthorized'
++        '409':
++          description: Stale goal or plan version, concurrent mutation, or reused operation ID. Refresh before saving a new operation.
+   /api/v1/goals:
+     get:
+       operationId: getGoal
+@@ -1687,6 +1734,28 @@ components:
+         projected_end_date: { type: [string, 'null'], format: date }
+         reason_code:
+           oneOf: [{ $ref: '#/components/schemas/CaloriePlanReasonCode' }, { type: 'null' }]
++    GoalPaceRequest:
++      type: object
++      additionalProperties: false
++      required: [daily_deficit, expected_plan_version]
++      properties:
++        daily_deficit: { type: integer, enum: [-1000, -750, -500, -250, 0, 250, 500, 750, 1000] }
++        expected_plan_version: { type: string, pattern: '^[a-f0-9]{64}$' }
++    GoalPaceOptions:
++      type: object
++      additionalProperties: false
++      required: [goal, expected_plan_version, effective_local_date, eligibility, bmr, tdee, minimumDailyCalorieTarget, planOptions]
++      properties:
++        goal: { $ref: '#/components/schemas/GoalEntry' }
++        expected_plan_version: { type: string }
++        effective_local_date: { type: string, format: date }
++        eligibility: { $ref: '#/components/schemas/CalorieEligibility' }
++        bmr: { type: [number, 'null'] }
++        tdee: { type: [number, 'null'] }
++        minimumDailyCalorieTarget: { type: [integer, 'null'] }
++        planOptions:
++          type: array
++          items: { $ref: '#/components/schemas/CaloriePlanOption' }
+     GoalEntry:
+       type: object
+       required: [id, user_id, start_weight, target_weight, target_date, daily_deficit, calorie_plan_review_status, calorie_plan_review_reason, created_at, plan_status, plan_reason_code, projection]
+@@ -1946,7 +2015,7 @@ components:
+           const: calibrate-account-export
+         version:
+           type: integer
+-          const: 9
++          const: 10
+         exported_at:
+           type: string
+           format: date-time
+@@ -2305,11 +2374,12 @@ components:
+         applied_at: { type: [string, 'null'], format: date-time }
+     AccountExportCaloriePlanRevision:
+       type: object
+-      required: [id, source_goal_id, recommendation_id, target_adjustment_kcal, effective_local_date, calorie_plan_review_status, calorie_plan_review_reason, created_at]
++      required: [id, source_goal_id, recommendation_id, configured_daily_deficit, target_adjustment_kcal, effective_local_date, calorie_plan_review_status, calorie_plan_review_reason, created_at]
+       properties:
+         id: { type: integer }
+         source_goal_id: { type: integer }
+         recommendation_id: { type: [integer, 'null'] }
++        configured_daily_deficit: { type: [integer, 'null'], description: 'Configured pace from a manual change; null for calibration-only and legacy revisions.' }
+         target_adjustment_kcal: { type: integer }
+         effective_local_date: { type: string, format: date }
+         calorie_plan_review_status: { type: string, enum: [CLEAR, REQUIRES_REVIEW] }
+diff --git a/docs/visual-design.md b/docs/visual-design.md
+index fec2da13..39b12fd0 100644
+--- a/docs/visual-design.md
++++ b/docs/visual-design.md
+@@ -102,7 +102,7 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
+ ### Progress
+ 
+ Keep the compact Snapshot on the page background, with paired weight/date metrics, goal progress, current
+-target, and direct Edit goal access. Trend's heading, decorative fullscreen icon, and graph form one
++target and one Edit goal action. For an active loss/gain goal, Edit goal contains the pace controls and an intentional Set a new goal action. Trend's heading, decorative fullscreen icon, and graph form one
+ full-width tap target with a shared hover/focus treatment. Trend fills the middle and expands in place
+ when tapped. Its entire chart, axes, and labels must remain visible; do not crop it behind a footer.
+ A full-width horizontal rule separates Snapshot from Trend, matching the rule above Plan check.
+diff --git a/e2e/expo-web/goal-pace.spec.ts b/e2e/expo-web/goal-pace.spec.ts
+new file mode 100644
+index 00000000..21a7e70c
+--- /dev/null
++++ b/e2e/expo-web/goal-pace.spec.ts
+@@ -0,0 +1,145 @@
++import { test, expect, expectApiFailure, hideTransientPwaNotices } from './fixtures';
++import { applyTwoHundredPercentText } from './text-scaling';
++import { expectNoBlockingAccessibilityViolations } from './ux-a11y';
++for (const colorScheme of ['light', 'dark'] as const) {
++    test(`pace adjustment preserves the goal and explicit new goal resets intentionally in ${colorScheme}`, async ({ page, ux }, testInfo) => {
++        await page.emulateMedia({ colorScheme });
++        await ux.install('populated', { metrics: [{ id: 1, date: '2026-07-21', weight: 85 }] });
++        expectApiFailure(page, { method: 'PATCH', pathname: '/api/v1/goals/7/pace', status: 503 });
++        let goal = { id: 7, start_weight: 90, target_weight: 75, target_date: '2027-02-01T00:00:00Z',
++            created_at: '2026-01-01T12:00:00Z', daily_deficit: 500, plan_status: 'available', plan_reason_code: null,
++            projection: { status: 'projected', projected_end_date: '2026-12-22', reason_code: null } };
++        let writes = 0, creates = 0, externalChanges = 0, loseResponse = true;
++        const receipts = new Map<string, typeof goal>();
++        const operations: string[] = [];
++        await page.route('**/api/v1/goals', async (route) => {
++            if (route.request().method() === 'POST') {
++                creates++;
++                const payload = route.request().postDataJSON();
++                goal = { ...goal, ...payload, id: 8, created_at: '2026-07-21T19:00:00Z',
++                    projection: { status: 'projected', projected_end_date: '2027-05-25', reason_code: null } };
++            }
++            return route.fulfill({ json: goal });
++        });
++        await page.route('**/api/v1/user/profile', async (route) => {
++            await route.fulfill({ json: { profile: { timezone: 'America/Los_Angeles', date_of_birth: '1985-01-01', sex: 'MALE',
++                        height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' }, latest_weight_grams: 85000,
++                    goal_daily_deficit: goal.daily_deficit, calorieSummary: { dailyCalorieTarget: 2600 - goal.daily_deficit,
++                        tdee: 2600, bmr: 2000, deficit: goal.daily_deficit, missing: [], planStatus: 'available', planReasonCode: null,
++                        eligibility: { status: 'eligible', reasonCode: null, ageYears: 41, localDate: '2026-07-21' } } } });
++        });
++        await page.route('**/api/v1/goals/pace-options', route => route.fulfill({ json: {
++                goal, expected_plan_version: String(writes + externalChanges).padStart(64, '0'), effective_local_date: '2026-07-21',
++                eligibility: { status: 'eligible', reasonCode: null, ageYears: 41, localDate: '2026-07-21' }, bmr: 2000, tdee: 2600, minimumDailyCalorieTarget: 2000,
++                planOptions: [250, 500, 750, 1000].map(dailyDeficit => ({ dailyDeficit, available: dailyDeficit <= 500,
++                    dailyCalorieTarget: dailyDeficit <= 500 ? 2600 - dailyDeficit : null, reasonCode: dailyDeficit <= 500 ? null : 'TARGET_BELOW_MINIMUM' }))
++            } }));
++        await page.route('**/api/v1/goals/7/pace', async (route) => {
++            const operation = route.request().headers()['x-client-operation-id'];
++            operations.push(operation);
++            if (!receipts.has(operation)) {
++                writes++;
++                goal = { ...goal, daily_deficit: route.request().postDataJSON().daily_deficit,
++                    projection: { status: 'projected', projected_end_date: '2027-05-25', reason_code: null } };
++                receipts.set(operation, goal);
++            }
++            if (loseResponse) {
++                loseResponse = false;
++                return route.fulfill({ status: 503, json: { message: 'Synthetic lost response after commit', retryable: true } });
++            }
++            return route.fulfill({ json: receipts.get(operation) });
++        });
++        await page.goto('/progress');
++        await hideTransientPwaNotices(page);
++        await expect(page.getByText('33% complete')).toBeVisible();
++        await expect(page.getByText('Current target: 2,100 kcal/day')).toBeVisible();
++        await expect(page.getByTestId('progress-snapshot-card').getByRole('button')).toHaveCount(1);
++        await expect(page.getByRole('button', { name: 'Set a new goal', exact: true })).toHaveCount(0);
++        await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
++        const sheet = page.getByRole('dialog', { name: 'Edit goal' });
++        await expect(sheet).toBeVisible();
++        await expect(sheet.getByText(/Started 2026-01-01/)).toBeVisible();
++        await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
++        await page.getByRole('option', { name: new RegExp("250 kcal/day deficit") }).click();
++        await expect(page.getByText('New target: 2,350 kcal/day')).toBeVisible();
++        await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: 'goal-pace' });
++        page.once('dialog', dialog => dialog.accept());
++        await page.getByRole('button', { name: 'Cancel', exact: true }).click();
++        await expect(sheet).toHaveCount(0);
++        expect(writes).toBe(0);
++        await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
++        await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
++        await page.getByRole('option', { name: new RegExp("250 kcal/day deficit") }).click();
++        await page.getByRole('button', { name: 'Save pace', exact: true }).click();
++        await expect(page.getByRole('alert').filter({ hasText: /Unable|Synthetic/ })).toBeVisible();
++        await page.getByRole('button', { name: 'Save pace', exact: true }).click();
++        await expect(sheet).toHaveCount(0);
++        expect(writes).toBe(1);
++        expect(operations[0]).toBe(operations[1]);
++        await expect(page.getByText('33% complete')).toBeVisible();
++        await expect(page.getByText('Current target: 2,350 kcal/day')).toBeVisible();
++        await page.route('**/api/v1/food-days?date=*', route => route.fulfill({ json: {
++                date: new URL(route.request().url()).searchParams.get('date'), status: 'COMPLETE', origin: 'USER', source: 'STORED',
++                is_complete: true, is_representative: true, completed_at: '2026-07-20T20:00:00Z', updated_at: null,
++                calorie_comparison: { consumed_kcal: 360, target_kcal: 2100, maintenance_kcal: 2600, captured_at: '2026-07-20T20:00:00Z' }
++            } }));
++        await page.goto('/today?date=2026-07-20');
++        await hideTransientPwaNotices(page);
++        await expect(page.getByLabel(/Daily balance.*2,100 calorie target/)).toBeVisible();
++        await page.goto('/progress');
++        await page.reload();
++        await hideTransientPwaNotices(page);
++        await expect(page.getByText('33% complete')).toBeVisible();
++        await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
++        await expect(page.getByRole('combobox', { name: 'Select daily calorie change' })).toContainText('250 kcal/day deficit');
++        await expect(page.getByText(/Started 2026-01-01/)).toBeVisible();
++        goal = { ...goal, daily_deficit: 500 };
++        externalChanges++;
++        await sheet.getByRole('button', { name: 'Retry plan check', exact: true }).click();
++        await expect(page.getByRole('combobox', { name: 'Select daily calorie change' })).toContainText('500 kcal/day deficit');
++        await expect(page.getByText('New target: 2,100 kcal/day')).toBeVisible();
++        expect(writes).toBe(1);
++        await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
++        await page.getByRole('option', { name: new RegExp('250 kcal/day deficit') }).click();
++        await page.getByRole('button', { name: 'Save pace', exact: true }).click();
++        await expect(sheet).toHaveCount(0);
++        expect(writes).toBe(2);
++        expect(operations[2]).not.toBe(operations[0]);
++        await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
++        await page.keyboard.press('Escape');
++        await expect(sheet).toHaveCount(0);
++        await expect(page.getByRole('button', { name: 'Edit goal', exact: true })).toBeFocused();
++        await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
++        await page.getByRole('combobox', { name: 'Select daily calorie change' }).click();
++        await page.getByRole('option', { name: new RegExp('500 kcal/day deficit') }).click();
++        page.once('dialog', dialog => dialog.dismiss());
++        await sheet.getByRole('button', { name: 'Set a new goal', exact: true }).click();
++        await expect(sheet).toBeVisible();
++        expect(creates).toBe(0);
++        expect(writes).toBe(2);
++        page.once('dialog', dialog => dialog.accept());
++        await sheet.getByRole('button', { name: 'Set a new goal', exact: true }).click();
++        await expect(page.getByRole('dialog', { name: 'Set a new goal' })).toBeVisible();
++        await page.getByRole('button', { name: 'Cancel', exact: true }).click();
++        await expect(page.getByRole('dialog')).toHaveCount(0);
++        await expect(page.getByRole('button', { name: 'Edit goal', exact: true })).toBeFocused();
++        await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
++        await sheet.getByRole('button', { name: 'Set a new goal', exact: true }).click();
++        await expect(page.getByRole('dialog', { name: 'Set a new goal' })).toBeVisible();
++        await page.getByRole('button', { name: 'Save goal', exact: true }).click();
++        await expect(page.getByRole('dialog', { name: 'Set a new goal' })).toHaveCount(0);
++        expect(creates).toBe(1);
++        expect(goal.id).toBe(8);
++        expect(goal.start_weight).toBe(85);
++        expect(goal.created_at).toContain('2026-07-21');
++        await expect(page.getByText('0% complete')).toBeVisible();
++        if (testInfo.project.name === 'compact-phone-chrome' && colorScheme === 'light') {
++            await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
++            await applyTwoHundredPercentText(page);
++            await page.getByRole('button', { name: 'Save pace', exact: true }).scrollIntoViewIfNeeded();
++            await expect(page.getByRole('button', { name: 'Save pace', exact: true })).toBeVisible();
++            await page.getByRole('button', { name: 'Close edit goal', exact: true }).click();
++            await expect(sheet).toHaveCount(0);
++        }
++    });
++}
+diff --git a/e2e/expo-web/today-paused.spec.ts b/e2e/expo-web/today-paused.spec.ts
+index 19676f99..620b611d 100644
+--- a/e2e/expo-web/today-paused.spec.ts
++++ b/e2e/expo-web/today-paused.spec.ts
+@@ -1,6 +1,25 @@
+ import { expect, test, hideTransientPwaNotices, FROZEN_LOCAL_DATE, type AuthenticatedApiOptions } from './fixtures';
+ import { applyTwoHundredPercentText } from './text-scaling';
+ import { expectNoBlockingAccessibilityViolations } from './ux-a11y';
++import type { Page } from '@playwright/test';
++
++async function expectWeightBoundary(page: Page, paused: boolean) {
++  const row = page.getByTestId('today-weight-card');
++  const action = page.getByTestId('today-weight-card-press-layer');
++  const lower = await action.evaluate(element => {
++    const style = getComputedStyle(element);
++    return { width: style.borderBottomWidth, color: style.borderBottomColor };
++  });
++  await expect(row).toHaveCSS('border-top-width', paused ? lower.width : '0px');
++  if (paused) {
++    expect(parseFloat(lower.width)).toBeGreaterThan(0);
++    await expect(row).toHaveCSS('border-top-color', lower.color);
++    const rowBounds = await row.boundingBox();
++    const actionBounds = await action.boundingBox();
++    expect(rowBounds!.x).toBe(actionBounds!.x);
++    expect(rowBounds!.width).toBe(actionBounds!.width);
++  }
++}
+ 
+ const retainedFood = [{ id: 31, meal_period: 'BREAKFAST' as const, name: 'Saved breakfast', calories: 360 }];
+ 
+@@ -35,6 +54,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
+     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toHaveCount(0);
+     await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeInViewport();
+     await page.evaluate(() => document.fonts.ready);
++    await expectWeightBoundary(page, true);
+     await page.screenshot({ path: testInfo.outputPath(`paused-today-${colorScheme}.png`) });
+     await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: 'paused-today' });
+ 
+@@ -48,10 +68,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
+     await page.getByRole('button', { name: 'Log weight', exact: true }).click();
+     await page.getByRole('button', { name: 'Done', exact: true }).click();
+     await expect(page.getByTestId('today-weight-card')).toContainText('88 kg');
++    await expectWeightBoundary(page, true);
+     await expect(page.getByRole('heading', { name: 'Tracking paused', exact: true })).toBeVisible();
+ 
+     await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
+     await expect(page.getByTestId('paused-day-message')).toHaveCount(0);
++    await expectWeightBoundary(page, false);
+     await expect(page.getByLabel(/^Daily balance\./)).toBeVisible();
+     await expect(page.getByTestId('today-food-preview')).toContainText('360 kcal');
+     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+@@ -69,6 +91,7 @@ test('a past paused day replaces an expanded food log and can be backfilled', as
+   });
+   await page.goto('/today');
+   await hideTransientPwaNotices(page);
++  await expectWeightBoundary(page, false);
+   await page.getByTestId('today-food-preview').click();
+   await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toBeVisible();
+   options.foodDayStatus = 'PAUSED';
+@@ -79,6 +102,7 @@ test('a past paused day replaces an expanded food log and can be backfilled', as
+   await expect(page.getByTestId('today-food-preview')).toHaveCount(0);
+   await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toHaveCount(0);
+   await page.evaluate(() => document.fonts.ready);
++  await expectWeightBoundary(page, true);
+   await page.screenshot({ path: testInfo.outputPath('paused-past-day.png') });
+   await page.getByTestId('today-weight-card-press-layer').click();
+   await expect(page.getByRole('heading', { name: 'Log weight', exact: true })).toBeVisible();
+diff --git a/mobile/app/(tabs)/(progress)/progress.tsx b/mobile/app/(tabs)/(progress)/progress.tsx
+index 23f95fa0..c7d42fed 100644
+--- a/mobile/app/(tabs)/(progress)/progress.tsx
++++ b/mobile/app/(tabs)/(progress)/progress.tsx
+@@ -1,10 +1,11 @@
+ import { useTrackingMetrics } from '../../../src/offline/useTrackingQueries';
++import { GoalPaceSheet } from '../../../src/progress/GoalPaceSheet';
+ import React, { useEffect, useMemo, useRef, useState } from 'react';
+ import { useWindowDimensions, AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
+ import Ionicons from '@expo/vector-icons/Ionicons';
+ import { router, useLocalSearchParams, usePathname } from 'expo-router';
+ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+-import type { CaloriePlanOptionsRequest } from '@calibrate/api-client';
++import type { CaloriePlanOptionsRequest, GoalEntry } from '@calibrate/api-client';
+ import { AppButton } from '../../../src/components/AppButton';
+ import { AppSection } from '../../../src/components/AppSection';
+ import { AppText } from '../../../src/components/AppText';
+@@ -126,6 +127,7 @@ export default function ProgressScreen() {
+     const retryFailedProgressResources = async () => {
+         await Promise.all(failedProgressQueries.map((query) => query.refetch()));
+     };
++    const [paceGoal, setPaceGoal] = useState<GoalEntry | null>(null);
+     const [isGoalEditorOpen, setIsGoalEditorOpen] = useState(false);
+     const [startWeight, setStartWeight] = useState('');
+     const [targetWeight, setTargetWeight] = useState('');
+@@ -265,6 +267,15 @@ export default function ProgressScreen() {
+         return goalQuery.data ? formatWeightInput(goalQuery.data.start_weight) : '';
+     }
+ 
++    function editCurrentGoal() {
++        const currentGoal = goalQuery.data;
++        if (currentGoal?.plan_status === 'available' && currentGoal.daily_deficit !== 0) {
++            setPaceGoal(currentGoal);
++            return;
++        }
++        openGoalEditor();
++    }
++
+     function openGoalEditor() {
+         const currentGoal = goalQuery.data;
+         const nextStartWeight = getDefaultStartWeight();
+@@ -388,7 +399,7 @@ export default function ProgressScreen() {
+                             metrics={metricsQuery.data}
+                             goal={goalQuery.data}
+                             user={user}
+-                            onEditGoal={openGoalEditor}
++                            onEditGoal={editCurrentGoal}
+                             onSetNextGoal={openNextGoalEditor}
+                             weightChangePending={hasPendingWeightChange}
+                             targetCalories={!hasPendingWeightChange && profileQuery.data?.calorieSummary.planStatus === 'available'
+@@ -413,6 +424,14 @@ export default function ProgressScreen() {
+                 />}
+             </FixedPage>
+ 
++            {paceGoal && <GoalPaceSheet
++                goal={paceGoal}
++                onClose={() => setPaceGoal(null)}
++                onStartNewGoal={() => {
++                    setPaceGoal(null);
++                    openGoalEditor();
++                }}
++            />}
+             <BottomSheetModal
+                 visible={isGoalEditorOpen}
+                 accessibilityLabel="Set a new goal"
+diff --git a/mobile/app/(tabs)/(today)/today.tsx b/mobile/app/(tabs)/(today)/today.tsx
+index 9f3d8935..8a7038fb 100644
+--- a/mobile/app/(tabs)/(today)/today.tsx
++++ b/mobile/app/(tabs)/(today)/today.tsx
+@@ -23,7 +23,7 @@ import { ASYNC_RESOURCE_STATES } from '../../../src/asyncState/resolveAsyncState
+ import { useSharedLogDateNavigation } from '../../../src/context/LogDateContext';
+ import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
+ import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPreviousFoodLog';
+-import { shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
++import { getFoodDayCalorieTarget, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
+ import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
+ import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
+ import { canonicalPathForRoute } from '../../../src/navigation/routeRegistry';
+@@ -32,11 +32,12 @@ import { getMetricDate } from '../../../src/utils/metrics';
+ import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
+ import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../src/today/dashboardState';
+ import { useBarcodeSearchHandoff } from '../../../src/barcode/useBarcodeSearchHandoff';
+-import { spacing } from '../../../src/theme';
++import { spacing, useAppTheme } from '../../../src/theme';
+ 
+ const FoodLogContent = React.lazy(() => import('../../../src/food/FoodLogContent'));
+ 
+ export default function TodayScreen() {
++    const theme = useAppTheme();
+     const routeParams = useLocalSearchParams<{ openAddFood?: string; date?: string; meal?: string }>();
+     const pathname = usePathname();
+     const { api, user } = useAuth();
+@@ -109,7 +110,7 @@ export default function TodayScreen() {
+     const calorieSummary = profileQuery.data?.calorieSummary;
+     const planStatus = calorieSummary?.planStatus;
+     const planIsAvailable = planStatus === 'available' && !hasPendingWeightChange;
+-    const target = planIsAvailable ? calorieSummary?.dailyCalorieTarget ?? null : null;
++    const currentTarget = planIsAvailable ? calorieSummary?.dailyCalorieTarget ?? null : null;
+     const planPresentation = getCaloriePlanPresentation(calorieSummary?.planReasonCode, planStatus);
+     function openWeightEntry() {
+         setIsWeightEntryOpen(true);
+@@ -132,6 +133,7 @@ export default function TodayScreen() {
+     const selectedDateMetric = (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === selectedDate) ?? null;
+     const isToday = selectedDate === getTodayDate(user?.timezone);
+     const dayStatus = foodDayQuery.data;
++    const target = getFoodDayCalorieTarget({ day: dayStatus, isToday, currentTarget });
+     const showCalorieComparison = shouldShowCalorieComparison({
+         status: dayStatus?.status,
+         isToday,
+@@ -141,6 +143,7 @@ export default function TodayScreen() {
+     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
+     if (!planIsAvailable) unavailableLabel = planStatus === 'requires_review' ? 'Plan needs review' : 'Target unavailable';
+     if (hasPendingWeightChange) unavailableLabel = 'Rechecking target';
++    if (!isToday || dayStatus?.status === 'COMPLETE') unavailableLabel = 'Saved target unavailable';
+     if (isPaused) unavailableLabel = 'Tracking paused';
+     const contentLoading = dashboardState.kind === 'loading';
+     if (contentLoading) unavailableLabel = 'Loading day';
+@@ -184,7 +187,7 @@ export default function TodayScreen() {
+                     compact
+                     open
+                 />
+-                {!contentLoading && !foodIsUnavailable && !isPaused && !hasPendingWeightChange && !planIsAvailable && <View style={styles.planAction}>
++                {!contentLoading && !foodIsUnavailable && isToday && dayStatus?.status !== 'COMPLETE' && !isPaused && !hasPendingWeightChange && !planIsAvailable && <View style={styles.planAction}>
+                     <AppText variant="muted">{planPresentation.message}</AppText>
+                     <AppButton title={planPresentation.actionLabel} variant="ghost" onPress={handlePlanAction} />
+                 </View>}
+@@ -208,7 +211,7 @@ export default function TodayScreen() {
+             >
+                 {isPaused ? <PausedDayBody expanded={expanded}>
+                     <PausedDayMessage isToday={isToday} />
+-                    <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
++                    <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.outline }} />
+                 </PausedDayBody> : <>
+                     <ExpansionRegion id="weight" order={1}>
+                         <TodayWeightCard metric={selectedDateMetric} weightUnit={user?.weight_unit} isToday={isToday} onPress={openWeightEntry} />
+diff --git a/mobile/src/food/dayPresentation.test.ts b/mobile/src/food/dayPresentation.test.ts
+index 0411d339..1c17a0c7 100644
+--- a/mobile/src/food/dayPresentation.test.ts
++++ b/mobile/src/food/dayPresentation.test.ts
+@@ -1,5 +1,6 @@
+ import {
+     getFoodDayStatusLabel,
++    getFoodDayCalorieTarget,
+     shouldEmphasizePausedStatus,
+     shouldShowCalorieComparison
+ } from './dayPresentation';
+@@ -63,3 +64,13 @@ describe('day calorie presentation', () => {
+         })).toBe(false);
+     });
+ });
++
++
++test('completed-day balance keeps its saved target after a pace change; unknown history stays unknown', () => {
++    const day = { status: 'COMPLETE', calorie_comparison: { target_kcal: 2000 } } as import('@calibrate/api-client').FoodLogDay;
++    expect(getFoodDayCalorieTarget({day,isToday:false,currentTarget:2350})).toBe(2000);
++    expect(getFoodDayCalorieTarget({day,isToday:true,currentTarget:2350})).toBe(2000);
++    expect(getFoodDayCalorieTarget({day:{...day,calorie_comparison:null},isToday:false,currentTarget:2350})).toBeNull();
++    expect(getFoodDayCalorieTarget({day:{...day,status:'OPEN'},isToday:true,currentTarget:2350})).toBe(2350);
++    expect(getFoodDayCalorieTarget({day:{...day,status:'OPEN'},isToday:false,currentTarget:2350})).toBeNull();
++});
+diff --git a/mobile/src/food/dayPresentation.ts b/mobile/src/food/dayPresentation.ts
+index f6ac21b2..f688d147 100644
+--- a/mobile/src/food/dayPresentation.ts
++++ b/mobile/src/food/dayPresentation.ts
+@@ -1,4 +1,4 @@
+-import type { FoodLogDayStatus } from '@calibrate/api-client';
++import type { FoodLogDay, FoodLogDayStatus } from '@calibrate/api-client';
+ 
+ export type FoodDayStatusLabel = 'Fully logged' | 'Not fully logged' | 'Paused';
+ 
+@@ -40,3 +40,14 @@ export function shouldEmphasizePausedStatus({
+ }) {
+     return status === 'PAUSED' && isToday && !hasFoodEntries && !isContentLoading;
+ }
++
++/** Historical/finalized days must never borrow today's changing calorie plan. */
++export function getFoodDayCalorieTarget({ day, isToday, currentTarget }: {
++    day: FoodLogDay | undefined;
++    isToday: boolean;
++    currentTarget: number | null;
++}): number | null {
++    if (day?.status === 'COMPLETE') return day.calorie_comparison?.target_kcal ?? null;
++    if (!isToday) return null;
++    return currentTarget;
++}
+diff --git a/mobile/src/progress/GoalPaceSheet.test.tsx b/mobile/src/progress/GoalPaceSheet.test.tsx
+new file mode 100644
+index 00000000..a41f1b7a
+--- /dev/null
++++ b/mobile/src/progress/GoalPaceSheet.test.tsx
+@@ -0,0 +1,195 @@
++import React from 'react';
++import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
++import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
++import { ApiError, type GoalEntry } from '@calibrate/api-client';
++import { GoalPaceSheet } from './GoalPaceSheet';
++import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
++const goal: GoalEntry = { id: 7, start_weight: 90, target_weight: 75, target_date: null,
++    created_at: '2026-01-01T12:00:00Z', daily_deficit: 500, plan_status: 'available' };
++const options = { goal, expected_plan_version: 'a'.repeat(64), effective_local_date: '2026-07-21',
++    planOptions: [250, 500].map(dailyDeficit => ({ dailyDeficit, available: true, dailyCalorieTarget: 2600 - dailyDeficit })) };
++const mockApi = { getGoalPaceOptions: jest.fn(), adjustGoalPace: jest.fn() };
++let mockOnline = true;
++let mockPending = false;
++let mockReconnection = false;
++const mockRecheck = jest.fn();
++jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'stable-operation-001') }));
++jest.mock('../auth/AuthContext', () => ({ useAuth: () => ({ api: mockApi, pendingReconnection: mockReconnection, recheckClientCompatibility: mockRecheck, user: { weight_unit: 'KG', timezone: 'UTC' } }) }));
++jest.mock('../offline/usePendingWeightMutation', () => ({ usePendingWeightMutation: () => mockPending }));
++jest.mock('../components/AsyncStateBoundary', () => ({ useOnlineStatus: () => mockOnline }));
++jest.mock('../components/confirmDiscardChanges', () => ({ confirmDiscardChanges: jest.fn(async () => true) }));
++jest.mock('../components/BottomSheetModal', () => ({ BottomSheetModal: ({ children }: {
++        children: React.ReactNode;
++    }) => children }));
++jest.mock('../components/GoalDailyChangeSelect', () => {
++    const { Button, Text, View } = require('react-native');
++    return { GoalDailyChangeSelect: ({ value, onChange }: {
++            value: string;
++            onChange: (value: string) => void;
++        }) => <View><Text>{value}</Text><Button title="Choose 250" onPress={() => onChange('250')}/></View> };
++});
++function setup() {
++    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
++    const close = jest.fn();
++    const startNewGoal = jest.fn();
++    const screen = render(<QueryClientProvider client={client}><GoalPaceSheet goal={goal} onClose={close} onStartNewGoal={startNewGoal}/></QueryClientProvider>);
++    return { ...screen, client, close, startNewGoal };
++}
++beforeEach(() => {
++    jest.clearAllMocks();
++    mockOnline = true;
++    mockPending = false;
++    mockReconnection = false;
++    mockRecheck.mockResolvedValue(true);
++    mockApi.getGoalPaceOptions.mockResolvedValue(options);
++    mockApi.adjustGoalPace.mockResolvedValue({ ...goal, daily_deficit: 250 });
++});
++test('cancel never writes and a failed save retains draft and identical operation for retry', async () => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    fireEvent.press(screen.getByText('Choose 250'));
++    fireEvent.press(screen.getByText('Cancel'));
++    await waitFor(() => expect(screen.close).toHaveBeenCalledTimes(1));
++    expect(mockApi.adjustGoalPace).not.toHaveBeenCalled();
++    mockApi.adjustGoalPace.mockRejectedValueOnce(new TypeError('Network unavailable'));
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
++    await waitFor(() => expect(screen.getByText('Save pace')).toBeEnabled());
++    expect(screen.getByText('250')).toBeTruthy();
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(2));
++    expect(mockApi.adjustGoalPace.mock.calls[0]).toEqual(mockApi.adjustGoalPace.mock.calls[1]);
++    expect(mockApi.adjustGoalPace.mock.calls[1]).toEqual([7, { daily_deficit: 250, expected_plan_version: 'a'.repeat(64) }, 'stable-operation-001']);
++    screen.unmount();
++    screen.client.clear();
++});
++test('pending duplicate presses submit once and keep dismissal disabled', async () => {
++    let resolveSave!: (value: GoalEntry) => void;
++    mockApi.adjustGoalPace.mockImplementation(() => new Promise(resolve => { resolveSave = resolve; }));
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    fireEvent.press(screen.getByText('Choose 250'));
++    fireEvent.press(screen.getByText('Save pace'));
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
++    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
++    expect(screen.getByRole('button', { name: 'Set a new goal' })).toBeDisabled();
++    await act(async () => resolveSave({ ...goal, daily_deficit: 250 }));
++    screen.unmount();
++    screen.client.clear();
++});
++test.each(['offline', 'pending weight', 'cached preview failure'])('%s prevents saving', async (condition) => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    if (condition === 'offline')
++        mockOnline = false;
++    if (condition === 'pending weight')
++        mockPending = true;
++    if (condition === 'cached preview failure') {
++        mockApi.getGoalPaceOptions.mockRejectedValueOnce(new TypeError('failed check'));
++        await act(async () => { await screen.client.refetchQueries({ queryKey: ['goal-pace-options'] }); });
++    }
++    screen.rerender(<QueryClientProvider client={screen.client}><GoalPaceSheet goal={goal} onClose={screen.close} onStartNewGoal={screen.startNewGoal}/></QueryClientProvider>);
++    expect(screen.getByRole('button', { name: 'Save pace' })).toBeDisabled();
++    expect(mockApi.adjustGoalPace).not.toHaveBeenCalled();
++    screen.unmount();
++    screen.client.clear();
++});
++test('stale goal conflict refreshes honestly and cannot silently save a replacement goal', async () => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    mockApi.adjustGoalPace.mockRejectedValueOnce(new ApiError('Your goal changed.', 409, { code: 'GOAL_PLAN_CHANGED' }));
++    mockApi.getGoalPaceOptions.mockResolvedValue({ ...options, goal: { ...goal, id: 8 } });
++    fireEvent.press(screen.getByText('Choose 250'));
++    fireEvent.press(screen.getByText('Save pace'));
++    await screen.findByText('A new goal is active. Close and reopen to use the current goal.');
++    expect(screen.getByRole('button', { name: 'Save pace' })).toBeDisabled();
++    expect(mockApi.adjustGoalPace.mock.calls[0][0]).toBe(7);
++    screen.unmount();
++    screen.client.clear();
++});
++
++test('same-goal conflict presents the new authoritative pace before a second save', async () => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    mockApi.adjustGoalPace.mockRejectedValueOnce(new ApiError('Your plan changed.', 409, { code: 'GOAL_PLAN_CHANGED' }));
++    mockApi.getGoalPaceOptions.mockResolvedValue({ ...options, goal: { ...goal, daily_deficit: 750 },
++        expected_plan_version: 'b'.repeat(64), planOptions: [...options.planOptions, { dailyDeficit: 750, available: true, dailyCalorieTarget: 1850 }] });
++    fireEvent.press(screen.getByText('Choose 250'));
++    fireEvent.press(screen.getByText('Save pace'));
++    await screen.findByText('750');
++    expect(screen.queryByText('250')).toBeNull();
++    expect(screen.getByText('That information changed. Refresh it and try again.')).toBeTruthy();
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(2));
++    expect(mockApi.adjustGoalPace.mock.calls[1][1]).toEqual({ daily_deficit: 750, expected_plan_version: 'b'.repeat(64) });
++    screen.unmount();
++    screen.client.clear();
++});
++
++test('starting a new goal confirms a dirty pace draft and never saves that draft', async () => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    fireEvent.press(screen.getByText('Choose 250'));
++    jest.mocked(confirmDiscardChanges).mockResolvedValueOnce(false);
++    fireEvent.press(screen.getByText('Set a new goal'));
++    await waitFor(() => expect(confirmDiscardChanges).toHaveBeenCalledTimes(1));
++    expect(screen.startNewGoal).not.toHaveBeenCalled();
++    fireEvent.press(screen.getByText('Set a new goal'));
++    await waitFor(() => expect(screen.startNewGoal).toHaveBeenCalledTimes(1));
++    expect(mockApi.adjustGoalPace).not.toHaveBeenCalled();
++    screen.unmount();
++    screen.client.clear();
++});
++
++test('manual plan refresh replaces a stale draft before enabling a save with the new version', async () => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    fireEvent.press(screen.getByText('Choose 250'));
++    mockApi.getGoalPaceOptions.mockResolvedValue({ ...options, goal: { ...goal, daily_deficit: 750 },
++        expected_plan_version: 'b'.repeat(64), planOptions: [...options.planOptions, { dailyDeficit: 750, available: true, dailyCalorieTarget: 1850 }] });
++    fireEvent.press(screen.getByText('Retry plan check'));
++    await screen.findByText('750');
++    expect(screen.queryByText('250')).toBeNull();
++    expect(mockApi.adjustGoalPace).not.toHaveBeenCalled();
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
++    expect(mockApi.adjustGoalPace.mock.calls[0][1]).toEqual({ daily_deficit: 750, expected_plan_version: 'b'.repeat(64) });
++    screen.unmount();
++    screen.client.clear();
++});
++
++test('manual refresh of an unchanged plan retains the unsaved draft', async () => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    fireEvent.press(screen.getByText('Choose 250'));
++    fireEvent.press(screen.getByText('Retry plan check'));
++    await waitFor(() => expect(mockApi.getGoalPaceOptions).toHaveBeenCalledTimes(2));
++    await waitFor(() => expect(screen.getByText('Save pace')).toBeEnabled());
++    expect(screen.getByText('250')).toBeTruthy();
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
++    expect(mockApi.adjustGoalPace.mock.calls[0][1]).toEqual({ daily_deficit: 250, expected_plan_version: 'a'.repeat(64) });
++    screen.unmount();
++    screen.client.clear();
++});
++
++ test.each([false, true])('pace retry requires verified reconnection (%s) and preserves the operation', async (verified) => {
++    const screen = setup();
++    await waitFor(() => expect(screen.getByText('500')).toBeTruthy());
++    fireEvent.press(screen.getByText('Choose 250'));
++    mockApi.adjustGoalPace.mockRejectedValueOnce(new TypeError('Lost response'));
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(1));
++    await waitFor(() => expect(screen.getByText('Save pace')).toBeEnabled());
++    mockReconnection = true;
++    mockRecheck.mockResolvedValue(verified);
++    screen.rerender(<QueryClientProvider client={screen.client}><GoalPaceSheet goal={goal} onClose={screen.close} onStartNewGoal={screen.startNewGoal}/></QueryClientProvider>);
++    fireEvent.press(screen.getByText('Save pace'));
++    await waitFor(() => expect(mockRecheck).toHaveBeenCalledTimes(1));
++    await waitFor(() => expect(screen.getByText(verified ? 'Retry refresh' : 'Save pace')).toBeTruthy());
++    expect(mockApi.adjustGoalPace).toHaveBeenCalledTimes(verified ? 2 : 1);
++    if (verified) expect(mockApi.adjustGoalPace.mock.calls[1]).toEqual(mockApi.adjustGoalPace.mock.calls[0]);
++    screen.unmount();
++    screen.client.clear();
++});
+diff --git a/mobile/src/progress/GoalPaceSheet.tsx b/mobile/src/progress/GoalPaceSheet.tsx
+new file mode 100644
+index 00000000..c4673fe3
+--- /dev/null
++++ b/mobile/src/progress/GoalPaceSheet.tsx
+@@ -0,0 +1,149 @@
++import { useEffect, useRef, useState } from 'react';
++import { AccessibilityInfo, View } from 'react-native';
++import * as Crypto from 'expo-crypto';
++import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
++import { ApiError, type GoalEntry, type GoalPaceRequest } from '@calibrate/api-client';
++import { useAuth } from '../auth/AuthContext';
++import { BottomSheetModal } from '../components/BottomSheetModal';
++import { AppButton } from '../components/AppButton';
++import { AppText } from '../components/AppText';
++import { GoalDailyChangeSelect } from '../components/GoalDailyChangeSelect';
++import { useOnlineStatus } from '../components/AsyncStateBoundary';
++import { confirmDiscardChanges } from '../components/confirmDiscardChanges';
++import { usePendingWeightMutation } from '../offline/usePendingWeightMutation';
++import { getSafeActionErrorMessage } from '../errors/presentation';
++import { invalidateProfilePlanningQueries } from '../caloriePlanning/queryInvalidation';
++import { formatWeight } from '../utils/format';
++import { getLocalDateForTimestamp } from '../utils/dates';
++import { spacing } from '../theme';
++/** Mounted per editor session so cancellation never carries a draft into another goal. */
++export function GoalPaceSheet({ goal, onClose, onStartNewGoal }: {
++    goal: GoalEntry;
++    onClose: () => void;
++    onStartNewGoal: () => void;
++}) {
++    const { api, user, pendingReconnection, recheckClientCompatibility } = useAuth();
++    const client = useQueryClient();
++    const online = useOnlineStatus();
++    const pendingWeight = usePendingWeightMutation();
++    const [value, setValue] = useState(String(Math.abs(goal.daily_deficit)));
++    const [selectOpen, setSelectOpen] = useState(false);
++    const [saved, setSaved] = useState(false);
++    const [refreshFailed, setRefreshFailed] = useState(false);
++    const ticket = useRef<{
++        key: string;
++        operationId: string;
++        payload: GoalPaceRequest;
++    } | null>(null);
++    const submitting = useRef(false);
++    // A refreshed version must initialize its own draft; unchanged refreshes keep edits.
++    const [initializedVersion, setInitializedVersion] = useState<string | null>(null);
++    const [baseline, setBaseline] = useState(value);
++    async function verifyConnection() {
++        if (pendingReconnection && !await recheckClientCompatibility()) {
++            throw new Error('Reconnect to the same account before adjusting your pace.');
++        }
++    }
++    const preview = useQuery({ queryKey: ['goal-pace-options', goal.id], queryFn: async () => {
++        await verifyConnection();
++        return api.getGoalPaceOptions();
++    },
++        staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: false, refetchOnReconnect: false, retry: false });
++    useEffect(() => {
++        if (preview.isSuccess && !preview.isFetching && preview.data.goal.id === goal.id &&
++            initializedVersion !== preview.data.expected_plan_version) {
++            const current = String(Math.abs(preview.data.goal.daily_deficit));
++            setValue(current);
++            setBaseline(current);
++            setInitializedVersion(preview.data.expected_plan_version);
++        }
++    }, [goal.id, initializedVersion, preview.data, preview.isFetching, preview.isSuccess]);
++    const deficit = Math.sign(goal.daily_deficit) * Number(value);
++    const selected = preview.data?.planOptions.find(option => option.dailyDeficit === deficit);
++    const fresh = online && preview.isSuccess && !preview.isFetching && preview.data.goal.id === goal.id;
++    const canSave = initializedVersion !== null && initializedVersion === preview.data?.expected_plan_version && fresh && selected?.available === true && !pendingWeight && !saved;
++    const dirty = !saved && value !== baseline;
++    async function refreshViews() {
++        try {
++            await invalidateProfilePlanningQueries(client);
++            await client.invalidateQueries({ queryKey: ['mobile-metrics-trend'] });
++            const failed = ['mobile-goal', 'mobile-profile', 'mobile-calibration-status'].some(key => client.getQueryState([key])?.status === 'error');
++            setRefreshFailed(failed);
++            if (!failed)
++                onClose();
++        }
++        catch {
++            setRefreshFailed(true);
++        }
++    }
++    const save = useMutation({
++        mutationFn: async () => {
++            await verifyConnection();
++            const key = JSON.stringify([goal.id, deficit, preview.data!.expected_plan_version]);
++            if (!ticket.current || ticket.current.key !== key)
++                ticket.current = {
++                    key, operationId: Crypto.randomUUID(),
++                    payload: { daily_deficit: deficit, expected_plan_version: preview.data!.expected_plan_version }
++                };
++            return api.adjustGoalPace(goal.id, ticket.current.payload, ticket.current.operationId);
++        },
++        onSuccess: async (updated) => {
++            setSaved(true);
++            client.setQueryData(['mobile-goal'], updated);
++            AccessibilityInfo.announceForAccessibility('Pace saved. Your goal and progress are unchanged.');
++            await refreshViews();
++        },
++        onError: error => {
++            if (error instanceof ApiError && error.status === 409) {
++                ticket.current = null;
++                // A conflict requires reviewing the authoritative pace before another save.
++                setInitializedVersion(null);
++                void preview.refetch();
++            }
++        },
++        onSettled: () => { submitting.current = false; }
++    });
++    async function close() {
++        if (!save.isPending && (!dirty || await confirmDiscardChanges()))
++            onClose();
++    }
++    async function startNewGoal() {
++        if (!save.isPending && (!dirty || await confirmDiscardChanges()))
++            onStartNewGoal();
++    }
++    function submit() {
++        if (!canSave || submitting.current || save.isPending)
++            return;
++        submitting.current = true;
++        save.mutate();
++    }
++    return <BottomSheetModal visible title="Edit goal" accessibilityLabel="Edit goal" description="Keep your existing goal, starting weight, start date and progress." showCloseButton dismissDisabled={save.isPending} isDirty={dirty} confirmDismiss={confirmDiscardChanges} onRequestClose={onClose}>
++        <View style={{ gap: spacing.md }}>
++            <AppText>Start {formatWeight(goal.start_weight, user?.weight_unit)} | Goal {formatWeight(goal.target_weight, user?.weight_unit)} | Started {getLocalDateForTimestamp(goal.created_at, user?.timezone)}</AppText>
++            <AppText variant="muted">Changes apply today. Completed days keep their saved comparison. Accepted calibration corrections remain in place and are checked for safety.</AppText>
++            {preview.isFetching && <AppText>Checking your current plan...</AppText>}
++            {(!online || pendingWeight) && <AppText accessibilityRole="alert">
++                {pendingWeight ? 'Wait for the queued weight change to sync before adjusting your pace.' : 'Reconnect to check and save your pace.'}
++            </AppText>}
++            {preview.isError && <AppText accessibilityRole="alert">Unable to check your current plan. Retry before saving.</AppText>}
++            {fresh && preview.data.goal.id === goal.id && <>
++                <GoalDailyChangeSelect goalMode={goal.daily_deficit < 0 ? 'gain' : 'lose'} value={value} isOpen={selectOpen} onToggle={() => { if (!save.isPending && !saved)
++            setSelectOpen(!selectOpen); }} onChange={next => { if (!save.isPending && !saved) {
++            setValue(next);
++            setSelectOpen(false);
++        } }} planOptions={preview.data.planOptions}/>
++                {selected?.dailyCalorieTarget != null && <AppText>New target: {selected.dailyCalorieTarget.toLocaleString()} kcal/day</AppText>}
++            </>}
++            {preview.data && preview.data.goal.id !== goal.id && <AppText accessibilityRole="alert">A new goal is active. Close and reopen to use the current goal.</AppText>}
++            {save.error && !saved && <AppText accessibilityRole="alert">{getSafeActionErrorMessage(save.error, 'Unable to confirm the saved pace. Retry to check the same change.')}</AppText>}
++            {saved && refreshFailed && <AppText accessibilityRole="alert">Pace saved. Some views could not refresh. Retry refresh to see the current plan.</AppText>}
++            {saved ? <AppButton title="Retry refresh" onPress={() => void refreshViews()}/> : <>
++                <AppButton title="Retry plan check" variant="secondary" disabled={!online || preview.isFetching || save.isPending} onPress={() => { ticket.current = null; void preview.refetch(); }}/>
++                <AppButton title="Save pace" onPress={submit} disabled={!canSave} busy={save.isPending} busyLabel="Saving pace..."/>
++            </>}
++            <AppButton title="Cancel" variant="secondary" disabled={save.isPending} onPress={() => void close()}/>
++            <AppText variant="muted">Want a different target? Start a new goal with your current weight and a new start date.</AppText>
++            <AppButton title="Set a new goal" variant="secondary" disabled={save.isPending} onPress={() => void startNewGoal()}/>
++        </View>
++    </BottomSheetModal>;
++}
+diff --git a/mobile/src/progress/ProgressScreen.test.tsx b/mobile/src/progress/ProgressScreen.test.tsx
+index a38892d7..3c668701 100644
+--- a/mobile/src/progress/ProgressScreen.test.tsx
++++ b/mobile/src/progress/ProgressScreen.test.tsx
+@@ -65,6 +65,7 @@ let mockSearchParams: { openNextGoal?: string } = {};
+ let mockWeightChangePending = false;
+ let mockTrendPreviewProps: { onPress: () => void; onLogWeight: () => void } | null = null;
+ let mockPlanSummaryProps: { onPress: () => void; planAvailable?: boolean } | null = null;
++jest.mock('expo-crypto', () => ({ randomUUID: () => 'test-operation-001' }));
+ jest.mock('expo-router', () => ({
+     router: { push: jest.fn() },
+     useLocalSearchParams: () => mockSearchParams,
+diff --git a/packages/api-client/src/client.ts b/packages/api-client/src/client.ts
+index 83044e3f..7d6fb969 100644
+--- a/packages/api-client/src/client.ts
++++ b/packages/api-client/src/client.ts
+@@ -29,6 +29,8 @@ import type {
+     FoodLogUpdatePayload,
+     FoodSearchResponse,
+     GoalEntry,
++    GoalPaceOptions,
++    GoalPaceRequest,
+     HealthConnectSyncPayload,
+     HealthConnectSyncResponse,
+     InAppNotificationPageResponse,
+@@ -686,6 +688,16 @@ export class CalibrateApiClient {
+         });
+     }
+ 
++    getGoalPaceOptions(): Promise<GoalPaceOptions> {
++        return this.request<GoalPaceOptions>('/api/goals/pace-options', { cache: 'no-store' });
++    }
++
++    adjustGoalPace(id: number, payload: GoalPaceRequest, operationId: string): Promise<GoalEntry> {
++        return this.request<GoalEntry>(`/api/goals/${encodeURIComponent(String(id))}/pace`, {
++            method: 'PATCH', headers: buildOperationHeaders(operationId), json: payload
++        });
++    }
++
+     getGoals(): Promise<GoalEntry | null> {
+         return this.request<GoalEntry | null>('/api/goals');
+     }
+diff --git a/packages/api-client/src/generated/v1.ts b/packages/api-client/src/generated/v1.ts
+index e0727139..b502f405 100644
+--- a/packages/api-client/src/generated/v1.ts
++++ b/packages/api-client/src/generated/v1.ts
+@@ -122,6 +122,38 @@ export interface paths {
+         patch: operations["updateUserPreferences"];
+         trace?: never;
+     };
++    "/api/v1/goals/pace-options": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        get: operations["getGoalPaceOptions"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
++    "/api/v1/goals/{id}/pace": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        get?: never;
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch: operations["adjustGoalPace"];
++        trace?: never;
++    };
+     "/api/v1/goals": {
+         parameters: {
+             query?: never;
+@@ -1010,6 +1042,22 @@ export interface components {
+             projected_end_date: string | null;
+             reason_code: components["schemas"]["CaloriePlanReasonCode"] | null;
+         };
++        GoalPaceRequest: {
++            /** @enum {integer} */
++            daily_deficit: -1000 | -750 | -500 | -250 | 0 | 250 | 500 | 750 | 1000;
++            expected_plan_version: string;
++        };
++        GoalPaceOptions: {
++            goal: components["schemas"]["GoalEntry"];
++            expected_plan_version: string;
++            /** Format: date */
++            effective_local_date: string;
++            eligibility: components["schemas"]["CalorieEligibility"];
++            bmr: number | null;
++            tdee: number | null;
++            minimumDailyCalorieTarget: number | null;
++            planOptions: components["schemas"]["CaloriePlanOption"][];
++        };
+         GoalEntry: {
+             id: number;
+             user_id: number;
+@@ -1199,7 +1247,7 @@ export interface components {
+             /** @constant */
+             format: "calibrate-account-export";
+             /** @constant */
+-            version: 9;
++            version: 10;
+             /** Format: date-time */
+             exported_at: string;
+             account: components["schemas"]["AccountExportProfile"];
+@@ -1541,6 +1589,8 @@ export interface components {
+             id: number;
+             source_goal_id: number;
+             recommendation_id: number | null;
++            /** @description Configured pace from a manual change; null for calibration-only and legacy revisions. */
++            configured_daily_deficit: number | null;
+             target_adjustment_kcal: number;
+             /** Format: date */
+             effective_local_date: string;
+@@ -2839,6 +2889,15 @@ export interface operations {
+                 };
+             };
+             401: components["responses"]["Unauthorized"];
++            /** @description Concurrent profile or calorie-plan change. No profile fields were saved; refresh and retry. */
++            409: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ApiError"];
++                };
++            };
+         };
+     };
+     updateUserPreferences: {
+@@ -2889,6 +2948,77 @@ export interface operations {
+             };
+         };
+     };
++    getGoalPaceOptions: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Authoritative current pace, dated plan version and safety options including calibration corrections. Never cached. */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["GoalPaceOptions"];
++                };
++            };
++            401: components["responses"]["Unauthorized"];
++            /** @description No current goal. */
++            404: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content?: never;
++            };
++        };
++    };
++    adjustGoalPace: {
++        parameters: {
++            query?: never;
++            header: {
++                "x-client-operation-id": string;
++            };
++            path: {
++                id: number;
++            };
++            cookie?: never;
++        };
++        requestBody: {
++            content: {
++                "application/json": components["schemas"]["GoalPaceRequest"];
++            };
++        };
++        responses: {
++            /** @description Same goal and baseline with new pace, effective today. Saved completed-day comparisons remain unchanged. Same-day latest revision wins. Identical operation retries replay their receipt. */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["GoalEntry"];
++                };
++            };
++            /** @description Invalid, unsafe, unavailable or direction-changing pace. No domain mutation. */
++            400: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content?: never;
++            };
++            401: components["responses"]["Unauthorized"];
++            /** @description Stale goal or plan version, concurrent mutation, or reused operation ID. Refresh before saving a new operation. */
++            409: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content?: never;
++            };
++        };
++    };
+     getGoal: {
+         parameters: {
+             query?: never;
+diff --git a/packages/api-client/src/types.ts b/packages/api-client/src/types.ts
+index 1794c141..34ed1c7d 100644
+--- a/packages/api-client/src/types.ts
++++ b/packages/api-client/src/types.ts
+@@ -147,7 +147,7 @@ export type OnboardingCompleteResponse = {
+ 
+ export type AccountExport = {
+     format: 'calibrate-account-export';
+-    version: 9;
++    version: 10;
+     exported_at: string;
+     account: {
+         id: number;
+@@ -338,6 +338,7 @@ export type AccountExport = {
+         id: number;
+         source_goal_id: number;
+         recommendation_id: number | null;
++        configured_daily_deficit: number | null;
+         target_adjustment_kcal: number;
+         calorie_plan_review_status: 'CLEAR' | 'REQUIRES_REVIEW';
+         calorie_plan_review_reason: string | null;
+@@ -780,6 +781,13 @@ export type CalibrationStatusResponse = {
+     planReasonCode?: CaloriePlanReasonCode | null;
+ };
+ 
++export type GoalPaceRequest = { daily_deficit: number; expected_plan_version: string };
++export type GoalPaceOptions = CaloriePlanOptionsResponse & {
++    goal: GoalEntry;
++    expected_plan_version: string;
++    effective_local_date: string;
++};
++
+ export type GoalEntry = {
+     id: number;
+     user_id?: number;
+diff --git a/packages/api-client/test/account-lifecycle.test.ts b/packages/api-client/test/account-lifecycle.test.ts
+index 2cabad3f..e99a10d2 100644
+--- a/packages/api-client/test/account-lifecycle.test.ts
++++ b/packages/api-client/test/account-lifecycle.test.ts
+@@ -13,7 +13,8 @@ const createClient = (requests: CapturedRequest[]): CalibrateApiClient =>
+             const isDelete = init?.method === 'DELETE';
+             return new Response(isDelete ? null : JSON.stringify({
+                 format: 'calibrate-account-export',
+-                version: 9,
++                version: 10,
++                calorie_plan_revisions: [{ configured_daily_deficit: 250 }, { configured_daily_deficit: null }],
+                 food_log_days: [{ comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: '2026-07-21T19:00:00.000Z' }]
+             }), {
+                 status: isDelete ? 204 : 200,
+@@ -29,7 +30,8 @@ test('exportAccount requests the versioned authenticated endpoint', async () =>
+     const result = await client.exportAccount();
+ 
+     assert.equal(result.format, 'calibrate-account-export');
+-    assert.equal(result.version, 9);
++    assert.equal(result.version, 10);
++    assert.deepEqual(result.calorie_plan_revisions.map(revision => revision.configured_daily_deficit), [250, null]);
+     assert.deepEqual(result.food_log_days[0], { comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: '2026-07-21T19:00:00.000Z' });
+     assert.equal(requests[0]?.url, 'https://calibrate.example/api/v1/user/account/export');
+     assert.equal(new Headers(requests[0]?.init.headers).get('authorization'), 'Bearer access-token');
+diff --git a/packages/api-client/test/goal-pace.test.ts b/packages/api-client/test/goal-pace.test.ts
+new file mode 100644
+index 00000000..bf66e0b3
+--- /dev/null
++++ b/packages/api-client/test/goal-pace.test.ts
+@@ -0,0 +1,24 @@
++import assert from 'node:assert/strict';
++import test from 'node:test';
++import { CalibrateApiClient } from '../src/client.ts';
++test('pace preview bypasses cache and adjustment retries retain operation and expected version', async () => {
++    const calls: Array<{
++        url: string;
++        init?: RequestInit;
++    }> = [];
++    const client = new CalibrateApiClient({ baseUrl: 'https://calibrate.example', fetchImpl: async (url, init) => {
++            calls.push({ url: String(url), init });
++            return new Response(JSON.stringify({ id: 4, start_weight: 90, target_weight: 75, daily_deficit: 250, created_at: '2025-01-01T00:00:00Z' }));
++        } });
++    await client.getGoalPaceOptions();
++    assert.equal(calls[0].init?.cache, 'no-store');
++    const body = { daily_deficit: 250, expected_plan_version: 'a'.repeat(64) };
++    const first = await client.adjustGoalPace(4, body, 'stable-operation-001');
++    await client.adjustGoalPace(4, body, 'stable-operation-001');
++    assert.equal(first.start_weight, 90);
++    assert.ok(calls[1].url.endsWith('/api/v1/goals/4/pace'));
++    assert.equal(calls[1].init?.method, 'PATCH');
++    assert.equal(new Headers(calls[1].init?.headers).get('x-client-operation-id'), 'stable-operation-001');
++    assert.equal(calls[1].init?.body, calls[2].init?.body);
++    assert.deepEqual(JSON.parse(String(calls[1].init?.body)), body);
++});
+diff --git a/scripts/postgres-goal-pace-smoke.mjs b/scripts/postgres-goal-pace-smoke.mjs
+new file mode 100644
+index 00000000..961d595f
+--- /dev/null
++++ b/scripts/postgres-goal-pace-smoke.mjs
+@@ -0,0 +1,193 @@
++#!/usr/bin/env node
++import assert from 'node:assert/strict';
++import crypto from 'node:crypto';
++import path from 'node:path';
++import { createRequire } from 'node:module';
++import { fileURLToPath } from 'node:url';
++import { databaseUrlForSchema, migrateDeploy } from './postgres-populated-upgrade-smoke.mjs';
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
++const backend = path.join(root, 'backend');
++const backendRequire = createRequire(path.join(backend, 'package.json'));
++const schema = 'calibrate_upgrade_smoke_goal_pace_' + crypto.randomBytes(8).toString('hex');
++const rawUrl = process.env.DATABASE_URL;
++assert.ok(rawUrl, 'DATABASE_URL is required; only a newly allocated smoke schema is modified.');
++const { Client } = backendRequire('pg');
++const admin = new Client({ connectionString: rawUrl });
++let disconnectDatabase;
++await admin.connect();
++try {
++    assert.match(schema, /^calibrate_upgrade_smoke_goal_pace_[a-f0-9]+$/);
++    await admin.query('CREATE SCHEMA "' + schema + '"');
++    const url = databaseUrlForSchema(rawUrl, schema);
++    migrateDeploy(url, path.join(backend, 'prisma/schema.prisma'));
++    process.env.DATABASE_URL = url;
++    backendRequire('ts-node').register({ project: path.join(backend, 'tsconfig.json'), transpileOnly: true, compilerOptions: { module: 'commonjs' } });
++    const database = backendRequire('./src/config/database');
++    disconnectDatabase = database.disconnectDatabase;
++    const db = database.default;
++    const router = backendRequire('./src/routes/goals').default;
++    const metricsRouter = backendRequire('./src/routes/metrics').default;
++    const userRouter = backendRequire('./src/routes/user').default;
++    const planningLock = backendRequire('./src/services/caloriePlanningLock');
++    const user = await db.user.create({ data: { email: 'pace-smoke@calibrate.invalid', password_hash: 'synthetic-only', timezone: 'UTC',
++            date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' } });
++    const goal = await db.goal.create({ data: { user_id: user.id, start_weight_grams: 90000, target_weight_grams: 75000,
++            daily_deficit: 500, created_at: new Date('2025-01-01Z'), target_date: new Date('2027-02-01Z') } });
++    const today = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z');
++    await db.bodyMetric.create({ data: { user_id: user.id, date: today, weight_grams: 85000 } });
++    const day = await db.foodLogDay.create({ data: { user_id: user.id, local_date: today, status: 'COMPLETE', origin: 'USER',
++            comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: new Date() } });
++    async function call(method, routePath, body = {}, operation = crypto.randomUUID(), targetRouter = router, goalId = goal.id) {
++        const res = { statusCode: 200, status(n) { this.statusCode = n; return this; }, set() { return this; }, json(data) { this.body = data; return this; } };
++        const handler = targetRouter.stack.find(layer => layer.route?.path === routePath && layer.route.methods[method]).route.stack[0].handle;
++        await handler({ user, params: { id: String(goalId) }, body, headers: { 'x-client-operation-id': operation } }, res);
++        return res;
++    }
++    const preview = await call('get', '/pace-options');
++    const payload = { daily_deficit: 250, expected_plan_version: preview.body.expected_plan_version };
++    const operation = crypto.randomUUID();
++    const first = await call('patch', '/:id/pace', payload, operation);
++    assert.equal(first.statusCode, 200);
++    assert.deepEqual((await call('patch', '/:id/pace', payload, operation)).body, first.body);
++    assert.equal(await db.goal.count({ where: { user_id: user.id } }), 1);
++    assert.equal(await db.caloriePlanRevision.count({ where: { user_id: user.id } }), 1);
++    assert.deepEqual(await db.goal.findUnique({ where: { id: goal.id } }), goal);
++    assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
++    assert.equal(first.body.start_weight, 90);
++    assert.equal(first.body.daily_deficit, 250);
++    const next = await call('get', '/pace-options');
++    const race = await Promise.all([500, 750].map(daily_deficit => call('patch', '/:id/pace', {
++        daily_deficit, expected_plan_version: next.body.expected_plan_version
++    })));
++    assert.deepEqual(race.map(result => result.statusCode).sort(), [200, 409]);
++    assert.equal(await db.caloriePlanRevision.count({ where: { user_id: user.id } }), 2);
++    // Hold each real input writer after its shared guard, then start a pace save
++    // with the prior preview. Release the writer only after pace reaches its guard.
++    const originalLock = planningLock.lockCaloriePlanningInputs;
++    for (const kind of ['weight', 'timezone']) {
++        const prior = await call('get', '/pace-options');
++        const revisionCount = await db.caloriePlanRevision.count({ where: { user_id: user.id } });
++        let releaseWriter, writerLocked, paceEntered;
++        const release = new Promise(resolve => { releaseWriter = resolve; });
++        const locked = new Promise(resolve => { writerLocked = resolve; });
++        const entered = new Promise(resolve => { paceEntered = resolve; });
++        let calls = 0;
++        planningLock.lockCaloriePlanningInputs = async (...args) => {
++            const ordinal = ++calls;
++            if (ordinal === 2) paceEntered();
++            await originalLock(...args);
++            if (ordinal === 1) { writerLocked(); await release; }
++        };
++        const writer = kind === 'weight'
++            ? call('post', '/', { date: today.toISOString().slice(0, 10), weight: 84 }, crypto.randomUUID(), metricsRouter)
++            : call('patch', '/profile', { timezone: 'Pacific/Kiritimati' }, crypto.randomUUID(), userRouter);
++        try {
++            await Promise.race([locked, writer.then(result => { throw new Error(kind + " writer ended before guard: " + JSON.stringify(result)); })]);
++            const pace = call('patch', '/:id/pace', { daily_deficit: 250, expected_plan_version: prior.body.expected_plan_version });
++            await Promise.race([entered, pace.then(result => { throw new Error("pace ended before guard: " + JSON.stringify(result)); })]);
++            releaseWriter();
++            assert.equal((await writer).statusCode, 200, kind + ' writer commits');
++            const conflict = await pace;
++            assert.equal(conflict.statusCode, 409, kind + ' change rejects the old pace snapshot');
++            assert.equal(conflict.body.code, 'GOAL_PLAN_CHANGED');
++            assert.equal(await db.caloriePlanRevision.count({ where: { user_id: user.id } }), revisionCount);
++            console.log('[goal-pace-smoke] PASS: overlapping ' + kind + ' route commits; stale pace returns409 with no revision.');
++        } finally {
++            releaseWriter();
++            planningLock.lockCaloriePlanningInputs = originalLock;
++        }
++    }
++    const newGoal = await call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
++    assert.equal(newGoal.statusCode, 200);
++    assert.notEqual(newGoal.body.id, goal.id);
++    assert.equal((await call('patch', '/:id/pace', payload)).statusCode, 409);
++    assert.equal(await db.bodyMetric.count({ where: { user_id: user.id } }), 1);
++    // A RepeatableRead profile read begun behind pace must fail recoverably, then
++    // succeed in a fresh transaction. Observe the real transactional read to force it.
++    const profilePreview = await call('get', '/pace-options');
++    const unchangedTimezone = (await db.user.findUnique({ where: { id: user.id } })).timezone;
++    let unlockPace, heldPace, profileRead;
++    const unlock = new Promise(resolve => { unlockPace = resolve; });
++    const held = new Promise(resolve => { heldPace = resolve; });
++    const read = new Promise(resolve => { profileRead = resolve; });
++    let holdNextGuard = true;
++    planningLock.lockCaloriePlanningInputs = async (...args) => {
++        await originalLock(...args);
++        if (holdNextGuard) { holdNextGuard = false; heldPace(); await unlock; }
++    };
++    const profileRacePace = call('patch', '/:id/pace', {
++        daily_deficit: 500, expected_plan_version: profilePreview.body.expected_plan_version
++    }, crypto.randomUUID(), router, newGoal.body.id);
++    const originalTransaction = db.$transaction;
++    try {
++        await Promise.race([held, profileRacePace.then(result => { throw new Error('pace ended before guard: ' + JSON.stringify(result)); })]);
++        db.$transaction = (callback, options) => originalTransaction.call(db, async tx => {
++            const observedUser = new Proxy(tx.user, { get(target, key) {
++                if (key !== 'findUnique') return target[key];
++                return async args => { const result = await target.findUnique(args); profileRead(); return result; };
++            } });
++            return callback(new Proxy(tx, { get(target, key) { return key === 'user' ? observedUser : target[key]; } }));
++        }, options);
++        const profile = call('patch', '/profile', { timezone: 'UTC' }, crypto.randomUUID(), userRouter);
++        await Promise.race([read, profile.then(result => { throw new Error('profile ended before read: ' + JSON.stringify(result)); })]);
++        unlockPace();
++        assert.equal((await profileRacePace).statusCode, 200);
++        const rejectedProfile = await profile;
++        assert.equal(rejectedProfile.statusCode, 409);
++        assert.equal(rejectedProfile.body.code, 'PROFILE_PLAN_CHANGED');
++        assert.equal(rejectedProfile.body.retryable, true);
++        assert.equal((await db.user.findUnique({ where: { id: user.id } })).timezone, unchangedTimezone);
++    } finally {
++        unlockPace();
++        db.$transaction = originalTransaction;
++        planningLock.lockCaloriePlanningInputs = originalLock;
++    }
++    assert.equal((await call('patch', '/profile', { timezone: 'UTC' }, crypto.randomUUID(), userRouter)).statusCode, 200);
++    assert.equal((await db.user.findUnique({ where: { id: user.id } })).timezone, 'UTC');
++    console.log('[goal-pace-smoke] PASS: pace-first profile conflict returns retryable409, rolls back, and succeeds on fresh retry.');
++
++    // Reverse the order: an accepted pace must be visible to a later weight
++    // writer's sticky safety check, even when its metric write already started.
++    const currentPreview = await call('get', '/pace-options');
++    assert.equal(currentPreview.body.planOptions.find(option => option.dailyDeficit === 750).available, true);
++    let releasePace, paceLocked, weightEntered;
++    const paceRelease = new Promise(resolve => { releasePace = resolve; });
++    const paceLock = new Promise(resolve => { paceLocked = resolve; });
++    const weightAtGuard = new Promise(resolve => { weightEntered = resolve; });
++    let guardCalls = 0;
++    planningLock.lockCaloriePlanningInputs = async (...args) => {
++        const ordinal = ++guardCalls;
++        if (ordinal === 2) weightEntered();
++        await originalLock(...args);
++        if (ordinal === 1) { paceLocked(); await paceRelease; }
++    };
++    const winningPace = call('patch', '/:id/pace', {
++        daily_deficit: 750, expected_plan_version: currentPreview.body.expected_plan_version
++    }, crypto.randomUUID(), router, newGoal.body.id);
++    try {
++        await Promise.race([paceLock, winningPace.then(result => { throw new Error('pace ended before guard: ' + JSON.stringify(result)); })]);
++        const laterWeight = call('post', '/', { date: today.toISOString().slice(0, 10), weight: 25 }, crypto.randomUUID(), metricsRouter);
++        await Promise.race([weightAtGuard, laterWeight.then(result => { throw new Error('weight ended before guard: ' + JSON.stringify(result)); })]);
++        releasePace();
++        assert.equal((await winningPace).statusCode, 200);
++        assert.equal((await laterWeight).statusCode, 200);
++        const currentGoal = await db.goal.findUnique({ where: { id: newGoal.body.id } });
++        assert.equal(currentGoal.calorie_plan_review_status, 'REQUIRES_REVIEW');
++        const currentRevision = await db.caloriePlanRevision.findFirst({ where: { source_goal_id: newGoal.body.id }, orderBy: { id: 'desc' } });
++        assert.equal(currentRevision.configured_daily_deficit, 750);
++        assert.equal(currentRevision.calorie_plan_review_status, 'REQUIRES_REVIEW');
++        console.log('[goal-pace-smoke] PASS: pace-first overlap makes the later weight safety check review the accepted pace.');
++    } finally {
++        releasePace();
++        planningLock.lockCaloriePlanningInputs = originalLock;
++    }
++    console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
++}
++finally {
++    if (disconnectDatabase)
++        await disconnectDatabase();
++    if (/^calibrate_upgrade_smoke_goal_pace_[a-f0-9]+$/.test(schema))
++        await admin.query('DROP SCHEMA IF EXISTS "' + schema + '" CASCADE');
++    await admin.end();
++    process.env.DATABASE_URL = rawUrl;
++}
+diff --git a/scripts/postgres-rollback-smoke.mjs b/scripts/postgres-rollback-smoke.mjs
+index 77091cdb..b171ddc9 100644
+--- a/scripts/postgres-rollback-smoke.mjs
++++ b/scripts/postgres-rollback-smoke.mjs
+@@ -34,9 +34,9 @@ export const ROLLBACK_BASE = Object.freeze({
+ });
+ 
+ export const ROLLBACK_CANDIDATE = Object.freeze({
+-  migrationCount: 47,
++  migrationCount: 48,
+   lastMigration: '0045_firebase_identity_foundation',
+-  ledgerSha256: 'e2b4ffc66827a1b2cbf75300d8cb27e61e1d2af328f05d2eae658b3e5c385174',
++  ledgerSha256: '699a788ed48ce95cee69c890cd0434f60b2498c7bd311924ba368c615f1a2f28',
+ });
+ 
+ export const ROLLBACK_RESULT_PATH = path.join(
+@@ -957,6 +957,7 @@ async function verifyCandidateSchema(client, schemaName, candidateNames) {
+     g."calorie_plan_review_reason" IS NULL AS "goal_review_reason_null",
+     r."calorie_plan_review_status"::text = 'CLEAR' AS "revision_review_clear",
+     r."calorie_plan_review_reason" IS NULL AS "revision_review_reason_null",
++    r."configured_daily_deficit" IS NULL AS "legacy_pace_inherits_goal",
+     t."trend_rate_grams_per_day" IS NULL AS "trend_rate_null",
+     t."trend_rate_std_grams_per_day" IS NULL AS "trend_rate_std_null",
+     t."source_revision" IS NULL AS "source_revision_null",

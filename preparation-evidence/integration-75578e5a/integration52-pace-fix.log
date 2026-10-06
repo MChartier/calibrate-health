@@ -1,0 +1,21 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/progress/GoalPaceSheet.test.tsx
+PASS src/progress/GoalPaceSheet.test.tsx
+  ΓêÜ cancel never writes and a failed save retains draft and identical operation for retry (287 ms)
+  ΓêÜ pending duplicate presses submit once and keep dismissal disabled (134 ms)
+  ΓêÜ offline prevents saving (57 ms)
+  ΓêÜ pending weight prevents saving (68 ms)
+  ΓêÜ cached preview failure prevents saving (82 ms)
+  ΓêÜ stale goal conflict refreshes honestly and cannot silently save a replacement goal (133 ms)
+  ΓêÜ same-goal conflict presents the new authoritative pace before a second save (189 ms)
+  ΓêÜ starting a new goal confirms a dirty pace draft and never saves that draft (126 ms)
+  ΓêÜ manual plan refresh replaces a stale draft before enabling a save with the new version (190 ms)
+  ΓêÜ manual refresh of an unchanged plan retains the unsaved draft (190 ms)
+  ΓêÜ pace retry requires verified reconnection (false) and preserves the operation (188 ms)
+  ΓêÜ pace retry requires verified reconnection (true) and preserves the operation (188 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        3.732 s
+Ran all test suites matching /src\\progress\\GoalPaceSheet.test.tsx/i.
