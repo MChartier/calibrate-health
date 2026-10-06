@@ -1,0 +1,81 @@
+{
+  "savedAtUtc": "2026-10-06T02:55:34.451Z",
+  "repository": "MChartier/calibrate-health",
+  "head": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+  "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "declaredParent": null,
+  "purpose": "Exact pre-rewrite public bodies preserved before the user-directed concise presentation edit. These are historical records, not current readiness claims.",
+  "ownerTask": "01a105d0-2544-70b1-813c-cf8460fd70c6",
+  "host": "mchartier_zbook",
+  "amendment": {
+    "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6008280372",
+    "id": 6008280372,
+    "bodySha256": "53ea8dd801ffd744c1fdaaa625bc959ceb8ae1f4193926339073a0574d1ec4ee",
+    "fullReadAcknowledged": true
+  },
+  "authority": {
+    "executionPin": "f0919b184b6344d6279178b2388190936ca432a9",
+    "communicationPin": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+    "versions": [
+      "workflow-v3",
+      "pr-review-v3",
+      "queue-v1"
+    ],
+    "fullPinnedRoleAndStandardsReadAcknowledged": true,
+    "migration": false
+  },
+  "issue": {
+    "url": "https://github.com/MChartier/calibrate-health/issues/412",
+    "updatedAt": "2026-10-05T22:54:13Z",
+    "bodySha256": "52e63a3aeac1ffdeb0da4e2bed4ef657ded58c4fd3a464ec554decc1515703ae"
+  },
+  "pr": {
+    "url": "https://github.com/MChartier/calibrate-health/pull/427",
+    "updatedAt": "2026-10-06T02:44:21Z",
+    "bodySha256": "23414eaa8dc96ad1904ae8a7e831c409cc9f235cd0b77b77e56a1efdb5d3db8d"
+  },
+  "originalPR": {
+    "url": "https://github.com/MChartier/calibrate-health/pull/417",
+    "head": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+    "bodySha256": "284844a665f22877ac56d59776a5167a4d4c8abff3c300b5bec3ae9814188c71",
+    "state": "open",
+    "draft": true
+  },
+  "originalEvidenceRefs": {
+    "refs/heads/master": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+    "refs/heads/mchartier/remove-notification-history-clean": "c5f149a516cbd8733b02fffa4ebf22630db6611d",
+    "refs/heads/mchartier/remove-notification-history": "123bab9e5c0e79e0fd6a0f024126c954b9bde08e",
+    "refs/heads/evidence/issue412-master-c5f149a": "dd9b611ded286189cb1d49e2f202638061d5048c",
+    "refs/heads/evidence/pr417-reviewed-736a86c": "736a86caa519ec929a5fda79d42793c8ff915a6f",
+    "refs/heads/evidence/pr417-guard-recovery-4dcad2c": "c7646821a1f2f4142a5d7c41a1026302b7c40e16",
+    "refs/heads/evidence/pr417-offline-recovery-3c743b4": "772dd261c6bcc3697bcd01a965497c74a9865e87",
+    "refs/heads/evidence/pr417-refresh-recovery-123bab9": "f3195813a3148f65c57ee27ab4eb6c59ac9cfff7"
+  },
+  "retention": {
+    "ref": "refs/heads/evidence/issue412-communication-archive-20261006",
+    "owner": "MChartier / same issue412 implementation owner",
+    "lifetime": "All reviews and receipts; never rewrite, delete or merge this archive ref"
+  },
+  "artifacts": [
+    {
+      "path": "issue412-body.md",
+      "bytes": 17678,
+      "sha256": "52e63a3aeac1ffdeb0da4e2bed4ef657ded58c4fd3a464ec554decc1515703ae"
+    },
+    {
+      "path": "pr427-body.md",
+      "bytes": 13910,
+      "sha256": "23414eaa8dc96ad1904ae8a7e831c409cc9f235cd0b77b77e56a1efdb5d3db8d"
+    },
+    {
+      "path": "record.json",
+      "bytes": 2806,
+      "sha256": "2063c515cb6a049d2bdc19531ea2688cb8d1bc082bc3731b7378f657bf019156"
+    },
+    {
+      "path": "README.md",
+      "bytes": 674,
+      "sha256": "5068e819deff125c7f7e042882c7ff62146c6dc9ddd3618afcb6d94917fdb83b"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Historical descriptions before concise rewrite
+
+The exact issue412 and PR427 bodies were saved before applying the direct human correction in [comment6008280372](https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6008280372). The issue body preserves the original human request, scope, acceptance requirements and intake history. Existing comments and QA receipts remain unedited. These archived descriptions contain historical workflow state and are not current readiness claims. See record.json for exact source and UTF-8 body digests. The current issue and PR carry the concise reviewer-facing descriptions. Code and existing evidence are unchanged.
