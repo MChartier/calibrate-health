@@ -1,0 +1,89 @@
+<h2 dir="auto">Summary</h2>
+<p dir="auto">Temporary authentication outages could return a previously signed-in user to Sign In, interrupting local tracking. Failed queued writes also left editing controls without a clear recovery path. Separately, existing-account Firebase migration lacked a safe preparation foundation.</p>
+<p dir="auto">This change preserves the same-account cached workspace and durable local edits through outages/restarts, exposes retry/discard recovery, and prepares migration tooling without activating Firebase. It follows the <a href="https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6000049703" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/421/hovercard">offline-first instruction</a>.</p>
+<p dir="auto">Useful implementation decisions:</p>
+<ul dir="auto">
+<li>Keep User.id and SQL data ownership; add immutable Firebase identity mapping and credential security-version guards. Local authentication remains the self-hosting default.</li>
+<li>Default migration tooling to sanitized dry runs; use deterministic scoped UIDs, collision/source-drift holds and a resumable BCRYPT journal that holds ambiguous outcomes instead of blindly overwriting accounts.</li>
+<li>Scope queues to account/server, preserve request IDs and serialize dispatch/replay. Day/pause intent survives reload; failed writes require explicit retry or discard. Goal-pace retries verify reconnection while retaining the original request identity.</li>
+</ul>
+<p dir="auto"><strong>Preparation only: issue421 remains open.</strong> Firebase runtime login/registration, recovery/verification, cross-store deletion, external security events, session/Wear integration and real-provider rehearsal remain unfinished. No live data, imports, provisioning or cutover occurred. <a href="https://github.com/MChartier/calibrate-health/blob/3eb583d972cc529509bd8145c8cefb504b3cd000/preparation-evidence/communication-before-20261006/issue-body.md">Full migration requirements</a>. <a href="https://github.com/MChartier/calibrate-health/pull/428" data-hovercard-type="pull_request" data-hovercard-url="/MChartier/calibrate-health/pull/428/hovercard">PR428</a> is a separate dependent follow-up.</p>
+<h2 dir="auto">Test plan and behavior evidence</h2>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Synthetic scenario</th>
+<th>Expected and observed result</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reload cached tracking during auth outage</td>
+<td>Today remains usable, local changes persist, reconnection is visible</td>
+<td>Outage pair below</td>
+</tr>
+<tr>
+<td>Edit food after a queued write fails</td>
+<td>No misleading successful save; explicit retry/discard recovery is available</td>
+<td>Food pair below</td>
+</tr>
+<tr>
+<td>Offline logout, restart and reconnect</td>
+<td>Stay signed out; retry server revocation and disclose storage failures</td>
+<td><a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/README.md">Logout/storage pairs</a></td>
+</tr>
+<tr>
+<td>Resume/pause/day commands across replay and restart</td>
+<td>Retain intent, reject stale conflicting controls, preserve deliberate historical backfill</td>
+<td><a href="https://github.com/MChartier/calibrate-health/blob/008cb58ed0f2617223635c564612015a957e6d3f/preparation-evidence/integration-75578e5a/README.md">Current-base browser scenarios and guard evidence</a></td>
+</tr>
+<tr>
+<td>Retry a lost goal-pace response after reconnecting</td>
+<td>Verify the same account before retry; preserve one operation and existing goal progress</td>
+<td><a href="https://github.com/MChartier/calibrate-health/blob/008cb58ed0f2617223635c564612015a957e6d3f/preparation-evidence/integration-75578e5a/README.md">Light/dark browser recovery and verification boundaries</a></td>
+</tr>
+<tr>
+<td>Dry-run/resume migration with synthetic identities</td>
+<td>Hold collisions, drift and ambiguous imports; preserve identity and avoid unsafe retries</td>
+<td><a href="https://github.com/MChartier/calibrate-health/blob/7afdb6f0bcbdec9d85f18c74aec610c0eb9d76a2/preparation-evidence/fc997b45-record.md">Migration evidence and maintained runbook</a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h3 dir="auto">Outage: cached tracking stays available</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/before.png?raw=true" alt="Before: outage" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/after.png?raw=true" alt="After: outage" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto">Before: auth-outage reload returns to Sign In. After: cached Today remains visible with pending reconnection.</p>
+<h3 dir="auto">Failed write: make recovery explicit</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/before.png?raw=true" alt="Before: food" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/food/after.png?raw=true" alt="After: food" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto">Before: Save remains available behind a failed queued write. After: the local correction is visible, but saving is guarded until explicit retry/discard resolves the failure.</p>
+<p dir="auto">These genuine captures compare earlier master <code class="notranslate">acc8a30</code> with preparation build <code class="notranslate">ed170e7</code>. The pictured scenarios remain applicable to current base <code class="notranslate">52bdc32</code> and head <code class="notranslate">75578e5</code>; see the <a href="https://github.com/MChartier/calibrate-health/blob/008cb58ed0f2617223635c564612015a957e6d3f/preparation-evidence/integration-75578e5a/README.md">base-impact assessment and current validation</a>. Matched synthetic account, clock, viewport and theme; unrelated PWA notices were suppressed equally. <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/README.md">Exact source/build/fixture identities and all capture pairs</a>; <a href="https://github.com/MChartier/calibrate-health/blob/008cb58ed0f2617223635c564612015a957e6d3f/preparation-evidence/integration-75578e5a/README.md">final-head behavior evidence</a>.</p>
+<h2 dir="auto">Supporting checks and limits</h2>
+<p dir="auto">Current-base validation passed 24 desktop-browser scenarios (one phone-only case skipped), 232 mobile suites (1,243 tests), 56 affected backend tests, 69 API tests, 14 rollback checks, typechecks and schema/API validation. The final goal-pace retry boundaries, mobile typecheck and web export also passed. <a href="https://github.com/MChartier/calibrate-health/blob/488bc6f97295412be7004302bc78ad7cad37d8e9/preparation-evidence/integration-75578e5a-ci/README.md">All five exact-head CI workflows passed</a>. <a href="https://github.com/MChartier/calibrate-health/blob/008cb58ed0f2617223635c564612015a957e6d3f/preparation-evidence/integration-75578e5a/README.md">Exact results, revisions and operational record</a>.</p>
+<p dir="auto">Configured review is <a href="https://github.com/MChartier/calibrate-health/pull/423#issuecomment-6006048888" data-hovercard-type="pull_request" data-hovercard-url="/MChartier/calibrate-health/pull/423/hovercard">blocked by quota</a>; independent readiness QA is pending. Native/device and real Firebase validation are not claimed. Uncached resources require connectivity; browsers without Web Locks retain queued work but cannot safely replay it. Private GitHub page rendering remains unverified; retained evidence includes a local render of API-returned Markdown with verified image bytes.</p>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/3eb583d972cc529509bd8145c8cefb504b3cd000/preparation-evidence/communication-before-20261006/pr-body.md">Preserved prior PR narrative</a>.</p>

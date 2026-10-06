@@ -1,0 +1,48 @@
+{
+  "bodySha256": "8d18f5704a8e2bcf5ab9b1a7795c82ba5b3c5f095b35b33ca35127bdb42057d9",
+  "checkedAt": "2026-10-06T04:01:55.824Z",
+  "browser": "154.0.8037.98",
+  "images": [
+    {
+      "alt": "Before: outage",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: outage",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "limitation": "Local browser render of API-returned GitHub Markdown using previously verified immutable image bytes. Private GitHub UI not inspected; no waiver.",
+  "files": [
+    {
+      "name": "api.json",
+      "sha256": "a2e1b94d2022d48e8c71d3f15cf2fab69b801f61211f43096c1d863e3a5023ef"
+    },
+    {
+      "name": "body.md",
+      "sha256": "8d18f5704a8e2bcf5ab9b1a7795c82ba5b3c5f095b35b33ca35127bdb42057d9"
+    },
+    {
+      "name": "full.png",
+      "sha256": "2f3b5b4e41dc97cb834a5b8ee453d254f9f8eb35c68e9d12deae438083c4ffc8"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "4ec64bb4ff20f922602f0ef419979fd9dfdb3261aa94556d49982e8c7cef6b85"
+    },
+    {
+      "name": "opening.png",
+      "sha256": "616319d17fadc594ab61cbbfabb74bfc6da9e38f4283bef7983220bf54e847cc"
+    },
+    {
+      "name": "pair-0.png",
+      "sha256": "22387d8d56b8bb319cf1773cbb97c28c45156fcf3d1fd0026d768f601b9907e4"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "292494de54bf0a2dbaa32dfe7c80a984699080d35b034c4ff4924c0de2d2000a"
+    }
+  ]
+}

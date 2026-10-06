@@ -1,0 +1,64 @@
+{
+  "bodySha256": "ab386c5236fa53eaaa07acc1d0edb81e65bfff6495ca107e1320378c3108a2c7",
+  "head": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "base": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+  "checkedAt": "2026-10-06T04:01:57.481Z",
+  "browser": "154.0.8037.98",
+  "images": [
+    {
+      "alt": "Before: outage",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: outage",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "Before: food",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "alt": "After: food",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "limitation": "Local browser render of API-returned GitHub Markdown using previously verified immutable image bytes. Private GitHub UI not inspected; no waiver.",
+  "files": [
+    {
+      "name": "api.json",
+      "sha256": "75717e27533b2c31c0dbe577fba18ceeba4d4916992b9a87306104a68a0c5c17"
+    },
+    {
+      "name": "body.md",
+      "sha256": "ab386c5236fa53eaaa07acc1d0edb81e65bfff6495ca107e1320378c3108a2c7"
+    },
+    {
+      "name": "full.png",
+      "sha256": "149dc176c7b8d4e0dd4476a2051cc8581a3d9389973f3afe6b4bcf9e57a26f60"
+    },
+    {
+      "name": "github-markdown.html",
+      "sha256": "36a69e1dc0b795da28112f55b097344964622b14e5cf9951abc46c19b85d3416"
+    },
+    {
+      "name": "opening.png",
+      "sha256": "d217ad48ab671450874883a24c17611f75cd8613200271062e8a109fc404ea1d"
+    },
+    {
+      "name": "pair-0.png",
+      "sha256": "466fa9f0b0e06c70546792cda4aacc670966b343f5edaa6b717ba3e3944f6c02"
+    },
+    {
+      "name": "pair-1.png",
+      "sha256": "713d6eff41e5befea4b12125eda5d06e0e9bb92495816d2be6aae7543bfab426"
+    },
+    {
+      "name": "rendered.html",
+      "sha256": "6717e10d63bba56c7d00e3169e96b2df2bf650c36a822e31f26a8302953672d5"
+    }
+  ]
+}

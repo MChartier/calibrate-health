@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-10-06T04:02:29.174Z",
+  "head": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "base": "52bdc324fa2215e2d35e488a2bfaadd59cdca3ed",
+  "childHead": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "childBase": "mchartier/firebase-migration-preparation",
+  "issueBodySha256": "8d18f5704a8e2bcf5ab9b1a7795c82ba5b3c5f095b35b33ca35127bdb42057d9",
+  "prBodySha256": "ab386c5236fa53eaaa07acc1d0edb81e65bfff6495ca107e1320378c3108a2c7",
+  "draft": true,
+  "labels": [],
+  "evidenceCommit": "008cb58ed0f2617223635c564612015a957e6d3f",
+  "ciCommit": "488bc6f97295412be7004302bc78ad7cad37d8e9",
+  "status": "clean idle; configured review quota-blocked; independent QA pending",
+  "contract": "Offline/auth/pause source unchanged from old pin; same readFoodPause/readFoodDay/dayIntents and explicit backfill contracts.",
+  "inspection": "Final issue and PR API-Markdown full-page renders visually inspected; representative pairs visible and labels clear; original image identities unchanged. Private GitHub UI not verified."
+}
