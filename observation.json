@@ -1,10 +1,10 @@
 {
   "parent": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
-  "head": "7892c7a8193c5e64c37e92a06e3e0fd360de9a43",
+  "head": "8d54fd6797944c46b64c4efde965b0c7f7d34306",
   "sourcePath": "backend/src/config/databaseUtils.ts",
   "sourceHashes": {
     "before": "e5ae7d84be3aafffb2abff4faefd50da214fbe12f20835f3c44f479828cf1644",
-    "after": "46a3ca930db9193cb8de274d5bc96bdd42ca8c002edf6d642f835e69fa123fac"
+    "after": "e2520f1d1ab36d6d08b3ba94dcb989e9ed1b8520d0c4e2bbbd3cc3b92dc5f019"
   },
   "environment": {
     "platform": "win32",
