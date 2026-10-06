@@ -1,6 +1,6 @@
 {
   "parent": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
-  "head": "3b2ccd7d3a79cc880e163bf6b157be9d56476c9f",
+  "head": "7892c7a8193c5e64c37e92a06e3e0fd360de9a43",
   "sourcePath": "backend/src/config/databaseUtils.ts",
   "sourceHashes": {
     "before": "e5ae7d84be3aafffb2abff4faefd50da214fbe12f20835f3c44f479828cf1644",

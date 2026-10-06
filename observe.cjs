@@ -7,7 +7,7 @@ const repo = path.resolve(process.argv[2]);
 const req = createRequire(path.join(repo, 'backend/package.json'));
 const ts = req('typescript');
 const parent = '75578e5ac57a05ba0f06146598b314a01eafb2ae';
-const head = '3b2ccd7d3a79cc880e163bf6b157be9d56476c9f';
+const head = '7892c7a8193c5e64c37e92a06e3e0fd360de9a43';
 const sourcePath = 'backend/src/config/databaseUtils.ts';
 function read(revision) {
   const source = execFileSync('git', ['show', `${revision}:${sourcePath}`], { cwd: repo, encoding: 'utf8' });

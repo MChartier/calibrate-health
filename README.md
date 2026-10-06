@@ -4,7 +4,7 @@ Owner: native implementation task 01a10fc4-f337-760c-9ad3-1b350f4f3027 on verifi
 Retain this dedicated non-merged evidence ref for reviewer/QA access and historical provenance; it is never a product merge target. No credentials or live data.
 
 Parent: PR423 / mchartier/firebase-migration-preparation at 75578e5ac57a05ba0f06146598b314a01eafb2ae.
-Child: mchartier/bounded-sql-422 at 3b2ccd7d3a79cc880e163bf6b157be9d56476c9f.
+Child: mchartier/bounded-sql-422 at 7892c7a8193c5e64c37e92a06e3e0fd360de9a43.
 Ultimate target: master, observed remote 52bdc324fa2215e2d35e488a2bfaadd59cdca3ed.
 Review/merge parent first. This child is only Scope3 SQL preparation; issue422 stays open.
 
@@ -28,7 +28,9 @@ Observed: 34 tests passed, 0 failed/skipped/cancelled; backend typecheck passed;
 
 ## Scope and boundaries
 
-Full child range has one product commit and seven files (+389/-86): three configuration files, two maintained test files, one connection guide and one README link. Every file implements, protects or explains the admitted contract. No migration/generated contract change, source copy, temporary capture, log, fixture archive or operational record appears in product history. Auth/session revocation, User.id, Firebase identity, offline/backfill and parent/sibling sources are unchanged. This evidence was created separately, not added then deleted from product history.
+Full child range has two product commits and eight files (+390/-86): three configuration files, production image packaging for the shared CLI resolver, two maintained test files, one connection guide and one README link. Every file implements, protects or explains the admitted contract. No migration/generated contract change, source copy, temporary capture, log, fixture archive or operational record appears in product history. Auth/session revocation, User.id, Firebase identity, offline/backfill and parent/sibling sources are unchanged. This evidence was created separately, not added then deleted from product history.
+
+Original evidence remains immutable at 47e83f1d6b26cbb5d39f6ce82f120758c625e1eb for original head3b2ccd7. Current configuration/tests are byte-identical; the follow-up only includes the shared resolver in the production image. The initial container workflow37421705426 caught the missing imported file in startup; Dockerfile packaging fixes that concrete failure. The existing production-image startup/readiness CI is the regression check. Source observations were regenerated at the final head rather than relabeling the original record. Initial/current publication readbacks retain separate identities.
 
 No real TCP/socket database handshake, cloud/provider call, migration execution, infrastructure choice, production sizing, deployment or release is claimed. Prisma CLI URL/config parity is tested; live schema-engine transport/timeout behavior is not. Acquisition settings do not bound query execution. Idle timers cannot run while a process is suspended. Independent QA and current-head CI/review reconciliation remain separate gates, not certified by this implementation record.
 
