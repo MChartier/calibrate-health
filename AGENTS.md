@@ -268,7 +268,8 @@ UI code style:
 - The visible server release Actions are read-only request workflows. Default-branch `workflow_run` handlers verify
   exact requests before calling reusable workers. Keep build and verification jobs read-only. Use job-scoped
   `GITHUB_TOKEN` writes only for candidate/tag publication, PR finalization/cleanup, and GHCR publication; callers must
-  propagate every required reusable-workflow permission. Finalization uses the PR merge API with the validated head,
+  propagate every required reusable-workflow permission. Finalization waits for the exact candidate PR CI (including
+  any required human workflow approval), then uses the PR merge API with the validated head,
   honors master protection, and checks merged parents/tree before publication. It must never push directly to master.
   Keep the repository's existing package Actions write access and PR-creation setting. A Server Release GitHub App,
   GHCR robot, `server-release-publication` environment, and extra server tag rulesets are not prerequisites.
@@ -291,8 +292,10 @@ UI code style:
   workflows own full tests, production-image scanning, and database upgrade/rollback validation. Package dependency
   audits run only during weekly/manual maintenance; do not add them or expiring advisory exceptions to PR or release gates.
   Keep container OS-vulnerability checks on PRs; scan package libraries in the scheduled/manual full image scans.
-- If `master` advances while a candidate is validating, rerun **Cut release**. Do not rebase or manually repair the
-  generated release branch.
+- A CI-blocked validated candidate is retained. Approve pending PR workflows or repair their failure, then rerun only
+  failed release jobs while master and candidate remain unchanged. Do not cut another version or use the prepared
+  publisher before merge. If master advances, stop and explicitly reconcile the retained candidate before a fresh
+  Cut release; do not rebase, overwrite or manually merge it.
 - Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are
   globally unique: phone uses the odd lane and Wear uses the even lane. Use `node scripts/release-config.mjs prepare-native --bump patch` for a paired
   store version only after its current manifest tag is verified as a signed annotated tag against the reviewed public

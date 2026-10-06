@@ -20,11 +20,16 @@ match the highest stable tag, prepares all server/web mirrors on `release/vMAJOR
 commit. Validation covers candidate identity, synchronized release configuration, the exact generated mirror set, and
 a production-image startup and served-Web smoke. Affected pull-request and scheduled workflows own the broader unit,
 integration, API/deploy, production-image, and database checks; package audits run separately as scheduled/manual
-maintenance. The version-only release candidate does not replay them.
+maintenance. Before merging, the release finalizer also waits for the five existing PR workflows on the exact
+candidate: Lint, Tests, Builds, Production Container Scan and Database Upgrade. Generated-mirror build fan-out and
+migration-only rollback skips remain intentional; required classifier/configuration/test/scan/upgrade jobs must pass.
 
 The candidate is merged through an action-created version-only PR only when `master` still points to the source commit
-selected at dispatch. The workflow verifies and pushes the exact GitHub-generated PR merge commit without force; the
-server-side fast-forward check atomically rejects a concurrent `master` update. Publishing tags the validated candidate
+selected at dispatch and the complete current CI inventory succeeds. A bounded 40-minute wait reports missing or
+approval-pending checks; failed, cancelled, stale, missing and zero-job results never authorize merge. The finalizer
+rechecks CI immediately before the SHA-locked PR merge API and verifies merged ancestry/tree afterward. Repository
+required-status-check rules are still recommended as a separate administrator-controlled boundary: client polling
+and the merge API do not form an atomic CI-and-base transaction. Publishing tags the validated candidate
 commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate
 manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone, Wear,
 and self-host deployment remain independent. After the GHCR image is published, the publisher invokes the reusable
@@ -63,3 +68,17 @@ job verifies only its configured target; independent installations retain the ru
   release.
 - Protected production approval controls public promotion, while independently managed self-hosts remain protected
   by the runtime directional contract-version guard.
+
+## CI failure and recovery
+
+GitHub may require human approval for the bot-created PR workflows. Open the PR checks and approve the exact runs
+when prompted; the release workflow does not approve itself or bypass that policy. If CI blocks or times out, the
+validated candidate is retained. Once checks pass, rerun failed release jobs with the same source/head. A changed
+master or candidate stops recovery; inspect and explicitly reconcile the retained branch before a fresh cut.
+Do not manually merge it, recut a prepared version, or invoke the post-merge publisher for an unmerged candidate.
+An unattended approval-free trigger, if desired, requires a separately reviewed authorization decision.
+
+The always-run stage summary separates candidate validation, CI/merge and publication. Follow the nested publisher
+summary for the image digest and OTA/deployment outcomes: optional rollout skips are not image failures. After a
+successful merge, use Publish prepared release for tag/image recovery; existing immutable tag/digest and attestation
+checks remain authoritative and refuse conflicting aliases. Never overwrite a published release to retry it.

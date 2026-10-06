@@ -544,10 +544,11 @@ jobs:
     name: Merge validated release PR
     needs: [prepare, publish_candidate, release-validation]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 50
     permissions:
       contents: write
       pull-requests: write
+      actions: read
     outputs:
       merge_commit: ${{ steps.merge.outputs.merge_commit }}
       pull_request_url: ${{ steps.pr.outputs.pull_request_url }}
@@ -690,9 +691,9 @@ jobs:
               '',
               '- exact candidate identity and synchronized release mirrors',
               '- production image build, readiness, and served-Web smoke',
-              '- full tests, production-image scans, and migration checks already completed on affected pull requests',
+              '- required CI must succeed on this exact candidate before merge; approval or missing checks block finalization',
               '',
-              'Cut release validated this exact candidate before creating the PR. After merge it will publish the image and start the gated OTA rollout when the native tag is ready.',
+              'Candidate metadata and production smoke passed. Cut release now waits for this PR’s CI; approve pending workflow runs if GitHub requests it. After CI and merge, image publication runs explicitly; OTA and deployment have separate readiness gates.',
             ].join('\n');
             const { data: pull } = await github.rest.pulls.create({
               owner: context.repo.owner,
@@ -705,6 +706,16 @@ jobs:
             core.setOutput('pull_request_number', pull.number);
             core.setOutput('pull_request_url', pull.html_url);
 
+      - name: Wait for exact release PR CI
+        id: ci_gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+          RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
+          PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
+        run: node .release-tooling/scripts/release-ci-gate.mjs
+
       - name: Merge the exact release pull request through GitHub
         id: merge
         shell: bash
@@ -714,6 +725,7 @@ jobs:
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
           PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           AUTH_HEADER="$(printf 'x-access-token:%s' "${RELEASE_TOKEN}" | base64 | tr -d '\n')"
@@ -762,6 +774,8 @@ jobs:
             echo "Master advanced before the release merge. Rerun Cut release." >&2
             exit 1
           fi
+          # Re-read the complete CI inventory after merge-ref preparation and immediately before merge.
+          node .release-tooling/scripts/release-ci-gate.mjs --once
           MERGE_RESPONSE="$(curl --fail --silent --show-error --request PUT \
             --header "Authorization: Bearer ${RELEASE_TOKEN}" \
             --header "Accept: application/vnd.github+json" \
@@ -809,9 +823,24 @@ jobs:
             echo "If tag or image publishing fails, rerun Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`. OTA resumes only when that prepared manifest already records a compatible protected native tag; otherwise use the release runbook's manual OTA path."
           } >> "${GITHUB_STEP_SUMMARY}"
 
+      - name: Report blocked release PR
+        if: ${{ failure() && steps.pr.outputs.pull_request_number != '' && steps.merge.outcome != 'success' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              ...context.repo, issue_number: Number(process.env.PR_NUMBER),
+              body: 'Release finalization did not complete. Verify the PR merge state and inspect the [release run](' +
+                context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId +
+                ') and this PR’s checks, including approval/no-job annotations. The candidate is retained. Approve or repair CI, then rerun failed release jobs only while source/head remain unchanged; do not cut another version or use the post-merge publisher for an unmerged candidate.'
+            });
+
   inspect_cleanup:
     name: Inspect unmerged candidate cleanup
-    if: ${{ always() && needs.prepare.result == 'success' && needs.finalize.result != 'success' }}
+    # Retain validated candidates for approval/CI retry, including runner cancellation.
+    if: ${{ always() && needs.prepare.result == 'success' && needs.release-validation.result != 'success' && needs.finalize.result != 'success' }}
     needs: [prepare, publish_candidate, release-validation, finalize]
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1043,3 +1072,32 @@ jobs:
     with:
       release_commit: ${{ needs.prepare.outputs.release_sha }}
       release_branch: ${{ needs.prepare.outputs.release_branch }}
+
+  release_status:
+    name: Summarize release stages
+    if: ${{ always() }}
+    needs: [prepare, publish_candidate, release-validation, finalize, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Report stage outcomes and recovery
+        env:
+          PREPARE: ${{ needs.prepare.result }}
+          CANDIDATE: ${{ needs.publish_candidate.result }}
+          SMOKE: ${{ needs.release-validation.result }}
+          FINALIZE: ${{ needs.finalize.result }}
+          PUBLISH: ${{ needs.publish.result }}
+          PR_URL: ${{ needs.finalize.outputs.pull_request_url }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+          RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
+        run: |
+          {
+            echo '## Release stage outcomes'
+            echo "- Prepare: $PREPARE; candidate branch: $CANDIDATE; metadata/smoke: $SMOKE"
+            echo "- CI gate and merge: $FINALIZE; publication workflow: $PUBLISH"
+            echo "- Release PR: $PR_URL"
+            echo 'Before merge: inspect PR CI and approval annotations; a validated candidate is retained for failed-job retry while refs remain unchanged.'
+            echo "After merge: use Publish prepared release with commit $RELEASE_SHA and branch $RELEASE_BRANCH for tag/image recovery. Never recut an already prepared version."
+            echo 'Image, OTA and deployment are separate stages. Read the nested publisher summary/log for the verified image digest and explicit optional rollout skips; a skipped OTA/deploy job does not mean the image failed.'
+          } >> "$GITHUB_STEP_SUMMARY"

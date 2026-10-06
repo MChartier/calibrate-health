@@ -336,7 +336,7 @@ test('server publication grants only the operation-specific built-in token permi
     ['cut-release.yml', 'prepare', { contents: 'read' }],
     ['cut-release.yml', 'publish_candidate', { actions: 'read', contents: 'write' }],
     ['cut-release.yml', 'release-validation', { contents: 'read' }],
-    ['cut-release.yml', 'finalize', { contents: 'write', 'pull-requests': 'write' }],
+    ['cut-release.yml', 'finalize', { contents: 'write', 'pull-requests': 'write', actions: 'read' }],
     ['cut-release.yml', 'inspect_cleanup', { contents: 'read', 'pull-requests': 'read' }],
     ['cut-release.yml', 'cleanup-candidate', { contents: 'write', 'pull-requests': 'write' }],
     ['publish-release.yml', 'tag_release', { contents: 'read' }],
@@ -398,8 +398,8 @@ test('Cut release uses a read-only request, protected handler, and scoped token 
   assert.doesNotMatch(workflow, /secrets: inherit|SERVER_RELEASE_APP_|create-github-app-token/);
   assert.equal(
     (workflow.match(/GITHUB_TOKEN: \$\{\{ github\.token \}\}/g) ?? []).length,
-    6,
-    'the three publisher jobs must each have an early and mutation-adjacent live-master gate'
+    8,
+    'six live-master reads plus two exact-candidate CI reads use the repository token'
   );
   for (const [jobName, job, mutation] of [
     ['publish_candidate', publishCandidate, 'Publish only the exact verified candidate branch'],
