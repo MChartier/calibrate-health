@@ -138,7 +138,10 @@ test('due prompt failed update, until-resumed removal and explicit resume', asyn
 
 test('year target, shortened plan on reload and unavailable metadata recovery', async ({ page, ux }) => {
     const state = await install(page, ux, '2027-01-02'); await open(page); await calendar(page);
-    for (let month = 0; month < 6; month++) await page.getByRole('button', { name: 'Next month', exact: true }).click();
+    for (const month of ['August', 'September', 'October', 'November', 'December', 'January']) {
+        await page.getByRole('button', { name: 'Next month', exact: true }).click();
+        await expect(page.getByText(month + (month === 'January' ? ' 2027' : ' 2026'), { exact: true })).toBeVisible();
+    }
     await expect(page.getByTestId('calendar-day-2027-01-01')).toHaveAccessibleName(/planned tracking pause/);
     await expect(page.getByTestId('calendar-day-2027-01-02')).toHaveAccessibleName(/future date/);
 
@@ -149,7 +152,7 @@ test('year target, shortened plan on reload and unavailable metadata recovery', 
     await expect(page.getByTestId('calendar-day-2026-07-23')).not.toHaveAccessibleName(/planned/);
     state.failRead = true; expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/pause', status: 503 });
     await page.reload(); await hideTransientPwaNotices(page);
-    await expect(page.getByText(/Pause plan unavailable|Offline - showing saved pause plan|Could not refresh the saved pause plan/)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/Pause plan unavailable|Offline - showing saved pause plan|Could not refresh the saved pause plan|Pending reconnection/).first()).toBeVisible({ timeout: 20000 });
     await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeEnabled();
 
     state.failRead = false; await page.reload(); await hideTransientPwaNotices(page);
@@ -205,7 +208,7 @@ test('cached read failure keeps the saved plan visibly stale and reopening recov
     await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
     state.failRead = true; expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/pause', status: 503 });
     await calendar(page);
-    await expect(page.getByRole('dialog', { name: 'Calendar' }).getByText(/Could not refresh the saved pause plan|Offline - showing saved pause plan/)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByRole('dialog', { name: 'Calendar' }).getByText(/Could not refresh the saved pause plan|Offline - showing saved pause plan|Showing saved tracking changes/)).toBeVisible({ timeout: 20000 });
     await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
 
     state.failRead = false; state.target = '2026-07-23';

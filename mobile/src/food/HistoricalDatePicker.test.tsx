@@ -292,3 +292,17 @@ it('excludes failed and foreign-account projection without changing completed hi
     expect(screen.getByTestId('calendar-day-2026-07-18').props.accessibilityLabel).not.toMatch(/paused/);
     screen.unmount(); client.clear(); mockOutbox.mutations = [];
 });
+
+it('shows durable calendar intent with honest missing-history labels after an uncached read failure', async () => {
+    mockGetFoodDays.mockRejectedValue(new Error('offline')); mockGetPause.mockResolvedValue({ pause: { active: false } });
+    mockOutbox.dayIntents = [{ namespace: createOutboxNamespace('https://example.test', 1), id: 'receipt:pause', operation: 'food-tracking-pause.start', payload: { starts_on: '2026-07-17' }, sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1 }];
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    const screen = renderPicker(client);
+    await waitFor(() => expect(screen.getByText('Showing saved tracking changes. Other history is unavailable.')).toBeTruthy());
+    expect(screen.getByTestId('calendar-day-2026-07-17').props.accessibilityLabel).toMatch(/tracking paused/);
+    expect(screen.getByTestId('calendar-day-2026-07-11').props.accessibilityLabel).toMatch(/tracking status unavailable/);
+    mockGetFoodDays.mockResolvedValue(RANGE_RESPONSE);
+    await act(async () => { await client.refetchQueries({ queryKey: ['mobile-food-days'] }); });
+    await waitFor(() => expect(screen.queryByText('Showing saved tracking changes. Other history is unavailable.')).toBeNull());
+    screen.unmount(); client.clear(); mockOutbox.dayIntents = [];
+});

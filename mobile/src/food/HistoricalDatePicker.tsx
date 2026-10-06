@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
@@ -125,7 +125,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
         setVisibleMonth(month => month > lastBrowseMonth ? lastBrowseMonth : month);
     }, [lastBrowseMonth]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (visible) setVisibleMonth(getMonthKey(selectedDate));
     }, [selectedDate, visible]);
 
@@ -150,6 +150,12 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
         [rangeQuery.data?.days]
     );
     const weeks = useMemo(() => getCalendarWeeks(displayMonth), [displayMonth]);
+    const hasLocalHistory = weeks.flat().some(date => date && date >= minDate && date <= maxDate
+        && calendarDayWithIntent(date, undefined, dayIntent) !== undefined);
+    const localHistoryOnly = !rangeQuery.data && hasLocalHistory;
+    const visibleRangeState = localHistoryOnly && rangeState.kind === 'error'
+        ? { ...rangeState, kind: 'degraded' as const }
+        : localHistoryOnly ? { kind: 'content' as const, error: null } : rangeState;
     const canGoPrevious = displayMonth > getMonthKey(minDate);
     const canGoNext = displayMonth < lastBrowseMonth;
     let planNotice: string | null = null;
@@ -214,9 +220,10 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     </Pressable>
                 </View>
 
+                {localHistoryOnly && <AppText variant="caption">Showing saved tracking changes. Other history is unavailable.</AppText>}
                 {planNotice && <AppText variant="caption" accessibilityLiveRegion="polite">{planNotice}</AppText>}
                 <AsyncStateBoundary
-                    state={hasHistory ? rangeState : { kind: 'content', error: null }}
+                    state={hasHistory ? visibleRangeState : { kind: 'content', error: null }}
                     resourceLabel="tracking history"
                     loading={(
                         <View style={styles.queryLoading}>
@@ -247,7 +254,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                 const marker = getFoodDayCalendarMarker(day, maxDate);
                                 const isSelected = date === selectedDate;
                                 const isToday = date === maxDate;
-                                let statusLabel = getFoodDayCalendarLabel(day, maxDate);
+                                let statusLabel = localHistoryOnly && !day ? 'tracking status unavailable' : getFoodDayCalendarLabel(day, maxDate);
                                 if (date > maxDate) statusLabel = planned ? 'planned tracking pause' : 'future date';
                                 if (planned && pausePlan?.expectedResumeOn === null) statusLabel += ', until resumed';
                                 const complete = completedMarker(marker);
