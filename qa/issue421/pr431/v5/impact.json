@@ -1,0 +1,232 @@
+{
+  "checkedAtUtc": "2026-10-06T21:30:09.857Z",
+  "actualTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "mergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "syntheticIntegrationTree": "06a810c956e2bb0a4dd2880e1fefcc05ffe4994d",
+  "exactProductPatchEqual": true,
+  "patchSha256": "9f61cbfc77d8466a1db85ba6c807072fb54c9e418a8f570e76933786fe355522",
+  "newTargetPaths": [
+    ".github/workflows/cut-release.yml",
+    "AGENTS.md",
+    "docs/architecture/0008-explicit-server-releases.md",
+    "package.json",
+    "scripts/release-ci-gate.mjs",
+    "scripts/release-ci-gate.test.mjs",
+    "scripts/release-workflow-contract.test.mjs"
+  ],
+  "completeTargetRangeCommits": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5 6b803fbc5ecd833cc4de5039e8ce495812a97e86 cf388c52cc9040bd236ad92bc8b4788487c4338a Block release finalization until exact candidate CI succeeds (#434)",
+    "cf388c52cc9040bd236ad92bc8b4788487c4338a 9f8359c428a6e29dc0e5d8661636fb851035299e Bind release CI to its PR and recheck refs after inspection",
+    "9f8359c428a6e29dc0e5d8661636fb851035299e 6b803fbc5ecd833cc4de5039e8ce495812a97e86 Gate release finalization on exact candidate CI",
+    "6b803fbc5ecd833cc4de5039e8ce495812a97e86 2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b 5ac6be5aa46fbbce274620ea44c2e310ab169032 Release v0.38.0 (#432)",
+    "5ac6be5aa46fbbce274620ea44c2e310ab169032 2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b Prepare release v0.38.0"
+  ],
+  "releaseMergeSecondParentTreeEqual": true,
+  "assessment": "Read full seven-path advancement, including recovered untruncated release gate source and AGENTS amendment. Changes are release finalizer CI gating/recovery, related tests/docs, and test:release script inclusion. They do not change credential runtime, dependencies, schema, UI or PR431 CI workflow definitions. Prior release-version/diagnostic advancement remains covered by v2. Complete merge-base-to-target integration is conflict-free with byte-identical PR431 product patch. Prior 59 tests and current-head CI remain applicable; no runtime integration or release execution claimed.",
+  "association": {
+    "closingIssuesReferences": {
+      "nodes": []
+    },
+    "reviewThreads": {
+      "nodes": [],
+      "pageInfo": {
+        "hasNextPage": false
+      }
+    }
+  },
+  "issueState": "open",
+  "project": "Current PRs explicitly points to PR431; verified read-only. No closing association exists; Development-sidebar association is not claimed.",
+  "checks": [
+    {
+      "name": "Android Emulator End-to-End",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Wear Release Emulator Smoke",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Native Two-Emulator Package Upgrade",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "UX Accessibility and Visual Regression",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Web Critical Smoke",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Mobile Build",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Wear Build and JVM Tests",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Six-State Data-Backed Route Acceptance",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Full Exported Web and PWA End-to-End",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Release Configuration",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Expo Web Build",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "iOS Build",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Backend Build",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    },
+    {
+      "name": "High and Critical Vulnerabilities",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    },
+    {
+      "name": "Mobile Tests",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Populated Postgres Upgrade",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Backend Tests",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    },
+    {
+      "name": "Classify Production Image Inputs",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    },
+    {
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    },
+    {
+      "name": "Classify Build Inputs",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    },
+    {
+      "name": "Classify Database Inputs",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    },
+    {
+      "name": "Classify Test Inputs",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "conclusion": "success"
+    }
+  ],
+  "files": [
+    {
+      "path": "backend/scripts/lib/credentialProvider.ts",
+      "blob": "1446ee461dd409fb48c341a1d656bb82ff598ddb",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/index.ts",
+      "blob": "da4504772fcb3517a0eeb5f1d697006fb3706815",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "blob": "2374a3145fdb52ffe7bd854f90b5a96eb786fe40",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/routes/user.ts",
+      "blob": "10810ad6087436f8e564e4fb16c7e4efaa8c7f95",
+      "status": "modified"
+    },
+    {
+      "path": "backend/src/services/credentialVerification.ts",
+      "blob": "b441397ef14c01836044ce0dc85759ab110fc259",
+      "status": "added"
+    },
+    {
+      "path": "backend/src/services/mcpOAuth.ts",
+      "blob": "6bb8246e6cbb94ef1e0792808c1c26d575730f7a",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/credential-provider.test.js",
+      "blob": "39e35f03317cd6629f289d996a1d4f171010b242",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-account-recovery.test.js",
+      "blob": "3259e143f4103fae7c261ed0721127bff2d15ac7",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "blob": "d8e4013536eb9b1f1cec39236bcd8df2206ace20",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-auth.test.js",
+      "blob": "b9528c490947ec8fc60f6de47ed7b12dbdca977c",
+      "status": "modified"
+    },
+    {
+      "path": "backend/test/routes-user.test.js",
+      "blob": "d546ee371fbd0eb357553f2bf6c148582e1e4985",
+      "status": "modified"
+    },
+    {
+      "path": "docs/firebase-migration-preparation.md",
+      "blob": "d68b50fcadd3c281bec4b3f478b158a8c590750f",
+      "status": "modified"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "parents": [
+        "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+      ]
+    }
+  ]
+}
