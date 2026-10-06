@@ -1,31 +1,11 @@
-# PR434 independent QA
+# PR434 independent reassessment
 
-Verdict: evidence-incomplete, with changes-required code findings.
+Verdict: ready at cf388c52 against master6b803fbc. Supersedes verdict6023284090; historical evidence and receipt remain unchanged.
 
-## F1 (P1)
+F1 final-ref race and F2 PR/tested-base association fixed and independently verified. Final20 gate tests pass; three new tests fail against prior implementation. Full release suite:152pass,2documentedLinux-onlyskips. Five exact-head CI workflows:10successfuljobs,14justifiedskips. Full2commit7file+442/-14scope reviewed. No remaining actionable findings.
 
-Final ref verification precedes the entire CI inventory read. A master change during that read is accepted, allowing the head-only merge API to merge against a different base. Post-merge ancestry verification prevents publication but cannot undo the merge.
+Final description passes base-to-final communication. Project Current PR and native nonclosing reference verified. Bot quota refusal is recorded honestly and covered by the human amendment; no completed bot review claimed.
 
-Mock changes master when actions/runs is read: inspectCi returns no pending workflows with only one master read.
+Bindings and gate assessment: verdict.json. CI: ci.json. Regression sensitivity: sensitivity-result.txt; reproduce final maintained tests against prior gate9f8359c4 using Node --test --test-name-pattern="final one-shot|successful runs must|fresh run read". Tests/fixtures bound to final source cf388c52.
 
-Read PR/head/base and master again after the complete CI/run-attempt inspection and immediately before authorizing merge. Retain the documented unavoidable final API race limitation.
-
-## F2 (P2)
-
-Run selection ignores pull_requests number/base identity. Successful runs for the same head/branch but another PR or base are accepted as this release PR validation.
-
-All five synthetic runs carry pull_requests number 99/base c.../ref other instead of requested PR12/base b...; inspectCi still passes.
-
-Bind accepted run evidence to the intended PR and tested base, using authoritative GitHub run/event/check metadata; fail closed for missing or ambiguous identity. Add wrong-PR, stale-base and empty-association maintained cases.
-
-## F3 (P2)
-
-The current PR body will become stale after this verdict because it says Independent QA remains pending; Project Current PRs still says Not created. No native closing association exists.
-
-
-
-Remove operational QA-pending text from the PR body and keep outcome/evidence concise. Coordinator must set verified Current PR and report unsupported nonclosing native linkage honestly.
-
-Full bindings and scope: verdict.json. Probe: qa-probe.mjs (run from a directory containing exact candidate checkout at review/). Observed output: WRONG_PR_AND_BASE_ACCEPTED true; MASTER_CHANGED_DURING_READ_ACCEPTED true masterReads 1.
-
-Retention: dedicated nonmerged evidence ref, owned by independent QA task 01a1128e-30ca-76da-bdf8-6e588e957030; retain for lifetime of PR434 review and release-gate recovery history. Never merge this record into product history. Original owner evidence and receipts remain untouched.
+Retain on dedicated nonmerged QA evidence ref for lifetime of PR434 review/release recovery; owner independent QA task01a1128e-30ca-76da-bdf8-6e588e957030. Never merge evidence into product history. Human merge/release boundary preserved.

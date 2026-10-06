@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "verdict": "evidence-incomplete",
+  "verdict": "ready",
   "workflowVersion": "workflow-v3",
   "prCommunicationStandard": "pr-review-v3",
   "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
@@ -8,12 +8,12 @@
   "pullRequest": "https://github.com/MChartier/calibrate-health/pull/434",
   "issue": "https://github.com/MChartier/calibrate-health/issues/433",
   "reviewerChat": "01a1128e-30ca-76da-bdf8-6e588e957030",
-  "supersedesVerdictCommentId": null,
-  "checkedAtUtc": "2026-10-06T18:55:12.083Z",
-  "headSha": "9f8359c428a6e29dc0e5d8661636fb851035299e",
+  "supersedesVerdictCommentId": 6023284090,
+  "checkedAtUtc": "2026-10-06T19:07:36.441Z",
+  "headSha": "cf388c52cc9040bd236ad92bc8b4788487c4338a",
   "baseSha": "6b803fbc5ecd833cc4de5039e8ce495812a97e86",
   "parentRevisions": [],
-  "prBodySha256": "64120a0d9d514deb464e71fbdd319e51598c4f95b351003fb23ab571299bea86",
+  "prBodySha256": "f82316b65be697964f21355b0b9527708e10136528ec651d938ba4a22bfcd94c",
   "actualTarget": {
     "repository": "MChartier/calibrate-health",
     "ref": "master",
@@ -21,44 +21,17 @@
   },
   "mergeBase": "6b803fbc5ecd833cc4de5039e8ce495812a97e86",
   "ultimateTarget": "master",
-  "findings": [
-    {
-      "id": "F1",
-      "priority": "P1",
-      "location": "scripts/release-ci-gate.mjs:67-86; .github/workflows/cut-release.yml:777-784",
-      "problem": "Final ref verification precedes the entire CI inventory read. A master change during that read is accepted, allowing the head-only merge API to merge against a different base. Post-merge ancestry verification prevents publication but cannot undo the merge.",
-      "observed": "Mock changes master when actions/runs is read: inspectCi returns no pending workflows with only one master read.",
-      "expected": "Read PR/head/base and master again after the complete CI/run-attempt inspection and immediately before authorizing merge. Retain the documented unavoidable final API race limitation.",
-      "nextAction": "Add a maintained asynchronous ref-change regression, including the final --once path; reject detected changes before merge."
-    },
-    {
-      "id": "F2",
-      "priority": "P2",
-      "location": "scripts/release-ci-gate.mjs:36-41,73-76",
-      "problem": "Run selection ignores pull_requests number/base identity. Successful runs for the same head/branch but another PR or base are accepted as this release PR validation.",
-      "observed": "All five synthetic runs carry pull_requests number 99/base c.../ref other instead of requested PR12/base b...; inspectCi still passes.",
-      "expected": "Bind accepted run evidence to the intended PR and tested base, using authoritative GitHub run/event/check metadata; fail closed for missing or ambiguous identity. Add wrong-PR, stale-base and empty-association maintained cases.",
-      "nextAction": "Owner must implement and demonstrate the exact PR/base producer binding without privileged triggering."
-    },
-    {
-      "id": "F3",
-      "priority": "P2",
-      "location": "PR434 description and issue433 Project association",
-      "problem": "The current PR body will become stale after this verdict because it says Independent QA remains pending; Project Current PRs still says Not created. No native closing association exists.",
-      "expected": "Remove operational QA-pending text from the PR body and keep outcome/evidence concise. Coordinator must set verified Current PR and report unsupported nonclosing native linkage honestly.",
-      "nextAction": "Owner communication-only correction and coordinator Project reconciliation; rebind final body without unrelated test reruns."
-    }
-  ],
+  "findings": [],
   "gates": {
-    "value": "pass: observed PR432 approval-expiry merge defect; proportionate release safety scope",
-    "outcome": "changes-required: F1/F2",
-    "code": "changes-required: F1/F2 reproduced independently",
-    "engineeringReview": "Independent complete current-code review completed here. Configured GitHub bot gate unverified: no request, review or quota refusal in current PR history. Narrow quota-only waiver cannot apply without a refusal; coordinator must reconcile configured requirement.",
-    "ci": "pass: five exact-head workflow runs, 10 successful jobs, 14 justified path/manual/platform skips. Implementation PR is not a canonical release PR; its skips are not accepted release-gate inputs.",
-    "behavior": "Maintained suite independently reproduced 151 total,149 pass,2 preexisting Linux-shell skips; two adverse probes expose gaps.",
-    "evidence": "Owner source-bound records read at immutable commits; non-UI exception appropriate. No fabricated screenshots.",
-    "communication": "Problem-first base-to-final Summary and behavioral table otherwise good; F3 operational sentence must be removed after assessment.",
-    "stack": "pass: independent one-commit child of master; no parent/sibling merges or evidence churn"
+    "value": "pass: unchanged concrete PR432 failure and authorized bounded prevention/recovery scope",
+    "outcome": "pass: current fail-closed gate, bounded approval waiting, preserved candidate retry, independent explicit publication and stage summary",
+    "code": "pass: full current published range inspected; F1/F2 resolved, no remaining actionable findings",
+    "engineeringReview": "pass: independent current-code engineering review complete; bot request6023344648 got quota-only refusal6023348372. Explicit amendment6006523068 applies; no bot completion claimed.",
+    "ci": "pass: all five exact-head workflows successful;24 jobs=10success14justified path/platform/manual skips; unchanged applicability policy checked. These implementation-PR skips are not canonical-release gate input.",
+    "behavior": "pass: independently reran20 gate tests and full154-test release suite=152pass2existingLinux-shellskips. Independently ran final three regression tests against prior gate:3 expected failures. No live mutations.",
+    "evidence": "pass: maintained synthetic contract; immutable original and final evidence read. Before baseline remains actual master, correction sensitivity clearly supplemental.",
+    "communication": "pass: concise problem-first base-to-final Summary and meaningful failure/success/recovery behavioral table; explicit non-UI reason and non-atomic/human-approval limits, no stale QA statement.",
+    "stack": "pass:2linearcommits7files+442/-14 against actual master; no parent/sibling merges or evidence churn"
   },
   "scope": {
     "commits": [
@@ -66,6 +39,12 @@
         "sha": "9f8359c428a6e29dc0e5d8661636fb851035299e",
         "parents": [
           "6b803fbc5ecd833cc4de5039e8ce495812a97e86"
+        ]
+      },
+      {
+        "sha": "cf388c52cc9040bd236ad92bc8b4788487c4338a",
+        "parents": [
+          "9f8359c428a6e29dc0e5d8661636fb851035299e"
         ]
       }
     ],
@@ -87,9 +66,9 @@
       {
         "path": "docs/architecture/0008-explicit-server-releases.md",
         "status": "modified",
-        "additions": 22,
+        "additions": 24,
         "deletions": 3,
-        "blob": "f0a931eda93ed47751308fff212d87a65daa82b1"
+        "blob": "0e6d988791f9ddc33aea15e9a999890634a09edc"
       },
       {
         "path": "package.json",
@@ -101,16 +80,16 @@
       {
         "path": "scripts/release-ci-gate.mjs",
         "status": "added",
-        "additions": 148,
+        "additions": 173,
         "deletions": 0,
-        "blob": "728ee28f04997885bc77f57c002f0b94f2dd24fb"
+        "blob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
       },
       {
         "path": "scripts/release-ci-gate.test.mjs",
         "status": "added",
-        "additions": 129,
+        "additions": 173,
         "deletions": 0,
-        "blob": "96e7dff442736b0a3599219e5b43ab43d21c896e"
+        "blob": "5a739a178adf706349b22a742a82ba347923fe5a"
       },
       {
         "path": "scripts/release-workflow-contract.test.mjs",
@@ -121,23 +100,26 @@
       }
     ],
     "totals": {
-      "commits": 1,
+      "commits": 2,
       "files": 7,
-      "additions": 371,
+      "additions": 442,
       "deletions": 14
     },
-    "assessment": "All seven paths inspected: product gate/workflow, maintained regression tests and test registration, proportionate maintained recovery documentation. No exception/churn. git diff --check passed; isolated checkout clean."
+    "assessment": "Complete API pages and git per-commit paths/parents reconcile. Second commit changes only gate/test/maintained ADR; all retained material necessary. No product-source edits by QA; clean checkout and diff hygiene."
   },
   "evidence": [
     "https://github.com/MChartier/calibrate-health/blob/31bbc61e7554dfc4f074b414998fba11d5131fd1/README.md",
-    "https://github.com/MChartier/calibrate-health/blob/c7925069e89144a92aa22a660c803a436884bf3e/ci-readback.md"
+    "https://github.com/MChartier/calibrate-health/blob/c7925069e89144a92aa22a660c803a436884bf3e/ci-readback.md",
+    "https://github.com/MChartier/calibrate-health/blob/825306680fb8430bd8cf02c4c5a99724c44773b5/final-contract.md",
+    "https://github.com/MChartier/calibrate-health/blob/8f17913224046ef135dfecfc4f7588ddbd68dd46/same-qa-handoff.md",
+    "https://github.com/MChartier/calibrate-health/blob/b208da1ee737556ea869c144a0e15f7a36de0a23/verdict.json"
   ],
   "ciRunIds": [
-    37513584705,
-    37513584848,
-    37513584743,
-    37513584647,
-    37513584699
+    37515494163,
+    37515494103,
+    37515494082,
+    37515494151,
+    37515494104
   ],
   "uiEvidence": {
     "applicable": false,
@@ -146,11 +128,35 @@
     "provenanceRecords": []
   },
   "limitations": [
-    "No live release, merge, publish, deploy, approval, credentials or protections changed. PR401 untouched.",
-    "Polling plus head-only merge remains non-atomic even after F1 correction; this is explicitly disclosed.",
-    "Authenticated Actions API repository/path/event/exact-head selection is useful producer restriction and canonical candidate verification protects tooling; it does not establish omitted run PR/base binding.",
-    "Native closingIssuesReferences empty; issue has Project item but Current PRs field is Not created. Nonclosing mention is not a native association.",
-    "No bot review or quota-only refusal exists on this PR as of readback; no bot completion claimed."
+    "No live release,merge,publish,deploy,approval,credential or protection mutation. PR401 untouched.",
+    "Final polling and head-locked merge remain non-atomic; documented inherent race is not claimed eliminated. Post-merge ancestry/tree checks guard publication.",
+    "Human approval may still be required for generated PR CI; retained candidate retry requires unchanged source/head.",
+    "Native nonclosing cross-reference and Project Current PR verified; closingIssuesReferences intentionally empty for partial scope. Project old blocker text may be updated by coordinator after this verdict.",
+    "Bot quota-only refusal is nonblocking solely under the supplied direct amendment; independent review completed."
   ],
-  "nextAction": "Route F1/F2 and final-body correction to existing implementation owner. Coordinator reconcile configured bot requirement and Project association. Same independent QA reassesses changed code/evidence and final identities; coordinator alone owns readiness."
+  "nextAction": "Coordinator independently verifies this trusted receipt, exact source/base/body/evidence and current findings/CI, then owns any readiness/draft/Project transition and post-transition race readback. No merge or release authorization.",
+  "dispositions": [
+    {
+      "id": "F1",
+      "status": "resolved",
+      "evidence": "inspectCi rereads current PR/head/base and master after all CI metadata/jobs reads. Maintained final one-shot asynchronous master/head/base mutation cases pass; each prior implementation lacks rejection."
+    },
+    {
+      "id": "F2",
+      "status": "resolved",
+      "evidence": "Both selected and fresh runs require one exact PR number, base/head SHAs/refs and matching repository IDs. Missing/ambiguous/wrong/stale bindings reject. Real Actions payloads independently inspected and match the assumed metadata shape."
+    },
+    {
+      "id": "F3",
+      "status": "resolved",
+      "evidence": "Final PR omits stale QA-pending prose. Issue Project Current PRs points to PR434; native timeline cross-reference verified. Nonclosing partial scope retained; no fabricated closing link."
+    }
+  ],
+  "botDisposition": {
+    "request": 6023344648,
+    "refusal": 6023348372,
+    "author": "chatgpt-codex-connector[bot]",
+    "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+    "completedReview": false
+  }
 }
