@@ -1,5 +1,6 @@
 import {
     getFoodDayStatusLabel,
+    getFoodDayCalorieTarget,
     shouldEmphasizePausedStatus,
     shouldShowCalorieComparison
 } from './dayPresentation';
@@ -62,4 +63,14 @@ describe('day calorie presentation', () => {
             ...state
         })).toBe(false);
     });
+});
+
+
+test('completed-day balance keeps its saved target after a pace change; unknown history stays unknown', () => {
+    const day = { status: 'COMPLETE', calorie_comparison: { target_kcal: 2000 } } as import('@calibrate/api-client').FoodLogDay;
+    expect(getFoodDayCalorieTarget({day,isToday:false,currentTarget:2350})).toBe(2000);
+    expect(getFoodDayCalorieTarget({day,isToday:true,currentTarget:2350})).toBe(2000);
+    expect(getFoodDayCalorieTarget({day:{...day,calorie_comparison:null},isToday:false,currentTarget:2350})).toBeNull();
+    expect(getFoodDayCalorieTarget({day:{...day,status:'OPEN'},isToday:true,currentTarget:2350})).toBe(2350);
+    expect(getFoodDayCalorieTarget({day:{...day,status:'OPEN'},isToday:false,currentTarget:2350})).toBeNull();
 });

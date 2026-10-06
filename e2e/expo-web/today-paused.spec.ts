@@ -1,6 +1,25 @@
 import { expect, test, hideTransientPwaNotices, FROZEN_LOCAL_DATE, type AuthenticatedApiOptions } from './fixtures';
 import { applyTwoHundredPercentText } from './text-scaling';
 import { expectNoBlockingAccessibilityViolations } from './ux-a11y';
+import type { Page } from '@playwright/test';
+
+async function expectWeightBoundary(page: Page, paused: boolean) {
+  const row = page.getByTestId('today-weight-card');
+  const action = page.getByTestId('today-weight-card-press-layer');
+  const lower = await action.evaluate(element => {
+    const style = getComputedStyle(element);
+    return { width: style.borderBottomWidth, color: style.borderBottomColor };
+  });
+  await expect(row).toHaveCSS('border-top-width', paused ? lower.width : '0px');
+  if (paused) {
+    expect(parseFloat(lower.width)).toBeGreaterThan(0);
+    await expect(row).toHaveCSS('border-top-color', lower.color);
+    const rowBounds = await row.boundingBox();
+    const actionBounds = await action.boundingBox();
+    expect(rowBounds!.x).toBe(actionBounds!.x);
+    expect(rowBounds!.width).toBe(actionBounds!.width);
+  }
+}
 
 const retainedFood = [{ id: 31, meal_period: 'BREAKFAST' as const, name: 'Saved breakfast', calories: 360 }];
 
@@ -35,6 +54,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeInViewport();
     await page.evaluate(() => document.fonts.ready);
+    await expectWeightBoundary(page, true);
     await page.screenshot({ path: testInfo.outputPath(`paused-today-${colorScheme}.png`) });
     await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: 'paused-today' });
 
@@ -48,10 +68,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Log weight', exact: true }).click();
     await page.getByRole('button', { name: 'Done', exact: true }).click();
     await expect(page.getByTestId('today-weight-card')).toContainText('88 kg');
+    await expectWeightBoundary(page, true);
     await expect(page.getByRole('heading', { name: 'Tracking paused', exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Resume tracking', exact: true }).click();
     await expect(page.getByTestId('paused-day-message')).toHaveCount(0);
+    await expectWeightBoundary(page, false);
     await expect(page.getByLabel(/^Daily balance\./)).toBeVisible();
     await expect(page.getByTestId('today-food-preview')).toContainText('360 kcal');
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
@@ -69,6 +91,7 @@ test('a past paused day replaces an expanded food log and can be backfilled', as
   });
   await page.goto('/today');
   await hideTransientPwaNotices(page);
+  await expectWeightBoundary(page, false);
   await page.getByTestId('today-food-preview').click();
   await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toBeVisible();
   options.foodDayStatus = 'PAUSED';
@@ -79,6 +102,7 @@ test('a past paused day replaces an expanded food log and can be backfilled', as
   await expect(page.getByTestId('today-food-preview')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toHaveCount(0);
   await page.evaluate(() => document.fonts.ready);
+  await expectWeightBoundary(page, true);
   await page.screenshot({ path: testInfo.outputPath('paused-past-day.png') });
   await page.getByTestId('today-weight-card-press-layer').click();
   await expect(page.getByRole('heading', { name: 'Log weight', exact: true })).toBeVisible();
