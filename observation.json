@@ -1,0 +1,42 @@
+{
+  "parent": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "head": "3b2ccd7d3a79cc880e163bf6b157be9d56476c9f",
+  "sourcePath": "backend/src/config/databaseUtils.ts",
+  "sourceHashes": {
+    "before": "e5ae7d84be3aafffb2abff4faefd50da214fbe12f20835f3c44f479828cf1644",
+    "after": "46a3ca930db9193cb8de274d5bc96bdd42ca8c002edf6d642f835e69fa123fac"
+  },
+  "environment": {
+    "platform": "win32",
+    "node": "v24.19.0",
+    "pg": "8.16.3",
+    "prisma": "7.9.0"
+  },
+  "fixture": {
+    "DATABASE_URL": "postgresql://synthetic:synthetic@localhost/app?sslmode=disable",
+    "DB_POOL_MAX": "3",
+    "DB_POOL_ACQUIRE_TIMEOUT_SECONDS": "5",
+    "DB_POOL_IDLE_TIMEOUT_SECONDS": "30"
+  },
+  "beforeConfig": {
+    "host": "localhost",
+    "database": "app",
+    "user": "synthetic",
+    "password": "synthetic",
+    "ssl": false
+  },
+  "after": {
+    "url": "postgresql://synthetic:synthetic@localhost/app?sslmode=disable&connection_limit=3&pool_timeout=5&connect_timeout=5&max_idle_connection_lifetime=30",
+    "poolConfig": {
+      "host": "localhost",
+      "database": "app",
+      "user": "synthetic",
+      "password": "synthetic",
+      "ssl": false,
+      "max": 3,
+      "connectionTimeoutMillis": 5000,
+      "idleTimeoutMillis": 30000
+    }
+  },
+  "explanation": "Before uses the exact parent database.ts composition. Opt-in settings are absent there; After supplies max=3, acquisition=5000ms and idle=30000ms, with equivalent CLI URL parameters. No database is contacted."
+}
