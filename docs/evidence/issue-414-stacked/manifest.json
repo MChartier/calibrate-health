@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAtUtc": "2026-10-06T00:33:07.165Z",
+  "createdAtUtc": "2026-10-06T00:33:28.781Z",
   "beforeSource": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
   "afterSource": "0ee7d098589beb218c4f34b370ba556f25de4498",
   "parent": {
@@ -8,7 +8,7 @@
     "head": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
     "state": "open draft; review quota blocked"
   },
-  "harnessCommit": "928dd9e4612f505028cbdcc170ce49234f8f8249",
+  "harnessCommit": "9d6138cd3e1b631af97e0157bff9169359499b53",
   "captureRuns": {
     "before": "10 passed",
     "after": "11 passed, 1 deliberate desktop enlarged-text skip"
@@ -735,6 +735,10 @@
     }
   ],
   "artifacts": [
+    {
+      "path": ".gitattributes",
+      "sha256": "8b9c3028d6467ff3be7c793141927841d70f47f52d0590677438f488ca154992"
+    },
     {
       "path": "after-build.json",
       "sha256": "d6188962a5b4c02fea24de8ced9c0481555d9c1bcce88529a5d031843a9159a8"
