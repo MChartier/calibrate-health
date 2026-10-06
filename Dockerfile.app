@@ -52,6 +52,7 @@ COPY --from=build /app/backend/node_modules/.prisma /app/backend/node_modules/.p
 COPY --from=build /app/backend/dist /app/backend/dist
 COPY --from=build /app/backend/prisma /app/backend/prisma
 COPY --from=build /app/backend/prisma.config.ts /app/backend/prisma.config.ts
+COPY --from=build /app/backend/src/config/databaseUtils.ts /app/backend/src/config/databaseUtils.ts
 COPY --from=build /app/backend/scripts /app/backend/scripts
 
 COPY --from=build /app/mobile/dist /app/web/dist

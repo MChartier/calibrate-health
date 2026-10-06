@@ -1,24 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-import {
-  buildPgOptionsForSchema,
-  parseDatabaseUrlToPgConfig,
-  resolveDatabaseUrl,
-  resolvePgSslConfig,
-  resolvePrismaSchema
-} from './databaseUtils';
+import { resolveDatabaseConnection } from './databaseUtils';
 
-const databaseUrl = resolveDatabaseUrl();
-
-const prismaSchema = resolvePrismaSchema(databaseUrl);
-
-export const pgPool = new Pool({
-  ...parseDatabaseUrlToPgConfig(databaseUrl),
-  ssl: resolvePgSslConfig(databaseUrl),
-  ...buildPgOptionsForSchema(prismaSchema),
-});
-const adapter = new PrismaPg(pgPool, { schema: prismaSchema });
+const connection = resolveDatabaseConnection();
+export const pgPool = new Pool(connection.poolConfig);
+// pg removes the failed idle client. Do not log driver errors containing connection details.
+pgPool.on('error', () => console.error('Idle database connection failed; check database availability. The pool will replace it on demand.'));
+const adapter = new PrismaPg(pgPool, { schema: connection.schema });
 
 const prisma = new PrismaClient({ adapter });
 
@@ -29,8 +18,11 @@ const prisma = new PrismaClient({ adapter });
  * short-lived CLI scripts must close both handles or Node waits for the pool idle timeout.
  */
 export async function disconnectDatabase(): Promise<void> {
-  await prisma.$disconnect();
-  await pgPool.end();
+  try {
+    await prisma.$disconnect();
+  } finally {
+    await pgPool.end();
+  }
 }
 
 export default prisma;

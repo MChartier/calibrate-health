@@ -36,6 +36,7 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Weight trend model: `docs/weight-trend-model.md`
 - MCP, OAuth, and the Codex plugin: `docs/mcp.md`
 - Deployment (Compose self-hosting): `deploy/README.md`
+- Database connections and optional pool bounds: [configuration](docs/database-connections.md)
 - Expo web dev/build/PWA: `docs/expo-web.md`
 - Expo Android client: `mobile/README.md`
 - First hosted release scope: `docs/release-scope.md`
