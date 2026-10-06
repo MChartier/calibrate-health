@@ -5,16 +5,16 @@ import { expect, expectApiFailure, hideTransientPwaNotices, test } from './fixtu
 
 const EVIDENCE_DIR = path.resolve('docs/screenshots/launch-07');
 
-test('unknown app addresses replace themselves with Today without leaving redirect loops in history', async ({ page, ux }) => {
-  await ux.install('populated');
-  const historyRequests: string[] = [];
-  page.on('request', (request) => {
-    const url = new URL(request.url());
-    if (url.searchParams.get('view') === 'history' || url.pathname.endsWith('/notifications/in-app/read-all')) {
-      historyRequests.push(request.url());
-    }
-  });
-  for (const missing of ['/notifications', '/notifications?cursor=old#history', '/notifications/obsolete', '/missing/deep/page?stale=true#section']) {
+for (const missing of ['/notifications', '/notifications?cursor=old#history', '/notifications/obsolete', '/missing/deep/page?stale=true#section']) {
+  test(`unknown address ${missing} replaces itself with Today without a history loop`, async ({ page, ux }) => {
+    await ux.install('populated');
+    const historyRequests: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.searchParams.get('view') === 'history' || url.pathname.endsWith('/notifications/in-app/read-all')) {
+        historyRequests.push(request.url());
+      }
+    });
     await page.goto('/progress');
     await expect(page.locator('#route-focus-title')).toHaveText('Progress');
     expectApiFailure(page, { method: 'GET', pathname: new URL(missing, 'http://localhost').pathname, status: 404 });
@@ -35,9 +35,9 @@ test('unknown app addresses replace themselves with Today without leaving redire
       await expect(page.locator('#route-focus-title')).toHaveText('Today');
       await expect(page).toHaveURL((url) => url.pathname === '/today');
     }
-  }
-  expect(historyRequests).toEqual([]);
-});
+    expect(historyRequests).toEqual([]);
+  });
+}
 
 test('signed-in legal pages retain Settings navigation without the history shortcut', async ({ page, ux }) => {
   await ux.install('populated');
