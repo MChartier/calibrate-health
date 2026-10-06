@@ -1,0 +1,540 @@
+Γ£ö existing local installations remain local even when unrelated Firebase environment values exist (0.6694ms)
+Γ£ö incomplete provider activation fails closed instead of silently using local credentials (0.2751ms)
+Γ£ö local compatibility works without Firebase configuration (146.7165ms)
+Γ£ö Firebase authority receives passwords beyond the local bcrypt byte limit (0.5106ms)
+Γ£ö Firebase password authentication returns only a boolean and binds verified project and UID (0.3686ms)
+Γ£ö wrong configured project and missing configuration never call the network or local bcrypt fallback (0.3833ms)
+Γ£ö enumeration-safe credential failures differ from retryable network/configuration failures (0.7137ms)
+Γ£ö timeout covers hanging transport and token verification (32.4985ms)
+Γ£ö forged response and verifier rejection cannot create an authenticated result (0.7166ms)
+Γ£ö runtime local verification keeps unknown accounts invalid without issuing an authenticated result (241.2674ms)
+Γ£ö preparation compatibility export shares the runtime implementation and error identity (23.3947ms)
+Γ£ö incomplete trusted Firebase mappings are held before any provider request (0.3097ms)
+Γ£ö unknown local credentials perform a dummy comparison but cannot authenticate (0.9306ms)
+Γ£û MCP OAuth stores a hashed, ten-minute approval credential for an exact resource (855.8316ms)
+Γ£û MCP OAuth dynamic client persistence strips client secrets (10.461ms)
+Γ£û MCP OAuth uses different purpose-bound hashes for the same token text (8.8042ms)
+Γ£û MCP OAuth revokes the entire grant when refresh-token replay wins a race (7.6827ms)
+Γ£û MCP OAuth refresh rotation prunes only expired credentials for the active grant (20.4836ms)
+Γ£û MCP OAuth approval cannot create a code after the security version changes with the same password hash (17.061ms)
+Γ£û known-account SMTP work cannot delay the generic password reset response (1096.4209ms)
+Γ£û known and unknown recovery requests have the same immediate response (14.9443ms)
+Γ£û auth route: POST /mobile/login returns mobile tokens for valid credentials (299.4075ms)
+Γ£û auth route: POST /mobile/login refuses direct Wear OS password sessions (17.0456ms)
+Γ£û auth route: Wear pairing credential issuance rejects browser-only authentication (14.3187ms)
+Γ£û auth route: Wear pairing credential issuance rejects non-origin server bindings (12.0771ms)
+Γ£û auth route: Wear pairing credential issuance binds the watch key and challenge (11.7637ms)
+Γ£û auth route: POST /mobile/login performs a dummy hash comparison for unknown accounts (11.898ms)
+Γ£û auth route: POST /mobile/refresh rejects missing refresh token (14.7575ms)
+Γ£û auth route: POST /mobile/refresh records invalid or expired refresh tokens (14.7276ms)
+Γ£û auth route: GET /mobile/sessions returns owned active devices (13.7815ms)
+Γ£û auth route: POST /register returns 400 when the email already exists (1074.6051ms)
+Γ£û auth route: POST /register validates email and password inputs (16.1811ms)
+Γ£û auth route: POST /register creates a user and logs them in (15.3961ms)
+Γ£û auth route: POST /login normalizes credentials, logs in, and returns the serialized user (14.2366ms)
+Γ£û auth route: POST /login returns JSON errors for invalid or rejected credentials (11.6881ms)
+Γ£û auth route: POST /logout forwards errors from req.logout (11.1463ms)
+Γ£û auth route: POST /logout destroys the session and clears its cookie (19.9419ms)
+Γ£û auth route: GET /me returns 401 when not authenticated (13.0582ms)
+Γ£û hosted registration requires explicit current legal versions (10.7559ms)
+Γ£û auth route: hosted registration fails closed when account email is unavailable (15.2211ms)
+Γ£û auth route: verification resend and reset request do not reveal account existence (12.779ms)
+Γ£û user route: rejects unauthenticated requests via router.use middleware (946.6718ms)
+Γ£û user route: GET /me returns 404 when the user row is missing (12.4482ms)
+Γ£û user route: GET /me returns serialized user data (9.0424ms)
+Γ£û user route: PUT /profile-image validates data_url input (8.5142ms)
+Γ£û user route: PUT /profile-image rejects invalid profile image payloads (7.1656ms)
+Γ£û user route: PUT /profile-image stores bytes and returns a data URL (6.9913ms)
+Γ£û user route: PATCH /password validates request shape and rejects identical passwords (5.8331ms)
+Γ£û user route: PATCH /password updates password when current password matches (6.4063ms)
+Γ£û user route: GET /account/export returns a no-store attachment (6.0339ms)
+Γ£û user route: DELETE /account requires and verifies the current password (7.505ms)
+Γ£û user route: DELETE /account deletes data, destroys the request session, and clears the cookie (5.6203ms)
+Γ£û user route: PATCH /preferences validates reminder preference booleans (5.4333ms)
+Γ£û user route: PATCH /preferences updates reminder preference fields (5.5919ms)
+Γ£û user route: PATCH /preferences validates haptics_enabled boolean (5.7223ms)
+Γ£û user route: PATCH /preferences updates haptics_enabled field (14.3924ms)
+Γ£û user route: GET /profile reads the latest goal with deterministic ordering (6.5269ms)
+Γ£û user route: PATCH /profile fails invalid legacy timezones closed and marks the current goal in the same transaction (5.8634ms)
+Γ£û user route: a profile serialization conflict returns a retryable conflict (1.9897ms)
+Γä╣ tests 59
+Γä╣ suites 0
+Γä╣ pass 13
+Γä╣ fail 46
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 5151.5799
+
+Γ£û failing tests:
+
+test at test\mcp-oauth.test.js:31:1
+Γ£û MCP OAuth stores a hashed, ten-minute approval credential for an exact resource (855.8316ms)
+  src/services/mcpOAuth.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/services/mcpOAuth.ts(3,23): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+  src/services/mcpOAuth.ts(231,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(290,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(328,22): error TS7006: Parameter 'scope' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(334,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(425,24): error TS7006: Parameter 'grant' implicitly has an 'any' type.
+  
+
+test at test\mcp-oauth.test.js:69:1
+Γ£û MCP OAuth dynamic client persistence strips client secrets (10.461ms)
+  src/services/mcpOAuth.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/services/mcpOAuth.ts(3,23): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+  src/services/mcpOAuth.ts(231,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(290,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(328,22): error TS7006: Parameter 'scope' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(334,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(425,24): error TS7006: Parameter 'grant' implicitly has an 'any' type.
+  
+
+test at test\mcp-oauth.test.js:92:1
+Γ£û MCP OAuth uses different purpose-bound hashes for the same token text (8.8042ms)
+  src/services/mcpOAuth.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/services/mcpOAuth.ts(3,23): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+  src/services/mcpOAuth.ts(231,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(290,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(328,22): error TS7006: Parameter 'scope' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(334,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(425,24): error TS7006: Parameter 'grant' implicitly has an 'any' type.
+  
+
+test at test\mcp-oauth.test.js:106:1
+Γ£û MCP OAuth revokes the entire grant when refresh-token replay wins a race (7.6827ms)
+  src/services/mcpOAuth.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/services/mcpOAuth.ts(3,23): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+  src/services/mcpOAuth.ts(231,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(290,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(328,22): error TS7006: Parameter 'scope' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(334,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(425,24): error TS7006: Parameter 'grant' implicitly has an 'any' type.
+  
+
+test at test\mcp-oauth.test.js:150:1
+Γ£û MCP OAuth refresh rotation prunes only expired credentials for the active grant (20.4836ms)
+  src/services/mcpOAuth.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/services/mcpOAuth.ts(3,23): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+  src/services/mcpOAuth.ts(231,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(290,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(328,22): error TS7006: Parameter 'scope' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(334,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(425,24): error TS7006: Parameter 'grant' implicitly has an 'any' type.
+  
+
+test at test\mcp-oauth.test.js:195:1
+Γ£û MCP OAuth approval cannot create a code after the security version changes with the same password hash (17.061ms)
+  src/services/mcpOAuth.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/services/mcpOAuth.ts(3,23): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+  src/services/mcpOAuth.ts(231,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(290,60): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(328,22): error TS7006: Parameter 'scope' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(334,62): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/services/mcpOAuth.ts(425,24): error TS7006: Parameter 'grant' implicitly has an 'any' type.
+  
+
+test at test\routes-account-recovery.test.js:55:1
+Γ£û known-account SMTP work cannot delay the generic password reset response (1096.4209ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-account-recovery.test.js:77:1
+Γ£û known and unknown recovery requests have the same immediate response (14.9443ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:113:1
+Γ£û auth route: POST /mobile/login returns mobile tokens for valid credentials (299.4075ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:161:1
+Γ£û auth route: POST /mobile/login refuses direct Wear OS password sessions (17.0456ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:188:1
+Γ£û auth route: Wear pairing credential issuance rejects browser-only authentication (14.3187ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:207:1
+Γ£û auth route: Wear pairing credential issuance rejects non-origin server bindings (12.0771ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:226:1
+Γ£û auth route: Wear pairing credential issuance binds the watch key and challenge (11.7637ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:269:1
+Γ£û auth route: POST /mobile/login performs a dummy hash comparison for unknown accounts (11.898ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:302:1
+Γ£û auth route: POST /mobile/refresh rejects missing refresh token (14.7575ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:319:1
+Γ£û auth route: POST /mobile/refresh records invalid or expired refresh tokens (14.7276ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth-mobile.test.js:338:1
+Γ£û auth route: GET /mobile/sessions returns owned active devices (13.7815ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:83:1
+Γ£û auth route: POST /register returns 400 when the email already exists (1074.6051ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:106:1
+Γ£û auth route: POST /register validates email and password inputs (16.1811ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:141:1
+Γ£û auth route: POST /register creates a user and logs them in (15.3961ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:224:1
+Γ£û auth route: POST /login normalizes credentials, logs in, and returns the serialized user (14.2366ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:282:1
+Γ£û auth route: POST /login returns JSON errors for invalid or rejected credentials (11.6881ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:320:1
+Γ£û auth route: POST /logout forwards errors from req.logout (11.1463ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:342:1
+Γ£û auth route: POST /logout destroys the session and clears its cookie (19.9419ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:367:1
+Γ£û auth route: GET /me returns 401 when not authenticated (13.0582ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:384:1
+Γ£û hosted registration requires explicit current legal versions (10.7559ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:419:1
+Γ£û auth route: hosted registration fails closed when account email is unavailable (15.2211ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-auth.test.js:452:1
+Γ£û auth route: verification resend and reset request do not reveal account existence (12.779ms)
+  src/utils/userSerialization.ts(1,15): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/utils/userSerialization.ts(1,30): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/utils/userSerialization.ts(1,42): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/utils/userSerialization.ts(1,50): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/utils/userSerialization.ts(1,55): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  
+
+test at test\routes-user.test.js:149:1
+Γ£û user route: rejects unauthenticated requests via router.use middleware (946.6718ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:169:1
+Γ£û user route: GET /me returns 404 when the user row is missing (12.4482ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:188:1
+Γ£û user route: GET /me returns serialized user data (9.0424ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:254:1
+Γ£û user route: PUT /profile-image validates data_url input (8.5142ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:269:1
+Γ£û user route: PUT /profile-image rejects invalid profile image payloads (7.1656ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:284:1
+Γ£û user route: PUT /profile-image stores bytes and returns a data URL (6.9913ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:324:1
+Γ£û user route: PATCH /password validates request shape and rejects identical passwords (5.8331ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:353:1
+Γ£û user route: PATCH /password updates password when current password matches (6.4063ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:426:1
+Γ£û user route: GET /account/export returns a no-store attachment (6.0339ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:454:1
+Γ£û user route: DELETE /account requires and verifies the current password (7.505ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:483:1
+Γ£û user route: DELETE /account deletes data, destroys the request session, and clears the cookie (5.6203ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:520:1
+Γ£û user route: PATCH /preferences validates reminder preference booleans (5.4333ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:541:1
+Γ£û user route: PATCH /preferences updates reminder preference fields (5.5919ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:587:1
+Γ£û user route: PATCH /preferences validates haptics_enabled boolean (5.7223ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:608:1
+Γ£û user route: PATCH /preferences updates haptics_enabled field (14.3924ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:653:1
+Γ£û user route: GET /profile reads the latest goal with deterministic ordering (6.5269ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:708:1
+Γ£û user route: PATCH /profile fails invalid legacy timezones closed and marks the current goal in the same transaction (5.8634ms)
+  src/routes/user.ts(6,10): error TS2305: Module '"@prisma/client"' has no exported member 'ActivityLevel'.
+  src/routes/user.ts(6,25): error TS2305: Module '"@prisma/client"' has no exported member 'HeightUnit'.
+  src/routes/user.ts(6,37): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+  src/routes/user.ts(6,45): error TS2305: Module '"@prisma/client"' has no exported member 'Sex'.
+  src/routes/user.ts(6,50): error TS2305: Module '"@prisma/client"' has no exported member 'WeightUnit'.
+  src/routes/user.ts(588,53): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+  src/routes/user.ts(632,66): error TS18046: 'error' is of type 'unknown'.
+  
+
+test at test\routes-user.test.js:757:1
+Γ£û user route: a profile serialization conflict returns a retryable conflict (1.9897ms)
+  Error: Cannot find module '.prisma/client/default'
+  Require stack:
+  - C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-431\backend\node_modules\@prisma\client\default.js
+  - C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-431\backend\test\routes-user.test.js
+      at Module.<anonymous> (node:internal/modules/cjs/loader:1517:15)
+      at Module._resolveFilename.sharedData.moduleResolveFilenameHook.installedValue [as _resolveFilename] (C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-431\backend\node_modules\@cspotcode\source-map-support\source-map-support.js:811:30)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+      at Module._load (node:internal/modules/cjs/loader:1294:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+      at Object.<anonymous> (C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-431\backend\node_modules\@prisma\client\default.js:2:6) {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: [ 'C:\\Users\\MChar\\Documents\\Codex\\2026-10-05\\task-11\\qa-431\\backend\\node_modules\\@prisma\\client\\default.js', 'C:\\Users\\MChar\\Documents\\Codex\\2026-10-05\\task-11\\qa-431\\backend\\test\\routes-user.test.js' ]
+  }

@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "verdict": "evidence-incomplete",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/431",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/421",
+  "reviewerChat": "01a10f9e-b990-7742-b94e-da6d8b4e0026",
+  "supersedesVerdictCommentId": null,
+  "checkedAtUtc": "2026-10-06T17:33:41.748Z",
+  "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "baseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "parentRevisions": [],
+  "prBodySha256": "3957f5da210f1018b5dfa95825cd09d795f28a40df146e3b3d4a3f246fe949b1",
+  "issueBodySha256": "62b15e479a6d2f636fa6de7a1e4facddc162519b8b3a026d0536afb439ed93e3",
+  "scope": {
+    "repository": "MChartier/calibrate-health",
+    "targetRef": "master",
+    "targetSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+    "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+    "mergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+    "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+    "parentRevisions": [],
+    "commits": [
+      {
+        "sha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+        "parents": [
+          "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+        ]
+      }
+    ],
+    "files": [
+      {
+        "path": "backend/scripts/lib/credentialProvider.ts",
+        "status": "modified",
+        "blob": "1446ee461dd409fb48c341a1d656bb82ff598ddb",
+        "additions": 3,
+        "deletions": 81
+      },
+      {
+        "path": "backend/src/index.ts",
+        "status": "modified",
+        "blob": "da4504772fcb3517a0eeb5f1d697006fb3706815",
+        "additions": 3,
+        "deletions": 3
+      },
+      {
+        "path": "backend/src/routes/auth.ts",
+        "status": "modified",
+        "blob": "2374a3145fdb52ffe7bd854f90b5a96eb786fe40",
+        "additions": 3,
+        "deletions": 2
+      },
+      {
+        "path": "backend/src/routes/user.ts",
+        "status": "modified",
+        "blob": "10810ad6087436f8e564e4fb16c7e4efaa8c7f95",
+        "additions": 3,
+        "deletions": 2
+      },
+      {
+        "path": "backend/src/services/credentialVerification.ts",
+        "status": "added",
+        "blob": "b441397ef14c01836044ce0dc85759ab110fc259",
+        "additions": 89,
+        "deletions": 0
+      },
+      {
+        "path": "backend/src/services/mcpOAuth.ts",
+        "status": "modified",
+        "blob": "6bb8246e6cbb94ef1e0792808c1c26d575730f7a",
+        "additions": 3,
+        "deletions": 10
+      },
+      {
+        "path": "backend/test/credential-provider.test.js",
+        "status": "modified",
+        "blob": "39e35f03317cd6629f289d996a1d4f171010b242",
+        "additions": 39,
+        "deletions": 1
+      },
+      {
+        "path": "backend/test/routes-account-recovery.test.js",
+        "status": "modified",
+        "blob": "3259e143f4103fae7c261ed0721127bff2d15ac7",
+        "additions": 1,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth-mobile.test.js",
+        "status": "modified",
+        "blob": "d8e4013536eb9b1f1cec39236bcd8df2206ace20",
+        "additions": 6,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth.test.js",
+        "status": "modified",
+        "blob": "b9528c490947ec8fc60f6de47ed7b12dbdca977c",
+        "additions": 6,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-user.test.js",
+        "status": "modified",
+        "blob": "d546ee371fbd0eb357553f2bf6c148582e1e4985",
+        "additions": 6,
+        "deletions": 0
+      },
+      {
+        "path": "docs/firebase-migration-preparation.md",
+        "status": "modified",
+        "blob": "d68b50fcadd3c281bec4b3f478b158a8c590750f",
+        "additions": 6,
+        "deletions": 1
+      }
+    ],
+    "pages": {
+      "files": [
+        12,
+        0
+      ],
+      "commits": [
+        1,
+        0
+      ]
+    },
+    "additions": 168,
+    "deletions": 100,
+    "inventoryPath": "scope.json",
+    "inventorySha256": "ab5745db7354cee0f6f520ed4281b34388308925b80ceedf6aa44d0f61c6929e",
+    "assessment": "All 12 files and the sole commit with its actual parent reviewed. Product changes, proportional maintained tests, and maintained migration documentation only; no PR402 work, evidence churn, schema or UI changes."
+  },
+  "gates": {
+    "value": "pass: authorized bounded runtime credential-verification checkpoint in issue421",
+    "outcome": "pass for bounded checkpoint only; full migration unfinished",
+    "code": "pass: all changed source and tests inspected; account lookup, password policies, session issuance/revocation and MCP security-version CAS remain caller owned",
+    "engineeringReview": "pass under explicit quota-only exception; refusal 6021318904 is not completed bot review; independent full current code review completed; no review threads",
+    "ci": "pass: 8 successful current-head checks and 16 configured skips across five completed workflows; database, mobile, web, native/release scopes unaffected or manual-only",
+    "behavior": "pass: independent 59 tests, 59 pass, zero failures/skips; initial missing generated Prisma client resolved using existing prisma:generate script before rerun",
+    "evidence": "incomplete: mandatory real user-openable implementing Codex task link remains unavailable; code and non-UI evidence verified",
+    "communication": "incomplete only for task-link requirement; issue and PR otherwise concise, final-base scoped, and honest about remaining runtime/provider/rehearsal exclusions",
+    "stack": "pass: single direct commit over actual master; no declared dependency parents"
+  },
+  "independentBehavior": {
+    "command": "node -r ts-node/register --test --test-concurrency=2 test/credential-provider.test.js test/config-credential-provider.test.js test/routes-auth.test.js test/routes-auth-mobile.test.js test/routes-user.test.js test/routes-account-recovery.test.js test/mcp-oauth.test.js",
+    "environment": "Actual designated Windows ZBook; isolated detached QA worktree; Node 24; no database/provider/device installation",
+    "tests": 59,
+    "pass": 59,
+    "fail": 0,
+    "skipped": 0,
+    "logPath": "focused-tests.log",
+    "logSha256": "3149d0ff4d4d91fe81c6d9f36eb9f788095dea91560b1a7d0369a686fb69e609",
+    "boundaries": [
+      "Real bcrypt match/mismatch and unknown-account dummy compare",
+      "Raw existing local reauthentication behavior preserved while preparation local identities retain 72-byte cap",
+      "Incomplete/mismatched Firebase identity fails before network; transport/timeout distinct from invalid credentials",
+      "Firebase startup selection stays disabled",
+      "Browser/native login and password/account reauthentication remain local",
+      "Password/session revocation and MCP concurrent credential-security-version change remain guarded"
+    ],
+    "limitations": "Focused local tests use synthetic/stubbed route dependencies. Fresh owner 765-test and CI evidence assessed; no live provider, production migration, device or complete migration claim."
+  },
+  "evidence": [
+    {
+      "commitSha": "9b22a1c9714e5ca6a3dfed7769d57c0f81c6b3d1",
+      "path": "preparation-evidence/credential-runtime-b3d6559a/manifest.json",
+      "sha256": "a980be64fc651f1008eda02002c7fd3dac0f66011f68bba3bfa7864bdb560603",
+      "verified": 7,
+      "url": "https://github.com/MChartier/calibrate-health/blob/9b22a1c9714e5ca6a3dfed7769d57c0f81c6b3d1/preparation-evidence/credential-runtime-b3d6559a/manifest.json",
+      "assessment": "Exact manifest bytes and every referenced artifact independently verified; 15 artifacts total."
+    },
+    {
+      "commitSha": "497ec9f3152fa38d73de0b125a012bf6b712673f",
+      "path": "preparation-evidence/credential-runtime-b3d6559a-final/manifest.json",
+      "sha256": "a55e50abebe3aed7ed3301705721800d365e9839e65711e54021262c7781254c",
+      "verified": 8,
+      "url": "https://github.com/MChartier/calibrate-health/blob/497ec9f3152fa38d73de0b125a012bf6b712673f/preparation-evidence/credential-runtime-b3d6559a-final/manifest.json",
+      "assessment": "Exact manifest bytes and every referenced artifact independently verified; 15 artifacts total."
+    }
+  ],
+  "uiEvidence": {
+    "applicable": false,
+    "representativeCoverage": null,
+    "pairs": [],
+    "provenanceRecords": [],
+    "provenanceAssessment": "No application UI changes in this complete range. Public page screenshots are presentation evidence, not application behavior captures.",
+    "pixelObservations": "Actual rendered public PR and issue screenshots inspected: concise PR summary and behavioral table; issue fixed template and explicit pending implementing-task link; no authentication obstacle.",
+    "renderedPrInspection": {
+      "url": "https://github.com/MChartier/calibrate-health/pull/431",
+      "checkedAtUtc": "2026-10-06T17:28:47.281Z",
+      "observations": "Public PR and issue rendered successfully using Playwright/Edge; screenshots inspected. No application Before/After pair required for this non-UI refactor."
+    },
+    "nonUiObservableContract": "Existing local credential inputs retain match/mismatch results and caller-owned session/security contracts after centralization; controlled tests establish results. Firebase is still configuration-disabled.",
+    "scopedHumanBaselineWaiver": null
+  },
+  "linkage": {
+    "currentPr": "https://github.com/MChartier/calibrate-health/pull/431",
+    "projectCurrentPrVerified": true,
+    "issueCrossReferenceVerified": true,
+    "closingIssuesReferences": [],
+    "developmentSidebar": "No branches or pull requests",
+    "assessment": "Nonclosing partial checkpoint. Actual issue cross-reference and Project Current PR verified; neither is misrepresented as a closing Development association. Available closing-only mutation was not used."
+  },
+  "limitations": [
+    "Mandatory actual implementing-task URL remains unresolved; placeholder is honest but does not satisfy strict user requirement. No waiver inferred.",
+    "Full issue421 runtime/lifecycle, provider import/rehearsal/cutover, GCP422 readiness and deployment are not certified.",
+    "Temporary outages vs confirmed revocation, durable local/offline tracking, and explicit historical Backfill while paused remain binding; this range does not change those implementations.",
+    "Bot review quota refusal is preserved; no claim of current-head bot completion."
+  ],
+  "nextAction": "Coordinator/owner obtain and insert the verified user-openable implementing Codex task URL, or obtain an explicit trusted human amendment. Reassess affected issue communication/link evidence without rerunning unchanged code suites. Keep readiness withheld."
+}

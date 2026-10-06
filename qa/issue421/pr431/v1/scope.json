@@ -1,0 +1,115 @@
+{
+  "repository": "MChartier/calibrate-health",
+  "targetRef": "master",
+  "targetSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "mergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "parentRevisions": [],
+  "commits": [
+    {
+      "sha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "parents": [
+        "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "backend/scripts/lib/credentialProvider.ts",
+      "status": "modified",
+      "blob": "1446ee461dd409fb48c341a1d656bb82ff598ddb",
+      "additions": 3,
+      "deletions": 81
+    },
+    {
+      "path": "backend/src/index.ts",
+      "status": "modified",
+      "blob": "da4504772fcb3517a0eeb5f1d697006fb3706815",
+      "additions": 3,
+      "deletions": 3
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "status": "modified",
+      "blob": "2374a3145fdb52ffe7bd854f90b5a96eb786fe40",
+      "additions": 3,
+      "deletions": 2
+    },
+    {
+      "path": "backend/src/routes/user.ts",
+      "status": "modified",
+      "blob": "10810ad6087436f8e564e4fb16c7e4efaa8c7f95",
+      "additions": 3,
+      "deletions": 2
+    },
+    {
+      "path": "backend/src/services/credentialVerification.ts",
+      "status": "added",
+      "blob": "b441397ef14c01836044ce0dc85759ab110fc259",
+      "additions": 89,
+      "deletions": 0
+    },
+    {
+      "path": "backend/src/services/mcpOAuth.ts",
+      "status": "modified",
+      "blob": "6bb8246e6cbb94ef1e0792808c1c26d575730f7a",
+      "additions": 3,
+      "deletions": 10
+    },
+    {
+      "path": "backend/test/credential-provider.test.js",
+      "status": "modified",
+      "blob": "39e35f03317cd6629f289d996a1d4f171010b242",
+      "additions": 39,
+      "deletions": 1
+    },
+    {
+      "path": "backend/test/routes-account-recovery.test.js",
+      "status": "modified",
+      "blob": "3259e143f4103fae7c261ed0721127bff2d15ac7",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "status": "modified",
+      "blob": "d8e4013536eb9b1f1cec39236bcd8df2206ace20",
+      "additions": 6,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/routes-auth.test.js",
+      "status": "modified",
+      "blob": "b9528c490947ec8fc60f6de47ed7b12dbdca977c",
+      "additions": 6,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/routes-user.test.js",
+      "status": "modified",
+      "blob": "d546ee371fbd0eb357553f2bf6c148582e1e4985",
+      "additions": 6,
+      "deletions": 0
+    },
+    {
+      "path": "docs/firebase-migration-preparation.md",
+      "status": "modified",
+      "blob": "d68b50fcadd3c281bec4b3f478b158a8c590750f",
+      "additions": 6,
+      "deletions": 1
+    }
+  ],
+  "pages": {
+    "files": [
+      12,
+      0
+    ],
+    "commits": [
+      1,
+      0
+    ]
+  },
+  "additions": 168,
+  "deletions": 100
+}

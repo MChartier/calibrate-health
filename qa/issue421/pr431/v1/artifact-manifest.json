@@ -1,0 +1,34 @@
+[
+  {
+    "path": "verdict.json",
+    "sha256": "7e3e0a28acc63d2adb8590d9b46e2aef28fc0a155a1bd8fb4c09430f085f63e7"
+  },
+  {
+    "path": "scope.json",
+    "sha256": "ab5745db7354cee0f6f520ed4281b34388308925b80ceedf6aa44d0f61c6929e"
+  },
+  {
+    "path": "focused-tests.log",
+    "sha256": "3149d0ff4d4d91fe81c6d9f36eb9f788095dea91560b1a7d0369a686fb69e609"
+  },
+  {
+    "path": "focused-tests-initial-setup.log",
+    "sha256": "df6d488d77e9e37741a95a4ec8e3f963e5d9266513d14aad21fc2174c48d0245"
+  },
+  {
+    "path": "evidence-verification.json",
+    "sha256": "149467f21704fe0e4d32ab03295bfaf17b7570c901ec6b68f470bdd1313b935b"
+  },
+  {
+    "path": "pr-public.png",
+    "sha256": "fe8f6be125deaa446421bc3960317a8455e7d55c9e654dee3a84d6225e1e5d1e"
+  },
+  {
+    "path": "issue-public.png",
+    "sha256": "ae22cc64b57cb0f458cbeb7b9d97999075bda4312ebc4fbd789bdc8485fecbd3"
+  },
+  {
+    "path": "README.md",
+    "sha256": "0ac1475620fcb739d05368ad2bf34336174af4c5c849bcbd8ca228f9bd731fb1"
+  }
+]

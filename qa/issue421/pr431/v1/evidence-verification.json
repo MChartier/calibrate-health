@@ -1,0 +1,14 @@
+[
+  {
+    "commitSha": "9b22a1c9714e5ca6a3dfed7769d57c0f81c6b3d1",
+    "path": "preparation-evidence/credential-runtime-b3d6559a/manifest.json",
+    "sha256": "a980be64fc651f1008eda02002c7fd3dac0f66011f68bba3bfa7864bdb560603",
+    "verified": 7
+  },
+  {
+    "commitSha": "497ec9f3152fa38d73de0b125a012bf6b712673f",
+    "path": "preparation-evidence/credential-runtime-b3d6559a-final/manifest.json",
+    "sha256": "a55e50abebe3aed7ed3301705721800d365e9839e65711e54021262c7781254c",
+    "verified": 8
+  }
+]
