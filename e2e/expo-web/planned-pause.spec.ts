@@ -323,6 +323,7 @@ test('matched accepted queued resume before replay', async ({ page, ux }, info) 
     await calendar(page);
     if (before) await expect(page.getByRole('alert').filter({ hasText: /tracking history/ })).toBeVisible();
     else await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(/in progress/);
+    await expect(page.getByRole('alert').filter({ hasText: /tracking history/ })).toBeVisible();
     await capture(page, info, 'queued-resume-calendar');
     await page.getByRole('button', { name: 'Close date picker', exact: true }).click();
     await activateFixtureOffline(page); state.queueResume = false; await page.context().setOffline(false);
