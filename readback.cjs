@@ -9,7 +9,7 @@ const pr = api('pulls/429');
 const commits = pages('pulls/429/commits');
 const files = pages('pulls/429/files');
 if (commits.length !== pr.commits || files.length !== pr.changed_files) throw new Error('Incomplete published scope inventory');
-const evidenceCommit = '9ed5d2c23c2a9445ee2db904723da022b768d565';
+const evidenceCommit = '391c3f2fc5e4d579977d2fffe24d66b75037f3f7';
 const evidence = ['README.md', 'observe.cjs', 'observation.json'].map((file) => {
   const remote = execFileSync('gh', ['api', `repos/MChartier/calibrate-health/contents/${file}?ref=${evidenceCommit}`, '-H', 'Accept: application/vnd.github.raw+json']);
   const local = execFileSync('git', ['show', `${evidenceCommit}:${file}`], { cwd: __dirname });
@@ -28,8 +28,8 @@ const receipt = {
   checks: api(`commits/${pr.head.sha}/check-runs?per_page=100`).check_runs.map(({name,status,conclusion,html_url}) => ({name,status,conclusion,url:html_url})),
   reviewComments: pages('pulls/429/comments'), reviews: pages('pulls/429/reviews'),
   comments: pages('issues/429/comments').map(({id,body,html_url}) => ({id,body,url:html_url})),
-  presentation: 'Public GitHub HTML text read back via web tool: concise summary, behavior table, evidence and guide links accessible. Browser pixel inspection unavailable: cua kernel sandbox deny-read ACL startup failure. Non-UI configuration change; no application screenshots required.',
+  presentation: 'API-decoded final body read: concise summary, behavior table, immutable evidence and guide links. No current rendered pixel inspection claimed; genuinely non-UI configuration change. Earlier browser kernel failed at sandbox startup. Independent QA explicitly accepted the non-UI presentation method, with SSL correctness requiring reassessment.',
   independentQa: 'Required; not performed by implementation owner.'
 };
-fs.writeFileSync(path.join(__dirname, 'published-readback.json'), JSON.stringify(receipt, null, 2) + '\n');
+fs.writeFileSync(path.join(__dirname, process.argv[2] ?? 'published-readback.json'), JSON.stringify(receipt, null, 2) + '\n');
 console.log(JSON.stringify({head:receipt.head,base:receipt.base,bodySha256:receipt.prBodySha256,totals:receipt.totals,checks:receipt.checks.filter(c=>c.conclusion!=='skipped')}, null, 2));

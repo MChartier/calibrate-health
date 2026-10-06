@@ -1,0 +1,289 @@
+{
+  "checkedAtUtc": "2026-10-06T06:39:22.402Z",
+  "repository": "MChartier/calibrate-health",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/429",
+  "head": "8d54fd6797944c46b64c4efde965b0c7f7d34306",
+  "base": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "baseRef": "mchartier/firebase-migration-preparation",
+  "ultimateTarget": "master",
+  "parent": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "mergeBase": "75578e5ac57a05ba0f06146598b314a01eafb2ae",
+  "prBodySha256": "3ad4fd637e8b967b0cfcb9f6dad617a1352f43bf5c869bb5b7a46be04d0aa9ae",
+  "draft": true,
+  "commits": [
+    {
+      "sha": "3b2ccd7d3a79cc880e163bf6b157be9d56476c9f",
+      "parents": [
+        "75578e5ac57a05ba0f06146598b314a01eafb2ae"
+      ],
+      "message": "Add bounded shared SQL connection configuration"
+    },
+    {
+      "sha": "7892c7a8193c5e64c37e92a06e3e0fd360de9a43",
+      "parents": [
+        "3b2ccd7d3a79cc880e163bf6b157be9d56476c9f"
+      ],
+      "message": "Include shared Prisma connection resolver in production image"
+    },
+    {
+      "sha": "8d54fd6797944c46b64c4efde965b0c7f7d34306",
+      "parents": [
+        "7892c7a8193c5e64c37e92a06e3e0fd360de9a43"
+      ],
+      "message": "Reject ambiguous SSL settings consistently in runtime and Prisma CLI"
+    }
+  ],
+  "files": [
+    {
+      "filename": "Dockerfile.app",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "filename": "README.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "filename": "backend/prisma.config.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 65
+    },
+    {
+      "filename": "backend/src/config/database.ts",
+      "status": "modified",
+      "additions": 11,
+      "deletions": 19
+    },
+    {
+      "filename": "backend/src/config/databaseUtils.ts",
+      "status": "modified",
+      "additions": 102,
+      "deletions": 14
+    },
+    {
+      "filename": "backend/test/database-pool.test.js",
+      "status": "added",
+      "additions": 124,
+      "deletions": 0
+    },
+    {
+      "filename": "backend/test/database-utils.test.js",
+      "status": "modified",
+      "additions": 149,
+      "deletions": 1
+    },
+    {
+      "filename": "docs/database-connections.md",
+      "status": "added",
+      "additions": 78,
+      "deletions": 0
+    }
+  ],
+  "totals": {
+    "commits": 3,
+    "files": 8,
+    "additions": 468,
+    "deletions": 99
+  },
+  "evidenceCommit": "391c3f2fc5e4d579977d2fffe24d66b75037f3f7",
+  "evidence": [
+    {
+      "file": "README.md",
+      "sha256": "fdc206a7d5a4ba5b88ee6b5b980915cf7d3edc604a3e93130871ebe5f1a3c2ea"
+    },
+    {
+      "file": "observe.cjs",
+      "sha256": "d25f0c16c22b4f78d62d8cdd2f436e083049c109acf4018b6646265ff3acd8a1"
+    },
+    {
+      "file": "observation.json",
+      "sha256": "fa6edeb67c1371840c09ce51f4fe632ad14b18de7cd17aa535a03236f72e6818"
+    }
+  ],
+  "checks": [
+    {
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384666/job/112140652658"
+    },
+    {
+      "name": "Mobile Tests",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384621/job/112140652173"
+    },
+    {
+      "name": "High and Critical Vulnerabilities",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384718/job/112140650816"
+    },
+    {
+      "name": "Populated Postgres Upgrade",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384666/job/112140650699"
+    },
+    {
+      "name": "Backend Tests",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384621/job/112140650430"
+    },
+    {
+      "name": "Android Emulator End-to-End",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140649166"
+    },
+    {
+      "name": "Full Exported Web and PWA End-to-End",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648875"
+    },
+    {
+      "name": "Wear Release Emulator Smoke",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648747"
+    },
+    {
+      "name": "Mobile Build",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648545"
+    },
+    {
+      "name": "iOS Build",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648512"
+    },
+    {
+      "name": "UX Accessibility and Visual Regression",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648484"
+    },
+    {
+      "name": "Web Critical Smoke",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648268"
+    },
+    {
+      "name": "Six-State Data-Backed Route Acceptance",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648204"
+    },
+    {
+      "name": "Wear Build and JVM Tests",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648178"
+    },
+    {
+      "name": "Native Two-Emulator Package Upgrade",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648055"
+    },
+    {
+      "name": "Expo Web Build",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140648048"
+    },
+    {
+      "name": "Release Configuration",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140647960"
+    },
+    {
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140647918"
+    },
+    {
+      "name": "Backend Build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140646866"
+    },
+    {
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384781/job/112140618886"
+    },
+    {
+      "name": "Classify Build Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384704/job/112140617875"
+    },
+    {
+      "name": "Classify Database Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384666/job/112140617603"
+    },
+    {
+      "name": "Classify Test Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384621/job/112140617510"
+    },
+    {
+      "name": "Classify Production Image Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37424384718/job/112140617443"
+    }
+  ],
+  "reviewComments": [],
+  "reviews": [],
+  "comments": [
+    {
+      "id": 6010420168,
+      "body": "@codex review",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010420168"
+    },
+    {
+      "id": 6010422188,
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010422188"
+    },
+    {
+      "id": 6010534741,
+      "body": "Final implementation checkpoint: all five CI workflows pass at 7892c7a, including 759 backend tests and production startup/readiness. The full published range is two focused commits/eight files. [Exact head/base/body/scope, CI and evidence readback](https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/final-handoff.md). Bot quota refusal is recorded; independent QA remains required. Draft retained; issue422 stays open.",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010534741"
+    },
+    {
+      "id": 6010706581,
+      "body": "Independent QA: **changes-required** for this bounded SQL checkpoint.\n\n**F1 (P2): an empty SSL override disables TLS in Prisma CLI.** At `backend/src/config/databaseUtils.ts:185`, `DB_SSLMODE=\"\"` rewrites an explicit `DATABASE_URL?...sslmode=verify-full` to `sslmode=disable`. The parent CLI preserved that direct URL. With `PGSSLMODE=verify-full`, an unconnected real pg Client still resolves runtime SSL to `true`, while CLI receives `disable`. This can cause plaintext administrative connections or TLS-required connection failures. Reject ambiguous blank input or preserve the explicit secure mode consistently; add blank/whitespace regression cases through runtime and actual Prisma configuration loading. No database was contacted.\n\nFocused tests: **34/34 pass** after credential-free Prisma generation; schema validation and exact baseline/final evidence reproduction pass. Current CI: all five workflows pass, including **759 backend tests** and production startup/readiness. Complete published scope is **two linear commits, eight files, +390/-86**, all within SQL configuration/tests/maintained documentation/required image packaging. Bot review was refused solely for code-review quota; no bot completion is claimed.\n\nThe issue and PR explain the base-state problem and partial outcome clearly. Full Firebase/GCP work remains unfinished. Route F1 to the existing owner and retain readiness withholding; no merge or readiness approval is given.\n\nSynthetic reproduction from `backend` (unconnected Client only):\n```js\nconst { resolveDatabaseConnection } = require(\"./src/config/databaseUtils\");\nconst { Client } = require(\"pg\");\nprocess.env.PGSSLMODE = \"verify-full\";\nconst c = resolveDatabaseConnection({\n  DATABASE_URL: \"postgresql://synthetic:synthetic@localhost/app?sslmode=verify-full\",\n  DB_SSLMODE: \"\"\n});\nconsole.log(new Client(c.poolConfig).connectionParameters.ssl,\n  new URL(c.url).searchParams.get(\"sslmode\"));\n// observed: true, disable\n```\n\n```json\n{\n  \"schemaVersion\": 1,\n  \"verdict\": \"changes-required\",\n  \"workflowVersion\": \"workflow-v3\",\n  \"prCommunicationStandard\": \"pr-review-v3\",\n  \"workflowCommit\": \"f0919b184b6344d6279178b2388190936ca432a9\",\n  \"prCommunicationCommit\": \"97e5583c8355f3673aad0835c0ce3ca1486aeb8b\",\n  \"pullRequest\": \"https://github.com/MChartier/calibrate-health/pull/429\",\n  \"issue\": \"https://github.com/MChartier/calibrate-health/issues/422\",\n  \"reviewerChat\": \"01a10fdf-efef-733f-bde1-dbc62c3cd039\",\n  \"supersedesVerdictCommentId\": null,\n  \"checkedAtUtc\": \"2026-10-06T06:27:35.231Z\",\n  \"headSha\": \"7892c7a8193c5e64c37e92a06e3e0fd360de9a43\",\n  \"baseSha\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n  \"parentRevisions\": [\n    {\n      \"pullRequest\": 423,\n      \"sha\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\"\n    }\n  ],\n  \"prBodySha256\": \"f93a52c65b57d656f78d9f724832469e7133aff08fb85655683574173cbca7ca\",\n  \"gates\": {\n    \"value\": \"pass: admitted partial Scope3 bounds SQL capacity and unifies configuration; no full GCP/Firebase claim\",\n    \"outcome\": \"changes-required: F1 violates SSL preservation and runtime/CLI parity\",\n    \"code\": \"changes-required: F1 independently reproduced; complete 2-commit/8-file code and test diff inspected; no other actionable findings\",\n    \"engineeringReview\": \"independent review completed with F1; bot comment 6010422188 is quota-only refusal after request on prior 3b2ccd7, not current-head completion; no submitted reviews or inline findings; quota amendment applied without retries\",\n    \"ci\": \"pass: all five head-bound workflows completed successfully; backend log proves 759 passed, 0 failed/skipped; startup/readiness and container scan passed; unrelated mobile/web/native/release and migration-rollback jobs were justified scope skips\",\n    \"behavior\": \"34 focused tests passed after required Prisma generation; schema validation passed; baseline/final experiment reproduced byte-identical observation; extra SSL boundary exposes F1\",\n    \"evidence\": \"pass for provenance and disclosed non-UI scope; positive SSL preservation claim needs F1 correction\",\n    \"communication\": \"Issue requirements and concise PR problem/solution/test table read in full. Base-to-final framing and partial-scope limits pass; blanket SSL-preservation/parity claim cannot pass until F1 fixed. No iteration diary.\",\n    \"stack\": \"pass: actual base and merge-base equal unmerged parent423 head; ultimate master separately bound; parent must be reviewed first\"\n  },\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"priority\": \"P2\",\n      \"file\": \"backend/src/config/databaseUtils.ts\",\n      \"line\": 185,\n      \"title\": \"Empty DB_SSLMODE silently disables TLS in Prisma CLI\",\n      \"input\": {\n        \"DATABASE_URL\": \"postgresql://synthetic:synthetic@localhost/app?sslmode=verify-full\",\n        \"DB_SSLMODE\": \"\",\n        \"PGSSLMODE\": \"verify-full\"\n      },\n      \"observed\": {\n        \"resolvedRuntimeSsl\": \"undefined\",\n        \"effectivePgSsl\": true,\n        \"cliSslmode\": \"disable\"\n      },\n      \"expected\": \"A blank override must not silently weaken an explicit URL TLS requirement; reject ambiguous input or preserve a consistent secure setting in runtime and CLI.\",\n      \"consequence\": \"Administrative/migration commands can attempt plaintext despite the explicit verify-full URL; servers requiring TLS instead reject them. Parent Prisma config returned the direct URL unchanged.\",\n      \"nextAction\": \"Remove the blank-to-disable coercion, resolve blank/whitespace SSL settings consistently, and add regression coverage through runtime and the actual Prisma config entrypoint.\"\n    }\n  ],\n  \"scope\": {\n    \"repository\": \"MChartier/calibrate-health\",\n    \"headRepository\": \"MChartier/calibrate-health\",\n    \"headRef\": \"mchartier/bounded-sql-422\",\n    \"headSha\": \"7892c7a8193c5e64c37e92a06e3e0fd360de9a43\",\n    \"actualBaseRef\": \"mchartier/firebase-migration-preparation\",\n    \"actualBaseSha\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n    \"mergeBase\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n    \"parent\": {\n      \"number\": 423,\n      \"head\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n      \"state\": \"open\",\n      \"merged\": false\n    },\n    \"ultimateTarget\": {\n      \"repository\": \"MChartier/calibrate-health\",\n      \"ref\": \"master\",\n      \"sha\": \"52bdc324fa2215e2d35e488a2bfaadd59cdca3ed\"\n    },\n    \"commits\": [\n      {\n        \"sha\": \"3b2ccd7d3a79cc880e163bf6b157be9d56476c9f\",\n        \"parents\": [\n          \"75578e5ac57a05ba0f06146598b314a01eafb2ae\"\n        ],\n        \"message\": \"Add bounded shared SQL connection configuration\"\n      },\n      {\n        \"sha\": \"7892c7a8193c5e64c37e92a06e3e0fd360de9a43\",\n        \"parents\": [\n          \"3b2ccd7d3a79cc880e163bf6b157be9d56476c9f\"\n        ],\n        \"message\": \"Include shared Prisma connection resolver in production image\"\n      }\n    ],\n    \"files\": [\n      {\n        \"path\": \"Dockerfile.app\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 1,\n        \"deletions\": 0\n      },\n      {\n        \"path\": \"README.md\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 1,\n        \"deletions\": 0\n      },\n      {\n        \"path\": \"backend/prisma.config.ts\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 2,\n        \"deletions\": 65\n      },\n      {\n        \"path\": \"backend/src/config/database.ts\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 11,\n        \"deletions\": 19\n      },\n      {\n        \"path\": \"backend/src/config/databaseUtils.ts\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 73,\n        \"deletions\": 1\n      },\n      {\n        \"path\": \"backend/test/database-pool.test.js\",\n        \"previousPath\": null,\n        \"status\": \"added\",\n        \"additions\": 124,\n        \"deletions\": 0\n      },\n      {\n        \"path\": \"backend/test/database-utils.test.js\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 105,\n        \"deletions\": 1\n      },\n      {\n        \"path\": \"docs/database-connections.md\",\n        \"previousPath\": null,\n        \"status\": \"added\",\n        \"additions\": 73,\n        \"deletions\": 0\n      }\n    ],\n    \"totals\": {\n      \"commits\": 2,\n      \"files\": 8,\n      \"additions\": 390,\n      \"deletions\": 86\n    }\n  },\n  \"scopeSha256\": \"2e6168a392ca691e7b4da001488e6912131553f29c2678abbd31ba6a545e6aea\",\n  \"evidence\": [\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/README.md\",\n      \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n      \"sha256\": \"69f6779c41fdcd32453ab1a4638b4717b1e64850bec1dbbbc001a0545c849fad\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observe.cjs\",\n      \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n      \"sha256\": \"93055972a1627f88331b593ff6869ba86518d4e26674974d57e0f5e401feb066\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observation.json\",\n      \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n      \"sha256\": \"788ca7465cc00fecda64020bfab575822858940df52ed071fb28c6062fab9588\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/final-handoff.md\",\n      \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n      \"sha256\": \"ac93ba6c0353a5b0701dea04e7791121351c651bf7b9eedb9659db3b37a434a1\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/published-readback.json\",\n      \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n      \"sha256\": \"849396c8c699479baf50135fdbc2e0bc47e82bb10053b27a1189c3805236f63a\"\n    }\n  ],\n  \"uiEvidence\": {\n    \"applicable\": false,\n    \"representativeCoverage\": \"SQL connection configuration only; no changed UI flow\",\n    \"pairs\": [],\n    \"provenanceRecords\": [\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/README.md\",\n        \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n        \"sha256\": \"69f6779c41fdcd32453ab1a4638b4717b1e64850bec1dbbbc001a0545c849fad\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observe.cjs\",\n        \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n        \"sha256\": \"93055972a1627f88331b593ff6869ba86518d4e26674974d57e0f5e401feb066\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observation.json\",\n        \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n        \"sha256\": \"788ca7465cc00fecda64020bfab575822858940df52ed071fb28c6062fab9588\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/final-handoff.md\",\n        \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n        \"sha256\": \"ac93ba6c0353a5b0701dea04e7791121351c651bf7b9eedb9659db3b37a434a1\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/published-readback.json\",\n        \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n        \"sha256\": \"849396c8c699479baf50135fdbc2e0bc47e82bb10053b27a1189c3805236f63a\"\n      }\n    ],\n    \"provenanceAssessment\": \"Exact API-decoded artifact bytes hashed and compared; synthetic harness read, source hashes checked, and observation reproduced. Dedicated evidence/issue422-sql-3b2ccd7 ref points to d2a7c3af77d01a24dbd20190ad8b9135c2d9820f; no evidence commits in product range.\",\n    \"pixelObservations\": null,\n    \"renderedPrInspection\": {\n      \"url\": \"https://github.com/MChartier/calibrate-health/pull/429\",\n      \"checkedAtUtc\": null,\n      \"observations\": \"API-decoded published body read; no rendered pixel inspection claimed or required for this genuinely non-UI configuration change.\"\n    },\n    \"nonUiObservableContract\": \"Inputs 3/5/30 yield pg max=3, acquisition=5000ms, idle=30000ms and equivalent CLI parameters; parent ignores opt-in numeric settings. Maintained synthetic tests exercise actual Prisma config loading, numeric bounds/conflicts, socket/TCP selection, schema/escaping, timeout recovery, idle errors/removal and shared-pool disposal. Independent blank SSL experiment returns effective pg TLS=true but CLI sslmode=disable.\",\n    \"scopedHumanBaselineWaiver\": null\n  },\n  \"limitations\": [\n    \"No live database, cloud/provider, migration, deployment, device or production capacity validation.\",\n    \"Initial focused run had 33/34 because Prisma client was not yet generated in the fresh checkout; credential-free generation then all 34 passed.\",\n    \"No full expensive suite rerun; fresh current-head CI inspected.\",\n    \"Full issue422 and Firebase runtime/GCP readiness remain unfinished.\"\n  ],\n  \"execution\": {\n    \"host\": \"MCHARTIER_ZBOOK\",\n    \"worktree\": \"C:/Users/MChar/Documents/Codex/2026-10-05/task-15/qa-429\",\n    \"headMode\": \"detached\",\n    \"productStatus\": \"clean\",\n    \"standards\": \"All supplied full pinned standards and direct amendments read; actual repository AGENTS.md and pinned deployment read. No relevant additional repository skill for this SQL task. Sandbox helper startup failed; approved escalated commands succeeded without changing permissions.\"\n  },\n  \"nextAction\": \"Coordinator routes F1 to the existing implementation owner. Keep readiness withheld. After correction reassess affected code, SSL boundary tests, evidence, CI and final body in a new superseding verdict. No product, label, draft or Project mutation performed.\"\n}\n```",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010706581"
+    },
+    {
+      "id": 6010712958,
+      "body": "Line-location correction to first verdict 6010706581: F1 is at `databaseUtils.ts:186` (the previous comment cited adjacent line 185). The changes-required outcome, reproduction, assessed revisions and every other finding remain unchanged. Previous comment and receipt are preserved.\n\n```json\n{\n  \"schemaVersion\": 1,\n  \"verdict\": \"changes-required\",\n  \"workflowVersion\": \"workflow-v3\",\n  \"prCommunicationStandard\": \"pr-review-v3\",\n  \"workflowCommit\": \"f0919b184b6344d6279178b2388190936ca432a9\",\n  \"prCommunicationCommit\": \"97e5583c8355f3673aad0835c0ce3ca1486aeb8b\",\n  \"pullRequest\": \"https://github.com/MChartier/calibrate-health/pull/429\",\n  \"issue\": \"https://github.com/MChartier/calibrate-health/issues/422\",\n  \"reviewerChat\": \"01a10fdf-efef-733f-bde1-dbc62c3cd039\",\n  \"supersedesVerdictCommentId\": 6010706581,\n  \"checkedAtUtc\": \"2026-10-06T06:27:35.231Z\",\n  \"headSha\": \"7892c7a8193c5e64c37e92a06e3e0fd360de9a43\",\n  \"baseSha\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n  \"parentRevisions\": [\n    {\n      \"pullRequest\": 423,\n      \"sha\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\"\n    }\n  ],\n  \"prBodySha256\": \"f93a52c65b57d656f78d9f724832469e7133aff08fb85655683574173cbca7ca\",\n  \"gates\": {\n    \"value\": \"pass: admitted partial Scope3 bounds SQL capacity and unifies configuration; no full GCP/Firebase claim\",\n    \"outcome\": \"changes-required: F1 violates SSL preservation and runtime/CLI parity\",\n    \"code\": \"changes-required: F1 independently reproduced; complete 2-commit/8-file code and test diff inspected; no other actionable findings\",\n    \"engineeringReview\": \"independent review completed with F1; bot comment 6010422188 is quota-only refusal after request on prior 3b2ccd7, not current-head completion; no submitted reviews or inline findings; quota amendment applied without retries\",\n    \"ci\": \"pass: all five head-bound workflows completed successfully; backend log proves 759 passed, 0 failed/skipped; startup/readiness and container scan passed; unrelated mobile/web/native/release and migration-rollback jobs were justified scope skips\",\n    \"behavior\": \"34 focused tests passed after required Prisma generation; schema validation passed; baseline/final experiment reproduced byte-identical observation; extra SSL boundary exposes F1\",\n    \"evidence\": \"pass for provenance and disclosed non-UI scope; positive SSL preservation claim needs F1 correction\",\n    \"communication\": \"Issue requirements and concise PR problem/solution/test table read in full. Base-to-final framing and partial-scope limits pass; blanket SSL-preservation/parity claim cannot pass until F1 fixed. No iteration diary.\",\n    \"stack\": \"pass: actual base and merge-base equal unmerged parent423 head; ultimate master separately bound; parent must be reviewed first\"\n  },\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"priority\": \"P2\",\n      \"file\": \"backend/src/config/databaseUtils.ts\",\n      \"line\": 186,\n      \"title\": \"Empty DB_SSLMODE silently disables TLS in Prisma CLI\",\n      \"input\": {\n        \"DATABASE_URL\": \"postgresql://synthetic:synthetic@localhost/app?sslmode=verify-full\",\n        \"DB_SSLMODE\": \"\",\n        \"PGSSLMODE\": \"verify-full\"\n      },\n      \"observed\": {\n        \"resolvedRuntimeSsl\": \"undefined\",\n        \"effectivePgSsl\": true,\n        \"cliSslmode\": \"disable\"\n      },\n      \"expected\": \"A blank override must not silently weaken an explicit URL TLS requirement; reject ambiguous input or preserve a consistent secure setting in runtime and CLI.\",\n      \"consequence\": \"Administrative/migration commands can attempt plaintext despite the explicit verify-full URL; servers requiring TLS instead reject them. Parent Prisma config returned the direct URL unchanged.\",\n      \"nextAction\": \"Remove the blank-to-disable coercion, resolve blank/whitespace SSL settings consistently, and add regression coverage through runtime and the actual Prisma config entrypoint.\"\n    }\n  ],\n  \"scope\": {\n    \"repository\": \"MChartier/calibrate-health\",\n    \"headRepository\": \"MChartier/calibrate-health\",\n    \"headRef\": \"mchartier/bounded-sql-422\",\n    \"headSha\": \"7892c7a8193c5e64c37e92a06e3e0fd360de9a43\",\n    \"actualBaseRef\": \"mchartier/firebase-migration-preparation\",\n    \"actualBaseSha\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n    \"mergeBase\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n    \"parent\": {\n      \"number\": 423,\n      \"head\": \"75578e5ac57a05ba0f06146598b314a01eafb2ae\",\n      \"state\": \"open\",\n      \"merged\": false\n    },\n    \"ultimateTarget\": {\n      \"repository\": \"MChartier/calibrate-health\",\n      \"ref\": \"master\",\n      \"sha\": \"52bdc324fa2215e2d35e488a2bfaadd59cdca3ed\"\n    },\n    \"commits\": [\n      {\n        \"sha\": \"3b2ccd7d3a79cc880e163bf6b157be9d56476c9f\",\n        \"parents\": [\n          \"75578e5ac57a05ba0f06146598b314a01eafb2ae\"\n        ],\n        \"message\": \"Add bounded shared SQL connection configuration\"\n      },\n      {\n        \"sha\": \"7892c7a8193c5e64c37e92a06e3e0fd360de9a43\",\n        \"parents\": [\n          \"3b2ccd7d3a79cc880e163bf6b157be9d56476c9f\"\n        ],\n        \"message\": \"Include shared Prisma connection resolver in production image\"\n      }\n    ],\n    \"files\": [\n      {\n        \"path\": \"Dockerfile.app\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 1,\n        \"deletions\": 0\n      },\n      {\n        \"path\": \"README.md\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 1,\n        \"deletions\": 0\n      },\n      {\n        \"path\": \"backend/prisma.config.ts\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 2,\n        \"deletions\": 65\n      },\n      {\n        \"path\": \"backend/src/config/database.ts\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 11,\n        \"deletions\": 19\n      },\n      {\n        \"path\": \"backend/src/config/databaseUtils.ts\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 73,\n        \"deletions\": 1\n      },\n      {\n        \"path\": \"backend/test/database-pool.test.js\",\n        \"previousPath\": null,\n        \"status\": \"added\",\n        \"additions\": 124,\n        \"deletions\": 0\n      },\n      {\n        \"path\": \"backend/test/database-utils.test.js\",\n        \"previousPath\": null,\n        \"status\": \"modified\",\n        \"additions\": 105,\n        \"deletions\": 1\n      },\n      {\n        \"path\": \"docs/database-connections.md\",\n        \"previousPath\": null,\n        \"status\": \"added\",\n        \"additions\": 73,\n        \"deletions\": 0\n      }\n    ],\n    \"totals\": {\n      \"commits\": 2,\n      \"files\": 8,\n      \"additions\": 390,\n      \"deletions\": 86\n    }\n  },\n  \"scopeSha256\": \"2e6168a392ca691e7b4da001488e6912131553f29c2678abbd31ba6a545e6aea\",\n  \"evidence\": [\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/README.md\",\n      \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n      \"sha256\": \"69f6779c41fdcd32453ab1a4638b4717b1e64850bec1dbbbc001a0545c849fad\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observe.cjs\",\n      \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n      \"sha256\": \"93055972a1627f88331b593ff6869ba86518d4e26674974d57e0f5e401feb066\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observation.json\",\n      \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n      \"sha256\": \"788ca7465cc00fecda64020bfab575822858940df52ed071fb28c6062fab9588\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/final-handoff.md\",\n      \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n      \"sha256\": \"ac93ba6c0353a5b0701dea04e7791121351c651bf7b9eedb9659db3b37a434a1\"\n    },\n    {\n      \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/published-readback.json\",\n      \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n      \"sha256\": \"849396c8c699479baf50135fdbc2e0bc47e82bb10053b27a1189c3805236f63a\"\n    }\n  ],\n  \"uiEvidence\": {\n    \"applicable\": false,\n    \"representativeCoverage\": \"SQL connection configuration only; no changed UI flow\",\n    \"pairs\": [],\n    \"provenanceRecords\": [\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/README.md\",\n        \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n        \"sha256\": \"69f6779c41fdcd32453ab1a4638b4717b1e64850bec1dbbbc001a0545c849fad\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observe.cjs\",\n        \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n        \"sha256\": \"93055972a1627f88331b593ff6869ba86518d4e26674974d57e0f5e401feb066\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/9ed5d2c23c2a9445ee2db904723da022b768d565/observation.json\",\n        \"commitSha\": \"9ed5d2c23c2a9445ee2db904723da022b768d565\",\n        \"sha256\": \"788ca7465cc00fecda64020bfab575822858940df52ed071fb28c6062fab9588\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/final-handoff.md\",\n        \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n        \"sha256\": \"ac93ba6c0353a5b0701dea04e7791121351c651bf7b9eedb9659db3b37a434a1\"\n      },\n      {\n        \"url\": \"https://github.com/MChartier/calibrate-health/blob/d2a7c3af77d01a24dbd20190ad8b9135c2d9820f/published-readback.json\",\n        \"commitSha\": \"d2a7c3af77d01a24dbd20190ad8b9135c2d9820f\",\n        \"sha256\": \"849396c8c699479baf50135fdbc2e0bc47e82bb10053b27a1189c3805236f63a\"\n      }\n    ],\n    \"provenanceAssessment\": \"Exact API-decoded artifact bytes hashed and compared; synthetic harness read, source hashes checked, and observation reproduced. Dedicated evidence/issue422-sql-3b2ccd7 ref points to d2a7c3af77d01a24dbd20190ad8b9135c2d9820f; no evidence commits in product range.\",\n    \"pixelObservations\": null,\n    \"renderedPrInspection\": {\n      \"url\": \"https://github.com/MChartier/calibrate-health/pull/429\",\n      \"checkedAtUtc\": null,\n      \"observations\": \"API-decoded published body read; no rendered pixel inspection claimed or required for this genuinely non-UI configuration change.\"\n    },\n    \"nonUiObservableContract\": \"Inputs 3/5/30 yield pg max=3, acquisition=5000ms, idle=30000ms and equivalent CLI parameters; parent ignores opt-in numeric settings. Maintained synthetic tests exercise actual Prisma config loading, numeric bounds/conflicts, socket/TCP selection, schema/escaping, timeout recovery, idle errors/removal and shared-pool disposal. Independent blank SSL experiment returns effective pg TLS=true but CLI sslmode=disable.\",\n    \"scopedHumanBaselineWaiver\": null\n  },\n  \"limitations\": [\n    \"No live database, cloud/provider, migration, deployment, device or production capacity validation.\",\n    \"Initial focused run had 33/34 because Prisma client was not yet generated in the fresh checkout; credential-free generation then all 34 passed.\",\n    \"No full expensive suite rerun; fresh current-head CI inspected.\",\n    \"Full issue422 and Firebase runtime/GCP readiness remain unfinished.\"\n  ],\n  \"execution\": {\n    \"host\": \"MCHARTIER_ZBOOK\",\n    \"worktree\": \"C:/Users/MChar/Documents/Codex/2026-10-05/task-15/qa-429\",\n    \"headMode\": \"detached\",\n    \"productStatus\": \"clean\",\n    \"standards\": \"All supplied full pinned standards and direct amendments read; actual repository AGENTS.md and pinned deployment read. No relevant additional repository skill for this SQL task. Sandbox helper startup failed; approved escalated commands succeeded without changing permissions.\"\n  },\n  \"nextAction\": \"Coordinator routes F1 to the existing implementation owner. Keep readiness withheld. After correction reassess affected code, SSL boundary tests, evidence, CI and final body in a new superseding verdict. No product, label, draft or Project mutation performed.\"\n}\n```",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010712958"
+    },
+    {
+      "id": 6010773080,
+      "body": "Pre-push F1 impact: verified QA6010712958 exact body SHA2560573754e2a44c2054d126735745e677fe9d8d27ee6b0501834d50a03f4519e71. Published head7892c7a8193c5e64c37e92a06e3e0fd360de9a43 and parent75578e5ac57a05ba0f06146598b314a01eafb2ae unchanged. Local correction8d54fd6797944c46b64c4efde965b0c7f7d34306 rejects blank/unknown SSL settings and conflicting duplicate URL modes, normalizes selected modes once for consistent runtime/CLI interpretation, and preserves nonblank override precedence. Three changed files: resolver, maintained tests, guide. All36 focused tests, typecheck, credential-free generation/validation and diff hygiene pass. No actual TLS/system settings or provider/credential operations; no parent changes. Publishing this source correction next; independent same-QA reassessment required.",
+      "url": "https://github.com/MChartier/calibrate-health/pull/429#issuecomment-6010773080"
+    }
+  ],
+  "presentation": "API-decoded final body read: concise summary, behavior table, immutable evidence and guide links. No current rendered pixel inspection claimed; genuinely non-UI configuration change. Earlier browser kernel failed at sandbox startup. Independent QA explicitly accepted the non-UI presentation method, with SSL correctness requiring reassessment.",
+  "independentQa": "Required; not performed by implementation owner."
+}
