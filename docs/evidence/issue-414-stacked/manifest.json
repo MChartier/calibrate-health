@@ -1,0 +1,1223 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-06T00:33:07.165Z",
+  "beforeSource": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "afterSource": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "parent": {
+    "pr": 423,
+    "head": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+    "state": "open draft; review quota blocked"
+  },
+  "harnessCommit": "928dd9e4612f505028cbdcc170ce49234f8f8249",
+  "captureRuns": {
+    "before": "10 passed",
+    "after": "11 passed, 1 deliberate desktop enlarged-text skip"
+  },
+  "pairs": [
+    {
+      "name": "compact-phone-chrome-calendar-dark",
+      "before": {
+        "record": "before-compact-phone-chrome-calendar-dark.json",
+        "recordSha256": "bf0631e955e2dbad525ce653db15850857c16074798bb9694dd179dbeb7beba6",
+        "image": "before-compact-phone-chrome-calendar-dark.png",
+        "imageSha256": "aca1db10f0f744c3a63b55250d3b128c36df97bedbebadeaccec42c004644630",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-calendar-dark.json",
+        "recordSha256": "f009cb4e5a57fa917469d860e2491a80f119207fcc452354b62ac90ce1d73275",
+        "image": "after-compact-phone-chrome-calendar-dark.png",
+        "imageSha256": "783575b9b2e6b83037da8ce94688e97232c00a3b8d58578bfcb2b1f8a69b8a85",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-calendar-light",
+      "before": {
+        "record": "before-compact-phone-chrome-calendar-light.json",
+        "recordSha256": "d5ca48933e6f51e4f592917a1b70c2612f249f9f94533770acbf562edc60aaae",
+        "image": "before-compact-phone-chrome-calendar-light.png",
+        "imageSha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-calendar-light.json",
+        "recordSha256": "4549b93f3c5e5bffe616afa7d028f261ceea5e129754c1a24ae52b06f7aaa5c6",
+        "image": "after-compact-phone-chrome-calendar-light.png",
+        "imageSha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-dated-today-dark",
+      "before": {
+        "record": "before-compact-phone-chrome-dated-today-dark.json",
+        "recordSha256": "1cdc0bffdedfc366b24c35f4bf8bfd6a1607d8df38cb223d8625adbf25a23da8",
+        "image": "before-compact-phone-chrome-dated-today-dark.png",
+        "imageSha256": "fdd58e5c317a8f8cbcbc2d2736c2dc73207943036a918b085e320892a83b8718",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-dated-today-dark.json",
+        "recordSha256": "d9014b96da6ce4ca97a60ff731238c23193186fa6d07c7d7455f34ac9bd28afe",
+        "image": "after-compact-phone-chrome-dated-today-dark.png",
+        "imageSha256": "3c7bb68c38a078cbddea71985eebbd3300c604130d83d53d615c4ecfff851b72",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-dated-today-light",
+      "before": {
+        "record": "before-compact-phone-chrome-dated-today-light.json",
+        "recordSha256": "01df5f3c08bd9733434bf80d78e732e364fdadcad07bc65f0f3c989045932277",
+        "image": "before-compact-phone-chrome-dated-today-light.png",
+        "imageSha256": "afd567d9858931bdf34dfeeeef5300f6e0fec4904efa6a90bcf66a7d5994e0ef",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-dated-today-light.json",
+        "recordSha256": "e9f7972c86c87a7842135f8b25cc4f38dfbbc5debae220758e5762b90fc8aec5",
+        "image": "after-compact-phone-chrome-dated-today-light.png",
+        "imageSha256": "df7d0d188ae23a104ecdf5a5b8a10a392aa3aab03bb632e8bd4732e6deef7fae",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-matched-failed-resume",
+      "before": {
+        "record": "before-compact-phone-chrome-matched-failed-resume.json",
+        "recordSha256": "bc7625428f34e2046687482f29bf8147bb172324e0a47b889957f6a418ba4ab3",
+        "image": "before-compact-phone-chrome-matched-failed-resume.png",
+        "imageSha256": "d59651dc105f16fdb892086b50868265d867162ed3723b8519cd5c50ea929c06",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-matched-failed-resume.json",
+        "recordSha256": "93e877cebedd0fbd2451349bedcb080f357b470ef92e3a99ab44ed570b2db87a",
+        "image": "after-compact-phone-chrome-matched-failed-resume.png",
+        "imageSha256": "cc5744220c33b0f318c291b88fd01a24faa5bd1727f4047c36efb616fe514e6a",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-matched-recovered-calendar",
+      "before": {
+        "record": "before-compact-phone-chrome-matched-recovered-calendar.json",
+        "recordSha256": "6911f0669e765437233a5b041126a5b7580f4832785c8091ac988fdc42195d59",
+        "image": "before-compact-phone-chrome-matched-recovered-calendar.png",
+        "imageSha256": "ade9e1867a87979415774344d54755032ff242283b410762b7e5bd76582a5d6f",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-matched-recovered-calendar.json",
+        "recordSha256": "651dedbb437940510bd515dee6254e8a3c8a2501caf835d654bfbb13052a54ad",
+        "image": "after-compact-phone-chrome-matched-recovered-calendar.png",
+        "imageSha256": "ade9e1867a87979415774344d54755032ff242283b410762b7e5bd76582a5d6f",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-queued-replayed",
+      "before": {
+        "record": "before-compact-phone-chrome-queued-replayed.json",
+        "recordSha256": "ec46e01a8eef391c99f03e62a5202909ae7202076795ba1ab1f1c9a787310c0a",
+        "image": "before-compact-phone-chrome-queued-replayed.png",
+        "imageSha256": "c5b8ffe93a7f2fb33e851528215feebea4544db979113df02c2734fb446689ec",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-queued-replayed.json",
+        "recordSha256": "ce885b4ec159f1f223be6745884765b9d9cf65cf69f11be15f2bd8ba8351d556",
+        "image": "after-compact-phone-chrome-queued-replayed.png",
+        "imageSha256": "c5b8ffe93a7f2fb33e851528215feebea4544db979113df02c2734fb446689ec",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-queued-resume-calendar",
+      "before": {
+        "record": "before-compact-phone-chrome-queued-resume-calendar.json",
+        "recordSha256": "94c13af8f71608a29f7f5bcfd92a3756f2ddb2dd8f94ac4be45c905695525cf7",
+        "image": "before-compact-phone-chrome-queued-resume-calendar.png",
+        "imageSha256": "7dbc652a533b8121d6ac4cd2399a05019e296489b05fe6ff92b94dbfc723fe17",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-queued-resume-calendar.json",
+        "recordSha256": "05050660922e69834e8660508c95618d4ec149a90f91b418c78577eb5abe35c7",
+        "image": "after-compact-phone-chrome-queued-resume-calendar.png",
+        "imageSha256": "e870474eefe64a0e4df08ce43c26e6445de1bbecf2041fe8d7c0653403d1d23b",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-queued-resume",
+      "before": {
+        "record": "before-compact-phone-chrome-queued-resume.json",
+        "recordSha256": "82a2786b86ad0af7bc086a689cda9afab531c1ad32f9fc630dd07326b9bcbfa2",
+        "image": "before-compact-phone-chrome-queued-resume.png",
+        "imageSha256": "cc7a7ffd8830fedc356dcecce83279a1ce9fbb49e8346586168e49b06fcad48d",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-queued-resume.json",
+        "recordSha256": "6125cdd1b0ecfead36215ac48ee12845a9533c67d7d2a5e823e8258ccf10073f",
+        "image": "after-compact-phone-chrome-queued-resume.png",
+        "imageSha256": "e92a5a34016feb03d726c0ce8e3621bf8f49706c598a47495478a149f9981057",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-queued-start-calendar",
+      "before": {
+        "record": "before-compact-phone-chrome-queued-start-calendar.json",
+        "recordSha256": "3d702fe865c30a6d55d19fb58c4b7972ca82170cf7841316de27d3b5e2658f20",
+        "image": "before-compact-phone-chrome-queued-start-calendar.png",
+        "imageSha256": "d16331948bb758e90679a39eb2bc0c5d32a332dc35ae07c916d88cdf1b5d378e",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-queued-start-calendar.json",
+        "recordSha256": "4446f633f1cd04edae6ca26e40af10bf12fc3b02ae0a2ea9c193ff0eda611cb0",
+        "image": "after-compact-phone-chrome-queued-start-calendar.png",
+        "imageSha256": "cc37e8111c6c634779d2aa6964dd001ac5baab0a6efa22340d89c50e891baa8f",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "compact-phone-chrome-queued-start-today",
+      "before": {
+        "record": "before-compact-phone-chrome-queued-start-today.json",
+        "recordSha256": "44f6fe1f7b3bb63444b81c46c3e002a754c192f28b56fa13aaeebce81c821211",
+        "image": "before-compact-phone-chrome-queued-start-today.png",
+        "imageSha256": "3648c4266704843dee74ee3d3de5b46ff3704389a24d1b4c30ce9a6fb93fde8d",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-compact-phone-chrome-queued-start-today.json",
+        "recordSha256": "b9d8259d29f916a460e0be44655f2245a7947c3c697d119f9fb87d193ddc7e31",
+        "image": "after-compact-phone-chrome-queued-start-today.png",
+        "imageSha256": "92f49e592f525847b663be48e3e58f5b2576470c9383f30f02de4780263d877a",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-calendar-dark",
+      "before": {
+        "record": "before-desktop-chrome-calendar-dark.json",
+        "recordSha256": "a3e5be11831829fe515733f26715b8a683393cc7156e36dced224a7a6cab16d8",
+        "image": "before-desktop-chrome-calendar-dark.png",
+        "imageSha256": "92e33a9141363bf054bb93a3548a7f295e333c56a35798806d2ee866281f041f",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-calendar-dark.json",
+        "recordSha256": "1c4748e12afbbd60b259c68c8c58e5c7fe0a7e463cae3fed404f60aab9bef608",
+        "image": "after-desktop-chrome-calendar-dark.png",
+        "imageSha256": "ff35c3b8d0266a166fd4bd4a43899ac6b0edce16d39e2aa12eb3a4342e758fd1",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-calendar-light",
+      "before": {
+        "record": "before-desktop-chrome-calendar-light.json",
+        "recordSha256": "b5d577568131b3efaa814123ade545b5c63bc166b7a5df4a57aecd42ae8f5007",
+        "image": "before-desktop-chrome-calendar-light.png",
+        "imageSha256": "347027b507df987f39e810c0b34e60dec36e8cdd984c1af9cf251ff585210be6",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-calendar-light.json",
+        "recordSha256": "b65903f7e5e08ce8e2cad72f20e08abfbc4b0d86593f44a65d9637532d51d0e6",
+        "image": "after-desktop-chrome-calendar-light.png",
+        "imageSha256": "8fc92eed08d03b3a7e22765bd795c61ba40dd846a323c1a422df64bd2aba0db1",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-dated-today-dark",
+      "before": {
+        "record": "before-desktop-chrome-dated-today-dark.json",
+        "recordSha256": "d8e1a5f136e52dcec8dee16991bbab6e75c3466d7a4dd2dfc9fad74f53019581",
+        "image": "before-desktop-chrome-dated-today-dark.png",
+        "imageSha256": "65eb91f12fe2345e41568d4e60c2ceb0d7493754c365ed7fc82465d7fe166d41",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-dated-today-dark.json",
+        "recordSha256": "e5a40e6f985ea5a081e8eb5aa946fdd4fa01f791d1db61732d1b8afe79eb8ba8",
+        "image": "after-desktop-chrome-dated-today-dark.png",
+        "imageSha256": "a0f70ada362cf06e413ae2927fd4e37eba35e36a36ff0b61212c9c7d0d2b7236",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-dated-today-light",
+      "before": {
+        "record": "before-desktop-chrome-dated-today-light.json",
+        "recordSha256": "1cabb5500d64bf37d3a386988aee027826412e077332d370d0fe7800c80af90b",
+        "image": "before-desktop-chrome-dated-today-light.png",
+        "imageSha256": "0ae3f558c9b9c5a9d6039e4e976d4607aaa63668dd47fad4944e209d60e5cc30",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-dated-today-light.json",
+        "recordSha256": "12905bdfb77d5f328441b774f3069d3486387393da060bd1953458575ca7d699",
+        "image": "after-desktop-chrome-dated-today-light.png",
+        "imageSha256": "58c00e7cc02501d06a8876fe3d3f7119cc48cd6e774fbb13a5db8c80ccecfd7c",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-matched-failed-resume",
+      "before": {
+        "record": "before-desktop-chrome-matched-failed-resume.json",
+        "recordSha256": "27cb0e24b792bcc3ebf3ef209e568daa30196a88abab5fc7d7f11cc98f321467",
+        "image": "before-desktop-chrome-matched-failed-resume.png",
+        "imageSha256": "5635cec5012182ee8c4ee2166e20e8b04d39427aac14f5f1ec80427f005ba1a7",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-matched-failed-resume.json",
+        "recordSha256": "5712b806c869946115bdc3e729de62df651e5445a06685bcbf504a96455b288a",
+        "image": "after-desktop-chrome-matched-failed-resume.png",
+        "imageSha256": "f142bd53f0bb7e3a6de9ebc3a0791d49d926c16c7078e7768c686a74f6edd2d8",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-matched-recovered-calendar",
+      "before": {
+        "record": "before-desktop-chrome-matched-recovered-calendar.json",
+        "recordSha256": "6ce0f346387d35549dc1924d01b229d3cc7cf5cea1d5d1d3fa56f52b2a2ba0f3",
+        "image": "before-desktop-chrome-matched-recovered-calendar.png",
+        "imageSha256": "8822ae4247388ad2236bb9aa3fd9e72e4332a3c65cfdc68912bb3d187b395a29",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-matched-recovered-calendar.json",
+        "recordSha256": "1a977145fc86305f7de5cc5e77d25a2a1cadafee0419d3d0e0933d2ce394419a",
+        "image": "after-desktop-chrome-matched-recovered-calendar.png",
+        "imageSha256": "8822ae4247388ad2236bb9aa3fd9e72e4332a3c65cfdc68912bb3d187b395a29",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-queued-replayed",
+      "before": {
+        "record": "before-desktop-chrome-queued-replayed.json",
+        "recordSha256": "f278fb38c56106baa4a0ee12bd495d544775beb8930c26398c84a8770fddb879",
+        "image": "before-desktop-chrome-queued-replayed.png",
+        "imageSha256": "7bfa053c2608f35eb46eea1dfa914675fe0342f367b35f26baf129f41826e377",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-queued-replayed.json",
+        "recordSha256": "c303aaf76c871c1d89f9bad093fe7c1e4cf54ff0104d5eb8565a3e7d0f09e2b8",
+        "image": "after-desktop-chrome-queued-replayed.png",
+        "imageSha256": "8f11953e37c616a71a3c4b8d046a0b94ed8ceb94b87bb6701c2cc786c6d3723c",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-queued-resume-calendar",
+      "before": {
+        "record": "before-desktop-chrome-queued-resume-calendar.json",
+        "recordSha256": "37bcc144b2690ac72e24d94cd18a5c99a8d01c105c99334c4008763fbe33aa94",
+        "image": "before-desktop-chrome-queued-resume-calendar.png",
+        "imageSha256": "669d94e9d414ab5ccb60e85cd9a9301c8d1ebe28556d73997a9a9c3239f23387",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-queued-resume-calendar.json",
+        "recordSha256": "7ec7a52426338a05ba00e24eabd4b79f891f0699466b6f407b6cb74f7d2fa282",
+        "image": "after-desktop-chrome-queued-resume-calendar.png",
+        "imageSha256": "4cc505258ab78ced87c9a71dbeca3c5636e4f7632b9d2171ed6832dec4909b07",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-queued-resume",
+      "before": {
+        "record": "before-desktop-chrome-queued-resume.json",
+        "recordSha256": "d7d0da8fb8d1f2ae5223c50e51168c517e681b3e042e3fd7ac0ddda287913811",
+        "image": "before-desktop-chrome-queued-resume.png",
+        "imageSha256": "4dffb916010cdb17e85d166ad53b36c242bf9a1c27477876715f19aefde28bd6",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-queued-resume.json",
+        "recordSha256": "d27ef5675be5a0ae2c271c2ae3b6c8239d8ae48a72bd59f4ff73c01641f209bc",
+        "image": "after-desktop-chrome-queued-resume.png",
+        "imageSha256": "4dffb916010cdb17e85d166ad53b36c242bf9a1c27477876715f19aefde28bd6",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-queued-start-calendar",
+      "before": {
+        "record": "before-desktop-chrome-queued-start-calendar.json",
+        "recordSha256": "9d81da1efa7842d8d4cab25877506760359971c41920b16f1505dceba1f8d005",
+        "image": "before-desktop-chrome-queued-start-calendar.png",
+        "imageSha256": "aae26f4b4e04be006b1fae9ac18625fb7d4cecde83a8af575e879c9c0a16ee16",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-queued-start-calendar.json",
+        "recordSha256": "c6caca51f6ab7367e449ca3afd82ab0a4ccc5558875236927aa852685c5c9fe7",
+        "image": "after-desktop-chrome-queued-start-calendar.png",
+        "imageSha256": "6d36f009e3c81a748694c78e3ba2601ec21f97eee7fc6267cba634933f83556f",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    },
+    {
+      "name": "desktop-chrome-queued-start-today",
+      "before": {
+        "record": "before-desktop-chrome-queued-start-today.json",
+        "recordSha256": "d939f0dcefa45b57d4aaa13ecdeab49b29203340276e6bc2957065991e962319",
+        "image": "before-desktop-chrome-queued-start-today.png",
+        "imageSha256": "f9e68dba95c68c49fa883d58d2c79a82c77dbcc6c4e65db11ea36a0684534a2b",
+        "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+      },
+      "after": {
+        "record": "after-desktop-chrome-queued-start-today.json",
+        "recordSha256": "ba74e8b1cc65cb2af6b293ee3f01c73f93ffdbf3f7ffa165046e3779d36bb03b",
+        "image": "after-desktop-chrome-queued-start-today.png",
+        "imageSha256": "6cbbb3b0a6346f57d386857d5adaeefc029a8fedb6303332027c750d79ef10bc",
+        "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+      }
+    }
+  ],
+  "captures": [
+    {
+      "record": "after-compact-phone-chrome-calendar-dark.json",
+      "recordSha256": "f009cb4e5a57fa917469d860e2491a80f119207fcc452354b62ac90ce1d73275",
+      "image": "after-compact-phone-chrome-calendar-dark.png",
+      "imageSha256": "783575b9b2e6b83037da8ce94688e97232c00a3b8d58578bfcb2b1f8a69b8a85",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-calendar-light.json",
+      "recordSha256": "4549b93f3c5e5bffe616afa7d028f261ceea5e129754c1a24ae52b06f7aaa5c6",
+      "image": "after-compact-phone-chrome-calendar-light.png",
+      "imageSha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-dated-today-dark.json",
+      "recordSha256": "d9014b96da6ce4ca97a60ff731238c23193186fa6d07c7d7455f34ac9bd28afe",
+      "image": "after-compact-phone-chrome-dated-today-dark.png",
+      "imageSha256": "3c7bb68c38a078cbddea71985eebbd3300c604130d83d53d615c4ecfff851b72",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-dated-today-light.json",
+      "recordSha256": "e9f7972c86c87a7842135f8b25cc4f38dfbbc5debae220758e5762b90fc8aec5",
+      "image": "after-compact-phone-chrome-dated-today-light.png",
+      "imageSha256": "df7d0d188ae23a104ecdf5a5b8a10a392aa3aab03bb632e8bd4732e6deef7fae",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-large-text.json",
+      "recordSha256": "c8bfb1fd879d0a12c6b83ebe625d0323cb69f53c3d37d69e6150f1cc7ef1e121",
+      "image": "after-compact-phone-chrome-large-text.png",
+      "imageSha256": "e692527b46cef9eb051faab2e16af518a62c718a851c2e0ff26b8cf5c4b73e19",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-matched-failed-resume.json",
+      "recordSha256": "93e877cebedd0fbd2451349bedcb080f357b470ef92e3a99ab44ed570b2db87a",
+      "image": "after-compact-phone-chrome-matched-failed-resume.png",
+      "imageSha256": "cc5744220c33b0f318c291b88fd01a24faa5bd1727f4047c36efb616fe514e6a",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-matched-recovered-calendar.json",
+      "recordSha256": "651dedbb437940510bd515dee6254e8a3c8a2501caf835d654bfbb13052a54ad",
+      "image": "after-compact-phone-chrome-matched-recovered-calendar.png",
+      "imageSha256": "ade9e1867a87979415774344d54755032ff242283b410762b7e5bd76582a5d6f",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-queued-replayed.json",
+      "recordSha256": "ce885b4ec159f1f223be6745884765b9d9cf65cf69f11be15f2bd8ba8351d556",
+      "image": "after-compact-phone-chrome-queued-replayed.png",
+      "imageSha256": "c5b8ffe93a7f2fb33e851528215feebea4544db979113df02c2734fb446689ec",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-queued-resume-calendar.json",
+      "recordSha256": "05050660922e69834e8660508c95618d4ec149a90f91b418c78577eb5abe35c7",
+      "image": "after-compact-phone-chrome-queued-resume-calendar.png",
+      "imageSha256": "e870474eefe64a0e4df08ce43c26e6445de1bbecf2041fe8d7c0653403d1d23b",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-queued-resume.json",
+      "recordSha256": "6125cdd1b0ecfead36215ac48ee12845a9533c67d7d2a5e823e8258ccf10073f",
+      "image": "after-compact-phone-chrome-queued-resume.png",
+      "imageSha256": "e92a5a34016feb03d726c0ce8e3621bf8f49706c598a47495478a149f9981057",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-queued-start-calendar.json",
+      "recordSha256": "4446f633f1cd04edae6ca26e40af10bf12fc3b02ae0a2ea9c193ff0eda611cb0",
+      "image": "after-compact-phone-chrome-queued-start-calendar.png",
+      "imageSha256": "cc37e8111c6c634779d2aa6964dd001ac5baab0a6efa22340d89c50e891baa8f",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-queued-start-today.json",
+      "recordSha256": "b9d8259d29f916a460e0be44655f2245a7947c3c697d119f9fb87d193ddc7e31",
+      "image": "after-compact-phone-chrome-queued-start-today.png",
+      "imageSha256": "92f49e592f525847b663be48e3e58f5b2576470c9383f30f02de4780263d877a",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-target-month-dark.json",
+      "recordSha256": "46748ef0f4a219418c2b6587bd957479029419e86f5d341830a281ab550b2bbd",
+      "image": "after-compact-phone-chrome-target-month-dark.png",
+      "imageSha256": "6a234f990972e58b6205fc957898676b9892d76739b7950b215058f0434829bf",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-compact-phone-chrome-target-month-light.json",
+      "recordSha256": "674aebec6c7e8c670b664b691d9aab3873e023780de9197fa81f921dfde47b8c",
+      "image": "after-compact-phone-chrome-target-month-light.png",
+      "imageSha256": "714785fcaa1ee62135e733193c007478fd1c8f086120b44c52f3d277ae85e81e",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-calendar-dark.json",
+      "recordSha256": "1c4748e12afbbd60b259c68c8c58e5c7fe0a7e463cae3fed404f60aab9bef608",
+      "image": "after-desktop-chrome-calendar-dark.png",
+      "imageSha256": "ff35c3b8d0266a166fd4bd4a43899ac6b0edce16d39e2aa12eb3a4342e758fd1",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-calendar-light.json",
+      "recordSha256": "b65903f7e5e08ce8e2cad72f20e08abfbc4b0d86593f44a65d9637532d51d0e6",
+      "image": "after-desktop-chrome-calendar-light.png",
+      "imageSha256": "8fc92eed08d03b3a7e22765bd795c61ba40dd846a323c1a422df64bd2aba0db1",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-dated-today-dark.json",
+      "recordSha256": "e5a40e6f985ea5a081e8eb5aa946fdd4fa01f791d1db61732d1b8afe79eb8ba8",
+      "image": "after-desktop-chrome-dated-today-dark.png",
+      "imageSha256": "a0f70ada362cf06e413ae2927fd4e37eba35e36a36ff0b61212c9c7d0d2b7236",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-dated-today-light.json",
+      "recordSha256": "12905bdfb77d5f328441b774f3069d3486387393da060bd1953458575ca7d699",
+      "image": "after-desktop-chrome-dated-today-light.png",
+      "imageSha256": "58c00e7cc02501d06a8876fe3d3f7119cc48cd6e774fbb13a5db8c80ccecfd7c",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-matched-failed-resume.json",
+      "recordSha256": "5712b806c869946115bdc3e729de62df651e5445a06685bcbf504a96455b288a",
+      "image": "after-desktop-chrome-matched-failed-resume.png",
+      "imageSha256": "f142bd53f0bb7e3a6de9ebc3a0791d49d926c16c7078e7768c686a74f6edd2d8",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-matched-recovered-calendar.json",
+      "recordSha256": "1a977145fc86305f7de5cc5e77d25a2a1cadafee0419d3d0e0933d2ce394419a",
+      "image": "after-desktop-chrome-matched-recovered-calendar.png",
+      "imageSha256": "8822ae4247388ad2236bb9aa3fd9e72e4332a3c65cfdc68912bb3d187b395a29",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-queued-replayed.json",
+      "recordSha256": "c303aaf76c871c1d89f9bad093fe7c1e4cf54ff0104d5eb8565a3e7d0f09e2b8",
+      "image": "after-desktop-chrome-queued-replayed.png",
+      "imageSha256": "8f11953e37c616a71a3c4b8d046a0b94ed8ceb94b87bb6701c2cc786c6d3723c",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-queued-resume-calendar.json",
+      "recordSha256": "7ec7a52426338a05ba00e24eabd4b79f891f0699466b6f407b6cb74f7d2fa282",
+      "image": "after-desktop-chrome-queued-resume-calendar.png",
+      "imageSha256": "4cc505258ab78ced87c9a71dbeca3c5636e4f7632b9d2171ed6832dec4909b07",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-queued-resume.json",
+      "recordSha256": "d27ef5675be5a0ae2c271c2ae3b6c8239d8ae48a72bd59f4ff73c01641f209bc",
+      "image": "after-desktop-chrome-queued-resume.png",
+      "imageSha256": "4dffb916010cdb17e85d166ad53b36c242bf9a1c27477876715f19aefde28bd6",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-queued-start-calendar.json",
+      "recordSha256": "c6caca51f6ab7367e449ca3afd82ab0a4ccc5558875236927aa852685c5c9fe7",
+      "image": "after-desktop-chrome-queued-start-calendar.png",
+      "imageSha256": "6d36f009e3c81a748694c78e3ba2601ec21f97eee7fc6267cba634933f83556f",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-queued-start-today.json",
+      "recordSha256": "ba74e8b1cc65cb2af6b293ee3f01c73f93ffdbf3f7ffa165046e3779d36bb03b",
+      "image": "after-desktop-chrome-queued-start-today.png",
+      "imageSha256": "6cbbb3b0a6346f57d386857d5adaeefc029a8fedb6303332027c750d79ef10bc",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-target-month-dark.json",
+      "recordSha256": "2bc202a47f2869abf653e316b23c1306a760af75236df0aaf68a849a54d79790",
+      "image": "after-desktop-chrome-target-month-dark.png",
+      "imageSha256": "01e7e1584bb8cad6da82bc1323ade004fd47a852e25bb1ad9a93182d5b4186df",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "after-desktop-chrome-target-month-light.json",
+      "recordSha256": "507c4bab5aa8aad579978c345d06551e82d1765b2dded5e70eaa84fb7fc0f75a",
+      "image": "after-desktop-chrome-target-month-light.png",
+      "imageSha256": "e58c89dda096f5e223529290c186ec270c2346ad646e85f967c95ff16e4ba80c",
+      "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498"
+    },
+    {
+      "record": "before-compact-phone-chrome-calendar-dark.json",
+      "recordSha256": "bf0631e955e2dbad525ce653db15850857c16074798bb9694dd179dbeb7beba6",
+      "image": "before-compact-phone-chrome-calendar-dark.png",
+      "imageSha256": "aca1db10f0f744c3a63b55250d3b128c36df97bedbebadeaccec42c004644630",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-calendar-light.json",
+      "recordSha256": "d5ca48933e6f51e4f592917a1b70c2612f249f9f94533770acbf562edc60aaae",
+      "image": "before-compact-phone-chrome-calendar-light.png",
+      "imageSha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-dated-today-dark.json",
+      "recordSha256": "1cdc0bffdedfc366b24c35f4bf8bfd6a1607d8df38cb223d8625adbf25a23da8",
+      "image": "before-compact-phone-chrome-dated-today-dark.png",
+      "imageSha256": "fdd58e5c317a8f8cbcbc2d2736c2dc73207943036a918b085e320892a83b8718",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-dated-today-light.json",
+      "recordSha256": "01df5f3c08bd9733434bf80d78e732e364fdadcad07bc65f0f3c989045932277",
+      "image": "before-compact-phone-chrome-dated-today-light.png",
+      "imageSha256": "afd567d9858931bdf34dfeeeef5300f6e0fec4904efa6a90bcf66a7d5994e0ef",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-matched-failed-resume.json",
+      "recordSha256": "bc7625428f34e2046687482f29bf8147bb172324e0a47b889957f6a418ba4ab3",
+      "image": "before-compact-phone-chrome-matched-failed-resume.png",
+      "imageSha256": "d59651dc105f16fdb892086b50868265d867162ed3723b8519cd5c50ea929c06",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-matched-recovered-calendar.json",
+      "recordSha256": "6911f0669e765437233a5b041126a5b7580f4832785c8091ac988fdc42195d59",
+      "image": "before-compact-phone-chrome-matched-recovered-calendar.png",
+      "imageSha256": "ade9e1867a87979415774344d54755032ff242283b410762b7e5bd76582a5d6f",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-queued-replayed.json",
+      "recordSha256": "ec46e01a8eef391c99f03e62a5202909ae7202076795ba1ab1f1c9a787310c0a",
+      "image": "before-compact-phone-chrome-queued-replayed.png",
+      "imageSha256": "c5b8ffe93a7f2fb33e851528215feebea4544db979113df02c2734fb446689ec",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-queued-resume-calendar.json",
+      "recordSha256": "94c13af8f71608a29f7f5bcfd92a3756f2ddb2dd8f94ac4be45c905695525cf7",
+      "image": "before-compact-phone-chrome-queued-resume-calendar.png",
+      "imageSha256": "7dbc652a533b8121d6ac4cd2399a05019e296489b05fe6ff92b94dbfc723fe17",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-queued-resume.json",
+      "recordSha256": "82a2786b86ad0af7bc086a689cda9afab531c1ad32f9fc630dd07326b9bcbfa2",
+      "image": "before-compact-phone-chrome-queued-resume.png",
+      "imageSha256": "cc7a7ffd8830fedc356dcecce83279a1ce9fbb49e8346586168e49b06fcad48d",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-queued-start-calendar.json",
+      "recordSha256": "3d702fe865c30a6d55d19fb58c4b7972ca82170cf7841316de27d3b5e2658f20",
+      "image": "before-compact-phone-chrome-queued-start-calendar.png",
+      "imageSha256": "d16331948bb758e90679a39eb2bc0c5d32a332dc35ae07c916d88cdf1b5d378e",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-compact-phone-chrome-queued-start-today.json",
+      "recordSha256": "44f6fe1f7b3bb63444b81c46c3e002a754c192f28b56fa13aaeebce81c821211",
+      "image": "before-compact-phone-chrome-queued-start-today.png",
+      "imageSha256": "3648c4266704843dee74ee3d3de5b46ff3704389a24d1b4c30ce9a6fb93fde8d",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-calendar-dark.json",
+      "recordSha256": "a3e5be11831829fe515733f26715b8a683393cc7156e36dced224a7a6cab16d8",
+      "image": "before-desktop-chrome-calendar-dark.png",
+      "imageSha256": "92e33a9141363bf054bb93a3548a7f295e333c56a35798806d2ee866281f041f",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-calendar-light.json",
+      "recordSha256": "b5d577568131b3efaa814123ade545b5c63bc166b7a5df4a57aecd42ae8f5007",
+      "image": "before-desktop-chrome-calendar-light.png",
+      "imageSha256": "347027b507df987f39e810c0b34e60dec36e8cdd984c1af9cf251ff585210be6",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-dated-today-dark.json",
+      "recordSha256": "d8e1a5f136e52dcec8dee16991bbab6e75c3466d7a4dd2dfc9fad74f53019581",
+      "image": "before-desktop-chrome-dated-today-dark.png",
+      "imageSha256": "65eb91f12fe2345e41568d4e60c2ceb0d7493754c365ed7fc82465d7fe166d41",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-dated-today-light.json",
+      "recordSha256": "1cabb5500d64bf37d3a386988aee027826412e077332d370d0fe7800c80af90b",
+      "image": "before-desktop-chrome-dated-today-light.png",
+      "imageSha256": "0ae3f558c9b9c5a9d6039e4e976d4607aaa63668dd47fad4944e209d60e5cc30",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-matched-failed-resume.json",
+      "recordSha256": "27cb0e24b792bcc3ebf3ef209e568daa30196a88abab5fc7d7f11cc98f321467",
+      "image": "before-desktop-chrome-matched-failed-resume.png",
+      "imageSha256": "5635cec5012182ee8c4ee2166e20e8b04d39427aac14f5f1ec80427f005ba1a7",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-matched-recovered-calendar.json",
+      "recordSha256": "6ce0f346387d35549dc1924d01b229d3cc7cf5cea1d5d1d3fa56f52b2a2ba0f3",
+      "image": "before-desktop-chrome-matched-recovered-calendar.png",
+      "imageSha256": "8822ae4247388ad2236bb9aa3fd9e72e4332a3c65cfdc68912bb3d187b395a29",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-queued-replayed.json",
+      "recordSha256": "f278fb38c56106baa4a0ee12bd495d544775beb8930c26398c84a8770fddb879",
+      "image": "before-desktop-chrome-queued-replayed.png",
+      "imageSha256": "7bfa053c2608f35eb46eea1dfa914675fe0342f367b35f26baf129f41826e377",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-queued-resume-calendar.json",
+      "recordSha256": "37bcc144b2690ac72e24d94cd18a5c99a8d01c105c99334c4008763fbe33aa94",
+      "image": "before-desktop-chrome-queued-resume-calendar.png",
+      "imageSha256": "669d94e9d414ab5ccb60e85cd9a9301c8d1ebe28556d73997a9a9c3239f23387",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-queued-resume.json",
+      "recordSha256": "d7d0da8fb8d1f2ae5223c50e51168c517e681b3e042e3fd7ac0ddda287913811",
+      "image": "before-desktop-chrome-queued-resume.png",
+      "imageSha256": "4dffb916010cdb17e85d166ad53b36c242bf9a1c27477876715f19aefde28bd6",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-queued-start-calendar.json",
+      "recordSha256": "9d81da1efa7842d8d4cab25877506760359971c41920b16f1505dceba1f8d005",
+      "image": "before-desktop-chrome-queued-start-calendar.png",
+      "imageSha256": "aae26f4b4e04be006b1fae9ac18625fb7d4cecde83a8af575e879c9c0a16ee16",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    },
+    {
+      "record": "before-desktop-chrome-queued-start-today.json",
+      "recordSha256": "d939f0dcefa45b57d4aaa13ecdeab49b29203340276e6bc2957065991e962319",
+      "image": "before-desktop-chrome-queued-start-today.png",
+      "imageSha256": "f9e68dba95c68c49fa883d58d2c79a82c77dbcc6c4e65db11ea36a0684534a2b",
+      "sourceCommit": "7b83b3255c263efbb22fd1be1be3124bc46fc23c"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "after-build.json",
+      "sha256": "d6188962a5b4c02fea24de8ced9c0481555d9c1bcce88529a5d031843a9159a8"
+    },
+    {
+      "path": "after-build.log",
+      "sha256": "0d1b71e796f7cc83df432fca4185abcfad330eb5314112d73c195abd78cbaa1f"
+    },
+    {
+      "path": "after-compact-phone-chrome-calendar-dark.json",
+      "sha256": "f009cb4e5a57fa917469d860e2491a80f119207fcc452354b62ac90ce1d73275"
+    },
+    {
+      "path": "after-compact-phone-chrome-calendar-dark.png",
+      "sha256": "783575b9b2e6b83037da8ce94688e97232c00a3b8d58578bfcb2b1f8a69b8a85"
+    },
+    {
+      "path": "after-compact-phone-chrome-calendar-light.json",
+      "sha256": "4549b93f3c5e5bffe616afa7d028f261ceea5e129754c1a24ae52b06f7aaa5c6"
+    },
+    {
+      "path": "after-compact-phone-chrome-calendar-light.png",
+      "sha256": "6a221234a0db257f2e2827e113a4055696d43c75465ccb1ffd1ce5edc2ae838f"
+    },
+    {
+      "path": "after-compact-phone-chrome-dated-today-dark.json",
+      "sha256": "d9014b96da6ce4ca97a60ff731238c23193186fa6d07c7d7455f34ac9bd28afe"
+    },
+    {
+      "path": "after-compact-phone-chrome-dated-today-dark.png",
+      "sha256": "3c7bb68c38a078cbddea71985eebbd3300c604130d83d53d615c4ecfff851b72"
+    },
+    {
+      "path": "after-compact-phone-chrome-dated-today-light.json",
+      "sha256": "e9f7972c86c87a7842135f8b25cc4f38dfbbc5debae220758e5762b90fc8aec5"
+    },
+    {
+      "path": "after-compact-phone-chrome-dated-today-light.png",
+      "sha256": "df7d0d188ae23a104ecdf5a5b8a10a392aa3aab03bb632e8bd4732e6deef7fae"
+    },
+    {
+      "path": "after-compact-phone-chrome-large-text.json",
+      "sha256": "c8bfb1fd879d0a12c6b83ebe625d0323cb69f53c3d37d69e6150f1cc7ef1e121"
+    },
+    {
+      "path": "after-compact-phone-chrome-large-text.png",
+      "sha256": "e692527b46cef9eb051faab2e16af518a62c718a851c2e0ff26b8cf5c4b73e19"
+    },
+    {
+      "path": "after-compact-phone-chrome-matched-failed-resume.json",
+      "sha256": "93e877cebedd0fbd2451349bedcb080f357b470ef92e3a99ab44ed570b2db87a"
+    },
+    {
+      "path": "after-compact-phone-chrome-matched-failed-resume.png",
+      "sha256": "cc5744220c33b0f318c291b88fd01a24faa5bd1727f4047c36efb616fe514e6a"
+    },
+    {
+      "path": "after-compact-phone-chrome-matched-recovered-calendar.json",
+      "sha256": "651dedbb437940510bd515dee6254e8a3c8a2501caf835d654bfbb13052a54ad"
+    },
+    {
+      "path": "after-compact-phone-chrome-matched-recovered-calendar.png",
+      "sha256": "ade9e1867a87979415774344d54755032ff242283b410762b7e5bd76582a5d6f"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-replayed.json",
+      "sha256": "ce885b4ec159f1f223be6745884765b9d9cf65cf69f11be15f2bd8ba8351d556"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-replayed.png",
+      "sha256": "c5b8ffe93a7f2fb33e851528215feebea4544db979113df02c2734fb446689ec"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-resume-calendar.json",
+      "sha256": "05050660922e69834e8660508c95618d4ec149a90f91b418c78577eb5abe35c7"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-resume-calendar.png",
+      "sha256": "e870474eefe64a0e4df08ce43c26e6445de1bbecf2041fe8d7c0653403d1d23b"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-resume.json",
+      "sha256": "6125cdd1b0ecfead36215ac48ee12845a9533c67d7d2a5e823e8258ccf10073f"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-resume.png",
+      "sha256": "e92a5a34016feb03d726c0ce8e3621bf8f49706c598a47495478a149f9981057"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-start-calendar.json",
+      "sha256": "4446f633f1cd04edae6ca26e40af10bf12fc3b02ae0a2ea9c193ff0eda611cb0"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-start-calendar.png",
+      "sha256": "cc37e8111c6c634779d2aa6964dd001ac5baab0a6efa22340d89c50e891baa8f"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-start-today.json",
+      "sha256": "b9d8259d29f916a460e0be44655f2245a7947c3c697d119f9fb87d193ddc7e31"
+    },
+    {
+      "path": "after-compact-phone-chrome-queued-start-today.png",
+      "sha256": "92f49e592f525847b663be48e3e58f5b2576470c9383f30f02de4780263d877a"
+    },
+    {
+      "path": "after-compact-phone-chrome-target-month-dark.json",
+      "sha256": "46748ef0f4a219418c2b6587bd957479029419e86f5d341830a281ab550b2bbd"
+    },
+    {
+      "path": "after-compact-phone-chrome-target-month-dark.png",
+      "sha256": "6a234f990972e58b6205fc957898676b9892d76739b7950b215058f0434829bf"
+    },
+    {
+      "path": "after-compact-phone-chrome-target-month-light.json",
+      "sha256": "674aebec6c7e8c670b664b691d9aab3873e023780de9197fa81f921dfde47b8c"
+    },
+    {
+      "path": "after-compact-phone-chrome-target-month-light.png",
+      "sha256": "714785fcaa1ee62135e733193c007478fd1c8f086120b44c52f3d277ae85e81e"
+    },
+    {
+      "path": "after-desktop-chrome-calendar-dark.json",
+      "sha256": "1c4748e12afbbd60b259c68c8c58e5c7fe0a7e463cae3fed404f60aab9bef608"
+    },
+    {
+      "path": "after-desktop-chrome-calendar-dark.png",
+      "sha256": "ff35c3b8d0266a166fd4bd4a43899ac6b0edce16d39e2aa12eb3a4342e758fd1"
+    },
+    {
+      "path": "after-desktop-chrome-calendar-light.json",
+      "sha256": "b65903f7e5e08ce8e2cad72f20e08abfbc4b0d86593f44a65d9637532d51d0e6"
+    },
+    {
+      "path": "after-desktop-chrome-calendar-light.png",
+      "sha256": "8fc92eed08d03b3a7e22765bd795c61ba40dd846a323c1a422df64bd2aba0db1"
+    },
+    {
+      "path": "after-desktop-chrome-dated-today-dark.json",
+      "sha256": "e5a40e6f985ea5a081e8eb5aa946fdd4fa01f791d1db61732d1b8afe79eb8ba8"
+    },
+    {
+      "path": "after-desktop-chrome-dated-today-dark.png",
+      "sha256": "a0f70ada362cf06e413ae2927fd4e37eba35e36a36ff0b61212c9c7d0d2b7236"
+    },
+    {
+      "path": "after-desktop-chrome-dated-today-light.json",
+      "sha256": "12905bdfb77d5f328441b774f3069d3486387393da060bd1953458575ca7d699"
+    },
+    {
+      "path": "after-desktop-chrome-dated-today-light.png",
+      "sha256": "58c00e7cc02501d06a8876fe3d3f7119cc48cd6e774fbb13a5db8c80ccecfd7c"
+    },
+    {
+      "path": "after-desktop-chrome-matched-failed-resume.json",
+      "sha256": "5712b806c869946115bdc3e729de62df651e5445a06685bcbf504a96455b288a"
+    },
+    {
+      "path": "after-desktop-chrome-matched-failed-resume.png",
+      "sha256": "f142bd53f0bb7e3a6de9ebc3a0791d49d926c16c7078e7768c686a74f6edd2d8"
+    },
+    {
+      "path": "after-desktop-chrome-matched-recovered-calendar.json",
+      "sha256": "1a977145fc86305f7de5cc5e77d25a2a1cadafee0419d3d0e0933d2ce394419a"
+    },
+    {
+      "path": "after-desktop-chrome-matched-recovered-calendar.png",
+      "sha256": "8822ae4247388ad2236bb9aa3fd9e72e4332a3c65cfdc68912bb3d187b395a29"
+    },
+    {
+      "path": "after-desktop-chrome-queued-replayed.json",
+      "sha256": "c303aaf76c871c1d89f9bad093fe7c1e4cf54ff0104d5eb8565a3e7d0f09e2b8"
+    },
+    {
+      "path": "after-desktop-chrome-queued-replayed.png",
+      "sha256": "8f11953e37c616a71a3c4b8d046a0b94ed8ceb94b87bb6701c2cc786c6d3723c"
+    },
+    {
+      "path": "after-desktop-chrome-queued-resume-calendar.json",
+      "sha256": "7ec7a52426338a05ba00e24eabd4b79f891f0699466b6f407b6cb74f7d2fa282"
+    },
+    {
+      "path": "after-desktop-chrome-queued-resume-calendar.png",
+      "sha256": "4cc505258ab78ced87c9a71dbeca3c5636e4f7632b9d2171ed6832dec4909b07"
+    },
+    {
+      "path": "after-desktop-chrome-queued-resume.json",
+      "sha256": "d27ef5675be5a0ae2c271c2ae3b6c8239d8ae48a72bd59f4ff73c01641f209bc"
+    },
+    {
+      "path": "after-desktop-chrome-queued-resume.png",
+      "sha256": "4dffb916010cdb17e85d166ad53b36c242bf9a1c27477876715f19aefde28bd6"
+    },
+    {
+      "path": "after-desktop-chrome-queued-start-calendar.json",
+      "sha256": "c6caca51f6ab7367e449ca3afd82ab0a4ccc5558875236927aa852685c5c9fe7"
+    },
+    {
+      "path": "after-desktop-chrome-queued-start-calendar.png",
+      "sha256": "6d36f009e3c81a748694c78e3ba2601ec21f97eee7fc6267cba634933f83556f"
+    },
+    {
+      "path": "after-desktop-chrome-queued-start-today.json",
+      "sha256": "ba74e8b1cc65cb2af6b293ee3f01c73f93ffdbf3f7ffa165046e3779d36bb03b"
+    },
+    {
+      "path": "after-desktop-chrome-queued-start-today.png",
+      "sha256": "6cbbb3b0a6346f57d386857d5adaeefc029a8fedb6303332027c750d79ef10bc"
+    },
+    {
+      "path": "after-desktop-chrome-target-month-dark.json",
+      "sha256": "2bc202a47f2869abf653e316b23c1306a760af75236df0aaf68a849a54d79790"
+    },
+    {
+      "path": "after-desktop-chrome-target-month-dark.png",
+      "sha256": "01e7e1584bb8cad6da82bc1323ade004fd47a852e25bb1ad9a93182d5b4186df"
+    },
+    {
+      "path": "after-desktop-chrome-target-month-light.json",
+      "sha256": "507c4bab5aa8aad579978c345d06551e82d1765b2dded5e70eaa84fb7fc0f75a"
+    },
+    {
+      "path": "after-desktop-chrome-target-month-light.png",
+      "sha256": "e58c89dda096f5e223529290c186ec270c2346ad646e85f967c95ff16e4ba80c"
+    },
+    {
+      "path": "before-build.json",
+      "sha256": "609fae4846fd11fa28e54729cb5df72fc74472e97523885b395215a43e0c2b00"
+    },
+    {
+      "path": "before-build.log",
+      "sha256": "08baac9bf357c545f40bfcf5683620de49b7304d8229f904bbe0d8e4b5ff5187"
+    },
+    {
+      "path": "before-compact-phone-chrome-calendar-dark.json",
+      "sha256": "bf0631e955e2dbad525ce653db15850857c16074798bb9694dd179dbeb7beba6"
+    },
+    {
+      "path": "before-compact-phone-chrome-calendar-dark.png",
+      "sha256": "aca1db10f0f744c3a63b55250d3b128c36df97bedbebadeaccec42c004644630"
+    },
+    {
+      "path": "before-compact-phone-chrome-calendar-light.json",
+      "sha256": "d5ca48933e6f51e4f592917a1b70c2612f249f9f94533770acbf562edc60aaae"
+    },
+    {
+      "path": "before-compact-phone-chrome-calendar-light.png",
+      "sha256": "e3f92844cd07a866a058f045526ee3d3bf0e16ab0c6db9a84c0e2b51b4c1de0e"
+    },
+    {
+      "path": "before-compact-phone-chrome-dated-today-dark.json",
+      "sha256": "1cdc0bffdedfc366b24c35f4bf8bfd6a1607d8df38cb223d8625adbf25a23da8"
+    },
+    {
+      "path": "before-compact-phone-chrome-dated-today-dark.png",
+      "sha256": "fdd58e5c317a8f8cbcbc2d2736c2dc73207943036a918b085e320892a83b8718"
+    },
+    {
+      "path": "before-compact-phone-chrome-dated-today-light.json",
+      "sha256": "01df5f3c08bd9733434bf80d78e732e364fdadcad07bc65f0f3c989045932277"
+    },
+    {
+      "path": "before-compact-phone-chrome-dated-today-light.png",
+      "sha256": "afd567d9858931bdf34dfeeeef5300f6e0fec4904efa6a90bcf66a7d5994e0ef"
+    },
+    {
+      "path": "before-compact-phone-chrome-matched-failed-resume.json",
+      "sha256": "bc7625428f34e2046687482f29bf8147bb172324e0a47b889957f6a418ba4ab3"
+    },
+    {
+      "path": "before-compact-phone-chrome-matched-failed-resume.png",
+      "sha256": "d59651dc105f16fdb892086b50868265d867162ed3723b8519cd5c50ea929c06"
+    },
+    {
+      "path": "before-compact-phone-chrome-matched-recovered-calendar.json",
+      "sha256": "6911f0669e765437233a5b041126a5b7580f4832785c8091ac988fdc42195d59"
+    },
+    {
+      "path": "before-compact-phone-chrome-matched-recovered-calendar.png",
+      "sha256": "ade9e1867a87979415774344d54755032ff242283b410762b7e5bd76582a5d6f"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-replayed.json",
+      "sha256": "ec46e01a8eef391c99f03e62a5202909ae7202076795ba1ab1f1c9a787310c0a"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-replayed.png",
+      "sha256": "c5b8ffe93a7f2fb33e851528215feebea4544db979113df02c2734fb446689ec"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-resume-calendar.json",
+      "sha256": "94c13af8f71608a29f7f5bcfd92a3756f2ddb2dd8f94ac4be45c905695525cf7"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-resume-calendar.png",
+      "sha256": "7dbc652a533b8121d6ac4cd2399a05019e296489b05fe6ff92b94dbfc723fe17"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-resume.json",
+      "sha256": "82a2786b86ad0af7bc086a689cda9afab531c1ad32f9fc630dd07326b9bcbfa2"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-resume.png",
+      "sha256": "cc7a7ffd8830fedc356dcecce83279a1ce9fbb49e8346586168e49b06fcad48d"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-start-calendar.json",
+      "sha256": "3d702fe865c30a6d55d19fb58c4b7972ca82170cf7841316de27d3b5e2658f20"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-start-calendar.png",
+      "sha256": "d16331948bb758e90679a39eb2bc0c5d32a332dc35ae07c916d88cdf1b5d378e"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-start-today.json",
+      "sha256": "44f6fe1f7b3bb63444b81c46c3e002a754c192f28b56fa13aaeebce81c821211"
+    },
+    {
+      "path": "before-compact-phone-chrome-queued-start-today.png",
+      "sha256": "3648c4266704843dee74ee3d3de5b46ff3704389a24d1b4c30ce9a6fb93fde8d"
+    },
+    {
+      "path": "before-desktop-chrome-calendar-dark.json",
+      "sha256": "a3e5be11831829fe515733f26715b8a683393cc7156e36dced224a7a6cab16d8"
+    },
+    {
+      "path": "before-desktop-chrome-calendar-dark.png",
+      "sha256": "92e33a9141363bf054bb93a3548a7f295e333c56a35798806d2ee866281f041f"
+    },
+    {
+      "path": "before-desktop-chrome-calendar-light.json",
+      "sha256": "b5d577568131b3efaa814123ade545b5c63bc166b7a5df4a57aecd42ae8f5007"
+    },
+    {
+      "path": "before-desktop-chrome-calendar-light.png",
+      "sha256": "347027b507df987f39e810c0b34e60dec36e8cdd984c1af9cf251ff585210be6"
+    },
+    {
+      "path": "before-desktop-chrome-dated-today-dark.json",
+      "sha256": "d8e1a5f136e52dcec8dee16991bbab6e75c3466d7a4dd2dfc9fad74f53019581"
+    },
+    {
+      "path": "before-desktop-chrome-dated-today-dark.png",
+      "sha256": "65eb91f12fe2345e41568d4e60c2ceb0d7493754c365ed7fc82465d7fe166d41"
+    },
+    {
+      "path": "before-desktop-chrome-dated-today-light.json",
+      "sha256": "1cabb5500d64bf37d3a386988aee027826412e077332d370d0fe7800c80af90b"
+    },
+    {
+      "path": "before-desktop-chrome-dated-today-light.png",
+      "sha256": "0ae3f558c9b9c5a9d6039e4e976d4607aaa63668dd47fad4944e209d60e5cc30"
+    },
+    {
+      "path": "before-desktop-chrome-matched-failed-resume.json",
+      "sha256": "27cb0e24b792bcc3ebf3ef209e568daa30196a88abab5fc7d7f11cc98f321467"
+    },
+    {
+      "path": "before-desktop-chrome-matched-failed-resume.png",
+      "sha256": "5635cec5012182ee8c4ee2166e20e8b04d39427aac14f5f1ec80427f005ba1a7"
+    },
+    {
+      "path": "before-desktop-chrome-matched-recovered-calendar.json",
+      "sha256": "6ce0f346387d35549dc1924d01b229d3cc7cf5cea1d5d1d3fa56f52b2a2ba0f3"
+    },
+    {
+      "path": "before-desktop-chrome-matched-recovered-calendar.png",
+      "sha256": "8822ae4247388ad2236bb9aa3fd9e72e4332a3c65cfdc68912bb3d187b395a29"
+    },
+    {
+      "path": "before-desktop-chrome-queued-replayed.json",
+      "sha256": "f278fb38c56106baa4a0ee12bd495d544775beb8930c26398c84a8770fddb879"
+    },
+    {
+      "path": "before-desktop-chrome-queued-replayed.png",
+      "sha256": "7bfa053c2608f35eb46eea1dfa914675fe0342f367b35f26baf129f41826e377"
+    },
+    {
+      "path": "before-desktop-chrome-queued-resume-calendar.json",
+      "sha256": "37bcc144b2690ac72e24d94cd18a5c99a8d01c105c99334c4008763fbe33aa94"
+    },
+    {
+      "path": "before-desktop-chrome-queued-resume-calendar.png",
+      "sha256": "669d94e9d414ab5ccb60e85cd9a9301c8d1ebe28556d73997a9a9c3239f23387"
+    },
+    {
+      "path": "before-desktop-chrome-queued-resume.json",
+      "sha256": "d7d0da8fb8d1f2ae5223c50e51168c517e681b3e042e3fd7ac0ddda287913811"
+    },
+    {
+      "path": "before-desktop-chrome-queued-resume.png",
+      "sha256": "4dffb916010cdb17e85d166ad53b36c242bf9a1c27477876715f19aefde28bd6"
+    },
+    {
+      "path": "before-desktop-chrome-queued-start-calendar.json",
+      "sha256": "9d81da1efa7842d8d4cab25877506760359971c41920b16f1505dceba1f8d005"
+    },
+    {
+      "path": "before-desktop-chrome-queued-start-calendar.png",
+      "sha256": "aae26f4b4e04be006b1fae9ac18625fb7d4cecde83a8af575e879c9c0a16ee16"
+    },
+    {
+      "path": "before-desktop-chrome-queued-start-today.json",
+      "sha256": "d939f0dcefa45b57d4aaa13ecdeab49b29203340276e6bc2957065991e962319"
+    },
+    {
+      "path": "before-desktop-chrome-queued-start-today.png",
+      "sha256": "f9e68dba95c68c49fa883d58d2c79a82c77dbcc6c4e65db11ea36a0684534a2b"
+    },
+    {
+      "path": "build.mjs",
+      "sha256": "1249a1a2910b79ee54629bbd79508459c86f60fc08f8933ff50d00d42d6b1a77"
+    },
+    {
+      "path": "README.md",
+      "sha256": "89f563365a458acb7faa4ca02ae97506fe8242a25029cfb20c1bcf590757a1e3"
+    },
+    {
+      "path": "harness/playwright.expo-web.config.ts",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "path": "logs/stacked-after-bound.log",
+      "sha256": "b1324e044c572ced769cd5557ee75130045e146bbebd2a0f95fa9a396316f6b9"
+    },
+    {
+      "path": "logs/stacked-before-bound.log",
+      "sha256": "a9ca66ce603c3ab188d921bb4f29c16c6b6a65b3578262a214dabc59d634b61f"
+    },
+    {
+      "path": "logs/stacked-browser-final.log",
+      "sha256": "5e5b398aefd9d9a3d5b0702ac65a66c19849ca5d6ba179b99beb2c374c5f30e3"
+    },
+    {
+      "path": "logs/stacked-browser-recovery.log",
+      "sha256": "11d82c2958fe34d648c7c266da33a8e404f023b578db1d79b0b5b65add986386"
+    },
+    {
+      "path": "logs/stacked-browser.log",
+      "sha256": "40ae2267a0f1e14aad25396808827c179e71034ae5fb410b48056ec7de0b642b"
+    },
+    {
+      "path": "logs/stacked-focused.log",
+      "sha256": "a8c8d5215f21192944ff3b46c156953b4bfbcb24cfe4bf3fec4ea49267f21187"
+    },
+    {
+      "path": "logs/stacked-knip.log",
+      "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+    },
+    {
+      "path": "logs/stacked-lint-final.log",
+      "sha256": "757b0bb10d13e30778409bbc4b459653deaa06e4b28b9f54bf61ccdcef23d97e"
+    },
+    {
+      "path": "logs/stacked-maintained-final.log",
+      "sha256": "798262eb1c20481d34227f3fc41080e3fffbdeb890e6c43f26fd19fa8e8a1890"
+    },
+    {
+      "path": "logs/stacked-mobile-final.log",
+      "sha256": "47faf765dffd2fe7f0fdf3f142dca4da80975d11aa16235ceb48506e52e7477f"
+    },
+    {
+      "path": "logs/stacked-receipt-fix.log",
+      "sha256": "4c0b4c0e1ca76f177d893d61752975979788c766635f3cf76f38240717afffbd"
+    },
+    {
+      "path": "logs/stacked-recovery-tests.log",
+      "sha256": "5385d407c43ed6cefd37d3df2778a442f95d9f1b0db0c4462d12177d86546141"
+    },
+    {
+      "path": "harness/e2e/expo-web/fixtures.ts",
+      "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+    },
+    {
+      "path": "harness/e2e/expo-web/planned-pause.spec.ts",
+      "sha256": "55190871ca4d191ece3d12b0c144b41643f759d31bcae26bea82e7ddcb5c4f25"
+    },
+    {
+      "path": "harness/e2e/expo-web/text-scaling.ts",
+      "sha256": "b1bf4208293331490b5ba14358189d87faa1e18490d1086ede45ca2a7991607e"
+    },
+    {
+      "path": "harness/e2e/expo-web/ux-a11y.ts",
+      "sha256": "33babe0c39c04dd979a9518896c9da00b7b747192c1b2e6c4baae94668ba7158"
+    }
+  ]
+}

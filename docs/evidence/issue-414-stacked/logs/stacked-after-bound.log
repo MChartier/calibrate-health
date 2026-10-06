@@ -1,0 +1,22 @@
+
+Running 12 tests using 1 worker
+
+(node:22824) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in light (1.9s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in dark (1.8s)
+  -   3 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:190:5 ΓÇ║ planned pause remains readable at enlarged text
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:220:5 ΓÇ║ matched failed resume and recovery retains the actual pause until success (1.3s)
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:301:5 ΓÇ║ matched accepted queued resume before replay (9.2s)
+  ok  6 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:336:5 ΓÇ║ matched queued pause metadata survives calendar reads (2.0s)
+(node:32904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  7 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in light (1.9s)
+  ok  8 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:87:9 ΓÇ║ dated plan and exact month boundary in dark (1.7s)
+  ok  9 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:190:5 ΓÇ║ planned pause remains readable at enlarged text (889ms)
+  ok 10 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:220:5 ΓÇ║ matched failed resume and recovery retains the actual pause until success (1.0s)
+  ok 11 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:301:5 ΓÇ║ matched accepted queued resume before replay (8.4s)
+  ok 12 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:336:5 ΓÇ║ matched queued pause metadata survives calendar reads (1.5s)
+
+  1 skipped
+  11 passed (34.2s)

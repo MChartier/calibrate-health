@@ -1,36 +1,36 @@
 {
-  "sourceCommit": "682d8d0315bada0a885c5075777284bf5a6e5a0b",
+  "sourceCommit": "0ee7d098589beb218c4f34b370ba556f25de4498",
   "checkout": ".",
   "host": "mchartier_zbook",
   "platform": "win32",
   "node": "v24.19.0",
-  "startedAtUtc": "2026-10-06T00:24:44.941Z",
-  "finishedAtUtc": "2026-10-06T00:24:50.295Z",
+  "startedAtUtc": "2026-10-06T00:29:46.835Z",
+  "finishedAtUtc": "2026-10-06T00:29:52.283Z",
   "command": "npm.cmd --prefix mobile run build:web",
   "files": [
     {
       "path": "+not-found.html",
-      "sha256": "9bf18f5315a1b1318ecd3a6da71a5f47d8ea7328f958ac978c53a55b7844532d"
+      "sha256": "fb26da4ebbfb89a21cfb3685e8fdb95efaf518efe723ff0d0909ad29ccc71897"
     },
     {
       "path": "about.html",
-      "sha256": "610ce73888db9fa0526c5f9a83295e09c0ff3de7048df3146a8eae25cf253f7a"
+      "sha256": "7cb8857bd6822195705574a23d990af714c5389ec08125678e6979bf414a9779"
     },
     {
       "path": "account-deletion.html",
-      "sha256": "ea8bfc5786f2b8538df9e34933c4afee50377d76a9cd4b770b761d897a54695a"
+      "sha256": "3328721aad22edc06608825fe73f303d150e31ecbfa0bbce01090ab35002c289"
     },
     {
       "path": "activity.html",
-      "sha256": "557b80774d12eb4e47f431ec6e511c060c04555dddaecc25770fbb58327c99a1"
+      "sha256": "e076faeb73bf030477bbdd28501519509116d48d9221d61111ad7dcdd47af897"
     },
     {
       "path": "advanced.html",
-      "sha256": "3a1bb35c5e947fbb319495a2c131c70cea4a65ab48ed95725ed52eafb11ae220"
+      "sha256": "45c5b23b2da201a6cefb169da5e852d6688eb793374dfdc5ed481aa1f6ad827c"
     },
     {
       "path": "barcode.html",
-      "sha256": "a8ceaaf3500ac41b65b81ec577ec39e093b184a57bcac758df598a880fdace7c"
+      "sha256": "74f7b9c47ae3d89c6dde955ca4f13e0690d6381e5664a7fd4258b67d2ac97a4b"
     },
     {
       "path": "calibrate-icon-192.png",
@@ -50,19 +50,19 @@
     },
     {
       "path": "connected-apps.html",
-      "sha256": "3e8c83aab64ca57367878566f34d3d3f6079a3d7987b21dd08863b6e017d1c6c"
+      "sha256": "f2d09a4cdef3d7929d1c4eb56e7bec791831ff54625baa03ec6742651e7cbc92"
     },
     {
       "path": "connections.html",
-      "sha256": "fc83e1e61843cc47bcd54b5b0bd1f12179f7eef8bc6e7ef59665745520dd5448"
+      "sha256": "8c33e2f717b38b50a0aa97eac5ab7baba5dba228c3a38d28678726b830f15b30"
     },
     {
       "path": "data.html",
-      "sha256": "90903bc3cf3abb484d5bf83fc276a8726b23a21523f133fc8b9d63f461bc9de1"
+      "sha256": "b56b79c1085d294ff3f5f570b2d3b5cb5e74207e8d17b46e3e2512b5f2922cd2"
     },
     {
       "path": "devices.html",
-      "sha256": "28cf9c6cc6ddd7da0f77200c8112881f892f3a669e24fe5702dc4aa63f423a00"
+      "sha256": "be9203fa2cc86ee02c91274fd3f3716a19d740b733b11eb8f415c0de31d724d0"
     },
     {
       "path": "favicon.ico",
@@ -70,43 +70,43 @@
     },
     {
       "path": "food-log.html",
-      "sha256": "45d4de32ee1167cb9c10ec80ab6ad42fa1c68686f37330cef99d57eb68a57212"
+      "sha256": "75e54e37023b8ff7c8d390b611080fda7635e6ad5245a08ad9b39f980d1dcac7"
     },
     {
       "path": "forgot-password.html",
-      "sha256": "32acc38574dcae6a2a3b8ad0d39b77d096e1fb2d99019cbcc70e56cdb0b59d57"
+      "sha256": "9466980b0b9b0f5ed23b25fc3cf05966b2ec42f1357416b7d83be1c34218b6ab"
     },
     {
       "path": "goals.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "health-connect-privacy.html",
-      "sha256": "be8721147f0bfa515bd52fe9faf554797fb1663a8b4a5c9f52774303b009cedb"
+      "sha256": "351d9c0fc2e297d5160aac00d6614d6ad7c6049877d32ca1a606420be2ce5a2c"
     },
     {
       "path": "health-connect.html",
-      "sha256": "e971680a2288ad3fd727279956d42676a05cee120a59d6cedabd1e57d6e18d31"
+      "sha256": "82238757d12ce4c119293c7bf1022b16c66017c3379206cd7484010d52d93b80"
     },
     {
       "path": "help.html",
-      "sha256": "69a268b9a97e2c831cd1467287a852c11ad806cdf8d68871492fe8d7038b9fd5"
+      "sha256": "ef6b7e544166dbf5f62cced67b181737e156eee65dd93b2e083ce0cf4fe0470e"
     },
     {
       "path": "index.html",
-      "sha256": "cb40e732f999627570cb349e541a305ab7630f51ffb8e937cebb6f49292e4e4a"
+      "sha256": "0ea27d0699fd7f7f86c42d9dc03af4e7d5453fdb36b8651a79261d82070b6d3a"
     },
     {
       "path": "legal-update.html",
-      "sha256": "1e4403ca1af35a2a32860c2f5e9bf2b0d001bab64a30ba85ffaeff3db6758672"
+      "sha256": "671bf09bd14d178ffb0778c0f34e33dbc59341ca52568aafea067029a07936bb"
     },
     {
       "path": "log.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "login.html",
-      "sha256": "fae5fb0933e174e3481b7d0a1a370512e348717cf331f7a70c8b8c4c7470bb43"
+      "sha256": "45a5776ed1e62ffd9e7d0f859ec2da458b928e69d33e457292b6af43718bcaef"
     },
     {
       "path": "manifest.webmanifest",
@@ -114,315 +114,315 @@
     },
     {
       "path": "my-foods.html",
-      "sha256": "6a83be8af0f257780d2bd15f7bf07a6b5f82c074234e7d45cf9c93c4f54da475"
+      "sha256": "8708b16d60300834e796c1a05159c080e7948e02ca327080ba2d484b0da595a0"
     },
     {
       "path": "notifications.html",
-      "sha256": "4520dc3bbc3e1c2da65c446596410bdb09e0eba539f4daa0b7349b5a5cdef2ae"
+      "sha256": "1f5cf3b8afe44c51a629c36984b1243f0171470b124511fe32e0c0f5cd26f8fe"
     },
     {
       "path": "nutrition-label.html",
-      "sha256": "7fe7b70d7bc4773d2c10bf7feaaa5662e4702c00196139773b9c441f971ff256"
+      "sha256": "53b214f0165505b057848422f1b807918ed85c8def47a603754c1d568bfbf76e"
     },
     {
       "path": "onboarding.html",
-      "sha256": "b21f26897563664a2088feb0c7b7ff44986ca57d91068efca3c42715fbeb7ea8"
+      "sha256": "70d6e1ff6d6d972d07f8159c0d292ab0256a1c99a063d662c618c90970681bc4"
     },
     {
       "path": "plan-check.html",
-      "sha256": "2a15c001a3f9ea9d81b1ba63a1cf5e5c35c9acbc9f8e4c5310a5d418dc439807"
+      "sha256": "c43235ecf5ee9d0084554d48d0cba28bdfdaa132ec9495a537797fec12887dc0"
     },
     {
       "path": "preferences.html",
-      "sha256": "fdfec65f628b17c8bd209c264e94d9a774133ba7161df45b8e02969764614453"
+      "sha256": "72b9807865ffda0ce1550bb8985b311bbc88583b0c8af0e99fe8f9fca4b285ca"
     },
     {
       "path": "privacy.html",
-      "sha256": "ea5f01a7254693d54df9856c174b706e06121a5b1450c277ed00a5dfc10fb118"
+      "sha256": "2bcc324629865001033914bea6211717eacb3b1d0748a636f9fa56069c2fd95e"
     },
     {
       "path": "profile-details.html",
-      "sha256": "f3314f741b58bcc338294b1aee973e2786eb4ee623ab12860dbbc2213aca7552"
+      "sha256": "c265be58193e3d0dd907374a5a3416cb0a1330e8d9350a2615c8d875b4e78de6"
     },
     {
       "path": "profile.html",
-      "sha256": "f069984c7a4acb2c7837f3d1e285d5853d7546850c6b6c88dd1eaab9fd4c4a11"
+      "sha256": "c1a1a300edfa25a41cca7db10454f7d9d7713396861918139499d76f0e919753"
     },
     {
       "path": "progress.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "register.html",
-      "sha256": "7bb622f5541fcd74ff609b62c00168182db0c8c5122ebd645e70bfade3f058c8"
+      "sha256": "7c22a0e0fa2db4e67da82c4cce2b8a35553cf4c33eb4a560f443e1dcd917fb2d"
     },
     {
       "path": "reset-password.html",
-      "sha256": "abbef9d0f1497ad59b0ecd9857f8bf3313e8b2ed10e832505fdabacc5c234d1d"
+      "sha256": "56b3266ca35425cad7a0f393dfc1370b9dc427b2988366c5afd215cc8a6d5ec5"
     },
     {
       "path": "security.html",
-      "sha256": "56f4a98202a6fd025552e7a51e54e12c8c3d6a0fb1cad1aac70dcda642f8a1ab"
+      "sha256": "d8b6bf515320998fd2774699367446e8eec17aa92072b8a5ee0cf94e3b2dc832"
     },
     {
       "path": "server-admin.html",
-      "sha256": "5254b7541821894a25ac52334b4d29de2babdde2255840548b4ac6f639b3c6bf"
+      "sha256": "b25a8a5586d612cbab981306ef959fd798e9a8fc92222ce896054d507acca9c5"
     },
     {
       "path": "settings.html",
-      "sha256": "b5270f721ef3374062a8520fe09cb35578dbddf1a3fd249475d2ad213d913537"
+      "sha256": "ab08a94461f0507b588bc2b140e282220ac122abb51827acb22be283165a2db0"
     },
     {
       "path": "support.html",
-      "sha256": "5cfcd02f9f2ba7e0b435ff2b04202979d77bb229c468de876530700ceb7f2d9d"
+      "sha256": "379201ceff96d74d908f4c83eee90756c29ad3e35e043ef3837726378c1fade0"
     },
     {
       "path": "sw.js",
-      "sha256": "860f3d2f68f10e7ac5a85ea0911c5f09c187727b0f7aed34721bdc97d311b069"
+      "sha256": "3b153861e0b4cd726793f33dd4e6e79363c0113f8bbad92c53135eb152ad0969"
     },
     {
       "path": "terms.html",
-      "sha256": "39ce14d0a276b14a292f68903dd4f725cd7f773c2792cc471d676c5f8f0bb2d4"
+      "sha256": "dcde4dd6ee9b01a11b93fde94acd937a2dd3723b574a23ab84c28e353dc51345"
     },
     {
       "path": "today.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "verify-email.html",
-      "sha256": "23e49170bf8714d365f67ec86d9b3f9295b1701161620e3c9f01814bd98dbbf6"
+      "sha256": "bc35d7a172d837584e0e6fae86730644746a408962339e4dd0a18a823fbade11"
     },
     {
       "path": "watch.html",
-      "sha256": "47ad53d8f82acf535f3295b4395e8614f0f8863cf388620fc1f6c9cc8ff7ea1f"
+      "sha256": "eb6408610fc655f2032e62900c0288900b6cfc5ead3708e5aa1f9de45675b6ea"
     },
     {
       "path": "weight-trend.html",
-      "sha256": "c35e9c11678a1cab30ae6c9d08ee02657462079188d13918f3c47870516d946a"
+      "sha256": "90e6b51de75e2f4652546ed0bfff2ef75e7b345ecb8cedd169ebf9d163cddf48"
     },
     {
       "path": "weight.html",
-      "sha256": "2a1dd169aa584d7173e7f30e0304cf4cba0db4518633dbeceb3443eb0fcce76c"
+      "sha256": "edb1e9a5a21d04eb4b0149506b6bacedc205b2033b9982bffc4a06f2213a7781"
     },
     {
       "path": "_sitemap.html",
-      "sha256": "38d6adc49ef43030e1badaecf3892a28ebac5b0d5d559bdc2477ac8dd302ff67"
+      "sha256": "f67e2a1c8b49096278f506abe4135e25279e494eedad7c1ec16e6e329dea03f5"
     },
     {
       "path": "(auth)/login.html",
-      "sha256": "fae5fb0933e174e3481b7d0a1a370512e348717cf331f7a70c8b8c4c7470bb43"
+      "sha256": "45a5776ed1e62ffd9e7d0f859ec2da458b928e69d33e457292b6af43718bcaef"
     },
     {
       "path": "(auth)/register.html",
-      "sha256": "7bb622f5541fcd74ff609b62c00168182db0c8c5122ebd645e70bfade3f058c8"
+      "sha256": "7c22a0e0fa2db4e67da82c4cce2b8a35553cf4c33eb4a560f443e1dcd917fb2d"
     },
     {
       "path": "(progress)/goals.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "(progress)/plan-check.html",
-      "sha256": "2a15c001a3f9ea9d81b1ba63a1cf5e5c35c9acbc9f8e4c5310a5d418dc439807"
+      "sha256": "c43235ecf5ee9d0084554d48d0cba28bdfdaa132ec9495a537797fec12887dc0"
     },
     {
       "path": "(progress)/progress.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "(progress)/weight-trend.html",
-      "sha256": "c35e9c11678a1cab30ae6c9d08ee02657462079188d13918f3c47870516d946a"
+      "sha256": "90e6b51de75e2f4652546ed0bfff2ef75e7b345ecb8cedd169ebf9d163cddf48"
     },
     {
       "path": "(progress)/weight.html",
-      "sha256": "2a1dd169aa584d7173e7f30e0304cf4cba0db4518633dbeceb3443eb0fcce76c"
+      "sha256": "edb1e9a5a21d04eb4b0149506b6bacedc205b2033b9982bffc4a06f2213a7781"
     },
     {
       "path": "(settings)/about.html",
-      "sha256": "610ce73888db9fa0526c5f9a83295e09c0ff3de7048df3146a8eae25cf253f7a"
+      "sha256": "7cb8857bd6822195705574a23d990af714c5389ec08125678e6979bf414a9779"
     },
     {
       "path": "(settings)/activity.html",
-      "sha256": "557b80774d12eb4e47f431ec6e511c060c04555dddaecc25770fbb58327c99a1"
+      "sha256": "e076faeb73bf030477bbdd28501519509116d48d9221d61111ad7dcdd47af897"
     },
     {
       "path": "(settings)/advanced.html",
-      "sha256": "3a1bb35c5e947fbb319495a2c131c70cea4a65ab48ed95725ed52eafb11ae220"
+      "sha256": "45c5b23b2da201a6cefb169da5e852d6688eb793374dfdc5ed481aa1f6ad827c"
     },
     {
       "path": "(settings)/connected-apps.html",
-      "sha256": "3e8c83aab64ca57367878566f34d3d3f6079a3d7987b21dd08863b6e017d1c6c"
+      "sha256": "f2d09a4cdef3d7929d1c4eb56e7bec791831ff54625baa03ec6742651e7cbc92"
     },
     {
       "path": "(settings)/connections.html",
-      "sha256": "fc83e1e61843cc47bcd54b5b0bd1f12179f7eef8bc6e7ef59665745520dd5448"
+      "sha256": "8c33e2f717b38b50a0aa97eac5ab7baba5dba228c3a38d28678726b830f15b30"
     },
     {
       "path": "(settings)/data.html",
-      "sha256": "90903bc3cf3abb484d5bf83fc276a8726b23a21523f133fc8b9d63f461bc9de1"
+      "sha256": "b56b79c1085d294ff3f5f570b2d3b5cb5e74207e8d17b46e3e2512b5f2922cd2"
     },
     {
       "path": "(settings)/devices.html",
-      "sha256": "28cf9c6cc6ddd7da0f77200c8112881f892f3a669e24fe5702dc4aa63f423a00"
+      "sha256": "be9203fa2cc86ee02c91274fd3f3716a19d740b733b11eb8f415c0de31d724d0"
     },
     {
       "path": "(settings)/health-connect.html",
-      "sha256": "e971680a2288ad3fd727279956d42676a05cee120a59d6cedabd1e57d6e18d31"
+      "sha256": "82238757d12ce4c119293c7bf1022b16c66017c3379206cd7484010d52d93b80"
     },
     {
       "path": "(settings)/help.html",
-      "sha256": "69a268b9a97e2c831cd1467287a852c11ad806cdf8d68871492fe8d7038b9fd5"
+      "sha256": "ef6b7e544166dbf5f62cced67b181737e156eee65dd93b2e083ce0cf4fe0470e"
     },
     {
       "path": "(settings)/my-foods.html",
-      "sha256": "6a83be8af0f257780d2bd15f7bf07a6b5f82c074234e7d45cf9c93c4f54da475"
+      "sha256": "8708b16d60300834e796c1a05159c080e7948e02ca327080ba2d484b0da595a0"
     },
     {
       "path": "(settings)/preferences.html",
-      "sha256": "fdfec65f628b17c8bd209c264e94d9a774133ba7161df45b8e02969764614453"
+      "sha256": "72b9807865ffda0ce1550bb8985b311bbc88583b0c8af0e99fe8f9fca4b285ca"
     },
     {
       "path": "(settings)/profile-details.html",
-      "sha256": "f3314f741b58bcc338294b1aee973e2786eb4ee623ab12860dbbc2213aca7552"
+      "sha256": "c265be58193e3d0dd907374a5a3416cb0a1330e8d9350a2615c8d875b4e78de6"
     },
     {
       "path": "(settings)/profile.html",
-      "sha256": "f069984c7a4acb2c7837f3d1e285d5853d7546850c6b6c88dd1eaab9fd4c4a11"
+      "sha256": "c1a1a300edfa25a41cca7db10454f7d9d7713396861918139499d76f0e919753"
     },
     {
       "path": "(settings)/security.html",
-      "sha256": "56f4a98202a6fd025552e7a51e54e12c8c3d6a0fb1cad1aac70dcda642f8a1ab"
+      "sha256": "d8b6bf515320998fd2774699367446e8eec17aa92072b8a5ee0cf94e3b2dc832"
     },
     {
       "path": "(settings)/server-admin.html",
-      "sha256": "5254b7541821894a25ac52334b4d29de2babdde2255840548b4ac6f639b3c6bf"
+      "sha256": "b25a8a5586d612cbab981306ef959fd798e9a8fc92222ce896054d507acca9c5"
     },
     {
       "path": "(settings)/settings.html",
-      "sha256": "b5270f721ef3374062a8520fe09cb35578dbddf1a3fd249475d2ad213d913537"
+      "sha256": "ab08a94461f0507b588bc2b140e282220ac122abb51827acb22be283165a2db0"
     },
     {
       "path": "(settings)/watch.html",
-      "sha256": "47ad53d8f82acf535f3295b4395e8614f0f8863cf388620fc1f6c9cc8ff7ea1f"
+      "sha256": "eb6408610fc655f2032e62900c0288900b6cfc5ead3708e5aa1f9de45675b6ea"
     },
     {
       "path": "(tabs)/about.html",
-      "sha256": "610ce73888db9fa0526c5f9a83295e09c0ff3de7048df3146a8eae25cf253f7a"
+      "sha256": "7cb8857bd6822195705574a23d990af714c5389ec08125678e6979bf414a9779"
     },
     {
       "path": "(tabs)/activity.html",
-      "sha256": "557b80774d12eb4e47f431ec6e511c060c04555dddaecc25770fbb58327c99a1"
+      "sha256": "e076faeb73bf030477bbdd28501519509116d48d9221d61111ad7dcdd47af897"
     },
     {
       "path": "(tabs)/advanced.html",
-      "sha256": "3a1bb35c5e947fbb319495a2c131c70cea4a65ab48ed95725ed52eafb11ae220"
+      "sha256": "45c5b23b2da201a6cefb169da5e852d6688eb793374dfdc5ed481aa1f6ad827c"
     },
     {
       "path": "(tabs)/connected-apps.html",
-      "sha256": "3e8c83aab64ca57367878566f34d3d3f6079a3d7987b21dd08863b6e017d1c6c"
+      "sha256": "f2d09a4cdef3d7929d1c4eb56e7bec791831ff54625baa03ec6742651e7cbc92"
     },
     {
       "path": "(tabs)/connections.html",
-      "sha256": "fc83e1e61843cc47bcd54b5b0bd1f12179f7eef8bc6e7ef59665745520dd5448"
+      "sha256": "8c33e2f717b38b50a0aa97eac5ab7baba5dba228c3a38d28678726b830f15b30"
     },
     {
       "path": "(tabs)/data.html",
-      "sha256": "90903bc3cf3abb484d5bf83fc276a8726b23a21523f133fc8b9d63f461bc9de1"
+      "sha256": "b56b79c1085d294ff3f5f570b2d3b5cb5e74207e8d17b46e3e2512b5f2922cd2"
     },
     {
       "path": "(tabs)/devices.html",
-      "sha256": "28cf9c6cc6ddd7da0f77200c8112881f892f3a669e24fe5702dc4aa63f423a00"
+      "sha256": "be9203fa2cc86ee02c91274fd3f3716a19d740b733b11eb8f415c0de31d724d0"
     },
     {
       "path": "(tabs)/food-log.html",
-      "sha256": "45d4de32ee1167cb9c10ec80ab6ad42fa1c68686f37330cef99d57eb68a57212"
+      "sha256": "75e54e37023b8ff7c8d390b611080fda7635e6ad5245a08ad9b39f980d1dcac7"
     },
     {
       "path": "(tabs)/goals.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "(tabs)/health-connect.html",
-      "sha256": "e971680a2288ad3fd727279956d42676a05cee120a59d6cedabd1e57d6e18d31"
+      "sha256": "82238757d12ce4c119293c7bf1022b16c66017c3379206cd7484010d52d93b80"
     },
     {
       "path": "(tabs)/help.html",
-      "sha256": "69a268b9a97e2c831cd1467287a852c11ad806cdf8d68871492fe8d7038b9fd5"
+      "sha256": "ef6b7e544166dbf5f62cced67b181737e156eee65dd93b2e083ce0cf4fe0470e"
     },
     {
       "path": "(tabs)/log.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "(tabs)/my-foods.html",
-      "sha256": "6a83be8af0f257780d2bd15f7bf07a6b5f82c074234e7d45cf9c93c4f54da475"
+      "sha256": "8708b16d60300834e796c1a05159c080e7948e02ca327080ba2d484b0da595a0"
     },
     {
       "path": "(tabs)/notifications.html",
-      "sha256": "4520dc3bbc3e1c2da65c446596410bdb09e0eba539f4daa0b7349b5a5cdef2ae"
+      "sha256": "1f5cf3b8afe44c51a629c36984b1243f0171470b124511fe32e0c0f5cd26f8fe"
     },
     {
       "path": "(tabs)/plan-check.html",
-      "sha256": "2a15c001a3f9ea9d81b1ba63a1cf5e5c35c9acbc9f8e4c5310a5d418dc439807"
+      "sha256": "c43235ecf5ee9d0084554d48d0cba28bdfdaa132ec9495a537797fec12887dc0"
     },
     {
       "path": "(tabs)/preferences.html",
-      "sha256": "fdfec65f628b17c8bd209c264e94d9a774133ba7161df45b8e02969764614453"
+      "sha256": "72b9807865ffda0ce1550bb8985b311bbc88583b0c8af0e99fe8f9fca4b285ca"
     },
     {
       "path": "(tabs)/profile-details.html",
-      "sha256": "f3314f741b58bcc338294b1aee973e2786eb4ee623ab12860dbbc2213aca7552"
+      "sha256": "c265be58193e3d0dd907374a5a3416cb0a1330e8d9350a2615c8d875b4e78de6"
     },
     {
       "path": "(tabs)/profile.html",
-      "sha256": "f069984c7a4acb2c7837f3d1e285d5853d7546850c6b6c88dd1eaab9fd4c4a11"
+      "sha256": "c1a1a300edfa25a41cca7db10454f7d9d7713396861918139499d76f0e919753"
     },
     {
       "path": "(tabs)/progress.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "(tabs)/security.html",
-      "sha256": "56f4a98202a6fd025552e7a51e54e12c8c3d6a0fb1cad1aac70dcda642f8a1ab"
+      "sha256": "d8b6bf515320998fd2774699367446e8eec17aa92072b8a5ee0cf94e3b2dc832"
     },
     {
       "path": "(tabs)/server-admin.html",
-      "sha256": "5254b7541821894a25ac52334b4d29de2babdde2255840548b4ac6f639b3c6bf"
+      "sha256": "b25a8a5586d612cbab981306ef959fd798e9a8fc92222ce896054d507acca9c5"
     },
     {
       "path": "(tabs)/settings.html",
-      "sha256": "b5270f721ef3374062a8520fe09cb35578dbddf1a3fd249475d2ad213d913537"
+      "sha256": "ab08a94461f0507b588bc2b140e282220ac122abb51827acb22be283165a2db0"
     },
     {
       "path": "(tabs)/today.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "(tabs)/watch.html",
-      "sha256": "47ad53d8f82acf535f3295b4395e8614f0f8863cf388620fc1f6c9cc8ff7ea1f"
+      "sha256": "eb6408610fc655f2032e62900c0288900b6cfc5ead3708e5aa1f9de45675b6ea"
     },
     {
       "path": "(tabs)/weight-trend.html",
-      "sha256": "c35e9c11678a1cab30ae6c9d08ee02657462079188d13918f3c47870516d946a"
+      "sha256": "90e6b51de75e2f4652546ed0bfff2ef75e7b345ecb8cedd169ebf9d163cddf48"
     },
     {
       "path": "(tabs)/weight.html",
-      "sha256": "2a1dd169aa584d7173e7f30e0304cf4cba0db4518633dbeceb3443eb0fcce76c"
+      "sha256": "edb1e9a5a21d04eb4b0149506b6bacedc205b2033b9982bffc4a06f2213a7781"
     },
     {
       "path": "(today)/food-log.html",
-      "sha256": "45d4de32ee1167cb9c10ec80ab6ad42fa1c68686f37330cef99d57eb68a57212"
+      "sha256": "75e54e37023b8ff7c8d390b611080fda7635e6ad5245a08ad9b39f980d1dcac7"
     },
     {
       "path": "(today)/log.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "(today)/notifications.html",
-      "sha256": "4520dc3bbc3e1c2da65c446596410bdb09e0eba539f4daa0b7349b5a5cdef2ae"
+      "sha256": "1f5cf3b8afe44c51a629c36984b1243f0171470b124511fe32e0c0f5cd26f8fe"
     },
     {
       "path": "(today)/today.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "_expo/.routes.json",
@@ -430,107 +430,107 @@
     },
     {
       "path": "(tabs)/(progress)/goals.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "(tabs)/(progress)/plan-check.html",
-      "sha256": "2a15c001a3f9ea9d81b1ba63a1cf5e5c35c9acbc9f8e4c5310a5d418dc439807"
+      "sha256": "c43235ecf5ee9d0084554d48d0cba28bdfdaa132ec9495a537797fec12887dc0"
     },
     {
       "path": "(tabs)/(progress)/progress.html",
-      "sha256": "bba26c599e9175f8f01d6f18feafef49d064b6a2bba7d9b4739db76acb59151e"
+      "sha256": "d8c5ff93c442fe0061fcd5d61cd26111d3b93b989b0c84e3e59a865b8142b9d3"
     },
     {
       "path": "(tabs)/(progress)/weight-trend.html",
-      "sha256": "c35e9c11678a1cab30ae6c9d08ee02657462079188d13918f3c47870516d946a"
+      "sha256": "90e6b51de75e2f4652546ed0bfff2ef75e7b345ecb8cedd169ebf9d163cddf48"
     },
     {
       "path": "(tabs)/(progress)/weight.html",
-      "sha256": "2a1dd169aa584d7173e7f30e0304cf4cba0db4518633dbeceb3443eb0fcce76c"
+      "sha256": "edb1e9a5a21d04eb4b0149506b6bacedc205b2033b9982bffc4a06f2213a7781"
     },
     {
       "path": "(tabs)/(settings)/about.html",
-      "sha256": "610ce73888db9fa0526c5f9a83295e09c0ff3de7048df3146a8eae25cf253f7a"
+      "sha256": "7cb8857bd6822195705574a23d990af714c5389ec08125678e6979bf414a9779"
     },
     {
       "path": "(tabs)/(settings)/activity.html",
-      "sha256": "557b80774d12eb4e47f431ec6e511c060c04555dddaecc25770fbb58327c99a1"
+      "sha256": "e076faeb73bf030477bbdd28501519509116d48d9221d61111ad7dcdd47af897"
     },
     {
       "path": "(tabs)/(settings)/advanced.html",
-      "sha256": "3a1bb35c5e947fbb319495a2c131c70cea4a65ab48ed95725ed52eafb11ae220"
+      "sha256": "45c5b23b2da201a6cefb169da5e852d6688eb793374dfdc5ed481aa1f6ad827c"
     },
     {
       "path": "(tabs)/(settings)/connected-apps.html",
-      "sha256": "3e8c83aab64ca57367878566f34d3d3f6079a3d7987b21dd08863b6e017d1c6c"
+      "sha256": "f2d09a4cdef3d7929d1c4eb56e7bec791831ff54625baa03ec6742651e7cbc92"
     },
     {
       "path": "(tabs)/(settings)/connections.html",
-      "sha256": "fc83e1e61843cc47bcd54b5b0bd1f12179f7eef8bc6e7ef59665745520dd5448"
+      "sha256": "8c33e2f717b38b50a0aa97eac5ab7baba5dba228c3a38d28678726b830f15b30"
     },
     {
       "path": "(tabs)/(settings)/data.html",
-      "sha256": "90903bc3cf3abb484d5bf83fc276a8726b23a21523f133fc8b9d63f461bc9de1"
+      "sha256": "b56b79c1085d294ff3f5f570b2d3b5cb5e74207e8d17b46e3e2512b5f2922cd2"
     },
     {
       "path": "(tabs)/(settings)/devices.html",
-      "sha256": "28cf9c6cc6ddd7da0f77200c8112881f892f3a669e24fe5702dc4aa63f423a00"
+      "sha256": "be9203fa2cc86ee02c91274fd3f3716a19d740b733b11eb8f415c0de31d724d0"
     },
     {
       "path": "(tabs)/(settings)/health-connect.html",
-      "sha256": "e971680a2288ad3fd727279956d42676a05cee120a59d6cedabd1e57d6e18d31"
+      "sha256": "82238757d12ce4c119293c7bf1022b16c66017c3379206cd7484010d52d93b80"
     },
     {
       "path": "(tabs)/(settings)/help.html",
-      "sha256": "69a268b9a97e2c831cd1467287a852c11ad806cdf8d68871492fe8d7038b9fd5"
+      "sha256": "ef6b7e544166dbf5f62cced67b181737e156eee65dd93b2e083ce0cf4fe0470e"
     },
     {
       "path": "(tabs)/(settings)/my-foods.html",
-      "sha256": "6a83be8af0f257780d2bd15f7bf07a6b5f82c074234e7d45cf9c93c4f54da475"
+      "sha256": "8708b16d60300834e796c1a05159c080e7948e02ca327080ba2d484b0da595a0"
     },
     {
       "path": "(tabs)/(settings)/preferences.html",
-      "sha256": "fdfec65f628b17c8bd209c264e94d9a774133ba7161df45b8e02969764614453"
+      "sha256": "72b9807865ffda0ce1550bb8985b311bbc88583b0c8af0e99fe8f9fca4b285ca"
     },
     {
       "path": "(tabs)/(settings)/profile-details.html",
-      "sha256": "f3314f741b58bcc338294b1aee973e2786eb4ee623ab12860dbbc2213aca7552"
+      "sha256": "c265be58193e3d0dd907374a5a3416cb0a1330e8d9350a2615c8d875b4e78de6"
     },
     {
       "path": "(tabs)/(settings)/profile.html",
-      "sha256": "f069984c7a4acb2c7837f3d1e285d5853d7546850c6b6c88dd1eaab9fd4c4a11"
+      "sha256": "c1a1a300edfa25a41cca7db10454f7d9d7713396861918139499d76f0e919753"
     },
     {
       "path": "(tabs)/(settings)/security.html",
-      "sha256": "56f4a98202a6fd025552e7a51e54e12c8c3d6a0fb1cad1aac70dcda642f8a1ab"
+      "sha256": "d8b6bf515320998fd2774699367446e8eec17aa92072b8a5ee0cf94e3b2dc832"
     },
     {
       "path": "(tabs)/(settings)/server-admin.html",
-      "sha256": "5254b7541821894a25ac52334b4d29de2babdde2255840548b4ac6f639b3c6bf"
+      "sha256": "b25a8a5586d612cbab981306ef959fd798e9a8fc92222ce896054d507acca9c5"
     },
     {
       "path": "(tabs)/(settings)/settings.html",
-      "sha256": "b5270f721ef3374062a8520fe09cb35578dbddf1a3fd249475d2ad213d913537"
+      "sha256": "ab08a94461f0507b588bc2b140e282220ac122abb51827acb22be283165a2db0"
     },
     {
       "path": "(tabs)/(settings)/watch.html",
-      "sha256": "47ad53d8f82acf535f3295b4395e8614f0f8863cf388620fc1f6c9cc8ff7ea1f"
+      "sha256": "eb6408610fc655f2032e62900c0288900b6cfc5ead3708e5aa1f9de45675b6ea"
     },
     {
       "path": "(tabs)/(today)/food-log.html",
-      "sha256": "45d4de32ee1167cb9c10ec80ab6ad42fa1c68686f37330cef99d57eb68a57212"
+      "sha256": "75e54e37023b8ff7c8d390b611080fda7635e6ad5245a08ad9b39f980d1dcac7"
     },
     {
       "path": "(tabs)/(today)/log.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "(tabs)/(today)/notifications.html",
-      "sha256": "4520dc3bbc3e1c2da65c446596410bdb09e0eba539f4daa0b7349b5a5cdef2ae"
+      "sha256": "1f5cf3b8afe44c51a629c36984b1243f0171470b124511fe32e0c0f5cd26f8fe"
     },
     {
       "path": "(tabs)/(today)/today.html",
-      "sha256": "4d3377baf6d0acf8ec6cf02112dff962dedc90fd1b2549457c3145c28aaa823a"
+      "sha256": "0943be7da5654a52e744bede0f7686c75e2042304f4f3ca063fac4038624711d"
     },
     {
       "path": "assets/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
@@ -577,8 +577,8 @@
       "sha256": "4dedb6cea95e3c27def73a58daf8618a93fdf22c062c8a5966453ae2987d67ed"
     },
     {
-      "path": "_expo/static/js/web/index-fe176438fbe425746f96a3e8c82e128d.js",
-      "sha256": "8d7bea303016712720b3413c71424687c58784460101e84bd9fbec9832ded11f"
+      "path": "_expo/static/js/web/index-924abfcbaea21d1a450b410d04d51a16.js",
+      "sha256": "a5605e2a2787d2dce8f37d2c66167e1f9b991d86a3bb0cd29c95379c28d682ee"
     },
     {
       "path": "_expo/static/js/web/ProgressExpansionContent-d1f265c2d3131d9861ae144dce8b4134.js",

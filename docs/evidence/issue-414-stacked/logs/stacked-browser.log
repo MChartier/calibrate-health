@@ -1,0 +1,465 @@
+
+Running 38 tests using 2 workers
+
+(node:14952) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39692) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in light (3.1s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in dark (3.1s)
+  -   4 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:123:5 ΓÇ║ calendar remains usable with enlarged text on a small browser viewport
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in light (1.9s)
+  ok  6 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in dark (1.8s)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=none
+  x   7 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (11.6s)
+(node:2972) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:66:5 ΓÇ║ calendar refresh, uncached month failure, retry, and completion reopening stay honest (17.8s)
+  ok  8 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (2.6s)
+  -  10 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:159:5 ΓÇ║ planned pause remains readable at enlarged text
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=none
+  x  11 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:169:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (11.0s)
+(node:25488) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 12 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:187:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (2.2s)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=GET /api/v1/food-days/pause (503)
+  x   9 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (22.1s)
+(node:40804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=POST /api/v1/food-days/resume (503)
+  x  14 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:217:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (11.4s)
+(node:9248) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/today viewport=1440x1000 project=desktop-chrome last_failed_request=GET /api/v1/food-days/pause (503)
+  x  13 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:203:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (21.2s)
+(node:36332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 15 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:259:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay (4.8s)
+  ok 16 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:8:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light (2.2s)
+  ok 17 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:8:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in dark (2.2s)
+  -  19 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:91:5 ΓÇ║ paused-day copy and actions remain reachable at 200% text on a short phone
+(node:16020) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 18 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:61:5 ΓÇ║ a past paused day replaces an expanded food log and can be backfilled (1.8s)
+(node:30824) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 20 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in light (2.4s)
+  -  22 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:66:5 ΓÇ║ calendar refresh, uncached month failure, retry, and completion reopening stay honest
+  ok 21 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in dark (2.4s)
+  ok 23 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:123:5 ΓÇ║ calendar remains usable with enlarged text on a small browser viewport (1.5s)
+  ok 24 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in light (1.9s)
+  ok 25 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in dark (2.0s)
+  ok 27 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (2.6s)
+[expo-web failure] route=/today viewport=320x720 project=compact-phone-chrome last_failed_request=none
+  x  26 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (11.6s)
+(node:6132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/today viewport=320x720 project=compact-phone-chrome last_failed_request=none
+  ok 29 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:159:5 ΓÇ║ planned pause remains readable at enlarged text (1.4s)
+  x  28 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (11.3s)
+  ok 30 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:169:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (1.8s)
+(node:12728) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 32 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:187:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (2.2s)
+[expo-web failure] route=/today viewport=320x720 project=compact-phone-chrome last_failed_request=POST /api/v1/food-days/resume (503)
+  x  33 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:217:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (11.3s)
+(node:39576) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/today viewport=320x720 project=compact-phone-chrome last_failed_request=GET /api/v1/food-days/pause (503)
+  x  31 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:203:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (21.5s)
+(node:12556) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 35 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:8:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light (1.9s)
+[expo-web failure] route=/today viewport=320x720 project=compact-phone-chrome last_failed_request=none
+  x  34 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:259:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay (11.0s)
+  ok 36 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:8:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in dark (1.6s)
+(node:36108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 37 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:91:5 ΓÇ║ paused-day copy and actions remain reachable at 200% text on a short phone (1.5s)
+  ok 38 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:61:5 ΓÇ║ a past paused day replaces an expanded food log and can be backfilled (1.9s)
+
+
+  1) [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator: getByRole('button', { name: 'Add food', exact: true })
+    Expected: enabled
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 10000ms
+      - waiting for getByRole('button', { name: 'Add food', exact: true })
+        - locator resolved to <button disabled role="button" tabindex="-1" type="button" aria-disabled="true" aria-label="Add food" class="css-g5y9jx r-12vffkv r-1awozwy r-1q9bdsx r-1777fci r-11f147o r-7zyun1 r-1r2rb8h r-rs99b7 r-15i92mo r-6dt33c r-13awgt0 r-19yznuf r-bcqeeo r-1s79g0 r-is05cd">ΓÇª</button>
+        - unexpected value "disabled"
+
+
+      101 |     await expect(page.getByText(/Expected to resume/)).toHaveCount(0);
+      102 |     await page.getByRole('button', { name: 'Edit day', exact: true }).click();
+    > 103 |     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+          |                                                                               ^
+      104 |     expect(state.active).toBe(true);
+      105 |     await page.getByRole('button', { name: 'Next day', exact: true }).click();
+      106 |     state.failResume = true; expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/resume', status: 400 });
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:103:79
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  2) [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Pause plan unavailable.', { exact: true })
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 20000ms
+      - waiting for getByText('Pause plan unavailable.', { exact: true })
+
+
+      150 |     state.failRead = true; expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/pause', status: 503 });
+      151 |     await page.reload(); await hideTransientPwaNotices(page);
+    > 152 |     await expect(page.getByText('Pause plan unavailable.', { exact: true })).toBeVisible({ timeout: 20000 });
+          |                                                                              ^
+      153 |     await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toBeEnabled();
+      154 |
+      155 |     state.failRead = false; await page.reload(); await hideTransientPwaNotices(page);
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:152:78
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  3) [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:169:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon 
+
+    Error: expect(locator).toHaveAccessibleName(expected) failed
+
+    Locator: getByTestId('calendar-day-2026-08-02')
+    Expected pattern: /planned/
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAccessibleName" with timeout 10000ms
+      - waiting for getByTestId('calendar-day-2026-08-02')
+
+
+      170 |     const state = await install(page, ux); await open(page); await calendar(page);
+      171 |     await page.getByRole('button', { name: 'Next month', exact: true }).click();
+    > 172 |     await expect(page.getByTestId('calendar-day-2026-08-02')).toHaveAccessibleName(/planned/);
+          |                                                               ^
+      173 |     state.target = '2026-07-23';
+      174 |     await page.getByRole('button', { name: 'Previous month', exact: true }).click();
+      175 |     await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled();
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:172:63
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-reopening-an-b7e6f-er-from-a-shortened-horizon-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-reopening-an-b7e6f-er-from-a-shortened-horizon-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-reopening-an-b7e6f-er-from-a-shortened-horizon-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-reopening-an-b7e6f-er-from-a-shortened-horizon-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  4) [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:203:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 20000ms
+      - waiting for getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')
+
+
+      206 |     state.failRead = true; expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/pause', status: 503 });
+      207 |     await calendar(page);
+    > 208 |     await expect(page.getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')).toBeVisible({ timeout: 20000 });
+          |                                                                                                                       ^
+      209 |     await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
+      210 |
+      211 |     state.failRead = false; state.target = '2026-07-23';
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:208:119
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  5) [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:217:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByRole('button', { name: 'Add food', exact: true })
+    Expected: enabled
+    Received: disabled
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 10000ms
+      - waiting for getByRole('button', { name: 'Add food', exact: true })
+        23 ├ù locator resolved to <button disabled role="button" tabindex="-1" type="button" aria-disabled="true" aria-label="Add food" class="css-g5y9jx r-12vffkv r-1awozwy r-1q9bdsx r-1777fci r-11f147o r-7zyun1 r-1r2rb8h r-rs99b7 r-15i92mo r-6dt33c r-13awgt0 r-19yznuf r-bcqeeo r-1s79g0 r-is05cd">ΓÇª</button>
+           - unexpected value "disabled"
+
+
+      237 |         };
+      238 |     }))).toBe(1);
+    > 239 |     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+          |                                                                               ^
+      240 |     await expect(page.getByText('Tracking paused', { exact: true })).toHaveCount(0);
+      241 |     await page.reload(); await hideTransientPwaNotices(page);
+      242 |     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:239:79
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-desktop-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-desktop-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-desktop-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-desktop-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  6) [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator: getByRole('button', { name: 'Add food', exact: true })
+    Expected: enabled
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 10000ms
+      - waiting for getByRole('button', { name: 'Add food', exact: true })
+        - locator resolved to <button disabled role="button" tabindex="-1" type="button" aria-disabled="true" aria-label="Add food" class="css-g5y9jx r-12vffkv r-1awozwy r-1q9bdsx r-1777fci r-11f147o r-7zyun1 r-1r2rb8h r-rs99b7 r-15i92mo r-6dt33c r-13awgt0 r-19yznuf r-bcqeeo r-1s79g0 r-n7gxbd">ΓÇª</button>
+        - unexpected value "disabled"
+
+
+      101 |     await expect(page.getByText(/Expected to resume/)).toHaveCount(0);
+      102 |     await page.getByRole('button', { name: 'Edit day', exact: true }).click();
+    > 103 |     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+          |                                                                               ^
+      104 |     expect(state.active).toBe(true);
+      105 |     await page.getByRole('button', { name: 'Next day', exact: true }).click();
+      106 |     state.failResume = true; expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/resume', status: 400 });
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:103:79
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-compact-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-compact-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-compact-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-real-pause-f-97fd8-d-preserved-historical-edit-compact-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  7) [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery 
+
+    Error: expect(locator).toHaveAccessibleName(expected) failed
+
+    Locator: getByTestId('calendar-day-2027-01-01')
+    Expected pattern: /planned tracking pause/
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAccessibleName" with timeout 10000ms
+      - waiting for getByTestId('calendar-day-2027-01-01')
+
+
+      140 |     const state = await install(page, ux, '2027-01-02'); await open(page); await calendar(page);
+      141 |     for (let month = 0; month < 6; month++) await page.getByRole('button', { name: 'Next month', exact: true }).click();
+    > 142 |     await expect(page.getByTestId('calendar-day-2027-01-01')).toHaveAccessibleName(/planned tracking pause/);
+          |                                                               ^
+      143 |     await expect(page.getByTestId('calendar-day-2027-01-02')).toHaveAccessibleName(/future date/);
+      144 |
+      145 |     expect(state.rangeRequests.every(range => range.endsWith(today))).toBe(true);
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:142:63
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-compact-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-compact-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-compact-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-year-target--ea572-available-metadata-recovery-compact-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  8) [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:203:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 20000ms
+      - waiting for getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')
+
+
+      206 |     state.failRead = true; expectApiFailure(page, { method: 'GET', pathname: '/api/v1/food-days/pause', status: 503 });
+      207 |     await calendar(page);
+    > 208 |     await expect(page.getByRole('dialog', { name: 'Calendar' }).getByText('Could not refresh the saved pause plan.')).toBeVisible({ timeout: 20000 });
+          |                                                                                                                       ^
+      209 |     await expect(page.getByTestId('calendar-day-2026-07-22')).toHaveAccessibleName(/planned/);
+      210 |
+      211 |     state.failRead = false; state.target = '2026-07-23';
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:208:119
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-compact-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-compact-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-compact-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-cached-read--2bc4d-e-and-reopening-recovers-it-compact-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  9) [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:217:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  getByRole('button', { name: 'Add food', exact: true })
+    Expected: enabled
+    Received: disabled
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 10000ms
+      - waiting for getByRole('button', { name: 'Add food', exact: true })
+        24 ├ù locator resolved to <button disabled role="button" tabindex="-1" type="button" aria-disabled="true" aria-label="Add food" class="css-g5y9jx r-12vffkv r-1awozwy r-1q9bdsx r-1777fci r-11f147o r-7zyun1 r-1r2rb8h r-rs99b7 r-15i92mo r-6dt33c r-13awgt0 r-19yznuf r-bcqeeo r-1s79g0 r-n7gxbd">ΓÇª</button>
+           - unexpected value "disabled"
+
+
+      237 |         };
+      238 |     }))).toBe(1);
+    > 239 |     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+          |                                                                               ^
+      240 |     await expect(page.getByText('Tracking paused', { exact: true })).toHaveCount(0);
+      241 |     await page.reload(); await hideTransientPwaNotices(page);
+      242 |     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:239:79
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-compact-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-compact-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-compact-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-offline-cach-5beca--real-browser-outbox-replay-compact-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  10) [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:259:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay 
+
+    TimeoutError: locator.click: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Choose expected resume date', exact: true })
+
+
+      262 |     expectApiFailure(page, { method: 'POST', pathname: '/api/v1/food-days/pause', status: 503 });
+      263 |     await page.getByRole('button', { name: 'Pause tracking', exact: true }).click();
+    > 264 |     await page.getByRole('button', { name: 'Choose expected resume date', exact: true }).click();
+          |                                                                                          ^
+      265 |     await page.getByLabel('Expected resume date', { exact: true }).fill('2026-08-03');
+      266 |     await page.getByRole('button', { name: 'Pause with this date', exact: true }).click();
+      267 |     await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeVisible();
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:264:90
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-queued-pause-9ede2-r-refetch-reload-and-replay-compact-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: .codex-screenshots\expo-web-playwright-results\planned-pause-queued-pause-9ede2-r-refetch-reload-and-replay-compact-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    .codex-screenshots\expo-web-playwright-results\planned-pause-queued-pause-9ede2-r-refetch-reload-and-replay-compact-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace .codex-screenshots\expo-web-playwright-results\planned-pause-queued-pause-9ede2-r-refetch-reload-and-replay-compact-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  10 failed
+    [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit 
+    [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery 
+    [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:169:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon 
+    [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:203:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it 
+    [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:217:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay 
+    [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit 
+    [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery 
+    [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:203:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it 
+    [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:217:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay 
+    [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:259:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay 
+  4 skipped
+  24 passed (2.0m)

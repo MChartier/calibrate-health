@@ -1,0 +1,68 @@
+
+Running 22 tests using 1 worker
+
+(node:40148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in light (1.8s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in dark (1.6s)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (2.0s)
+  ok  4 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (2.0s)
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (3.2s)
+  -   6 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:162:5 ΓÇ║ planned pause remains readable at enlarged text
+  ok  7 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:172:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (1.4s)
+  ok  8 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:190:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (1.7s)
+  ok  9 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:206:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (6.2s)
+  ok 10 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:220:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (2.7s)
+  ok 11 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:262:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay (8.6s)
+(node:35604) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 12 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in light (1.8s)
+  ok 13 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in dark (1.7s)
+  ok 14 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (2.5s)
+[expo-web failure] route=/today viewport=320x720 project=compact-phone-chrome last_failed_request=POST /api/v1/client-diagnostics (net::ERR_ABORTED)
+  x  15 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (11.3s)
+(node:5348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 16 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:139:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (3.8s)
+  ok 17 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:162:5 ΓÇ║ planned pause remains readable at enlarged text (1.1s)
+  ok 18 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:172:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (1.6s)
+  ok 19 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:190:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (1.6s)
+  ok 20 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:206:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (6.3s)
+  ok 21 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:220:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (2.8s)
+  ok 22 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:262:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay (5.0s)
+
+
+  1) [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume 
+
+    TimeoutError: locator.click: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: 'Ready to resume tracking?' }).getByRole('button', { name: 'Resume tracking', exact: true })
+
+
+      131 |
+      132 |     state.target = today; await page.reload(); await hideTransientPwaNotices(page);
+    > 133 |     await page.getByRole('dialog', { name: 'Ready to resume tracking?' }).getByRole('button', { name: 'Resume tracking', exact: true }).click();
+          |                                                                                                                                         ^
+      134 |     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+      135 |     await calendar(page); await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
+      136 |     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
+        at C:\Users\MChar\Documents\Codex\2026-10-04\task-6\planned-pause-stacked\e2e\expo-web\planned-pause.spec.ts:133:137
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\stacked-recovery-results\planned-pause-due-prompt-f-0714d-removal-and-explicit-resume-compact-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: ..\stacked-recovery-results\planned-pause-due-prompt-f-0714d-removal-and-explicit-resume-compact-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\stacked-recovery-results\planned-pause-due-prompt-f-0714d-removal-and-explicit-resume-compact-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\stacked-recovery-results\planned-pause-due-prompt-f-0714d-removal-and-explicit-resume-compact-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  1 failed
+    [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume 
+  1 skipped
+  20 passed (1.3m)

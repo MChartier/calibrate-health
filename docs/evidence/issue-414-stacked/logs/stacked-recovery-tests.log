@@ -1,0 +1,19 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/food/HistoricalDatePicker.test.tsx
+PASS src/food/HistoricalDatePicker.test.tsx
+  ΓêÜ browses the target month without requesting future history or enabling future selection, and clamps a shortened plan (221 ms)
+  ΓêÜ keeps completed circles date-only with factual accessible meanings and an explanatory legend (69 ms)
+  ΓêÜ projects durable receipts then pending controls on absent range dates across refetch and remount (36 ms)
+  ΓêÜ excludes failed and foreign-account projection without changing completed history (68 ms)
+  ΓêÜ shows durable calendar intent with honest missing-history labels after an uncached read failure (14 ms)
+  HistoricalDatePicker
+    ΓêÜ loads the visible range, exposes status labels, and selects a day (160 ms)
+    ΓêÜ never exposes unresolved days as selectable status after an uncached failure and announces Retry (184 ms)
+    ΓêÜ keeps cached calendar days selectable and labels refresh failure as degraded (81 ms)
+    ΓêÜ labels cached calendar days stale while native or web connectivity is offline (16 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        2.19 s
+Ran all test suites matching /src\\food\\HistoricalDatePicker.test.tsx/i.
