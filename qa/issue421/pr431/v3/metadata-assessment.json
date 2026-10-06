@@ -1,0 +1,149 @@
+{
+  "checkedAtUtc": "2026-10-06T18:36:06.177Z",
+  "issueBodySha256": "f06dbdfbf31286c8f9fff816f35f37d3d0005a64f103a94108e396747d930ede",
+  "issueUpdatedAt": "2026-10-06T18:27:20Z",
+  "prBodySha256": "3957f5da210f1018b5dfa95825cd09d795f28a40df146e3b3d4a3f246fe949b1",
+  "taskId": "01a10cfe-a79f-7198-9e8f-2b4dc6703031",
+  "taskVerification": "Matches implementation owner in trusted original dispatch and subsequent same-task handoffs. Current issue includes exact ID and does not invent a shareable URL.",
+  "amendmentUrl": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6022754087",
+  "amendmentBodySha256": "1bdb9f683ed1c434d2f5ab20b9621217be7d14f17bbc34e5fc946a9e86c5e161",
+  "findings": [
+    {
+      "observed": "PR states Independent readiness QA has not run for this checkpoint.",
+      "expected": "Remove this stale sentence or describe completed independent QA accurately, preferably linking the latest short verdict.",
+      "consequence": "Final PR description contradicts completed independent QA and misleads the reviewer."
+    },
+    {
+      "observed": "PR labels 2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b as Base without qualification.",
+      "expected": "Identify it as the source merge-base and note current master 6b803fbc or link the current base-impact verdict for concise context.",
+      "consequence": "The unqualified base wording is stale relative to actual target; prior v2 impact assessment remains valid."
+    }
+  ],
+  "issueAssessment": "Pass: clear problem, original requirements and staged plan, verified task ID and active nonclosing PR link; no duplicated QA evidence. Full migration explicitly unfinished.",
+  "prAssessment": "Problem/solution and non-UI behavioral table remain clear and valid. Supporting-checks QA status and unqualified base need correction.",
+  "reviewComments": [],
+  "reviews": [],
+  "checkRuns": [
+    {
+      "name": "Android Emulator End-to-End",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Wear Release Emulator Smoke",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Native Two-Emulator Package Upgrade",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "UX Accessibility and Visual Regression",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Web Critical Smoke",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Mobile Build",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Wear Build and JVM Tests",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Six-State Data-Backed Route Acceptance",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Full Exported Web and PWA End-to-End",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Release Configuration",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Expo Web Build",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "iOS Build",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Backend Build",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "High and Critical Vulnerabilities",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Mobile Tests",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Populated Postgres Upgrade",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "conclusion": "skipped",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Backend Tests",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Production Image Inputs",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Build Inputs",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Database Inputs",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "name": "Classify Test Inputs",
+      "conclusion": "success",
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    }
+  ],
+  "rendering": "No fresh page screenshot check claimed. Human amendment generally waives GitHub-page rendering verification; non-UI applicability and previous actual page inspection remain recorded."
+}

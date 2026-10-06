@@ -1,0 +1,3 @@
+Direct human amendments, 2026-10-06: Matthew extended the screenshot-rendering waiver generally. Actual GitHub PR-page image-rendering verification may be waived; genuine matched captures, independent pixel inspection and exact source/build/fixture provenance remain required. Record the waiver honestly rather than claiming a rendering check passed.
+
+For implementing Codex task references, obtain a verified shareable link when available; otherwise include the verified task ID. Missing shareable URLs must not block readiness or require Matthew to supply them. Keep the fixed issue template and current PR associations. All other independent QA, CI, append-only receipt and coordinator readiness checks remain unchanged; runtime pins remain fixed.
