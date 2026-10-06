@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-06T03:00:08.154Z",
+  "head": "7b83b3255c263efbb22fd1be1be3124bc46fc23c",
+  "base": "acc8a30d6cde7477f08f0b7ace23df4047d21354",
+  "childHead": "0ee7d098589beb218c4f34b370ba556f25de4498",
+  "childBase": "mchartier/firebase-migration-preparation",
+  "files": [
+    {
+      "name": ".gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "name": "child-body.md",
+      "sha256": "8f095da07d619c96c85cb6e0ca2f2cfcbeead2b643c021c3281898502d084358"
+    },
+    {
+      "name": "child.json",
+      "sha256": "5ecc530d1bd9b19b16717d59bd392c5dc0b55e4fc13349ee23c8f51fe4b9c2db"
+    },
+    {
+      "name": "issue-body.md",
+      "sha256": "c68d462e88675419e3b69792a198e0037afc458fddd7f4120bbd40ec43ab942e"
+    },
+    {
+      "name": "issue.json",
+      "sha256": "47153bdfee873a4dd12e708f135bb978f9c724465960db82d710f9dea748f396"
+    },
+    {
+      "name": "pr-body.md",
+      "sha256": "7a4e9afe33a9e5272bb4ab28b2b2ca0757f924d2042c177c3d9d08f71f2a2fb3"
+    },
+    {
+      "name": "pr.json",
+      "sha256": "a3d5694c9dbc25831bf6b539e51f39fd584be83563b67767fa15e6423373fc1a"
+    },
+    {
+      "name": "README.md",
+      "sha256": "6df175899f05e49afe8b498d9c3f73c906c1e65414de7af536ee18eb28ee12fe"
+    }
+  ]
+}
