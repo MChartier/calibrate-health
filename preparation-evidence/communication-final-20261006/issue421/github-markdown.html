@@ -1,0 +1,31 @@
+<h2 dir="auto">Problem and intended outcome</h2>
+<p dir="auto">Existing accounts depend on local credentials across login, recovery, sessions and deletion. Moving to Firebase must preserve passwords where supported, existing User.id, owned data and access controls, while keeping independent self-hosting available. <strong>This migration is unfinished.</strong></p>
+<p dir="auto">The <a href="https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6000049703" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/421/hovercard">human offline-first instruction</a> remains binding: temporary outages must allow local tracking, retain pending changes through restart, and show pending reconnection. Unreachable authentication is not confirmed revocation; server access and replay still require valid authorization and account/server isolation.</p>
+<h2 dir="auto">Implemented preparation</h2>
+<p dir="auto">Draft <a href="https://github.com/MChartier/calibrate-health/pull/423" data-hovercard-type="pull_request" data-hovercard-url="/MChartier/calibrate-health/pull/423/hovercard">PR423</a> adds dry-run-default BCRYPT migration tooling, immutable identity mapping, provider/security foundations and durable offline tracking/recovery. Local authentication remains the default; Firebase is not activated. Existing IDs and health-record ownership remain unchanged.</p>
+<h2 dir="auto">Still required</h2>
+<ul dir="auto">
+<li>Firebase runtime registration/login, recovery, verification, deletion and external credential-event enforcement, including browser/native/Wear sessions and lifecycle failure recovery.</li>
+<li>Separately authorized real-provider import/sign-in rehearsal, complete account reconciliation, rollback validation and eventual operational cutover. Synthetic tests do not establish migration readiness.</li>
+<li>Relevant Firebase foundations before <a href="https://github.com/MChartier/calibrate-health/issues/422" data-hovercard-type="issue" data-hovercard-url="/MChartier/calibrate-health/issues/422/hovercard">GCP preparation422</a>; the pause/calendar follow-up is separate in <a href="https://github.com/MChartier/calibrate-health/pull/428" data-hovercard-type="pull_request" data-hovercard-url="/MChartier/calibrate-health/pull/428/hovercard">PR428</a>.</li>
+</ul>
+<p dir="auto"><a href="https://github.com/MChartier/calibrate-health/blob/3eb583d972cc529509bd8145c8cefb504b3cd000/preparation-evidence/communication-before-20261006/issue-body.md">Full original requirements and acceptance criteria</a> remain in force. No real-user reads/imports, provisioning, credential changes, deployment or release are authorized by this issue.</p>
+<h2 dir="auto">Evidence and validation</h2>
+<p dir="auto">Synthetic browser testing observed cached tracking surviving authentication outages/reload and failed writes requiring explicit recovery. The current preparation head passed 19 browser scenarios, 231 mobile suites (1,230 tests), focused checks and all five CI workflows. Native/device and real Firebase validation remain unexecuted; configured engineering review is blocked by quota and readiness QA is pending. <a href="https://github.com/MChartier/calibrate-health/blob/f0ab0b0964cf0a1b09d2f74e93ddcf4814cbd06d/preparation-evidence/final-handoff-7b83b325/README.md">Detailed results and limitations</a>.</p>
+<h3 dir="auto">Authentication outage: keep cached tracking available</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/before.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/before.png?raw=true" alt="Before: outage" style="max-width: 100%;"></a></td>
+<td><a target="_blank" rel="noopener noreferrer" href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/after.png?raw=true"><img src="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/outage/after.png?raw=true" alt="After: outage" style="max-width: 100%;"></a></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p dir="auto">Before: reloading during an authentication outage returns to Sign In. After: the same cached Today screen remains available with pending reconnection.</p>
+<p dir="auto">These genuine browser captures compare target master <code class="notranslate">acc8a30</code> with preparation build <code class="notranslate">ed170e7</code>. They remain applicable to current head <code class="notranslate">7b83b32</code>; later pause/day guards do not change these scenarios. Matched synthetic account, clock, viewport and theme; unrelated PWA notices were suppressed equally. <a href="https://github.com/MChartier/calibrate-health/blob/3990f461abdc28d9d3091cb001f65f72c9264368/preparation-evidence/boundary-fixes-ed170e7e/README.md">Exact source/build/fixture identities and all capture pairs</a>; <a href="https://github.com/MChartier/calibrate-health/blob/2b993b5670d60b3f5b1e239d19980bfe6ddd4ba6/preparation-evidence/final-7b83b325/README.md">final-head behavior evidence</a>.</p>
