@@ -129,11 +129,7 @@ test('due prompt failed update, until-resumed removal and explicit resume', asyn
     await expect(page.getByTestId('calendar-day-2026-07-31')).toHaveAccessibleName(/planned tracking pause, until resumed/);
     await expect(page.getByRole('button', { name: 'Next month', exact: true })).toBeDisabled();
 
-    state.target = today; await page.reload(); await hideTransientPwaNotices(page);
-    await page.getByRole('dialog', { name: 'Ready to resume tracking?' }).getByRole('button', { name: 'Resume tracking', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
-    await calendar(page); await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
-    await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
+
 });
 
 test('year target, shortened plan on reload and unavailable metadata recovery', async ({ page, ux }) => {
@@ -296,4 +292,13 @@ test('queued pause metadata survives new observers, calendar refetch, reload and
     await activateFixtureOffline(page); state.queueUpdate = false; await page.context().setOffline(false);
     await expect.poll(() => state.target).toBeNull();
     await expect(page.getByText('Until you resume', { exact: true })).toBeVisible();
+});
+
+test('explicit due-prompt resume clears the calendar plan and preserves prior pause', async ({page, ux}) => {
+    await install(page, ux, today); await open(page);
+    await page.getByRole('dialog', { name: 'Ready to resume tracking?' }).getByRole('button', { name: 'Resume tracking', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Add food', exact: true })).toBeEnabled();
+    await calendar(page);
+    await expect(page.getByTestId('calendar-day-2026-07-22')).not.toHaveAccessibleName(/planned/);
+    await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
 });
