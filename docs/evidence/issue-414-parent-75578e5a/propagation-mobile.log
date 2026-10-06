@@ -1,0 +1,16 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand plannedPause calendarIntent HistoricalDatePicker PausedDayMessage foodDayReceipts replayInvalidation dayPresentation GoalPaceSheet
+PASS src/progress/GoalPaceSheet.test.tsx
+PASS src/food/HistoricalDatePicker.test.tsx
+PASS src/today/PausedDayMessage.test.tsx
+PASS src/offline/foodDayReceipts.test.ts
+PASS src/offline/replayInvalidation.test.ts
+PASS src/food/plannedPause.test.ts
+PASS src/food/dayPresentation.test.ts
+PASS src/food/calendarIntent.test.ts
+
+Test Suites: 8 passed, 8 total
+Tests:       87 passed, 87 total
+Snapshots:   0 total
+Time:        7.418 s
+Ran all test suites matching /plannedPause|calendarIntent|HistoricalDatePicker|PausedDayMessage|foodDayReceipts|replayInvalidation|dayPresentation|GoalPaceSheet/i.

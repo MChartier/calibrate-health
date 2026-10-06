@@ -1,0 +1,54 @@
+
+Running 44 tests using 1 worker
+
+(node:37152) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in light (2.9s)
+  ok  2 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in dark (2.5s)
+  ok  3 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:66:5 ΓÇ║ calendar refresh, uncached month failure, retry, and completion reopening stay honest (18.5s)
+  -   4 [desktop-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:123:5 ΓÇ║ calendar remains usable with enlarged text on a small browser viewport
+  ok  5 [desktop-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (5.2s)
+  ok  6 [desktop-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (5.5s)
+  ok  7 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in light (2.2s)
+  ok  8 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in dark (1.8s)
+  ok  9 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (2.7s)
+  ok 10 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (1.4s)
+  ok 11 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:135:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (4.1s)
+  -  12 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:158:5 ΓÇ║ planned pause remains readable at enlarged text
+  ok 13 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:168:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (1.7s)
+  ok 14 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:186:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (2.1s)
+  ok 15 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:202:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (6.3s)
+  ok 16 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:216:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (2.9s)
+  ok 17 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:258:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay (5.4s)
+  ok 18 [desktop-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:297:5 ΓÇ║ explicit due-prompt resume clears the calendar plan and preserves prior pause (1.5s)
+  ok 19 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light (2.3s)
+  ok 20 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in dark (2.2s)
+  ok 21 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:83:5 ΓÇ║ a past paused day replaces an expanded food log and can be backfilled (1.9s)
+  -  22 [desktop-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:115:5 ΓÇ║ paused-day copy and actions remain reachable at 200% text on a short phone
+(node:29824) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 23 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in light (2.1s)
+  ok 24 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:25:7 ΓÇ║ completed calendar boundaries and selection in dark (2.1s)
+  -  25 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:66:5 ΓÇ║ calendar refresh, uncached month failure, retry, and completion reopening stay honest
+  ok 26 [compact-phone-chrome] ΓÇ║ e2e\expo-web\completed-calendar.spec.ts:123:5 ΓÇ║ calendar remains usable with enlarged text on a small browser viewport (1.4s)
+  ok 27 [compact-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in light (6.2s)
+  ok 28 [compact-phone-chrome] ΓÇ║ e2e\expo-web\goal-pace.spec.ts:5:9 ΓÇ║ pace adjustment preserves the goal and explicit new goal resets intentionally in dark (6.4s)
+  ok 29 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in light (2.0s)
+  ok 30 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:61:9 ΓÇ║ dated plan and exact month boundary in dark (2.0s)
+  ok 31 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:90:5 ΓÇ║ real pause form, failed resume, recovery and preserved historical edit (2.6s)
+  ok 32 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:119:5 ΓÇ║ due prompt failed update, until-resumed removal and explicit resume (1.7s)
+  ok 33 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:135:5 ΓÇ║ year target, shortened plan on reload and unavailable metadata recovery (5.1s)
+  ok 34 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:158:5 ΓÇ║ planned pause remains readable at enlarged text (1.3s)
+  ok 35 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:168:5 ΓÇ║ reopening and month navigation refresh the plan and recover from a shortened horizon (1.6s)
+  ok 36 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:186:5 ΓÇ║ due and overdue plans remain paused with no invented future interval (2.2s)
+  ok 37 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:202:5 ΓÇ║ cached read failure keeps the saved plan visibly stale and reopening recovers it (6.7s)
+  ok 38 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:216:5 ΓÇ║ offline cached plan and accepted queued resume converge after real browser outbox replay (2.6s)
+  ok 39 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:258:5 ΓÇ║ queued pause metadata survives new observers, calendar refetch, reload and replay (5.7s)
+  ok 40 [compact-phone-chrome] ΓÇ║ e2e\expo-web\planned-pause.spec.ts:297:5 ΓÇ║ explicit due-prompt resume clears the calendar plan and preserves prior pause (1.3s)
+  ok 41 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in light (2.0s)
+  ok 42 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:27:7 ΓÇ║ paused Today preserves weight entry and resumes with existing food in dark (2.0s)
+  ok 43 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:83:5 ΓÇ║ a past paused day replaces an expanded food log and can be backfilled (1.8s)
+  ok 44 [compact-phone-chrome] ΓÇ║ e2e\expo-web\today-paused.spec.ts:115:5 ΓÇ║ paused-day copy and actions remain reachable at 200% text on a short phone (1.0s)
+
+  4 skipped
+  40 passed (2.3m)
