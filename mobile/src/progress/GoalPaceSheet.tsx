@@ -22,7 +22,7 @@ export function GoalPaceSheet({ goal, onClose, onStartNewGoal }: {
     onClose: () => void;
     onStartNewGoal: () => void;
 }) {
-    const { api, user } = useAuth();
+    const { api, user, pendingReconnection, recheckClientCompatibility } = useAuth();
     const client = useQueryClient();
     const online = useOnlineStatus();
     const pendingWeight = usePendingWeightMutation();
@@ -39,7 +39,15 @@ export function GoalPaceSheet({ goal, onClose, onStartNewGoal }: {
     // A refreshed version must initialize its own draft; unchanged refreshes keep edits.
     const [initializedVersion, setInitializedVersion] = useState<string | null>(null);
     const [baseline, setBaseline] = useState(value);
-    const preview = useQuery({ queryKey: ['goal-pace-options', goal.id], queryFn: () => api.getGoalPaceOptions(),
+    async function verifyConnection() {
+        if (pendingReconnection && !await recheckClientCompatibility()) {
+            throw new Error('Reconnect to the same account before adjusting your pace.');
+        }
+    }
+    const preview = useQuery({ queryKey: ['goal-pace-options', goal.id], queryFn: async () => {
+        await verifyConnection();
+        return api.getGoalPaceOptions();
+    },
         staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: false, refetchOnReconnect: false, retry: false });
     useEffect(() => {
         if (preview.isSuccess && !preview.isFetching && preview.data.goal.id === goal.id &&
@@ -70,6 +78,7 @@ export function GoalPaceSheet({ goal, onClose, onStartNewGoal }: {
     }
     const save = useMutation({
         mutationFn: async () => {
+            await verifyConnection();
             const key = JSON.stringify([goal.id, deficit, preview.data!.expected_plan_version]);
             if (!ticket.current || ticket.current.key !== key)
                 ticket.current = {
