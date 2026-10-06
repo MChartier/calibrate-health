@@ -233,10 +233,7 @@ export const ROUTE_REGISTRY = {
     shellPolicy: 'app',
     deepLink: 'render',
     authenticatedRedirect: null,
-    aliases: [
-      { path: '/log', authenticatedRedirect: 'today' },
-      { path: '/notifications', authenticatedRedirect: 'today' },
-    ],
+    aliases: [{ path: '/log', authenticatedRedirect: 'today' }],
   }),
   progress: route({
     path: '/progress',

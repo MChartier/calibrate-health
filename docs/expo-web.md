@@ -17,8 +17,8 @@ Native-only features such as Health Connect and Wear transport must not evaluate
 Browser routes should either use the web implementation or render intentional guidance.
 
 The app-bar bell opens up to five active reminders with the global unread count. Reminder schedules and delivery
-permission/recovery controls remain in Settings > Profile & preferences > Preferences. The retired `/notifications`
-history address replaces itself with `/today` after the normal account gates. This client simplification does not
+permission/recovery controls remain in Settings > Profile & preferences > Preferences. Unknown app addresses use the
+general fallback to `/today`, which enforces the normal account gates. This client simplification does not
 delete stored reminder records or remove history/read-all APIs used by compatible older clients.
 
 ## Development and validation
