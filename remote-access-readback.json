@@ -1,0 +1,36 @@
+{
+  "commit": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+  "checkedAt": "2026-10-07T02:21:40.766Z",
+  "artifacts": [
+    {
+      "name": "README.md",
+      "sha256": "af75d080e023309fc7696abfeffd33cf746d7b41fe966a4e0c6643708746bb97",
+      "verified": true
+    },
+    {
+      "name": "manifest.json",
+      "sha256": "0cf7c8c9bf85df16b517f79b2edb5dc0f7b121e1def9d53d940089b2bcc913d5",
+      "verified": true
+    },
+    {
+      "name": "before-valid.png",
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "verified": true
+    },
+    {
+      "name": "after-valid.png",
+      "sha256": "87457543d3af98f5d3fe0c3e20e45b86acabeea7fe794db3b94052f2b3c0d26c",
+      "verified": true
+    },
+    {
+      "name": "before-missing.png",
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "verified": true
+    },
+    {
+      "name": "after-missing.png",
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "verified": true
+    }
+  ]
+}

@@ -1,0 +1,475 @@
+{
+  "checkedAt": "2026-10-07T02:24:14.855Z",
+  "repository": "MChartier/calibrate-health",
+  "targetRef": "master",
+  "targetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "head": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "ultimateTarget": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "prBodySha256": "9c644b441193e0b88b817cfd5d5d958ff4f9e11433555504038e51db2b910e67",
+  "commits": [
+    {
+      "sha": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "message": "Return saved calorie comparisons for completed-day reads and acknowledgements",
+      "files": [
+        {
+          "filename": "backend/src/routes/foodDays.ts",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 3
+        },
+        {
+          "filename": "backend/src/services/foodDayComparison.ts",
+          "status": "modified",
+          "additions": 12,
+          "deletions": 0
+        },
+        {
+          "filename": "backend/src/services/foodTracking.ts",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2
+        },
+        {
+          "filename": "backend/src/services/watch.ts",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 2
+        },
+        {
+          "filename": "backend/test/food-day-comparison.test.js",
+          "status": "modified",
+          "additions": 35,
+          "deletions": 2
+        },
+        {
+          "filename": "backend/test/routes-food-days.test.js",
+          "status": "modified",
+          "additions": 14,
+          "deletions": 2
+        },
+        {
+          "filename": "backend/test/watch-service.test.js",
+          "status": "modified",
+          "additions": 25,
+          "deletions": 0
+        },
+        {
+          "filename": "e2e/expo-web/saved-target.spec.ts",
+          "status": "added",
+          "additions": 42,
+          "deletions": 0
+        }
+      ]
+    },
+    {
+      "sha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "parents": [
+        "3ac32ffa92f1e429dd689e2f52683bd8ea045d15"
+      ],
+      "message": "Describe saved comparison on day reads and completion responses",
+      "files": [
+        {
+          "filename": "docs/openapi/v1.yaml",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "filename": "packages/api-client/src/generated/v1.ts",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "filename": "backend/src/routes/foodDays.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3
+    },
+    {
+      "filename": "backend/src/services/foodDayComparison.ts",
+      "status": "modified",
+      "additions": 12,
+      "deletions": 0
+    },
+    {
+      "filename": "backend/src/services/foodTracking.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2
+    },
+    {
+      "filename": "backend/src/services/watch.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 2
+    },
+    {
+      "filename": "backend/test/food-day-comparison.test.js",
+      "status": "modified",
+      "additions": 35,
+      "deletions": 2
+    },
+    {
+      "filename": "backend/test/routes-food-days.test.js",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 2
+    },
+    {
+      "filename": "backend/test/watch-service.test.js",
+      "status": "modified",
+      "additions": 25,
+      "deletions": 0
+    },
+    {
+      "filename": "docs/openapi/v1.yaml",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "filename": "e2e/expo-web/saved-target.spec.ts",
+      "status": "added",
+      "additions": 42,
+      "deletions": 0
+    },
+    {
+      "filename": "packages/api-client/src/generated/v1.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "apiTotals": {
+    "commits": 2,
+    "files": 10,
+    "additions": 138,
+    "deletions": 13
+  },
+  "feedback": {
+    "issueComments": [
+      {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6023260057",
+        "html_url": "https://github.com/MChartier/calibrate-health/issues/435#issuecomment-6023260057",
+        "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/435",
+        "id": 6023260057,
+        "node_id": "IC_kwDOQbBgUs8AAAABZwOnmQ",
+        "user": {
+          "login": "MChartier",
+          "id": 1258197,
+          "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/MChartier",
+          "html_url": "https://github.com/MChartier",
+          "followers_url": "https://api.github.com/users/MChartier/followers",
+          "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+          "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+          "organizations_url": "https://api.github.com/users/MChartier/orgs",
+          "repos_url": "https://api.github.com/users/MChartier/repos",
+          "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/MChartier/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "created_at": "2026-10-06T18:54:18Z",
+        "updated_at": "2026-10-06T18:54:18Z",
+        "body": "Retained scoping record — October 6, 2026. Scope-only investigation; no product changes or implementation assignment.\n\n**Source binding and history.** Read-only analysis used live `master` `6b803fbc5ecd833cc4de5039e8ce495812a97e86`, verified again before filing. The working checkout was older and was not switched or edited. Workflow-v3 `f0919b184b6344d6279178b2388190936ca432a9`, supplied pr-review-v3 `97e5583c8355f3673aad0835c0ce3ca1486aeb8b`, pinned deployment/intake/template and live #405 amendments were read; direct amendments govern the newer issue format. Searches across issues/PRs for saved target, daily balance and snapshots found related #408/#410 and #409/#424, not a duplicate defect. Open PRs #401, #402, #404, #431 and #434 do not own this outcome. PR410 merged October 5 21:03:52 UTC; PR424 merged October 6 03:41:32 UTC.\n\n**Proven source path.**\n- [Snapshot capture and validation](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/src/services/foodDayComparison.ts): first completion on the account's current local day saves target, rounded maintenance and capture time; an unavailable capture is also retained. Past-day completion does not reconstruct a plan.\n- [Migration 0043](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/prisma/migrations/0043_food_day_comparison/migration.sql) deliberately leaves legacy comparison columns null.\n- [Food tracking service](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/src/services/foodTracking.ts): `getEffectiveFoodDay` returns `serializeStoredDay(stored)`, which omits `calorie_comparison`. The range method adds validated comparison data and summed logged calories.\n- [Day routes](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/src/routes/foodDays.ts): GET uses the deficient single-day method; PATCH captures the snapshot but serializes only status fields and records that body for sync. Related watch completion also captures but omits comparison in its response/sync payload. Inspect those delivery boundaries without expanding into unrelated sync redesign.\n- [Client resolver](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/mobile/src/food/dayPresentation.ts) requires `day.calorie_comparison.target_kcal` for COMPLETE. Today uses `useFoodDayStatus` → `api.getFoodDay`; the read/receipt wrapper returns the original response. Missing comparison therefore yields null and the observed label. PR424 introduced this completed-day selection. Existing helper tests inject a comparison directly; backend comparison tests exercise range, leaving the single-day integration gap.\n\n**Executed synthetic check.** Seven assertions executed actual pinned TypeScript functions through TypeScript transpilation and a VM, with explicit in-memory dependency/database mocks (no database connection). One COMPLETE row: saved target 2000, maintenance 2500, intake 1800; current target 2350. Range returned saved target 2000; single-day comparison was absent and the client resolved null for both historical and current COMPLETE states. Supplying the range response resolved 2000. Current OPEN resolved 2350. A missing saved target stayed null in range. All seven assertions passed, reproducing the serialization defect, not proving the user's particular stored-row state. Harness is retained in this investigation task workspace as `investigate-saved-target.cjs`; no app screenshot or physical-device test was performed.\n\n**Compatibility and uncertainty.** The optional wire field permits older payloads to omit comparisons. The current source manifest says server 0.38.0; publication/source is not deployment evidence. OTA and self-host deployment are separate release paths. Reported reproduction before and after the user's latest deployment is preserved, but exact running server versions, OTA identity, client platform and whether affected dates contain snapshots are unknown. An older server or truly legacy row can independently produce absence; the current-source omission explains failure even with valid saved data. Do not “fix” legacy absence by substituting today's plan. No live health records, deployment, migrations or source branches were changed. Coordinator may admit this scoped defect without waiting for those optional runtime details.",
+        "author_association": "OWNER",
+        "pin": null,
+        "reactions": {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6023260057/reactions",
+          "total_count": 0,
+          "+1": 0,
+          "-1": 0,
+          "laugh": 0,
+          "hooray": 0,
+          "confused": 0,
+          "heart": 0,
+          "rocket": 0,
+          "eyes": 0
+        },
+        "performed_via_github_app": {
+          "id": 1144995,
+          "client_id": "Iv23liVemv8A9if9v0F2",
+          "slug": "chatgpt-codex-connector",
+          "node_id": "A_kwHOAOQ6Gs4AEXij",
+          "owner": {
+            "login": "openai",
+            "id": 14957082,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+            "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/openai",
+            "html_url": "https://github.com/openai",
+            "followers_url": "https://api.github.com/users/openai/followers",
+            "following_url": "https://api.github.com/users/openai/following{/other_user}",
+            "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+            "organizations_url": "https://api.github.com/users/openai/orgs",
+            "repos_url": "https://api.github.com/users/openai/repos",
+            "events_url": "https://api.github.com/users/openai/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/openai/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "ChatGPT Codex Connector",
+          "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+          "external_url": "https://www.chatgpt.com",
+          "html_url": "https://github.com/apps/chatgpt-codex-connector",
+          "created_at": "2025-02-14T01:37:05Z",
+          "updated_at": "2026-09-23T18:52:59Z",
+          "permissions": {
+            "actions": "write",
+            "checks": "read",
+            "contents": "write",
+            "emails": "read",
+            "issues": "write",
+            "metadata": "read",
+            "pull_requests": "write",
+            "statuses": "read",
+            "workflows": "write"
+          },
+          "events": [
+            "check_run",
+            "check_suite",
+            "commit_comment",
+            "issues",
+            "issue_comment",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "pull_request_review_thread",
+            "repository",
+            "status",
+            "sub_issues"
+          ]
+        },
+        "minimized": null
+      },
+      {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6029222183",
+        "html_url": "https://github.com/MChartier/calibrate-health/issues/435#issuecomment-6029222183",
+        "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/435",
+        "id": 6029222183,
+        "node_id": "IC_kwDOQbBgUs8AAAABZ16hJw",
+        "user": {
+          "login": "MChartier",
+          "id": 1258197,
+          "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/MChartier",
+          "html_url": "https://github.com/MChartier",
+          "followers_url": "https://api.github.com/users/MChartier/followers",
+          "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+          "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+          "organizations_url": "https://api.github.com/users/MChartier/orgs",
+          "repos_url": "https://api.github.com/users/MChartier/repos",
+          "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/MChartier/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "created_at": "2026-10-07T01:55:22Z",
+        "updated_at": "2026-10-07T01:55:22Z",
+        "body": "Queued claim after planning under Matthew's direct instruction to move the backlog through scoping and implementation. Planned owner 01a1128c-d211-7497-8dbe-3acf0662f004; implementation not yet started. Queued for same scoping-owner fix of reproduced single-day saved-target serialization. Preserve legacy unavailable snapshots. No PR/dispatch yet; independent of Little Say geometry/playback work. Coordinator must confirm shared capacity and the actual base before starting; at most three implementation tasks share the ZBook. No execution, branch claim, readiness or release is asserted.",
+        "author_association": "OWNER",
+        "pin": null,
+        "reactions": {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6029222183/reactions",
+          "total_count": 0,
+          "+1": 0,
+          "-1": 0,
+          "laugh": 0,
+          "hooray": 0,
+          "confused": 0,
+          "heart": 0,
+          "rocket": 0,
+          "eyes": 0
+        },
+        "performed_via_github_app": null,
+        "minimized": null
+      }
+    ],
+    "comments": [
+      {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6029476995",
+        "html_url": "https://github.com/MChartier/calibrate-health/pull/436#issuecomment-6029476995",
+        "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/436",
+        "id": 6029476995,
+        "node_id": "IC_kwDOQbBgUs8AAAABZ2KEgw",
+        "user": {
+          "login": "MChartier",
+          "id": 1258197,
+          "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/MChartier",
+          "html_url": "https://github.com/MChartier",
+          "followers_url": "https://api.github.com/users/MChartier/followers",
+          "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+          "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+          "organizations_url": "https://api.github.com/users/MChartier/orgs",
+          "repos_url": "https://api.github.com/users/MChartier/repos",
+          "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/MChartier/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "created_at": "2026-10-07T02:16:58Z",
+        "updated_at": "2026-10-07T02:16:58Z",
+        "body": "@codex review",
+        "author_association": "OWNER",
+        "reactions": {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6029476995/reactions",
+          "total_count": 0,
+          "+1": 0,
+          "-1": 0,
+          "laugh": 0,
+          "hooray": 0,
+          "confused": 0,
+          "heart": 0,
+          "rocket": 0,
+          "eyes": 0
+        },
+        "performed_via_github_app": null,
+        "minimized": null
+      },
+      {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6029479109",
+        "html_url": "https://github.com/MChartier/calibrate-health/pull/436#issuecomment-6029479109",
+        "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/436",
+        "id": 6029479109,
+        "node_id": "IC_kwDOQbBgUs8AAAABZ2KMxQ",
+        "user": {
+          "login": "chatgpt-codex-connector[bot]",
+          "id": 199175422,
+          "node_id": "BOT_kgDOC98s_g",
+          "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+          "html_url": "https://github.com/apps/chatgpt-codex-connector",
+          "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+          "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+          "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+          "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+          "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+          "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+          "type": "Bot",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "created_at": "2026-10-07T02:17:10Z",
+        "updated_at": "2026-10-07T02:17:10Z",
+        "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+        "author_association": "NONE",
+        "reactions": {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6029479109/reactions",
+          "total_count": 0,
+          "+1": 0,
+          "-1": 0,
+          "laugh": 0,
+          "hooray": 0,
+          "confused": 0,
+          "heart": 0,
+          "rocket": 0,
+          "eyes": 0
+        },
+        "performed_via_github_app": {
+          "id": 1144995,
+          "client_id": "Iv23liVemv8A9if9v0F2",
+          "slug": "chatgpt-codex-connector",
+          "node_id": "A_kwHOAOQ6Gs4AEXij",
+          "owner": {
+            "login": "openai",
+            "id": 14957082,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+            "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/openai",
+            "html_url": "https://github.com/openai",
+            "followers_url": "https://api.github.com/users/openai/followers",
+            "following_url": "https://api.github.com/users/openai/following{/other_user}",
+            "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+            "organizations_url": "https://api.github.com/users/openai/orgs",
+            "repos_url": "https://api.github.com/users/openai/repos",
+            "events_url": "https://api.github.com/users/openai/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/openai/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "ChatGPT Codex Connector",
+          "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+          "external_url": "https://www.chatgpt.com",
+          "html_url": "https://github.com/apps/chatgpt-codex-connector",
+          "created_at": "2025-02-14T01:37:05Z",
+          "updated_at": "2026-09-23T18:52:59Z",
+          "permissions": {
+            "actions": "write",
+            "checks": "read",
+            "contents": "write",
+            "emails": "read",
+            "issues": "write",
+            "metadata": "read",
+            "pull_requests": "write",
+            "statuses": "read",
+            "workflows": "write"
+          },
+          "events": [
+            "check_run",
+            "check_suite",
+            "commit_comment",
+            "issues",
+            "issue_comment",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "pull_request_review_thread",
+            "repository",
+            "status",
+            "sub_issues"
+          ]
+        },
+        "minimized": null
+      }
+    ],
+    "reviews": [],
+    "inline": []
+  },
+  "dispositions": [
+    {
+      "id": 6029479109,
+      "requestedHead": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+      "currentHead": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "disposition": "Quota-only refusal. No completed bot review claimed; independent QA required under direct amendment. No retries."
+    }
+  ]
+}
