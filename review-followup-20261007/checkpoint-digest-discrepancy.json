@@ -1,0 +1,14 @@
+{
+  "checkedAtUtc": "2026-10-07T05:35:33.699Z",
+  "url": "https://github.com/MChartier/calibrate-health/blob/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json",
+  "commit": "5bc914fa7e3120fc8f872488459d7095ee621511",
+  "gitBlob": "837e0435078cd45ee0fdc4321a36b137cfa8cc0f",
+  "bytes": 45450,
+  "apiDecodedSha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+  "localGitObjectSha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+  "rawPublicSha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+  "originalOwnerReceiptSha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+  "qaVerdictCommit": "e83d376cfb37b4927ed21bae39eb6f6453fca509",
+  "qaRecordedSha256": "c53200e649797431826629a899be9bf9fed9bbaaf72ec36da83ec6919a61b0f5",
+  "assessment": "The three exact-byte readings agree with the original owner receipt. The QA referenced owner-checkpoint digest differs. Preserve the existing QA record and request an append-only superseding correction; no change to source, old evidence, or QA receipt is made here."
+}
