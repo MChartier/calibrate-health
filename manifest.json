@@ -1,0 +1,66 @@
+{
+  "sourceBefore": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "sourceAfter": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+  "files": {
+    "after-missing-capture.json": {
+      "sha256": "f38d81113245478927ed97d951700a8c7e270f171d1d0641263e37d6f0a3fc10",
+      "bytes": 386
+    },
+    "after-missing.png": {
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "bytes": 41448
+    },
+    "after-responses.json": {
+      "sha256": "36c4da7c979a93e7971ec3860e4d6a5d4f0bfa4a181bff6bd47737debe80892d",
+      "bytes": 738
+    },
+    "after-valid-capture.json": {
+      "sha256": "6b32728a8da593aa1cbc5a4117b8c1923161a5d688cf8b3c6fe249465824f53e",
+      "bytes": 384
+    },
+    "after-valid.png": {
+      "sha256": "87457543d3af98f5d3fe0c3e20e45b86acabeea7fe794db3b94052f2b3c0d26c",
+      "bytes": 42349
+    },
+    "backend-tests.log": {
+      "sha256": "faac881d6dc817504d58a77f3e3f30efda4d3dfaa4bdb8bd6907aa70f9425a61",
+      "bytes": 74124
+    },
+    "before-missing-capture.json": {
+      "sha256": "85cc0979c597edebe459bfc89fdffb7d10056ef4dafeda77833564b26dd8b6d7",
+      "bytes": 387
+    },
+    "before-missing.png": {
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "bytes": 41448
+    },
+    "before-responses.json": {
+      "sha256": "8b32fd0745b454debcd2dd3708e29b7b6279fe00196b266fb1879192a23b18d0",
+      "bytes": 535
+    },
+    "before-valid-capture.json": {
+      "sha256": "0f3a1926e818261149a238a7a5d642496cfb0297f1ee6a60242c789c703cf2a9",
+      "bytes": 385
+    },
+    "before-valid.png": {
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "bytes": 41448
+    },
+    "capture.spec.ts": {
+      "sha256": "2566879054f27b480999c25c5d97e8076a0e83f6abb495011132052263c145ad",
+      "bytes": 2133
+    },
+    "client-tests.log": {
+      "sha256": "550143f53adad11594878e41d3cdbbd681819492d5245c8d5b289fa6f541d529",
+      "bytes": 583
+    },
+    "README.md": {
+      "sha256": "af75d080e023309fc7696abfeffd33cf746d7b41fe966a4e0c6643708746bb97",
+      "bytes": 6386
+    },
+    "serialize-fixture.cjs": {
+      "sha256": "b7192734b7ccf60d335af838f8f0112ea6a0225d003e2c8df50fc4224cf5033d",
+      "bytes": 1298
+    }
+  }
+}

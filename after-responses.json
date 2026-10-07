@@ -1,0 +1,29 @@
+{
+  "valid": {
+    "date": "2026-07-20",
+    "status": "COMPLETE",
+    "origin": "USER",
+    "source": "STORED",
+    "is_representative": true,
+    "is_complete": true,
+    "completed_at": "2026-07-20T19:00:00.000Z",
+    "updated_at": "2026-07-20T19:00:00.000Z",
+    "calorie_comparison": {
+      "consumed_kcal": 1800,
+      "target_kcal": 2000,
+      "maintenance_kcal": 2500,
+      "captured_at": "2026-07-20T19:00:00.000Z"
+    }
+  },
+  "missing": {
+    "date": "2026-07-20",
+    "status": "COMPLETE",
+    "origin": "USER",
+    "source": "STORED",
+    "is_representative": true,
+    "is_complete": true,
+    "completed_at": "2026-07-20T19:00:00.000Z",
+    "updated_at": "2026-07-20T19:00:00.000Z",
+    "calorie_comparison": null
+  }
+}

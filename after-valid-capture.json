@@ -1,0 +1,14 @@
+{
+  "source": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+  "browser": "154.0.8037.98",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "side": "after",
+  "state": "valid",
+  "checkedAt": "2026-10-07T02:12:45.332Z",
+  "bundles": {
+    "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32"
+  }
+}
