@@ -1,0 +1,15 @@
+{
+  "verdictCommentId": 6031629809,
+  "verdictCommentUrl": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031629809",
+  "verdictBodySha256": "c18e3942ec5a8978e55aa30ef5763b5ef33c029606686e5c169d7f89180d3891",
+  "verdictUpdatedAt": "2026-10-07T05:29:50Z",
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "prBodySha256": "ad55ce850a10e17ad32127546863be2fca0fe79ef0fa738416715abe527b0656",
+  "checkedAtUtc": "2026-10-07T05:29:55.363Z",
+  "assessmentCommitSha": "e83d376cfb37b4927ed21bae39eb6f6453fca509",
+  "assessmentUrl": "https://github.com/MChartier/calibrate-health/blob/e83d376cfb37b4927ed21bae39eb6f6453fca509/pr439-qa/verdict.json",
+  "digestRule": "SHA256 of API-decoded full comment body encoded UTF8, without trimming, normalization or added newline",
+  "coordinatorReceipt": "Trusted QA task handoff; coordinator must independently verify and retain its own separate durable receipt."
+}

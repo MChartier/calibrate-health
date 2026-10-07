@@ -1,0 +1,22 @@
+{
+  "preCheckedAtUtc": "2026-10-07T05:26:38.794Z",
+  "postCheckedAtUtc": "2026-10-07T05:30:16.699Z",
+  "commentRecheckedAtUtc": "2026-10-07T05:30:18.033Z",
+  "fullFeedbackCompared": [
+    "comments402",
+    "comments438",
+    "comments439",
+    "reviews402",
+    "reviews439",
+    "inline402",
+    "inline439",
+    "threads402",
+    "threads439"
+  ],
+  "changedFeedbackExcludingOwnAppend": [],
+  "revisionsAndPublishedScopeUnchanged": true,
+  "commentVerified": true,
+  "expectedOnlyNewCommentId": 6031629809,
+  "readinessMutation": false,
+  "assessmentApplies": true
+}
