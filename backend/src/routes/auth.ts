@@ -13,6 +13,7 @@ import {
     exchangeWearPairingCredential,
     formatMobileAuthResponse,
     issueMobileAuthPayload,
+    issueVerifiedMobileAuthPayload,
     issueWearPairingCredential,
     listMobileSessionsForUser,
     normalizePairingServerOrigin,
@@ -418,19 +419,20 @@ router.post('/mobile/login', async (req, res) => {
     try {
         const user = await prisma.user.findFirst({
             where: { email: { equals: email, mode: 'insensitive' } },
-            select: { ...USER_CLIENT_SELECT, password_hash: true }
+            select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true }
         });
         const isMatch = await verifyLocalPassword(password, user?.password_hash);
         if (!user || !isMatch) {
             return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
         }
 
-        const authPayload = await issueMobileAuthPayload({
+        const authPayload = await issueVerifiedMobileAuthPayload({
             userId: user.id,
+            credentialSecurityVersion: user.credential_security_version,
             device: device.device
         });
         if (!authPayload) {
-            return res.status(500).json({ message: 'Server error' });
+            return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
         }
 
         res.json(formatMobileAuthResponse(authPayload));

@@ -735,3 +735,45 @@ test('mobile auth cannot revoke a session owned by another user', async () => {
   assert.equal(revoked, false);
   assert.equal(transactionCalled, false);
 });
+
+const loginDevice = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHONE', deviceName: null };
+
+test('verified mobile issuance rejects stale credentials before reading account or creating tokens', async () => {
+  let created = false;
+  const tx = { user: { updateMany: async ({ where, data }) => {
+    assert.deepEqual(where, { id: 4, credential_security_version: 8 });
+    assert.deepEqual(data, { credential_security_version: 8 });
+    return { count: 0 };
+  }, findUnique: async () => { throw Error('must not read stale account'); } },
+  mobileAuthSession: { create: async () => { created = true; } } };
+  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: action => action(tx) } });
+  assert.equal(await issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 8, device: loginDevice }), null);
+  assert.equal(created, false);
+});
+
+test('verified mobile issuance preserves restricted access and returns only after commit', async () => {
+  let commit;
+  const committed = new Promise(resolve => { commit = resolve; });
+  let prepared;
+  const preparedSignal = new Promise(resolve => { prepared = resolve; });
+  const tx = { user: { updateMany: async () => ({ count: 1 }), findUnique: async () => ({ ...baseUser, email_verified_at: null, legal_acceptances: [] }) },
+    mobileAuthSession: { create: async ({ data }) => { assert.equal(data.user_id, 4); return { id: 10 }; } } };
+  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: async action => {
+    const result = await action(tx); prepared(); await committed; return result;
+  } } });
+  let returned = false;
+  const pending = issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 0, device: loginDevice }).then(result => { returned = true; return result; });
+  await preparedSignal;
+  assert.equal(returned, false);
+  commit();
+  const payload = await pending;
+  assert.equal(payload.user.id, 4);
+  assert.equal(payload.user.account_access.state, 'email_verification_required');
+  assert.equal('credential_security_version' in payload.user, false);
+  assert.equal('password_hash' in payload.user, false);
+});
+
+test('verified mobile issuance propagates transaction failure without returning credentials', async () => {
+  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: async () => { throw Error('synthetic rollback'); } } });
+  await assert.rejects(issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 0, device: loginDevice }), /synthetic rollback/);
+});
