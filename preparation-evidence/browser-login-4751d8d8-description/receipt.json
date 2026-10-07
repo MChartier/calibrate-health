@@ -1,0 +1,72 @@
+{
+  "checkedAtUtc": "2026-10-07T05:47:14.011Z",
+  "pr": "https://github.com/MChartier/calibrate-health/pull/442",
+  "headSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "baseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "baseRef": "mchartier/atomic-native-login-421",
+  "masterSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "isDraft": true,
+  "prBodySha256": "19f186751bcced72abc59975253621092fa9cddfa88efc11ff004ec3b7f0cd66",
+  "prUpdatedAt": "2026-10-07T05:46:36Z",
+  "evidenceCommit": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+  "evidence": [
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/.gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+      "gitBlobSha": "fa1385d99a319b43c06f5309d1aae9fdd3adea46"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/backend.log",
+      "sha256": "d87894ac5659d5e10d9895e8aadaf6f82484abe96dc17e4a2442337c125c8e2f",
+      "gitBlobSha": "4568d52493ea7763bb0e852056825f3169954ce7"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/ci-backend.log",
+      "sha256": "40ba98f85aa4785e3a7f3e2073b7a51037abbadcb2a83896bd5056e4e49bab59",
+      "gitBlobSha": "81e3d48d45731a77325fd1f121045d331e203b03"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/ci-runs.json",
+      "sha256": "50e055cef00c5a3f647f071f4954ea614ffb0cb0ea70464f6caafb9ff7061c0d",
+      "gitBlobSha": "47e629feb699dbd99fd373aff52528710aa4622b"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/focused.log",
+      "sha256": "41b31f816ee8de230f1e533205de6cb3bbba2fd3d70c8c9c83592793f5b9cb39",
+      "gitBlobSha": "3070d3058c0baa3d4493ee5fd79a55787143c477"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/knip.log",
+      "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681",
+      "gitBlobSha": "312efdb70e39d6d2db412b40debd191fed5887f2"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/product.diff",
+      "sha256": "26f2ac84c6a4f40d3a859a23fb6ba2652c3e422267a963795bd16f7ecd62eade",
+      "gitBlobSha": "174bf95cb53d7d12bd9afac6b66d0ada3cbca68f"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/README.md",
+      "sha256": "a19731db3f7c7a12441e082caffc63d7022db05b67493d9320ae0ab32376e76e",
+      "gitBlobSha": "e1f4256d171dd2eca091417b92f68f857de4d74b"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/review.json",
+      "sha256": "f93e5f1db4bada6344f0d08dcfa73dbe6673f73e37967941c000c210266be8f3",
+      "gitBlobSha": "0bafb560d3fb01a92639bc28015f0c1f95ca80ff"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/scope.json",
+      "sha256": "9d9a36207dc8e919268e8b4660989bda215a069a7c9e1ef7c654380053d5c05b",
+      "gitBlobSha": "8866b831e6f9c632f59602ec591eaf3a61c2b6f8"
+    },
+    {
+      "path": "preparation-evidence/browser-login-4751d8d8/typecheck.log",
+      "sha256": "d203b7901d4e592f545b8a1028ada15a2f6734cb69eae3a3bc002bec00c5e594",
+      "gitBlobSha": "f4a0a0d3e6fbefc0e16599750a8a3e983c124541"
+    }
+  ],
+  "ownerTask": "01a10cfe-a79f-7198-9e8f-2b4dc6703031",
+  "renderedPrInspection": "General rendered-page waiver; not freshly inspected in a browser. No changed UI flow.",
+  "nativeArtifactAttachment": "No callable native attachment tool; verified task ID and PR URL recorded in issue/project."
+}
