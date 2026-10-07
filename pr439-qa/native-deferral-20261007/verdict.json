@@ -1,0 +1,983 @@
+{
+  "schemaVersion": 1,
+  "recordType": "Fresh independent affected-gate assessment; historical records are linked references, not current-status objects",
+  "verdict": "ready",
+  "readinessMeaning": "Ready for human review under the explicit native-device deferral; not human approval or authorization to merge, release or deploy.",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "prCommunicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/439",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/438",
+  "reviewerChat": "01a114c0-dd68-76bb-9c8a-4ef9eb507024",
+  "supersedesVerdictCommentId": 6032159061,
+  "checkedAtUtc": "2026-10-07T18:19:45.994Z",
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "parentBodySha256": [],
+  "prBodySha256": "40b95e1adaba4e7d52a238893839e81ddff70e8ffb292f0ce07ed7915b5052e2",
+  "issueBodySha256": "e4a62eca4b1c55f934c4742f4899711b4717ef49bebf65cc3bdff4683799040c",
+  "prApiUpdatedAt": "2026-10-07T17:55:57Z",
+  "issueApiUpdatedAt": "2026-10-07T18:08:29Z",
+  "environment": {
+    "host": "mchartier_zbook",
+    "repositoryRemote": "git@github.com:MChartier/calibrate-health.git",
+    "isolatedWorktree": "C:/Users/MChar/Documents/Codex/2026-10-06/task-18/qa-source",
+    "gitDirectory": "C:/Users/MChar/Code/calibrate-health/.git/worktrees/qa-source",
+    "detached": true,
+    "trackedClean": true,
+    "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "repositoryInstructions": {
+      "path": "AGENTS.md",
+      "sourceSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+      "sha256": "bbaa8db9352d8dfaa7838c05c41c1b2fd71dcce7237507d73eb67ee43336dfb6"
+    },
+    "applicableLocalAgentsSkills": "No .agents instruction/skill files present in this isolated checkout; unrelated Calibrate food-progress plugin skill is outside QA scope."
+  },
+  "pinnedStandardAcknowledgment": {
+    "fullNormativeSourcesRead": true,
+    "executionPin": "f0919b184b6344d6279178b2388190936ca432a9",
+    "overlayPin": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+    "pinsUnchanged": true,
+    "verifiedSourceIdentities": [
+      {
+        "repository": "MChartier/agentic-development-workflow",
+        "commitSha": "f0919b184b6344d6279178b2388190936ca432a9",
+        "path": "AGENTS.md",
+        "sha256": "3446374885265a8548edfcd2c38b2f28a0f5a57eafae6486e85c35e8b0cc1973",
+        "gitBlob": "9b66756482ddba1388b587458f9f7c1881e9477f"
+      },
+      {
+        "repository": "MChartier/agentic-development-workflow",
+        "commitSha": "f0919b184b6344d6279178b2388190936ca432a9",
+        "path": "SKILL.md",
+        "sha256": "f9153061d3b5feb82125fbd35fd8bdc4cfedbc7850dd837cd9d0ec193ef85b37",
+        "gitBlob": "a9ad886b4b3a9fffb0f3a8d76b1dfd743f9cbff2"
+      },
+      {
+        "repository": "MChartier/agentic-development-workflow",
+        "commitSha": "f0919b184b6344d6279178b2388190936ca432a9",
+        "path": "prompts/qa.md",
+        "sha256": "6c97946f55f3597f58ecda2de198fc50be40ece184eea0da2ae3b6b06e4ba983",
+        "gitBlob": "0879e8390d6925441c8b83abfd1dd7b60b35ccf9"
+      },
+      {
+        "repository": "MChartier/agentic-development-workflow",
+        "commitSha": "f0919b184b6344d6279178b2388190936ca432a9",
+        "path": "standards/intake.md",
+        "sha256": "d92fbab7b7c585abfbf78d139ca461dc341cd88a80df08f686c2a8fa1a7336cb",
+        "gitBlob": "5498e7b4b702264b78104c15a2e72535d8477649"
+      },
+      {
+        "repository": "MChartier/agentic-development-workflow",
+        "commitSha": "f0919b184b6344d6279178b2388190936ca432a9",
+        "path": "standards/stacks.md",
+        "sha256": "00583a56bc13825e9ccdcaab8ad365869f276b6151eb371167e60c334ec1e661",
+        "gitBlob": "a2e41e508cda43c8fb7c5b5d19744002ac8940b0"
+      },
+      {
+        "repository": "MChartier/agentic-development-workflow",
+        "commitSha": "f0919b184b6344d6279178b2388190936ca432a9",
+        "path": "deployments/calibrate-zbook.json",
+        "sha256": "a518d1207030692b39beb4214e541c623b20e37d83bffa278b292434a0405b45",
+        "gitBlob": "c186687e68525df14af85202fda0ae87fbe567da"
+      },
+      {
+        "repository": "MChartier/agentic-workflow",
+        "commitSha": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+        "path": "standards/pr-review.md",
+        "sha256": "a4e5ba7458f5a153f68eeee72e606d3a705d8eb025bd4ff3b262545029a9799b",
+        "gitBlob": "3294f6cb7d8e46cb0a176cda01dcbd22a2783205"
+      },
+      {
+        "repository": "MChartier/agentic-workflow",
+        "commitSha": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+        "path": "standards/review-queue.md",
+        "sha256": "649e333ea90ffcaa2bd30cc386fe5c6325c77e08bd529dc33ad6a9f2d66cb936",
+        "gitBlob": "7ddc23820423b3982007b537a6d477386a115761"
+      },
+      {
+        "repository": "MChartier/agentic-workflow",
+        "commitSha": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+        "path": "templates/qa-verdict.json",
+        "sha256": "71edd2c0fae6fd18084ca95e9ab41df6aadd0d42fc5960d75cd83666b7b664ea",
+        "gitBlob": "fe8faa890b301601d4867d6930e1292fd7c074e8"
+      }
+    ],
+    "applicableAmendments": [
+      {
+        "id": 5984018358,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-5984018358",
+        "bodySha256": "457e7755eb1ec94e1552e2192e0a487c308a181cd6920f204f3af1b2ba2c8abf",
+        "updatedAt": "2026-10-04T20:21:21Z"
+      },
+      {
+        "id": 5987999201,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-5987999201",
+        "bodySha256": "972a4a9e64684bfe8703118c7cc8c33f26980abe65f1e212c05f899d2e65ed63",
+        "updatedAt": "2026-10-05T04:16:50Z"
+      },
+      {
+        "id": 5997739454,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-5997739454",
+        "bodySha256": "8ffac98257544b912ec49d1b11259be82d56e50183685364f12e159298f6e396",
+        "updatedAt": "2026-10-05T15:35:43Z"
+      },
+      {
+        "id": 6002971212,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6002971212",
+        "bodySha256": "02bd694f3a6fe0bcc7b48a7f16e20f12d8a3db11c04e2ed326a5e11bcb789992",
+        "updatedAt": "2026-10-05T21:09:29Z"
+      },
+      {
+        "id": 6006523068,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6006523068",
+        "bodySha256": "445c01c614a0aa767f408e4e98ca79f6525a3dd1a52a6b977a9499384f389481",
+        "updatedAt": "2026-10-06T00:30:46Z"
+      },
+      {
+        "id": 6008280372,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6008280372",
+        "bodySha256": "53ea8dd801ffd744c1fdaaa625bc959ceb8ae1f4193926339073a0574d1ec4ee",
+        "updatedAt": "2026-10-06T02:45:58Z"
+      },
+      {
+        "id": 6008834896,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6008834896",
+        "bodySha256": "c7a8391deb149ce166ba49323682fb4f6336e43a941c8164cfb7a12d8c1f3a10",
+        "updatedAt": "2026-10-06T03:38:32Z"
+      },
+      {
+        "id": 6020948896,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6020948896",
+        "bodySha256": "b833facef0b79a05c92ffec982480393d1f060e4b741c11136af7c011d680ba6",
+        "updatedAt": "2026-10-06T16:40:54Z"
+      },
+      {
+        "id": 6021105604,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6021105604",
+        "bodySha256": "d9fc320b61d0238711e14dcb9cb028ba605c16024d64ac6dc97ebe75c7299b48",
+        "updatedAt": "2026-10-06T16:50:11Z"
+      },
+      {
+        "id": 6021281028,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6021281028",
+        "bodySha256": "eb9a05a4b43bd4a1f7d9b39e78ddda0a5ad6f0b47af8293768fcef6f5905e0cb",
+        "updatedAt": "2026-10-06T17:00:34Z"
+      },
+      {
+        "id": 6022754087,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6022754087",
+        "bodySha256": "1bdb9f683ed1c434d2f5ab20b9621217be7d14f17bbc34e5fc946a9e86c5e161",
+        "updatedAt": "2026-10-06T18:24:41Z"
+      },
+      {
+        "id": 6026521080,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6026521080",
+        "bodySha256": "74a486b468a12a67303e9f40b21193c41e10c6485e3a1d9a20431ee02d87a990",
+        "updatedAt": "2026-10-06T22:21:29Z"
+      },
+      {
+        "id": 6041659686,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6041659686",
+        "bodySha256": "c821f39f0892512600f7547fc610f0565c15dcbd5dd9d2c99c59152c351e860b",
+        "updatedAt": "2026-10-07T15:58:13Z"
+      }
+    ]
+  },
+  "gates": {
+    "value": {
+      "status": "pass",
+      "reason": "The authorized issue438 outcome gives native users deliberate service selection and self-hosted operators safe durable role administration. The focused scope remains proportionate."
+    },
+    "outcome": {
+      "status": "pass-with-explicit-deferral",
+      "reason": "Previously verified source, PostgreSQL invariants, session/cancellation boundaries and browser behavior remain applicable at the same source/base. Native-device checks are explicitly deferred for review readiness by6041659686 and remain unexecuted."
+    },
+    "code": {
+      "status": "pass",
+      "reason": "Reuse of the same independent full63-file/published-commit review is justified by exact unchanged head/tree/base and ordered scope. No unresolved source finding. Original directory-lock finding remains verified fixed; no source reassessment or mutation needed."
+    },
+    "engineeringReview": {
+      "status": "pass",
+      "reason": "Authenticated configured Codex result6031728424 reports no major issues for the unchanged current head. Full comments, submitted reviews and inline threads reread; no new finding."
+    },
+    "ci": {
+      "status": "pass",
+      "reason": "Exact same25 completed current-head checks:16 success and9 justified existing path/manual-policy skips. Existing actual execution logs, including8 real cross-connection PostgreSQL scenarios, remain applicable; no status-only inference or suite rerun."
+    },
+    "behavior": {
+      "status": "pass-with-explicit-deferral",
+      "reason": "Previously independently executed133 component/backend/API tests and4 actual Chromium scenarios remain applicable. Source and evidence unchanged. Native device behavior has not been executed and is deferred, not passed."
+    },
+    "evidence": {
+      "status": "pass-with-explicit-deferral",
+      "reason": "Both genuine actual-master/final browser pairs retain their exact source/build/fixture/harness/image identities and prior same-reviewer pixel assessment. Exact artifacts and receipts reverified. Native-device proof is explicitly deferred; GitHub rendered-page inspection remains separately waived."
+    },
+    "communication": {
+      "status": "pass",
+      "reason": "Final PR opening describes the base-state problem and final solution; behavioral Test plan explains observed boundaries. Four unexecuted native flows and the exact human deferral are visible, with no device-execution claim. Five-section issue retains requirements/plan/task identity and stable links. Lifecycle-sensitive stale wording is removed."
+    },
+    "stack": {
+      "status": "pass",
+      "reason": "Direct master target with no stacked parent; API base, actual master, merge-base and direct Git parent all match. Related431/437 remain separate unchanged contracts; original402 remains open. No unrelated merge or closure required."
+    }
+  },
+  "publishedScope": {
+    "path": "published-scope.json",
+    "sha256": "d87ce5486b7ff530257cc3abaf654683fc816b7a3e278812873015fa58dc1251",
+    "commits": 1,
+    "files": 63,
+    "additions": 3360,
+    "deletions": 729,
+    "headTree": "36e1a976846914bb5abae4afa844972f8d62718d",
+    "directGitParents": [
+      "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+    ]
+  },
+  "relatedPullRequests": [
+    {
+      "pullRequest": 402,
+      "url": "https://github.com/MChartier/calibrate-health/pull/402",
+      "headSha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "apiBaseSha": "014f19669cbe4b62cb9b98514830d7874660e994",
+      "baseRef": "master",
+      "bodySha256": "24f9f6d844a9cea11eb771adbaeb11a626113cd7cb7b4c9bce6fd181018f030b",
+      "state": "open",
+      "isParentOf439": false
+    },
+    {
+      "pullRequest": 431,
+      "url": "https://github.com/MChartier/calibrate-health/pull/431",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+      "baseRef": "master",
+      "bodySha256": "408e99d2726bed567256f64b03b89f54b04f042710a2cbbe221033b4ce42b4c8",
+      "state": "open",
+      "isParentOf439": false
+    },
+    {
+      "pullRequest": 437,
+      "url": "https://github.com/MChartier/calibrate-health/pull/437",
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "baseRef": "mchartier/credential-verification-421",
+      "bodySha256": "a125ab27c6193d0477223728900c0199440ca538e86bf6fc63d76270b9ec88b9",
+      "state": "open",
+      "isParentOf439": false
+    }
+  ],
+  "configuredEngineeringReview": {
+    "commentId": 6031728424,
+    "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031728424",
+    "bodySha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf",
+    "updatedAt": "2026-10-07T05:38:36Z",
+    "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "author": "chatgpt-codex-connector[bot]",
+    "observation": "Completed without major issues; no actionable inline findings."
+  },
+  "ci": {
+    "checkedAtUtc": "2026-10-07T18:13:20.638Z",
+    "total": 25,
+    "success": 16,
+    "justifiedSkips": 9,
+    "checks": [
+      {
+        "id": 112623962281,
+        "name": "Classify Production Image Inputs",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:04Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623962452,
+        "name": "Classify Test Inputs",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623962541,
+        "name": "Backend, Shared, API Client, and Mobile Typecheck",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:00:02Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623962761,
+        "name": "Classify Database Inputs",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:04Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623962874,
+        "name": "Classify Build Inputs",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623989604,
+        "name": "High and Critical Vulnerabilities",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:02:08Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623991372,
+        "name": "Populated Postgres Upgrade",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:50Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623991393,
+        "name": "v0.14.0 Upgrade and Encrypted Rollback",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:43Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623994145,
+        "name": "Web Critical Smoke",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:02:12Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623994180,
+        "name": "Release Configuration",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:20Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623994195,
+        "name": "Expo Web Build",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:01:18Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623994224,
+        "name": "android Runtime Bundle",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:00:08Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623994250,
+        "name": "Backend Build",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T03:59:53Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623994290,
+        "name": "ios Runtime Bundle",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:00:08Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623995092,
+        "name": "Wear Release Emulator Smoke",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing expensive web/native release or upgrade lanes require manual workflow input, disabled on this pull-request event; not evidence of device execution."
+      },
+      {
+        "id": 112623995315,
+        "name": "Full Exported Web and PWA End-to-End",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing expensive web/native release or upgrade lanes require manual workflow input, disabled on this pull-request event; not evidence of device execution."
+      },
+      {
+        "id": 112623995345,
+        "name": "Wear Build and JVM Tests",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Wear paths unchanged under existing classifier."
+      },
+      {
+        "id": 112623995378,
+        "name": "Six-State Data-Backed Route Acceptance",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing expensive web/native release or upgrade lanes require manual workflow input, disabled on this pull-request event; not evidence of device execution."
+      },
+      {
+        "id": 112623995395,
+        "name": "iOS Build",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing native-package path classifier excludes this unchanged package scope."
+      },
+      {
+        "id": 112623995561,
+        "name": "UX Accessibility and Visual Regression",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing expensive web/native release or upgrade lanes require manual workflow input, disabled on this pull-request event; not evidence of device execution."
+      },
+      {
+        "id": 112623995566,
+        "name": "Mobile Build",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing native-package path classifier excludes this unchanged package scope."
+      },
+      {
+        "id": 112623995654,
+        "name": "Native Two-Emulator Package Upgrade",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing expensive web/native release or upgrade lanes require manual workflow input, disabled on this pull-request event; not evidence of device execution."
+      },
+      {
+        "id": 112623995840,
+        "name": "Android Emulator End-to-End",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "skipped",
+        "completedAt": "2026-10-07T03:59:05Z",
+        "skipJustification": "Existing expensive web/native release or upgrade lanes require manual workflow input, disabled on this pull-request event; not evidence of device execution."
+      },
+      {
+        "id": 112623996153,
+        "name": "Mobile Tests",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:00:19Z",
+        "skipJustification": null
+      },
+      {
+        "id": 112623996176,
+        "name": "Backend Tests",
+        "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "status": "completed",
+        "conclusion": "success",
+        "completedAt": "2026-10-07T04:03:22Z",
+        "skipJustification": null
+      }
+    ],
+    "executedResultsReused": {
+      "backend": 786,
+      "realPostgresqlScenarios": 8,
+      "mobile": 1319,
+      "apiClient": 75,
+      "migrations": "Fresh/populated and encrypted rollback/restore/reupgrade executed in exact-head CI."
+    }
+  },
+  "independentBehaviorReused": {
+    "mobileComponentSessionTests": 86,
+    "backendTests": 41,
+    "apiTests": 6,
+    "desktopChromiumScenarios": 4,
+    "newSuitesRun": false,
+    "newCaptures": false,
+    "reference": "https://github.com/MChartier/calibrate-health/blob/e83d376cfb37b4927ed21bae39eb6f6453fca509/pr439-qa/verdict.json"
+  },
+  "feedback": {
+    "path": "feedback-dispositions.json",
+    "sha256": "27f6097c2a86aa1a0f0d0d66ecf849f689b324a506bd6feceeea6ab1925aec63",
+    "allPagesAndFullBodiesRead": true,
+    "unresolvedActionableFindings": [],
+    "dispositions": [
+      {
+        "location": "comments402",
+        "id": 5973146186,
+        "url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-5973146186",
+        "bodySha256": "3a70dc58cca1eb85359a8180380513159754c8a3aa6c8c3ce36af7e1fb656103",
+        "updatedAt": "2026-10-03T20:29:19Z",
+        "disposition": "Historical configured review of original402; no completion claim for439 is derived from this comment. Current439 completion is independently bound to6031728424.",
+        "blocking": false
+      },
+      {
+        "location": "comments402",
+        "id": 6030179516,
+        "url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-6030179516",
+        "bodySha256": "36cb078a738ccdc18fdea245face604ff3eada2ff71ff3c3e6e7252fec0fe4b7",
+        "updatedAt": "2026-10-07T03:17:43Z",
+        "disposition": "Original recovery planning completed by the focused successor. Current published scope and retained original evidence verified; original402 remains open.",
+        "blocking": false
+      },
+      {
+        "location": "comments402",
+        "id": 6030711005,
+        "url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-6030711005",
+        "bodySha256": "b2709ec105b77150f00c4ce9f8d99aedb71e6853d76172470fb888382b44a054",
+        "updatedAt": "2026-10-07T04:07:45Z",
+        "disposition": "Historical successor/retention checkpoint. Source and retention remain verified; its prior pending-native/review wording is superseded by current review completion and amendment6041659686. No closure performed.",
+        "blocking": false
+      },
+      {
+        "location": "comments438",
+        "id": 6030410384,
+        "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6030410384",
+        "bodySha256": "9f24bf3a42a0e2b6517d1fb47b9d6b8a5201f70b18b8ff199edbe478e795c4ef",
+        "updatedAt": "2026-10-07T03:39:48Z",
+        "disposition": "Historical preparation claim; implementation is now evidenced by the unchanged successor head. Exact original requirements and retention are preserved.",
+        "blocking": false
+      },
+      {
+        "location": "comments438",
+        "id": 6031957383,
+        "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6031957383",
+        "bodySha256": "00ffe8c0d2f0d914cfaea419ce81af4eca1edd00a94b5c7433ca601d760db315",
+        "updatedAt": "2026-10-07T05:57:31Z",
+        "disposition": "Exact historical issue description retained. Its earlier status text is not current; current issue has the five required sections and stable links.",
+        "blocking": false
+      },
+      {
+        "location": "comments438",
+        "id": 6043344805,
+        "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6043344805",
+        "bodySha256": "8cfc0c6676a5ff99f6e63dfaa1bc43ce366cbbd881ed0f8f78a3f3647da29b7a",
+        "updatedAt": "2026-10-07T17:36:36Z",
+        "disposition": "Authorized metadata-only correction completed: current PR and issue hashes match the retained final descriptions; native limitations are explicit.",
+        "blocking": false
+      },
+      {
+        "location": "comments438",
+        "id": 6043906416,
+        "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6043906416",
+        "bodySha256": "c4ddc2225b834d956cb17977da76ba708adfa11a8e4efc69d1c1c5ff2def81ef",
+        "updatedAt": "2026-10-07T18:08:29Z",
+        "disposition": "Admission for this same independent QA reassessment; fulfilled by the fresh assessment under the verified deferral. No readiness transition performed.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6030751935,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6030751935",
+        "bodySha256": "fba99781567242dc7dc0173ad0a62f76d3432cbb1e5929dce54c4bc1a36ff1f2",
+        "updatedAt": "2026-10-07T04:11:20Z",
+        "disposition": "Checkpoint claims independently assessed earlier and exact artifact hash corrected in the preserved encoding record. Current source/CI/provenance remain bound. Earlier native/review blockers are superseded by completed review and explicit deferral.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6031323353,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031323353",
+        "bodySha256": "599af8ac9b2f433702c5e115203099de41082083fb57216e8c039c3bebec694e",
+        "updatedAt": "2026-10-07T05:05:32Z",
+        "disposition": "Independent review completed on the current source with full scope and PostgreSQL execution evidence. The later scoped human deferral governs the unexecuted native checks.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6031629809,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031629809",
+        "bodySha256": "c18e3942ec5a8978e55aa30ef5763b5ef33c029606686e5c169d7f89180d3891",
+        "updatedAt": "2026-10-07T05:29:50Z",
+        "disposition": "Historical initial QA findings: source and browser checks stand; configured review subsequently completed, encoding binding corrected, native readiness gate explicitly deferred. Prior comment and receipt remain unchanged.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6031679377,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031679377",
+        "bodySha256": "fe20cf1b5836cf8634b01c453cd73e2dbfe2ed59e098fa514eec4e42d466c3e1",
+        "updatedAt": "2026-10-07T05:34:16Z",
+        "disposition": "Single configured review request fulfilled by6031728424 on the exact current head; no retry or quota inference used.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6031682737,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031682737",
+        "bodySha256": "63eb5fa59770ec41b85d6cd16f93f6ed1852e5272fee4bf35f52540a0a5c4e5a",
+        "updatedAt": "2026-10-07T05:38:38Z",
+        "disposition": "Completion summary corroborates the actual current-head review response; it is not used alone as proof of review outcome.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6031728424,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031728424",
+        "bodySha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf",
+        "updatedAt": "2026-10-07T05:38:36Z",
+        "disposition": "Authenticated configured reviewer reports no major issues on ce8543483d, uniquely matching the current full head. No associated inline finding requires disposition.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6031769862,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031769862",
+        "bodySha256": "92c71d937619077d4ff21698ac8397bd7a3165d337d5c66615846dfb79d512ea",
+        "updatedAt": "2026-10-07T05:42:13Z",
+        "disposition": "Requested same-QA body/review reconciliation and checkpoint hash correction were completed in retained append-only assessments. Corrected owner checkpoint hash remains verified; native checks now follow the human deferral.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6031898060,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031898060",
+        "bodySha256": "fac7bc334bf7c5ca11eb43c705aa7569ac8276d9e263a5cfe1c1e3bcdb39c546",
+        "updatedAt": "2026-10-07T05:52:31Z",
+        "disposition": "Historical correction preserved. Issue status line was reconciled and original body retained; native unexecuted limitation now falls under amendment6041659686.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6032159061,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6032159061",
+        "bodySha256": "0dc9d7e572166ca16a5fc9b2415e266762170d62f3a55bee56bd0134c026c191",
+        "updatedAt": "2026-10-07T06:14:04Z",
+        "disposition": "Superseded by this assessment. Its only remaining native gate is deferred for review readiness by exact human amendment6041659686; it is not treated as executed or passed.",
+        "blocking": false
+      },
+      {
+        "location": "comments439",
+        "id": 6043693072,
+        "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6043693072",
+        "bodySha256": "f5fbbc46f67809deb4337ea22814a05ab10d13f285ff49de5ace114430673936",
+        "updatedAt": "2026-10-07T17:55:57Z",
+        "disposition": "Final metadata-only handoff verified against live descriptions, retained originals, unchanged source and exact amendment. Timestamp distinctions are documented.",
+        "blocking": false
+      },
+      {
+        "location": "reviews402",
+        "id": 5402605506,
+        "url": "https://github.com/MChartier/calibrate-health/pull/402#pullrequestreview-5402605506",
+        "bodySha256": "a521942576cbf8abde0aaddd215a48f4e4703dd2b2c30c01b5c46d97a87ad130",
+        "updatedAt": "2026-10-03T20:29:16Z",
+        "disposition": "Historical original402 review; actionable directory-lock finding4174731711 was fixed in current head and independently validated.",
+        "blocking": false
+      },
+      {
+        "location": "inline402",
+        "id": 4174731711,
+        "url": "https://github.com/MChartier/calibrate-health/pull/402#discussion_r4174731711",
+        "bodySha256": "2ddf8b192c5b3ed99f85ccb889f8560c07af5179a05bc7979b1f725e91e0d057",
+        "updatedAt": "2026-10-03T20:29:16Z",
+        "disposition": "Resolved in ce8543483db55800034e6ed2622eeb4b9ac7f3b6: directory reads execute outside the exclusive ownership transaction, with fresh authorization before/after. Existing independently inspected cross-connection PostgreSQL execution proves nonblocking reads and mid-scan revocation. Original thread remains untouched.",
+        "blocking": false
+      },
+      {
+        "location": "issue405-amendment",
+        "id": 6041659686,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6041659686",
+        "bodySha256": "c821f39f0892512600f7547fc610f0565c15dcbd5dd9d2c99c59152c351e860b",
+        "updatedAt": "2026-10-07T15:58:13Z",
+        "disposition": "Applied exactly to PR439 native-device review-readiness checks. Four named device flows remain unexecuted; this does not waive source, CI, review, browser pixels/provenance or authorize merge/release/deployment.",
+        "blocking": false
+      }
+    ]
+  },
+  "uiEvidence": {
+    "applicable": true,
+    "representativeCoverage": "Settings service/admin entry and administrator capabilities/directory at actual master versus current head. Native-device flows remain unexecuted under the explicit readiness deferral.",
+    "pairs": [
+      {
+        "state": "Settings service entry",
+        "beforeSourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "afterSourceSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "beforeUrl": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-settings.png",
+        "beforeSha256": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+        "afterUrl": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-settings.png",
+        "afterSha256": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+        "viewport": {
+          "width": 1280,
+          "height": 1500
+        },
+        "scale": 1,
+        "theme": "light",
+        "fixtureSha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b"
+      },
+      {
+        "state": "Administrator capabilities and user roles",
+        "beforeSourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "afterSourceSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+        "beforeUrl": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-administration.png",
+        "beforeSha256": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+        "afterUrl": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-administration.png",
+        "afterSha256": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+        "viewport": {
+          "width": 1280,
+          "height": 2500
+        },
+        "scale": 1,
+        "theme": "light",
+        "fixtureSha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b"
+      }
+    ],
+    "provenanceRecords": [
+      {
+        "pairs": [
+          "Settings service entry",
+          "Administrator capabilities and user roles"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/provenance.json",
+        "commitSha": "8457ed1a3bbb0f0381b48e22a40aac52b223ae6c",
+        "sha256": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e",
+        "referencedArtifacts": [
+          {
+            "path": "capture.config.ts",
+            "sha256": "741d873d29e5fbc0807db66e4b32df9faba0273303eef7e86561aad6ba48fc4c",
+            "bytes": 505
+          },
+          {
+            "path": "capture.spec.ts",
+            "sha256": "bbafaec9f0d9765b22b3655571b1dc64a9980cabaf029e8af477997cb86b1ae5",
+            "bytes": 2746
+          },
+          {
+            "path": "capture-run.mjs",
+            "sha256": "26cc33bc13df595210bbd491933220a22ddf6c1cf44dce3edc38ce4ffc5f6241",
+            "bytes": 976
+          },
+          {
+            "path": "before-capture.json",
+            "sha256": "d9bfee6a9d334a017b51166739b865492a77fb6d2db4b04a1158f8b200a3d084",
+            "bytes": 767
+          },
+          {
+            "path": "after-capture.json",
+            "sha256": "56a13d5831442c9ca64db4b9662b02e792e2c10145b22719f08f61ddeb4b7941",
+            "bytes": 766
+          },
+          {
+            "path": "before-settings.png",
+            "sha256": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+            "bytes": 55685
+          },
+          {
+            "path": "after-settings.png",
+            "sha256": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+            "bytes": 63862
+          },
+          {
+            "path": "before-administration.png",
+            "sha256": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+            "bytes": 44861
+          },
+          {
+            "path": "after-administration.png",
+            "sha256": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+            "bytes": 140354
+          },
+          {
+            "path": "published-scope.json",
+            "sha256": "789b2230b5dc4e6938b49743eb73a6a3fa23e3a3a12fd1020e7807d0d5d78858",
+            "bytes": 21404
+          },
+          {
+            "path": "build-identities.json",
+            "sha256": "2dbc6124530046e0d9908d797be2899943608ed7eefc4ee7c19d0579cfc74a23",
+            "bytes": 66435
+          }
+        ],
+        "fixture": {
+          "url": "https://github.com/MChartier/calibrate-health/blob/ce8543483db55800034e6ed2622eeb4b9ac7f3b6/e2e/expo-web/fixtures.ts",
+          "commitSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+          "sha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b"
+        }
+      }
+    ],
+    "provenanceAssessment": "Exact retained manifest, capture/build/harness records and all four image bytes freshly reverified. Prior complete export/loaded-JS/source-tree verification remains applicable. Same synthetic accounts, frozen clock/randomness, viewport, scale, locale/timezone and theme; disclosed identical suppression of unrelated transient PWA notices; no altered image pixels.",
+    "pixelObservations": "Prior same-QA independent inspection of all four unchanged originals is reused. Settings adds the active Service & hosting and Administration entries with the same synthetic profile/goal/rail. Administration adds server/capability details and two verified synthetic role rows while its feature switch remains Off. Matched setups showed no misleading differences. No new capture or new pixel-inspection execution is claimed.",
+    "pixelInspectionReference": {
+      "purpose": "Original independently executed code/behavior/pixel assessment and logs",
+      "url": "https://github.com/MChartier/calibrate-health/blob/e83d376cfb37b4927ed21bae39eb6f6453fca509/pr439-qa/verdict.json",
+      "commitSha": "e83d376cfb37b4927ed21bae39eb6f6453fca509",
+      "sha256": "0793516dc62a5d5c67899fbdefafeae28d58755fbecc08e7d9ae016e867abd66"
+    },
+    "renderedPrInspection": {
+      "url": "https://github.com/MChartier/calibrate-health/pull/439",
+      "checkedAtUtc": null,
+      "observations": "Unperformed under the separate general GitHub PR-page-rendering waiver6022754087; no rendering pass is claimed.",
+      "waiver": {
+        "id": 6022754087,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6022754087",
+        "bodySha256": "1bdb9f683ed1c434d2f5ab20b9621217be7d14f17bbc34e5fc946a9e86c5e161",
+        "updatedAt": "2026-10-06T18:24:41Z"
+      }
+    },
+    "nonUiObservableContract": null,
+    "scopedHumanBaselineWaiver": null,
+    "nativeDeviceDeferral": {
+      "scope": "Review readiness only for the remaining native chooser checks of PR439",
+      "instruction": {
+        "id": 6041659686,
+        "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6041659686",
+        "bodySha256": "c821f39f0892512600f7547fc610f0565c15dcbd5dd9d2c99c59152c351e860b",
+        "updatedAt": "2026-10-07T15:58:13Z"
+      },
+      "checks": [
+        {
+          "name": "Managed versus self-hosted native service selection",
+          "executionStatus": "unexecuted",
+          "readinessTreatment": "deferred-by-explicit-human-instruction"
+        },
+        {
+          "name": "Canceling or failing native selection retains the current destination",
+          "executionStatus": "unexecuted",
+          "readinessTreatment": "deferred-by-explicit-human-instruction"
+        },
+        {
+          "name": "Confirmed native service changes clear entered credentials and consent",
+          "executionStatus": "unexecuted",
+          "readinessTreatment": "deferred-by-explicit-human-instruction"
+        },
+        {
+          "name": "Native switching is prevented while offline changes are unresolved or their state is unknown",
+          "executionStatus": "unexecuted",
+          "readinessTreatment": "deferred-by-explicit-human-instruction"
+        }
+      ],
+      "doesNotAuthorize": [
+        "merge",
+        "release",
+        "deployment",
+        "code/CI/provenance waiver",
+        "revival of canceled actions",
+        "partial-issue linkage decision"
+      ]
+    }
+  },
+  "evidence": [
+    {
+      "path": "evidence-identities.json",
+      "sha256": "1914c09cdf9eaf0015c6725a5539cda3c2817ba6a8026ce50492b37a01cc2fdf"
+    },
+    {
+      "path": "current-pr-body.md",
+      "sha256": "40b95e1adaba4e7d52a238893839e81ddff70e8ffb292f0ce07ed7915b5052e2"
+    },
+    {
+      "path": "current-issue-body.md",
+      "sha256": "e4a62eca4b1c55f934c4742f4899711b4717ef49bebf65cc3bdff4683799040c"
+    },
+    {
+      "path": "linkage.json",
+      "sha256": "3cb111aceae0457b4083f2d4437fa6521a63a4642f0b2bc19d3d14511e751462"
+    }
+  ],
+  "ownerHandoff": {
+    "url": "https://github.com/MChartier/calibrate-health/blob/5a0e855ae28d74ce70e365006821e19588ed8499/native-deferral-result-20261007/handoff.json",
+    "commitSha": "5a0e855ae28d74ce70e365006821e19588ed8499",
+    "sha256": "b3185cd6f69f5a49574a1d87f31d59ac04143ae54932eeb7cb5681188ebda976",
+    "independentlyVerified": true,
+    "originalsReference": {
+      "url": "https://github.com/MChartier/calibrate-health/blob/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/originals.json",
+      "commitSha": "463626255783a028f7a8e590c1c97758de05f83f",
+      "sha256": "04cecbaf7a96331c6e7344fb52f07d1fa34bca0aabafc57ac99c386451f5b79e"
+    }
+  },
+  "timestampAssessment": {
+    "ownerOriginalsCapturedAt": "2026-10-07T17:47:54.434Z",
+    "ownerOriginalPrApiUpdatedAt": "2026-10-07T06:14:04Z",
+    "ownerOriginalIssueApiUpdatedAt": "2026-10-07T17:36:36Z",
+    "ownerFinalReadbackAt": "2026-10-07T17:52:10.327Z",
+    "ownerFinalPrApiUpdatedAt": "2026-10-07T17:52:03Z",
+    "ownerFinalIssueApiUpdatedAt": "2026-10-07T17:52:06Z",
+    "livePrApiUpdatedAt": "2026-10-07T17:55:57Z",
+    "liveIssueApiUpdatedAt": "2026-10-07T18:08:29Z",
+    "explanation": "API updated_at is resource activity time, not a guaranteed description-edit timestamp. Original issue timestamp17:36:36 includes the admission comment while its bytes remain the earlier issue-body identity; later PR/issue times include owner and QA-admission comments. Exact bodies and immutable file hashes, not updated_at alone, establish old/final content."
+  },
+  "authoritativeCheckpoint": {
+    "url": "https://github.com/MChartier/calibrate-health/blob/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json",
+    "commitSha": "5bc914fa7e3120fc8f872488459d7095ee621511",
+    "gitBlob": "837e0435078cd45ee0fdc4321a36b137cfa8cc0f",
+    "sha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+    "correctionReference": {
+      "purpose": "Preserved explicit encoding correction",
+      "url": "https://github.com/MChartier/calibrate-health/blob/1fe117f29d9a5b578217b963a5c685084b82894d/pr439-qa/followup-20261007/checkpoint-correction.json",
+      "commitSha": "1fe117f29d9a5b578217b963a5c685084b82894d",
+      "sha256": "276b9df0fe1c2423e8652f85154e97a7063d35d533927b66ac0591d7bfcdc07b"
+    }
+  },
+  "historicalReferences": [
+    {
+      "purpose": "Previous same-QA assessment",
+      "url": "https://github.com/MChartier/calibrate-health/blob/bf82d9f38c8a488720ee0e97b1b2f59c97d464a6/pr439-qa/issue-rebind-20261007/verdict.json",
+      "commitSha": "bf82d9f38c8a488720ee0e97b1b2f59c97d464a6",
+      "sha256": "fba4caf12d654bad95495331c00def8e7fd7b09f0791af182170324fbe8ba992"
+    },
+    {
+      "purpose": "Previous trusted QA receipt",
+      "url": "https://github.com/MChartier/calibrate-health/blob/d998f85af8ada64cd34011ce72f51c49a2c86e5b/pr439-qa/issue-rebind-20261007/receipt.json",
+      "commitSha": "d998f85af8ada64cd34011ce72f51c49a2c86e5b",
+      "sha256": "527389e2cd5c2fc6732d5e75def72d6d87e358ca4b8af1a905b04625d66346ab"
+    },
+    {
+      "purpose": "Preserved explicit encoding correction",
+      "url": "https://github.com/MChartier/calibrate-health/blob/1fe117f29d9a5b578217b963a5c685084b82894d/pr439-qa/followup-20261007/checkpoint-correction.json",
+      "commitSha": "1fe117f29d9a5b578217b963a5c685084b82894d",
+      "sha256": "276b9df0fe1c2423e8652f85154e97a7063d35d533927b66ac0591d7bfcdc07b"
+    },
+    {
+      "purpose": "Original independently executed code/behavior/pixel assessment and logs",
+      "url": "https://github.com/MChartier/calibrate-health/blob/e83d376cfb37b4927ed21bae39eb6f6453fca509/pr439-qa/verdict.json",
+      "commitSha": "e83d376cfb37b4927ed21bae39eb6f6453fca509",
+      "sha256": "0793516dc62a5d5c67899fbdefafeae28d58755fbecc08e7d9ae016e867abd66"
+    }
+  ],
+  "limitations": [
+    "The four listed native-device flows remain unexecuted; browser/component/bundle evidence does not establish device execution. They are deferred for review readiness only.",
+    "Actual GitHub PR-page rendering was not inspected under the separate verified general waiver. Genuine browser images and provenance remain verified.",
+    "This affected-gate reassessment reuses unchanged prior code/behavior/pixel evidence; no suites, builds, captures or device availability checks were repeated.",
+    "This is independent review-readiness QA, not human approval, a label/draft transition, closure or merge/release/deployment authorization."
+  ],
+  "blockingFindings": [],
+  "nextAction": "Coordinator independently verifies the new API receipt, current source/base/body/parent/evidence/feedback bindings and deferral before any authorized readiness transition. Keep unexecuted native limitations explicit. No further source or metadata correction is requested by this assessment.",
+  "retention": {
+    "purpose": "Append-only independent native-deferral readiness assessment",
+    "ownerTask": "01a114c0-dd68-76bb-9c8a-4ef9eb507024",
+    "nonmergedEvidenceOnly": true,
+    "automaticExpiry": false,
+    "priorRecordsPreserved": true
+  }
+}

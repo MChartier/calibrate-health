@@ -1,0 +1,189 @@
+{
+  "checkedAtUtc": "2026-10-07T18:17:12.606Z",
+  "allRestPagesRead": true,
+  "allReviewThreadPagesRead": true,
+  "fullBodiesRead": true,
+  "records": [
+    {
+      "location": "comments402",
+      "id": 5973146186,
+      "url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-5973146186",
+      "bodySha256": "3a70dc58cca1eb85359a8180380513159754c8a3aa6c8c3ce36af7e1fb656103",
+      "updatedAt": "2026-10-03T20:29:19Z",
+      "disposition": "Historical configured review of original402; no completion claim for439 is derived from this comment. Current439 completion is independently bound to6031728424.",
+      "blocking": false
+    },
+    {
+      "location": "comments402",
+      "id": 6030179516,
+      "url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-6030179516",
+      "bodySha256": "36cb078a738ccdc18fdea245face604ff3eada2ff71ff3c3e6e7252fec0fe4b7",
+      "updatedAt": "2026-10-07T03:17:43Z",
+      "disposition": "Original recovery planning completed by the focused successor. Current published scope and retained original evidence verified; original402 remains open.",
+      "blocking": false
+    },
+    {
+      "location": "comments402",
+      "id": 6030711005,
+      "url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-6030711005",
+      "bodySha256": "b2709ec105b77150f00c4ce9f8d99aedb71e6853d76172470fb888382b44a054",
+      "updatedAt": "2026-10-07T04:07:45Z",
+      "disposition": "Historical successor/retention checkpoint. Source and retention remain verified; its prior pending-native/review wording is superseded by current review completion and amendment6041659686. No closure performed.",
+      "blocking": false
+    },
+    {
+      "location": "comments438",
+      "id": 6030410384,
+      "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6030410384",
+      "bodySha256": "9f24bf3a42a0e2b6517d1fb47b9d6b8a5201f70b18b8ff199edbe478e795c4ef",
+      "updatedAt": "2026-10-07T03:39:48Z",
+      "disposition": "Historical preparation claim; implementation is now evidenced by the unchanged successor head. Exact original requirements and retention are preserved.",
+      "blocking": false
+    },
+    {
+      "location": "comments438",
+      "id": 6031957383,
+      "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6031957383",
+      "bodySha256": "00ffe8c0d2f0d914cfaea419ce81af4eca1edd00a94b5c7433ca601d760db315",
+      "updatedAt": "2026-10-07T05:57:31Z",
+      "disposition": "Exact historical issue description retained. Its earlier status text is not current; current issue has the five required sections and stable links.",
+      "blocking": false
+    },
+    {
+      "location": "comments438",
+      "id": 6043344805,
+      "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6043344805",
+      "bodySha256": "8cfc0c6676a5ff99f6e63dfaa1bc43ce366cbbd881ed0f8f78a3f3647da29b7a",
+      "updatedAt": "2026-10-07T17:36:36Z",
+      "disposition": "Authorized metadata-only correction completed: current PR and issue hashes match the retained final descriptions; native limitations are explicit.",
+      "blocking": false
+    },
+    {
+      "location": "comments438",
+      "id": 6043906416,
+      "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6043906416",
+      "bodySha256": "c4ddc2225b834d956cb17977da76ba708adfa11a8e4efc69d1c1c5ff2def81ef",
+      "updatedAt": "2026-10-07T18:08:29Z",
+      "disposition": "Admission for this same independent QA reassessment; fulfilled by the fresh assessment under the verified deferral. No readiness transition performed.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6030751935,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6030751935",
+      "bodySha256": "fba99781567242dc7dc0173ad0a62f76d3432cbb1e5929dce54c4bc1a36ff1f2",
+      "updatedAt": "2026-10-07T04:11:20Z",
+      "disposition": "Checkpoint claims independently assessed earlier and exact artifact hash corrected in the preserved encoding record. Current source/CI/provenance remain bound. Earlier native/review blockers are superseded by completed review and explicit deferral.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6031323353,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031323353",
+      "bodySha256": "599af8ac9b2f433702c5e115203099de41082083fb57216e8c039c3bebec694e",
+      "updatedAt": "2026-10-07T05:05:32Z",
+      "disposition": "Independent review completed on the current source with full scope and PostgreSQL execution evidence. The later scoped human deferral governs the unexecuted native checks.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6031629809,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031629809",
+      "bodySha256": "c18e3942ec5a8978e55aa30ef5763b5ef33c029606686e5c169d7f89180d3891",
+      "updatedAt": "2026-10-07T05:29:50Z",
+      "disposition": "Historical initial QA findings: source and browser checks stand; configured review subsequently completed, encoding binding corrected, native readiness gate explicitly deferred. Prior comment and receipt remain unchanged.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6031679377,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031679377",
+      "bodySha256": "fe20cf1b5836cf8634b01c453cd73e2dbfe2ed59e098fa514eec4e42d466c3e1",
+      "updatedAt": "2026-10-07T05:34:16Z",
+      "disposition": "Single configured review request fulfilled by6031728424 on the exact current head; no retry or quota inference used.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6031682737,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031682737",
+      "bodySha256": "63eb5fa59770ec41b85d6cd16f93f6ed1852e5272fee4bf35f52540a0a5c4e5a",
+      "updatedAt": "2026-10-07T05:38:38Z",
+      "disposition": "Completion summary corroborates the actual current-head review response; it is not used alone as proof of review outcome.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6031728424,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031728424",
+      "bodySha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf",
+      "updatedAt": "2026-10-07T05:38:36Z",
+      "disposition": "Authenticated configured reviewer reports no major issues on ce8543483d, uniquely matching the current full head. No associated inline finding requires disposition.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6031769862,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031769862",
+      "bodySha256": "92c71d937619077d4ff21698ac8397bd7a3165d337d5c66615846dfb79d512ea",
+      "updatedAt": "2026-10-07T05:42:13Z",
+      "disposition": "Requested same-QA body/review reconciliation and checkpoint hash correction were completed in retained append-only assessments. Corrected owner checkpoint hash remains verified; native checks now follow the human deferral.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6031898060,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031898060",
+      "bodySha256": "fac7bc334bf7c5ca11eb43c705aa7569ac8276d9e263a5cfe1c1e3bcdb39c546",
+      "updatedAt": "2026-10-07T05:52:31Z",
+      "disposition": "Historical correction preserved. Issue status line was reconciled and original body retained; native unexecuted limitation now falls under amendment6041659686.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6032159061,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6032159061",
+      "bodySha256": "0dc9d7e572166ca16a5fc9b2415e266762170d62f3a55bee56bd0134c026c191",
+      "updatedAt": "2026-10-07T06:14:04Z",
+      "disposition": "Superseded by this assessment. Its only remaining native gate is deferred for review readiness by exact human amendment6041659686; it is not treated as executed or passed.",
+      "blocking": false
+    },
+    {
+      "location": "comments439",
+      "id": 6043693072,
+      "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6043693072",
+      "bodySha256": "f5fbbc46f67809deb4337ea22814a05ab10d13f285ff49de5ace114430673936",
+      "updatedAt": "2026-10-07T17:55:57Z",
+      "disposition": "Final metadata-only handoff verified against live descriptions, retained originals, unchanged source and exact amendment. Timestamp distinctions are documented.",
+      "blocking": false
+    },
+    {
+      "location": "reviews402",
+      "id": 5402605506,
+      "url": "https://github.com/MChartier/calibrate-health/pull/402#pullrequestreview-5402605506",
+      "bodySha256": "a521942576cbf8abde0aaddd215a48f4e4703dd2b2c30c01b5c46d97a87ad130",
+      "updatedAt": "2026-10-03T20:29:16Z",
+      "disposition": "Historical original402 review; actionable directory-lock finding4174731711 was fixed in current head and independently validated.",
+      "blocking": false
+    },
+    {
+      "location": "inline402",
+      "id": 4174731711,
+      "url": "https://github.com/MChartier/calibrate-health/pull/402#discussion_r4174731711",
+      "bodySha256": "2ddf8b192c5b3ed99f85ccb889f8560c07af5179a05bc7979b1f725e91e0d057",
+      "updatedAt": "2026-10-03T20:29:16Z",
+      "disposition": "Resolved in ce8543483db55800034e6ed2622eeb4b9ac7f3b6: directory reads execute outside the exclusive ownership transaction, with fresh authorization before/after. Existing independently inspected cross-connection PostgreSQL execution proves nonblocking reads and mid-scan revocation. Original thread remains untouched.",
+      "blocking": false
+    },
+    {
+      "location": "issue405-amendment",
+      "id": 6041659686,
+      "url": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6041659686",
+      "bodySha256": "c821f39f0892512600f7547fc610f0565c15dcbd5dd9d2c99c59152c351e860b",
+      "updatedAt": "2026-10-07T15:58:13Z",
+      "disposition": "Applied exactly to PR439 native-device review-readiness checks. Four named device flows remain unexecuted; this does not waive source, CI, review, browser pixels/provenance or authorize merge/release/deployment.",
+      "blocking": false
+    }
+  ],
+  "unresolvedActionableFindings": []
+}

@@ -1,0 +1,14 @@
+{
+  "checkedAtUtc": "2026-10-07T18:17:12.600Z",
+  "nativeClosingIssueReferences": [
+    438
+  ],
+  "projectAssociations": [
+    {
+      "project": "Agentic development pipeline",
+      "number": 1,
+      "currentPr": "Current draft successor: https://github.com/MChartier/calibrate-health/pull/439 . Original PR402 remains open; replacement not certified."
+    }
+  ],
+  "projectWrites": false
+}

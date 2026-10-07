@@ -1,0 +1,9 @@
+{
+  "checkedAtUtc": "2026-10-07T18:19:46.035Z",
+  "currentGateConsistency": true,
+  "historicalRecordsReferencesOnly": true,
+  "explicitUnexecutedNativeFlows": 4,
+  "policyScope": "review readiness only",
+  "encodingCorrectionPreserved": true,
+  "readinessControlsNotMutated": true
+}

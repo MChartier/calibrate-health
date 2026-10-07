@@ -1,0 +1,667 @@
+{
+  "checkedAtUtc": "2026-10-07T18:13:15.900Z",
+  "repository": "MChartier/calibrate-health",
+  "headRef": "mchartier/self-hosting-438",
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "apiBaseRef": "master",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "actualTargetRef": "master",
+  "actualTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "declaredParent": null,
+  "parentRevisions": [],
+  "parentBodySha256": [],
+  "ultimateTarget": "MChartier/calibrate-health/master",
+  "headTree": "36e1a976846914bb5abae4afa844972f8d62718d",
+  "directGitParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  ],
+  "orderedCommits": [
+    {
+      "sha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "message": "Complete managed-first hosting and persistent server administration"
+    }
+  ],
+  "files": [
+    {
+      "path": ".env.example",
+      "previousFilename": null,
+      "gitBlob": "a36424f042182af3522f8c667f168ebbee36d65c",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "scopeRationale": "Maintained operator, API or design documentation for hosting and account administration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": ".github/workflows/tests.yml",
+      "previousFilename": null,
+      "gitBlob": "9558c1fb50ad2e65d52a154e5507e9e6b26a1f87",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/package.json",
+      "previousFilename": null,
+      "gitBlob": "6062684322dd0014b8904e4637d11a1148052d82",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "scopeRationale": "Register maintained administrator recovery command",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/prisma/migrations/0042_persistent_server_roles/migration.sql",
+      "previousFilename": null,
+      "gitBlob": "bdcaeef4fb69cb70183296d861913d6f3e2bb645",
+      "status": "added",
+      "additions": 16,
+      "deletions": 0,
+      "scopeRationale": "Persistent roles and one-time bootstrap/import migration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/prisma/schema.prisma",
+      "previousFilename": null,
+      "gitBlob": "f2f462fb15aa1b5ca3ab1cb43add80dd3f758360",
+      "status": "modified",
+      "additions": 12,
+      "deletions": 0,
+      "scopeRationale": "Persistent roles and one-time bootstrap/import migration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/index.ts",
+      "previousFilename": null,
+      "gitBlob": "af9734fe0b61b04dde77c2db3b1ac1c938614c89",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "previousFilename": null,
+      "gitBlob": "d9f11cd006e5b0ca231c2f7daa137058b6241ef8",
+      "status": "modified",
+      "additions": 33,
+      "deletions": 34,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/routes/serverSettings.ts",
+      "previousFilename": null,
+      "gitBlob": "9bd473bd233b2b031e7c6334639462c2edf81a69",
+      "status": "modified",
+      "additions": 39,
+      "deletions": 6,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/routes/user.ts",
+      "previousFilename": null,
+      "gitBlob": "5c588e39a4b5d24217347aa89a7a7c31d3ab1497",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/scripts/grantServerAdmin.ts",
+      "previousFilename": null,
+      "gitBlob": "765b7fb68ba804581e14c3c20a407662cf480722",
+      "status": "added",
+      "additions": 38,
+      "deletions": 0,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/services/accountLifecycle.ts",
+      "previousFilename": null,
+      "gitBlob": "44683dbd8eabe391a67fc923cc9ea9fc854ce087",
+      "status": "modified",
+      "additions": 6,
+      "deletions": 2,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/services/serverAccess.ts",
+      "previousFilename": null,
+      "gitBlob": "0fe59484392bb3543193fc4c048413fde89261b8",
+      "status": "added",
+      "additions": 197,
+      "deletions": 0,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/src/services/serverSettings.ts",
+      "previousFilename": null,
+      "gitBlob": "548fd011ee4624cb45729dbc3ae5e2f9963e1ea5",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 20,
+      "scopeRationale": "Backend identity, role, authorization, deletion and recovery product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/account-lifecycle.test.js",
+      "previousFilename": null,
+      "gitBlob": "049faa60133b691129d5ecd4578c62b18864d971",
+      "status": "modified",
+      "additions": 66,
+      "deletions": 12,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/routes-account-recovery.test.js",
+      "previousFilename": null,
+      "gitBlob": "48928d85b201e1af8c6b86eb9f537b40ba28de21",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "previousFilename": null,
+      "gitBlob": "fe711057a6d529d7673f0b199893b0d4d8a61522",
+      "status": "modified",
+      "additions": 13,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/routes-auth.test.js",
+      "previousFilename": null,
+      "gitBlob": "ac48248414a973f361c52ea01fd1ac104e55e32c",
+      "status": "modified",
+      "additions": 13,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/routes-user.test.js",
+      "previousFilename": null,
+      "gitBlob": "e4c5f84024e2aeb9c0988fa07674c3011e051ae9",
+      "status": "modified",
+      "additions": 53,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/server-access-postgres.test.js",
+      "previousFilename": null,
+      "gitBlob": "4dab0d20f0454ac3508db24a53a4649492c54a93",
+      "status": "added",
+      "additions": 147,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/server-admin-command.test.js",
+      "previousFilename": null,
+      "gitBlob": "7ac3b6d488a3bd12e2ad99bd12c87ccfc2dde176",
+      "status": "added",
+      "additions": 24,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "backend/test/server-settings.test.js",
+      "previousFilename": null,
+      "gitBlob": "17abf4b3594f23feb0ea387a68cc4ac3954d8a03",
+      "status": "modified",
+      "additions": 455,
+      "deletions": 129,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "deploy/.env.example",
+      "previousFilename": null,
+      "gitBlob": "9c310720599821a7d354cb8a6b9b5f776c11aa6e",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "scopeRationale": "Maintained operator, API or design documentation for hosting and account administration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "deploy/README.md",
+      "previousFilename": null,
+      "gitBlob": "9dc556e716e4f917ed4f5591465f2d44dfff5d25",
+      "status": "modified",
+      "additions": 58,
+      "deletions": 22,
+      "scopeRationale": "Maintained operator, API or design documentation for hosting and account administration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "docs/account-access-and-recovery.md",
+      "previousFilename": null,
+      "gitBlob": "5ff23aa1e607b1edea4c06d32cabc705a3514976",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 2,
+      "scopeRationale": "Maintained operator, API or design documentation for hosting and account administration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "docs/openapi/v1.yaml",
+      "previousFilename": null,
+      "gitBlob": "291f6f427fc28f062a0b3f94f7a9c37e6c9a124f",
+      "status": "modified",
+      "additions": 103,
+      "deletions": 3,
+      "scopeRationale": "Maintained operator, API or design documentation for hosting and account administration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "docs/visual-design.md",
+      "previousFilename": null,
+      "gitBlob": "cd6e92bfa8d8439ae0ec0e303dc364377f6a564e",
+      "status": "modified",
+      "additions": 18,
+      "deletions": 0,
+      "scopeRationale": "Maintained operator, API or design documentation for hosting and account administration",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "previousFilename": null,
+      "gitBlob": "40bd4339326d34e506b4c90d4ac1dc8719404d1c",
+      "status": "modified",
+      "additions": 15,
+      "deletions": 11,
+      "scopeRationale": "Maintained synthetic fixture and browser behavior regression",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "previousFilename": null,
+      "gitBlob": "f454412eb0c1a42ce70c1fc60e4e143ee2072b98",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "e2e/expo-web/server-admin.spec.ts",
+      "previousFilename": null,
+      "gitBlob": "980854ed9707e52790e4aa5dbfd472e62ffde8f4",
+      "status": "modified",
+      "additions": 44,
+      "deletions": 2,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "knip.json",
+      "previousFilename": null,
+      "gitBlob": "89746f0e1f12a98beb230271fbee5dc8f30011d2",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "scopeRationale": "Register maintained administrator recovery command",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/app/(auth)/login.tsx",
+      "previousFilename": null,
+      "gitBlob": "98343351da97a1e9cbf11a256410e886e7e47205",
+      "status": "modified",
+      "additions": 54,
+      "deletions": 12,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/app/(auth)/register.tsx",
+      "previousFilename": null,
+      "gitBlob": "de702b04a52f0bf306c3c3ddbc1b5b864b5ba4eb",
+      "status": "modified",
+      "additions": 62,
+      "deletions": 10,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/advanced.tsx",
+      "previousFilename": null,
+      "gitBlob": "0359446739285506c9645718b9df7f17acd0e309",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 50,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/service.tsx",
+      "previousFilename": null,
+      "gitBlob": "35296ded2f8707e0419237f6bb688560e2c4a2b8",
+      "status": "added",
+      "additions": 89,
+      "deletions": 0,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/settings.tsx",
+      "previousFilename": null,
+      "gitBlob": "ce54492019a8f75ce46202144f3ff452a6941486",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 8,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/app/forgot-password.tsx",
+      "previousFilename": null,
+      "gitBlob": "e5e0a2c5ee25f47bca839612d7c01da151656b4f",
+      "status": "modified",
+      "additions": 28,
+      "deletions": 6,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "9220f871ed011429fe7286acb7a11b5f32006847",
+      "status": "modified",
+      "additions": 58,
+      "deletions": 8,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.tsx",
+      "previousFilename": null,
+      "gitBlob": "5c0f4d6d41522d83d5963078824fa828c90412a9",
+      "status": "modified",
+      "additions": 53,
+      "deletions": 29,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "a822cfc9f4d113c15eaef13041961b8023b0dd28",
+      "status": "modified",
+      "additions": 17,
+      "deletions": 3,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "previousFilename": null,
+      "gitBlob": "568e20bad71e186a602751770efcf1deaaba0682",
+      "status": "modified",
+      "additions": 23,
+      "deletions": 10,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/auth/authScreenNavigation.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "21174aa00543e53512ba20e72283f09841ab8d27",
+      "status": "modified",
+      "additions": 73,
+      "deletions": 5,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/auth/passwordResetServer.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "67706492bd52c259b37b90cb510973106041e0c3",
+      "status": "added",
+      "additions": 55,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "01ed5cf5c64824ef32f7332c942fc26d2223378a",
+      "status": "modified",
+      "additions": 74,
+      "deletions": 113,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.tsx",
+      "previousFilename": null,
+      "gitBlob": "1ef5e3d0550fd272f099fdc39ea978d9e049d408",
+      "status": "modified",
+      "additions": 131,
+      "deletions": 171,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/errors/presentation.test.ts",
+      "previousFilename": null,
+      "gitBlob": "52c8631e9db43fe6fa78fd9683d659928aa2b975",
+      "status": "modified",
+      "additions": 10,
+      "deletions": 1,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/errors/presentation.ts",
+      "previousFilename": null,
+      "gitBlob": "4b2894a296ae62a0e9df721ab35000bd86e237af",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "previousFilename": null,
+      "gitBlob": "20fb0663f49d7bc716cc6e1867ef9d1eabadc39e",
+      "status": "modified",
+      "additions": 13,
+      "deletions": 1,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "7e42914988e4608cea92c0d238e9ee88d8859170",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 16,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/screens/ServiceSettingsScreen.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "9fb0afeeb7e8e9c3f91f7de0aea36b5a30fe6f92",
+      "status": "added",
+      "additions": 68,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerOverview.tsx",
+      "previousFilename": null,
+      "gitBlob": "f2c7a58a1284d60f5f3b13e2612f84b10a8f8b0b",
+      "status": "added",
+      "additions": 119,
+      "deletions": 0,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerSettingsScreen.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "a6fca47e1006613ebeba58dea6823c3117c8d520",
+      "status": "modified",
+      "additions": 286,
+      "deletions": 8,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerSettingsScreen.tsx",
+      "previousFilename": null,
+      "gitBlob": "f278385f522fddcbd3e98acef285b4cac13ebb99",
+      "status": "modified",
+      "additions": 65,
+      "deletions": 18,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerUserManagement.tsx",
+      "previousFilename": null,
+      "gitBlob": "b92e8854362ff626683395b9aef66258ced90131",
+      "status": "added",
+      "additions": 269,
+      "deletions": 0,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/settings/SettingsCategoryPage.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "45513ed2050b9815813f6acf23f05d383418b44c",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/settings/SettingsCategoryPage.tsx",
+      "previousFilename": null,
+      "gitBlob": "b34a11f32559e347b0c8252977eead786f8fc9f7",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/settings/SettingsHome.test.tsx",
+      "previousFilename": null,
+      "gitBlob": "07f3033bf0180f8f31dbf164bc8d41d6edc62c61",
+      "status": "modified",
+      "additions": 30,
+      "deletions": 1,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "mobile/src/settings/SettingsHome.tsx",
+      "previousFilename": null,
+      "gitBlob": "954c1627e441ff4574f8ee366f791ca0d33d819a",
+      "status": "modified",
+      "additions": 30,
+      "deletions": 1,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "packages/api-client/src/client.ts",
+      "previousFilename": null,
+      "gitBlob": "7cc5287dae23c4dfb2b3891dc23323989a864844",
+      "status": "modified",
+      "additions": 33,
+      "deletions": 2,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "packages/api-client/src/generated/v1.ts",
+      "previousFilename": null,
+      "gitBlob": "4b54ef2ef4dae67191f22be60fe85d9cb6a6c2a5",
+      "status": "modified",
+      "additions": 164,
+      "deletions": 3,
+      "scopeRationale": "Required generated API contract matching OpenAPI bytes",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "packages/api-client/src/types.ts",
+      "previousFilename": null,
+      "gitBlob": "6ad8bae8f0c80d345cef50ee8d791a387cafae90",
+      "status": "modified",
+      "additions": 24,
+      "deletions": 0,
+      "scopeRationale": "Client service selection, authorization, cancellation and administration product behavior",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "packages/api-client/test/server-settings.test.ts",
+      "previousFilename": null,
+      "gitBlob": "bcc153ecaa0c58607780ea454f9cee0f14af8102",
+      "status": "added",
+      "additions": 119,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "scripts/knip-config.test.mjs",
+      "previousFilename": null,
+      "gitBlob": "f1bad8911023e07b3c7c6dd83997f11bf431aedf",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 0,
+      "scopeRationale": "Maintained regression protection for ownership, authorization, session/server boundaries, admin UI or rollback",
+      "unchangedSinceIndependentSourceReview": true
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.mjs",
+      "previousFilename": null,
+      "gitBlob": "b2e0a542e0a6a9ce0c6771bfd00dfe8c0cc79353",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "scopeRationale": "Maintain supported rollback migration ledger",
+      "unchangedSinceIndependentSourceReview": true
+    }
+  ],
+  "totals": {
+    "commits": 1,
+    "files": 63,
+    "additions": 3360,
+    "deletions": 729
+  },
+  "assessment": "Complete published range remains the independently inspected focused issue438 implementation. No parent/sibling merges or capture/evidence churn in the product history. Required migrations/generated contracts, maintained regression coverage and operator documentation retain their original scope justification."
+}

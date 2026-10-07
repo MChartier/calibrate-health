@@ -1,0 +1,194 @@
+{
+  "checkedAtUtc": "2026-10-07T18:13:20.638Z",
+  "artifacts": [
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture.config.ts",
+      "sha256": "741d873d29e5fbc0807db66e4b32df9faba0273303eef7e86561aad6ba48fc4c",
+      "bytes": 505,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture.spec.ts",
+      "sha256": "bbafaec9f0d9765b22b3655571b1dc64a9980cabaf029e8af477997cb86b1ae5",
+      "bytes": 2746,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture-run.mjs",
+      "sha256": "26cc33bc13df595210bbd491933220a22ddf6c1cf44dce3edc38ce4ffc5f6241",
+      "bytes": 976,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-capture.json",
+      "sha256": "d9bfee6a9d334a017b51166739b865492a77fb6d2db4b04a1158f8b200a3d084",
+      "bytes": 767,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-capture.json",
+      "sha256": "56a13d5831442c9ca64db4b9662b02e792e2c10145b22719f08f61ddeb4b7941",
+      "bytes": 766,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-settings.png",
+      "sha256": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+      "bytes": 55685,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-settings.png",
+      "sha256": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+      "bytes": 63862,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-administration.png",
+      "sha256": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+      "bytes": 44861,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-administration.png",
+      "sha256": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+      "bytes": 140354,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/published-scope.json",
+      "sha256": "789b2230b5dc4e6938b49743eb73a6a3fa23e3a3a12fd1020e7807d0d5d78858",
+      "bytes": 21404,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/build-identities.json",
+      "sha256": "2dbc6124530046e0d9908d797be2899943608ed7eefc4ee7c19d0579cfc74a23",
+      "bytes": 66435,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/provenance.json",
+      "sha256": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e",
+      "bytes": 5116,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/ce8543483db55800034e6ed2622eeb4b9ac7f3b6/e2e/expo-web/fixtures.ts",
+      "sha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+      "bytes": 33511,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json",
+      "sha256": "283f23ae1b2b4db67acac3f0af47fefbb5592aff71bce2599cf330414e9de40e",
+      "bytes": 8506,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/e83d376cfb37b4927ed21bae39eb6f6453fca509/pr439-qa/verdict.json",
+      "sha256": "0793516dc62a5d5c67899fbdefafeae28d58755fbecc08e7d9ae016e867abd66",
+      "bytes": 17251,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/901623726146da075fdd49172af20f30cc5abf5c/pr439-qa/receipt.json",
+      "sha256": "53ed9afe8c566890307401c3863b44a36c9501db032c4896063038180cefe93a",
+      "bytes": 1012,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/1fe117f29d9a5b578217b963a5c685084b82894d/pr439-qa/followup-20261007/verdict.json",
+      "sha256": "ec1b69d4928975e35e92a8bf9dd44b9fc70f23abd7582a13045170b9edc13b75",
+      "bytes": 22350,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/1fe117f29d9a5b578217b963a5c685084b82894d/pr439-qa/followup-20261007/checkpoint-correction.json",
+      "sha256": "276b9df0fe1c2423e8652f85154e97a7063d35d533927b66ac0591d7bfcdc07b",
+      "bytes": 4103,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/ce52a157cd878faef077715b2dbad53d8c90864e/pr439-qa/followup-20261007/receipt.json",
+      "sha256": "759ac7f3939ea955e48a6bc57ec356c9b17b69939507c502e532df38859dc1fb",
+      "bytes": 1081,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json",
+      "sha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+      "bytes": 45450,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/bf82d9f38c8a488720ee0e97b1b2f59c97d464a6/pr439-qa/issue-rebind-20261007/verdict.json",
+      "sha256": "fba4caf12d654bad95495331c00def8e7fd7b09f0791af182170324fbe8ba992",
+      "bytes": 24777,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d998f85af8ada64cd34011ce72f51c49a2c86e5b/pr439-qa/issue-rebind-20261007/receipt.json",
+      "sha256": "527389e2cd5c2fc6732d5e75def72d6d87e358ca4b8af1a905b04625d66346ab",
+      "bytes": 1212,
+      "verified": true
+    }
+  ],
+  "ownerArtifacts": [
+    {
+      "name": "owner-handoff.json",
+      "commitSha": "5a0e855ae28d74ce70e365006821e19588ed8499",
+      "path": "native-deferral-result-20261007/handoff.json",
+      "sha256": "b3185cd6f69f5a49574a1d87f31d59ac04143ae54932eeb7cb5681188ebda976",
+      "gitBlob": "aad4ce0395babed94f8d7e509013ae13cc13c85c",
+      "bytes": 9516,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/5a0e855ae28d74ce70e365006821e19588ed8499/native-deferral-result-20261007/handoff.json",
+      "publicAccess": true
+    },
+    {
+      "name": "owner-originals.json",
+      "commitSha": "463626255783a028f7a8e590c1c97758de05f83f",
+      "path": "native-deferral-originals-20261007/originals.json",
+      "sha256": "04cecbaf7a96331c6e7344fb52f07d1fa34bca0aabafc57ac99c386451f5b79e",
+      "gitBlob": "91db046257866187377f44de5ed96a12d1e552be",
+      "bytes": 4343,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/originals.json",
+      "publicAccess": true
+    }
+  ],
+  "retainedDescriptionFiles": [
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/issue438-before.md",
+      "sha256": "972d89cb9a1b911e54e30a9979175e8e77a9571b50c86d922878cc4bc920865e",
+      "bytes": 3823,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/originals.json",
+      "sha256": "04cecbaf7a96331c6e7344fb52f07d1fa34bca0aabafc57ac99c386451f5b79e",
+      "bytes": 4343,
+      "verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/pr439-before.md",
+      "sha256": "50ce47c1c3b0c9bbf34fdf49a13e06a9d6468fee751793983228a979fa39228a",
+      "bytes": 4812,
+      "verified": true
+    }
+  ],
+  "retentionRefs": [
+    {
+      "ref": "refs/heads/evidence/pr402-original-a341dcf2",
+      "sha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5"
+    },
+    {
+      "ref": "refs/heads/evidence/pr402-capture-build-7da08240",
+      "sha": "7da082409f7a903133e84f53576b656b4c965dd7"
+    },
+    {
+      "ref": "refs/heads/evidence/pr402-recovery-record-20261007",
+      "sha": "a928a96f3bbeeec5ca722baf03f0e69df205bef0"
+    }
+  ],
+  "historicalRecordsAreReferencesOnly": true
+}
