@@ -49,7 +49,7 @@
       "id": 112599696262,
       "conclusion": "skipped",
       "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
-      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package or device-client source changed; affected API and browser behavior independently exercised."
     },
     {
       "name": "Wear Release Emulator Smoke",
@@ -57,7 +57,7 @@
       "id": 112599696081,
       "conclusion": "skipped",
       "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
-      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package or device-client source changed; affected API and browser behavior independently exercised."
     },
     {
       "name": "iOS Build",
@@ -73,7 +73,7 @@
       "id": 112599695594,
       "conclusion": "skipped",
       "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
-      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package or device-client source changed; affected API and browser behavior independently exercised."
     },
     {
       "name": "Six-State Data-Backed Route Acceptance",
@@ -81,7 +81,7 @@
       "id": 112599695514,
       "conclusion": "skipped",
       "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
-      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package or device-client source changed; affected API and browser behavior independently exercised."
     },
     {
       "name": "Wear Build and JVM Tests",
@@ -97,7 +97,7 @@
       "id": 112599695424,
       "conclusion": "skipped",
       "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
-      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package or device-client source changed; affected API and browser behavior independently exercised."
     },
     {
       "name": "UX Accessibility and Visual Regression",
@@ -105,7 +105,7 @@
       "id": 112599695414,
       "conclusion": "skipped",
       "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
-      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package or device-client source changed; affected API and browser behavior independently exercised."
     },
     {
       "name": "Mobile Build",
