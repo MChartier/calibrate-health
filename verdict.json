@@ -1,0 +1,357 @@
+{
+  "schemaVersion": 1,
+  "verdict": "changes-required",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "standardsOverrideCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "amendments": [
+    "5984018358",
+    "5987999201",
+    "5997739454",
+    "6002971212",
+    "6006523068",
+    "6008280372",
+    "6008834896",
+    "6020948896",
+    "6021105604",
+    "6021281028",
+    "6022754087",
+    "6026521080"
+  ],
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/441",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/440",
+  "reviewerChat": "01a1128e-30ca-76da-bdf8-6e588e957030",
+  "supersedesVerdictCommentId": null,
+  "checkedAtUtc": "2026-10-07T05:41:08.740Z",
+  "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "prBodySha256": "7e28879c0f21b5b63edc2fdf600ec3e7aa39a4652edfd7549608f3844a41d539",
+  "issueBodySha256": "90b694aba7ec092140cd0d5cdd50bf268a058ed06cf4306709d2b8437dd051af",
+  "actualTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  },
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateTarget": "master",
+  "environment": {
+    "host": "MCHARTIER_ZBOOK",
+    "node": "v24.19.0",
+    "checkout": "isolated task-6/review clone; detached exact candidate; clean; no shared service/ports started"
+  },
+  "gates": {
+    "value": "pass: useful authorized recovery of original PR401 simplification on current master",
+    "outcome": "pass: five server choices preserve cut/resume/image-only capabilities; native release and skip-build preserve worker sequencing and revalidation",
+    "code": "pass: all30files and sole commit inspected; no actionable code findings. All nine declared critical unchanged blobs independently matched base. No audit gates restored.",
+    "engineeringReview": "pass: independent full current review complete; bot6031504125 quota-only refusal under explicit amendment, no completed bot review claimed. Full current issue/PR401/PR441 comments,reviews,inline feedback read; no unaddressed human request.",
+    "ci": "pass: five exact-head workflows successful,10successfuljobs14justified scope/platform/manual skips. Linux publisher-shell cases passed; two shallow-history and oneWindows-only skips are complemented by retained local passing tests.",
+    "behavior": "pass:117focused maintained tests independently ran,0fail0skip, covering routing,request authority/artifacts,CI failure/races,GHCR receipts, native await/failure/path isolation and retained artifacts. Reused fresh broader release/native/deploy evidence.",
+    "evidence": "pass:10original behavior artifacts+3CI artifacts+4PR401original artifacts exact hashes matched; retained record file hashes matched. Public original raw artifacts HTTP200 with exact hashes. Existing source/capture refs unchanged.",
+    "communication": "changes-required:C1/C2. PR opening and short expected/observed behavioral table otherwise pass actual-base-to-final standard.",
+    "stack": "pass:one linear commit on actual master,no parent,30files+625/-785. No PR404/439 import or evidence churn."
+  },
+  "findings": [
+    {
+      "id": "C1",
+      "priority": "P2",
+      "location": "Issue440: Implementation plan / Implementing Codex task",
+      "observed": "The issue repeats implemented outcomes and evidence: useful port complete, fixture checks passed, five hosted workflows passed, quota refusal and QA pending. The latter status becomes stale after this assessment.",
+      "expected": "Keep the fixed issue template focused on problem, requirements, the pre-created plan and verified implementing task/PR links. Preserve outcome/CI/QA/history in already-linked immutable records or comments, not repeated in the issue.",
+      "nextAction": "Owner rewrite those two sections as concise plan/task reference only, preserving requirements and links. Do not erase historical comments/evidence."
+    },
+    {
+      "id": "C2",
+      "priority": "P2",
+      "location": "PR441 Supporting checks and limitations",
+      "observed": "Final description includes independent QA remains pending, which becomes stale when this verdict is published.",
+      "expected": "Remove the operational pending clause; retain the honest quota-refusal evidence link and concise behavioral checks. Put QA status in append-only comments.",
+      "nextAction": "Owner body-only correction and same-QA final issue/PR reread; no code/suite rerun needed if source/base/evidence unchanged."
+    }
+  ],
+  "scope": {
+    "commits": [
+      {
+        "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+        ]
+      }
+    ],
+    "paths": [
+      {
+        "path": ".github/workflows/container-handler.yml",
+        "additions": 0,
+        "deletions": 121,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": ".github/workflows/container-request.yml",
+        "additions": 0,
+        "deletions": 81,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": ".github/workflows/cut-release-handler.yml",
+        "additions": 47,
+        "deletions": 8,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": ".github/workflows/cut-release-request.yml",
+        "additions": 62,
+        "deletions": 16,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": ".github/workflows/cut-release.yml",
+        "additions": 15,
+        "deletions": 15,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": ".github/workflows/publish-release-handler.yml",
+        "additions": 0,
+        "deletions": 121,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": ".github/workflows/publish-release-request.yml",
+        "additions": 0,
+        "deletions": 73,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": "AGENTS.md",
+        "additions": 16,
+        "deletions": 13,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "README.md",
+        "additions": 11,
+        "deletions": 46,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "deploy/README.md",
+        "additions": 4,
+        "deletions": 0,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "deploy/self-hosted/README.md",
+        "additions": 6,
+        "deletions": 5,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/android-internal-testing.md",
+        "additions": 1,
+        "deletions": 1,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/architecture/0002-canonical-release-manifest.md",
+        "additions": 1,
+        "deletions": 1,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/architecture/0008-explicit-server-releases.md",
+        "additions": 4,
+        "deletions": 2,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/database-rollback-rehearsal.md",
+        "additions": 1,
+        "deletions": 1,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/deployment.md",
+        "additions": 115,
+        "deletions": 0,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/mobile-release.md",
+        "additions": 51,
+        "deletions": 87,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/native-store-release.md",
+        "additions": 4,
+        "deletions": 4,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/release-acceptance.md",
+        "additions": 3,
+        "deletions": 3,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/release-compatibility.md",
+        "additions": 28,
+        "deletions": 43,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "docs/ux-regression-gates.md",
+        "additions": 1,
+        "deletions": 1,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "mobile/README.md",
+        "additions": 3,
+        "deletions": 2,
+        "category": "maintained documentation"
+      },
+      {
+        "path": "package.json",
+        "additions": 1,
+        "deletions": 1,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": "scripts/native-config.test.mjs",
+        "additions": 2,
+        "deletions": 3,
+        "category": "maintained regression tests"
+      },
+      {
+        "path": "scripts/native-internal-release.mjs",
+        "additions": 1,
+        "deletions": 2,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": "scripts/native.mjs",
+        "additions": 50,
+        "deletions": 21,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": "scripts/native.test.mjs",
+        "additions": 64,
+        "deletions": 19,
+        "category": "maintained regression tests"
+      },
+      {
+        "path": "scripts/release-request.mjs",
+        "additions": 29,
+        "deletions": 21,
+        "category": "product workflow/CLI"
+      },
+      {
+        "path": "scripts/release-request.test.mjs",
+        "additions": 67,
+        "deletions": 33,
+        "category": "maintained regression tests"
+      },
+      {
+        "path": "scripts/release-workflow-contract.test.mjs",
+        "additions": 38,
+        "deletions": 41,
+        "category": "maintained regression tests"
+      }
+    ],
+    "totals": {
+      "files": 30,
+      "additions": 625,
+      "deletions": 785
+    },
+    "criticalUnchanged": [
+      {
+        "path": "scripts/release-ci-gate.mjs",
+        "baseBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e",
+        "headBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
+      },
+      {
+        "path": "scripts/release-ci-gate.test.mjs",
+        "baseBlob": "5a739a178adf706349b22a742a82ba347923fe5a",
+        "headBlob": "5a739a178adf706349b22a742a82ba347923fe5a"
+      },
+      {
+        "path": ".github/workflows/container.yml",
+        "baseBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4",
+        "headBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4"
+      },
+      {
+        "path": ".github/workflows/publish-release.yml",
+        "baseBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1",
+        "headBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1"
+      },
+      {
+        "path": "scripts/ghcr-release-policy.mjs",
+        "baseBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984",
+        "headBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984"
+      },
+      {
+        "path": "scripts/ghcr-release-receipt.mjs",
+        "baseBlob": "afdc549612071d6c3e496b8720ab27257eaee767",
+        "headBlob": "afdc549612071d6c3e496b8720ab27257eaee767"
+      },
+      {
+        "path": "scripts/native-tag-attestation.mjs",
+        "baseBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec",
+        "headBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec"
+      },
+      {
+        "path": "scripts/release-config.mjs",
+        "baseBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341",
+        "headBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341"
+      },
+      {
+        "path": ".github/release-image-attestation-trusted-workflow-shas",
+        "baseBlob": "760e82a4dd87bc383213d07193d585041d1231dd",
+        "headBlob": "760e82a4dd87bc383213d07193d585041d1231dd"
+      }
+    ],
+    "assessment": "Product workflow/CLI changes,4maintained regression test files,and maintained guides. Four redundant forms/handlers removed only after equivalent routes; no useful tests removed to game size. Cut worker changes inspected as messaging/recovery-summary variable only."
+  },
+  "replacementAssessment": {
+    "originalPR": 401,
+    "originalHead": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+    "originalProduct": "001fcaad8cdc639809db3133571f2b95cb4e5e20",
+    "status": "Useful replacement outcome complete, pending communication QA. Seven core port files independently byte-identical to original product; current-master safeguards and corrected recovery guidance retained. Original2commit34file scope excluded only4historical screenshot/provenance files from product history. Source/evidence refs and original branch preserved; PR401 remains open. Coordinator must reverify dependencies/owner state before closure; QA performed no closure."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "representativeCoverage": "Non-UI CLI/workflow/doc contract",
+    "pairs": [],
+    "provenanceRecords": [],
+    "nonUiObservableContract": "Actual baseline/final source imports with synthetic request routing and injected native workers. Existing maintained cases establish rejection, build-await-before-submit, skip-build revalidation, scoped credentials and immutable recovery. Historical document screenshots are preservation evidence only, not current behavior or device proof.",
+    "renderedPrInspection": {
+      "url": "https://github.com/MChartier/calibrate-health/pull/441",
+      "checkedAtUtc": null,
+      "observations": "No actual PR-page screenshot rendering claimed; general waiver acknowledged, non-UI contract appropriate."
+    }
+  },
+  "evidence": [
+    "https://github.com/MChartier/calibrate-health/blob/aead6ffa9e6a6002c4195f9ef440511238cba6d9/issue440-evidence/README.md",
+    "https://github.com/MChartier/calibrate-health/blob/fa378d82eb524b33ada2de4291eb34bc8d312be5/issue440-evidence/CI.md",
+    "https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md"
+  ],
+  "ciRunIds": [
+    37575683447,
+    37575683395,
+    37575683509,
+    37575683376,
+    37575683422
+  ],
+  "feedbackDispositions": "All issue440/PR441/originalPR401 current conversation/review/inline pages read. Implementation/assignment claims treated as claims and verified. No human change-request finding remains; new QA C1/C2 require correction.",
+  "limitations": [
+    "No operator release,store submission,signing,upload,provider setup,deploy,merge,protection,credential or readiness/draft mutation.",
+    "QA did not repeat expensive complete CI;117critical fixture tests executed; wider fresh source-bound local/hosted suites reused.",
+    "Polling/merge remains non-atomic as already documented; inherited434 contract unchanged. Human workflow approval may still be required.",
+    "PR401 stays open pending coordinator replacement/owner/dependency decision.",
+    "Metadata-only corrections need affected communication/feedback/identity reread, not unrelated suite reruns."
+  ],
+  "nextAction": "Route C1/C2 to same implementation owner via coordinator. Preserve current code/evidence. Same QA rebind final descriptions and live feedback; coordinator alone handles readiness/draft/Project and eventual401 lifecycle."
+}

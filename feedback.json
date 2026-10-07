@@ -1,0 +1,61 @@
+{
+  "issues/440/comments?per_page=100": [
+    {
+      "id": 6031309241,
+      "body": "Pre-dispatch claim for this single recovery outcome: proposed sole native continuation owner is verified task `01a114af-c6d1-705c-ade9-39553731d038`. **Implementation is not started**; `mchartier/release-entrypoints-recovery` is only a proposed branch. Coordinator admission/dispatch and a fresh base/ownership check must precede code work.\n\nThe original cloud owner's idle handoff and PR #401 branch remain preserved. Current master is `4cbcbc74`; current original head is `0f53ed82`. [Immutable plan, exact source/evidence refs, ownership and no-expiry retention](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md) were read back and verified, including all original image bytes. Coordinate shared documentation with #439/#404; import neither branch. Keep #434's CI gate and historical image-receipt callers intact.\n\nThis claim authorizes no product port, replacement PR, closure, merge, release/build/upload/provider action or workflow execution. Fixed execution/review pins and live amendments remain unchanged.",
+      "bodySha256": "5ebb7809a400ab4c5ff643439908d34ad50659280bede0eae98d4cf7b65bc3d8",
+      "updatedAt": "2026-10-07T05:04:12Z",
+      "author": "MChartier"
+    },
+    {
+      "id": 6031358833,
+      "body": "Execution checkpoint: coordinator accepted intake and claim 6031309241 and dispatched the existing native owner, task `01a114af-c6d1-705c-ade9-39553731d038`. Actual designated host and master `4cbcbc74` were reverified; isolated branch `mchartier/release-entrypoints-recovery` is created. This supersedes only the prior claim's scoping-only execution status.\n\nOriginal #401 and all three retention refs remain unchanged. The #439 owner independently reports idle/unchanged; its deploy README edits concern server administration, separate from this publishing-guide link. #404 remains untouched; its README index/package-alias edits were inspected read-only. No stack/restructure is needed. Porting and fixture/mock validation begin under the existing CI, receipt, credential and manual-publication contracts. No real release, signing, upload or deployment will run.",
+      "bodySha256": "30075c02a962f33211126596582fd03e7c9d7b5735470a902b2b58f34fa79e88",
+      "updatedAt": "2026-10-07T05:08:50Z",
+      "author": "MChartier"
+    },
+    {
+      "id": 6031572461,
+      "body": "Implementation complete in draft [PR #441](https://github.com/MChartier/calibrate-health/pull/441) at `0c26cea12e3ecdbc962eebaeb140af35f54ab95a`, base `4cbcbc740fbe5fa5646b4de31951c79a653176d5`. One published commit, 30 files, +625/-785; all are product workflows/CLI, maintained tests or maintained guides. Exact CI/receipt/native isolation contracts are preserved; no operator release, signing, native package build, upload or deployment ran; hosted CI performed its authorized builds/smoke checks.\n\n[Source-bound behavior, logs and full scope](https://github.com/MChartier/calibrate-health/blob/aead6ffa9e6a6002c4195f9ef440511238cba6d9/issue440-evidence/README.md) and [final CI/review evidence](https://github.com/MChartier/calibrate-health/blob/fa378d82eb524b33ada2de4291eb34bc8d312be5/issue440-evidence/CI.md) are verified on nonmerged refs. All five hosted workflows passed. The configured review produced only the documented quota refusal; independent QA remains required. Final PR body SHA-256: `7e28879c0f21b5b63edc2fdf600ec3e7aa39a4652edfd7549608f3844a41d539`.\n\nNative issue association and Project Current PRs were read back as #441. The Project's older Queued/Blocked by fields remain coordinator-owned and need reconciliation to this checkpoint. Original #401 remains open, branch and original source/evidence refs unchanged; #404/#439 were not adopted. Owner task `01a114af-c6d1-705c-ade9-39553731d038` is stopped from writing and available for review fixes. No readiness, draft-to-ready transition or closure was applied.",
+      "bodySha256": "426f9402fe8d8a79272a5203be3910a6b787ec60a224cc08a8f1de917a9ebab5",
+      "updatedAt": "2026-10-07T05:26:13Z",
+      "author": "MChartier"
+    }
+  ],
+  "issues/441/comments?per_page=100": [
+    {
+      "id": 6031502531,
+      "body": "@codex review",
+      "bodySha256": "7750379659fbba413136c8bf4f500a59f1e03f0c36c0ab16b0a2475eb13ecb1a",
+      "updatedAt": "2026-10-07T05:19:19Z",
+      "author": "MChartier"
+    },
+    {
+      "id": 6031504125,
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "bodySha256": "e39b189a2ed6388c9d919876a2893ca0216a023301e11d788df190b4366991b9",
+      "updatedAt": "2026-10-07T05:19:26Z",
+      "author": "chatgpt-codex-connector[bot]"
+    },
+    {
+      "id": 6031670755,
+      "body": "Independent QA assignment is next after the completed self-hosting assessment. The existing release-process reviewer will assess this exact focused successor against current master, including preservation of PR434’s CI gates, historical recovery receipt identities, native credential-stage isolation and complete published scope. PR401 remains open until replacement/evidence/dependency checks are complete; no real release execution is part of this assessment.",
+      "bodySha256": "0cbe457bf4d7b64d5426f70c5521f39d380a109a1cbb37e3da8b9bfc45db0dd3",
+      "updatedAt": "2026-10-07T05:33:29Z",
+      "author": "MChartier"
+    }
+  ],
+  "pulls/441/reviews?per_page=100": [],
+  "pulls/441/comments?per_page=100": [],
+  "issues/401/comments?per_page=100": [
+    {
+      "id": 6031123360,
+      "body": "Read-only recovery-assessment claim: the original implementation owner has confirmed an idle handoff at 0f53ed8239633c34d03b7f41afccfee2b8cd7b13 with preserved source and documentation evidence. A designated-ZBook assessment will compare the complete published history and original release-cleanup outcome against actual master and merged PR434, distinguishing already-landed work from any valuable remainder. No branch adoption, code edits, release execution or closure is authorized by this assessment.",
+      "bodySha256": "9e2738c39997c10b01128d01fd170680d9751a62d72f5f64f28e97ef89f0d49f",
+      "updatedAt": "2026-10-07T04:46:35Z",
+      "author": "MChartier"
+    }
+  ],
+  "pulls/401/reviews?per_page=100": [],
+  "pulls/401/comments?per_page=100": []
+}
