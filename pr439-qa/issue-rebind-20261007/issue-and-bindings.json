@@ -1,0 +1,428 @@
+{
+  "checkedAtUtc": "2026-10-07T06:12:04.907Z",
+  "sourcePrBodyScopeCiAndRelatedRefsUnchanged": true,
+  "oldIssueSha256": "c5b8fc3b01f427b5653459ca3b479f6ae06d714310972e4e2737e3e7bfcaa918",
+  "newIssueSha256": "972d89cb9a1b911e54e30a9979175e8e77a9571b50c86d922878cc4bc920865e",
+  "issueUpdatedAt": "2026-10-07T05:57:33Z",
+  "sections": [
+    {
+      "name": "Problem",
+      "unchanged": true,
+      "onlyRemovedExpectedStatus": null
+    },
+    {
+      "name": "Requirements and acceptance",
+      "unchanged": true,
+      "onlyRemovedExpectedStatus": null
+    },
+    {
+      "name": "Implementation plan",
+      "unchanged": false,
+      "onlyRemovedExpectedStatus": true
+    },
+    {
+      "name": "Implementing Codex task",
+      "unchanged": true,
+      "onlyRemovedExpectedStatus": null
+    },
+    {
+      "name": "Implementing PR",
+      "unchanged": true,
+      "onlyRemovedExpectedStatus": null
+    }
+  ],
+  "exactlyFiveFixedSections": true,
+  "onlyChange": "Removed exactly the stale operational status tail from Implementation plan. Requirements, plan instructions, owner identity, all links and final newline are unchanged.",
+  "allLinksUnchanged": true,
+  "links": [
+    "https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/recovery-plan.md",
+    "https://github.com/MChartier/agentic-development-workflow/blob/e7c61c50d8be01437c15e0c3cfcd3fa683e81571/runtime-next-scope/pr402-owner-handoff.json",
+    "https://github.com/MChartier/calibrate-health/pull/439",
+    "https://github.com/MChartier/calibrate-health/pull/402"
+  ],
+  "historicalOriginal": {
+    "commentId": 6031957383,
+    "fullCommentBodySha256": "00ffe8c0d2f0d914cfaea419ce81af4eca1edd00a94b5c7433ca601d760db315",
+    "updatedAt": "2026-10-07T05:57:31Z",
+    "extractedBodySha256": "c5b8fc3b01f427b5653459ca3b479f6ae06d714310972e4e2737e3e7bfcaa918",
+    "exactMatch": true
+  },
+  "feedback": [
+    {
+      "kind": "comments402",
+      "records": [
+        {
+          "id": 5973146186,
+          "body": "<!-- codex-pull-request-review-summary -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-03T20:29:18.915853Z\">2026-10-03T20:29:18.915853Z</relative-time> | `a341dcf` | Draft marked ready |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+          "bodySha256": "3a70dc58cca1eb85359a8180380513159754c8a3aa6c8c3ce36af7e1fb656103",
+          "updatedAt": "2026-10-03T20:29:19Z"
+        },
+        {
+          "id": 6030179516,
+          "body": "Pre-dispatch recovery-planning claim (2026-10-07T03:17:45.309269+00:00). The original cloud collaboration owner `/root/improve_self_hosting_experience` supplied a verified complete idle handoff: no active children or writes. Original head `a341dcf2e736c8207c7e9296c1c7a8f67cf012f5`, tree `8a2ca5dcba729164f1ca851c6e1a6864a70b13bd`, original base `014f19669cbe4b62cb9b98514830d7874660e994`. No native UUID existed for that cloud owner. A new native MCHARTIER_ZBOOK continuation task ID is pending coordinator creation; this comment is not an execution claim.\n\nBounded next scope is read-only: assess actual master (currently `4cbcbc740fbe5fa5646b4de31951c79a653176d5`), the full published history and merge diff, every conversation/review/inline finding, conflicts, original behavioral evidence and retention requirements. Independently assess directory-lock finding `discussion_r4174731711` and overlap with issue421 / PR431 / PR437 before proposing exact fixes, base and validation. Return a concrete recovery plan; do not edit this PR or any source branch yet.\n\nPreserve the existing branch and all original source/evidence identities. The 14 unedited Chromium captures and provenance under `docs/pr-screenshots/self-hosting/` were captured from `df7e610812408e59a1e340dd8f32ab94fe4b4289`; the final head adds evidence only. Before any eventual merge-diff cleanup, retain and verify accessible commit-addressed originals, manifests, fixtures/harness identities and an explicit owner/purpose/retention record on a non-merged evidence ref. Assess a focused replacement only if justified; do not create it, force-push, erase history or assume full issue closure.\n\nThe coordinator will map the original cloud-owner handoff to the new native task and keep the original owner informed. No takeover of an active writer, implementation dispatch by this metadata task, provider/security activation, credentials, release, deployment or merge is authorized by this claim.",
+          "bodySha256": "36cb078a738ccdc18fdea245face604ff3eada2ff71ff3c3e6e7252fec0fe4b7",
+          "updatedAt": "2026-10-07T03:17:43Z"
+        },
+        {
+          "id": 6030711005,
+          "body": "Draft successor [PR439](https://github.com/MChartier/calibrate-health/pull/439) implements the retained self-hosting outcome under issue438, including the directory-lock fix and reconciliation with current master. Original source and evidence remain preserved on the [retained refs](https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json). This PR remains open until the coordinator verifies replacement, dependencies and evidence. Native chooser evidence and independent review/QA are still outstanding.",
+          "bodySha256": "b2709ec105b77150f00c4ce9f8d99aedb71e6853d76172470fb888382b44a054",
+          "updatedAt": "2026-10-07T04:07:45Z"
+        }
+      ],
+      "changed": [],
+      "deletedIds": []
+    },
+    {
+      "kind": "comments438",
+      "records": [
+        {
+          "id": 6030410384,
+          "body": "Preparation complete; **implementation has not started**. Proposed native continuation owner is task `01a1145f-aae2-70e0-af56-3952f0eab012`, following the original cloud owner's explicit idle handoff. This is a pre-dispatch claim for coordinator admission, not an active branch-writing assignment.\n\n[Concrete successor plan](https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/recovery-plan.md) · [Exact original retention record](https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json). The original source/build commits, all fourteen PNGs and their manifests, and the byte-identical CI archive are retained on nonmerged refs with no automatic expiry. Public reviewer access and hashes were verified. These remain historical After-only web captures.\n\nThe proposed successor starts from reverified master, fixes the directory-lock finding and seven conflicts, and preserves maintained tests plus current offline/session behavior. The421 owner confirmed no overlooked dependency; PR431/437 remain idle and unchanged. No product branch or replacement PR was created, and PR402 remains open. Coordinator assignment and independent validation/QA are the next gates.\n",
+          "bodySha256": "9f24bf3a42a0e2b6517d1fb47b9d6b8a5201f70b18b8ff199edbe478e795c4ef",
+          "updatedAt": "2026-10-07T03:39:48Z"
+        },
+        {
+          "id": 6031957383,
+          "body": "Historical issue-description snapshot, preserved before removing operational status prose. This is a record of the prior wording, not the current review status. Original issue updated_at: `2026-10-07T04:09:48Z`; original UTF-8 SHA256: `c5b8fc3b01f427b5653459ca3b479f6ae06d714310972e4e2737e3e7bfcaa918`.\n\n<details>\n<summary>Exact previous issue438 description</summary>\n\n<!-- issue438-original-body-begin -->\n## Problem\n\nNative users need a deliberate service choice that keeps credentials and recovery on the intended server. Self-hosted operators currently rely on environment-based administrator grants and need durable user-role management, safe first-owner setup and recovery. PR402 contains unmerged improvements, including a directory scan that holds the ownership lock and can block other account operations.\n\n## Requirements and acceptance\n\n- Preserve managed hosting as the default. Make native self-hosted selection explicit, tested and cancelable; failed/canceled selection preserves the current destination. Confirming a different service clears entered credentials and consent. Browser authentication and recovery remain on the serving origin.\n- Separate Service & hosting from app diagnostics. Explain account/service boundaries and prevent switching while offline changes are unresolved or their state is unknown.\n- Provide a bounded administrator directory containing only account ID, email, role, creation time and verification status. Require explicit role-change confirmation, fresh verified-admin authorization and last-verified-admin protection for demotion and deletion. Directory reads must not hold the exclusive ownership lock.\n- Atomically grant exactly one first-account owner only on a genuinely new self-hosted database; never on managed hosting or a populated upgrade. Import valid existing legacy administrator IDs once, preserve an unverified owner's account after email-delivery failure, and recover only an existing verified account. Never reserve grants for future users.\n- Preserve immediate authorization and account/server isolation across logout, refresh, cancellation and late responses, including master's offline workspace and revocation behavior. Keep issue421's credential-verification and atomic native-login contracts intact.\n- Validate the database invariants with real cross-connection PostgreSQL cases, fresh/populated upgrade and rollback checks, and maintained client/API regressions. Demonstrate representative actual-base-to-final behavior with matched synthetic captures, including the native chooser. Historical After-only web images are not baseline evidence.\n\nNo provider activation, production account/access changes, credential changes, deployment or release is included. This scope follows the trusted human authorization for PR402 recovery and active backlog progression; related closed issues290/298 are context, while421/422 remain separate outcomes.\n\n## Implementation plan\n\nFollow the [retained recovery plan](https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/recovery-plan.md) for a focused successor from reverified master: preserve original evidence, selectively port useful product/tests/contracts/documentation, fix directory locking, and resolve the seven identified auth/API-client/rollback conflicts. Coordinate shared imports and test loaders with the existing421 owner; do not import or rewrite PR431/437. Keep capture archives and one-off capture machinery outside the successor's published product history. The authorized continuation is implemented in draft PR439. CI and matched browser evidence are complete. Actual native chooser evidence remains blocked by unavailable device/emulator access; independent engineering review/QA is pending.\n\n## Implementing Codex task\n\nImplementing owner: verified native task ID `01a1145f-aae2-70e0-af56-3952f0eab012` (shareable URL unavailable). This follows the original cloud owner `/root/improve_self_hosting_experience` and its [explicit idle handoff](https://github.com/MChartier/agentic-development-workflow/blob/e7c61c50d8be01437c15e0c3cfcd3fa683e81571/runtime-next-scope/pr402-owner-handoff.json).\n\n## Implementing PR\n\nActive implementing PR: [PR439](https://github.com/MChartier/calibrate-health/pull/439) (draft). Historical original: [PR402](https://github.com/MChartier/calibrate-health/pull/402), retained open until the coordinator verifies replacement, evidence and dependencies.\n<!-- issue438-original-body-end -->\n\n</details>",
+          "bodySha256": "00ffe8c0d2f0d914cfaea419ce81af4eca1edd00a94b5c7433ca601d760db315",
+          "updatedAt": "2026-10-07T05:57:31Z"
+        }
+      ],
+      "changed": [
+        {
+          "id": 6031957383,
+          "body": "Historical issue-description snapshot, preserved before removing operational status prose. This is a record of the prior wording, not the current review status. Original issue updated_at: `2026-10-07T04:09:48Z`; original UTF-8 SHA256: `c5b8fc3b01f427b5653459ca3b479f6ae06d714310972e4e2737e3e7bfcaa918`.\n\n<details>\n<summary>Exact previous issue438 description</summary>\n\n<!-- issue438-original-body-begin -->\n## Problem\n\nNative users need a deliberate service choice that keeps credentials and recovery on the intended server. Self-hosted operators currently rely on environment-based administrator grants and need durable user-role management, safe first-owner setup and recovery. PR402 contains unmerged improvements, including a directory scan that holds the ownership lock and can block other account operations.\n\n## Requirements and acceptance\n\n- Preserve managed hosting as the default. Make native self-hosted selection explicit, tested and cancelable; failed/canceled selection preserves the current destination. Confirming a different service clears entered credentials and consent. Browser authentication and recovery remain on the serving origin.\n- Separate Service & hosting from app diagnostics. Explain account/service boundaries and prevent switching while offline changes are unresolved or their state is unknown.\n- Provide a bounded administrator directory containing only account ID, email, role, creation time and verification status. Require explicit role-change confirmation, fresh verified-admin authorization and last-verified-admin protection for demotion and deletion. Directory reads must not hold the exclusive ownership lock.\n- Atomically grant exactly one first-account owner only on a genuinely new self-hosted database; never on managed hosting or a populated upgrade. Import valid existing legacy administrator IDs once, preserve an unverified owner's account after email-delivery failure, and recover only an existing verified account. Never reserve grants for future users.\n- Preserve immediate authorization and account/server isolation across logout, refresh, cancellation and late responses, including master's offline workspace and revocation behavior. Keep issue421's credential-verification and atomic native-login contracts intact.\n- Validate the database invariants with real cross-connection PostgreSQL cases, fresh/populated upgrade and rollback checks, and maintained client/API regressions. Demonstrate representative actual-base-to-final behavior with matched synthetic captures, including the native chooser. Historical After-only web images are not baseline evidence.\n\nNo provider activation, production account/access changes, credential changes, deployment or release is included. This scope follows the trusted human authorization for PR402 recovery and active backlog progression; related closed issues290/298 are context, while421/422 remain separate outcomes.\n\n## Implementation plan\n\nFollow the [retained recovery plan](https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/recovery-plan.md) for a focused successor from reverified master: preserve original evidence, selectively port useful product/tests/contracts/documentation, fix directory locking, and resolve the seven identified auth/API-client/rollback conflicts. Coordinate shared imports and test loaders with the existing421 owner; do not import or rewrite PR431/437. Keep capture archives and one-off capture machinery outside the successor's published product history. The authorized continuation is implemented in draft PR439. CI and matched browser evidence are complete. Actual native chooser evidence remains blocked by unavailable device/emulator access; independent engineering review/QA is pending.\n\n## Implementing Codex task\n\nImplementing owner: verified native task ID `01a1145f-aae2-70e0-af56-3952f0eab012` (shareable URL unavailable). This follows the original cloud owner `/root/improve_self_hosting_experience` and its [explicit idle handoff](https://github.com/MChartier/agentic-development-workflow/blob/e7c61c50d8be01437c15e0c3cfcd3fa683e81571/runtime-next-scope/pr402-owner-handoff.json).\n\n## Implementing PR\n\nActive implementing PR: [PR439](https://github.com/MChartier/calibrate-health/pull/439) (draft). Historical original: [PR402](https://github.com/MChartier/calibrate-health/pull/402), retained open until the coordinator verifies replacement, evidence and dependencies.\n<!-- issue438-original-body-end -->\n\n</details>",
+          "updatedAt": "2026-10-07T05:57:31Z"
+        }
+      ],
+      "deletedIds": []
+    },
+    {
+      "kind": "comments439",
+      "records": [
+        {
+          "id": 6030751935,
+          "body": "Implementation checkpoint: all 16 triggered CI checks passed, including eight real PostgreSQL ownership/concurrency scenarios; nine optional checks were skipped by existing workflow policy. Matched actual-master/final browser images and exact provenance are retained outside product history. [Verified source/scope/CI/evidence checkpoint](https://github.com/MChartier/calibrate-health/blob/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json).\n\nStill blocked from readiness: genuine native chooser evidence and independent engineering review/QA. No native waiver is assumed. PR402 and its evidence remain preserved; PR431/437 are unchanged.",
+          "bodySha256": "fba99781567242dc7dc0173ad0a62f76d3432cbb1e5929dce54c4bc1a36ff1f2",
+          "updatedAt": "2026-10-07T04:11:20Z"
+        },
+        {
+          "id": 6031323353,
+          "body": "Independent QA assignment is next after completion of the storyboard-editor review. A separate ZBook reviewer will assess the full focused successor scope, preserved PR402 evidence, current integration and real PostgreSQL concurrency results. Native chooser evidence is currently missing and will remain an explicit gate unless supported evidence or a scoped human decision resolves it. PR402 stays open and its history remains preserved until supersession checks complete.",
+          "bodySha256": "599af8ac9b2f433702c5e115203099de41082083fb57216e8c039c3bebec694e",
+          "updatedAt": "2026-10-07T05:05:32Z"
+        },
+        {
+          "id": 6031629809,
+          "body": "Independent QA: **evidence-incomplete**. The full 63-file master-to-head review found no new blocking code defect; the directory-lock fix, real PostgreSQL execution and two genuine browser pairs were verified. Independent checks passed: 133 component/backend/API tests and 4 browser scenarios.\n\nRemaining gates: actual native chooser Before/After proof is unavailable, and PR439 has no recorded current-head configured engineering review or applicable quota refusal. Browser/component checks do not replace native evidence. The coordinator should arrange those gates and return affected evidence to QA.\n\n[Immutable assessment, exact revisions, findings and evidence](https://github.com/MChartier/calibrate-health/blob/e83d376cfb37b4927ed21bae39eb6f6453fca509/pr439-qa/verdict.json). PR402 and staged PR431/437 are unchanged; no readiness or merge action was taken.",
+          "bodySha256": "c18e3942ec5a8978e55aa30ef5763b5ef33c029606686e5c169d7f89180d3891",
+          "updatedAt": "2026-10-07T05:29:50Z"
+        },
+        {
+          "id": 6031679377,
+          "body": "@codex review\n\nPlease review current head `ce8543483db55800034e6ed2622eeb4b9ac7f3b6` against master. This is the single configured engineering-review request for PR439 at this revision.",
+          "bodySha256": "fe20cf1b5836cf8634b01c453cd73e2dbfe2ed59e098fa514eec4e42d466c3e1",
+          "updatedAt": "2026-10-07T05:34:16Z"
+        },
+        {
+          "id": 6031682737,
+          "body": "<!-- codex-pull-request-review-summary -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-07T05:38:37.739889Z\">2026-10-07T05:38:37.739889Z</relative-time> | `ce85434` | Manual request |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+          "bodySha256": "63eb5fa59770ec41b85d6cd16f93f6ed1852e5272fee4bf35f52540a0a5c4e5a",
+          "updatedAt": "2026-10-07T05:38:38Z"
+        },
+        {
+          "id": 6031728424,
+          "body": "Codex Review: Didn't find any major issues. Keep them coming!\n\n**Reviewed commit:** `ce8543483d`\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+          "bodySha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf",
+          "updatedAt": "2026-10-07T05:38:36Z"
+        },
+        {
+          "id": 6031769862,
+          "body": "The single configured [review request](https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031679377) completed on the unchanged current head with [no major issues](https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031728424). Stale review wording is corrected; the [exact old/new bodies and review receipt](https://github.com/MChartier/calibrate-health/blob/1b6fcdf5fe12689c65ce3ce4bf77aabcf3e42dae/review-followup-20261007/review-and-body-receipt.json) are retained.\n\nSame-QA follow-up is needed for the final body/review gate and an [owner-checkpoint digest discrepancy](https://github.com/MChartier/calibrate-health/blob/1b6fcdf5fe12689c65ce3ce4bf77aabcf3e42dae/review-followup-20261007/checkpoint-digest-discrepancy.json) in the historical assessment. Preserve that assessment and supersede it rather than editing it. Native chooser evidence remains missing; this PR remains draft and unready.",
+          "bodySha256": "92c71d937619077d4ff21698ac8397bd7a3165d337d5c66615846dfb79d512ea",
+          "updatedAt": "2026-10-07T05:42:13Z"
+        },
+        {
+          "id": 6031898060,
+          "body": "Same-QA follow-up: **evidence-incomplete**, superseding [the earlier verdict](https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031629809). Current-head configured Codex review is complete with no major issues, and the revised PR body passes.\n\nThe checkpoint digest is corrected: the old local copy was UTF-8 decoded as code page437, with CRLF conversion and a final newline. That transformation reproduces the erroneous digest exactly; the authoritative GitHub bytes and original assessment/receipt are preserved.\n\nNative chooser proof remains missing with no applicable waiver. The owner/coordinator should also reconcile issue438's stale review-pending status line. Unchanged source, CI and browser evidence were reverified without rerunning suites or captures.\n\n[Immutable superseding assessment and correction](https://github.com/MChartier/calibrate-health/blob/1fe117f29d9a5b578217b963a5c685084b82894d/pr439-qa/followup-20261007/verdict.json). No source, readiness or draft changes.",
+          "bodySha256": "fac7bc334bf7c5ca11eb43c705aa7569ac8276d9e263a5cfe1c1e3bcdb39c546",
+          "updatedAt": "2026-10-07T05:52:31Z"
+        }
+      ],
+      "changed": [],
+      "deletedIds": []
+    },
+    {
+      "kind": "reviews402",
+      "records": [
+        {
+          "id": 5402605506,
+          "body": "\n### 💡 Codex Review\n\nHere are some automated review suggestions for this pull request.\n\n**Reviewed commit:** `a341dcf2e7`\n    \n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+          "bodySha256": "a521942576cbf8abde0aaddd215a48f4e4703dd2b2c30c01b5c46d97a87ad130"
+        }
+      ],
+      "changed": [],
+      "deletedIds": []
+    },
+    {
+      "kind": "reviews439",
+      "records": [],
+      "changed": [],
+      "deletedIds": []
+    },
+    {
+      "kind": "inline402",
+      "records": [
+        {
+          "id": 4174731711,
+          "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Move directory scans outside the exclusive ownership lock**\n\nOn a populated managed instance, every `/server-settings/users` request holds the singleton `ServerAccessState` row's exclusive `FOR UPDATE` lock for the entire directory query. The case-insensitive substring search can scan the `User` table, and registrations, role changes, feature updates, and account deletions all need the same lock, so one slow search blocks those operations and concurrent directory reads unnecessarily serialize. Keep the ownership lock limited to authorization/ownership mutations, or provide an indexed access path that does not hold this exclusive lock while listing users.\n\nAGENTS.md reference: [AGENTS.md:L257-L258](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/AGENTS.md#L257-L258)\n\nUseful? React with 👍 / 👎.",
+          "bodySha256": "2ddf8b192c5b3ed99f85ccb889f8560c07af5179a05bc7979b1f725e91e0d057",
+          "updatedAt": "2026-10-03T20:29:16Z"
+        }
+      ],
+      "changed": [],
+      "deletedIds": []
+    },
+    {
+      "kind": "inline439",
+      "records": [],
+      "changed": [],
+      "deletedIds": []
+    },
+    {
+      "kind": "threads402",
+      "records": {
+        "data": {
+          "repository": {
+            "pullRequest": {
+              "reviewThreads": {
+                "pageInfo": {
+                  "hasNextPage": false,
+                  "endCursor": "Y3Vyc29yOnYyOpK0MjAyNi0xMC0wM1QyMDoyOToxNlrOqK1hjA=="
+                },
+                "nodes": [
+                  {
+                    "id": "PRRT_kwDOQbBgUs6orWGM",
+                    "isResolved": false,
+                    "isOutdated": false,
+                    "comments": {
+                      "pageInfo": {
+                        "hasNextPage": false,
+                        "endCursor": "Y3Vyc29yOnYyOpK0MjAyNi0xMC0wM1QyMDoyOToxNlrO-NVZvw=="
+                      },
+                      "nodes": [
+                        {
+                          "databaseId": 4174731711,
+                          "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Move directory scans outside the exclusive ownership lock**\n\nOn a populated managed instance, every `/server-settings/users` request holds the singleton `ServerAccessState` row's exclusive `FOR UPDATE` lock for the entire directory query. The case-insensitive substring search can scan the `User` table, and registrations, role changes, feature updates, and account deletions all need the same lock, so one slow search blocks those operations and concurrent directory reads unnecessarily serialize. Keep the ownership lock limited to authorization/ownership mutations, or provide an indexed access path that does not hold this exclusive lock while listing users.\n\nAGENTS.md reference: [AGENTS.md:L257-L258](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/AGENTS.md#L257-L258)\n\nUseful? React with 👍 / 👎.",
+                          "updatedAt": "2026-10-03T20:29:16Z",
+                          "url": "https://github.com/MChartier/calibrate-health/pull/402#discussion_r4174731711"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "closingIssuesReferences": {
+                "nodes": []
+              }
+            }
+          }
+        }
+      },
+      "changed": false,
+      "deletedIds": []
+    },
+    {
+      "kind": "threads439",
+      "records": {
+        "data": {
+          "repository": {
+            "pullRequest": {
+              "reviewThreads": {
+                "pageInfo": {
+                  "hasNextPage": false,
+                  "endCursor": null
+                },
+                "nodes": []
+              },
+              "closingIssuesReferences": {
+                "nodes": [
+                  {
+                    "number": 438
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "changed": false,
+      "deletedIds": []
+    }
+  ],
+  "commentChecks": [
+    {
+      "id": 6031898060,
+      "sha256": "fac7bc334bf7c5ca11eb43c705aa7569ac8276d9e263a5cfe1c1e3bcdb39c546",
+      "updatedAt": "2026-10-07T05:52:31Z",
+      "matches": true
+    },
+    {
+      "id": 6031629809,
+      "sha256": "c18e3942ec5a8978e55aa30ef5763b5ef33c029606686e5c169d7f89180d3891",
+      "updatedAt": "2026-10-07T05:29:50Z",
+      "matches": true
+    },
+    {
+      "id": 6031728424,
+      "sha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf",
+      "updatedAt": "2026-10-07T05:38:36Z",
+      "matches": true
+    }
+  ],
+  "evidence": [
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture.config.ts",
+      "expected": "741d873d29e5fbc0807db66e4b32df9faba0273303eef7e86561aad6ba48fc4c",
+      "actual": "741d873d29e5fbc0807db66e4b32df9faba0273303eef7e86561aad6ba48fc4c",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture.spec.ts",
+      "expected": "bbafaec9f0d9765b22b3655571b1dc64a9980cabaf029e8af477997cb86b1ae5",
+      "actual": "bbafaec9f0d9765b22b3655571b1dc64a9980cabaf029e8af477997cb86b1ae5",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture-run.mjs",
+      "expected": "26cc33bc13df595210bbd491933220a22ddf6c1cf44dce3edc38ce4ffc5f6241",
+      "actual": "26cc33bc13df595210bbd491933220a22ddf6c1cf44dce3edc38ce4ffc5f6241",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-capture.json",
+      "expected": "d9bfee6a9d334a017b51166739b865492a77fb6d2db4b04a1158f8b200a3d084",
+      "actual": "d9bfee6a9d334a017b51166739b865492a77fb6d2db4b04a1158f8b200a3d084",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-capture.json",
+      "expected": "56a13d5831442c9ca64db4b9662b02e792e2c10145b22719f08f61ddeb4b7941",
+      "actual": "56a13d5831442c9ca64db4b9662b02e792e2c10145b22719f08f61ddeb4b7941",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-settings.png",
+      "expected": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+      "actual": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-settings.png",
+      "expected": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+      "actual": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-administration.png",
+      "expected": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+      "actual": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-administration.png",
+      "expected": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+      "actual": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/published-scope.json",
+      "expected": "789b2230b5dc4e6938b49743eb73a6a3fa23e3a3a12fd1020e7807d0d5d78858",
+      "actual": "789b2230b5dc4e6938b49743eb73a6a3fa23e3a3a12fd1020e7807d0d5d78858",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/build-identities.json",
+      "expected": "2dbc6124530046e0d9908d797be2899943608ed7eefc4ee7c19d0579cfc74a23",
+      "actual": "2dbc6124530046e0d9908d797be2899943608ed7eefc4ee7c19d0579cfc74a23",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/provenance.json",
+      "expected": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e",
+      "actual": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/ce8543483db55800034e6ed2622eeb4b9ac7f3b6/e2e/expo-web/fixtures.ts",
+      "expected": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+      "actual": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json",
+      "expected": "283f23ae1b2b4db67acac3f0af47fefbb5592aff71bce2599cf330414e9de40e",
+      "actual": "283f23ae1b2b4db67acac3f0af47fefbb5592aff71bce2599cf330414e9de40e",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/e83d376cfb37b4927ed21bae39eb6f6453fca509/pr439-qa/verdict.json",
+      "expected": "0793516dc62a5d5c67899fbdefafeae28d58755fbecc08e7d9ae016e867abd66",
+      "actual": "0793516dc62a5d5c67899fbdefafeae28d58755fbecc08e7d9ae016e867abd66",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/901623726146da075fdd49172af20f30cc5abf5c/pr439-qa/receipt.json",
+      "expected": "53ed9afe8c566890307401c3863b44a36c9501db032c4896063038180cefe93a",
+      "actual": "53ed9afe8c566890307401c3863b44a36c9501db032c4896063038180cefe93a",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/1fe117f29d9a5b578217b963a5c685084b82894d/pr439-qa/followup-20261007/verdict.json",
+      "expected": "ec1b69d4928975e35e92a8bf9dd44b9fc70f23abd7582a13045170b9edc13b75",
+      "actual": "ec1b69d4928975e35e92a8bf9dd44b9fc70f23abd7582a13045170b9edc13b75",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/1fe117f29d9a5b578217b963a5c685084b82894d/pr439-qa/followup-20261007/checkpoint-correction.json",
+      "expected": "276b9df0fe1c2423e8652f85154e97a7063d35d533927b66ac0591d7bfcdc07b",
+      "actual": "276b9df0fe1c2423e8652f85154e97a7063d35d533927b66ac0591d7bfcdc07b",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/ce52a157cd878faef077715b2dbad53d8c90864e/pr439-qa/followup-20261007/receipt.json",
+      "expected": "759ac7f3939ea955e48a6bc57ec356c9b17b69939507c502e532df38859dc1fb",
+      "actual": "759ac7f3939ea955e48a6bc57ec356c9b17b69939507c502e532df38859dc1fb",
+      "matches": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json",
+      "expected": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+      "actual": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+      "matches": true
+    }
+  ],
+  "retainedRefs": [
+    {
+      "ref": "refs/heads/evidence/pr402-original-a341dcf2",
+      "sha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/evidence/pr402-capture-build-7da08240",
+      "sha": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "unchanged": true
+    },
+    {
+      "ref": "refs/heads/evidence/pr402-recovery-record-20261007",
+      "sha": "a928a96f3bbeeec5ca722baf03f0e69df205bef0",
+      "unchanged": true
+    }
+  ],
+  "limitations": [
+    "Native chooser evidence remains missing with no applicable waiver.",
+    "No tests, builds or captures repeated. Prior source/CI/test/pixel observations remain applicable to the unchanged source and verified evidence.",
+    "No protected session logs accessed; previous explicit encoding correction preserved."
+  ]
+}
