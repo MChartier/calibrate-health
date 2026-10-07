@@ -22,13 +22,13 @@
   "pullRequest": "https://github.com/MChartier/calibrate-health/pull/441",
   "issue": "https://github.com/MChartier/calibrate-health/issues/440",
   "reviewerChat": "01a1128e-30ca-76da-bdf8-6e588e957030",
-  "supersedesVerdictCommentId": 6031764310,
-  "checkedAtUtc": "2026-10-07T05:56:50.560Z",
+  "supersedesVerdictCommentId": 6031981280,
+  "checkedAtUtc": "2026-10-07T06:30:30.837Z",
   "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
   "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
   "parentRevisions": [],
   "prBodySha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30",
-  "issueBodySha256": "398c9c64339f6868ac1e82337e5f3410dd0c754538131d966240246fe1bb28a9",
+  "issueBodySha256": "a1afb81d9a1d2e144ddeff7426531cd16c92dc9464098bc75c6b220023ca10fa",
   "actualTarget": {
     "repository": "MChartier/calibrate-health",
     "ref": "master",
@@ -45,11 +45,11 @@
     "value": "pass: useful authorized recovery of original PR401 simplification on current master",
     "outcome": "pass: five server choices preserve cut/resume/image-only capabilities; native release and skip-build preserve worker sequencing and revalidation",
     "code": "pass: all30files and sole commit inspected; no actionable code findings. All nine declared critical unchanged blobs independently matched base. No audit gates restored.",
-    "engineeringReview": "pass: original independent current-code review remains applicable; full fresh conversation/reviews/inline threads checked; C1/C2 resolved, no actionable human feedback outstanding. Quota-only refusal6031504125 remains honestly disclosed.",
+    "engineeringReview": "pass: independent code review remains applicable. Bot summary6032060810 reports Completed at2026-10-07T06:08:21.231593Z for0c26cea after draft-ready trigger; full submitted reviews/inline comments/GraphQL threads empty. Earlier6031504125 is a historical quota refusal, not the completed review. No actionable feedback outstanding.",
     "ci": "pass: five exact-head workflows successful,10successfuljobs14justified scope/platform/manual skips. Linux publisher-shell cases passed; two shallow-history and oneWindows-only skips are complemented by retained local passing tests.",
     "behavior": "pass:117focused maintained tests independently ran,0fail0skip, covering routing,request authority/artifacts,CI failure/races,GHCR receipts, native await/failure/path isolation and retained artifacts. Reused fresh broader release/native/deploy evidence.",
     "evidence": "pass:10original behavior artifacts+3CI artifacts+4PR401original artifacts exact hashes matched; retained record file hashes matched. Public original raw artifacts HTTP200 with exact hashes. Existing source/capture refs unchanged.",
-    "communication": "pass: independently reread corrected issue and final PR. Fixed issue template, unchanged requirements, concise pre-created plan and real task/PR links. Final-base problem/solution and expected/observed non-UI behavior are clear; no stale pending status.",
+    "communication": "pass: complete issue and PR reread; concise five-section issue, unchanged requirements, stable current441/historical401 links. Original closure prohibition is explicitly within the pre-implementation plan authorization, not a current lifecycle claim. PR Summary and behavioral table remain accurate.",
     "stack": "pass:one linear commit on actual master,no parent,30files+625/-785. No PR404/439 import or evidence churn."
   },
   "findings": [],
@@ -302,7 +302,7 @@
     "originalPR": 401,
     "originalHead": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
     "originalProduct": "001fcaad8cdc639809db3133571f2b95cb4e5e20",
-    "status": "Replacement outcome and retention gates pass. Original branch/head and both source/evidence refs remain exact; originalPR401open. Fresh all-open-PR inventory has no PR based on mchartier/streamline-deployment. PR404/439 remain independent master-based work; no stack target needs moving. These checks support coordinator closure of superseded401 after readiness/owner reconciliation; no closure performed."
+    "status": "Original401 closed unmerged2026-10-07T06:12:59Z. Replacement comment6032144733 links441/440 and retention. Exact original head/source refs and branch retained. PR441 open nondraft without human-ready; native closing association440 verified. No lifecycle mutation performed by QA."
   },
   "uiEvidence": {
     "applicable": false,
@@ -328,7 +328,7 @@
     37575683376,
     37575683422
   ],
-  "feedbackDispositions": "Full fresh issue440/PR441/original401 comments and submitted/inline reviews read; no new human request. Metadata history6031805319 accurately preserves removed text and prior identities. C1/C2 explicitly resolved here.",
+  "feedbackDispositions": "All current issue440/PR441/PR401 comments, submitted and inline reviews read across all pages; bot completion and closure/history comments assessed. No new actionable finding.",
   "limitations": [
     "No operator release,store submission,signing,upload,provider setup,deploy,merge,protection,credential or readiness/draft mutation.",
     "QA did not repeat expensive complete CI;117critical fixture tests executed; wider fresh source-bound local/hosted suites reused.",
@@ -336,7 +336,7 @@
     "PR401 stays open pending coordinator replacement/owner/dependency decision.",
     "Metadata-only corrections need affected communication/feedback/identity reread, not unrelated suite reruns."
   ],
-  "nextAction": "Coordinator independently verifies trusted receipt and unchanged refs/body/evidence/CI/feedback, performs readiness/draft/Project transition and postread if appropriate. Verified replacement/retention/no-dependent-target findings support later401closure after owner/lifecycle reconciliation; preserve original branch/evidence. No merge/release authorization.",
+  "nextAction": "Coordinator verifies exact new trusted receipt and unchanged revision/body/evidence/feedback/CI before readiness. Project approval remains separately pending with user; do not bypass. No source/Project/readiness/lifecycle mutation or merge/release authorization.",
   "dispositions": [
     {
       "id": "C1",
@@ -347,14 +347,19 @@
       "id": "C2",
       "status": "resolved",
       "evidence": "PR441 removes pending-QA clause and points to revision-scoped discussion; actual-base Summary, behavioral scenarios, complementary-platform evidence and limitations remain accurate."
+    },
+    {
+      "id": "L1",
+      "status": "resolved",
+      "evidence": "Only Implementing PR section changed. Current441 and historical superseded401 links accurate. Exact prior issue body preserved and hash-verified in6032314538. Requirements and all preceding sections byte-identical."
     }
   ],
   "reassessment": {
-    "type": "metadata-only",
-    "sourceBaseEvidenceUnchanged": true,
+    "type": "issue-lifecycle-only",
+    "sourceBasePrBodyEvidenceUnchanged": true,
     "noSuitesRerun": true,
-    "reusedIndependentTests": "117focused tests passed in preceding assessment; unchanged source/base makes them applicable.",
-    "previousImmutableRecord": "https://github.com/MChartier/calibrate-health/blob/34a5f58833b2f2ae044425ae1e68a9fe4f3e5c3d/verdict.json",
-    "historyComment": 6031805319
+    "previousImmutableRecord": "https://github.com/MChartier/calibrate-health/blob/2755f6fa65e2f816eac2fc12ed5023ee80e176c3/verdict.json",
+    "historyComment": 6032314538,
+    "priorReceiptVerified": true
   }
 }
