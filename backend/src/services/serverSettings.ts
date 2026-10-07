@@ -8,23 +8,4 @@ export async function getServerFeatures() {
   return { nutrition_label_scanning: settings?.nutrition_label_scanning_enabled ?? false };
 }
 
-export async function updateServerFeatures(nutritionLabelScanning: boolean) {
-  const settings = await prisma.serverSettings.upsert({
-    where: { id: SERVER_SETTINGS_ID },
-    create: { id: SERVER_SETTINGS_ID, nutrition_label_scanning_enabled: nutritionLabelScanning },
-    update: { nutrition_label_scanning_enabled: nutritionLabelScanning }
-  });
-  return { nutrition_label_scanning: settings.nutrition_label_scanning_enabled };
-}
-
-export async function isServerAdmin(userId: number): Promise<boolean> {
-  // Operators bind grants to existing accounts; disabled email delivery can auto-verify emails.
-  const allowedUserIds = new Set((process.env.ADMIN_USER_IDS ?? '').split(',')
-    .map((id) => id.trim()).filter((id) => /^[1-9]\d*$/.test(id)));
-  if (!allowedUserIds.has(String(userId))) return false;
-  // Recheck account existence and verification status for every request.
-  const user = await prisma.user.findUnique({
-    where: { id: userId }, select: { email_verified_at: true }
-  });
-  return Boolean(user?.email_verified_at);
-}
+export { isServerAdmin } from './serverAccess';

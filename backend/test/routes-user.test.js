@@ -2,6 +2,14 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
+class ServerAccessError extends Error {
+  constructor(status, code, message) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
 function stubModule(resolvedPath, exports) {
   const moduleInstance = new Module(resolvedPath);
   moduleInstance.exports = exports;
@@ -15,6 +23,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
   const browserSessionsPath = require.resolve('../src/services/browserSessions');
   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
+  const serverAccessPath = require.resolve('../src/services/serverAccess');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
   const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
   const caloriePlanReviewPath = require.resolve('../src/services/caloriePlanReview');
@@ -26,6 +35,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
   const previousMobileAuthModule = require.cache[mobileAuthPath];
   const previousBrowserSessionsModule = require.cache[browserSessionsPath];
   const previousAccountLifecycleModule = require.cache[accountLifecyclePath];
+  const previousServerAccessModule = require.cache[serverAccessPath];
   const previousClientOperationsModule = require.cache[clientOperationsPath];
   const previousCaloriePlanningModule = require.cache[caloriePlanningPath];
   const previousCaloriePlanReviewModule = require.cache[caloriePlanReviewPath];
@@ -54,6 +64,11 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
     }
   };
   normalizedPrismaStub.$transaction ??= async (callback) => callback(normalizedPrismaStub);
+  stubModule(serverAccessPath, {
+    ServerAccessError,
+    withServerAccessLock: async (callback) => callback(normalizedPrismaStub),
+    assertCanRemoveServerAdmin: async () => {}
+  });
   stubModule(dbPath, normalizedPrismaStub);
   stubModule(bcryptPath, bcryptStub);
   if (accountLifecycleStub) stubModule(accountLifecyclePath, accountLifecycleStub);
@@ -78,6 +93,9 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
 
   if (previousBrowserSessionsModule) require.cache[browserSessionsPath] = previousBrowserSessionsModule;
   else delete require.cache[browserSessionsPath];
+
+  if (previousServerAccessModule) require.cache[serverAccessPath] = previousServerAccessModule;
+  else delete require.cache[serverAccessPath];
 
   if (previousAccountLifecycleModule) require.cache[accountLifecyclePath] = previousAccountLifecycleModule;
   else delete require.cache[accountLifecyclePath];
@@ -509,6 +527,41 @@ test('user route: DELETE /account deletes data, destroys the request session, an
   assert.equal(sessionDestroyed, true);
   assert.deepEqual(res.clearedCookie, { name: 'cal.sid', options: { path: '/' } });
   assert.equal(res.statusCode, 204);
+});
+
+test('user route: DELETE /account returns an actionable conflict and preserves the last admin session', async () => {
+  let sessionDestroyed = false;
+  const message = 'Add another verified administrator before removing this administrator.';
+  const router = loadUserRouter({
+    prismaStub: {
+      user: { findUnique: async () => ({ password_hash: 'stored-hash' }) }
+    },
+    bcryptStub: { compare: async () => true },
+    accountLifecycleStub: {
+      deleteAccountData: async (userId) => {
+        assert.equal(userId, 7);
+        throw new ServerAccessError(409, 'LAST_ADMIN_REQUIRED', message);
+      }
+    }
+  });
+  const handler = getRouteHandler(router, 'delete', '/account');
+  const res = createRes();
+
+  await handler({
+    user: { id: 7 },
+    body: { current_password: 'correct-password' },
+    session: {
+      destroy: (callback) => {
+        sessionDestroyed = true;
+        callback();
+      }
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 409);
+  assert.deepEqual(res.body, { message, code: 'LAST_ADMIN_REQUIRED', retryable: false });
+  assert.equal(sessionDestroyed, false);
+  assert.equal(res.clearedCookie, null);
 });
 
 test('user route: PATCH /preferences validates reminder preference booleans', async () => {

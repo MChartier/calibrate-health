@@ -99,8 +99,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [pendingReconnection, setPendingReconnection] = useState(false);
     const localOnlyRef = useRef(false);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
+    const sessionEpochRef = useRef(0);
+    const [sessionEpoch, setSessionEpoch] = useState(0);
+    const advanceSessionEpoch = useCallback(() => {
+        sessionEpochRef.current += 1;
+        setSessionEpoch(sessionEpochRef.current);
+    }, []);
 
     const clearSession = useCallback(async () => {
+        // Invalidate old API callbacks synchronously, before React unmounts their callers.
+        advanceSessionEpoch();
         const scope = accountScopeRef.current;
         accountScopeRef.current = null;
         localOnlyRef.current = false;
@@ -116,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setClientServerIncompatibility(null);
         queryClient.clear();
         await Promise.all([clearStoredTokens(), draftCleanup, workspaceCleanup]);
-    }, [queryClient]);
+    }, [advanceSessionEpoch, queryClient]);
 
     const handleClientUpgradeRequired = useCallback((requirement: ClientUpgradeRequirement) => {
         // Keep credentials and offline state intact so an in-place app update can resume the same session.
@@ -127,9 +135,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: UserClientPayload;
         access_token: string;
         refresh_token: string;
-    }) => {
+    }, newSession = false) => {
         const previousScope = accountScopeRef.current;
         const nextScope = { serverUrl: serverUrlRef.current, userId: payload.user.id };
+        if (newSession || !previousScope || previousScope.serverUrl !== nextScope.serverUrl || previousScope.userId !== nextScope.userId) {
+            advanceSessionEpoch();
+        }
         accountScopeRef.current = nextScope;
         if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== serverUrlRef.current)) {
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
@@ -154,18 +165,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (accountScopeRef.current === nextScope) await saveOfflineWorkspace(nextScope.serverUrl, payload.user, queryClient).catch(() => undefined);
         return accountScopeRef.current === nextScope;
-    }, [queryClient]);
+    }, [advanceSessionEpoch, queryClient]);
 
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+        const refreshEpoch = sessionEpochRef.current;
+        const refreshServer = serverUrl || HOSTED_SERVER_URL;
+        if (serverUrlRef.current !== refreshServer) return false;
         const currentRefreshToken = refreshTokenRef.current;
         const scope = accountScopeRef.current;
-        const isCurrent = () => accountScopeRef.current === scope && refreshTokenRef.current === currentRefreshToken;
+        const isCurrent = () => sessionEpochRef.current === refreshEpoch
+            && serverUrlRef.current === refreshServer
+            && accountScopeRef.current === scope && refreshTokenRef.current === currentRefreshToken;
         if (!currentRefreshToken) return false;
 
         const refreshClient = new CalibrateApiClient({
             baseUrl: serverUrl || HOSTED_SERVER_URL,
             clientIdentity: MOBILE_CLIENT_IDENTITY,
-            onClientUpgradeRequired: handleClientUpgradeRequired
+            onClientUpgradeRequired: (requirement) => {
+                if (isCurrent()) handleClientUpgradeRequired(requirement);
+            }
         });
         try {
             const refreshed = await refreshClient.refreshMobile<MobileAuthResponse>(currentRefreshToken);
@@ -192,28 +210,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [handleClientUpgradeRequired, persistAuthPayload, serverUrl]);
 
-    const api = useMemo(
-        () =>
-            new CalibrateApiClient({
-                baseUrl: serverUrl || HOSTED_SERVER_URL,
-                clientIdentity: MOBILE_CLIENT_IDENTITY,
-                onClientUpgradeRequired: handleClientUpgradeRequired,
-                getAccessToken: () => accessTokenRef.current,
-                fetchImpl: (input, init) => {
-                    if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
-                    return globalThis.fetch(input, init);
-                },
-                refreshAccessToken,
-                onRequestError: (error) => {
-                    if (isRetryableMutationError(error)) {
-                        if (accountScopeRef.current) localOnlyRef.current = true;
-                        setPendingReconnection(true);
-                    }
-                },
-                onUnauthorized: clearSession
-            }),
-        [clearSession, handleClientUpgradeRequired, refreshAccessToken, serverUrl]
-    );
+    const api = useMemo(() => {
+        const requestServer = serverUrl || HOSTED_SERVER_URL;
+        const isCurrentSession = () => sessionEpochRef.current === sessionEpoch
+            && serverUrlRef.current === requestServer;
+        return new CalibrateApiClient({
+            baseUrl: requestServer,
+            clientIdentity: MOBILE_CLIENT_IDENTITY,
+            onClientUpgradeRequired: (requirement) => {
+                if (isCurrentSession()) handleClientUpgradeRequired(requirement);
+            },
+            getAccessToken: () => isCurrentSession() ? accessTokenRef.current : null,
+            fetchImpl: (input, init) => {
+                if (!isCurrentSession()) return Promise.reject(new Error('Authentication scope changed.'));
+                if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
+                return globalThis.fetch(input, init);
+            },
+            onRequestError: (error) => {
+                if (isCurrentSession() && isRetryableMutationError(error)) {
+                    if (accountScopeRef.current) localOnlyRef.current = true;
+                    setPendingReconnection(true);
+                }
+            },
+            refreshAccessToken: () => isCurrentSession() ? refreshAccessToken() : false,
+            onUnauthorized: () => {
+                if (isCurrentSession()) return clearSession();
+            }
+        });
+    }, [clearSession, handleClientUpgradeRequired, refreshAccessToken, serverUrl, sessionEpoch]);
 
     const getDevTestUserAuthPayload = useCallback(async (
         baseUrl: string,
@@ -473,7 +497,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!payload) return false;
             await finishExplicitLogin(serverUrlRef.current);
 
-            await persistAuthPayload(payload);
+            await persistAuthPayload(payload, true);
             return true;
         },
         [accountDeletionCleanupNotice, confirmSelectedServerUrl, deviceId, handleClientUpgradeRequired, persistAuthPayload]
@@ -520,7 +544,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!payload) return false;
             await finishExplicitLogin(serverUrlRef.current);
 
-            await persistAuthPayload(payload);
+            await persistAuthPayload(payload, true);
             return true;
         },
         [accountDeletionCleanupNotice, confirmSelectedServerUrl, deviceId, handleClientUpgradeRequired, persistAuthPayload]

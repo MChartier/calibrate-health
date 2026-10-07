@@ -10,6 +10,7 @@ import { CALIBRATE_PRODUCT_LINKS } from '@calibrate/shared/product';
 jest.mock('./AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../account/accountDeletionNotice', () => ({ accountDeletionCleanupGuidance: jest.fn(() => '') }));
 jest.mock('@expo/vector-icons/Ionicons', () => () => null);
+jest.mock('../hooks/useReducedMotionPreference', () => ({ useReducedMotionPreference: () => true }));
 jest.mock('react-native-safe-area-context', () => ({
     useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 })
 }));
@@ -73,8 +74,8 @@ describe('auth screen server navigation', () => {
     it('carries the login server draft into the registration link', () => {
         const screen = render(<LoginScreen />);
 
-        expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
-        fireEvent.press(screen.getByLabelText('Show advanced connection options'));
+        expect(screen.getByText(SELF_HOSTED_URL)).toBeTruthy();
+        fireEvent.press(screen.getByLabelText('Change service'));
         expect(screen.getByLabelText('Server URL')).toHaveProp('value', SELF_HOSTED_URL);
         expectAuthLink('/(auth)/register');
     });
@@ -82,8 +83,8 @@ describe('auth screen server navigation', () => {
     it('carries the registration server draft back to the login link', () => {
         const screen = render(<RegisterScreen />);
 
-        expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
-        fireEvent.press(screen.getByLabelText('Show advanced connection options'));
+        expect(screen.getByText(SELF_HOSTED_URL)).toBeTruthy();
+        fireEvent.press(screen.getByLabelText('Change service'));
         expect(screen.getByLabelText('Server URL')).toHaveProp('value', SELF_HOSTED_URL);
         expectAuthLink('/(auth)/login');
     });
@@ -119,6 +120,73 @@ describe('auth screen server navigation', () => {
                 acceptPrivacy: false
             });
         });
+    });
+
+    it.each([LoginScreen, RegisterScreen])('follows a server switch that finishes after auth mounts', async (ScreenComponent) => {
+        mockUseLocalSearchParams.mockReturnValue({});
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<ScreenComponent />);
+        fireEvent.changeText(screen.getByLabelText('Email'), 'old@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'old-secret');
+        auth.serverUrl = 'https://switched.example';
+        screen.rerender(<ScreenComponent />);
+        expect(screen.getByText('https://switched.example')).toBeTruthy();
+        expect(screen.getByLabelText('Email')).toHaveProp('value', '');
+        expect(screen.getByLabelText('Password')).toHaveProp('value', '');
+    });
+
+    it('clears entered credentials only after confirming another service', async () => {
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<LoginScreen />);
+        fireEvent.changeText(screen.getByLabelText('Email'), 'old@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'old-secret');
+        fireEvent.press(screen.getByText('Change service'));
+        fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://new.example');
+        fireEvent.press(screen.getByText('Cancel'));
+        expect(screen.getByLabelText('Password')).toHaveProp('value', 'old-secret');
+        fireEvent.press(screen.getByText('Change service'));
+        fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://new.example');
+        fireEvent.press(screen.getByText('Use this service'));
+        await waitFor(() => expect(screen.getByLabelText('Password')).toHaveProp('value', ''));
+        expect(screen.getByLabelText('Email')).toHaveProp('value', '');
+        expect(screen.getByText('https://new.example')).toBeTruthy();
+        expect(auth.login).not.toHaveBeenCalled();
+        // Failed authentication may persist the new host; it must not restore the old URL parameter.
+        auth.serverUrl = 'https://new.example';
+        screen.rerender(<LoginScreen />);
+        expect(screen.getByText('https://new.example')).toBeTruthy();
+    });
+
+    it('preserves typed credentials and destination when a new server cannot be confirmed', async () => {
+        const auth = authContextStub();
+        auth.testServerUrl.mockResolvedValueOnce(false);
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<LoginScreen />);
+        fireEvent.changeText(screen.getByLabelText('Password'), 'old-secret');
+        fireEvent.press(screen.getByText('Change service'));
+        fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://new.example');
+        fireEvent.press(screen.getByText('Use this service'));
+        await screen.findByText('Could not confirm this service. Check the address and connection details, then try again.');
+        fireEvent.press(screen.getByText('Cancel'));
+        expect(screen.getByLabelText('Password')).toHaveProp('value', 'old-secret');
+        expect(screen.getByText(SELF_HOSTED_URL)).toBeTruthy();
+    });
+
+    it('clears registration credentials and hosted consent after changing service', async () => {
+        const auth = authContextStub();
+        mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
+        const screen = render(<RegisterScreen />);
+        fireEvent.changeText(screen.getByLabelText('Email'), 'person@example.com');
+        fireEvent.changeText(screen.getByLabelText('Password'), 'password123');
+        fireEvent.changeText(screen.getByLabelText('Confirm password'), 'password123');
+        fireEvent.press(screen.getByText('Change service'));
+        fireEvent.press(screen.getByRole('radio', { name: 'Calibrate' }));
+        fireEvent.press(screen.getByText('Use this service'));
+        await waitFor(() => expect(screen.getByLabelText('Password')).toHaveProp('value', ''));
+        expect(screen.getByLabelText('Confirm password')).toHaveProp('value', '');
+        expect(screen.getAllByRole('checkbox').every((field) => !field.props.accessibilityState.checked)).toBe(true);
     });
 
     it('shows actionable registration credential validation', () => {
@@ -173,7 +241,7 @@ describe('auth screen server navigation', () => {
         const screen = render(<LoginScreen />);
 
         expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
-        expect(screen.queryByLabelText('Show advanced connection options')).toBeNull();
+        expect(screen.queryByLabelText('Change service')).toBeNull();
 
         fireEvent.changeText(screen.getByLabelText('Email'), 'user@example.com');
         fireEvent.changeText(screen.getByLabelText('Password'), 'secret');

@@ -16,6 +16,7 @@ import { validatePasswordCredential } from '../utils/authCredentials';
 import { revokeOtherMobileSessionsForUser } from '../services/mobileAuth';
 import { revokeOtherBrowserSessionsForUser } from '../services/browserSessions';
 import { deleteAccountData, exportAccountData } from '../services/accountLifecycle';
+import { ServerAccessError } from '../services/serverAccess';
 import { formatDateKey, getTrackingStartDate } from '../services/foodTracking';
 import {
   ClientOperationConflictError,
@@ -305,6 +306,9 @@ router.delete('/account', async (req, res) => {
     clearSessionCookie(res);
     res.status(204).send();
   } catch (error) {
+    if (error instanceof ServerAccessError) {
+      return res.status(error.status).json({ message: error.message, code: error.code, retryable: false });
+    }
     logSafeOperationalError('account.delete', error, res.locals?.requestId);
     res.status(500).json({ message: 'Server error' });
   }

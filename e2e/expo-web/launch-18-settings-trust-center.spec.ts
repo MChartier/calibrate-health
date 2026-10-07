@@ -358,7 +358,7 @@ test('settings trust center preserves hierarchy, session control, reminder truth
           'Terms of service',
           'Open-source licenses',
           'About Calibrate',
-          'Advanced settings',
+          'App diagnostics & updates',
         ],
       },
     ] as const;

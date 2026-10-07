@@ -174,6 +174,24 @@ and persistent notices must leave navigation reachable and offer dismissal when 
 Expo Router `Link asChild` merges child styles as objects. Use a flattened style object, with explicit
 hover/pressed state if needed, instead of a Pressable style callback that the slot cannot preserve.
 
+## Service and administration
+
+Managed hosting is the native client's fresh-install default. Authentication shows the chosen
+service before credentials; entering a self-hosted address is an intentional chooser with its own
+draft, connection check, and Cancel. Confirming another service clears entered credentials and legal
+choices. Testing or canceling must not change the selected service. Keep browser authentication and
+recovery bound to the serving origin; the native recovery link follows the selected sign-in service.
+
+Settings places **Service & hosting** beside the account summary. It identifies where the account
+lives and explains that switching does not transfer accounts or data. Native switching checks the new
+service before signing out and blocks while offline changes are unresolved. The browser instead
+explains how to open another trusted deployment. **App diagnostics & updates** stays under Help & app.
+
+Show **Server administration** only after fresh server authorization. Keep shared features, server
+capabilities, and user roles together, with explicit confirmation for role changes and clear recovery
+for permission failures. Never imply that server controls can read members' health records, configure
+secrets, install server updates, or manage backups when those capabilities are not supported.
+
 ## Onboarding
 
 Required setup is three steps on every platform: About you, Activity, and Your plan. Keep the compact

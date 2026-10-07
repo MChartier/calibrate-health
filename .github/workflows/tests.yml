@@ -105,6 +105,8 @@ jobs:
         run: npm run db:migrate
 
       - name: Run tests
+        env:
+          CALIBRATE_SERVER_ACCESS_TEST_DATABASE_URL: postgresql://calibrate_ci:calibrate_ci@localhost:5432/calibrate_ci?schema=public
         run: npm test
 
   mobile-tests:

@@ -18,8 +18,42 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** @description Update instance-wide feature switches. Requires an existing account explicitly approved by the operator through ADMIN_USER_IDS and a completed account verification status. */
+        /** @description Update instance-wide feature switches. Requires a verified account with a persisted administrator role. Authorization is rechecked in the mutation transaction. */
         patch: operations["updateServerSettings"];
+        trace?: never;
+    };
+    "/api/v1/server-settings/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Administrator-only account directory. Reads current persisted roles; never returns profiles, health data, passwords, or session credentials. Responses must not be cached. */
+        get: operations["getServerUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/server-settings/users/{id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Persist an existing account's role. Concurrent changes are serialized; removing an administrator requires another verified administrator. Current sessions observe the change on their next administrator request. */
+        patch: operations["updateServerUserRole"];
         trace?: never;
     };
     "/api/v1/client-config": {
@@ -1923,6 +1957,24 @@ export interface components {
             features: components["schemas"]["ServerFeatures"];
             is_admin: boolean;
         };
+        /** @enum {string} */
+        ServerUserRole: "admin" | "member";
+        ServerUser: {
+            id: number;
+            /** Format: email */
+            email: string;
+            role: components["schemas"]["ServerUserRole"];
+            /** Format: date-time */
+            created_at: string;
+            email_verified: boolean;
+        };
+        ServerUsersResponse: {
+            users: components["schemas"]["ServerUser"][];
+            next_cursor: number | null;
+        };
+        ServerUserRoleResponse: {
+            user: components["schemas"]["ServerUser"];
+        };
         NutritionLabelDraft: {
             calories_per_serving: number | null;
             serving_size_quantity: number | null;
@@ -2689,6 +2741,106 @@ export interface operations {
             };
         };
     };
+    getServerUsers: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive email substring. */
+                search?: string;
+                /** @description Last account id from the previous page. */
+                cursor?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded account page in ascending id order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerUsersResponse"];
+                };
+            };
+            /** @description Invalid search or pagination parameters. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Verified administrator access required (ADMIN_REQUIRED). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateServerUserRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    role: components["schemas"]["ServerUserRole"];
+                };
+            };
+        };
+        responses: {
+            /** @description Updated account role. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerUserRoleResponse"];
+                };
+            };
+            /** @description Invalid role or account id. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Verified administrator access required (ADMIN_REQUIRED). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Account does not exist (USER_NOT_FOUND). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another verified administrator is required (LAST_ADMIN_REQUIRED), or the target must verify its email before promotion (EMAIL_VERIFICATION_REQUIRED). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getClientConfig: {
         parameters: {
             query?: never;
@@ -3117,7 +3269,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description Hosted registration is unavailable because email delivery is not configured. */
+            /** @description Email delivery is unavailable. ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE means the account was retained; sign in and resend verification instead of registering again. EMAIL_DELIVERY_UNAVAILABLE means registration can be retried after delivery is restored. */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -3371,7 +3523,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description Hosted registration is unavailable because email delivery is not configured. */
+            /** @description Email delivery is unavailable. ACCOUNT_CREATED_EMAIL_DELIVERY_UNAVAILABLE means the account was retained; sign in and resend verification instead of registering again. EMAIL_DELIVERY_UNAVAILABLE means registration can be retried after delivery is restored. */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -4790,6 +4942,15 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /** @description Another verified administrator must be added before deleting an administrator account (LAST_ADMIN_REQUIRED). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
 }

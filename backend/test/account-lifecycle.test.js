@@ -9,16 +9,28 @@ function stubModule(resolvedPath, exports) {
   require.cache[resolvedPath] = moduleInstance;
 }
 
-function loadAccountLifecycle(prismaStub) {
-  const dbPath = require.resolve('../src/config/database');
-  const servicePath = require.resolve('../src/services/accountLifecycle');
-  const previousDbModule = require.cache[dbPath];
-  delete require.cache[servicePath];
-  stubModule(dbPath, prismaStub);
-  const loaded = require('../src/services/accountLifecycle');
-  if (previousDbModule) require.cache[dbPath] = previousDbModule;
-  else delete require.cache[dbPath];
-  return loaded;
+function loadAccountLifecycle(prismaStub, serverAccessOverrides = {}) {
+  const paths = {
+    database: require.resolve('../src/config/database'),
+    serverAccess: require.resolve('../src/services/serverAccess'),
+    lifecycle: require.resolve('../src/services/accountLifecycle')
+  };
+  const previous = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, require.cache[path]]));
+  delete require.cache[paths.lifecycle];
+  stubModule(paths.database, prismaStub);
+  stubModule(paths.serverAccess, {
+    withServerAccessLock: async (callback) => callback(prismaStub),
+    assertCanRemoveServerAdmin: async () => {},
+    ...serverAccessOverrides
+  });
+  try {
+    return require('../src/services/accountLifecycle');
+  } finally {
+    for (const [key, path] of Object.entries(paths)) {
+      if (previous[key]) require.cache[path] = previous[key];
+      else delete require.cache[path];
+    }
+  }
 }
 
 const at = (value) => new Date(value);
@@ -320,19 +332,61 @@ test('account export returns null for a missing account', async () => {
   assert.equal(await exportAccountData(404), null);
 });
 
-test('account deletion removes only the selected account root', async () => {
+test('account deletion checks server access in the same lock before deleting the selected account root', async () => {
   let deleteArgs = null;
-  const { deleteAccountData } = loadAccountLifecycle({
+  const events = [];
+  const transaction = {
     user: {
       deleteMany: async (args) => {
+        events.push('delete');
         deleteArgs = args;
         return { count: 1 };
       }
+    }
+  };
+  const { deleteAccountData } = loadAccountLifecycle({}, {
+    withServerAccessLock: async (callback) => {
+      events.push('lock');
+      const result = await callback(transaction);
+      events.push('unlock');
+      return result;
+    },
+    assertCanRemoveServerAdmin: async (tx, userId) => {
+      events.push('check');
+      assert.equal(tx, transaction);
+      assert.equal(userId, 7);
     }
   });
 
   assert.equal(await deleteAccountData(7), true);
   assert.deepEqual(deleteArgs, { where: { id: 7 } });
+  assert.deepEqual(events, ['lock', 'check', 'delete', 'unlock']);
+});
+
+test('account deletion keeps the account when server access prevents removal', async () => {
+  let deleted = false;
+  const rejection = new Error('At least one server administrator is required');
+  const { deleteAccountData } = loadAccountLifecycle({
+    user: {
+      deleteMany: async () => {
+        deleted = true;
+        return { count: 1 };
+      }
+    }
+  }, {
+    assertCanRemoveServerAdmin: async () => { throw rejection; }
+  });
+
+  await assert.rejects(deleteAccountData(7), (error) => error === rejection);
+  assert.equal(deleted, false);
+});
+
+test('account deletion returns false when the account is already missing', async () => {
+  const { deleteAccountData } = loadAccountLifecycle({
+    user: { deleteMany: async () => ({ count: 0 }) }
+  });
+
+  assert.equal(await deleteAccountData(404), false);
 });
 
 test('portable export preserves captured and unavailable day plans through JSON serialization', async () => {

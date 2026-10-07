@@ -65,10 +65,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [pendingReconnection, setPendingReconnection] = useState(false);
     const localOnlyRef = useRef(false);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
+    const sessionEpochRef = useRef(0);
+    const [sessionEpoch, setSessionEpoch] = useState(0);
+    const advanceSessionEpoch = useCallback(() => {
+        sessionEpochRef.current += 1;
+        setSessionEpoch(sessionEpochRef.current);
+    }, []);
 
-    const acceptUser = useCallback(async (nextUser: UserClientPayload) => {
+    const acceptUser = useCallback(async (nextUser: UserClientPayload, newSession = false) => {
         const previousScope = accountScopeRef.current;
         const nextScope = { serverUrl, userId: nextUser.id };
+        if (newSession || !previousScope || previousScope.userId !== nextUser.id) advanceSessionEpoch();
         accountScopeRef.current = nextScope;
         if (previousScope && previousScope.userId !== nextUser.id) {
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
@@ -82,9 +89,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAuthError(null);
         setUser(nextUser);
         await saveOfflineWorkspace(serverUrl, nextUser, queryClient).catch(() => undefined);
-    }, [queryClient, serverUrl]);
+    }, [advanceSessionEpoch, queryClient, serverUrl]);
 
     const clearSession = useCallback(async () => {
+        advanceSessionEpoch();
         const scope = accountScopeRef.current;
         accountScopeRef.current = null;
         localOnlyRef.current = false;
@@ -95,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAuthError(null);
         queryClient.clear();
         await Promise.all([clearBrowserUserScopedCaches(), draftCleanup, workspaceCleanup]);
-    }, [queryClient, serverUrl]);
+    }, [advanceSessionEpoch, queryClient, serverUrl]);
 
     const clearSessionWithBrowserCleanup = useCallback(async () => {
         await cleanupBrowserPushBeforeSessionChange();
@@ -106,22 +114,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         baseUrl: serverUrl,
         requestCredentials: 'include',
         fetchImpl: (input, init) => {
+            if (sessionEpochRef.current !== sessionEpoch) return Promise.reject(new Error('Authentication scope changed.'));
             if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
             return globalThis.fetch(input, init);
         },
         onRequestError: (error) => {
-            if (isRetryableMutationError(error)) {
+            if (sessionEpochRef.current === sessionEpoch && isRetryableMutationError(error)) {
                 if (accountScopeRef.current) localOnlyRef.current = true;
                 setPendingReconnection(true);
             }
         },
-        onUnauthorized: clearSession
-    }), [clearSession, serverUrl]);
+        onUnauthorized: () => {
+            if (sessionEpochRef.current === sessionEpoch) return clearSession();
+        }
+    }), [clearSession, serverUrl, sessionEpoch]);
 
     useEffect(() => {
         let active = true;
         let mayRestoreWorkspace = false;
         setIsLoading(true);
+        // Restoration has its own client so changing session epochs does not restart hydration.
+        const restoreApi = new CalibrateApiClient({ baseUrl: serverUrl, requestCredentials: 'include' });
         void (async () => {
             if (await hasExplicitLogout(serverUrl)) {
                 await clearSession();
@@ -129,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return null;
             }
             mayRestoreWorkspace = true;
-            return restoreBrowserDevelopmentSession(api, serverUrl);
+            return restoreBrowserDevelopmentSession(restoreApi, serverUrl);
         })().then(async (payload) => {
             if (active && payload) await acceptUser(payload.user);
         }).catch(async (error: unknown) => {
@@ -149,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (active) setIsLoading(false);
         });
         return () => { active = false; };
-    }, [acceptUser, api, clearSession, serverUrl]);
+    }, [acceptUser, clearSession, queryClient, serverUrl]);
 
     const probeCurrentServer = useCallback(async (): Promise<ServerConnectionResult> => {
         const currentRequest = requestId.current + 1;
@@ -199,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await finishExplicitLogin(serverUrl);
         queryClient.clear();
         await clearBrowserUserScopedCaches();
-        await acceptUser(payload.user);
+        await acceptUser(payload.user, true);
         return true;
     }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 
@@ -236,7 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await finishExplicitLogin(serverUrl);
         queryClient.clear();
         await clearBrowserUserScopedCaches();
-        await acceptUser(payload.user);
+        await acceptUser(payload.user, true);
         return true;
     }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
 

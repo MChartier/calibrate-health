@@ -106,9 +106,21 @@ enum CaloriePlanReviewStatus {
   REQUIRES_REVIEW
 }
 
+enum ServerRole {
+  admin
+  member
+}
+
+model ServerAccessState {
+  id                             Int       @id @default(1)
+  first_user_bootstrap_available  Boolean   @default(false)
+  legacy_admin_imported_at        DateTime?
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
+  server_role   ServerRole @default(member)
   password_hash     String
   /// Monotonic credential/security generation; database trigger advances it on password changes.
   credential_security_version Int @default(0)

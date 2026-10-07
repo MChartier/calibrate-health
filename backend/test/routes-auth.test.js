@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
+const { USER_CLIENT_SELECT } = require('../src/utils/userSerialization');
 
 const CURRENT_LEGAL_ACCEPTANCE = {
   terms_version: '2026-08-09',
@@ -20,19 +21,31 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   const dbPath = require.resolve('../src/config/database');
   const passportPath = require.resolve('passport');
   const bcryptPath = require.resolve('bcryptjs');
+  const serverAccessPath = require.resolve('../src/services/serverAccess');
   const authPath = require.resolve('../src/routes/auth');
 
+  const previousServerAccessModule = require.cache[serverAccessPath];
   const previousDbModule = require.cache[dbPath];
   const previousPassportModule = require.cache[passportPath];
   const previousBcryptModule = require.cache[bcryptPath];
 
   delete require.cache[authPath];
 
+  stubModule(serverAccessPath, {
+    createRegisteredUser: (data) => prismaStub.user.create({ data, select: USER_CLIENT_SELECT }),
+    cleanupFailedRegistration: async (userId) => {
+      await prismaStub.user.delete({ where: { id: userId } });
+      return true;
+    }
+  });
   stubModule(dbPath, prismaStub);
   stubModule(passportPath, passportStub);
   stubModule(bcryptPath, bcryptStub);
 
   const loaded = require('../src/routes/auth');
+
+  if (previousServerAccessModule) require.cache[serverAccessPath] = previousServerAccessModule;
+  else delete require.cache[serverAccessPath];
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];

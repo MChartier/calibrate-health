@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
+import { assertCanRemoveServerAdmin, withServerAccessLock } from './serverAccess';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
 export const ACCOUNT_EXPORT_VERSION = 10;
@@ -515,6 +516,9 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
 
 /** Delete the account root; database cascades revoke sessions and remove owned records atomically. */
 export async function deleteAccountData(userId: number): Promise<boolean> {
-  const result = await prisma.user.deleteMany({ where: { id: userId } });
-  return result.count > 0;
+  return withServerAccessLock(async (tx) => {
+    await assertCanRemoveServerAdmin(tx, userId);
+    const result = await tx.user.deleteMany({ where: { id: userId } });
+    return result.count > 0;
+  });
 }
