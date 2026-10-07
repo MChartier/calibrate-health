@@ -1,4 +1,5 @@
 import session from 'express-session';
+import { browserLoginSave, BrowserLoginRejected, type BrowserLoginSave } from './browserLoginCredentials';
 import type { Pool } from 'pg';
 
 export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
@@ -59,18 +60,67 @@ export class PostgresSessionStore extends session.Store {
     const expire = this.calculateExpiry(sess);
     const sessionData = JSON.stringify(sess);
     const userId = this.resolvePassportUserId(sess);
-
+    const guard = browserLoginSave(sess);
     try {
-      await this.pool.query(
-        `INSERT INTO session_store (sid, sess, expire, user_id, last_used_at)
-         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-         ON CONFLICT (sid)
-         DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire, user_id = EXCLUDED.user_id, last_used_at = CURRENT_TIMESTAMP`,
-        [sid, sessionData, expire, userId]
-      );
+      if (guard) {
+        // Serialize saves of this newly logged-in object, including response-end saves.
+        const save = guard.queue.then(() => this.saveVerifiedLogin(sid, sessionData, expire, userId, guard));
+        guard.queue = save.catch(() => undefined);
+        await save;
+      } else {
+        await this.pool.query(
+          `INSERT INTO session_store (sid, sess, expire, user_id, last_used_at)
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+           ON CONFLICT (sid)
+           DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire, user_id = EXCLUDED.user_id, last_used_at = CURRENT_TIMESTAMP`,
+          [sid, sessionData, expire, userId]
+        );
+      }
       callback?.();
     } catch (err) {
       callback?.(err);
+    }
+  }
+
+  private async saveVerifiedLogin(sid: string, data: string, expire: Date, userId: number | null, guard: BrowserLoginSave): Promise<void> {
+    if (guard.state === 'rejected' || userId !== guard.userId) {
+      guard.state = 'rejected';
+      throw new BrowserLoginRejected();
+    }
+    try {
+      if (guard.state === 'saved') {
+        // Never recreate a newly issued session removed by reset/logout while this request ran.
+        // Do not recheck the version: password change deliberately preserves its current session.
+        const result = await this.pool.query(
+          'UPDATE session_store SET sess = $2, expire = $3, last_used_at = CURRENT_TIMESTAMP WHERE sid = $1 AND user_id = $4',
+          [sid, data, expire, userId]
+        );
+        if (result.rowCount !== 1) throw new BrowserLoginRejected();
+        return;
+      }
+      const client = await this.pool.connect();
+      try {
+        await client.query('BEGIN');
+        const current = await client.query(
+          'UPDATE "User" SET credential_security_version = credential_security_version WHERE id = $1 AND credential_security_version = $2 RETURNING id',
+          [userId, guard.version]
+        );
+        if (current.rowCount !== 1) throw new BrowserLoginRejected();
+        await client.query(
+          'INSERT INTO session_store (sid, sess, expire, user_id, last_used_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)',
+          [sid, data, expire, userId]
+        );
+        await client.query('COMMIT');
+        guard.state = 'saved';
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      guard.state = 'rejected';
+      throw error;
     }
   }
 

@@ -234,3 +234,43 @@ test('PostgresSessionStore.destroy deletes stored sessions', async () => {
   assert.match(pool.calls[0].text, /DELETE FROM session_store/);
   assert.equal(pool.calls[0].params[0], 'sid-remove');
 });
+const { markVerifiedBrowserLogin, serializeBrowserLoginUser, BrowserLoginRejected } = require('../src/utils/browserLoginCredentials');
+
+function verifiedSession(version = 2) {
+  const principal = { id: 42 };
+  const sess = { cookie: {}, passport: { user: 42 } };
+  markVerifiedBrowserLogin(principal, 42, version);
+  serializeBrowserLoginUser({ session: sess }, principal, (err, id) => { assert.equal(err, null); assert.equal(id, 42); });
+  assert.deepEqual(Object.keys(sess).sort(), ['cookie', 'passport']);
+  return sess;
+}
+
+test('verified browser save rejects stale identity and cannot retry as an unguarded upsert', async () => {
+  const queries = [];
+  const client = { query: async text => { queries.push(text); return { rowCount: text.startsWith('UPDATE "User"') ? 0 : 1 }; }, release() {} };
+  const pool = { connect: async () => client, query: async () => { throw Error('unguarded write'); } };
+  const store = new PostgresSessionStore(pool);
+  const sess = verifiedSession();
+  assert.ok(await callStoreSet(store, 'guarded', sess) instanceof BrowserLoginRejected);
+  const count = queries.length;
+  assert.ok(await callStoreSet(store, 'guarded', sess) instanceof BrowserLoginRejected);
+  assert.equal(queries.length, count);
+  assert.ok(queries.includes('ROLLBACK'));
+  assert.equal(queries.some(q => q.startsWith('INSERT')), false);
+});
+
+test('verified browser save commits once and later saves only update the existing session', async () => {
+  const queries = [];
+  const client = { query: async text => { queries.push(text); return { rowCount: 1 }; }, release() {} };
+  let exists = true;
+  const pool = { connect: async () => client, query: async text => { queries.push(text); return { rowCount: exists ? 1 : 0 }; } };
+  const store = new PostgresSessionStore(pool);
+  const sess = verifiedSession();
+  assert.equal(await callStoreSet(store, 'guarded', sess), undefined);
+  assert.ok(queries.includes('COMMIT'));
+  assert.equal(await callStoreSet(store, 'guarded', sess), undefined);
+  assert.match(queries.at(-1), /^UPDATE session_store/);
+  exists = false;
+  assert.ok(await callStoreSet(store, 'guarded', sess) instanceof BrowserLoginRejected);
+  assert.equal(queries.filter(q => q.startsWith('INSERT')).length, 1);
+});

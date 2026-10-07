@@ -481,3 +481,29 @@ test('auth route: verification resend and reset request do not reveal account ex
     assert.deepEqual(knownRes.body, unknownRes.body);
   }
 });
+
+test('browser login clears rejected authenticated state even when session cleanup fails', async () => {
+  const { BrowserLoginRejected } = require('../src/utils/browserLoginCredentials');
+  const user = { id: 7 };
+  const router = loadAuthRouter({ prismaStub: {}, bcryptStub: {}, passportStub: {
+    authenticate: (_strategy, callback) => (_req, _res, _next) => callback(null, user)
+  } });
+  const [handler] = getRouteHandlers(router, 'post', '/login');
+  const res = createRes();
+  let done;
+  const completed = new Promise(resolve => { done = resolve; });
+  const originalJson = res.json;
+  res.json = function(value) { originalJson.call(this, value); done(); return this; };
+  const req = {
+    body: { email: 'synthetic@example.invalid', password: 'synthetic' }, user,
+    session: { destroy(callback) { callback(new Error('synthetic cleanup failure')); } },
+    login(_user, callback) { void callback(new BrowserLoginRejected()); }
+  };
+  handler(req, res, error => { throw error; });
+  await completed;
+  assert.equal(res.statusCode, 401);
+  assert.deepEqual(res.body, { message: 'Invalid email or password' });
+  assert.equal(req.session, null);
+  assert.equal(req.user, undefined);
+  assert.ok(res.clearedCookie);
+});

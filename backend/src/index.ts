@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { markVerifiedBrowserLogin, serializeBrowserLoginUser } from './utils/browserLoginCredentials';
 import { verifyLocalPassword } from './services/credentialVerification';
 
 import cors from 'cors';
@@ -14,7 +15,6 @@ import { getNativePushModeConfigurationWarning } from './config/nativePush';
 import { resolveMcpConfiguration } from './config/mcp';
 import { validateCredentialProviderConfiguration } from './config/credentialProvider';
 import { configureFrontendStaticAssets } from './frontendStatic';
-import { isAuthenticatedUser } from './middleware/authenticatedUser';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
 import serverSettingsRoutes from './routes/serverSettings';
@@ -238,7 +238,7 @@ const bootstrap = async (): Promise<void> => {
         const user = await prisma.user.findFirst({
           where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
           orderBy: { id: 'asc' },
-          select: { ...USER_CLIENT_SELECT, password_hash: true },
+          select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true },
         });
         const isMatch = await verifyLocalPassword(password, user?.password_hash);
         if (!user || !isMatch) {
@@ -246,7 +246,8 @@ const bootstrap = async (): Promise<void> => {
         }
 
         // Avoid keeping password hashes on req.user or in the session.
-        const { password_hash: _passwordHash, ...safeUser } = user;
+        const { password_hash: _passwordHash, credential_security_version: version, ...safeUser } = user;
+        markVerifiedBrowserLogin(safeUser, user.id, version);
         return done(null, safeUser);
       } catch (err) {
         return done(err);
@@ -254,12 +255,7 @@ const bootstrap = async (): Promise<void> => {
     })
   );
 
-  passport.serializeUser((user, done) => {
-    if (!isAuthenticatedUser(user)) {
-      return done(new Error('Cannot serialize an invalid user principal'));
-    }
-    return done(null, user.id);
-  });
+  passport.serializeUser(serializeBrowserLoginUser);
 
   passport.deserializeUser(async (id: number, done) => {
     try {

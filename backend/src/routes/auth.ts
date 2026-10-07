@@ -1,5 +1,6 @@
 import { verifyLocalPassword } from '../services/credentialVerification';
 import express from 'express';
+import { BrowserLoginRejected } from '../utils/browserLoginCredentials';
 import passport from 'passport';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
@@ -392,8 +393,19 @@ router.post('/login', (req, res, next) => {
             return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
         }
 
-        req.login(user, (loginErr) => {
-            if (loginErr) return next(loginErr);
+        req.login(user, async (loginErr) => {
+            if (loginErr) {
+                delete req.user;
+                try { await destroyRequestSession(req); }
+                catch (error) { logSafeOperationalError('auth.login_cleanup', error, res.locals?.requestId); }
+                // Express must not retry saving authenticated state after a rejected store write.
+                req.session = null as unknown as express.Request['session'];
+                clearSessionCookie(res);
+                if (loginErr instanceof BrowserLoginRejected) {
+                    return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+                }
+                return next(loginErr);
+            }
             return res.json({
                 user: serializeUserForClient(user as UserForClient)
             });
