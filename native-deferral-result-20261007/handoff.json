@@ -1,0 +1,185 @@
+{
+  "checkedAtUtc": "2026-10-07T17:52:10.327Z",
+  "pr": {
+    "url": "https://github.com/MChartier/calibrate-health/pull/439",
+    "bodySha256": "40b95e1adaba4e7d52a238893839e81ddff70e8ffb292f0ce07ed7915b5052e2",
+    "updatedAt": "2026-10-07T17:52:03Z",
+    "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "headRef": "mchartier/self-hosting-438",
+    "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "baseRef": "master",
+    "draft": true,
+    "labels": []
+  },
+  "issue": {
+    "url": "https://github.com/MChartier/calibrate-health/issues/438",
+    "bodySha256": "e4a62eca4b1c55f934c4742f4899711b4717ef49bebf65cc3bdff4683799040c",
+    "updatedAt": "2026-10-07T17:52:06Z"
+  },
+  "retainedOriginals": {
+    "commit": "463626255783a028f7a8e590c1c97758de05f83f",
+    "parent": "1b6fcdf5fe12689c65ce3ce4bf77aabcf3e42dae",
+    "folder": "native-deferral-originals-20261007",
+    "verifiedAtUtc": "2026-10-07T17:50:56.142Z",
+    "publicFiles": [
+      {
+        "file": "issue438-before.md",
+        "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/issue438-before.md",
+        "sha256": "972d89cb9a1b911e54e30a9979175e8e77a9571b50c86d922878cc4bc920865e"
+      },
+      {
+        "file": "originals.json",
+        "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/originals.json",
+        "sha256": "04cecbaf7a96331c6e7344fb52f07d1fa34bca0aabafc57ac99c386451f5b79e"
+      },
+      {
+        "file": "pr439-before.md",
+        "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/463626255783a028f7a8e590c1c97758de05f83f/native-deferral-originals-20261007/pr439-before.md",
+        "sha256": "50ce47c1c3b0c9bbf34fdf49a13e06a9d6468fee751793983228a979fa39228a"
+      }
+    ],
+    "productHead": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "productStatus": ""
+  },
+  "feedbackIdentity": {
+    "issue": [
+      {
+        "id": 6030410384,
+        "updatedAt": "2026-10-07T03:39:48Z",
+        "bodySha256": "9f24bf3a42a0e2b6517d1fb47b9d6b8a5201f70b18b8ff199edbe478e795c4ef"
+      },
+      {
+        "id": 6031957383,
+        "updatedAt": "2026-10-07T05:57:31Z",
+        "bodySha256": "00ffe8c0d2f0d914cfaea419ce81af4eca1edd00a94b5c7433ca601d760db315"
+      },
+      {
+        "id": 6043344805,
+        "updatedAt": "2026-10-07T17:36:36Z",
+        "bodySha256": "8cfc0c6676a5ff99f6e63dfaa1bc43ce366cbbd881ed0f8f78a3f3647da29b7a"
+      }
+    ],
+    "pr": [
+      {
+        "id": 6030751935,
+        "updatedAt": "2026-10-07T04:11:20Z",
+        "bodySha256": "fba99781567242dc7dc0173ad0a62f76d3432cbb1e5929dce54c4bc1a36ff1f2"
+      },
+      {
+        "id": 6031323353,
+        "updatedAt": "2026-10-07T05:05:32Z",
+        "bodySha256": "599af8ac9b2f433702c5e115203099de41082083fb57216e8c039c3bebec694e"
+      },
+      {
+        "id": 6031629809,
+        "updatedAt": "2026-10-07T05:29:50Z",
+        "bodySha256": "c18e3942ec5a8978e55aa30ef5763b5ef33c029606686e5c169d7f89180d3891"
+      },
+      {
+        "id": 6031679377,
+        "updatedAt": "2026-10-07T05:34:16Z",
+        "bodySha256": "fe20cf1b5836cf8634b01c453cd73e2dbfe2ed59e098fa514eec4e42d466c3e1"
+      },
+      {
+        "id": 6031682737,
+        "updatedAt": "2026-10-07T05:38:38Z",
+        "bodySha256": "63eb5fa59770ec41b85d6cd16f93f6ed1852e5272fee4bf35f52540a0a5c4e5a"
+      },
+      {
+        "id": 6031728424,
+        "updatedAt": "2026-10-07T05:38:36Z",
+        "bodySha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf"
+      },
+      {
+        "id": 6031769862,
+        "updatedAt": "2026-10-07T05:42:13Z",
+        "bodySha256": "92c71d937619077d4ff21698ac8397bd7a3165d337d5c66615846dfb79d512ea"
+      },
+      {
+        "id": 6031898060,
+        "updatedAt": "2026-10-07T05:52:31Z",
+        "bodySha256": "fac7bc334bf7c5ca11eb43c705aa7569ac8276d9e263a5cfe1c1e3bcdb39c546"
+      },
+      {
+        "id": 6032159061,
+        "updatedAt": "2026-10-07T06:14:04Z",
+        "bodySha256": "0dc9d7e572166ca16a5fc9b2415e266762170d62f3a55bee56bd0134c026c191"
+      }
+    ],
+    "reviews": [],
+    "inline": []
+  },
+  "mutations": [
+    "PR439 description",
+    "Issue438 description"
+  ],
+  "sourceChanged": false,
+  "testsRerun": false,
+  "capturesChanged": false,
+  "readinessChanged": false,
+  "projectChanged": false,
+  "recordType": "Implementation-owner metadata-only handoff; not a QA verdict or readiness decision",
+  "purpose": "Record the native-device review-readiness deferral correction and preserve exact descriptions and prior evidence.",
+  "ownerTaskId": "01a1145f-aae2-70e0-af56-3952f0eab012",
+  "host": "mchartier_zbook",
+  "source": {
+    "targetRepository": "MChartier/calibrate-health",
+    "headRef": "mchartier/self-hosting-438",
+    "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "actualTargetRef": "master",
+    "actualTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "declaredParent": null,
+    "parentRevisions": [],
+    "ultimateTarget": "MChartier/calibrate-health/master"
+  },
+  "amendment": {
+    "id": 6041659686,
+    "body": "Direct human amendment, 2026-10-07 15:54 UTC: “Native device testing should not block changes going out for review. Defer those checks”.\n\nNative-device testing is deferred for review readiness, including the remaining native chooser checks for Calibrate PR439 and native unlock/focus, rotation, OS text scaling, screen-reader and reduced-motion checks for Little Say PR36. These checks remain unexecuted and their limitations must stay explicit; browser, component and bundle results must not be described as device execution.\n\nAll other gates remain: actionable human/code findings, CI and configured review, genuine captures and source/build/fixture provenance, independent pixel assessment, concise final descriptions, exact append-only QA receipts and coordinator verification. This does not authorize merge/release/deployment, resolve the separate partial-issue linkage choice, or revive cancelled actions. Existing owners must reconcile affected descriptions, then the same independent QA tasks reassess affected gates under the single-QA slot before any readiness transition. Runtime pins are unchanged.",
+    "bodySha256": "c821f39f0892512600f7547fc610f0565c15dcbd5dd9d2c99c59152c351e860b",
+    "updatedAt": "2026-10-07T15:58:13Z"
+  },
+  "workflow": {
+    "workflowVersion": "workflow-v3",
+    "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+    "prReviewStandard": "pr-review-v3",
+    "prReviewCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+    "suppliedPinsAndAmendmentsAcknowledged": true
+  },
+  "descriptionChanges": [
+    "PR439 discloses all four unexecuted native-device flows and cites the human review-readiness deferral.",
+    "Removed stale native-blocking and QA-pending wording while preserving observed browser/component/CI results.",
+    "Removed lifecycle-sensitive draft/pending association wording from PR439 and issue438.",
+    "Issue438 retains the exact first four template sections, requirements, plan, task identity and stable active/historical PR links."
+  ],
+  "impactAssessment": {
+    "productSourceAndPublishedScope": "Unchanged. Metadata-only; existing source/scope, CI, browser captures and same-revision code review remain applicable subject to independent QA assessment.",
+    "issueRequirements": "Unchanged; all five sections retained.",
+    "prBeforeAfterBlock": "Byte-identical, including four image URLs, source context and provenance link.",
+    "nativeDevice": "Unexecuted and deferred for review readiness only; no browser/component/bundle result is characterized as device execution.",
+    "renderedGitHubPage": "Unperformed under existing separate human rendering waiver.",
+    "historicalVerdicts": "Preserved unchanged. The old native blocker reflects the prior policy; only same independent QA may issue a superseding assessment."
+  },
+  "preservedOriginalEvidenceRefs": {
+    "evidence/pr402-original-a341dcf2": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+    "evidence/pr402-capture-build-7da08240": "7da082409f7a903133e84f53576b656b4c965dd7",
+    "evidence/pr402-recovery-record-20261007": "a928a96f3bbeeec5ca722baf03f0e69df205bef0"
+  },
+  "browserProvenance": {
+    "commitSha": "8457ed1a3bbb0f0381b48e22a40aac52b223ae6c",
+    "url": "https://github.com/MChartier/calibrate-health/blob/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/provenance.json",
+    "sha256": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e",
+    "publicExactByteVerification": true
+  },
+  "feedback": {
+    "allConversationPagesRead": true,
+    "allSubmittedReviewsRead": true,
+    "allInlineCommentsRead": true,
+    "allGraphqlReviewThreadsRead": true,
+    "reviewThreadCount": 0,
+    "newActionableFeedback": false,
+    "disposition": "The new human native-device deferral is reflected in the PR limitations. Earlier native-evidence-only blockers remain historical; prior source and communication corrections stay preserved."
+  },
+  "nextAction": "Coordinator may continue the same independent QA task 01a114c0-dd68-76bb-9c8a-4ef9eb507024 for affected communication/evidence gates under the current deferral. No readiness, draft, Project, closure, merge, release or deployment action was taken.",
+  "retention": "Nonmerged evidence only; no automatic expiry, no deletion authorized."
+}
