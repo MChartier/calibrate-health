@@ -1,0 +1,284 @@
+{
+  "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "head": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "tree": "055ff7b71b479c0f4ce9aff641493ed893491adb",
+  "commits": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "paths": [
+    {
+      "path": ".github/workflows/container-handler.yml",
+      "additions": 0,
+      "deletions": 121,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": ".github/workflows/container-request.yml",
+      "additions": 0,
+      "deletions": 81,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": ".github/workflows/cut-release-handler.yml",
+      "additions": 47,
+      "deletions": 8,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": ".github/workflows/cut-release-request.yml",
+      "additions": 62,
+      "deletions": 16,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": ".github/workflows/cut-release.yml",
+      "additions": 15,
+      "deletions": 15,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": ".github/workflows/publish-release-handler.yml",
+      "additions": 0,
+      "deletions": 121,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": ".github/workflows/publish-release-request.yml",
+      "additions": 0,
+      "deletions": 73,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": "AGENTS.md",
+      "additions": 16,
+      "deletions": 13,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "README.md",
+      "additions": 11,
+      "deletions": 46,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "deploy/README.md",
+      "additions": 4,
+      "deletions": 0,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "deploy/self-hosted/README.md",
+      "additions": 6,
+      "deletions": 5,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/android-internal-testing.md",
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/architecture/0002-canonical-release-manifest.md",
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/architecture/0008-explicit-server-releases.md",
+      "additions": 4,
+      "deletions": 2,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/database-rollback-rehearsal.md",
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/deployment.md",
+      "additions": 115,
+      "deletions": 0,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/mobile-release.md",
+      "additions": 51,
+      "deletions": 87,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/native-store-release.md",
+      "additions": 4,
+      "deletions": 4,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/release-acceptance.md",
+      "additions": 3,
+      "deletions": 3,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/release-compatibility.md",
+      "additions": 28,
+      "deletions": 43,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "docs/ux-regression-gates.md",
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "mobile/README.md",
+      "additions": 3,
+      "deletions": 2,
+      "category": "maintained documentation"
+    },
+    {
+      "path": "package.json",
+      "additions": 1,
+      "deletions": 1,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": "scripts/native-config.test.mjs",
+      "additions": 2,
+      "deletions": 3,
+      "category": "maintained regression tests"
+    },
+    {
+      "path": "scripts/native-internal-release.mjs",
+      "additions": 1,
+      "deletions": 2,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": "scripts/native.mjs",
+      "additions": 50,
+      "deletions": 21,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": "scripts/native.test.mjs",
+      "additions": 64,
+      "deletions": 19,
+      "category": "maintained regression tests"
+    },
+    {
+      "path": "scripts/release-request.mjs",
+      "additions": 29,
+      "deletions": 21,
+      "category": "product workflow/CLI"
+    },
+    {
+      "path": "scripts/release-request.test.mjs",
+      "additions": 67,
+      "deletions": 33,
+      "category": "maintained regression tests"
+    },
+    {
+      "path": "scripts/release-workflow-contract.test.mjs",
+      "additions": 38,
+      "deletions": 41,
+      "category": "maintained regression tests"
+    }
+  ],
+  "criticalUnchanged": [
+    {
+      "path": "scripts/release-ci-gate.mjs",
+      "baseBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e",
+      "headBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
+    },
+    {
+      "path": "scripts/release-ci-gate.test.mjs",
+      "baseBlob": "5a739a178adf706349b22a742a82ba347923fe5a",
+      "headBlob": "5a739a178adf706349b22a742a82ba347923fe5a"
+    },
+    {
+      "path": ".github/workflows/container.yml",
+      "baseBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4",
+      "headBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4"
+    },
+    {
+      "path": ".github/workflows/publish-release.yml",
+      "baseBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1",
+      "headBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1"
+    },
+    {
+      "path": "scripts/ghcr-release-policy.mjs",
+      "baseBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984",
+      "headBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984"
+    },
+    {
+      "path": "scripts/ghcr-release-receipt.mjs",
+      "baseBlob": "afdc549612071d6c3e496b8720ab27257eaee767",
+      "headBlob": "afdc549612071d6c3e496b8720ab27257eaee767"
+    },
+    {
+      "path": "scripts/native-tag-attestation.mjs",
+      "baseBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec",
+      "headBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec"
+    },
+    {
+      "path": "scripts/release-config.mjs",
+      "baseBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341",
+      "headBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341"
+    },
+    {
+      "path": ".github/release-image-attestation-trusted-workflow-shas",
+      "baseBlob": "760e82a4dd87bc383213d07193d585041d1231dd",
+      "headBlob": "760e82a4dd87bc383213d07193d585041d1231dd"
+    }
+  ],
+  "summary": {
+    "files": 30,
+    "additions": 625,
+    "deletions": 785
+  },
+  "historicalComparison": {
+    "pr401": {
+      "commits": 2,
+      "files": 34,
+      "additions": 625,
+      "deletions": 774
+    },
+    "retainedOutsideProduct": [
+      "original two-commit source history",
+      "three original JPEG screenshots and provenance README",
+      "assessment, owner handoff and full published-scope record",
+      "this capture harness, logs and provenance"
+    ]
+  },
+  "relatedOwnership": {
+    "pr439": {
+      "head": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+      "state": "owner idle, deployment README administration section disjoint from publishing guide introduction"
+    },
+    "pr404": {
+      "head": "c9c122f78cedc3ca06d6898e77878d93169066c1",
+      "state": "owner unrecovered; README index and unrelated package aliases inspected, not imported or rewritten"
+    }
+  },
+  "tests": {
+    "release": {
+      "pass": 154,
+      "skip": 2,
+      "reason": "Two Linux-only GHCR publisher shell tests defer to hosted PR CI."
+    },
+    "native": {
+      "pass": 254
+    },
+    "deploy": {
+      "pass": 26
+    },
+    "contractAfterDocs": {
+      "pass": 33
+    },
+    "releaseCheck": "pass"
+  },
+  "testApplicability": "Suites ran against the final product code. Subsequent changes only clarify release acceptance/compatibility and self-host documentation; contract suite was repeated for acceptance/compatibility wording. Final self-host wording has no executable or test effect. Behavior observation was refreshed at the final full source SHA."
+}

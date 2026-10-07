@@ -1,0 +1,349 @@
+{
+  "checkedAtUtc": "2026-10-07T05:17:48.857Z",
+  "host": "MCHARTIER_ZBOOK",
+  "node": "v24.19.0",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "method": "Actual source imports; synthetic requests and mocked native workers. No workflow dispatch, signing, build, upload, network, or deployment. Bash checks exercise only the request validation prefix before artifact construction.",
+  "before": {
+    "forms": [
+      {
+        "file": "container-request.yml",
+        "name": "Build Release Image",
+        "inputs": {
+          "release_tag": {
+            "description": "Exact immutable vMAJOR.MINOR.PATCH tag to publish",
+            "required": true,
+            "type": "string"
+          },
+          "release_commit": {
+            "description": "Exact release commit the immutable tag must target",
+            "required": true,
+            "type": "string"
+          },
+          "publish_latest": {
+            "description": "Also move latest after proving this is the current stable release",
+            "required": true,
+            "default": false,
+            "type": "boolean"
+          }
+        }
+      },
+      {
+        "file": "cut-release-request.yml",
+        "name": "Cut release",
+        "inputs": {
+          "bump": {
+            "description": "Semantic version component to increment",
+            "required": true,
+            "default": "patch",
+            "type": "choice",
+            "options": [
+              "patch",
+              "minor",
+              "major"
+            ]
+          }
+        }
+      },
+      {
+        "file": "publish-release-request.yml",
+        "name": "Publish prepared release",
+        "inputs": {
+          "release_commit": {
+            "description": "Exact validated release commit to recover or republish",
+            "required": true,
+            "type": "string"
+          },
+          "release_branch": {
+            "description": "Original release/vMAJOR.MINOR.PATCH branch name",
+            "required": true,
+            "type": "string"
+          }
+        }
+      }
+    ],
+    "native": {
+      "commands": [
+        [
+          "build"
+        ],
+        [
+          "submit"
+        ]
+      ],
+      "calls": [
+        [
+          "build",
+          "--credentials-file",
+          "synthetic-credentialsFile.json"
+        ],
+        [
+          "submit",
+          "--service-account-file",
+          "synthetic-serviceAccountFile.json",
+          "--confirm-play-console-clean"
+        ]
+      ],
+      "credentialPathsResolved": [
+        "credentialsFile",
+        "serviceAccountFile"
+      ]
+    }
+  },
+  "after": {
+    "forms": [
+      {
+        "file": "cut-release-request.yml",
+        "name": "Release server",
+        "inputs": {
+          "operation": {
+            "description": "New release (patch/minor/major), resume prepared release, or recover image only",
+            "required": true,
+            "default": "patch",
+            "type": "choice",
+            "options": [
+              "patch",
+              "minor",
+              "major",
+              "resume",
+              "image-only"
+            ]
+          },
+          "release_commit": {
+            "description": "Recovery only - exact full prepared release commit from the original run",
+            "required": false,
+            "default": "",
+            "type": "string"
+          },
+          "release_tag": {
+            "description": "Recovery only - exact vMAJOR.MINOR.PATCH from the original run",
+            "required": false,
+            "default": "",
+            "type": "string"
+          },
+          "publish_latest": {
+            "description": "Image-only recovery - also move latest (resume always restores latest and downstream stages)",
+            "required": true,
+            "default": false,
+            "type": "boolean"
+          }
+        }
+      }
+    ],
+    "native": {
+      "commands": [
+        [
+          "release"
+        ]
+      ],
+      "calls": [
+        [
+          "build",
+          "--credentials-file",
+          "synthetic-credentialsFile.json"
+        ],
+        [
+          "submit",
+          "--service-account-file",
+          "synthetic-serviceAccountFile.json",
+          "--confirm-play-console-clean"
+        ]
+      ],
+      "credentialPathsResolved": [
+        "serviceAccountFile",
+        "credentialsFile"
+      ]
+    },
+    "retry": {
+      "commands": [
+        [
+          "release",
+          "--skip-build"
+        ]
+      ],
+      "calls": [
+        [
+          "submit",
+          "--service-account-file",
+          "synthetic-serviceAccountFile.json",
+          "--confirm-play-console-clean"
+        ]
+      ],
+      "credentialPathsResolved": [
+        "serviceAccountFile"
+      ]
+    },
+    "failedBuild": {
+      "commands": [
+        [
+          "release"
+        ]
+      ],
+      "calls": [
+        [
+          "build",
+          "--credentials-file",
+          "synthetic-credentialsFile.json"
+        ]
+      ],
+      "credentialPathsResolved": [
+        "serviceAccountFile",
+        "credentialsFile"
+      ],
+      "error": "synthetic build verification failure"
+    },
+    "routes": [
+      {
+        "inputs": {
+          "operation": "patch",
+          "release_commit": "",
+          "release_tag": "",
+          "publish_latest": false
+        },
+        "output": {
+          "operation": "cut-release",
+          "bump": "patch"
+        }
+      },
+      {
+        "inputs": {
+          "operation": "minor",
+          "release_commit": "",
+          "release_tag": "",
+          "publish_latest": false
+        },
+        "output": {
+          "operation": "cut-release",
+          "bump": "minor"
+        }
+      },
+      {
+        "inputs": {
+          "operation": "major",
+          "release_commit": "",
+          "release_tag": "",
+          "publish_latest": false
+        },
+        "output": {
+          "operation": "cut-release",
+          "bump": "major"
+        }
+      },
+      {
+        "inputs": {
+          "operation": "resume",
+          "release_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "release_tag": "v0.38.0",
+          "publish_latest": false
+        },
+        "output": {
+          "operation": "publish-prepared-release",
+          "release_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "release_branch": "release/v0.38.0"
+        }
+      },
+      {
+        "inputs": {
+          "operation": "image-only",
+          "release_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "release_tag": "v0.38.0",
+          "publish_latest": false
+        },
+        "output": {
+          "operation": "build-release-image",
+          "release_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "release_tag": "v0.38.0",
+          "publish_latest": false
+        }
+      }
+    ],
+    "rejections": [
+      {
+        "inputs": {
+          "operation": "deploy",
+          "release_commit": "",
+          "release_tag": "",
+          "publish_latest": false
+        },
+        "rejection": "Server release operation must be patch, minor, major, resume, or image-only."
+      },
+      {
+        "inputs": {
+          "operation": "patch",
+          "release_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "release_tag": "v0.38.0",
+          "publish_latest": false
+        },
+        "rejection": "New releases require empty recovery fields and publish_latest false."
+      },
+      {
+        "inputs": {
+          "operation": "resume",
+          "release_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "release_tag": "v0.38.0",
+          "publish_latest": true
+        },
+        "rejection": "publish_latest is only an option for image-only recovery."
+      }
+    ],
+    "shellValidation": [
+      {
+        "operation": "patch",
+        "publish_latest": false,
+        "status": 0,
+        "stdout": "validated",
+        "stderr": ""
+      },
+      {
+        "operation": "minor",
+        "publish_latest": false,
+        "status": 0,
+        "stdout": "validated",
+        "stderr": ""
+      },
+      {
+        "operation": "major",
+        "publish_latest": false,
+        "status": 0,
+        "stdout": "validated",
+        "stderr": ""
+      },
+      {
+        "operation": "resume",
+        "publish_latest": false,
+        "status": 0,
+        "stdout": "validated",
+        "stderr": ""
+      },
+      {
+        "operation": "image-only",
+        "publish_latest": false,
+        "status": 0,
+        "stdout": "validated",
+        "stderr": ""
+      },
+      {
+        "operation": "deploy",
+        "publish_latest": false,
+        "status": 1,
+        "stdout": "",
+        "stderr": "Unsupported server release operation."
+      },
+      {
+        "operation": "patch",
+        "publish_latest": false,
+        "status": 1,
+        "stdout": "",
+        "stderr": "New releases need only an operation. Leave recovery fields empty and publish_latest unchecked."
+      },
+      {
+        "operation": "resume",
+        "publish_latest": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "publish_latest is only for image-only recovery; resume already restores the current release."
+      }
+    ]
+  }
+}
