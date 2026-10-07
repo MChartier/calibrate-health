@@ -1,0 +1,97 @@
+{
+  "checkedAtUtc": "2026-10-07T04:06:22.546Z",
+  "commit": "8457ed1a3bbb0f0381b48e22a40aac52b223ae6c",
+  "files": [
+    {
+      "name": "README.md",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/README.md",
+      "sha256": "a92ed283447bea34e1ea26bf2d6f142a1bc703a774beb2c9d0186f5b2285723f",
+      "status": 200,
+      "bytes": 2071
+    },
+    {
+      "name": "after-administration.png",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-administration.png",
+      "sha256": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+      "status": 200,
+      "bytes": 140354
+    },
+    {
+      "name": "after-capture.json",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-capture.json",
+      "sha256": "56a13d5831442c9ca64db4b9662b02e792e2c10145b22719f08f61ddeb4b7941",
+      "status": 200,
+      "bytes": 766
+    },
+    {
+      "name": "after-settings.png",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-settings.png",
+      "sha256": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+      "status": 200,
+      "bytes": 63862
+    },
+    {
+      "name": "before-administration.png",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-administration.png",
+      "sha256": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+      "status": 200,
+      "bytes": 44861
+    },
+    {
+      "name": "before-capture.json",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-capture.json",
+      "sha256": "d9bfee6a9d334a017b51166739b865492a77fb6d2db4b04a1158f8b200a3d084",
+      "status": 200,
+      "bytes": 767
+    },
+    {
+      "name": "before-settings.png",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-settings.png",
+      "sha256": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+      "status": 200,
+      "bytes": 55685
+    },
+    {
+      "name": "build-identities.json",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/build-identities.json",
+      "sha256": "2dbc6124530046e0d9908d797be2899943608ed7eefc4ee7c19d0579cfc74a23",
+      "status": 200,
+      "bytes": 66435
+    },
+    {
+      "name": "capture-run.mjs",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture-run.mjs",
+      "sha256": "26cc33bc13df595210bbd491933220a22ddf6c1cf44dce3edc38ce4ffc5f6241",
+      "status": 200,
+      "bytes": 976
+    },
+    {
+      "name": "capture.config.ts",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture.config.ts",
+      "sha256": "741d873d29e5fbc0807db66e4b32df9faba0273303eef7e86561aad6ba48fc4c",
+      "status": 200,
+      "bytes": 505
+    },
+    {
+      "name": "capture.spec.ts",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/capture.spec.ts",
+      "sha256": "bbafaec9f0d9765b22b3655571b1dc64a9980cabaf029e8af477997cb86b1ae5",
+      "status": 200,
+      "bytes": 2746
+    },
+    {
+      "name": "provenance.json",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/provenance.json",
+      "sha256": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e",
+      "status": 200,
+      "bytes": 5116
+    },
+    {
+      "name": "published-scope.json",
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/published-scope.json",
+      "sha256": "789b2230b5dc4e6938b49743eb73a6a3fa23e3a3a12fd1020e7807d0d5d78858",
+      "status": 200,
+      "bytes": 21404
+    }
+  ]
+}
