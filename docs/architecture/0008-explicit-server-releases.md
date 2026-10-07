@@ -15,7 +15,7 @@ need an explicit preparation step that can own the synchronized version commit w
 ## Decision
 
 Ordinary feature and fix PRs leave the stable server version unchanged. After changes land on `master`, an operator
-runs **Cut release** and chooses a strict `patch`, `minor`, or `major` increment. The workflow requires the manifest to
+runs **Release server** and chooses a strict `patch`, `minor`, or `major` increment. The workflow requires the manifest to
 match the highest stable tag, prepares all server/web mirrors on `release/vMAJOR.MINOR.PATCH`, and validates that exact
 commit. Validation covers candidate identity, synchronized release configuration, the exact generated mirror set, and
 a production-image startup and served-Web smoke. Affected pull-request and scheduled workflows own the broader unit,
@@ -82,5 +82,7 @@ An unattended approval-free trigger, if desired, requires a separately reviewed 
 
 The always-run stage summary separates candidate validation, CI/merge and publication. Follow the nested publisher
 summary for the image digest and OTA/deployment outcomes: optional rollout skips are not image failures. After a
-successful merge, use Publish prepared release for tag/image recovery; existing immutable tag/digest and attestation
+successful merge, use **Release server** with `resume` for tag/image recovery; existing immutable tag/digest and attestation
 checks remain authoritative and refuse conflicting aliases. Never overwrite a published release to retry it.
+
+The current operator interface and recovery modes are documented in [Release and deploy](../deployment.md).

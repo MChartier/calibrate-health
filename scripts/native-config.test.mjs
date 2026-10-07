@@ -245,7 +245,7 @@ test('build resolves the EAS path without reading signing contents or the Play c
   assert.equal(readNativeConfiguration(f.options).config.credentialsFile, result.credentialsFile);
 });
 
-test('EAS configure, setup, bare build and submit compose without repeated file arguments', async (t) => {
+test('EAS configure, setup, and one-command release compose without repeated file arguments', async (t) => {
   const f = fixture(t);
   const events = [];
   const options = { ...f.options, readUserEnvironment: () => ({}),
@@ -259,8 +259,7 @@ test('EAS configure, setup, bare build and submit compose without repeated file 
   };
   const configured = await runNative(['configure'], options);
   await runNative(['setup'], options);
-  await runNative(['build'], options);
-  await runNative(['submit'], options);
+  await runNative(['release'], options);
   assert.deepEqual(events, ['setup', ['build', '--credentials-file', configured.credentialsFile],
     ['submit', '--service-account-file', configured.serviceAccountFile, '--confirm-play-console-clean']]);
 });

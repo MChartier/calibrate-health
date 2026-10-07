@@ -32,7 +32,7 @@
     "setup": "node scripts/dev-env.mjs setup:host",
     "native:build": "node scripts/native.mjs build",
     "native:install": "node scripts/native.mjs install",
-    "native:submit": "node scripts/native.mjs submit",
+    "native:release": "node scripts/native.mjs release",
     "native:configure": "node scripts/native.mjs configure",
     "native:setup": "node scripts/native.mjs setup",
     "ota:publish": "node scripts/native.mjs ota",
