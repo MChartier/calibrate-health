@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { Prisma, type FoodLog } from '@prisma/client';
 import prisma from '../config/database';
-import { captureFoodDayComparison } from './foodDayComparison';
+import { captureFoodDayComparison, readFoodDayComparison } from './foodDayComparison';
 import { getRecentFoodSuggestions, type RecentFoodSuggestion } from './recentFoods';
 
 import {
@@ -437,7 +437,8 @@ export async function executeWatchMutation(options: {
           is_representative: (day.status ?? status) === 'COMPLETE',
           is_complete: (day.status ?? status) === 'COMPLETE',
           completed_at: day.completed_at,
-          revision: foodDayRevision(day)
+          revision: foodDayRevision(day),
+          calorie_comparison: await readFoodDayComparison(tx, day)
         }
       };
       await recordSyncChange({ tx, userId: options.userId, entityType: 'food_log_day', entityId: mutation.payload.local_date, action: 'upsert', operationId: claimedOperationId, payload: body.food_day });

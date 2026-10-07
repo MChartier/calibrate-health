@@ -248,13 +248,17 @@ test('PATCH completion captures its local-day plan once and reopening/recompleti
   const now = new Date();
   const dateKey = now.toISOString().slice(0, 10);
   let stored = null;
+  let syncPayload;
   const goal = { id: 1, user_id: 7, start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500, calorie_plan_review_status: 'CLEAR', created_at: now };
   const prismaStub = {
+    foodLog: { findMany: async () => [{ calories: 1800 }] },
+    syncChange: { create: async ({data}) => { syncPayload = data.payload; return { id: 1n }; } },
     user: { findUnique: async () => ({ id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' }) },
     goal: { findFirst: async () => goal },
     bodyMetric: { findFirst: async () => ({ weight_grams: 90000 }) },
     caloriePlanRevision: { findFirst: async () => null, findMany: async () => [] },
     foodLogDay: {
+      findUnique: async () => stored,
       upsert: async ({create, update}) => { stored = { id: 1, updated_at: now, ...(stored ?? create), ...(stored ? update : {}) }; return stored; },
       update: async ({data}) => { stored = { ...stored, ...data, updated_at: new Date(now.getTime() + 1) }; return stored; }
     }
@@ -271,9 +275,17 @@ test('PATCH completion captures its local-day plan once and reopening/recompleti
   assert.equal(complete.is_complete, true);
   assert.equal(complete.updated_at, stored.updated_at);
   assert.equal(stored.comparison_maintenance_kcal - stored.comparison_target_kcal, 500);
+  assert.equal(complete.calorie_comparison.target_kcal, stored.comparison_target_kcal);
+  assert.equal(complete.calorie_comparison.consumed_kcal, 1800);
+  assert.deepEqual(syncPayload.calorie_comparison, complete.calorie_comparison);
+  const fetched = createRes();
+  await getRouteHandler(router, 'get', '/')({ user: {id: 7}, query: {date: dateKey} }, fetched);
+  assert.deepEqual(fetched.body.calorie_comparison, complete.calorie_comparison);
   const snapshot = stored.comparison_target_kcal;
-  assert.equal((await change('OPEN')).is_complete, false);
+  const reopened = await change('OPEN');
+  assert.equal(reopened.is_complete, false);
+  assert.equal(reopened.calorie_comparison, null);
   goal.daily_deficit = -500;
-  assert.equal((await change('COMPLETE')).is_complete, true);
+  assert.deepEqual((await change('COMPLETE')).calorie_comparison, complete.calorie_comparison);
   assert.equal(stored.comparison_target_kcal, snapshot);
 });

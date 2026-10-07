@@ -10,6 +10,18 @@ export type FoodDayCalorieComparison = {
   captured_at: string;
 };
 
+/** Read saved history only; never reconstruct a completed day's plan from current settings. */
+export async function readFoodDayComparison(db: MutationDatabase, day: FoodLogDay): Promise<FoodDayCalorieComparison | null> {
+  if (day.status !== 'COMPLETE' || !foodDayCalorieComparison(day, 0)) return null;
+  const entries = await db.foodLog.findMany({
+    where: { user_id: day.user_id, local_date: day.local_date },
+    select: { calories: true }
+  });
+  const consumed = entries.reduce((total, entry) =>
+    total + (Number.isSafeInteger(entry.calories) && entry.calories >= 0 ? entry.calories : NaN), 0);
+  return foodDayCalorieComparison(day, consumed);
+}
+
 /** The caller has upserted (and locked) this day in the completion transaction. */
 export async function captureFoodDayComparison(db: MutationDatabase, day: FoodLogDay, now: Date): Promise<FoodLogDay> {
   if (day.status !== 'COMPLETE' || day.comparison_captured_at) return day;

@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { foodDayCalorieComparison, type FoodDayCalorieComparison } from './foodDayComparison';
+import { foodDayCalorieComparison, readFoodDayComparison, type FoodDayCalorieComparison } from './foodDayComparison';
 import {
   addUtcDays,
   formatDateToLocalDateString,
@@ -158,7 +158,7 @@ export async function getEffectiveFoodDay(
   const stored = await db.foodLogDay.findUnique({
     where: { user_id_local_date: { user_id: userId, local_date: localDate } }
   });
-  if (stored) return serializeStoredDay(stored);
+  if (stored) return { ...serializeStoredDay(stored), calorie_comparison: await readFoodDayComparison(db, stored) };
   const trackingStart = await getTrackingStartDate(userId, db);
   if (!trackingStart) return null;
 

@@ -21,7 +21,7 @@ import {
 } from '../services/foodTracking';
 import { resolveInactiveReminderNotificationsForUser } from '../services/inAppNotifications';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
-import { captureFoodDayComparison } from '../services/foodDayComparison';
+import { captureFoodDayComparison, readFoodDayComparison } from '../services/foodDayComparison';
 
 const router = express.Router();
 router.use(requireAuthenticatedUser);
@@ -228,13 +228,13 @@ router.patch('/', async (req, res) => {
           }
         });
         if (completedAt) updated = await captureFoodDayComparison(tx, updated, completedAt);
-        const body = serializeFoodDayStatus({
+        const body = { ...serializeFoodDayStatus({
           date: updated.local_date,
           status: updated.status as FoodDayStatus,
           origin: updated.origin,
           completedAt: updated.completed_at,
           updatedAt: updated.updated_at
-        });
+        }), calorie_comparison: await readFoodDayComparison(tx, updated) };
         await recordSyncChange({
           tx,
           userId: user.id,
