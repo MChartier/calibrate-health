@@ -1,0 +1,19 @@
+Backend Tests	Initialize containers	2026-10-07T03:07:25.2027312Z ##[command]/usr/bin/docker pull postgres:16-alpine
+Backend Tests	Initialize containers	2026-10-07T03:07:30.7024528Z Status: Downloaded newer image for postgres:16-alpine
+Backend Tests	Initialize containers	2026-10-07T03:07:30.7036637Z docker.io/library/postgres:16-alpine
+Backend Tests	Initialize containers	2026-10-07T03:07:30.7090429Z ##[command]/usr/bin/docker create --name 2d1234e7846f4d569ec63042352a023e_postgres16alpine_e2f8bb --label 0e608e --network github_network_6d5fd8dc75724be5a213cdedac88e0f9 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U calibrate_ci -d calibrate_ci" --health-interval 5s --health-timeout 5s --health-retries 10 -e "POSTGRES_USER=calibrate_ci" -e "POSTGRES_PASSWORD=calibrate_ci" -e "POSTGRES_DB=calibrate_ci" -e GITHUB_ACTIONS=true -e CI=true postgres:16-alpine
+Backend Tests	Checkout	2026-10-07T03:07:37.1038701Z   ref: a0fdefe8bca51c25306f36cccc8181bd35672341
+Backend Tests	Checkout	2026-10-07T03:07:37.3334121Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin a0fdefe8bca51c25306f36cccc8181bd35672341
+Backend Tests	Checkout	2026-10-07T03:07:39.4182274Z  * branch            a0fdefe8bca51c25306f36cccc8181bd35672341 -> FETCH_HEAD
+Backend Tests	Checkout	2026-10-07T03:07:39.4315913Z [command]/usr/bin/git checkout --progress --force a0fdefe8bca51c25306f36cccc8181bd35672341
+Backend Tests	Checkout	2026-10-07T03:07:39.6257381Z Note: switching to 'a0fdefe8bca51c25306f36cccc8181bd35672341'.
+Backend Tests	Checkout	2026-10-07T03:07:39.6331306Z a0fdefe8bca51c25306f36cccc8181bd35672341
+Backend Tests	Run tests	2026-10-07T03:07:55.0301446Z   CALIBRATE_AUTH_TEST_DATABASE_URL: ***localhost:5432/calibrate_ci
+Backend Tests	Run tests	2026-10-07T03:09:49.9512596Z     ok 1 - password commits first: stale verified login creates no session
+Backend Tests	Run tests	2026-10-07T03:09:50.0643944Z     ok 2 - issuance commits first: later password revokes or cascades its session
+Backend Tests	Run tests	2026-10-07T03:09:50.1371685Z     ok 3 - delete commits first: stale verified login creates no session
+Backend Tests	Run tests	2026-10-07T03:09:50.1601591Z     ok 4 - issuance commits first: later delete revokes or cascades its session
+Backend Tests	Run tests	2026-10-07T03:09:50.1951748Z     ok 5 - commit failure rolls back the session without returning tokens
+Backend Tests	Run tests	2026-10-07T03:11:11.9246854Z # tests 775
+Backend Tests	Run tests	2026-10-07T03:11:11.9247410Z # pass 775
+Backend Tests	Run tests	2026-10-07T03:11:11.9248085Z # skipped 0

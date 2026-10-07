@@ -1,0 +1,630 @@
+✖ account token hashes are purpose-bound and never equal raw credentials (1017.5309ms)
+✖ issued recovery token stores only its hash with a 30 minute expiry (6.7064ms)
+✖ password reset atomically revokes browser, phone, Wear, push, pairing, and connected-assistant credentials (3.849ms)
+✖ expired or already-consumed reset tokens cannot change credentials (4.0817ms)
+✖ mobile auth parses Android device metadata (905.3688ms)
+✖ mobile auth parses iPhone and iPad device metadata (8.7844ms)
+✖ Wear pairing origins require HTTPS except on Android-approved local and private hosts (5.0261ms)
+✖ mobile auth issues a short-lived hashed Wear credential only from an active phone session (4.8854ms)
+✖ Wear pairing issuance permits concurrent tickets while pruning overflow and stale rows (4.0649ms)
+✖ mobile auth exchanges a pairing token once for a Wear OS session bound to the same server (5.6394ms)
+✖ mobile auth rejects cross-server or revoked-phone Wear exchanges without consuming the token (4.5694ms)
+✖ mobile auth rejects invalid Wear challenge signatures without consuming the credential (4.2734ms)
+✖ expired consumed Wear retries return expiry without revoking the created session (3.6451ms)
+✖ mobile auth issues hashed opaque session tokens (3.3554ms)
+✖ mobile auth validates bearer access tokens and hydrates the client user (3.2337ms)
+✖ Wear bearer authentication exposes only the reduced principal (3.3842ms)
+✖ mobile auth allows exactly one successor for concurrent refresh-token replays (3.9711ms)
+✖ Wear refresh returns only the reduced principal (2.8956ms)
+✖ mobile auth logout revokes push subscriptions bound to the session (2.6523ms)
+✖ mobile auth lists only safe session metadata and marks the current device (2.7032ms)
+✖ mobile auth cannot revoke a session owned by another user (2.5952ms)
+✖ verified mobile issuance rejects stale credentials before reading account or creating tokens (4.5581ms)
+✖ verified mobile issuance preserves restricted access and returns only after commit (3.0191ms)
+✖ verified mobile issuance propagates transaction failure without returning credentials (2.6812ms)
+✖ known-account SMTP work cannot delay the generic password reset response (846.3321ms)
+✖ known and unknown recovery requests have the same immediate response (12.1157ms)
+Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\shared\clientDiagnostics' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\observability.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+    at moduleResolve (node:internal/modules/esm/resolve:865:10)
+    at defaultResolve (node:internal/modules/esm/resolve:992:11)
+    at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+    at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+    at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+    at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+    at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/shared/clientDiagnostics'
+}
+✖ backend\test\routes-auth-mobile.test.js (677.548ms)
+✖ auth route: POST /register returns 400 when the email already exists (782.8374ms)
+✖ auth route: POST /register validates email and password inputs (11.624ms)
+✖ auth route: POST /register creates a user and logs them in (10.5297ms)
+✖ auth route: POST /login normalizes credentials, logs in, and returns the serialized user (8.5664ms)
+✖ auth route: POST /login returns JSON errors for invalid or rejected credentials (8.0064ms)
+✖ auth route: POST /logout forwards errors from req.logout (7.6867ms)
+✖ auth route: POST /logout destroys the session and clears its cookie (7.2195ms)
+✖ auth route: GET /me returns 401 when not authenticated (6.2362ms)
+✖ hosted registration requires explicit current legal versions (6.8686ms)
+✖ auth route: hosted registration fails closed when account email is unavailable (6.9411ms)
+✖ auth route: verification resend and reset request do not reveal account existence (5.8596ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 0
+ℹ fail 38
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3009.729
+
+✖ failing tests:
+
+test at backend\test\account-tokens.test.js:33:1
+✖ account token hashes are purpose-bound and never equal raw credentials (1017.5309ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\accountTokens.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\account-tokens.test.js:45:1
+✖ issued recovery token stores only its hash with a 30 minute expiry (6.7064ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\accountTokens.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\account-tokens.test.js:63:1
+✖ password reset atomically revokes browser, phone, Wear, push, pairing, and connected-assistant credentials (3.849ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\accountTokens.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\account-tokens.test.js:106:1
+✖ expired or already-consumed reset tokens cannot change credentials (4.0817ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\accountTokens.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:71:1
+✖ mobile auth parses Android device metadata (905.3688ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:87:1
+✖ mobile auth parses iPhone and iPad device metadata (8.7844ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:103:1
+✖ Wear pairing origins require HTTPS except on Android-approved local and private hosts (5.0261ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:125:1
+✖ mobile auth issues a short-lived hashed Wear credential only from an active phone session (4.8854ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:171:1
+✖ Wear pairing issuance permits concurrent tickets while pruning overflow and stale rows (4.0649ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:203:1
+✖ mobile auth exchanges a pairing token once for a Wear OS session bound to the same server (5.6394ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:334:1
+✖ mobile auth rejects cross-server or revoked-phone Wear exchanges without consuming the token (4.5694ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:414:1
+✖ mobile auth rejects invalid Wear challenge signatures without consuming the credential (4.2734ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:455:1
+✖ expired consumed Wear retries return expiry without revoking the created session (3.6451ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:493:1
+✖ mobile auth issues hashed opaque session tokens (3.3554ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:527:1
+✖ mobile auth validates bearer access tokens and hydrates the client user (3.2337ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:553:1
+✖ Wear bearer authentication exposes only the reduced principal (3.3842ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:577:1
+✖ mobile auth allows exactly one successor for concurrent refresh-token replays (3.9711ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:621:1
+✖ Wear refresh returns only the reduced principal (2.8956ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:646:1
+✖ mobile auth logout revokes push subscriptions bound to the session (2.6523ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:674:1
+✖ mobile auth lists only safe session metadata and marks the current device (2.7032ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:721:1
+✖ mobile auth cannot revoke a session owned by another user (2.5952ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:741:1
+✖ verified mobile issuance rejects stale credentials before reading account or creating tokens (4.5581ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:754:1
+✖ verified mobile issuance preserves restricted access and returns only after commit (3.0191ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\mobile-auth.test.js:776:1
+✖ verified mobile issuance propagates transaction failure without returning credentials (2.6812ms)
+  Error: Cannot find module 'C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\config\database' imported from C:\Users\MChar\Documents\Codex\2026-10-05\task-11\qa-437\backend\src\services\mobileAuth.ts
+      at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+      at moduleResolve (node:internal/modules/esm/resolve:865:10)
+      at defaultResolve (node:internal/modules/esm/resolve:992:11)
+      at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+      at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:600:27)
+      at ModuleJobSync.syncLink (node:internal/modules/esm/module_job:163:33)
+      at ModuleJobSync.link (node:internal/modules/esm/module_job:489:17)
+      at new ModuleJobSync (node:internal/modules/esm/module_job:479:26) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///C:/Users/MChar/Documents/Codex/2026-10-05/task-11/qa-437/backend/src/config/database'
+  }
+
+test at backend\test\routes-account-recovery.test.js:55:1
+✖ known-account SMTP work cannot delay the generic password reset response (846.3321ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-account-recovery.test.js:77:1
+✖ known and unknown recovery requests have the same immediate response (12.1157ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth-mobile.test.js:1:1
+✖ backend\test\routes-auth-mobile.test.js (677.548ms)
+  'test failed'
+
+test at backend\test\routes-auth.test.js:83:1
+✖ auth route: POST /register returns 400 when the email already exists (782.8374ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:106:1
+✖ auth route: POST /register validates email and password inputs (11.624ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:141:1
+✖ auth route: POST /register creates a user and logs them in (10.5297ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:224:1
+✖ auth route: POST /login normalizes credentials, logs in, and returns the serialized user (8.5664ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:282:1
+✖ auth route: POST /login returns JSON errors for invalid or rejected credentials (8.0064ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:320:1
+✖ auth route: POST /logout forwards errors from req.logout (7.6867ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:342:1
+✖ auth route: POST /logout destroys the session and clears its cookie (7.2195ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:367:1
+✖ auth route: GET /me returns 401 when not authenticated (6.2362ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:384:1
+✖ hosted registration requires explicit current legal versions (6.8686ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:419:1
+✖ auth route: hosted registration fails closed when account email is unavailable (6.9411ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  
+
+test at backend\test\routes-auth.test.js:452:1
+✖ auth route: verification resend and reset request do not reveal account existence (5.8596ms)
+  backend/src/routes/auth.ts(91,14): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,13): error TS2339: Property 'session' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(93,30): error TS7006: Parameter 'error' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(551,13): error TS2339: Property 'session' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+  backend/src/routes/auth.ts(551,30): error TS7006: Parameter 'destroyError' implicitly has an 'any' type.
+  backend/src/routes/auth.ts(590,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(609,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{ sessionId: string; }, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  backend/src/routes/auth.ts(627,75): error TS2339: Property 'sessionID' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>> & AuthenticatedRequest'.
+  

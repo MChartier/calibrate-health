@@ -1,0 +1,78 @@
+{
+  "repository": "MChartier/calibrate-health",
+  "targetRef": "mchartier/credential-verification-421",
+  "actualTargetSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "mergeBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "ultimateTargetRef": "master",
+  "ultimateTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateMergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "parent": {
+    "pr": 431,
+    "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+    "state": "open",
+    "draft": false
+  },
+  "files": [
+    {
+      "path": ".github/workflows/tests.yml",
+      "blob": "a4b37df416fac5a804c844f1557dc61c7c3bbb93",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "blob": "145021ef1b367ad9e9ac431007cfcd7590ef9a89",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 3
+    },
+    {
+      "path": "backend/src/services/mobileAuth.ts",
+      "blob": "79db50afdd79b2f700e4a25aea1557bf7d433ff8",
+      "status": "modified",
+      "additions": 22,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/mobile-auth.test.js",
+      "blob": "674f1e5d94d192e70b9410ba24672e7818bca7f0",
+      "status": "modified",
+      "additions": 42,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/mobile-session-issuance-postgres.test.js",
+      "blob": "e6a7baa9b9f58cec14700f532edcb952bd12348a",
+      "status": "added",
+      "additions": 102,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "blob": "b5656f2cb9e64000b8a349f852d686dfad66ada8",
+      "status": "modified",
+      "additions": 22,
+      "deletions": 0
+    }
+  ],
+  "commits": [
+    {
+      "sha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "parents": [
+        "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+      ]
+    }
+  ],
+  "totals": {
+    "files": 6,
+    "commits": 1,
+    "additions": 195,
+    "deletions": 3
+  },
+  "syntheticParentTree": "06a810c956e2bb0a4dd2880e1fefcc05ffe4994d",
+  "syntheticChildTree": "a21fa2c7ed5277a0232ed9977e77e9abaa3a2627",
+  "integratedChildPatchIdentical": true,
+  "productPatchSha256": "60b430faa190ceeb1c478cdcecab05ae036c9ee3de4bbc8934b868f0f2e265d8"
+}

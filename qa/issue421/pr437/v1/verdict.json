@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "verdict": "human-decision-required",
+  "technicalVerdict": "pass",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/437",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/421",
+  "reviewerChat": "01a10f9e-b990-7742-b94e-da6d8b4e0026",
+  "supersedesVerdictCommentId": null,
+  "checkedAtUtc": "2026-10-07T04:02:14.706Z",
+  "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "baseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "parentRevisions": [
+    {
+      "pullRequest": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    }
+  ],
+  "actualTargetRef": "mchartier/credential-verification-421",
+  "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "mergeBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "ultimateTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "prBodySha256": "a125ab27c6193d0477223728900c0199440ca538e86bf6fc63d76270b9ec88b9",
+  "issueBodySha256": "7bb68da7d1aa5b1e85280a6c5b918ad02d23d1694bd7caa38807c3ba25d42140",
+  "scopeSha256": "8209cd739e54fc7833768d8bc0803a056a8791bb0091521b0333aba438c9e066",
+  "scope": {
+    "repository": "MChartier/calibrate-health",
+    "targetRef": "mchartier/credential-verification-421",
+    "actualTargetSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+    "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+    "mergeBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+    "ultimateTargetRef": "master",
+    "ultimateTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "ultimateMergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+    "parent": {
+      "pr": 431,
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open",
+      "draft": false
+    },
+    "files": [
+      {
+        "path": ".github/workflows/tests.yml",
+        "blob": "a4b37df416fac5a804c844f1557dc61c7c3bbb93",
+        "status": "modified",
+        "additions": 2,
+        "deletions": 0
+      },
+      {
+        "path": "backend/src/routes/auth.ts",
+        "blob": "145021ef1b367ad9e9ac431007cfcd7590ef9a89",
+        "status": "modified",
+        "additions": 5,
+        "deletions": 3
+      },
+      {
+        "path": "backend/src/services/mobileAuth.ts",
+        "blob": "79db50afdd79b2f700e4a25aea1557bf7d433ff8",
+        "status": "modified",
+        "additions": 22,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/mobile-auth.test.js",
+        "blob": "674f1e5d94d192e70b9410ba24672e7818bca7f0",
+        "status": "modified",
+        "additions": 42,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/mobile-session-issuance-postgres.test.js",
+        "blob": "e6a7baa9b9f58cec14700f532edcb952bd12348a",
+        "status": "added",
+        "additions": 102,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth-mobile.test.js",
+        "blob": "b5656f2cb9e64000b8a349f852d686dfad66ada8",
+        "status": "modified",
+        "additions": 22,
+        "deletions": 0
+      }
+    ],
+    "commits": [
+      {
+        "sha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+        "parents": [
+          "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+        ]
+      }
+    ],
+    "totals": {
+      "files": 6,
+      "commits": 1,
+      "additions": 195,
+      "deletions": 3
+    },
+    "syntheticParentTree": "06a810c956e2bb0a4dd2880e1fefcc05ffe4994d",
+    "syntheticChildTree": "a21fa2c7ed5277a0232ed9977e77e9abaa3a2627",
+    "integratedChildPatchIdentical": true,
+    "productPatchSha256": "60b430faa190ceeb1c478cdcecab05ae036c9ee3de4bbc8934b868f0f2e265d8"
+  },
+  "gates": {
+    "value": "pass: admitted stale verified native login/session race; proportional six-file fix",
+    "outcome": "pass for bounded local SQL/native-login checkpoint; not full issue421",
+    "code": "pass: full child diff and surrounding mutation/session contracts inspected. Conditional version update takes User lock before read and session create. Password trigger advances version; reset updates User before session revocation; deletion cascades. Tokens returned only after transaction resolution. Generic stale/unknown/wrong error preserved; infrastructure failures remain generic server error.",
+    "engineeringReview": "pass under quota exception: exact refusal6030076999 read; no completed bot review claimed. All current 31 issue comments, four PR comments, zero reviews/inline threads read; no unresolved actionable code feedback found.",
+    "ci": "pass: {\"success\":10,\"skipped\":14} on exact head. Live job112611401048/run37565258344 confirms postgres16 service, exact checkout, five named database subtests and775 passes/zero skips. Tests workflow change intentionally runs mobile/API checks as well. Other classifier skips remain unaffected/manual surfaces.",
+    "behavior": "pass: independent47 focused tests, zero failures/skips; real PostgreSQL execution independently verified from live CI logs. No local database rerun claimed.",
+    "evidence": "pass:11 immutable artifact digests and manifest API bytes verified, exact child diff matched. Final description receipt read/hashed. Genuine non-UI observable contract.",
+    "communication": "pass: concise parent-relative race problem, atomic solution and behavioral table, precise synthetic/real PostgreSQL distinction and unfinished lifecycle limits; issue fixed template and verified task ID preserved.",
+    "stack": "technical pass: one commit/six files against actual unchanged PR431 parent; child patch identical after conflict-free ultimate-master integration. Parent first. Human pipeline linkage choice remains pending."
+  },
+  "independentTests": {
+    "pass": 47,
+    "fail": 0,
+    "skipped": 0,
+    "files": [
+      "mobile-auth.test.js",
+      "routes-auth-mobile.test.js",
+      "account-tokens.test.js",
+      "routes-account-recovery.test.js",
+      "routes-auth.test.js"
+    ],
+    "logSha256": "5d9b995b8f5fa7d3a320e478cc7748e7b014a9c7b52d9bf795f9dc56ff0fd17e",
+    "setupNote": "Initial invocation from repository root selected wrong TypeScript configuration; preserved failed setup log, corrected backend cwd, all47 passed."
+  },
+  "evidence": [
+    {
+      "commitSha": "6f1e22d2d23ea0b8a4817336a74e7ee411f29dc4",
+      "path": "preparation-evidence/atomic-login-a0fdefe8/manifest.json",
+      "sha256": "4fe2e1e1e6fada8a3b9732a7cbdc83889028bec0bd7d56d58b660e77291fcf9b",
+      "artifactsVerified": 11,
+      "productDiffSha256": "60b430faa190ceeb1c478cdcecab05ae036c9ee3de4bbc8934b868f0f2e265d8",
+      "ciJob": 112611401048,
+      "ciRun": 37565258344,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "ciLiveLogSha256": "c814792b72027d5432342c689d6fe54e08e18b9192419e24c1729a1e4799bdfd",
+      "descriptionReceipt": {
+        "commitSha": "71f5859e7f18e1d6eef4943b0189c50ae293ea86",
+        "path": "preparation-evidence/atomic-login-a0fdefe8-description/receipt.json",
+        "sha256": "edec28957c495b7aa177847bf60e01858276ed09b23ceccb0ffa05339a5f49e1"
+      },
+      "url": "https://github.com/MChartier/calibrate-health/blob/6f1e22d2d23ea0b8a4817336a74e7ee411f29dc4/preparation-evidence/atomic-login-a0fdefe8/manifest.json"
+    }
+  ],
+  "uiEvidence": {
+    "applicable": false,
+    "pairs": [],
+    "provenanceRecords": [],
+    "nonUiObservableContract": "Session persistence/revocation and response behavior under both competing transaction orders, restricted recovery access, stale version and rollback. No application UI change.",
+    "renderedPrInspection": {
+      "url": "https://github.com/MChartier/calibrate-health/pull/437",
+      "checkedAtUtc": null,
+      "observations": "No new page-rendering inspection claimed; explicit human general rendering waiver applies."
+    },
+    "scopedHumanBaselineWaiver": null
+  },
+  "feedback": {
+    "sha256": "2ef7eba8034d1e5b923483d07a9a1652a1345362d4c70263030e437065604614",
+    "assessment": "All current bodies read, including offline-first/backfill requirements and current atomic-login admission. Historical owner checkpoints remain historical. No actionable new human code request omitted."
+  },
+  "linkage": {
+    "closingIssuesReferences": [],
+    "issueState": "OPEN",
+    "projectCurrentPr": "437 child;431 parent;423 merged history, independently read",
+    "nativeDevelopmentAssociation": "Not established; cross-reference/body/Project text is not claimed equivalent.",
+    "gate": "Existing coordinator/human choice for native linkage of nonclosing partial checkpoints remains unresolved. Do not autoclose421 or restore431 readiness."
+  },
+  "limitations": [
+    "Full Firebase runtime/lifecycle, cross-store pending deletion, live-provider rehearsal, migration/cutover and GCP422 readiness remain unfinished.",
+    "Database fixture directly exercises password update plus revocation ordering; it is not a reset-link end-to-end test. Password-change route commits its update before later revocation; reset does both in one transaction. Existing recovery tests/source verify those contracts; revocation infrastructure failure is not newly solved here.",
+    "Restricted recovery access is preserved; registration, refresh, Wear and browser paths are not broadened. Firebase remains configuration-disabled; offline contracts untouched.",
+    "No provider/live-user/security-configuration/device/deployment/release/merge/readiness operations performed."
+  ],
+  "nextAction": "Coordinator resolve the already-pending native linkage policy for partial checkpoints with the human, without falsely closing421. Technical QA passes at these bindings; retain parent-first dependency and separate parent readiness. Recheck feedback and all bindings before lifecycle transition."
+}
