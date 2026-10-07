@@ -1,0 +1,257 @@
+{
+  "checkedAt": "2026-10-07T02:49:17.873Z",
+  "manifestSha256": "0cf7c8c9bf85df16b517f79b2edb5dc0f7b121e1def9d53d940089b2bcc913d5",
+  "filesVerified": 15,
+  "records": [
+    {
+      "side": "before",
+      "state": "valid",
+      "record": {
+        "source": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "browser": "154.0.8037.98",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "side": "before",
+        "state": "valid",
+        "checkedAt": "2026-10-07T02:13:04.240Z",
+        "bundles": {
+          "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32"
+        }
+      },
+      "retainedBuildMatched": true
+    },
+    {
+      "side": "before",
+      "state": "missing",
+      "record": {
+        "source": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "browser": "154.0.8037.98",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "side": "before",
+        "state": "missing",
+        "checkedAt": "2026-10-07T02:13:05.284Z",
+        "bundles": {
+          "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32"
+        }
+      },
+      "retainedBuildMatched": true
+    },
+    {
+      "side": "after",
+      "state": "valid",
+      "record": {
+        "source": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+        "browser": "154.0.8037.98",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "side": "after",
+        "state": "valid",
+        "checkedAt": "2026-10-07T02:12:45.332Z",
+        "bundles": {
+          "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32"
+        }
+      },
+      "retainedBuildMatched": true
+    },
+    {
+      "side": "after",
+      "state": "missing",
+      "record": {
+        "source": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+        "browser": "154.0.8037.98",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "side": "after",
+        "state": "missing",
+        "checkedAt": "2026-10-07T02:12:46.609Z",
+        "bundles": {
+          "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32"
+        }
+      },
+      "retainedBuildMatched": true
+    }
+  ],
+  "commits": [
+    {
+      "sha": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "message": "Return saved calorie comparisons for completed-day reads and acknowledgements"
+    },
+    {
+      "sha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "parents": [
+        "3ac32ffa92f1e429dd689e2f52683bd8ea045d15"
+      ],
+      "message": "Describe saved comparison on day reads and completion responses"
+    }
+  ],
+  "files": [
+    {
+      "path": "backend/src/routes/foodDays.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3
+    },
+    {
+      "path": "backend/src/services/foodDayComparison.ts",
+      "status": "modified",
+      "additions": 12,
+      "deletions": 0
+    },
+    {
+      "path": "backend/src/services/foodTracking.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2
+    },
+    {
+      "path": "backend/src/services/watch.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 2
+    },
+    {
+      "path": "backend/test/food-day-comparison.test.js",
+      "status": "modified",
+      "additions": 35,
+      "deletions": 2
+    },
+    {
+      "path": "backend/test/routes-food-days.test.js",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 2
+    },
+    {
+      "path": "backend/test/watch-service.test.js",
+      "status": "modified",
+      "additions": 25,
+      "deletions": 0
+    },
+    {
+      "path": "docs/openapi/v1.yaml",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "e2e/expo-web/saved-target.spec.ts",
+      "status": "added",
+      "additions": 42,
+      "deletions": 0
+    },
+    {
+      "path": "packages/api-client/src/generated/v1.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "linkage": {
+    "data": {
+      "repository": {
+        "pullRequest": {
+          "closingIssuesReferences": {
+            "nodes": [
+              {
+                "number": 435,
+                "url": "https://github.com/MChartier/calibrate-health/issues/435"
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          },
+          "reviewThreads": {
+            "nodes": [],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          }
+        },
+        "issue": {
+          "projectItems": {
+            "nodes": [
+              {
+                "id": "PVTI_lAHOABMy1c4Bl3Eqzg-9jW8",
+                "project": {
+                  "number": 1,
+                  "title": "Agentic development pipeline"
+                },
+                "fieldValues": {
+                  "nodes": [
+                    {},
+                    {},
+                    {
+                      "field": {
+                        "name": "Linked pull requests"
+                      },
+                      "pullRequests": {
+                        "nodes": [
+                          {
+                            "number": 436,
+                            "url": "https://github.com/MChartier/calibrate-health/pull/436"
+                          }
+                        ],
+                        "pageInfo": {
+                          "hasNextPage": false
+                        }
+                      }
+                    },
+                    {
+                      "text": "Fix missing saved calorie targets in completed-day Daily Balance",
+                      "field": {
+                        "name": "Title"
+                      }
+                    },
+                    {},
+                    {
+                      "text": "01a1128c-d211-7497-8dbe-3acf0662f004; completed implementation checkpoint, idle",
+                      "field": {
+                        "name": "Owner"
+                      }
+                    },
+                    {
+                      "text": "https://github.com/MChartier/calibrate-health/pull/436",
+                      "field": {
+                        "name": "Current PRs"
+                      }
+                    },
+                    {
+                      "text": "Independent QA admitted: task 01a1143e-b348-745e-ab17-2f04d2301010, turn 01a1143e-bb5b-746f-9ceb-31e9e33b7f08; preclaim 6029785027. QA slot transferred after PR33 review completed. PR436 head d94a34d019bd9d993c27d33dbc1accc2cce61a87; no verdict/readiness yet.",
+                      "field": {
+                        "name": "Blocked by"
+                      }
+                    },
+                    {},
+                    {
+                      "text": "2026-10-07T02:45:22.867212+00:00",
+                      "field": {
+                        "name": "Verified at"
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,336 @@
+{
+  "head": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+  "checkedAtUtc": "2026-10-07T02:52:56.708Z",
+  "passed": 49,
+  "checks": [
+    {
+      "name": "saved target wins for historical completed day",
+      "currentTarget": 3100,
+      "savedTarget": 2000,
+      "remaining": 200
+    },
+    {
+      "name": "saved target wins for current completed day",
+      "currentTarget": 3100,
+      "savedTarget": 2000,
+      "remaining": 200
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [],
+      "output": {
+        "consumed_kcal": 0,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "0"
+      ],
+      "output": {
+        "consumed_kcal": 0,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "1000",
+        "800"
+      ],
+      "output": {
+        "consumed_kcal": 1800,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "2000"
+      ],
+      "output": {
+        "consumed_kcal": 2000,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "2600"
+      ],
+      "output": {
+        "consumed_kcal": 2600,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "-1"
+      ],
+      "output": null
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "1.5"
+      ],
+      "output": null
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "NaN"
+      ],
+      "output": null
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "Infinity"
+      ],
+      "output": null
+    },
+    {
+      "name": "single/range calorie boundary",
+      "input": [
+        "9007199254740991",
+        "1"
+      ],
+      "output": null
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "null"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "undefined"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "0"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "-1"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "1.5"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "NaN"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "Infinity"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_target_kcal",
+      "value": "9007199254740992"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "null"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "undefined"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "0"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "-1"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "1.5"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "NaN"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "Infinity"
+    },
+    {
+      "name": "invalid snapshot avoids intake read",
+      "field": "comparison_maintenance_kcal",
+      "value": "9007199254740992"
+    },
+    {
+      "name": "invalid snapshot capture time",
+      "value": "null"
+    },
+    {
+      "name": "invalid snapshot capture time",
+      "value": "undefined"
+    },
+    {
+      "name": "invalid snapshot capture time",
+      "value": "Invalid Date"
+    },
+    {
+      "name": "invalid snapshot capture time",
+      "value": "2026-07-20T19:00:00Z"
+    },
+    {
+      "name": "noncomplete status does not leak saved comparison",
+      "status": "OPEN"
+    },
+    {
+      "name": "noncomplete status does not leak saved comparison",
+      "status": "INCOMPLETE"
+    },
+    {
+      "name": "noncomplete status does not leak saved comparison",
+      "status": "PAUSED"
+    },
+    {
+      "name": "current open keeps current plan",
+      "target": 3100
+    },
+    {
+      "name": "actual before source reproduces retained valid capture input",
+      "result": {
+        "date": "2026-07-20",
+        "status": "COMPLETE",
+        "origin": "USER",
+        "source": "STORED",
+        "is_representative": true,
+        "is_complete": true,
+        "completed_at": "2026-07-20T19:00:00.000Z",
+        "updated_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "actual after source reproduces retained valid capture input",
+      "result": {
+        "date": "2026-07-20",
+        "status": "COMPLETE",
+        "origin": "USER",
+        "source": "STORED",
+        "is_representative": true,
+        "is_complete": true,
+        "completed_at": "2026-07-20T19:00:00.000Z",
+        "updated_at": "2026-07-20T19:00:00.000Z",
+        "calorie_comparison": {
+          "consumed_kcal": 1800,
+          "target_kcal": 2000,
+          "maintenance_kcal": 2500,
+          "captured_at": "2026-07-20T19:00:00.000Z"
+        }
+      }
+    },
+    {
+      "name": "actual before source reproduces retained missing capture input",
+      "result": {
+        "date": "2026-07-20",
+        "status": "COMPLETE",
+        "origin": "USER",
+        "source": "STORED",
+        "is_representative": true,
+        "is_complete": true,
+        "completed_at": "2026-07-20T19:00:00.000Z",
+        "updated_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "actual after source reproduces retained missing capture input",
+      "result": {
+        "date": "2026-07-20",
+        "status": "COMPLETE",
+        "origin": "USER",
+        "source": "STORED",
+        "is_representative": true,
+        "is_complete": true,
+        "completed_at": "2026-07-20T19:00:00.000Z",
+        "updated_at": "2026-07-20T19:00:00.000Z",
+        "calorie_comparison": null
+      }
+    },
+    {
+      "name": "API normalization getFoodDay",
+      "comparison": {
+        "consumed_kcal": 1800,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "API normalization setFoodDayStatus",
+      "comparison": {
+        "consumed_kcal": 1800,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "API normalization updateFoodDay",
+      "comparison": {
+        "consumed_kcal": 1800,
+        "target_kcal": 2000,
+        "maintenance_kcal": 2500,
+        "captured_at": "2026-07-20T19:00:00.000Z"
+      }
+    },
+    {
+      "name": "API normalization getFoodDay",
+      "comparison": "null"
+    },
+    {
+      "name": "API normalization setFoodDayStatus",
+      "comparison": "null"
+    },
+    {
+      "name": "API normalization updateFoodDay",
+      "comparison": "null"
+    },
+    {
+      "name": "API normalization getFoodDay",
+      "comparison": "undefined"
+    },
+    {
+      "name": "API normalization setFoodDayStatus",
+      "comparison": "undefined"
+    },
+    {
+      "name": "API normalization updateFoodDay",
+      "comparison": "undefined"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "repository": "MChartier/calibrate-health",
+  "targetRef": "master",
+  "targetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  },
+  "declaredParents": [],
+  "orderedCommits": [
+    {
+      "sha": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "message": "Return saved calorie comparisons for completed-day reads and acknowledgements"
+    },
+    {
+      "sha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "parents": [
+        "3ac32ffa92f1e429dd689e2f52683bd8ea045d15"
+      ],
+      "message": "Describe saved comparison on day reads and completion responses"
+    }
+  ],
+  "files": [
+    {
+      "path": "backend/src/routes/foodDays.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3
+    },
+    {
+      "path": "backend/src/services/foodDayComparison.ts",
+      "status": "modified",
+      "additions": 12,
+      "deletions": 0
+    },
+    {
+      "path": "backend/src/services/foodTracking.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2
+    },
+    {
+      "path": "backend/src/services/watch.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 2
+    },
+    {
+      "path": "backend/test/food-day-comparison.test.js",
+      "status": "modified",
+      "additions": 35,
+      "deletions": 2
+    },
+    {
+      "path": "backend/test/routes-food-days.test.js",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 2
+    },
+    {
+      "path": "backend/test/watch-service.test.js",
+      "status": "modified",
+      "additions": 25,
+      "deletions": 0
+    },
+    {
+      "path": "docs/openapi/v1.yaml",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "e2e/expo-web/saved-target.spec.ts",
+      "status": "added",
+      "additions": 42,
+      "deletions": 0
+    },
+    {
+      "path": "packages/api-client/src/generated/v1.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "totals": {
+    "commits": 2,
+    "files": 10,
+    "additions": 138,
+    "deletions": 13
+  },
+  "scopeRationale": "Four backend serializers/services, three backend regression files, one maintained browser regression, API description and generated comment mirror. No merge commits, renames, temp files or evidence churn anywhere in published history."
+}

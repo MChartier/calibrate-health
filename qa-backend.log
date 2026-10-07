@@ -1,0 +1,41 @@
+Γ£ö executeIdempotentMutation replays the committed response without repeating the mutation (51.9528ms)
+Γ£ö executeIdempotentMutation replays a completed 204 with a null body without repeating the mutation (10.7701ms)
+Γ£ö executeIdempotentMutation reports a matching incomplete receipt as in progress (7.7691ms)
+Γ£ö executeIdempotentMutation rejects reuse of an operation id for a different request (7.7914ms)
+Γ£ö the same client operation id remains isolated between users (6.6377ms)
+Γ£ö session-bound operations replay only for the originating mobile session (5.8453ms)
+Γ£ö recordSyncChange stores entity identifiers as strings and JSON-safe payload values (6.8902ms)
+Γ£ö food-copy operation IDs prevent duplicate writes across in-flight retries and exact replays (9.2141ms)
+Γ£ö captures only the actual local day and preserves the first plan through reopen/recomplete and later settings (13.8315ms)
+Γ£ö does not reconstruct past/future history or turn unsafe plans into colors (0.5661ms)
+Γ£ö uses the evaluated adjusted target while maintenance remains profile-estimated TDEE (0.3888ms)
+Γ£ö range returns known zero, sums immutable entry calories, hides non-complete comparisons, and rejects invalid totals (1.8327ms)
+Γ£ö an invalid timezone leaves completion intact and comparison unavailable (0.1783ms)
+Γ£ö single-day reads match calendar history without rebuilding the current plan (1.4068ms)
+Γ£ö single-day reads leave legacy, partial and invalid snapshots unavailable (0.1773ms)
+Γ£ö retains adjusted target ordering when a positive-deficit plan crosses maintenance (0.3615ms)
+Γ£ö food-days route: rejects unauthenticated requests via router.use middleware (273.8931ms)
+Γ£ö food-days route: GET / returns default incomplete status when no row exists (40.3532ms)
+Γ£ö food-days route: GET /range returns inclusive day statuses for start/end (28.3719ms)
+Γ£ö food-days route: GET /range supports month query (21.5263ms)
+Γ£ö food-days route: GET /range validates query shape (22.9714ms)
+Γ£ö PATCH completion captures its local-day plan once and reopening/recompletion retains it (26.3461ms)
+Γ£ö watch mutation parser accepts canonical grams and rejects unknown fields (287.3259ms)
+Γ£ö watch snapshot rejects an invalid stored timezone before reading any guessed local day (24.4917ms)
+Γ£ö watch snapshot is bounded, timezone-local, and derives current-session undo (22.1968ms)
+Γ£ö watch goal progress covers loss, gain, maintenance, missing goals, and completed targets (22.6459ms)
+Γ£ö watch food creation snapshots My Food and records trusted session provenance (20.7623ms)
+Γ£ö watch food creation rejects paused days before inserting (23.9696ms)
+Γ£ö watch food deletion is limited to the current session undo candidate (17.0354ms)
+Γ£ö watch undo is invalidated by a later phone edit and never walks to an older create (17.376ms)
+Γ£ö watch metric and completion mutations use canonical date-only upserts (24.2879ms)
+Γ£ö watch completion publishes saved comparison in its acknowledgement and sync change (16.7786ms)
+Γ£ö watch metric and completion mutations reject stale snapshot revisions (16.7629ms)
+Γä╣ tests 33
+Γä╣ suites 0
+Γä╣ pass 33
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 1958.9957

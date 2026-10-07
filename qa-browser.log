@@ -1,0 +1,10 @@
+
+Running 3 tests using 1 worker
+
+(node:39056) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ qa-436\e2e\expo-web\saved-target.spec.ts:3:5 ΓÇ║ Daily Balance retains a saved target through completion, refetch and reload (1.8s)
+  ok 2 [desktop-chrome] ΓÇ║ qa-436\e2e\expo-web\saved-target.spec.ts:31:7 ΓÇ║ legacy completed day stays unavailable with omitted comparison (1.2s)
+  ok 3 [desktop-chrome] ΓÇ║ qa-436\e2e\expo-web\saved-target.spec.ts:31:7 ΓÇ║ legacy completed day stays unavailable with null comparison (1.5s)
+
+  3 passed (5.8s)

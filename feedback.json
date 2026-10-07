@@ -1,0 +1,79 @@
+{
+  "checkedAtUtc": "2026-10-07T02:56:39.013Z",
+  "pagination": "gh api --paginate --slurp per_page=100 for every REST collection; complete submitted reviews and inline bodies. GraphQL reviewThreads empty, hasNextPage=false.",
+  "dispositions": [
+    {
+      "id": 6023260057,
+      "location": "issue435",
+      "disposition": "Scoping evidence and exact user report preserved. Backend omission reproduced; deployed version and live snapshot state remain explicitly unknown."
+    },
+    {
+      "id": 6029222183,
+      "location": "issue435",
+      "disposition": "Historical queued implementation claim; assigned owner produced this scoped PR. No product change request."
+    },
+    {
+      "id": 6029476995,
+      "location": "PR436",
+      "disposition": "Bot review request; response is quota refusal below."
+    },
+    {
+      "id": 6029479109,
+      "location": "PR436",
+      "disposition": "Exact quota-only refusal read. Bot did not review captured 3ac32ffa or documentation child d94a34d0. Direct human amendment 6006523068 permits independent QA; complete current-head independent review performed."
+    },
+    {
+      "id": 6029570559,
+      "location": "PR436",
+      "disposition": "Implementation claims independently checked against full scope, CI logs, actual source, test execution and retained evidence."
+    },
+    {
+      "id": 6029785027,
+      "location": "PR436",
+      "disposition": "Predispatch QA assignment claim fulfilled by this separate reviewer. Not treated as verdict."
+    }
+  ],
+  "issueBody": "## Problem\n\nCompleted days show **“Saved target unavailable”** in Daily Balance, preventing people from reviewing intake against their saved plan.\n\nDirect human report, October 6, 2026: “Scope and file an issue for a bug in calibrate where, for completed days, daily balance renders the target as 'Saved target unavailable'. This repro'd both before and after deploying the latest server version. Client is on latest OTA bundle from October 5 at 9:05pm.”\n\nThe reported OTA time is October 5 at 21:05 Pacific (October 6 at 04:05 UTC), not a verified bundle ID. Device platform and exact deployed server versions are unspecified.\n\nSource investigation found that the single-day API used by Daily Balance omits saved comparison data that the calendar range API returns. This reproduces with a valid synthetic saved target. Whether the reported days have valid snapshots remains unverified.\n\n## Requirements and acceptance\n\n- A completed day with a valid saved target displays that target and correct remaining/over calories, both immediately after completion and after navigation/reload. Current completed days also use their saved target.\n- Existing snapshots survive later goal/profile changes and reopen/recomplete. Current open days retain current-plan behavior.\n- Legacy, absent, partial or invalid snapshots remain honestly unavailable. Never silently replace historical targets with today's value or invent a backfill.\n- Verify single-day/range consistency and relevant mutation, sync and cached/refetch paths. Preserve additive compatibility with older payloads lacking the optional comparison.\n- Use synthetic regression tests and representative genuine matched Before/After Daily Balance captures; identify browser/device evidence accurately.\n\n## Implementation plan\n\nUnify saved-comparison serialization for the single-day read and relevant completion responses, using the existing validated snapshot contract and actual logged intake. Check cache/replay behavior so the corrected response survives completion and reload. Add focused backend contract and client-flow regressions for saved snapshots, missing legacy fields, current open/completed days and changed current targets. Related history: #408 / #410 introduced snapshots; #409 / #424 made Daily Balance depend on them. No unmerged prerequisite identified.\n\n[Retained investigation and source evidence](https://github.com/MChartier/calibrate-health/issues/435#issuecomment-6023260057).\n\nScope is this display/data-contract defect. No live-record edits, historical reconstruction, deployment, release or unrelated plan redesign. Implementation admission and assignment remain with the coordinator.\n\n## Implementing Codex task\n\nVerified task ID: `01a1128c-d211-7497-8dbe-3acf0662f004` (continuing the investigation task).\n\n## Implementing PR\n\nCurrent: [#436 — Restore saved targets in completed-day Daily Balance](https://github.com/MChartier/calibrate-health/pull/436).\n",
+  "issueComments": [
+    {
+      "id": 6023260057,
+      "body": "Retained scoping record — October 6, 2026. Scope-only investigation; no product changes or implementation assignment.\n\n**Source binding and history.** Read-only analysis used live `master` `6b803fbc5ecd833cc4de5039e8ce495812a97e86`, verified again before filing. The working checkout was older and was not switched or edited. Workflow-v3 `f0919b184b6344d6279178b2388190936ca432a9`, supplied pr-review-v3 `97e5583c8355f3673aad0835c0ce3ca1486aeb8b`, pinned deployment/intake/template and live #405 amendments were read; direct amendments govern the newer issue format. Searches across issues/PRs for saved target, daily balance and snapshots found related #408/#410 and #409/#424, not a duplicate defect. Open PRs #401, #402, #404, #431 and #434 do not own this outcome. PR410 merged October 5 21:03:52 UTC; PR424 merged October 6 03:41:32 UTC.\n\n**Proven source path.**\n- [Snapshot capture and validation](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/src/services/foodDayComparison.ts): first completion on the account's current local day saves target, rounded maintenance and capture time; an unavailable capture is also retained. Past-day completion does not reconstruct a plan.\n- [Migration 0043](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/prisma/migrations/0043_food_day_comparison/migration.sql) deliberately leaves legacy comparison columns null.\n- [Food tracking service](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/src/services/foodTracking.ts): `getEffectiveFoodDay` returns `serializeStoredDay(stored)`, which omits `calorie_comparison`. The range method adds validated comparison data and summed logged calories.\n- [Day routes](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/backend/src/routes/foodDays.ts): GET uses the deficient single-day method; PATCH captures the snapshot but serializes only status fields and records that body for sync. Related watch completion also captures but omits comparison in its response/sync payload. Inspect those delivery boundaries without expanding into unrelated sync redesign.\n- [Client resolver](https://github.com/MChartier/calibrate-health/blob/6b803fbc5ecd833cc4de5039e8ce495812a97e86/mobile/src/food/dayPresentation.ts) requires `day.calorie_comparison.target_kcal` for COMPLETE. Today uses `useFoodDayStatus` → `api.getFoodDay`; the read/receipt wrapper returns the original response. Missing comparison therefore yields null and the observed label. PR424 introduced this completed-day selection. Existing helper tests inject a comparison directly; backend comparison tests exercise range, leaving the single-day integration gap.\n\n**Executed synthetic check.** Seven assertions executed actual pinned TypeScript functions through TypeScript transpilation and a VM, with explicit in-memory dependency/database mocks (no database connection). One COMPLETE row: saved target 2000, maintenance 2500, intake 1800; current target 2350. Range returned saved target 2000; single-day comparison was absent and the client resolved null for both historical and current COMPLETE states. Supplying the range response resolved 2000. Current OPEN resolved 2350. A missing saved target stayed null in range. All seven assertions passed, reproducing the serialization defect, not proving the user's particular stored-row state. Harness is retained in this investigation task workspace as `investigate-saved-target.cjs`; no app screenshot or physical-device test was performed.\n\n**Compatibility and uncertainty.** The optional wire field permits older payloads to omit comparisons. The current source manifest says server 0.38.0; publication/source is not deployment evidence. OTA and self-host deployment are separate release paths. Reported reproduction before and after the user's latest deployment is preserved, but exact running server versions, OTA identity, client platform and whether affected dates contain snapshots are unknown. An older server or truly legacy row can independently produce absence; the current-source omission explains failure even with valid saved data. Do not “fix” legacy absence by substituting today's plan. No live health records, deployment, migrations or source branches were changed. Coordinator may admit this scoped defect without waiting for those optional runtime details.",
+      "updatedAt": "2026-10-06T18:54:18Z",
+      "url": "https://github.com/MChartier/calibrate-health/issues/435#issuecomment-6023260057"
+    },
+    {
+      "id": 6029222183,
+      "body": "Queued claim after planning under Matthew's direct instruction to move the backlog through scoping and implementation. Planned owner 01a1128c-d211-7497-8dbe-3acf0662f004; implementation not yet started. Queued for same scoping-owner fix of reproduced single-day saved-target serialization. Preserve legacy unavailable snapshots. No PR/dispatch yet; independent of Little Say geometry/playback work. Coordinator must confirm shared capacity and the actual base before starting; at most three implementation tasks share the ZBook. No execution, branch claim, readiness or release is asserted.",
+      "updatedAt": "2026-10-07T01:55:22Z",
+      "url": "https://github.com/MChartier/calibrate-health/issues/435#issuecomment-6029222183"
+    }
+  ],
+  "prComments": [
+    {
+      "id": 6029476995,
+      "body": "@codex review",
+      "updatedAt": "2026-10-07T02:16:58Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/436#issuecomment-6029476995"
+    },
+    {
+      "id": 6029479109,
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "updatedAt": "2026-10-07T02:17:10Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/436#issuecomment-6029479109"
+    },
+    {
+      "id": 6029570559,
+      "body": "Implementation handoff: final head `d94a34d0` has all five CI workflows successful (14 successful checks, 11 configured skips). Local synthetic validation passed 764 backend tests, 53 focused client tests, three browser regressions and four matched capture cases.\n\n[Complete published scope, feedback dispositions and final-head capture applicability](https://github.com/MChartier/calibrate-health/blob/fae8175407a2b2409e701ad0016507b26a156403/final-head.md) · [Exact current-head CI](https://github.com/MChartier/calibrate-health/blob/2a665be81113940803eb2771deeb0a50d7598620/final-ci.json).\n\nThe review bot's quota refusal is recorded; no bot review completion is claimed. No actionable conversation/review/inline findings were present at handoff. Independent QA is next; this PR remains draft and is not labeled human-ready. No live-data, migration, release or deployment action occurred.\r\n",
+      "updatedAt": "2026-10-07T02:25:42Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/436#issuecomment-6029570559"
+    },
+    {
+      "id": 6029785027,
+      "body": "Independent QA is queued for the current saved-target fix at d94a34d019bd9d993c27d33dbc1accc2cce61a87 against master 4cbcbc740fbe5fa5646b4de31951c79a653176d5. The preceding review has completed, so the shared QA slot is available. A separate ZBook reviewer will assess the complete change, behavior evidence and current feedback; this records the assignment attempt, not a completed review.",
+      "updatedAt": "2026-10-07T02:42:54Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/436#issuecomment-6029785027"
+    }
+  ],
+  "reviews": [],
+  "inline": []
+}

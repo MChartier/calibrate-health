@@ -1,0 +1,52 @@
+[
+  {
+    "path": "e2e/expo-web/fixtures.ts",
+    "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "playwright.expo-web.config.ts",
+    "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "scripts/expo-web-build.mjs",
+    "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "scripts/expo-web-static-server.mjs",
+    "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "mobile/src/food/dayPresentation.ts",
+    "sha256": "f5ac0dc695cf84ad99d78a0192c32a14b777462adb29905727d179395eb40694",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "mobile/src/components/FoodTrackingStatus.tsx",
+    "sha256": "f412a601c8f6ee94d436b8583abe08fbaa42a39ed805b6a6f43e20988f9dc37d",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "mobile/src/offline/foodDayReceipts.ts",
+    "sha256": "4b375462b765f59a4303ef1fb588e2facdcaaf07f1531bd7fb25e2af653d2615",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "mobile/src/offline/operations.ts",
+    "sha256": "1baeed1f6ab20bb10f1cdff7e2c47e09ebfd5a24cccfecc04ff672c787de1c88",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "package-lock.json",
+    "sha256": "1ff3ae75f972e5bd96519f8b7a9265c454556c310d77ab3c58baaddcf6e023e6",
+    "identicalBaseToHead": true
+  },
+  {
+    "path": "backend/package-lock.json",
+    "sha256": "8bb15e4747988cf175bf2745cee68c3fbf2fa5f402f8897aae8fcb79bb143213",
+    "identicalBaseToHead": true
+  }
+]

@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "prReviewCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/436",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/435",
+  "reviewerChat": "01a1143e-b348-745e-ab17-2f04d2301010",
+  "supersedesVerdictCommentId": null,
+  "checkedAtUtc": "2026-10-07T02:56:39.013Z",
+  "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "prBodySha256": "9c644b441193e0b88b817cfd5d5d958ff4f9e11433555504038e51db2b910e67",
+  "gates": {
+    "value": "pass: direct human defect report and reproduced data-contract omission; restores review of completed days without inventing historical plans.",
+    "outcome": "pass: valid saved snapshots reach day GET, phone/watch completion and sync; preserved first snapshot, current-open behavior, legacy absence, invalid data, changed goals, reload and old-payload compatibility assessed.",
+    "code": "pass: complete 2-commit/10-path published diff and relevant contracts inspected; 4 runtime, 4 maintained test, 2 API-description/generated mirror files; no avoidable churn or unrelated commits.",
+    "engineeringReview": "pass under exact quota-only human amendment: no completed bot review claimed; this independent reviewer inspected complete current published code; no actionable human/review finding remains.",
+    "ci": "pass: 5 workflows completed successfully on exact head, 14 successful checks, 11 skips individually justified in ci.json; 764 backend and 1283 mobile tests verified in logs.",
+    "behavior": "pass: independently executed 33 maintained backend tests, 49 additional boundary scenarios and 3 browser regressions; source serializer reproduces all four retained capture payloads.",
+    "evidence": "pass: four genuine original screenshots independently opened; all 15 manifest entries and build-byte bindings verified; source, harness and fixtures inspected; current head comments only after captured revision.",
+    "communication": "pass: final PR opens with base-state user problem, high-level repair and limits; short behavioral expected/observed Test plan with visibly embedded labeled base-to-final pairs. Issue fixed template retains requirements, actual task ID and current associated PR without duplicate implementation evidence.",
+    "stack": "pass: actual target and ultimate target MChartier/calibrate-health master; target/base/merge-base all 4cbcbc740fbe5fa5646b4de31951c79a653176d5; two linear child commits, no unmerged parents."
+  },
+  "evidence": [
+    "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/README.md",
+    "https://github.com/MChartier/calibrate-health/blob/fae8175407a2b2409e701ad0016507b26a156403/final-head.md",
+    "https://github.com/MChartier/calibrate-health/actions/runs/37561533626",
+    "https://github.com/MChartier/calibrate-health/actions/runs/37561533985",
+    "https://github.com/MChartier/calibrate-health/actions/runs/37561533618",
+    "https://github.com/MChartier/calibrate-health/actions/runs/37561533627",
+    "https://github.com/MChartier/calibrate-health/actions/runs/37561533622"
+  ],
+  "uiEvidence": {
+    "applicable": true,
+    "representativeCoverage": "Valid historical saved target plus missing history. Current-open-to-complete and reload/omitted-field flows independently exercised through maintained browser tests. Invalid snapshots and intake, zero/over intake and changed goals covered by synthetic backend/source tests.",
+    "pairs": [
+      {
+        "id": "valid-snapshot",
+        "state": "Historical completed 2026-07-20, synthetic 1800 kcal intake, saved 2000 target/2500 maintenance",
+        "before": {
+          "sourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/before-valid.png",
+          "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6"
+        },
+        "after": {
+          "sourceSha": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+          "applicableHeadSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/after-valid.png",
+          "sha256": "87457543d3af98f5d3fe0c3e20e45b86acabeea7fe794db3b94052f2b3c0d26c"
+        },
+        "matchedSetup": {
+          "viewport": "390x844",
+          "deviceScaleFactor": 1,
+          "theme": "light",
+          "locale": "en-US",
+          "timezone": "America/Los_Angeles",
+          "clock": "2026-07-21T19:00:00Z deterministic 16ms read steps",
+          "route": "/today?date=2026-07-20",
+          "normalization": "Identical disclosed suppression of unrelated transient PWA notices; actual compared balance unaltered",
+          "environment": "Windows Chrome 154.0.8037.98; phone-sized browser, not device"
+        },
+        "observation": "Before: Saved target unavailable, 1800 kcal logged. After: 90% eaten, 200 kcal remaining. Same selected day, intake, completion and shell; shorter balance layout exposes Evening Snack naturally."
+      },
+      {
+        "id": "missing-snapshot",
+        "state": "Historical completed 2026-07-20, synthetic 1800 kcal intake, null saved snapshot",
+        "before": {
+          "sourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/before-missing.png",
+          "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6"
+        },
+        "after": {
+          "sourceSha": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+          "applicableHeadSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/after-missing.png",
+          "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6"
+        },
+        "matchedSetup": {
+          "viewport": "390x844",
+          "deviceScaleFactor": 1,
+          "theme": "light",
+          "locale": "en-US",
+          "timezone": "America/Los_Angeles",
+          "clock": "2026-07-21T19:00:00Z deterministic 16ms read steps",
+          "route": "/today?date=2026-07-20",
+          "normalization": "Identical disclosed suppression of unrelated transient PWA notices; actual compared balance unaltered",
+          "environment": "Windows Chrome 154.0.8037.98; phone-sized browser, not device"
+        },
+        "observation": "Both show Saved target unavailable and 1800 kcal logged; expected identical pixels. Separate capture timestamps and independent harness invocations retained."
+      }
+    ],
+    "provenanceRecords": [
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/README.md",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "af75d080e023309fc7696abfeffd33cf746d7b41fe966a4e0c6643708746bb97"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/manifest.json",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "0cf7c8c9bf85df16b517f79b2edb5dc0f7b121e1def9d53d940089b2bcc913d5"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/capture.spec.ts",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "2566879054f27b480999c25c5d97e8076a0e83f6abb495011132052263c145ad"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/serialize-fixture.cjs",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "b7192734b7ccf60d335af838f8f0112ea6a0225d003e2c8df50fc4224cf5033d"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/before-responses.json",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "8b32fd0745b454debcd2dd3708e29b7b6279fe00196b266fb1879192a23b18d0"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/after-responses.json",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "36c4da7c979a93e7971ec3860e4d6a5d4f0bfa4a181bff6bd47737debe80892d"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/before-valid-capture.json",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "0f3a1926e818261149a238a7a5d642496cfb0297f1ee6a60242c789c703cf2a9"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/after-valid-capture.json",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "6b32728a8da593aa1cbc5a4117b8c1923161a5d688cf8b3c6fe249465824f53e"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/before-missing-capture.json",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "85cc0979c597edebe459bfc89fdffb7d10056ef4dafeda77833564b26dd8b6d7"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/7dd85c054275e336e1c42ff3b85ec6442d426c67/after-missing-capture.json",
+        "commitSha": "7dd85c054275e336e1c42ff3b85ec6442d426c67",
+        "sha256": "f38d81113245478927ed97d951700a8c7e270f171d1d0641263e37d6f0a3fc10"
+      },
+      {
+        "pairs": [
+          "valid-snapshot",
+          "missing-snapshot"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/fae8175407a2b2409e701ad0016507b26a156403/final-head.md",
+        "commitSha": "fae8175407a2b2409e701ad0016507b26a156403",
+        "sha256": "4e1c0d78e6cf7eceb8f627ee676245008a205b061f1876d8cd152c1af2a895ae"
+      }
+    ],
+    "provenanceAssessment": "All exact artifact bytes verified via GitHub Git Blob API and manifest SHA256. Original dedicated evidence ref evidence/issue435-3ac32ffa retains assessed ancestors. Capture scripts use actual independently built clients and actual baseline/current backend serializers with database stubs; not mockup UI. Served JS hashes matched retained build bytes independently. Base-to-head client/fixture/build inputs are byte-identical. API-description-only final child does not invalidate captures. QA additionally reproduced every retained serializer response from actual source.",
+    "pixelObservations": "Each of four original files opened independently. Valid pair reveals correct 1800/2000=90%, 200 remaining. Missing pair is unchanged unavailable. No compared UI masking, cropping, generated imagery or altered screenshots found; identical unavailable images are expected under deterministic fixtures.",
+    "renderedPrInspection": {
+      "url": "https://github.com/MChartier/calibrate-health/pull/436",
+      "checkedAtUtc": null,
+      "observations": "WAIVED, not passed: actual GitHub PR-page image rendering under direct user instruction / issue405comment6022754087. API body embeds labeled reviewer-accessible raw image URLs adjacent to Test plan; remote bytes and pixels verified."
+    },
+    "nonUiObservableContract": null,
+    "scopedHumanBaselineWaiver": null,
+    "scopedHumanRenderingWaiver": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6022754087"
+  },
+  "limitations": [
+    "No live records, backfill, PostgreSQL integration run, physical-device/actual OTA or deployed-version inspection. Exact reported rows may legitimately lack snapshots; no guarantee to reconstruct those.",
+    "QA browser run reused a copied, independently hash-verified retained export, not a newly rebuilt client. Complete relevant client/build/fixture inputs are unchanged base-to-head; exact-head CI web/native runtime builds passed.",
+    "Synthetic backend tests use in-memory DB stubs; QA TypeScript execution uses transpile-only with existing read-only dependency binaries. Exact-head CI typecheck and builds independently passed.",
+    "Existing pre-upgrade idempotency receipts or cached old payloads can omit the optional comparison until refetch; deliberate compatibility is preserved, and replay code performs authoritative currentControl refetch. Offline queued completion has no invented target until server confirmation.",
+    "Bot review was quota-refused on captured parent; no separate bot run on documentation-only child. Independent full-head review substitutes only under narrow direct amendment.",
+    "Actual GitHub-page rendering is waived; no baseline/provenance/pixel waiver used."
+  ],
+  "nextAction": "Coordinator must independently verify this append-only verdict via trusted task comment ID/full UTF-8 digest, persist a separate receipt, recheck unchanged head/base/parents/body/provenance and full current feedback before and after any readiness action. QA does not label, alter draft, approve, merge or deploy."
+}

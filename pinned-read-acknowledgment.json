@@ -1,0 +1,43 @@
+{
+  "acknowledgedBeforeAssessment": true,
+  "hostVerified": true,
+  "independentReviewer": "01a1143e-b348-745e-ab17-2f04d2301010",
+  "implementationOwner": "01a1128c-d211-7497-8dbe-3acf0662f004",
+  "preDispatchClaim": 6029785027,
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "workflowDocuments": [
+    "prompts/qa.md",
+    "AGENTS.md",
+    "SKILL.md",
+    "README.md",
+    "prompts/coordinator.md",
+    "standards/intake.md",
+    "standards/stacks.md",
+    "docs/operations.md"
+  ],
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "communicationDocuments": [
+    "standards/pr-review.md",
+    "standards/review-queue.md",
+    "templates/pull-request.md",
+    "templates/qa-verdict.json"
+  ],
+  "deploymentReadAtPinnedCommit": true,
+  "repositoryAGENTSReadAtAssessedHead": true,
+  "localAgentsSkills": "No additional tracked .agents instructions or applicable code-review skill in isolated checkout.",
+  "directAmendmentCommentIds": [
+    5984018358,
+    5987999201,
+    5997739454,
+    6002971212,
+    6006523068,
+    6008280372,
+    6008834896,
+    6020948896,
+    6021105604,
+    6021281028,
+    6022754087,
+    6026521080
+  ],
+  "pinsUnchanged": true
+}

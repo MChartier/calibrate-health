@@ -1,0 +1,257 @@
+{
+  "checkedAtUtc": "2026-10-07T02:56:39.013Z",
+  "workflows": [
+    {
+      "id": 37561533626,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533626",
+      "path": ".github/workflows/container-scan.yml",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "event": "pull_request",
+      "conclusion": "success"
+    },
+    {
+      "id": 37561533985,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985",
+      "path": ".github/workflows/builds.yml",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "event": "pull_request",
+      "conclusion": "success"
+    },
+    {
+      "id": 37561533618,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533618",
+      "path": ".github/workflows/tests.yml",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "event": "pull_request",
+      "conclusion": "success"
+    },
+    {
+      "id": 37561533627,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533627",
+      "path": ".github/workflows/database-upgrade.yml",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "event": "pull_request",
+      "conclusion": "success"
+    },
+    {
+      "id": 37561533622,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533622",
+      "path": ".github/workflows/lint.yml",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "event": "pull_request",
+      "conclusion": "success"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Android Emulator End-to-End",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599696262",
+      "id": 112599696262,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+    },
+    {
+      "name": "Wear Release Emulator Smoke",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599696081",
+      "id": 112599696081,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+    },
+    {
+      "name": "iOS Build",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599695803",
+      "id": 112599695803,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Unchanged native-package/Wear source paths: native_package and wear classifiers are false. Android/iOS runtime bundles passed."
+    },
+    {
+      "name": "Native Two-Emulator Package Upgrade",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599695594",
+      "id": 112599695594,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+    },
+    {
+      "name": "Six-State Data-Backed Route Acceptance",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599695514",
+      "id": 112599695514,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+    },
+    {
+      "name": "Wear Build and JVM Tests",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599695473",
+      "id": 112599695473,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Unchanged native-package/Wear source paths: native_package and wear classifiers are false. Android/iOS runtime bundles passed."
+    },
+    {
+      "name": "Full Exported Web and PWA End-to-End",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599695424",
+      "id": 112599695424,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+    },
+    {
+      "name": "UX Accessibility and Visual Regression",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599695414",
+      "id": 112599695414,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Configured workflow_dispatch-only job; this is pull_request. No native package/runtime behavior changed; relevant browser flow independently exercised."
+    },
+    {
+      "name": "Mobile Build",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599695411",
+      "id": 112599695411,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Unchanged native-package/Wear source paths: native_package and wear classifiers are false. Android/iOS runtime bundles passed."
+    },
+    {
+      "name": "Web Critical Smoke",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599694390",
+      "id": 112599694390,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "ios Runtime Bundle",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599694191",
+      "id": 112599694191,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "android Runtime Bundle",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599694068",
+      "id": 112599694068,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Expo Web Build",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599694015",
+      "id": 112599694015,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Release Configuration",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599693987",
+      "id": 112599693987,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Backend Build",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599693960",
+      "id": 112599693960,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Backend Tests",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533618/job/112599693906",
+      "id": 112599693906,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Mobile Tests",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533618/job/112599693900",
+      "id": 112599693900,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "High and Critical Vulnerabilities",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533626/job/112599691264",
+      "id": 112599691264,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533627/job/112599690614",
+      "id": 112599690614,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Path filters exclude this serializer-only change; no Prisma schema, migration, DB configuration, weight-trend service, or database smoke script changed."
+    },
+    {
+      "name": "Populated Postgres Upgrade",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533627/job/112599690528",
+      "id": 112599690528,
+      "conclusion": "skipped",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": "Path filters exclude this serializer-only change; no Prisma schema, migration, DB configuration, weight-trend service, or database smoke script changed."
+    },
+    {
+      "name": "Classify Build Inputs",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533985/job/112599667051",
+      "id": 112599667051,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Classify Test Inputs",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533618/job/112599665613",
+      "id": 112599665613,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Classify Production Image Inputs",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533626/job/112599665534",
+      "id": 112599665534,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Classify Database Inputs",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533627/job/112599665501",
+      "id": 112599665501,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    },
+    {
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37561533622/job/112599665415",
+      "id": 112599665415,
+      "conclusion": "success",
+      "headSha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+      "skipJustification": null
+    }
+  ],
+  "verifiedTestTotals": {
+    "backend": 764,
+    "mobile": 1283,
+    "mobileSuites": 234
+  },
+  "independent": {
+    "backend": 33,
+    "boundaries": 49,
+    "browser": 3
+  }
+}

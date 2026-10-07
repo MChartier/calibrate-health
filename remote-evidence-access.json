@@ -1,0 +1,53 @@
+{
+  "checkedAtUtc": "2026-10-07T02:56:42.399Z",
+  "remote": [
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/README.md",
+      "sha256": "af75d080e023309fc7696abfeffd33cf746d7b41fe966a4e0c6643708746bb97",
+      "bytes": 6386,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/manifest.json",
+      "sha256": "0cf7c8c9bf85df16b517f79b2edb5dc0f7b121e1def9d53d940089b2bcc913d5",
+      "bytes": 2243,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/capture.spec.ts",
+      "sha256": "2566879054f27b480999c25c5d97e8076a0e83f6abb495011132052263c145ad",
+      "bytes": 2133,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/serialize-fixture.cjs",
+      "sha256": "b7192734b7ccf60d335af838f8f0112ea6a0225d003e2c8df50fc4224cf5033d",
+      "bytes": 1298,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/before-valid.png",
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "bytes": 41448,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/after-valid.png",
+      "sha256": "87457543d3af98f5d3fe0c3e20e45b86acabeea7fe794db3b94052f2b3c0d26c",
+      "bytes": 42349,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/before-missing.png",
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "bytes": 41448,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/7dd85c054275e336e1c42ff3b85ec6442d426c67/after-missing.png",
+      "sha256": "9289e746adcdbbce72cf931a268995a29aafb6e65d59908e10bcff6985cc0ae6",
+      "bytes": 41448,
+      "status": 200
+    }
+  ]
+}
