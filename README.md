@@ -1,3 +1,3 @@
-# PR441 lifecycle-only QA rebind
+# PR441 QA artifact correction
 
-Ready; supersedes6031981280. See verdict.json, feedback.json and lifecycle-checks.json. Prior evidence retained in parent commit. Dedicated nonmerged QA retention ref, same owner and lifetime retention; never product merge target. No tests or captures rerun.
+Ready. Supersedes6032367378; corrects stale inherited lifecycle limitation only. PR401 closed unmerged; original refs preserved. Full verdict audited. Prior comments and immutable records remain unchanged. Dedicated nonmerged evidence ref; existing lifetime retention and owner unchanged. See verdict.json, feedback.json and lifecycle-checks.json.

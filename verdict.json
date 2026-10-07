@@ -22,8 +22,8 @@
   "pullRequest": "https://github.com/MChartier/calibrate-health/pull/441",
   "issue": "https://github.com/MChartier/calibrate-health/issues/440",
   "reviewerChat": "01a1128e-30ca-76da-bdf8-6e588e957030",
-  "supersedesVerdictCommentId": 6031981280,
-  "checkedAtUtc": "2026-10-07T06:30:30.837Z",
+  "supersedesVerdictCommentId": 6032367378,
+  "checkedAtUtc": "2026-10-07T06:42:30.462Z",
   "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
   "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
   "parentRevisions": [],
@@ -333,7 +333,7 @@
     "No operator release,store submission,signing,upload,provider setup,deploy,merge,protection,credential or readiness/draft mutation.",
     "QA did not repeat expensive complete CI;117critical fixture tests executed; wider fresh source-bound local/hosted suites reused.",
     "Polling/merge remains non-atomic as already documented; inherited434 contract unchanged. Human workflow approval may still be required.",
-    "PR401 stays open pending coordinator replacement/owner/dependency decision.",
+    "PR401 was closed unmerged on 2026-10-07 at 06:12:59 UTC; its original branch, source refs and evidence remain preserved. No further PR401 lifecycle action is required by this assessment.",
     "Metadata-only corrections need affected communication/feedback/identity reread, not unrelated suite reruns."
   ],
   "nextAction": "Coordinator verifies exact new trusted receipt and unchanged revision/body/evidence/feedback/CI before readiness. Project approval remains separately pending with user; do not bypass. No source/Project/readiness/lifecycle mutation or merge/release authorization.",
@@ -352,14 +352,19 @@
       "id": "L1",
       "status": "resolved",
       "evidence": "Only Implementing PR section changed. Current441 and historical superseded401 links accurate. Exact prior issue body preserved and hash-verified in6032314538. Requirements and all preceding sections byte-identical."
+    },
+    {
+      "id": "A1",
+      "status": "resolved",
+      "evidence": "Coordinator identified stale inherited limitations[3]. Corrected to actual unmerged closure and retained refs; complete current record audited."
     }
   ],
   "reassessment": {
-    "type": "issue-lifecycle-only",
-    "sourceBasePrBodyEvidenceUnchanged": true,
+    "type": "QA-artifact-only correction",
+    "sourceBasePrBodyIssueEvidenceUnchanged": true,
     "noSuitesRerun": true,
-    "previousImmutableRecord": "https://github.com/MChartier/calibrate-health/blob/2755f6fa65e2f816eac2fc12ed5023ee80e176c3/verdict.json",
-    "historyComment": 6032314538,
-    "priorReceiptVerified": true
+    "previousImmutableRecord": "https://github.com/MChartier/calibrate-health/blob/261a8b9feffad73e1bc30daacc3776d2accb5d18/verdict.json",
+    "priorReceiptVerified": true,
+    "completeRecordAudit": "All current verdict fields read for contradictory lifecycle status. Corrected limitations[3]; no other contradictory assertion found. Historical snapshots and all prior comments/records remain unchanged."
   }
 }

@@ -78,6 +78,13 @@
       "bodySha256": "594e0af3ae188e1a09bb414a98a1b405ecbb7c9972f9f73f1c89146a15ffaac2",
       "updatedAt": "2026-10-07T06:08:22Z",
       "author": "chatgpt-codex-connector[bot]"
+    },
+    {
+      "id": 6032367378,
+      "body": "Independent QA: **ready** — issue lifecycle-only rebind, superseding [6031981280](https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6031981280).\n\nIssue440 now accurately links current PR441 and historical superseded PR401. Requirements and every preceding section are unchanged; the exact original description is preserved and verified. PR401 is closed unmerged with original refs retained. PR441 source, base, description and prior behavioral evidence remain applicable; all five workflows remain successful. The current-head automatic review reports Completed with no findings; the earlier quota refusal is historical. All current feedback was reread. No tests or captures were rerun.\n\n[Immutable detailed verdict and exact bindings](https://github.com/MChartier/calibrate-health/blob/261a8b9feffad73e1bc30daacc3776d2accb5d18/verdict.json). No source, Project, readiness or lifecycle changes by QA. Project approval remains separately pending with the user.",
+      "bodySha256": "8bc48821b21be26888e79bfe21301773153a6b9b255c319ee81b33e637ac43bf",
+      "updatedAt": "2026-10-07T06:30:58Z",
+      "author": "MChartier"
     }
   ],
   "pulls/441/reviews?per_page=100": [],
