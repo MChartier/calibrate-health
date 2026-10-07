@@ -1422,7 +1422,7 @@ export interface components {
             captured_at: string;
         };
         FoodLogDay: {
-            /** @description Range-only comparison against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs. */
+            /** @description Comparison on day reads and completion responses against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs. */
             calorie_comparison?: components["schemas"]["FoodDayCalorieComparison"] | null;
             /** Format: date */
             date: string;
