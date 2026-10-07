@@ -20,6 +20,13 @@
       "bodySha256": "426f9402fe8d8a79272a5203be3910a6b787ec60a224cc08a8f1de917a9ebab5",
       "updatedAt": "2026-10-07T05:26:13Z",
       "author": "MChartier"
+    },
+    {
+      "id": 6031805319,
+      "body": "Description history preserved before the communication-only correction requested in [QA6031764310](https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6031764310). These are exact previous words, not a current status or new verdict. Requirements remain unchanged. Implementation results remain in [checkpoint6031572461](https://github.com/MChartier/calibrate-health/issues/440#issuecomment-6031572461) and its retained evidence links.\n\nPrior issue body: SHA-256 `90b694aba7ec092140cd0d5cdd50bf268a058ed06cf4306709d2b8437dd051af`, API updated_at `2026-10-07T05:26:13Z`. Exact sections and execution sentence removed from the issue narrative:\n\n> ## Implementation plan\n> \n> Follow the [source-backed staged plan and exact retention record](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md). Source/evidence retention is complete. Master and ownership were reverified; the isolated `mchartier/release-entrypoints-recovery` branch starts at `4cbcbc74`. The useful port and current recovery guidance are complete; fixture release/native/deployment checks passed. All five hosted workflows passed; independent full-scope QA is next.\n> \n> Coordinate `deploy/README.md` with #439 and README/package edits with #404 before shared-file changes; import neither branch. Implementation and a draft successor PR are now authorized. No broad hygiene, Firebase/GCP work, original-PR closure, real release/build/upload/provider action or settings change is authorized.\n> \n\n> ## Implementing Codex task\n> \n> Assigned sole native implementation owner: verified task ID `01a114af-c6d1-705c-ade9-39553731d038`. Implementation is published as draft PR #441 at `0c26cea1`; all five hosted workflows passed; the quota-only Codex review refusal is recorded and independent QA is pending. No publication operations. Preserve the [original cloud owner's idle handoff and ownership](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/owner-handoff.json); no original native UUID existed.\n> \n\n> The assigned owner has started execution from verified current master.\n\nPrior PR body: SHA-256 `7e28879c0f21b5b63edc2fdf600ec3e7aa39a4652edfd7549608f3844a41d539`, API updated_at `2026-10-07T05:41:44Z`. Exact stale clause replaced with a stable pointer to revision-scoped QA verdicts:\n\n> ; independent QA remains pending.",
+      "bodySha256": "f0df0116711a920a86d73839bf0e77c630750d0b176405e6169b675be9c14de4",
+      "updatedAt": "2026-10-07T05:45:15Z",
+      "author": "MChartier"
     }
   ],
   "issues/441/comments?per_page=100": [
@@ -42,6 +49,13 @@
       "body": "Independent QA assignment is next after the completed self-hosting assessment. The existing release-process reviewer will assess this exact focused successor against current master, including preservation of PR434’s CI gates, historical recovery receipt identities, native credential-stage isolation and complete published scope. PR401 remains open until replacement/evidence/dependency checks are complete; no real release execution is part of this assessment.",
       "bodySha256": "0cbe457bf4d7b64d5426f70c5521f39d380a109a1cbb37e3da8b9bfc45db0dd3",
       "updatedAt": "2026-10-07T05:33:29Z",
+      "author": "MChartier"
+    },
+    {
+      "id": 6031764310,
+      "body": "Independent QA: **changes-required, communication only** at 0c26cea1 against master 4cbcbc74.\n\n- Issue440 repeats completed implementation, CI and QA status in its plan/task sections. Keep the required problem/requirements/pre-created plan and verified task/PR links; retain results and workflow history in the existing linked records/comments.\n- Remove “independent QA remains pending” from PR441 now that this assessment is complete. Its problem-first Summary and behavioral evidence table otherwise pass.\n\nCode, complete one-commit/30-file scope, behavior, CI and preservation gates pass:117 focused tests independently passed, all five workflows are green, and original PR401 source/artifacts remain accessible with matching hashes. Release CI/receipt safeguards and native credential-stage isolation are preserved. The bot's quota-only refusal is accurately recorded. No code correction or unrelated expensive rerun is requested.\n\n[Immutable detailed assessment, exact bindings, feedback dispositions and evidence](https://github.com/MChartier/calibrate-health/blob/34a5f58833b2f2ae044425ae1e68a9fe4f3e5c3d/verdict.json). Return the final issue/PR descriptions to this same QA for a communication-only reassessment. PR401 remains open; no readiness or lifecycle mutation was performed. First PR441 verdict; supersedes none.",
+      "bodySha256": "10c02e446974561bb5547303bf44979f11c668bc7b43d6f6e428ab8eb50fb3ef",
+      "updatedAt": "2026-10-07T05:41:43Z",
       "author": "MChartier"
     }
   ],
