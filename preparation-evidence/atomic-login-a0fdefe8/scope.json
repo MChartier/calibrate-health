@@ -1,0 +1,62 @@
+{
+  "head": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "targetRef": "mchartier/credential-verification-421",
+  "targetSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "mergeBase": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "parent": {
+    "number": 431,
+    "state": "open",
+    "sha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+  },
+  "ultimateTarget": {
+    "ref": "master",
+    "sha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  },
+  "commits": [
+    {
+      "sha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "parents": [
+        "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": ".github/workflows/tests.yml",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 3
+    },
+    {
+      "path": "backend/src/services/mobileAuth.ts",
+      "status": "modified",
+      "additions": 22,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/mobile-auth.test.js",
+      "status": "modified",
+      "additions": 42,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/mobile-session-issuance-postgres.test.js",
+      "status": "added",
+      "additions": 102,
+      "deletions": 0
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "status": "modified",
+      "additions": 22,
+      "deletions": 0
+    }
+  ],
+  "checkedAt": "2026-10-07T03:12:40.009Z"
+}

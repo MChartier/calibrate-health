@@ -1,0 +1,39 @@
+Γ£ö mobile auth parses Android device metadata (1535.1826ms)
+Γ£ö mobile auth parses iPhone and iPad device metadata (13.6267ms)
+Γ£ö Wear pairing origins require HTTPS except on Android-approved local and private hosts (11.4686ms)
+Γ£ö mobile auth issues a short-lived hashed Wear credential only from an active phone session (13.8745ms)
+Γ£ö Wear pairing issuance permits concurrent tickets while pruning overflow and stale rows (9.6578ms)
+Γ£ö mobile auth exchanges a pairing token once for a Wear OS session bound to the same server (12.1554ms)
+Γ£ö mobile auth rejects cross-server or revoked-phone Wear exchanges without consuming the token (8.9613ms)
+Γ£ö mobile auth rejects invalid Wear challenge signatures without consuming the credential (10.9979ms)
+Γ£ö expired consumed Wear retries return expiry without revoking the created session (10.2311ms)
+Γ£ö mobile auth issues hashed opaque session tokens (8.651ms)
+Γ£ö mobile auth validates bearer access tokens and hydrates the client user (13.3447ms)
+Γ£ö Wear bearer authentication exposes only the reduced principal (9.3496ms)
+Γ£ö mobile auth allows exactly one successor for concurrent refresh-token replays (8.0595ms)
+Γ£ö Wear refresh returns only the reduced principal (8.8362ms)
+Γ£ö mobile auth logout revokes push subscriptions bound to the session (7.6278ms)
+Γ£ö mobile auth lists only safe session metadata and marks the current device (7.4504ms)
+Γ£ö mobile auth cannot revoke a session owned by another user (7.0381ms)
+Γ£ö verified mobile issuance rejects stale credentials before reading account or creating tokens (7.249ms)
+Γ£ö verified mobile issuance preserves restricted access and returns only after commit (7.2776ms)
+Γ£ö verified mobile issuance propagates transaction failure without returning credentials (7.4177ms)
+∩╣ú PostgreSQL orders verified native issuance against credential changes and deletion (0.4771ms) # SKIP
+Γ£ö auth route: POST /mobile/login returns mobile tokens for valid credentials (1211.657ms)
+Γ£ö auth route: POST /mobile/login refuses direct Wear OS password sessions (18.7476ms)
+Γ£ö auth route: Wear pairing credential issuance rejects browser-only authentication (17.4903ms)
+Γ£ö auth route: Wear pairing credential issuance rejects non-origin server bindings (17.7636ms)
+Γ£ö auth route: Wear pairing credential issuance binds the watch key and challenge (26.0857ms)
+Γ£ö auth route: POST /mobile/login performs a dummy hash comparison for unknown accounts (16.172ms)
+Γ£ö auth route: POST /mobile/refresh rejects missing refresh token (15.5526ms)
+Γ£ö auth route: POST /mobile/refresh records invalid or expired refresh tokens (15.6519ms)
+Γ£ö auth route: GET /mobile/sessions returns owned active devices (15.0292ms)
+Γ£ö mobile login rejects a credential change during password verification with the generic response (15.3845ms)
+Γä╣ tests 31
+Γä╣ suites 0
+Γä╣ pass 30
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 1
+Γä╣ todo 0
+Γä╣ duration_ms 2747.032

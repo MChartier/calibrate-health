@@ -1,0 +1,37 @@
+{
+  "baseRefName": "mchartier/credential-verification-421",
+  "baseRefOid": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "comments": [
+    {
+      "id": "IC_kwDOQbBgUs8AAAABZ2um9A",
+      "author": {
+        "login": "MChartier"
+      },
+      "authorAssociation": "OWNER",
+      "body": "@codex review",
+      "createdAt": "2026-10-07T03:07:51Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/MChartier/calibrate-health/pull/437#issuecomment-6030075636",
+      "viewerDidAuthor": true
+    },
+    {
+      "id": "IC_kwDOQbBgUs8AAAABZ2usRw",
+      "author": {
+        "login": "chatgpt-codex-connector"
+      },
+      "authorAssociation": "NONE",
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "createdAt": "2026-10-07T03:07:58Z",
+      "includesCreatedEdit": false,
+      "isMinimized": false,
+      "minimizedReason": "",
+      "reactionGroups": [],
+      "url": "https://github.com/MChartier/calibrate-health/pull/437#issuecomment-6030076999",
+      "viewerDidAuthor": false
+    }
+  ],
+  "headRefOid": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+}

@@ -1,0 +1,291 @@
+diff --git a/.github/workflows/tests.yml b/.github/workflows/tests.yml
+index f77e6e0d..a4b37df4 100644
+--- a/.github/workflows/tests.yml
++++ b/.github/workflows/tests.yml
+@@ -105,6 +105,8 @@ jobs:
+         run: npm run db:migrate
+ 
+       - name: Run tests
++        env:
++          CALIBRATE_AUTH_TEST_DATABASE_URL: postgresql://calibrate_ci:calibrate_ci@localhost:5432/calibrate_ci
+         run: npm test
+ 
+   mobile-tests:
+diff --git a/backend/src/routes/auth.ts b/backend/src/routes/auth.ts
+index 2374a314..145021ef 100755
+--- a/backend/src/routes/auth.ts
++++ b/backend/src/routes/auth.ts
+@@ -13,6 +13,7 @@ import {
+     exchangeWearPairingCredential,
+     formatMobileAuthResponse,
+     issueMobileAuthPayload,
++    issueVerifiedMobileAuthPayload,
+     issueWearPairingCredential,
+     listMobileSessionsForUser,
+     normalizePairingServerOrigin,
+@@ -418,19 +419,20 @@ router.post('/mobile/login', async (req, res) => {
+     try {
+         const user = await prisma.user.findFirst({
+             where: { email: { equals: email, mode: 'insensitive' } },
+-            select: { ...USER_CLIENT_SELECT, password_hash: true }
++            select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true }
+         });
+         const isMatch = await verifyLocalPassword(password, user?.password_hash);
+         if (!user || !isMatch) {
+             return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+         }
+ 
+-        const authPayload = await issueMobileAuthPayload({
++        const authPayload = await issueVerifiedMobileAuthPayload({
+             userId: user.id,
++            credentialSecurityVersion: user.credential_security_version,
+             device: device.device
+         });
+         if (!authPayload) {
+-            return res.status(500).json({ message: 'Server error' });
++            return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+         }
+ 
+         res.json(formatMobileAuthResponse(authPayload));
+diff --git a/backend/src/services/mobileAuth.ts b/backend/src/services/mobileAuth.ts
+index 068ff1e5..79db50af 100644
+--- a/backend/src/services/mobileAuth.ts
++++ b/backend/src/services/mobileAuth.ts
+@@ -67,6 +67,28 @@ export async function issueMobileAuthPayload(opts: {
+   };
+ }
+ 
++/** Issue only while the credential snapshot verified by local login is still current. */
++export async function issueVerifiedMobileAuthPayload(opts: {
++  userId: number;
++  credentialSecurityVersion: number;
++  device: ParsedMobileDevice;
++}): Promise<MobileAuthSessionPayload | null> {
++  if (!Number.isSafeInteger(opts.credentialSecurityVersion) || opts.credentialSecurityVersion < 0) return null;
++  return prisma.$transaction(async (tx) => {
++    // This row lock orders issuance against password writers and account deletion.
++    const current = await tx.user.updateMany({
++      where: { id: opts.userId, credential_security_version: opts.credentialSecurityVersion },
++      data: { credential_security_version: opts.credentialSecurityVersion }
++    });
++    if (current.count !== 1) return null;
++    const user = await tx.user.findUnique({ where: { id: opts.userId }, select: USER_CLIENT_SELECT });
++    if (!user) return null;
++    // Restricted accounts keep their recovery session; serialization retains current access gates.
++    const { sessionId: _sessionId, ...tokens } = await issueMobileSession(opts, tx);
++    return { user: serializeUserForClient(user), ...tokens };
++  });
++}
++
+ /** Rotate a refresh token into a new access/refresh pair for the same native session. */
+ export async function refreshMobileSession(refreshToken: string): Promise<MobileAuthSessionPayload | null> {
+   const tokenHash = hashMobileToken(refreshToken);
+diff --git a/backend/test/mobile-auth.test.js b/backend/test/mobile-auth.test.js
+index cba4c766..674f1e5d 100644
+--- a/backend/test/mobile-auth.test.js
++++ b/backend/test/mobile-auth.test.js
+@@ -735,3 +735,45 @@ test('mobile auth cannot revoke a session owned by another user', async () => {
+   assert.equal(revoked, false);
+   assert.equal(transactionCalled, false);
+ });
++
++const loginDevice = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHONE', deviceName: null };
++
++test('verified mobile issuance rejects stale credentials before reading account or creating tokens', async () => {
++  let created = false;
++  const tx = { user: { updateMany: async ({ where, data }) => {
++    assert.deepEqual(where, { id: 4, credential_security_version: 8 });
++    assert.deepEqual(data, { credential_security_version: 8 });
++    return { count: 0 };
++  }, findUnique: async () => { throw Error('must not read stale account'); } },
++  mobileAuthSession: { create: async () => { created = true; } } };
++  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: action => action(tx) } });
++  assert.equal(await issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 8, device: loginDevice }), null);
++  assert.equal(created, false);
++});
++
++test('verified mobile issuance preserves restricted access and returns only after commit', async () => {
++  let commit;
++  const committed = new Promise(resolve => { commit = resolve; });
++  let prepared;
++  const preparedSignal = new Promise(resolve => { prepared = resolve; });
++  const tx = { user: { updateMany: async () => ({ count: 1 }), findUnique: async () => ({ ...baseUser, email_verified_at: null, legal_acceptances: [] }) },
++    mobileAuthSession: { create: async ({ data }) => { assert.equal(data.user_id, 4); return { id: 10 }; } } };
++  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: async action => {
++    const result = await action(tx); prepared(); await committed; return result;
++  } } });
++  let returned = false;
++  const pending = issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 0, device: loginDevice }).then(result => { returned = true; return result; });
++  await preparedSignal;
++  assert.equal(returned, false);
++  commit();
++  const payload = await pending;
++  assert.equal(payload.user.id, 4);
++  assert.equal(payload.user.account_access.state, 'email_verification_required');
++  assert.equal('credential_security_version' in payload.user, false);
++  assert.equal('password_hash' in payload.user, false);
++});
++
++test('verified mobile issuance propagates transaction failure without returning credentials', async () => {
++  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: async () => { throw Error('synthetic rollback'); } } });
++  await assert.rejects(issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 0, device: loginDevice }), /synthetic rollback/);
++});
+diff --git a/backend/test/mobile-session-issuance-postgres.test.js b/backend/test/mobile-session-issuance-postgres.test.js
+new file mode 100644
+index 00000000..e6a7baa9
+--- /dev/null
++++ b/backend/test/mobile-session-issuance-postgres.test.js
+@@ -0,0 +1,102 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { randomUUID } = require('node:crypto');
++const { execFileSync } = require('node:child_process');
++const { Pool } = require('pg');
++
++const databaseUrl = process.env.CALIBRATE_AUTH_TEST_DATABASE_URL;
++const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
++
++test('PostgreSQL orders verified native issuance against credential changes and deletion', { skip: !databaseUrl, timeout: 90000 }, async (t) => {
++  const url = new URL(databaseUrl);
++  assert.ok(['localhost', '127.0.0.1'].includes(url.hostname), 'disposable local PostgreSQL only');
++  assert.match(url.pathname, /^\/(calibrate_ci|calibrate_test[^/]*)$/);
++  const schema = `auth_issuance_${randomUUID().replaceAll('-', '')}`;
++  const admin = new Pool({ connectionString: databaseUrl });
++  await admin.query(`CREATE SCHEMA "${schema}"`);
++  url.searchParams.set('schema', schema);
++  process.env.DATABASE_URL = url.toString();
++  let database;
++  try {
++    execFileSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'], { env: process.env, stdio: 'pipe', timeout: 45000 });
++    database = require('../src/config/database');
++    const prisma = database.default;
++    const { issueVerifiedMobileAuthPayload } = require('../src/services/mobileAuth');
++    const originalTransaction = prisma.$transaction.bind(prisma);
++    const device = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHONE', deviceName: null };
++    const createUser = () => prisma.user.create({ data: { email: `${randomUUID()}@example.invalid`, password_hash: 'synthetic-old', email_verified_at: null } });
++    const issue = user => issueVerifiedMobileAuthPayload({ userId: user.id, credentialSecurityVersion: user.credential_security_version, device });
++    const waitForLock = async pid => {
++      for (let i = 0; i < 100; i++) {
++        const { rows } = await admin.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1', [pid]);
++        if (rows[0]?.wait_event_type === 'Lock') return;
++        await new Promise(resolve => setTimeout(resolve, 20));
++      }
++      assert.fail('expected competing transaction to wait on a PostgreSQL lock');
++    };
++    // Exercise the same User update + session revocation ordering as local password writers.
++    const mutation = async (tx, user, kind) => {
++      if (kind === 'delete') return tx.user.delete({ where: { id: user.id } });
++      await tx.user.update({ where: { id: user.id }, data: { password_hash: 'synthetic-new' } });
++      await tx.mobileAuthSession.updateMany({ where: { user_id: user.id, revoked_at: null }, data: { revoked_at: new Date() } });
++    };
++    for (const kind of ['password', 'delete']) {
++      await t.test(`${kind} commits first: stale verified login creates no session`, async () => {
++        const user = await createUser();
++        const changed = deferred(), release = deferred(), issuerPid = deferred();
++        const writer = originalTransaction(async tx => { await mutation(tx, user, kind); changed.resolve(); await release.promise; }, { timeout: 15000 });
++        await changed.promise;
++        prisma.$transaction = action => originalTransaction(async tx => {
++          issuerPid.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          return action(tx);
++        }, { timeout: 15000 });
++        const pending = issue(user);
++        try { await waitForLock(await issuerPid.promise); } finally { release.resolve(); }
++        await writer;
++        assert.equal(await pending, null);
++        assert.equal(await prisma.mobileAuthSession.count({ where: { user_id: user.id } }), 0);
++        prisma.$transaction = originalTransaction;
++      });
++      await t.test(`issuance commits first: later ${kind} revokes or cascades its session`, async () => {
++        const user = await createUser();
++        const locked = deferred(), release = deferred(), writerPid = deferred();
++        prisma.$transaction = action => originalTransaction(async tx => {
++          const wrapped = new Proxy(tx, { get(target, key) {
++            if (key !== 'user') return target[key];
++            return new Proxy(target.user, { get(model, operation) {
++              if (operation !== 'updateMany') return model[operation];
++              return async args => { const result = await model.updateMany(args); locked.resolve(); await release.promise; return result; };
++            } });
++          } });
++          return action(wrapped);
++        }, { timeout: 15000 });
++        const pending = issue(user);
++        await locked.promise;
++        const writer = originalTransaction(async tx => {
++          writerPid.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          await mutation(tx, user, kind);
++        }, { timeout: 15000 });
++        try { await waitForLock(await writerPid.promise); } finally { release.resolve(); }
++        const payload = await pending;
++        assert.equal(payload.user.id, user.id);
++        assert.equal(payload.user.account_access.state, 'email_verification_required');
++        await writer;
++        const sessions = await prisma.mobileAuthSession.findMany({ where: { user_id: user.id } });
++        if (kind === 'delete') assert.equal(sessions.length, 0);
++        else { assert.equal(sessions.length, 1); assert.ok(sessions[0].revoked_at); }
++        prisma.$transaction = originalTransaction;
++      });
++    }
++    await t.test('commit failure rolls back the session without returning tokens', async () => {
++      const user = await createUser();
++      prisma.$transaction = action => originalTransaction(async tx => { await action(tx); throw Error('synthetic rollback'); });
++      await assert.rejects(issue(user), /synthetic rollback/);
++      assert.equal(await prisma.mobileAuthSession.count({ where: { user_id: user.id } }), 0);
++      prisma.$transaction = originalTransaction;
++    });
++  } finally {
++    if (database) await database.disconnectDatabase();
++    await admin.query(`DROP SCHEMA "${schema}" CASCADE`);
++    await admin.end();
++  }
++});
+diff --git a/backend/test/routes-auth-mobile.test.js b/backend/test/routes-auth-mobile.test.js
+index d8e40135..b5656f2c 100644
+--- a/backend/test/routes-auth-mobile.test.js
++++ b/backend/test/routes-auth-mobile.test.js
+@@ -94,6 +94,7 @@ const dbUser = {
+   id: 7,
+   email: 'native@example.com',
+   password_hash: 'hash',
++  credential_security_version: 3,
+   created_at: new Date('2026-01-01T00:00:00.000Z'),
+   weight_unit: 'KG',
+   height_unit: 'CM',
+@@ -119,6 +120,10 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
+         userLookups.push(args);
+         return dbUser;
+       },
++      updateMany: async ({ where }) => {
++        assert.deepEqual(where, { id: dbUser.id, credential_security_version: 3 });
++        return { count: 1 };
++      },
+       findUnique: async () => dbUser
+     },
+     mobileAuthSession: {
+@@ -128,6 +133,7 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
+       }
+     }
+   };
++  prismaStub.$transaction = async (action) => action(prismaStub);
+   const router = loadAuthRouter({
+     prismaStub,
+     passportStub: { authenticate: () => () => {} },
+@@ -363,3 +369,19 @@ test('auth route: GET /mobile/sessions returns owned active devices', async () =
+   assert.equal(res.body.sessions[0].current, true);
+   assert.equal(res.body.sessions[0].device_platform, 'android_phone');
+ });
++
++test('mobile login rejects a credential change during password verification with the generic response', async () => {
++  let version = 3;
++  let creates = 0;
++  const prismaStub = {
++    user: { findFirst: async () => ({ ...dbUser }), updateMany: async ({ where }) => ({ count: where.credential_security_version === version ? 1 : 0 }) },
++    mobileAuthSession: { create: async () => { creates++; return { id: 1 }; } }
++  };
++  prismaStub.$transaction = action => action(prismaStub);
++  const router = loadAuthRouter({ prismaStub, passportStub: {}, bcryptStub: { compare: async () => { version++; return true; } } });
++  const res = createRes();
++  await getRouteHandler(router, 'post', '/mobile/login')({ body: { email: dbUser.email, password: 'synthetic', device_id: 'phone', device_platform: 'android_phone' } }, res);
++  assert.equal(res.statusCode, 401);
++  assert.deepEqual(res.body, { message: 'Invalid email or password' });
++  assert.equal(creates, 0);
++});
