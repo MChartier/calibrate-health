@@ -1,0 +1,71 @@
+{
+  "checkedAtUtc": "2026-10-07T03:41:55.713Z",
+  "projectId": "PVT_kwHOABMy1c4Bl3Eq",
+  "projectUrl": "https://github.com/users/MChartier/projects/1",
+  "itemId": "PVTI_lAHOABMy1c4Bl3Eqzg_Cmhk",
+  "issue": 438,
+  "readback": {
+    "id": "PVTI_lAHOABMy1c4Bl3Eqzg_Cmhk",
+    "content": {
+      "number": 438,
+      "url": "https://github.com/MChartier/calibrate-health/issues/438"
+    },
+    "fieldValues": {
+      "nodes": [
+        {},
+        {
+          "text": "Complete managed-first hosting and safe self-hosted administration",
+          "field": {
+            "id": "PVTF_lAHOABMy1c4Bl3EqzhkiQDA",
+            "name": "Title"
+          }
+        },
+        {
+          "optionId": "f75ad846",
+          "name": "Todo",
+          "field": {
+            "id": "PVTSSF_lAHOABMy1c4Bl3EqzhkiQDI",
+            "name": "Status"
+          }
+        },
+        {
+          "optionId": "816fcd21",
+          "name": "Scoping",
+          "field": {
+            "id": "PVTSSF_lAHOABMy1c4Bl3EqzhkiQLQ",
+            "name": "Pipeline state"
+          }
+        },
+        {
+          "text": "Proposed: 01a1145f-aae2-70e0-af56-3952f0eab012; implementation not started",
+          "field": {
+            "id": "PVTF_lAHOABMy1c4Bl3EqzhkiQMM",
+            "name": "Owner"
+          }
+        },
+        {
+          "text": "Current original work: https://github.com/MChartier/calibrate-health/pull/402 (open). Focused successor: not created; preserve original source/evidence.",
+          "field": {
+            "id": "PVTF_lAHOABMy1c4Bl3EqzhkiQMQ",
+            "name": "Current PRs"
+          }
+        },
+        {
+          "text": "Awaiting coordinator admission/assignment. Evidence retained; plan covers directory lock, seven conflicts and 421 overlap. No product implementation started. Native Development association is absent; explicit issue and Current PRs links are verified.",
+          "field": {
+            "id": "PVTF_lAHOABMy1c4Bl3EqzhkiQMU",
+            "name": "Blocked by"
+          }
+        },
+        {
+          "text": "2026-10-07T03:41:51.957Z",
+          "field": {
+            "id": "PVTF_lAHOABMy1c4Bl3EqzhkiQNQ",
+            "name": "Verified at"
+          }
+        }
+      ]
+    }
+  },
+  "nativeDevelopmentAssociation": "Absent: PR402 closingIssuesReferences returned no issues; body hyperlink and Current PRs field are explicit nonclosing links, not claimed as native association. No PR-body change or closing keyword added."
+}

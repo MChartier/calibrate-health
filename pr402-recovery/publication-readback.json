@@ -1,0 +1,71 @@
+{
+  "checkedAtUtc": "2026-10-07T03:42:51.104Z",
+  "repository": "MChartier/calibrate-health",
+  "retentionInitialCommit": "6b265afbb92951ba55e1c22212374225049c580e",
+  "retentionRefs": [
+    {
+      "ref": "refs/heads/evidence/pr402-original-a341dcf2",
+      "sha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5"
+    },
+    {
+      "ref": "refs/heads/evidence/pr402-capture-build-7da08240",
+      "sha": "7da082409f7a903133e84f53576b656b4c965dd7"
+    },
+    {
+      "ref": "refs/heads/evidence/pr402-recovery-record-20261007",
+      "sha": "6b265afbb92951ba55e1c22212374225049c580e"
+    }
+  ],
+  "issue": {
+    "number": 438,
+    "url": "https://github.com/MChartier/calibrate-health/issues/438",
+    "bodySha256": "20f84a6d65d2a0aef3b44290558db7d5fb193eb8368495a94b3c087426d37e10",
+    "updatedAt": "2026-10-07T03:39:46Z",
+    "sections": [
+      "## Problem",
+      "## Requirements and acceptance",
+      "## Implementation plan",
+      "## Implementing Codex task",
+      "## Implementing PR"
+    ],
+    "labels": []
+  },
+  "preDispatchClaim": {
+    "id": 6030410384,
+    "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6030410384",
+    "bodySha256": "9f24bf3a42a0e2b6517d1fb47b9d6b8a5201f70b18b8ff199edbe478e795c4ef",
+    "updatedAt": "2026-10-07T03:39:48Z"
+  },
+  "proposedContinuationOwner": "01a1145f-aae2-70e0-af56-3952f0eab012",
+  "implementationStarted": false,
+  "actualMaster": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "protectedProductPrReadback": [
+    {
+      "number": 402,
+      "head": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "state": "open",
+      "draft": false,
+      "bodySha256": "24f9f6d844a9cea11eb771adbaeb11a626113cd7cb7b4c9bce6fd181018f030b",
+      "unchangedFromPreparationPreflight": true
+    },
+    {
+      "number": 431,
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open",
+      "draft": false,
+      "bodySha256": "408e99d2726bed567256f64b03b89f54b04f042710a2cbbe221033b4ce42b4c8",
+      "unchangedFromPreparationPreflight": true
+    },
+    {
+      "number": 437,
+      "head": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "state": "open",
+      "draft": true,
+      "bodySha256": "a125ab27c6193d0477223728900c0199440ca538e86bf6fc63d76270b9ec88b9",
+      "unchangedFromPreparationPreflight": true
+    }
+  ],
+  "nativeAssociation": "Absent; explicitly disclosed in Project record. Issue body and Current PRs field provide verified nonclosing PR402 links.",
+  "verification": "Public access verified for all36 original/retained/provenance URLs and hashes. Original PNGs and individual manifests match the original CI ZIP and committed aggregate. New tests/builds/captures not performed.",
+  "retentionPolicy": "No automatic expiry; source/build refs never moved. Record ref advances only by a new child evidence commit; all original immutable identities retained."
+}

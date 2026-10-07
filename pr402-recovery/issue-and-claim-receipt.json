@@ -1,0 +1,31 @@
+{
+  "checkedAtUtc": "2026-10-07T03:39:51.965Z",
+  "issue": {
+    "number": 438,
+    "url": "https://github.com/MChartier/calibrate-health/issues/438",
+    "bodySha256": "20f84a6d65d2a0aef3b44290558db7d5fb193eb8368495a94b3c087426d37e10",
+    "updatedAt": "2026-10-07T03:39:46Z",
+    "sections": [
+      "## Problem",
+      "## Requirements and acceptance",
+      "## Implementation plan",
+      "## Implementing Codex task",
+      "## Implementing PR"
+    ],
+    "labels": []
+  },
+  "claim": {
+    "id": 6030410384,
+    "url": "https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6030410384",
+    "bodySha256": "9f24bf3a42a0e2b6517d1fb47b9d6b8a5201f70b18b8ff199edbe478e795c4ef",
+    "updatedAt": "2026-10-07T03:39:48Z"
+  },
+  "retentionCommit": "6b265afbb92951ba55e1c22212374225049c580e",
+  "planUrl": "https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/recovery-plan.md",
+  "retentionManifestUrl": "https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json",
+  "implementationStarted": false,
+  "proposedOwner": "01a1145f-aae2-70e0-af56-3952f0eab012",
+  "originalPr": 402,
+  "originalHead": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+  "actualMaster": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+}

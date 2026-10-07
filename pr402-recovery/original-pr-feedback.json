@@ -1,0 +1,286 @@
+{
+  "retainedAtUtc": "2026-10-07T03:42:51.103Z",
+  "historicalAssessmentAtUtc": "2026-10-07T03:29:05.505Z",
+  "pr": {
+    "number": 402,
+    "title": "Improve managed hosting and self-hosted administration",
+    "url": "https://github.com/MChartier/calibrate-health/pull/402",
+    "body": "## Summary\n- Make managed Calibrate hosting the default end-user path, with an explicit, tested, cancelable self-hosted chooser\n- Move account/service identity into Service & hosting, separate from app diagnostics and updates\n- Add a server administration overview, capabilities, searchable/paginated user directory, and confirmed admin/member changes\n- Persist server roles with atomic first-account ownership for new self-hosted databases; managed hosting never grants the first public registrant administrator access\n- Import existing valid ADMIN_USER_IDS once, protect the last verified administrator, and provide an explicit recovery command for an existing verified account\n- Isolate credentials, password recovery, in-flight refreshes, and admin mutations across account/server changes\n\n## Verification\n- Final head a341dcf2e736c8207c7e9296c1c7a8f67cf012f5 passed all six PR workflows: [Builds and browser smoke](https://github.com/MChartier/calibrate-health/actions/runs/36914903424), [Tests](https://github.com/MChartier/calibrate-health/actions/runs/36914903373), [Lint](https://github.com/MChartier/calibrate-health/actions/runs/36914903442), [Database upgrade/rollback](https://github.com/MChartier/calibrate-health/actions/runs/36914903405), [Dependency audit](https://github.com/MChartier/calibrate-health/actions/runs/36914903488), and [Production container scan](https://github.com/MChartier/calibrate-health/actions/runs/36914903426)\n- 1,083 mobile tests passed (214 suites)\n- 717 backend tests passed with test-concurrency=2; an initial unconstrained run had one governance-file failure that passed in isolation and in the complete rerun\n- 73 API-client tests passed\n- Full lint/typechecks, backend production build, and Expo web production build passed\n- Web-release checks, release configuration checks, rollback ledger checks (14), and populated-upgrade unit checks (3) passed\n- OpenAPI regeneration is byte-identical to the committed generated client\n- Independent security review and re-review found no remaining blocking issue\n\n## Rollout notes\n- Migration 0042 stores admin/member roles and one-time bootstrap/import state\n- CALIBRATE_HOSTED_SERVICE=true disables first-user ownership regardless of NODE_ENV\n- Existing populated installations do not promote a new registrant automatically\n- Existing zero-admin installations use the documented operator recovery command against an existing verified account\n- No production access changes, merge, or deployment have been performed\n\n## Screenshot evidence\n[Full paired gallery: all 14 unedited PNGs](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/README.md) · [Provenance and image hashes](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/manifest.json) · [Original CI artifact](https://github.com/MChartier/calibrate-health/actions/runs/36913482326/artifacts/11188925700)\n\nCaptured from code commit df7e610812408e59a1e340dd8f32ab94fe4b4289. Real Chromium, synthetic intercepted API fixtures, no customer data or live role changes. The browser job passed 24 tests with no retries; every capture was visually inspected. These are web viewport screenshots, not native-device evidence. The subsequent gallery commit changes only documentation/images.\n\n### Service & hosting\n\n| Phone web, 390 × 844 | Desktop web, 1440 × 1000 |\n| --- | --- |\n| [![Service & hosting, phone](https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-service-hosting.png)](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-service-hosting.png) | [![Service & hosting, desktop](https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-service-hosting.png)](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-service-hosting.png) |\n\n### Users and roles\n\n| Phone web, 390 × 844 | Desktop web, 1440 × 1000 |\n| --- | --- |\n| [![Users and roles, phone](https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-users-and-roles.png)](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-users-and-roles.png) | [![Users and roles, desktop](https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-users-and-roles.png)](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-users-and-roles.png) |\n\n### Administrator confirmation\n\n| Phone web, 390 × 844 | Desktop web, 1440 × 1000 |\n| --- | --- |\n| [![Administrator confirmation, phone](https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-confirmation.png)](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-confirmation.png) | [![Administrator confirmation, desktop](https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-administrator-confirmation.png)](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-administrator-confirmation.png) |\n\n## Validation limits\n- Populated PostgreSQL upgrade and encrypted rollback passed in CI; dedicated live cross-connection RBAC concurrency remains unverified\n- Real phone/desktop browser evidence passed in CI; local browser and native-device QA remain unavailable\n- Native-only server selection is covered by component tests; browser captures will not be presented as native-device evidence\n\nThe initially published product tree is exactly the locally reviewed tree 4e6426ce765a37b54ec87d4c8faff3a962f366d0 (local review commit 89b616b; GitHub commit ec041fefe76d49eed0aefdd0bcf725548bb8e8f0).",
+    "bodySha256": "24f9f6d844a9cea11eb771adbaeb11a626113cd7cb7b4c9bce6fd181018f030b",
+    "head": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+    "apiBase": "014f19669cbe4b62cb9b98514830d7874660e994",
+    "actualMaster": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  },
+  "feedback": {
+    "comments": [
+      [
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5973146186",
+          "html_url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-5973146186",
+          "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/402",
+          "id": 5973146186,
+          "node_id": "IC_kwDOQbBgUs8AAAABZAb6Sg",
+          "user": {
+            "login": "chatgpt-codex-connector[bot]",
+            "id": 199175422,
+            "node_id": "BOT_kgDOC98s_g",
+            "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+            "html_url": "https://github.com/apps/chatgpt-codex-connector",
+            "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+            "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+            "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+            "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+            "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+            "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+            "type": "Bot",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "created_at": "2026-10-03T20:22:53Z",
+          "updated_at": "2026-10-03T20:29:19Z",
+          "body": "<!-- codex-pull-request-review-summary -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-03T20:29:18.915853Z\">2026-10-03T20:29:18.915853Z</relative-time> | `a341dcf` | Draft marked ready |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+          "author_association": "NONE",
+          "reactions": {
+            "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/5973146186/reactions",
+            "total_count": 0,
+            "+1": 0,
+            "-1": 0,
+            "laugh": 0,
+            "hooray": 0,
+            "confused": 0,
+            "heart": 0,
+            "rocket": 0,
+            "eyes": 0
+          },
+          "performed_via_github_app": {
+            "id": 1144995,
+            "client_id": "Iv23liVemv8A9if9v0F2",
+            "slug": "chatgpt-codex-connector",
+            "node_id": "A_kwHOAOQ6Gs4AEXij",
+            "owner": {
+              "login": "openai",
+              "id": 14957082,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+              "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/openai",
+              "html_url": "https://github.com/openai",
+              "followers_url": "https://api.github.com/users/openai/followers",
+              "following_url": "https://api.github.com/users/openai/following{/other_user}",
+              "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+              "organizations_url": "https://api.github.com/users/openai/orgs",
+              "repos_url": "https://api.github.com/users/openai/repos",
+              "events_url": "https://api.github.com/users/openai/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/openai/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "name": "ChatGPT Codex Connector",
+            "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+            "external_url": "https://www.chatgpt.com",
+            "html_url": "https://github.com/apps/chatgpt-codex-connector",
+            "created_at": "2025-02-14T01:37:05Z",
+            "updated_at": "2026-09-23T18:52:59Z",
+            "permissions": {
+              "actions": "write",
+              "checks": "read",
+              "contents": "write",
+              "emails": "read",
+              "issues": "write",
+              "metadata": "read",
+              "pull_requests": "write",
+              "statuses": "read",
+              "workflows": "write"
+            },
+            "events": [
+              "check_run",
+              "check_suite",
+              "commit_comment",
+              "issues",
+              "issue_comment",
+              "pull_request",
+              "pull_request_review",
+              "pull_request_review_comment",
+              "pull_request_review_thread",
+              "repository",
+              "status",
+              "sub_issues"
+            ]
+          },
+          "minimized": null
+        },
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6030179516",
+          "html_url": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-6030179516",
+          "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/402",
+          "id": 6030179516,
+          "node_id": "IC_kwDOQbBgUs8AAAABZ208vA",
+          "user": {
+            "login": "MChartier",
+            "id": 1258197,
+            "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/MChartier",
+            "html_url": "https://github.com/MChartier",
+            "followers_url": "https://api.github.com/users/MChartier/followers",
+            "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+            "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+            "organizations_url": "https://api.github.com/users/MChartier/orgs",
+            "repos_url": "https://api.github.com/users/MChartier/repos",
+            "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/MChartier/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "created_at": "2026-10-07T03:17:43Z",
+          "updated_at": "2026-10-07T03:17:43Z",
+          "body": "Pre-dispatch recovery-planning claim (2026-10-07T03:17:45.309269+00:00). The original cloud collaboration owner `/root/improve_self_hosting_experience` supplied a verified complete idle handoff: no active children or writes. Original head `a341dcf2e736c8207c7e9296c1c7a8f67cf012f5`, tree `8a2ca5dcba729164f1ca851c6e1a6864a70b13bd`, original base `014f19669cbe4b62cb9b98514830d7874660e994`. No native UUID existed for that cloud owner. A new native MCHARTIER_ZBOOK continuation task ID is pending coordinator creation; this comment is not an execution claim.\n\nBounded next scope is read-only: assess actual master (currently `4cbcbc740fbe5fa5646b4de31951c79a653176d5`), the full published history and merge diff, every conversation/review/inline finding, conflicts, original behavioral evidence and retention requirements. Independently assess directory-lock finding `discussion_r4174731711` and overlap with issue421 / PR431 / PR437 before proposing exact fixes, base and validation. Return a concrete recovery plan; do not edit this PR or any source branch yet.\n\nPreserve the existing branch and all original source/evidence identities. The 14 unedited Chromium captures and provenance under `docs/pr-screenshots/self-hosting/` were captured from `df7e610812408e59a1e340dd8f32ab94fe4b4289`; the final head adds evidence only. Before any eventual merge-diff cleanup, retain and verify accessible commit-addressed originals, manifests, fixtures/harness identities and an explicit owner/purpose/retention record on a non-merged evidence ref. Assess a focused replacement only if justified; do not create it, force-push, erase history or assume full issue closure.\n\nThe coordinator will map the original cloud-owner handoff to the new native task and keep the original owner informed. No takeover of an active writer, implementation dispatch by this metadata task, provider/security activation, credentials, release, deployment or merge is authorized by this claim.",
+          "author_association": "OWNER",
+          "reactions": {
+            "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6030179516/reactions",
+            "total_count": 0,
+            "+1": 0,
+            "-1": 0,
+            "laugh": 0,
+            "hooray": 0,
+            "confused": 0,
+            "heart": 0,
+            "rocket": 0,
+            "eyes": 0
+          },
+          "performed_via_github_app": null,
+          "minimized": null
+        }
+      ]
+    ],
+    "reviews": [
+      [
+        {
+          "id": 5402605506,
+          "node_id": "PRR_kwDOQbBgUs8AAAABQgU3wg",
+          "user": {
+            "login": "chatgpt-codex-connector[bot]",
+            "id": 199175422,
+            "node_id": "BOT_kgDOC98s_g",
+            "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+            "html_url": "https://github.com/apps/chatgpt-codex-connector",
+            "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+            "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+            "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+            "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+            "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+            "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+            "type": "Bot",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "body": "\n### 💡 Codex Review\n\nHere are some automated review suggestions for this pull request.\n\n**Reviewed commit:** `a341dcf2e7`\n    \n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+          "state": "COMMENTED",
+          "html_url": "https://github.com/MChartier/calibrate-health/pull/402#pullrequestreview-5402605506",
+          "pull_request_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/402",
+          "author_association": "NONE",
+          "_links": {
+            "html": {
+              "href": "https://github.com/MChartier/calibrate-health/pull/402#pullrequestreview-5402605506"
+            },
+            "pull_request": {
+              "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/402"
+            }
+          },
+          "submitted_at": "2026-10-03T20:29:16Z",
+          "commit_id": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5"
+        }
+      ]
+    ],
+    "inline": [
+      [
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4174731711",
+          "pull_request_review_id": 5402605506,
+          "id": 4174731711,
+          "node_id": "PRRC_kwDOQbBgUs741Vm_",
+          "diff_hunk": "@@ -0,0 +1,197 @@\n+import { Prisma, ServerRole, type ServerAccessState } from '@prisma/client';\n+import prisma from '../config/database';\n+import { USER_CLIENT_SELECT } from '../utils/userSerialization';\n+\n+const SERVER_ACCESS_ID = 1;\n+// User ids are PostgreSQL INTEGERs. Never preserve ids for accounts that do not exist yet.\n+const MAX_USER_ID = 2_147_483_647;\n+\n+export class ServerAccessError extends Error {\n+  constructor(public readonly status: number, public readonly code: string, message: string) {\n+    super(message);\n+  }\n+}\n+\n+export function parseLegacyAdminUserIds(value: string | undefined): number[] {\n+  return [...new Set((value ?? '').split(',').map((part) => part.trim())\n+    .filter((part) => /^[1-9]\\d*$/.test(part))\n+    .map(Number).filter((id) => Number.isSafeInteger(id) && id <= MAX_USER_ID))];\n+}\n+\n+/** The managed flag disables ownership claiming even outside production/staging. */\n+export function allowsFirstUserAdmin(env: NodeJS.ProcessEnv = process.env): boolean {\n+  const flag = env.CALIBRATE_HOSTED_SERVICE?.trim().toLowerCase();\n+  return flag === undefined || flag === '' || flag === 'false';\n+}\n+\n+async function initializeLockedAccess(tx: Prisma.TransactionClient, state: ServerAccessState) {\n+  if (state.legacy_admin_imported_at) return;\n+  const ids = parseLegacyAdminUserIds(process.env.ADMIN_USER_IDS);\n+  if (ids.length > 0) {\n+    // Match only existing accounts once. Verification is still required for effective access.\n+    await tx.user.updateMany({ where: { id: { in: ids } }, data: { server_role: ServerRole.admin } });\n+  }\n+  const hasUsers = await tx.user.count() > 0;\n+  const updated = await tx.serverAccessState.update({\n+    where: { id: SERVER_ACCESS_ID },\n+    data: {\n+      legacy_admin_imported_at: new Date(),\n+      first_user_bootstrap_available: state.first_user_bootstrap_available && !hasUsers && allowsFirstUserAdmin()\n+    }\n+  });\n+  Object.assign(state, updated);\n+}\n+\n+/** Serialize ownership changes; READ COMMITTED sees changes made by the previous lock holder. */\n+export async function withServerAccessLock<T>(\n+  action: (tx: Prisma.TransactionClient, state: ServerAccessState) => Promise<T>\n+): Promise<T> {\n+  return prisma.$transaction(async (tx) => {\n+    const [state] = await tx.$queryRaw<ServerAccessState[]>`\n+      SELECT \"id\", \"first_user_bootstrap_available\", \"legacy_admin_imported_at\"\n+      FROM \"ServerAccessState\" WHERE \"id\" = 1 FOR UPDATE\n+    `;\n+    if (!state) throw new Error('Server access migration is required before serving requests.');\n+    await initializeLockedAccess(tx, state);\n+    return action(tx, state);\n+  }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });\n+}\n+\n+export async function initializeServerAccess(): Promise<void> {\n+  await withServerAccessLock(async () => undefined);\n+}\n+\n+export async function createRegisteredUser(data: Prisma.UserCreateInput) {\n+  return withServerAccessLock(async (tx, state) => {\n+    const isFirstUser = state.first_user_bootstrap_available && allowsFirstUserAdmin() && await tx.user.count() === 0;\n+    const user = await tx.user.create({\n+      data: { ...data, server_role: isFirstUser ? ServerRole.admin : ServerRole.member },\n+      select: USER_CLIENT_SELECT\n+    });\n+    if (state.first_user_bootstrap_available) {\n+      await tx.serverAccessState.update({\n+        where: { id: SERVER_ACCESS_ID }, data: { first_user_bootstrap_available: false }\n+      });\n+    }\n+    return user;\n+  });\n+}\n+\n+/** Failed email delivery must not remove a newly claimed owner or reopen ownership claiming. */\n+export async function cleanupFailedRegistration(userId: number): Promise<boolean> {\n+  return withServerAccessLock(async (tx) => {\n+    const user = await tx.user.findUnique({ where: { id: userId }, select: { server_role: true, email_verified_at: true } });\n+    if (!user || user.server_role === ServerRole.admin || user.email_verified_at) return false;\n+    // Verification uses its own token transaction, so recheck eligibility in the DELETE itself.\n+    return (await tx.user.deleteMany({\n+      where: { id: userId, server_role: ServerRole.member, email_verified_at: null }\n+    })).count > 0;\n+  });\n+}\n+\n+async function assertServerAdmin(tx: Pick<Prisma.TransactionClient, 'user'>, userId: number): Promise<void> {\n+  const user = await tx.user.findUnique({\n+    where: { id: userId }, select: { server_role: true, email_verified_at: true }\n+  });\n+  if (user?.server_role !== ServerRole.admin || !user.email_verified_at) {\n+    throw new ServerAccessError(403, 'ADMIN_REQUIRED', 'Server administrator access is required.');\n+  }\n+}\n+\n+export async function isServerAdmin(userId: number): Promise<boolean> {\n+  const user = await prisma.user.findUnique({\n+    where: { id: userId }, select: { server_role: true, email_verified_at: true }\n+  });\n+  return user?.server_role === ServerRole.admin && Boolean(user.email_verified_at);\n+}\n+\n+export async function assertCanRemoveServerAdmin(tx: Prisma.TransactionClient, userId: number): Promise<void> {\n+  const user = await tx.user.findUnique({ where: { id: userId }, select: { server_role: true } });\n+  if (user?.server_role !== ServerRole.admin) return;\n+  const otherAdmins = await tx.user.count({\n+    where: { id: { not: userId }, server_role: ServerRole.admin, email_verified_at: { not: null } }\n+  });\n+  if (otherAdmins === 0) {\n+    throw new ServerAccessError(409, 'LAST_ADMIN_REQUIRED', 'Add another verified administrator before removing this administrator.');\n+  }\n+}\n+\n+// Keep the administrator directory strictly separate from profile, health, and credential data.\n+const SERVER_USER_SELECT = {\n+  id: true, email: true, server_role: true, created_at: true, email_verified_at: true\n+} satisfies Prisma.UserSelect;\n+\n+type ServerUserRow = Prisma.UserGetPayload<{ select: typeof SERVER_USER_SELECT }>;\n+const serializeServerUser = (user: ServerUserRow) => ({\n+  id: user.id,\n+  email: user.email,\n+  role: user.server_role,\n+  created_at: user.created_at.toISOString(),\n+  email_verified: Boolean(user.email_verified_at)\n+});\n+\n+export async function listServerUsers(actorId: number, query: { search?: string; cursor?: number; limit: number }) {\n+  return withServerAccessLock(async (tx) => {",
+          "path": "backend/src/services/serverAccess.ts",
+          "commit_id": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+          "original_commit_id": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+          "user": {
+            "login": "chatgpt-codex-connector[bot]",
+            "id": 199175422,
+            "node_id": "BOT_kgDOC98s_g",
+            "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+            "html_url": "https://github.com/apps/chatgpt-codex-connector",
+            "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+            "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+            "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+            "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+            "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+            "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+            "type": "Bot",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Move directory scans outside the exclusive ownership lock**\n\nOn a populated managed instance, every `/server-settings/users` request holds the singleton `ServerAccessState` row's exclusive `FOR UPDATE` lock for the entire directory query. The case-insensitive substring search can scan the `User` table, and registrations, role changes, feature updates, and account deletions all need the same lock, so one slow search blocks those operations and concurrent directory reads unnecessarily serialize. Keep the ownership lock limited to authorization/ownership mutations, or provide an indexed access path that does not hold this exclusive lock while listing users.\n\nAGENTS.md reference: [AGENTS.md:L257-L258](https://github.com/MChartier/calibrate-health/blob/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/AGENTS.md#L257-L258)\n\nUseful? React with 👍 / 👎.",
+          "created_at": "2026-10-03T20:29:16Z",
+          "updated_at": "2026-10-03T20:29:16Z",
+          "html_url": "https://github.com/MChartier/calibrate-health/pull/402#discussion_r4174731711",
+          "pull_request_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/402",
+          "_links": {
+            "self": {
+              "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4174731711"
+            },
+            "html": {
+              "href": "https://github.com/MChartier/calibrate-health/pull/402#discussion_r4174731711"
+            },
+            "pull_request": {
+              "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/402"
+            }
+          },
+          "reactions": {
+            "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments/4174731711/reactions",
+            "total_count": 0,
+            "+1": 0,
+            "-1": 0,
+            "laugh": 0,
+            "hooray": 0,
+            "confused": 0,
+            "heart": 0,
+            "rocket": 0,
+            "eyes": 0
+          },
+          "start_line": null,
+          "original_start_line": null,
+          "start_side": null,
+          "line": 134,
+          "original_line": 134,
+          "side": "RIGHT",
+          "author_association": "NONE",
+          "original_position": 134,
+          "position": 134,
+          "subject_type": "line"
+        }
+      ]
+    ]
+  }
+}

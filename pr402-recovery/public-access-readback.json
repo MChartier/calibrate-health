@@ -1,0 +1,296 @@
+{
+  "checkedAtUtc": "2026-10-07T03:38:05.620Z",
+  "access": "Unauthenticated public raw GitHub HTTPS; no credentials, repository visibility unchanged",
+  "originalPublicationCommit": "6b265afbb92951ba55e1c22212374225049c580e",
+  "checks": [
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/README.md",
+      "sha256": "1984a61081cd12448a52cfb0e8f6400f5d37ac93e317efdc7081bf78c53a9f1c",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 2061,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/archive-entry-inventory.json",
+      "sha256": "9b04b674bbf1aef848dd160785e5e6f8dbba2a33860d1fdcf7c08e97ebf51ec5",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 18937,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/original-artifact.json",
+      "sha256": "273e3a97a52b031ee13d5003c8279e8f5282c7085b1103b8ad5769767c4b693b",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 819,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/original-build-commit.json",
+      "sha256": "387f88dfd9822353edf0f375486f4ec840191573312fc6714aeae5c84436277e",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 330805,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/original-ci-artifact-11188925700.zip",
+      "sha256": "733b091adf53946b162f25bf5fc0c698ba7ae23bc07753e14d115afebc86680a",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 652610,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/original-job.json",
+      "sha256": "9b681838edf02a767e204d756cdd52acd69a9facbb9d7519b8d8df6ebea98d25",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 3271,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/original-run.json",
+      "sha256": "a7a2fb10f415867c43516ad4dbc61b82adba7aa3cf078ffc2bb5f80d96a59841",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 15039,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/published-scope-inventory.json",
+      "sha256": "a5d79d15e432928f865f27a4b6685c5e523782b6bc29b8ad70944ad65443f45e",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 43249,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/recovery-plan.md",
+      "sha256": "b23007fc2bdcede731b69d719d57144c8a443904b99032b47caddc1e77f2c5e3",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 5857,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json",
+      "sha256": "283f23ae1b2b4db67acac3f0af47fefbb5592aff71bce2599cf330414e9de40e",
+      "kind": "retained-record",
+      "status": 200,
+      "bytes": 8506,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/.github/workflows/builds.yml",
+      "sha256": "716bb81bff316f5c86391247f15ad5db6c78154f02a710d4a2d918b50308409a",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 36622,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/e2e/expo-web/self-hosting-evidence.spec.ts",
+      "sha256": "9d7e72d0d031a1bf658e7f3eea5f080c0780c4eccfd39aa596d469fc13d1a8d7",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 6612,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/e2e/expo-web/fixtures.ts",
+      "sha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 33511,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/e2e/expo-web/server-admin.spec.ts",
+      "sha256": "63527c37820e81cce2f27ff9ed17f59231548cc89df5ae64556d229fd567ba8f",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 5277,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/playwright.expo-web.config.ts",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 2477,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/scripts/expo-web-playwright.mjs",
+      "sha256": "ee53457b5ec22a4d521a09574839fb12a448aaa9f3f5c52ed0859002f9d39cfc",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 3625,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/package.json",
+      "sha256": "95e4aae9862382d15db6e9e2f6c1516ba5ad3a61827fc50397410345d6070fbe",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 9498,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/package-lock.json",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 467590,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/mobile/package.json",
+      "sha256": "a776b757edb0dad3d4fbee33eea3fc65b2106d30937b5d8117a889aba8ccafa3",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 3146,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/df7e610812408e59a1e340dd8f32ab94fe4b4289/mobile/metro.config.js",
+      "sha256": "c4d3731cbc91d3036f9e4a2a3d88e60e63e9ea267145bb4fc27799f4787f80bf",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 4287,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/README.md",
+      "sha256": "6fb9fb3ce0ef16cf8bbe63e3ff49d1da05c7091e832a14a85c0dd62ecdf4626a",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 4503,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/manifest.json",
+      "sha256": "8b7ac7be77bda60bc607996e347e1a6ab5c1bc42c7b47dea199fbe55bd44a2a1",
+      "kind": "source-provenance",
+      "status": 200,
+      "bytes": 14529,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-confirmation.png",
+      "sha256": "670ca816687f686cb6248660c804bac4babd79afbb39e9841b9e52e3ec1d8f1e",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 45826,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-overview.png",
+      "sha256": "53e954ae01c34c058e6bd9f45f6fde96b42a0ecd10b265e829073b1adb1e7423",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 40646,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-service-browser-boundaries.png",
+      "sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 42107,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-service-hosting.png",
+      "sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 42107,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-settings-service-entry.png",
+      "sha256": "7e1d73f52b140d5fdf33cac231c1ba6118ff84e0ad0d04354d3e90476552f3d9",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 48073,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-sign-in.png",
+      "sha256": "348277e2c8effc63b148ded1e9f177edcf9986c36688af05eb7ca61b5b7dd3dc",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 31627,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/android-phone-chrome-users-and-roles.png",
+      "sha256": "ed0d908d51bc0feb93b1906bd64d12047acd018525798e4d31fd72f4f4fa7f6a",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 43225,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-administrator-confirmation.png",
+      "sha256": "ba0f72d67ed40d02f5a526d8102d7d82f9d94b737dec8a8468ce4ff166ff4265",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 78156,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-administrator-overview.png",
+      "sha256": "e505ed9183a60b52f65fbf0abd0026f7e7fe4944e96b9b990183e391a640337b",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 61442,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-service-browser-boundaries.png",
+      "sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 49624,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-service-hosting.png",
+      "sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 49624,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-settings-service-entry.png",
+      "sha256": "a6681f681bad6c438d0f5a61e0227a275c40a2d61f3a510cfabe080574f8d05c",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 61653,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-sign-in.png",
+      "sha256": "43e3895fd56015d7fe029d67e527ad174e6a1cb75fc85bfb75fc2a88ffd1cea8",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 37710,
+      "hashVerified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a341dcf2e736c8207c7e9296c1c7a8f67cf012f5/docs/pr-screenshots/self-hosting/desktop-chrome-users-and-roles.png",
+      "sha256": "b8d44f896169a446ded20fdad44e31e74b727de7aad1a658151149d24fb9b243",
+      "kind": "original-png",
+      "status": 200,
+      "bytes": 67351,
+      "hashVerified": true
+    }
+  ],
+  "allVerified": true
+}
