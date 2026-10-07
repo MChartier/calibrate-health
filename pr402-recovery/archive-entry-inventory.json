@@ -1,0 +1,464 @@
+[
+  {
+    "path": "android-phone-chrome-administrator-confirmation.json",
+    "bytes": 884,
+    "sha256": "e07a38dd2bd77e7ec92c597741ba63a83a112be019b66f11ebcc1a67203becf5",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "android-phone-chrome-administrator-confirmation.png",
+      "image_sha256": "670ca816687f686cb6248660c804bac4babd79afbb39e9841b9e52e3ec1d8f1e",
+      "surface": "administrator-confirmation",
+      "route": "/server-admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project": "android-phone-chrome",
+      "test_title": "capture user roles and confirmation evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "android-phone-chrome-administrator-confirmation.png",
+    "bytes": 45826,
+    "sha256": "670ca816687f686cb6248660c804bac4babd79afbb39e9841b9e52e3ec1d8f1e",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "android-phone-chrome-administrator-overview.json",
+    "bytes": 871,
+    "sha256": "c965e14be5362609d8bffdde18ba7dda86b4db56a7ac33376e484648dc254dfb",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "android-phone-chrome-administrator-overview.png",
+      "image_sha256": "53e954ae01c34c058e6bd9f45f6fde96b42a0ecd10b265e829073b1adb1e7423",
+      "surface": "administrator-overview",
+      "route": "/server-admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project": "android-phone-chrome",
+      "test_title": "capture administrator overview evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "android-phone-chrome-administrator-overview.png",
+    "bytes": 40646,
+    "sha256": "53e954ae01c34c058e6bd9f45f6fde96b42a0ecd10b265e829073b1adb1e7423",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "android-phone-chrome-service-browser-boundaries.json",
+    "bytes": 868,
+    "sha256": "a51cf4eea3427aebdf73b33bb1687597e3cd7ba689ada337c0114fdcb3286e55",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "android-phone-chrome-service-browser-boundaries.png",
+      "image_sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+      "surface": "service-browser-boundaries",
+      "route": "/service",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project": "android-phone-chrome",
+      "test_title": "capture service settings evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "android-phone-chrome-service-browser-boundaries.png",
+    "bytes": 42107,
+    "sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "android-phone-chrome-service-hosting.json",
+    "bytes": 846,
+    "sha256": "7131393a5cb9c507aeed9f18001f4de1b5c524b19c67089fdcdc81d905d47dba",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "android-phone-chrome-service-hosting.png",
+      "image_sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+      "surface": "service-hosting",
+      "route": "/service",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project": "android-phone-chrome",
+      "test_title": "capture service settings evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "android-phone-chrome-service-hosting.png",
+    "bytes": 42107,
+    "sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "android-phone-chrome-settings-service-entry.json",
+    "bytes": 861,
+    "sha256": "5397ed7939708ae5394f466205a3d49b28943b0b58d7d16dcd5546952432e59e",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "android-phone-chrome-settings-service-entry.png",
+      "image_sha256": "7e1d73f52b140d5fdf33cac231c1ba6118ff84e0ad0d04354d3e90476552f3d9",
+      "surface": "settings-service-entry",
+      "route": "/settings",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project": "android-phone-chrome",
+      "test_title": "capture service settings evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "android-phone-chrome-settings-service-entry.png",
+    "bytes": 48073,
+    "sha256": "7e1d73f52b140d5fdf33cac231c1ba6118ff84e0ad0d04354d3e90476552f3d9",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "android-phone-chrome-sign-in.json",
+    "bytes": 823,
+    "sha256": "788488562f4dac54450ddc088dc4566847d7de1b4bf1cc4867c2e8a5ff61505a",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "android-phone-chrome-sign-in.png",
+      "image_sha256": "348277e2c8effc63b148ded1e9f177edcf9986c36688af05eb7ca61b5b7dd3dc",
+      "surface": "sign-in",
+      "route": "/login",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project": "android-phone-chrome",
+      "test_title": "capture web sign-in evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "android-phone-chrome-sign-in.png",
+    "bytes": 31627,
+    "sha256": "348277e2c8effc63b148ded1e9f177edcf9986c36688af05eb7ca61b5b7dd3dc",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "android-phone-chrome-users-and-roles.json",
+    "bytes": 862,
+    "sha256": "6a72060a29cf908f3760252766d2760fa72bfaa13a34a8904785ce62cc6a9c57",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "android-phone-chrome-users-and-roles.png",
+      "image_sha256": "ed0d908d51bc0feb93b1906bd64d12047acd018525798e4d31fd72f4f4fa7f6a",
+      "surface": "users-and-roles",
+      "route": "/server-admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project": "android-phone-chrome",
+      "test_title": "capture user roles and confirmation evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "android-phone-chrome-users-and-roles.png",
+    "bytes": 43225,
+    "sha256": "ed0d908d51bc0feb93b1906bd64d12047acd018525798e4d31fd72f4f4fa7f6a",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "desktop-chrome-administrator-confirmation.json",
+    "bytes": 874,
+    "sha256": "6c1349ebd8372a2677a8c25fa852baee427e961a794e323532ece39e704d153b",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "desktop-chrome-administrator-confirmation.png",
+      "image_sha256": "ba0f72d67ed40d02f5a526d8102d7d82f9d94b737dec8a8468ce4ff166ff4265",
+      "surface": "administrator-confirmation",
+      "route": "/server-admin",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "project": "desktop-chrome",
+      "test_title": "capture user roles and confirmation evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "desktop-chrome-administrator-confirmation.png",
+    "bytes": 78156,
+    "sha256": "ba0f72d67ed40d02f5a526d8102d7d82f9d94b737dec8a8468ce4ff166ff4265",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "desktop-chrome-administrator-overview.json",
+    "bytes": 861,
+    "sha256": "bb9765e6473b265df3fa4ee131e5648c58e5d5e28b054ba870759589fa821f5e",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "desktop-chrome-administrator-overview.png",
+      "image_sha256": "e505ed9183a60b52f65fbf0abd0026f7e7fe4944e96b9b990183e391a640337b",
+      "surface": "administrator-overview",
+      "route": "/server-admin",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "project": "desktop-chrome",
+      "test_title": "capture administrator overview evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "desktop-chrome-administrator-overview.png",
+    "bytes": 61442,
+    "sha256": "e505ed9183a60b52f65fbf0abd0026f7e7fe4944e96b9b990183e391a640337b",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "desktop-chrome-service-browser-boundaries.json",
+    "bytes": 858,
+    "sha256": "94e660e8e9c9d37841cf00f2229039eac85acf32360c9f5946ab09c1dd8dca32",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "desktop-chrome-service-browser-boundaries.png",
+      "image_sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+      "surface": "service-browser-boundaries",
+      "route": "/service",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "project": "desktop-chrome",
+      "test_title": "capture service settings evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "desktop-chrome-service-browser-boundaries.png",
+    "bytes": 49624,
+    "sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "desktop-chrome-service-hosting.json",
+    "bytes": 836,
+    "sha256": "bb539aaae8640611a4018f0c71054e80ff75dc10c905f7465c1711dec4110a18",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "desktop-chrome-service-hosting.png",
+      "image_sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+      "surface": "service-hosting",
+      "route": "/service",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "project": "desktop-chrome",
+      "test_title": "capture service settings evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "desktop-chrome-service-hosting.png",
+    "bytes": 49624,
+    "sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "desktop-chrome-settings-service-entry.json",
+    "bytes": 851,
+    "sha256": "1ae441acd166a9626c84fb191f84a491f4632c338a0e12b00b95a3196ad3463e",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "desktop-chrome-settings-service-entry.png",
+      "image_sha256": "a6681f681bad6c438d0f5a61e0227a275c40a2d61f3a510cfabe080574f8d05c",
+      "surface": "settings-service-entry",
+      "route": "/settings",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "project": "desktop-chrome",
+      "test_title": "capture service settings evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "desktop-chrome-settings-service-entry.png",
+    "bytes": 61653,
+    "sha256": "a6681f681bad6c438d0f5a61e0227a275c40a2d61f3a510cfabe080574f8d05c",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "desktop-chrome-sign-in.json",
+    "bytes": 813,
+    "sha256": "66b4b90ef9dc9066de9299359d6fce4cef9bfa526b94aa2d04344e4c2bc1f771",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "desktop-chrome-sign-in.png",
+      "image_sha256": "43e3895fd56015d7fe029d67e527ad174e6a1cb75fc85bfb75fc2a88ffd1cea8",
+      "surface": "sign-in",
+      "route": "/login",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "project": "desktop-chrome",
+      "test_title": "capture web sign-in evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "desktop-chrome-sign-in.png",
+    "bytes": 37710,
+    "sha256": "43e3895fd56015d7fe029d67e527ad174e6a1cb75fc85bfb75fc2a88ffd1cea8",
+    "matchesCommittedPng": true
+  },
+  {
+    "path": "desktop-chrome-users-and-roles.json",
+    "bytes": 852,
+    "sha256": "caca42b83abe2c426de66c5e7ae38eddc8cdf49d305c73cb4768c90005dd8943",
+    "record": {
+      "schema_version": 1,
+      "source_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "workflow_commit": "7da082409f7a903133e84f53576b656b4c965dd7",
+      "pull_request_head_commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "image": "desktop-chrome-users-and-roles.png",
+      "image_sha256": "b8d44f896169a446ded20fdad44e31e74b727de7aad1a658151149d24fb9b243",
+      "surface": "users-and-roles",
+      "route": "/server-admin",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "project": "desktop-chrome",
+      "test_title": "capture user roles and confirmation evidence",
+      "test_retry": 0,
+      "platform": "web",
+      "browser": "chromium",
+      "color_scheme": "light",
+      "data": "synthetic intercepted API fixtures; no live account or customer data",
+      "scope": "Browser origin is the local self-hosted preview. Native server chooser is not covered."
+    }
+  },
+  {
+    "path": "desktop-chrome-users-and-roles.png",
+    "bytes": 67351,
+    "sha256": "b8d44f896169a446ded20fdad44e31e74b727de7aad1a658151149d24fb9b243",
+    "matchesCommittedPng": true
+  }
+]

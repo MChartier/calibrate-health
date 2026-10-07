@@ -1,0 +1,108 @@
+{
+  "id": 110541689812,
+  "run_id": 36913482326,
+  "workflow_name": "Builds",
+  "head_branch": "mchartier/managed-self-hosting",
+  "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/36913482326",
+  "run_attempt": 1,
+  "node_id": "CR_kwDOQbBgUs8AAAAZvMxT1A",
+  "head_sha": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+  "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/110541689812",
+  "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/36913482326/job/110541689812",
+  "status": "completed",
+  "conclusion": "success",
+  "created_at": "2026-10-01T19:19:59Z",
+  "started_at": "2026-10-01T19:20:02Z",
+  "completed_at": "2026-10-01T19:23:31Z",
+  "name": "Web Critical Smoke",
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1,
+      "started_at": "2026-10-01T19:20:03Z",
+      "completed_at": "2026-10-01T19:20:04Z"
+    },
+    {
+      "name": "Checkout",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2,
+      "started_at": "2026-10-01T19:20:04Z",
+      "completed_at": "2026-10-01T19:20:22Z"
+    },
+    {
+      "name": "Setup Node",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3,
+      "started_at": "2026-10-01T19:20:22Z",
+      "completed_at": "2026-10-01T19:20:49Z"
+    },
+    {
+      "name": "Install dependencies",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4,
+      "started_at": "2026-10-01T19:20:49Z",
+      "completed_at": "2026-10-01T19:21:28Z"
+    },
+    {
+      "name": "Install pinned Playwright Chromium",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5,
+      "started_at": "2026-10-01T19:21:28Z",
+      "completed_at": "2026-10-01T19:21:46Z"
+    },
+    {
+      "name": "Exercise critical production Web journeys on desktop and phone",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6,
+      "started_at": "2026-10-01T19:21:46Z",
+      "completed_at": "2026-10-01T19:23:26Z"
+    },
+    {
+      "name": "Upload synthetic self-hosting Web screenshots",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7,
+      "started_at": "2026-10-01T19:23:26Z",
+      "completed_at": "2026-10-01T19:23:27Z"
+    },
+    {
+      "name": "Post Setup Node",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 13,
+      "started_at": "2026-10-01T19:23:27Z",
+      "completed_at": "2026-10-01T19:23:27Z"
+    },
+    {
+      "name": "Post Checkout",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 14,
+      "started_at": "2026-10-01T19:23:27Z",
+      "completed_at": "2026-10-01T19:23:29Z"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 15,
+      "started_at": "2026-10-01T19:23:29Z",
+      "completed_at": "2026-10-01T19:23:29Z"
+    }
+  ],
+  "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/110541689812",
+  "labels": [
+    "windows-latest"
+  ],
+  "runner_id": 1000013079,
+  "runner_name": "GitHub Actions 1000013079",
+  "runner_group_id": 0,
+  "runner_group_name": "GitHub Actions"
+}

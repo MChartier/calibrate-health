@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-07T03:35:29.249Z",
+  "purpose": "Preserve original PR402 evidence and source identities before CI expiry; prepare a scoped successor, without implementation",
+  "repository": "MChartier/calibrate-health",
+  "pullRequest": 402,
+  "owner": {
+    "retentionTaskId": "01a1145f-aae2-70e0-af56-3952f0eab012",
+    "proposedNativeContinuationOwner": true,
+    "implementationStarted": false,
+    "originalOwner": "cloud collaboration /root/improve_self_hosting_experience",
+    "originalOwnerIdle": true,
+    "originalHandoffCommit": "e7c61c50d8be01437c15e0c3cfcd3fa683e81571",
+    "originalHandoffPath": "runtime-next-scope/pr402-owner-handoff.json",
+    "coordinatorTaskId": "01a0f838-69d6-75b3-8cc0-f768175aa03e"
+  },
+  "authorization": {
+    "source": "Trusted current task delegation authorizes scoped issue creation and exact evidence retention; implementation remains unstarted",
+    "originalClaim": "https://github.com/MChartier/calibrate-health/pull/402#issuecomment-6030179516",
+    "focusedDiffAmendment": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-5984018358",
+    "publishedScopeAmendment": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6002971212"
+  },
+  "policy": {
+    "workflow": "workflow-v3",
+    "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+    "review": "pr-review-v3",
+    "reviewCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+    "directAmendments": "All supplied direct amendments through full-feedback reconciliation apply; pins unchanged"
+  },
+  "retention": {
+    "policy": "No automatic expiry. Keep all exact originals, refs, manifests and historical receipt identities for successor implementation, review and subsequent audit. Any later retirement requires separately authorized disposition with continued reviewer access; no deletion or force-update is authorized here.",
+    "mergeTarget": false,
+    "refs": {
+      "original": {
+        "ref": "refs/heads/evidence/pr402-original-a341dcf2",
+        "sha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+        "purpose": "Retain exact original PR source tree and all four published commits, including historical PNGs/provenance and original base ancestry"
+      },
+      "build": {
+        "ref": "refs/heads/evidence/pr402-capture-build-7da08240",
+        "sha": "7da082409f7a903133e84f53576b656b4c965dd7",
+        "purpose": "Retain exact original CI workflow merge commit, parents and build tree"
+      },
+      "record": {
+        "ref": "refs/heads/evidence/pr402-recovery-record-20261007",
+        "purpose": "Retain original CI archive, exact identity inventory, recovery plan and ownership/retention policy outside product history"
+      }
+    }
+  },
+  "source": {
+    "originalHead": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+    "originalTree": "8a2ca5dcba729164f1ca851c6e1a6864a70b13bd",
+    "originalBase": "014f19669cbe4b62cb9b98514830d7874660e994",
+    "capturedSource": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+    "capturedTree": "5bce4bf30697ba3cbdc6d5462ec42735f3c21767",
+    "workflowMergeCommit": "7da082409f7a903133e84f53576b656b4c965dd7",
+    "workflowTree": "5bce4bf30697ba3cbdc6d5462ec42735f3c21767",
+    "currentTarget": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  },
+  "originalArtifact": {
+    "id": 11188925700,
+    "runId": 36913482326,
+    "jobId": 110541689812,
+    "originalExpiresAt": "2026-10-08T19:23:26Z",
+    "archive": "original-ci-artifact-11188925700.zip",
+    "sha256": "733b091adf53946b162f25bf5fc0c698ba7ae23bc07753e14d115afebc86680a",
+    "bytes": 652610,
+    "pngCount": 14,
+    "manifestCount": 14,
+    "allPngsMatchCommittedOriginals": true,
+    "allPerImageManifestsMatchAggregate": true
+  },
+  "bindings": [
+    {
+      "path": ".github/workflows/builds.yml",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "0b59fb6e4617743fe2ec24084f19e6d753b6cd64",
+      "sha256": "716bb81bff316f5c86391247f15ad5db6c78154f02a710d4a2d918b50308409a"
+    },
+    {
+      "path": "e2e/expo-web/self-hosting-evidence.spec.ts",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "7214aaf7584370d4be860cadb4fbcaff8822fb78",
+      "sha256": "9d7e72d0d031a1bf658e7f3eea5f080c0780c4eccfd39aa596d469fc13d1a8d7"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "40bd4339326d34e506b4c90d4ac1dc8719404d1c",
+      "sha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b"
+    },
+    {
+      "path": "e2e/expo-web/server-admin.spec.ts",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "980854ed9707e52790e4aa5dbfd472e62ffde8f4",
+      "sha256": "63527c37820e81cce2f27ff9ed17f59231548cc89df5ae64556d229fd567ba8f"
+    },
+    {
+      "path": "playwright.expo-web.config.ts",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "c16c90dd0c0764608361d631b664bf350d1155a5",
+      "sha256": "243d97a8d35c5e84e7e948aace6998b6551bc29ccb38b091ef73a99fa51f94b1"
+    },
+    {
+      "path": "scripts/expo-web-playwright.mjs",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "0bceee976edb3cd55239fb72663843d229d62ff1",
+      "sha256": "ee53457b5ec22a4d521a09574839fb12a448aaa9f3f5c52ed0859002f9d39cfc"
+    },
+    {
+      "path": "package.json",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "a9ff4e1e48a1dfa87b856a52ca4751cd0a17253a",
+      "sha256": "95e4aae9862382d15db6e9e2f6c1516ba5ad3a61827fc50397410345d6070fbe"
+    },
+    {
+      "path": "package-lock.json",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "a3785d00bdd18870441bde62a1c3c9756d68e44b",
+      "sha256": "b825f5e7dc036ff0877172f487ad93d47d1c7aa0c4047e5472042a22948950e8"
+    },
+    {
+      "path": "mobile/package.json",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "3969f5c162e2260fb096da0000217a72e3248c12",
+      "sha256": "a776b757edb0dad3d4fbee33eea3fc65b2106d30937b5d8117a889aba8ccafa3"
+    },
+    {
+      "path": "mobile/metro.config.js",
+      "commit": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "blob": "a468dd1ac025de6a8df452b3a95035800e1980e2",
+      "sha256": "c4d3731cbc91d3036f9e4a2a3d88e60e63e9ea267145bb4fc27799f4787f80bf"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/README.md",
+      "commit": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "blob": "54a1ae8ac204a41eb2e372e63ccc651b0cb43c0e",
+      "sha256": "6fb9fb3ce0ef16cf8bbe63e3ff49d1da05c7091e832a14a85c0dd62ecdf4626a"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/manifest.json",
+      "commit": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "blob": "88b83c18021e7b691f369d82656ad2ca7cb947bd",
+      "sha256": "8b7ac7be77bda60bc607996e347e1a6ab5c1bc42c7b47dea199fbe55bd44a2a1"
+    }
+  ],
+  "files": [
+    {
+      "path": "archive-entry-inventory.json",
+      "bytes": 18937,
+      "sha256": "9b04b674bbf1aef848dd160785e5e6f8dbba2a33860d1fdcf7c08e97ebf51ec5"
+    },
+    {
+      "path": "original-artifact.json",
+      "bytes": 819,
+      "sha256": "273e3a97a52b031ee13d5003c8279e8f5282c7085b1103b8ad5769767c4b693b"
+    },
+    {
+      "path": "original-build-commit.json",
+      "bytes": 330805,
+      "sha256": "387f88dfd9822353edf0f375486f4ec840191573312fc6714aeae5c84436277e"
+    },
+    {
+      "path": "original-ci-artifact-11188925700.zip",
+      "bytes": 652610,
+      "sha256": "733b091adf53946b162f25bf5fc0c698ba7ae23bc07753e14d115afebc86680a"
+    },
+    {
+      "path": "original-job.json",
+      "bytes": 3271,
+      "sha256": "9b681838edf02a767e204d756cdd52acd69a9facbb9d7519b8d8df6ebea98d25"
+    },
+    {
+      "path": "original-run.json",
+      "bytes": 15039,
+      "sha256": "a7a2fb10f415867c43516ad4dbc61b82adba7aa3cf078ffc2bb5f80d96a59841"
+    },
+    {
+      "path": "published-scope-inventory.json",
+      "bytes": 43249,
+      "sha256": "a5d79d15e432928f865f27a4b6685c5e523782b6bc29b8ad70944ad65443f45e"
+    },
+    {
+      "path": "recovery-plan.md",
+      "bytes": 5857,
+      "sha256": "b23007fc2bdcede731b69d719d57144c8a443904b99032b47caddc1e77f2c5e3"
+    }
+  ],
+  "limitations": [
+    "Historical After-only browser evidence, no baseline/native captures",
+    "PWA notices suppressed by retained capture harness",
+    "No new behavior validation performed",
+    "No independent QA/readiness certification",
+    "Task share-link unavailable; verified task ID provided"
+  ]
+}

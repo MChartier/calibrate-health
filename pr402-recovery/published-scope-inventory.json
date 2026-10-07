@@ -1,0 +1,1323 @@
+{
+  "checkedAt": "2026-10-07T03:29:05.505Z",
+  "repository": "MChartier/calibrate-health",
+  "pr": 402,
+  "head": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+  "tree": "8a2ca5dcba729164f1ca851c6e1a6864a70b13bd",
+  "apiBase": "014f19669cbe4b62cb9b98514830d7874660e994",
+  "actualTarget": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "014f19669cbe4b62cb9b98514830d7874660e994",
+  "declaredParent": null,
+  "ultimateTarget": "master",
+  "totals": {
+    "commits": 4,
+    "commitFileTouches": 82,
+    "files": 80,
+    "additions": 3729,
+    "deletions": 710,
+    "comments": 2,
+    "reviews": 1,
+    "inline": 1
+  },
+  "pageCounts": {
+    "commits": 1,
+    "files": 1,
+    "comments": 1,
+    "reviews": 1,
+    "inline": 1,
+    "allIssues": 5
+  },
+  "prBodySha256": "24f9f6d844a9cea11eb771adbaeb11a626113cd7cb7b4c9bce6fd181018f030b",
+  "categories": {
+    "maintained-doc-or-config": {
+      "files": 5,
+      "additions": 96,
+      "deletions": 26
+    },
+    "exclude-capture-only-delta": {
+      "files": 1,
+      "additions": 17,
+      "deletions": 1
+    },
+    "product-or-required-tooling": {
+      "files": 30,
+      "additions": 1333,
+      "deletions": 386
+    },
+    "required-contract": {
+      "files": 4,
+      "additions": 295,
+      "deletions": 6
+    },
+    "maintained-regression": {
+      "files": 23,
+      "additions": 1442,
+      "deletions": 291
+    },
+    "retain-outside-product": {
+      "files": 17,
+      "additions": 546,
+      "deletions": 0
+    }
+  },
+  "commits": [
+    {
+      "sha": "ec041fefe76d49eed0aefdd0bcf725548bb8e8f0",
+      "parents": [
+        "014f19669cbe4b62cb9b98514830d7874660e994"
+      ],
+      "message": "Improve managed hosting and self-hosted administration",
+      "tree": "4e6426ce765a37b54ec87d4c8faff3a962f366d0",
+      "files": [
+        {
+          "status": "M",
+          "paths": [
+            ".env.example"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/package.json"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "backend/prisma/migrations/0042_persistent_server_roles/migration.sql"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/prisma/schema.prisma"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/src/index.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/src/routes/auth.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/src/routes/serverSettings.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/src/routes/user.ts"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "backend/src/scripts/grantServerAdmin.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/src/services/accountLifecycle.ts"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "backend/src/services/serverAccess.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/src/services/serverSettings.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/test/account-lifecycle.test.js"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/test/routes-account-recovery.test.js"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/test/routes-auth-mobile.test.js"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/test/routes-auth.test.js"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/test/routes-user.test.js"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "backend/test/server-admin-command.test.js"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "backend/test/server-settings.test.js"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "deploy/.env.example"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "deploy/README.md"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "docs/account-access-and-recovery.md"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "docs/openapi/v1.yaml"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "docs/visual-design.md"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "e2e/expo-web/fixtures.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "e2e/expo-web/launch-18-settings-trust-center.spec.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "e2e/expo-web/server-admin.spec.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/app/(auth)/login.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/app/(auth)/register.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/app/(tabs)/(settings)/advanced.tsx"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "mobile/app/(tabs)/(settings)/service.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/app/(tabs)/(settings)/settings.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/app/forgot-password.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/auth/AuthContext.test.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/auth/AuthContext.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/auth/AuthContext.web.test.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/auth/AuthContext.web.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/auth/authScreenNavigation.test.tsx"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "mobile/src/auth/passwordResetServer.test.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/components/ServerUrlControl.test.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/components/ServerUrlControl.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/errors/presentation.test.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/errors/presentation.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/navigation/routeRegistry.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/screens/AdvancedSettingsScreen.test.tsx"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "mobile/src/screens/ServiceSettingsScreen.test.tsx"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "mobile/src/serverSettings/ServerOverview.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/serverSettings/ServerSettingsScreen.test.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/serverSettings/ServerSettingsScreen.tsx"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "mobile/src/serverSettings/ServerUserManagement.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/settings/SettingsCategoryPage.test.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/settings/SettingsCategoryPage.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/settings/SettingsHome.test.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "mobile/src/settings/SettingsHome.tsx"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "packages/api-client/src/client.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "packages/api-client/src/generated/v1.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "packages/api-client/src/types.ts"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "packages/api-client/test/server-settings.test.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "scripts/postgres-rollback-smoke.mjs"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "scripts/postgres-rollback-smoke.test.mjs"
+          ]
+        }
+      ],
+      "numstat": "3\t1\t.env.example\n1\t0\tbackend/package.json\n16\t0\tbackend/prisma/migrations/0042_persistent_server_roles/migration.sql\n12\t0\tbackend/prisma/schema.prisma\n4\t0\tbackend/src/index.ts\n33\t34\tbackend/src/routes/auth.ts\n39\t6\tbackend/src/routes/serverSettings.ts\n4\t0\tbackend/src/routes/user.ts\n38\t0\tbackend/src/scripts/grantServerAdmin.ts\n6\t2\tbackend/src/services/accountLifecycle.ts\n197\t0\tbackend/src/services/serverAccess.ts\n1\t20\tbackend/src/services/serverSettings.ts\n66\t12\tbackend/test/account-lifecycle.test.js\n5\t0\tbackend/test/routes-account-recovery.test.js\n13\t0\tbackend/test/routes-auth-mobile.test.js\n13\t0\tbackend/test/routes-auth.test.js\n53\t0\tbackend/test/routes-user.test.js\n24\t0\tbackend/test/server-admin-command.test.js\n437\t129\tbackend/test/server-settings.test.js\n3\t1\tdeploy/.env.example\n58\t22\tdeploy/README.md\n14\t2\tdocs/account-access-and-recovery.md\n103\t3\tdocs/openapi/v1.yaml\n18\t0\tdocs/visual-design.md\n15\t11\te2e/expo-web/fixtures.ts\n1\t1\te2e/expo-web/launch-18-settings-trust-center.spec.ts\n44\t2\te2e/expo-web/server-admin.spec.ts\n54\t12\tmobile/app/(auth)/login.tsx\n62\t10\tmobile/app/(auth)/register.tsx\n3\t50\tmobile/app/(tabs)/(settings)/advanced.tsx\n89\t0\tmobile/app/(tabs)/(settings)/service.tsx\n4\t8\tmobile/app/(tabs)/(settings)/settings.tsx\n28\t6\tmobile/app/forgot-password.tsx\n47\t0\tmobile/src/auth/AuthContext.test.tsx\n38\t17\tmobile/src/auth/AuthContext.tsx\n14\t0\tmobile/src/auth/AuthContext.web.test.tsx\n22\t10\tmobile/src/auth/AuthContext.web.tsx\n73\t5\tmobile/src/auth/authScreenNavigation.test.tsx\n55\t0\tmobile/src/auth/passwordResetServer.test.tsx\n74\t113\tmobile/src/components/ServerUrlControl.test.tsx\n131\t171\tmobile/src/components/ServerUrlControl.tsx\n10\t1\tmobile/src/errors/presentation.test.ts\n4\t0\tmobile/src/errors/presentation.ts\n13\t1\tmobile/src/navigation/routeRegistry.ts\n4\t16\tmobile/src/screens/AdvancedSettingsScreen.test.tsx\n68\t0\tmobile/src/screens/ServiceSettingsScreen.test.tsx\n119\t0\tmobile/src/serverSettings/ServerOverview.tsx\n286\t8\tmobile/src/serverSettings/ServerSettingsScreen.test.tsx\n65\t18\tmobile/src/serverSettings/ServerSettingsScreen.tsx\n269\t0\tmobile/src/serverSettings/ServerUserManagement.tsx\n1\t1\tmobile/src/settings/SettingsCategoryPage.test.tsx\n3\t3\tmobile/src/settings/SettingsCategoryPage.tsx\n30\t1\tmobile/src/settings/SettingsHome.test.tsx\n30\t1\tmobile/src/settings/SettingsHome.tsx\n33\t2\tpackages/api-client/src/client.ts\n164\t3\tpackages/api-client/src/generated/v1.ts\n24\t0\tpackages/api-client/src/types.ts\n121\t0\tpackages/api-client/test/server-settings.test.ts\n3\t3\tscripts/postgres-rollback-smoke.mjs\n2\t2\tscripts/postgres-rollback-smoke.test.mjs"
+    },
+    {
+      "sha": "ef530412e29b0b14efc7f4a0f0de0844908ca4dd",
+      "parents": [
+        "ec041fefe76d49eed0aefdd0bcf725548bb8e8f0"
+      ],
+      "message": "Capture self-hosting UI evidence in browser CI",
+      "tree": "4721ce71c8d189a7a0f35d45a1cb06611c598c1d",
+      "files": [
+        {
+          "status": "M",
+          "paths": [
+            ".github/workflows/builds.yml"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "e2e/expo-web/self-hosting-evidence.spec.ts"
+          ]
+        }
+      ],
+      "numstat": "17\t1\t.github/workflows/builds.yml\n139\t0\te2e/expo-web/self-hosting-evidence.spec.ts"
+    },
+    {
+      "sha": "df7e610812408e59a1e340dd8f32ab94fe4b4289",
+      "parents": [
+        "ef530412e29b0b14efc7f4a0f0de0844908ca4dd"
+      ],
+      "message": "Keep recovery CLI in production checks and refine UI evidence",
+      "tree": "5bce4bf30697ba3cbdc6d5462ec42735f3c21767",
+      "files": [
+        {
+          "status": "M",
+          "paths": [
+            "e2e/expo-web/self-hosting-evidence.spec.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "knip.json"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "packages/api-client/test/server-settings.test.ts"
+          ]
+        },
+        {
+          "status": "M",
+          "paths": [
+            "scripts/knip-config.test.mjs"
+          ]
+        }
+      ],
+      "numstat": "1\t2\te2e/expo-web/self-hosting-evidence.spec.ts\n1\t1\tknip.json\n1\t3\tpackages/api-client/test/server-settings.test.ts\n3\t0\tscripts/knip-config.test.mjs"
+    },
+    {
+      "sha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "parents": [
+        "df7e610812408e59a1e340dd8f32ab94fe4b4289"
+      ],
+      "message": "Add verified phone and desktop administration screenshots",
+      "tree": "8a2ca5dcba729164f1ca851c6e1a6864a70b13bd",
+      "files": [
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/README.md"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-confirmation.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-overview.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/android-phone-chrome-service-browser-boundaries.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/android-phone-chrome-service-hosting.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/android-phone-chrome-settings-service-entry.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/android-phone-chrome-sign-in.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/android-phone-chrome-users-and-roles.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/desktop-chrome-administrator-confirmation.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/desktop-chrome-administrator-overview.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/desktop-chrome-service-browser-boundaries.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/desktop-chrome-service-hosting.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/desktop-chrome-settings-service-entry.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/desktop-chrome-sign-in.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/desktop-chrome-users-and-roles.png"
+          ]
+        },
+        {
+          "status": "A",
+          "paths": [
+            "docs/pr-screenshots/self-hosting/manifest.json"
+          ]
+        }
+      ],
+      "numstat": "70\t0\tdocs/pr-screenshots/self-hosting/README.md\n-\t-\tdocs/pr-screenshots/self-hosting/android-phone-chrome-administrator-confirmation.png\n-\t-\tdocs/pr-screenshots/self-hosting/android-phone-chrome-administrator-overview.png\n-\t-\tdocs/pr-screenshots/self-hosting/android-phone-chrome-service-browser-boundaries.png\n-\t-\tdocs/pr-screenshots/self-hosting/android-phone-chrome-service-hosting.png\n-\t-\tdocs/pr-screenshots/self-hosting/android-phone-chrome-settings-service-entry.png\n-\t-\tdocs/pr-screenshots/self-hosting/android-phone-chrome-sign-in.png\n-\t-\tdocs/pr-screenshots/self-hosting/android-phone-chrome-users-and-roles.png\n-\t-\tdocs/pr-screenshots/self-hosting/desktop-chrome-administrator-confirmation.png\n-\t-\tdocs/pr-screenshots/self-hosting/desktop-chrome-administrator-overview.png\n-\t-\tdocs/pr-screenshots/self-hosting/desktop-chrome-service-browser-boundaries.png\n-\t-\tdocs/pr-screenshots/self-hosting/desktop-chrome-service-hosting.png\n-\t-\tdocs/pr-screenshots/self-hosting/desktop-chrome-settings-service-entry.png\n-\t-\tdocs/pr-screenshots/self-hosting/desktop-chrome-sign-in.png\n-\t-\tdocs/pr-screenshots/self-hosting/desktop-chrome-users-and-roles.png\n338\t0\tdocs/pr-screenshots/self-hosting/manifest.json"
+    }
+  ],
+  "files": [
+    {
+      "path": ".env.example",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 1,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": ".github/workflows/builds.yml",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 17,
+      "deletions": 1,
+      "category": "exclude-capture-only-delta",
+      "rationale": "One-off screenshot capture invocation and artifact upload"
+    },
+    {
+      "path": "backend/package.json",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/prisma/migrations/0042_persistent_server_roles/migration.sql",
+      "status": "added",
+      "previousPath": null,
+      "additions": 16,
+      "deletions": 0,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "backend/prisma/schema.prisma",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 12,
+      "deletions": 0,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "backend/src/index.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 4,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 33,
+      "deletions": 34,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/routes/serverSettings.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 39,
+      "deletions": 6,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/routes/user.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 4,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/scripts/grantServerAdmin.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 38,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/services/accountLifecycle.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 6,
+      "deletions": 2,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/services/serverAccess.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 197,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/services/serverSettings.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 20,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/test/account-lifecycle.test.js",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 66,
+      "deletions": 12,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-account-recovery.test.js",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 5,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 13,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-auth.test.js",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 13,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-user.test.js",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 53,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/server-admin-command.test.js",
+      "status": "added",
+      "previousPath": null,
+      "additions": 24,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/server-settings.test.js",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 437,
+      "deletions": 129,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "deploy/.env.example",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 1,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "deploy/README.md",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 58,
+      "deletions": 22,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "docs/account-access-and-recovery.md",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 14,
+      "deletions": 2,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "docs/openapi/v1.yaml",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 103,
+      "deletions": 3,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/README.md",
+      "status": "added",
+      "previousPath": null,
+      "additions": 70,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-confirmation.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/android-phone-chrome-administrator-overview.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/android-phone-chrome-service-browser-boundaries.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/android-phone-chrome-service-hosting.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/android-phone-chrome-settings-service-entry.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/android-phone-chrome-sign-in.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/android-phone-chrome-users-and-roles.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/desktop-chrome-administrator-confirmation.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/desktop-chrome-administrator-overview.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/desktop-chrome-service-browser-boundaries.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/desktop-chrome-service-hosting.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/desktop-chrome-settings-service-entry.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/desktop-chrome-sign-in.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/desktop-chrome-users-and-roles.png",
+      "status": "added",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/pr-screenshots/self-hosting/manifest.json",
+      "status": "added",
+      "previousPath": null,
+      "additions": 338,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Historical original screenshots/manifest/gallery"
+    },
+    {
+      "path": "docs/visual-design.md",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 18,
+      "deletions": 0,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 15,
+      "deletions": 11,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "e2e/expo-web/self-hosting-evidence.spec.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 138,
+      "deletions": 0,
+      "category": "retain-outside-product",
+      "rationale": "Ad-hoc capture harness; preserve assertions not already covered as maintained regressions"
+    },
+    {
+      "path": "e2e/expo-web/server-admin.spec.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 44,
+      "deletions": 2,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "knip.json",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 1,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(auth)/login.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 54,
+      "deletions": 12,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(auth)/register.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 62,
+      "deletions": 10,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/advanced.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 50,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/service.tsx",
+      "status": "added",
+      "previousPath": null,
+      "additions": 89,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/settings.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 4,
+      "deletions": 8,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/forgot-password.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 28,
+      "deletions": 6,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 47,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 38,
+      "deletions": 17,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 14,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 22,
+      "deletions": 10,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/auth/authScreenNavigation.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 73,
+      "deletions": 5,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/auth/passwordResetServer.test.tsx",
+      "status": "added",
+      "previousPath": null,
+      "additions": 55,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 74,
+      "deletions": 113,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 131,
+      "deletions": 171,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/errors/presentation.test.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 10,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/errors/presentation.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 4,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 13,
+      "deletions": 1,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 4,
+      "deletions": 16,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/screens/ServiceSettingsScreen.test.tsx",
+      "status": "added",
+      "previousPath": null,
+      "additions": 68,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerOverview.tsx",
+      "status": "added",
+      "previousPath": null,
+      "additions": 119,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerSettingsScreen.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 286,
+      "deletions": 8,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerSettingsScreen.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 65,
+      "deletions": 18,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerUserManagement.tsx",
+      "status": "added",
+      "previousPath": null,
+      "additions": 269,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/settings/SettingsCategoryPage.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/settings/SettingsCategoryPage.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 3,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/settings/SettingsHome.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 30,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/settings/SettingsHome.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 30,
+      "deletions": 1,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "packages/api-client/src/client.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 33,
+      "deletions": 2,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "packages/api-client/src/generated/v1.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 164,
+      "deletions": 3,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "packages/api-client/src/types.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 24,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "packages/api-client/test/server-settings.test.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 119,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "scripts/knip-config.test.mjs",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.mjs",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 3,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.test.mjs",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 2,
+      "deletions": 2,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    }
+  ]
+}
