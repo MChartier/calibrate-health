@@ -1,0 +1,250 @@
+{
+  "checkedAt": "2026-10-07T03:13:55.464Z",
+  "head": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "targetRef": "mchartier/credential-verification-421",
+  "targetSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "parent": {
+    "pr": 431,
+    "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+    "state": "open"
+  },
+  "ultimateTarget": {
+    "ref": "master",
+    "sha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  },
+  "bodySha256": "6c95ea55bd3681843a04f6ba1afe269b7d72f00493fd6da210f8a2c1f06bef0f",
+  "prUpdatedAt": "2026-10-07T03:13:08Z",
+  "draft": true,
+  "labels": [],
+  "comments": [
+    {
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6030075636",
+      "html_url": "https://github.com/MChartier/calibrate-health/pull/437#issuecomment-6030075636",
+      "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/437",
+      "id": 6030075636,
+      "node_id": "IC_kwDOQbBgUs8AAAABZ2um9A",
+      "user": {
+        "login": "MChartier",
+        "id": 1258197,
+        "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/MChartier",
+        "html_url": "https://github.com/MChartier",
+        "followers_url": "https://api.github.com/users/MChartier/followers",
+        "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+        "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+        "organizations_url": "https://api.github.com/users/MChartier/orgs",
+        "repos_url": "https://api.github.com/users/MChartier/repos",
+        "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/MChartier/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "created_at": "2026-10-07T03:07:51Z",
+      "updated_at": "2026-10-07T03:07:51Z",
+      "body": "@codex review",
+      "author_association": "OWNER",
+      "reactions": {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6030075636/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "performed_via_github_app": null,
+      "minimized": null
+    },
+    {
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6030076999",
+      "html_url": "https://github.com/MChartier/calibrate-health/pull/437#issuecomment-6030076999",
+      "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/437",
+      "id": 6030076999,
+      "node_id": "IC_kwDOQbBgUs8AAAABZ2usRw",
+      "user": {
+        "login": "chatgpt-codex-connector[bot]",
+        "id": 199175422,
+        "node_id": "BOT_kgDOC98s_g",
+        "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+        "html_url": "https://github.com/apps/chatgpt-codex-connector",
+        "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "created_at": "2026-10-07T03:07:58Z",
+      "updated_at": "2026-10-07T03:07:58Z",
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "author_association": "NONE",
+      "reactions": {
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments/6030076999/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "performed_via_github_app": {
+        "id": 1144995,
+        "client_id": "Iv23liVemv8A9if9v0F2",
+        "slug": "chatgpt-codex-connector",
+        "node_id": "A_kwHOAOQ6Gs4AEXij",
+        "owner": {
+          "login": "openai",
+          "id": 14957082,
+          "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTU3MDgy",
+          "avatar_url": "https://avatars.githubusercontent.com/u/14957082?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/openai",
+          "html_url": "https://github.com/openai",
+          "followers_url": "https://api.github.com/users/openai/followers",
+          "following_url": "https://api.github.com/users/openai/following{/other_user}",
+          "gists_url": "https://api.github.com/users/openai/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/openai/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/openai/subscriptions",
+          "organizations_url": "https://api.github.com/users/openai/orgs",
+          "repos_url": "https://api.github.com/users/openai/repos",
+          "events_url": "https://api.github.com/users/openai/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/openai/received_events",
+          "type": "Organization",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "name": "ChatGPT Codex Connector",
+        "description": "Bring ChatGPT and Codex to your GitHub repositories.",
+        "external_url": "https://www.chatgpt.com",
+        "html_url": "https://github.com/apps/chatgpt-codex-connector",
+        "created_at": "2025-02-14T01:37:05Z",
+        "updated_at": "2026-09-23T18:52:59Z",
+        "permissions": {
+          "actions": "write",
+          "checks": "read",
+          "contents": "write",
+          "emails": "read",
+          "issues": "write",
+          "metadata": "read",
+          "pull_requests": "write",
+          "statuses": "read",
+          "workflows": "write"
+        },
+        "events": [
+          "check_run",
+          "check_suite",
+          "commit_comment",
+          "issues",
+          "issue_comment",
+          "pull_request",
+          "pull_request_review",
+          "pull_request_review_comment",
+          "pull_request_review_thread",
+          "repository",
+          "status",
+          "sub_issues"
+        ]
+      },
+      "minimized": null
+    }
+  ],
+  "reviews": [],
+  "inline": [],
+  "issue": {
+    "number": 421,
+    "state": "open",
+    "body": "## Problem\n\nExisting accounts depend on local credentials across login, recovery, sessions and deletion. The requested Firebase migration must preserve existing User.id, owned data, passwords where supported and access controls while keeping independent self-hosting available. The full migration remains unfinished.\n\n## Requirements and acceptance\n\n- Preserve immutable Firebase project/UID mappings, existing account identity/data ownership and browser/native/Wear session compatibility; local authentication remains available until an explicitly authorized cutover.\n- Implement Firebase registration/login, recovery, verification, deletion and external credential-event enforcement, including lifecycle failures and session recovery.\n- Follow the [human offline-first requirement](https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6000049703): temporary outages allow local tracking, retain pending changes through restart and show pending reconnection. Unreachable authentication is not confirmed revocation; server access/replay still require valid authorization and account/server isolation.\n- Preserve migration reconciliation, rollback and BCRYPT compatibility requirements. Separately authorized real-provider import/sign-in rehearsal and operational cutover are still required; synthetic checks do not establish migration readiness.\n- Complete the relevant Firebase runtime foundation before [GCP preparation #422](https://github.com/MChartier/calibrate-health/issues/422). Keep pause/calendar work separate.\n- The current credential-verification checkpoint is partial preparation only: centralize local verification for browser/native login, password reauthentication and MCP approval while Firebase stays disabled. Preserve identity, session, Wear and offline contracts; use maintained local/synthetic validation.\n- No real-user reads/imports, provisioning, credential changes, deployment or release are authorized here. Retain all [original requirements and acceptance criteria](https://github.com/MChartier/calibrate-health/blob/3eb583d972cc529509bd8145c8cefb504b3cd000/preparation-evidence/communication-before-20261006/issue-body.md).\n\n## Implementation plan\n\nFollow the existing staged plan: additive preparation and identity mapping, bounded local credential-verification checkpoint, then remaining Firebase runtime/lifecycle work and separately authorized rehearsal/cutover. The [current checkpoint admission](https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6021123566) preserves PR402's separate ownership and requires coordination for overlapping imports/tests. [Exact previous issue and retained plan/history](https://github.com/MChartier/agentic-development-workflow/blob/be7f2a00cbf9ced12d4b1a7a52f28e455695d7e3/issue-template-migration/calibrate-health-421-original.md).\n\n## Implementing Codex task\n\n\nVerified implementing Codex task ID: `01a10cfe-a79f-7198-9e8f-2b4dc6703031`. A shareable task link is not available through the current tools.\n\n## Implementing PR\n\nCurrent: [PR437 — atomic native login session issuance](https://github.com/MChartier/calibrate-health/pull/437), a draft nonclosing child of [PR431 — local runtime credential verification](https://github.com/MChartier/calibrate-health/pull/431). Review parent431 before child437; full migration remains open. History: [merged preparation PR423](https://github.com/MChartier/calibrate-health/pull/423). Implementation evidence and results belong in those PRs.\n"
+  },
+  "project": {
+    "blocked by": "Next bounded atomic native-login implementation admitted to existing owner, turn 01a11451-6732-7726-a15a-66494929ca0c; claim https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6030032122 . Parent PR431 pinned b3d6559, ultimate master 4cbcbc74. Actual execution checkpoint unverified; no parent/PR402 edits. Partial-linkage decision remains separate.",
+    "content": {
+      "body": "## Problem\n\nExisting accounts depend on local credentials across login, recovery, sessions and deletion. The requested Firebase migration must preserve existing User.id, owned data, passwords where supported and access controls while keeping independent self-hosting available. The full migration remains unfinished.\n\n## Requirements and acceptance\n\n- Preserve immutable Firebase project/UID mappings, existing account identity/data ownership and browser/native/Wear session compatibility; local authentication remains available until an explicitly authorized cutover.\n- Implement Firebase registration/login, recovery, verification, deletion and external credential-event enforcement, including lifecycle failures and session recovery.\n- Follow the [human offline-first requirement](https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6000049703): temporary outages allow local tracking, retain pending changes through restart and show pending reconnection. Unreachable authentication is not confirmed revocation; server access/replay still require valid authorization and account/server isolation.\n- Preserve migration reconciliation, rollback and BCRYPT compatibility requirements. Separately authorized real-provider import/sign-in rehearsal and operational cutover are still required; synthetic checks do not establish migration readiness.\n- Complete the relevant Firebase runtime foundation before [GCP preparation #422](https://github.com/MChartier/calibrate-health/issues/422). Keep pause/calendar work separate.\n- The current credential-verification checkpoint is partial preparation only: centralize local verification for browser/native login, password reauthentication and MCP approval while Firebase stays disabled. Preserve identity, session, Wear and offline contracts; use maintained local/synthetic validation.\n- No real-user reads/imports, provisioning, credential changes, deployment or release are authorized here. Retain all [original requirements and acceptance criteria](https://github.com/MChartier/calibrate-health/blob/3eb583d972cc529509bd8145c8cefb504b3cd000/preparation-evidence/communication-before-20261006/issue-body.md).\n\n## Implementation plan\n\nFollow the existing staged plan: additive preparation and identity mapping, bounded local credential-verification checkpoint, then remaining Firebase runtime/lifecycle work and separately authorized rehearsal/cutover. The [current checkpoint admission](https://github.com/MChartier/calibrate-health/issues/421#issuecomment-6021123566) preserves PR402's separate ownership and requires coordination for overlapping imports/tests. [Exact previous issue and retained plan/history](https://github.com/MChartier/agentic-development-workflow/blob/be7f2a00cbf9ced12d4b1a7a52f28e455695d7e3/issue-template-migration/calibrate-health-421-original.md).\n\n## Implementing Codex task\n\n\nVerified implementing Codex task ID: `01a10cfe-a79f-7198-9e8f-2b4dc6703031`. A shareable task link is not available through the current tools.\n\n## Implementing PR\n\nCurrent: [PR437 — atomic native login session issuance](https://github.com/MChartier/calibrate-health/pull/437), a draft nonclosing child of [PR431 — local runtime credential verification](https://github.com/MChartier/calibrate-health/pull/431). Review parent431 before child437; full migration remains open. History: [merged preparation PR423](https://github.com/MChartier/calibrate-health/pull/423). Implementation evidence and results belong in those PRs.\n",
+      "number": 421,
+      "repository": "MChartier/calibrate-health",
+      "title": "Migrate existing accounts to Firebase Auth while preserving access and history",
+      "type": "Issue",
+      "url": "https://github.com/MChartier/calibrate-health/issues/421"
+    },
+    "current PRs": "Current: https://github.com/MChartier/calibrate-health/pull/437 (draft child); parent: https://github.com/MChartier/calibrate-health/pull/431. History (merged): https://github.com/MChartier/calibrate-health/pull/423",
+    "id": "PVTI_lAHOABMy1c4Bl3Eqzg-xZ1w",
+    "owner": "01a10cfe-a79f-7198-9e8f-2b4dc6703031",
+    "pipeline state": "Blocked",
+    "repository": "https://github.com/MChartier/calibrate-health",
+    "status": "In Progress",
+    "title": "Migrate existing accounts to Firebase Auth while preserving access and history",
+    "verified at": "2026-10-07T03:07:40.625038+00:00"
+  },
+  "association": {
+    "data": {
+      "repository": {
+        "pullRequest": {
+          "closingIssuesReferences": {
+            "nodes": []
+          }
+        },
+        "issue": {
+          "timelineItems": {
+            "nodes": [
+              {
+                "source": {}
+              },
+              {
+                "source": {}
+              },
+              {
+                "source": {
+                  "number": 423
+                }
+              },
+              {
+                "source": {
+                  "number": 428
+                }
+              },
+              {
+                "source": {
+                  "number": 431
+                }
+              },
+              {
+                "source": {
+                  "number": 437
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "evidence": {
+    "commit": "6f1e22d2d23ea0b8a4817336a74e7ee411f29dc4",
+    "verifiedFiles": 11
+  },
+  "presentation": "Final API-decoded body read; actual PR-page rendering waiver applies. No fresh rendering observation claimed. Non-UI observable contract.",
+  "limitations": [
+    "Bot review quota refusal6030076999; independent QA separate.",
+    "Local PostgreSQL skipped; five real PostgreSQL scenarios and full775 backend tests passed in CI.",
+    "Native closing association intentionally absent for partial issue; coordinator linkage decision unresolved.",
+    "No live/provider/provisioning/deployment/release actions."
+  ]
+}
