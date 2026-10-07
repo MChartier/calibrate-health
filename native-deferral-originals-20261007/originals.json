@@ -1,0 +1,71 @@
+{
+  "purpose": "Preserve exact API-decoded UTF-8 descriptions before the authorized native-device-deferral communication correction. This is a retained nonmerged evidence record, never a product merge target.",
+  "ownerTaskId": "01a1145f-aae2-70e0-af56-3952f0eab012",
+  "retention": "No automatic expiry; preserve original descriptions and all prior evidence identities. No deletion authorized.",
+  "capturedAtUtc": "2026-10-07T17:47:54.434Z",
+  "workflowPin": "f0919b184b6344d6279178b2388190936ca432a9",
+  "prReviewPin": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "authorization": {
+    "id": 6043344805,
+    "body": "Metadata-only continuation under the human's native-device review-readiness deferral: https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6041659686 . Existing owner task01a1145f-aae2-70e0-af56-3952f0eab012 will retain original descriptions and reconcile PR439/issue438 wording with the explicit unperformed limitations. Headce854348 and master4cbcbc74 were reverified; no source change. Same independent QA follows the final body handoff. No readiness, draft, merge, release or Project transition is included.",
+    "updatedAt": "2026-10-07T17:36:36Z"
+  },
+  "amendment": {
+    "id": 6041659686,
+    "body": "Direct human amendment, 2026-10-07 15:54 UTC: “Native device testing should not block changes going out for review. Defer those checks”.\n\nNative-device testing is deferred for review readiness, including the remaining native chooser checks for Calibrate PR439 and native unlock/focus, rotation, OS text scaling, screen-reader and reduced-motion checks for Little Say PR36. These checks remain unexecuted and their limitations must stay explicit; browser, component and bundle results must not be described as device execution.\n\nAll other gates remain: actionable human/code findings, CI and configured review, genuine captures and source/build/fixture provenance, independent pixel assessment, concise final descriptions, exact append-only QA receipts and coordinator verification. This does not authorize merge/release/deployment, resolve the separate partial-issue linkage choice, or revive cancelled actions. Existing owners must reconcile affected descriptions, then the same independent QA tasks reassess affected gates under the single-QA slot before any readiness transition. Runtime pins are unchanged.",
+    "bodySha256": "c821f39f0892512600f7547fc610f0565c15dcbd5dd9d2c99c59152c351e860b",
+    "updatedAt": "2026-10-07T15:58:13Z"
+  },
+  "pr": {
+    "url": "https://github.com/MChartier/calibrate-health/pull/439",
+    "bodySha256": "50ce47c1c3b0c9bbf34fdf49a13e06a9d6468fee751793983228a979fa39228a",
+    "updatedAt": "2026-10-07T06:14:04Z",
+    "file": "pr439-before.md"
+  },
+  "issue": {
+    "url": "https://github.com/MChartier/calibrate-health/issues/438",
+    "bodySha256": "972d89cb9a1b911e54e30a9979175e8e77a9571b50c86d922878cc4bc920865e",
+    "updatedAt": "2026-10-07T17:36:36Z",
+    "file": "issue438-before.md"
+  },
+  "source": {
+    "head": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "headRef": "mchartier/self-hosting-438",
+    "targetRepository": "MChartier/calibrate-health",
+    "targetRef": "master",
+    "targetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "declaredParent": null,
+    "ultimateTarget": "MChartier/calibrate-health/master"
+  },
+  "priorEvidenceTip": "1b6fcdf5fe12689c65ce3ce4bf77aabcf3e42dae",
+  "related": [
+    {
+      "number": 402,
+      "head": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "headRef": "mchartier/managed-self-hosting",
+      "base": "014f19669cbe4b62cb9b98514830d7874660e994",
+      "baseRef": "master",
+      "state": "open",
+      "draft": false
+    },
+    {
+      "number": 431,
+      "head": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "headRef": "mchartier/credential-verification-421",
+      "base": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+      "baseRef": "master",
+      "state": "open",
+      "draft": false
+    },
+    {
+      "number": 437,
+      "head": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "headRef": "mchartier/atomic-native-login-421",
+      "base": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "baseRef": "mchartier/credential-verification-421",
+      "state": "open",
+      "draft": true
+    }
+  ]
+}
