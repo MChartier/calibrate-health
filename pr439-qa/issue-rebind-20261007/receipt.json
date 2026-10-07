@@ -1,0 +1,18 @@
+{
+  "verdictCommentId": 6032159061,
+  "verdictCommentUrl": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6032159061",
+  "verdictBodySha256": "0dc9d7e572166ca16a5fc9b2415e266762170d62f3a55bee56bd0134c026c191",
+  "verdictUpdatedAt": "2026-10-07T06:14:04Z",
+  "checkedAtUtc": "2026-10-07T06:14:08.940Z",
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "prBodySha256": "50ce47c1c3b0c9bbf34fdf49a13e06a9d6468fee751793983228a979fa39228a",
+  "issueBodySha256": "972d89cb9a1b911e54e30a9979175e8e77a9571b50c86d922878cc4bc920865e",
+  "issueUpdatedAt": "2026-10-07T05:57:33Z",
+  "supersedesVerdictCommentId": 6031898060,
+  "assessmentCommitSha": "bf82d9f38c8a488720ee0e97b1b2f59c97d464a6",
+  "assessmentUrl": "https://github.com/MChartier/calibrate-health/blob/bf82d9f38c8a488720ee0e97b1b2f59c97d464a6/pr439-qa/issue-rebind-20261007/verdict.json",
+  "digestRule": "SHA256 of full API-decoded comment body encoded UTF8; no trimming, newline normalization or added newline",
+  "coordinatorReceipt": "Trusted same-QA handoff. Coordinator must independently verify and preserve its separate durable receipt."
+}
