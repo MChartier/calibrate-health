@@ -1,0 +1,630 @@
+{
+  "checkedAtUtc": "2026-10-07T04:04:39.799Z",
+  "repository": "MChartier/calibrate-health",
+  "pullRequest": 439,
+  "issue": 438,
+  "actualTarget": {
+    "ref": "master",
+    "sha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  },
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "declaredParent": null,
+  "ultimateTarget": "master",
+  "orderedCommits": [
+    {
+      "sha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "message": "Complete managed-first hosting and persistent server administration",
+      "rationale": "Focused complete issue438 outcome with maintained regression/contracts/docs; no imported parent or sibling history"
+    }
+  ],
+  "files": [
+    {
+      "path": ".env.example",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": ".github/workflows/tests.yml",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Real PostgreSQL ownership/directory concurrency and populated-role-migration regression on existing disposable CI service"
+    },
+    {
+      "path": "backend/package.json",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/prisma/migrations/0042_persistent_server_roles/migration.sql",
+      "previousPath": null,
+      "status": "added",
+      "additions": 16,
+      "deletions": 0,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "backend/prisma/schema.prisma",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 12,
+      "deletions": 0,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "backend/src/index.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 33,
+      "deletions": 34,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/routes/serverSettings.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 39,
+      "deletions": 6,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/routes/user.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/scripts/grantServerAdmin.ts",
+      "previousPath": null,
+      "status": "added",
+      "additions": 38,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/services/accountLifecycle.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 6,
+      "deletions": 2,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/services/serverAccess.ts",
+      "previousPath": null,
+      "status": "added",
+      "additions": 197,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/src/services/serverSettings.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 20,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "backend/test/account-lifecycle.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 66,
+      "deletions": 12,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-account-recovery.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 5,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 13,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-auth.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 13,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/routes-user.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 53,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/server-access-postgres.test.js",
+      "previousPath": null,
+      "status": "added",
+      "additions": 147,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Real PostgreSQL ownership/directory concurrency and populated-role-migration regression on existing disposable CI service"
+    },
+    {
+      "path": "backend/test/server-admin-command.test.js",
+      "previousPath": null,
+      "status": "added",
+      "additions": 24,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "backend/test/server-settings.test.js",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 455,
+      "deletions": 129,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "deploy/.env.example",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "deploy/README.md",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 58,
+      "deletions": 22,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "docs/account-access-and-recovery.md",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 14,
+      "deletions": 2,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "docs/openapi/v1.yaml",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 103,
+      "deletions": 3,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "docs/visual-design.md",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 18,
+      "deletions": 0,
+      "category": "maintained-doc-or-config",
+      "rationale": "Operator/service behavior, recovery or visual contract"
+    },
+    {
+      "path": "e2e/expo-web/fixtures.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 15,
+      "deletions": 11,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "e2e/expo-web/launch-18-settings-trust-center.spec.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "e2e/expo-web/server-admin.spec.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 44,
+      "deletions": 2,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "knip.json",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(auth)/login.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 54,
+      "deletions": 12,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(auth)/register.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 62,
+      "deletions": 10,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/advanced.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 3,
+      "deletions": 50,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/service.tsx",
+      "previousPath": null,
+      "status": "added",
+      "additions": 89,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/settings.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 8,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/app/forgot-password.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 28,
+      "deletions": 6,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 58,
+      "deletions": 8,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 53,
+      "deletions": 29,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 17,
+      "deletions": 3,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 23,
+      "deletions": 10,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/auth/authScreenNavigation.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 73,
+      "deletions": 5,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/auth/passwordResetServer.test.tsx",
+      "previousPath": null,
+      "status": "added",
+      "additions": 55,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 74,
+      "deletions": 113,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 131,
+      "deletions": 171,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/errors/presentation.test.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 10,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/errors/presentation.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/navigation/routeRegistry.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 13,
+      "deletions": 1,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 4,
+      "deletions": 16,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/screens/ServiceSettingsScreen.test.tsx",
+      "previousPath": null,
+      "status": "added",
+      "additions": 68,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerOverview.tsx",
+      "previousPath": null,
+      "status": "added",
+      "additions": 119,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerSettingsScreen.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 286,
+      "deletions": 8,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerSettingsScreen.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 65,
+      "deletions": 18,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/serverSettings/ServerUserManagement.tsx",
+      "previousPath": null,
+      "status": "added",
+      "additions": 269,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/settings/SettingsCategoryPage.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/settings/SettingsCategoryPage.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "mobile/src/settings/SettingsHome.test.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 30,
+      "deletions": 1,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "mobile/src/settings/SettingsHome.tsx",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 30,
+      "deletions": 1,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "packages/api-client/src/client.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 33,
+      "deletions": 2,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "packages/api-client/src/generated/v1.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 164,
+      "deletions": 3,
+      "category": "required-contract",
+      "rationale": "Role schema/migration or generated API contract"
+    },
+    {
+      "path": "packages/api-client/src/types.ts",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 24,
+      "deletions": 0,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    },
+    {
+      "path": "packages/api-client/test/server-settings.test.ts",
+      "previousPath": null,
+      "status": "added",
+      "additions": 119,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "scripts/knip-config.test.mjs",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 3,
+      "deletions": 0,
+      "category": "maintained-regression",
+      "rationale": "Outcome-related tests; adapt to actual master without deleting useful scenarios"
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.mjs",
+      "previousPath": null,
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "category": "product-or-required-tooling",
+      "rationale": "Authorized hosting/admin/auth protection implementation or recovery CLI discovery"
+    }
+  ],
+  "totals": {
+    "commits": 1,
+    "files": 63,
+    "additions": 3360,
+    "deletions": 729
+  },
+  "composition": {
+    "maintained-doc-or-config": {
+      "files": 5,
+      "additions": 96,
+      "deletions": 26
+    },
+    "maintained-regression": {
+      "files": 24,
+      "additions": 1621,
+      "deletions": 300
+    },
+    "product-or-required-tooling": {
+      "files": 30,
+      "additions": 1348,
+      "deletions": 397
+    },
+    "required-contract": {
+      "files": 4,
+      "additions": 295,
+      "deletions": 6
+    }
+  },
+  "comparison": {
+    "original402": {
+      "commits": 4,
+      "files": 80,
+      "additions": 3729,
+      "deletions": 710
+    },
+    "excluded": "Original capture-only workflow/harness and sixteen archive/gallery/manifest files never entered this published product history. Useful tests retained and reconciled with actual master."
+  }
+}

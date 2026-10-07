@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Immutable actual-master/final browser evidence and focused published scope for PR439 / issue438. Nonmerged evidence only.",
+  "ownerTask": "01a1145f-aae2-70e0-af56-3952f0eab012",
+  "retention": "No automatic expiry. Keep these exact identities and original PR402 retention refs until explicit human-authorized retirement.",
+  "beforeSource": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "afterSource": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "captureCommands": [
+    "node assessment/ui-438/capture-run.mjs before",
+    "node assessment/ui-438/capture-run.mjs after"
+  ],
+  "captureHarness": "capture.spec.ts",
+  "fixture": {
+    "url": "https://github.com/MChartier/calibrate-health/blob/ce8543483db55800034e6ed2622eeb4b9ac7f3b6/e2e/expo-web/fixtures.ts",
+    "sourceCommit": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "sha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+    "normalization": "Identical maintained populated synthetic fixture and API overrides; frozen clock and randomness; only unrelated transient PWA notices suppressed, no compared UI hidden."
+  },
+  "buildScript": {
+    "sourceCommit": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "path": "scripts/expo-web-build.mjs"
+  },
+  "staticServer": {
+    "sourceCommit": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "path": "scripts/expo-web-static-server.mjs"
+  },
+  "pairs": [
+    {
+      "name": "Settings service entry",
+      "before": "before-settings.png",
+      "after": "after-settings.png",
+      "viewport": {
+        "width": 1280,
+        "height": 1500
+      },
+      "observation": "Before has category navigation and a separate admin link. After adds a Service & hosting row with the active origin and a consistent Administration action."
+    },
+    {
+      "name": "Administrator capabilities and user roles",
+      "before": "before-administration.png",
+      "after": "after-administration.png",
+      "viewport": {
+        "width": 1280,
+        "height": 2500
+      },
+      "observation": "Before offers the existing feature switch only. After shows server/capability details and a bounded two-account directory with verified status and role actions; feature switch remains off in both."
+    }
+  ],
+  "captureSetup": {
+    "origin": "http://127.0.0.1:4179",
+    "scale": 1,
+    "theme": "light",
+    "locale": "en-US",
+    "timezone": "America/Los_Angeles",
+    "navigation": "Open /settings; use its existing Server administration action (baseline link, final button); wait for controls and matched API data. The baseline lacks the new directory."
+  },
+  "pixelInspection": {
+    "by": "implementation owner; independent QA still required",
+    "checkedAtUtc": "2026-10-07T04:04:40.983Z",
+    "observations": "Opened and inspected all four original PNGs. Both pairs show consistent fixture, origin, theme and scale. Final role rows and controls are visible; no crops, redactions, generated pixels or other image edits."
+  },
+  "limitations": [
+    "Browser evidence only; no attached ADB device and no emulator executable in configured or conventional local SDK. Actual native chooser evidence remains missing.",
+    "GitHub PR-page image rendering verification uses the general human waiver; no rendering-pass claim.",
+    "Historical PR402 images are retained After-only web evidence and are not used as this baseline."
+  ],
+  "artifacts": [
+    {
+      "path": "capture.config.ts",
+      "sha256": "741d873d29e5fbc0807db66e4b32df9faba0273303eef7e86561aad6ba48fc4c",
+      "bytes": 505
+    },
+    {
+      "path": "capture.spec.ts",
+      "sha256": "bbafaec9f0d9765b22b3655571b1dc64a9980cabaf029e8af477997cb86b1ae5",
+      "bytes": 2746
+    },
+    {
+      "path": "capture-run.mjs",
+      "sha256": "26cc33bc13df595210bbd491933220a22ddf6c1cf44dce3edc38ce4ffc5f6241",
+      "bytes": 976
+    },
+    {
+      "path": "before-capture.json",
+      "sha256": "d9bfee6a9d334a017b51166739b865492a77fb6d2db4b04a1158f8b200a3d084",
+      "bytes": 767
+    },
+    {
+      "path": "after-capture.json",
+      "sha256": "56a13d5831442c9ca64db4b9662b02e792e2c10145b22719f08f61ddeb4b7941",
+      "bytes": 766
+    },
+    {
+      "path": "before-settings.png",
+      "sha256": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+      "bytes": 55685
+    },
+    {
+      "path": "after-settings.png",
+      "sha256": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+      "bytes": 63862
+    },
+    {
+      "path": "before-administration.png",
+      "sha256": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+      "bytes": 44861
+    },
+    {
+      "path": "after-administration.png",
+      "sha256": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+      "bytes": 140354
+    },
+    {
+      "path": "published-scope.json",
+      "sha256": "789b2230b5dc4e6938b49743eb73a6a3fa23e3a3a12fd1020e7807d0d5d78858",
+      "bytes": 21404
+    },
+    {
+      "path": "build-identities.json",
+      "sha256": "2dbc6124530046e0d9908d797be2899943608ed7eefc4ee7c19d0579cfc74a23",
+      "bytes": 66435
+    }
+  ]
+}

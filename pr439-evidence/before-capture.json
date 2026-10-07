@@ -1,0 +1,30 @@
+{
+  "variant": "before",
+  "capturedAtUtc": "2026-10-07T04:02:13.132Z",
+  "browserVersion": "149.0.7827.55",
+  "assets": [
+    {
+      "path": "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+      "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32"
+    }
+  ],
+  "routes": [
+    "/settings",
+    "/server-admin"
+  ],
+  "viewports": {
+    "settings": {
+      "width": 1280,
+      "height": 1500
+    },
+    "administration": {
+      "width": 1280,
+      "height": 2500
+    }
+  },
+  "scale": 1,
+  "theme": "light",
+  "fixture": "populated",
+  "normalization": "Common fixture freezes time/randomness; unrelated transient PWA notices hidden using maintained helper. Compared UI unaltered.",
+  "screenshotTransformation": "none"
+}

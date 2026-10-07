@@ -1,0 +1,2 @@
+import { defineConfig } from '../../self-hosting-438/node_modules/@playwright/test';
+export default defineConfig({ testDir: '.', testMatch: 'capture.spec.ts', workers: 1, retries: 0, timeout: 45000, reporter: 'list', outputDir: './results', use: { baseURL: 'http://127.0.0.1:4179', viewport: { width: 1280, height: 1500 }, deviceScaleFactor: 1, colorScheme: 'light', locale: 'en-US', timezoneId: 'America/Los_Angeles', reducedMotion: 'reduce', serviceWorkers: 'block', screenshot: 'only-on-failure' } });
