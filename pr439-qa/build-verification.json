@@ -1,0 +1,153 @@
+{
+  "checkedAtUtc": "2026-10-07T05:15:32.556Z",
+  "builds": [
+    {
+      "variant": "before",
+      "actualHead": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "actualTree": "a2a1576e2a0a64ec5093e0aac51b49e6f777667c",
+      "headMatches": true,
+      "treeMatches": true,
+      "trackedClean": true,
+      "files": 170,
+      "allFilesMatch": true,
+      "loaded": [
+        {
+          "path": "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "variant": "after",
+      "actualHead": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+      "actualTree": "36e1a976846914bb5abae4afa844972f8d62718d",
+      "headMatches": true,
+      "treeMatches": true,
+      "trackedClean": true,
+      "files": 174,
+      "allFilesMatch": true,
+      "loaded": [
+        {
+          "path": "/_expo/static/js/web/index-8fcc6dc53a11ca5fc695e20d2d5ee720.js",
+          "matches": true
+        }
+      ]
+    }
+  ],
+  "fixtureSha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+  "fixtureMatches": true,
+  "originalPngs": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "android-phone-chrome-administrator-confirmation.png",
+        "sha256": "670ca816687f686cb6248660c804bac4babd79afbb39e9841b9e52e3ec1d8f1e",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "android-phone-chrome-administrator-overview.png",
+        "sha256": "53e954ae01c34c058e6bd9f45f6fde96b42a0ecd10b265e829073b1adb1e7423",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "android-phone-chrome-service-browser-boundaries.png",
+        "sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "android-phone-chrome-service-hosting.png",
+        "sha256": "655df9224da826b288005218f731b055b18a28f1d698e81a23018f905012f663",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "android-phone-chrome-settings-service-entry.png",
+        "sha256": "7e1d73f52b140d5fdf33cac231c1ba6118ff84e0ad0d04354d3e90476552f3d9",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "android-phone-chrome-sign-in.png",
+        "sha256": "348277e2c8effc63b148ded1e9f177edcf9986c36688af05eb7ca61b5b7dd3dc",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "android-phone-chrome-users-and-roles.png",
+        "sha256": "ed0d908d51bc0feb93b1906bd64d12047acd018525798e4d31fd72f4f4fa7f6a",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "desktop-chrome-administrator-confirmation.png",
+        "sha256": "ba0f72d67ed40d02f5a526d8102d7d82f9d94b737dec8a8468ce4ff166ff4265",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "desktop-chrome-administrator-overview.png",
+        "sha256": "e505ed9183a60b52f65fbf0abd0026f7e7fe4944e96b9b990183e391a640337b",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "desktop-chrome-service-browser-boundaries.png",
+        "sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "desktop-chrome-service-hosting.png",
+        "sha256": "dca64049b20597d8a01adf53f6a93c05d4472f6f82fbfdd9eb00b887f58c970b",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "desktop-chrome-settings-service-entry.png",
+        "sha256": "a6681f681bad6c438d0f5a61e0227a275c40a2d61f3a510cfabe080574f8d05c",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "desktop-chrome-sign-in.png",
+        "sha256": "43e3895fd56015d7fe029d67e527ad174e6a1cb75fc85bfb75fc2a88ffd1cea8",
+        "matches": true
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "image": "desktop-chrome-users-and-roles.png",
+        "sha256": "b8d44f896169a446ded20fdad44e31e74b727de7aad1a658151149d24fb9b243",
+        "matches": true
+      }
+    }
+  ]
+}

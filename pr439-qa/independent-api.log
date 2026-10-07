@@ -1,0 +1,14 @@
+Γ£ö admin directory encodes bounded search parameters and sends authenticated no-store requests (18.8176ms)
+Γ£ö role changes send only the intended role and preserve structured safety errors (1.3757ms)
+Γ£ö aborted role mutation does not refresh/retry a late 401 with another identity (0.4127ms)
+Γ£ö aborted features mutation does not refresh/retry a late 401 with another identity (0.2496ms)
+Γ£ö aborting during shared token refresh prevents role-mutation replay and unauthorized callbacks (0.3611ms)
+Γ£ö pre-aborted mutation does not request credentials or contact a server (0.1476ms)
+Γä╣ tests 6
+Γä╣ suites 0
+Γä╣ pass 6
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 143.8251

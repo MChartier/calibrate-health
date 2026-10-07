@@ -1,0 +1,53 @@
+{
+  "checkedAtUtc": "2026-10-07T05:26:38.794Z",
+  "earlierCheckedAtUtc": "2026-10-07T05:08:20.658Z",
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "prBodySha256": "ad55ce850a10e17ad32127546863be2fca0fe79ef0fa738416715abe527b0656",
+  "fullFeedbackCompared": [
+    "comments402",
+    "comments438",
+    "comments439",
+    "reviews402",
+    "reviews439",
+    "inline402",
+    "inline439",
+    "threads402",
+    "threads439"
+  ],
+  "changedFeedback": [],
+  "allPagesFetched": true,
+  "graphQlThreadPaginationExhausted": true,
+  "parentRevisions": [],
+  "relatedRevisions": [
+    {
+      "pullRequest": 402,
+      "headSha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "baseSha": "014f19669cbe4b62cb9b98514830d7874660e994",
+      "state": "open"
+    },
+    {
+      "pullRequest": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "baseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+      "state": "open"
+    },
+    {
+      "pullRequest": 437,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "baseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open"
+    }
+  ],
+  "dispositions": [
+    {
+      "source": "https://github.com/MChartier/calibrate-health/pull/402#discussion_r4174731711",
+      "finding": "Directory reads unnecessarily take the exclusive ownership lock",
+      "disposition": "Fixed at current head: read outside ownership transaction, fresh authorization before and after; independently inspected real cross-connection PostgreSQL test execution. Historical thread remains untouched."
+    },
+    {
+      "source": "PR439 complete comments/reviews/inline threads and issue438 complete comments",
+      "disposition": "No further actionable change request found. Owner explicitly records native and independent review pending. Full current-head submitted reviews/inline threads are empty; no actual current-head bot quota refusal present."
+    }
+  ]
+}

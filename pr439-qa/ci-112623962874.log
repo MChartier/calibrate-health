@@ -1,0 +1,539 @@
+﻿2026-10-07T03:59:00.7128614Z Current runner version: '2.337.0'
+2026-10-07T03:59:00.7154855Z ##[group]Runner Image Provisioner
+2026-10-07T03:59:00.7155828Z Hosted Compute Agent
+2026-10-07T03:59:00.7156470Z Version: 20260901.588
+2026-10-07T03:59:00.7157323Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-07T03:59:00.7158183Z Build Date: 2026-09-01T19:56:44Z
+2026-10-07T03:59:00.7158858Z Worker ID: {86f0b9c5-4e81-4e07-af00-c84c6eac4c10}
+2026-10-07T03:59:00.7159566Z Azure Region: westus2
+2026-10-07T03:59:00.7160227Z ##[endgroup]
+2026-10-07T03:59:00.7161758Z ##[group]Operating System
+2026-10-07T03:59:00.7162550Z Ubuntu
+2026-10-07T03:59:00.7163113Z 24.04.5
+2026-10-07T03:59:00.7163650Z LTS
+2026-10-07T03:59:00.7164296Z ##[endgroup]
+2026-10-07T03:59:00.7164844Z ##[group]Runner Image
+2026-10-07T03:59:00.7165537Z Image: ubuntu-24.04
+2026-10-07T03:59:00.7166118Z Version: 20260927.320.1
+2026-10-07T03:59:00.7167730Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-07T03:59:00.7169342Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-07T03:59:00.7170391Z ##[endgroup]
+2026-10-07T03:59:00.7171665Z ##[group]GITHUB_TOKEN Permissions
+2026-10-07T03:59:00.7173644Z Contents: read
+2026-10-07T03:59:00.7174286Z Metadata: read
+2026-10-07T03:59:00.7175022Z PullRequests: read
+2026-10-07T03:59:00.7175687Z ##[endgroup]
+2026-10-07T03:59:00.7178340Z Secret source: Actions
+2026-10-07T03:59:00.7179409Z Cache mode: write
+2026-10-07T03:59:00.7180147Z Prepare workflow directory
+2026-10-07T03:59:00.7528865Z Prepare all required actions
+2026-10-07T03:59:00.7579749Z Getting action download info
+2026-10-07T03:59:01.0713032Z Download action repository 'dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad' (SHA:0e4a8c6effa4802afeda77dc8d303f8176d7dfad)
+2026-10-07T03:59:01.4827831Z Complete job name: Classify Build Inputs
+2026-10-07T03:59:01.5584312Z ##[group]Run dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad
+2026-10-07T03:59:01.5585444Z with:
+2026-10-07T03:59:01.5597290Z   filters: release_config:
+  - '.github/native-release-tag-allowed-signers'
+  - '.github/native-play-attestation-trusted-workflow-shas'
+  - '.github/release-image-attestation-trusted-workflow-shas'
+  - 'tools/eas-cli/**'
+  - '.github/workflows/**'
+  - 'backend/package.json'
+  - 'backend/package-lock.json'
+  - 'deploy/**'
+  - 'docs/openapi/**'
+  - 'docs/release-acceptance.md'
+  - 'mobile/app.config.js'
+  - 'mobile/app.json'
+  - 'mobile/eas.json'
+  - 'mobile/package.json'
+  - 'package.json'
+  - 'package-lock.json'
+  - 'packages/api-client/src/generated/**'
+  - 'playwright.ux.config.ts'
+  - 'quality/**'
+  - 'scripts/**'
+  - 'shared/client-diagnostic-versions.json'
+  - 'shared/release.json'
+  - 'wear/**'
+backend:
+  - 'backend/**'
+  - 'shared/**'
+web:
+  - 'e2e/expo-web/fixtures.ts'
+  - 'e2e/expo-web/release-smoke.spec.ts'
+  - 'mobile/app/**'
+  - 'mobile/assets/**'
+  - 'mobile/public/**'
+  - 'mobile/src/**'
+  - 'mobile/app.config.js'
+  - 'mobile/app.json'
+  - 'mobile/babel.config.js'
+  - 'mobile/index.js'
+  - 'mobile/metro.config.js'
+  - 'mobile/modules/**'
+  - 'mobile/package.json'
+  - 'mobile/tsconfig.json'
+  - 'package.json'
+  - 'package-lock.json'
+  - 'packages/api-client/**'
+  - 'playwright.expo-web.config.ts'
+  - 'scripts/expo-cli-environment.mjs'
+  - 'scripts/expo-web-build.mjs'
+  - 'scripts/expo-web-playwright.mjs'
+  - 'scripts/expo-web-release.mjs'
+  - 'scripts/expo-web-release.test.mjs'
+  - 'scripts/expo-web-static-server.mjs'
+  - 'scripts/expo-web-static-server.test.mjs'
+  - 'shared/**'
+wear:
+  - 'wear/**'
+native_runtime:
+  - 'mobile/app/**'
+  - 'mobile/assets/**'
+  - 'mobile/src/**'
+  - 'mobile/app.config.js'
+  - 'mobile/app.json'
+  - 'mobile/babel.config.js'
+  - 'mobile/index.js'
+  - 'mobile/metro.config.js'
+  - 'mobile/modules/**'
+  - 'mobile/package.json'
+  - 'package-lock.json'
+  - 'packages/api-client/**'
+  - 'scripts/xcode-uuid-compatibility.test.mjs'
+  - 'shared/**'
+native_package:
+  - 'mobile/app.config.js'
+  - 'mobile/app.json'
+  - 'mobile/eas.json'
+  - 'mobile/assets/**'
+  - 'mobile/modules/**'
+  - 'mobile/package.json'
+  - 'mobile/plugins/**'
+  - 'package-lock.json'
+
+2026-10-07T03:59:01.5612129Z   token: ***
+2026-10-07T03:59:01.5612575Z   list-files: none
+2026-10-07T03:59:01.5613044Z   initial-fetch-depth: 100
+2026-10-07T03:59:01.5613557Z   predicate-quantifier: some
+2026-10-07T03:59:01.5614425Z ##[endgroup]
+2026-10-07T03:59:01.6568024Z ##[group]Fetching list of changed files for PR#439 from Github API
+2026-10-07T03:59:01.6569088Z Invoking listFiles(pull_number: 439, per_page: 100)
+2026-10-07T03:59:02.0177797Z Received 63 items
+2026-10-07T03:59:02.0178817Z [modified] .env.example
+2026-10-07T03:59:02.0179874Z [modified] .github/workflows/tests.yml
+2026-10-07T03:59:02.0181015Z [modified] backend/package.json
+2026-10-07T03:59:02.0182450Z [added] backend/prisma/migrations/0042_persistent_server_roles/migration.sql
+2026-10-07T03:59:02.0183637Z [modified] backend/prisma/schema.prisma
+2026-10-07T03:59:02.0184273Z [modified] backend/src/index.ts
+2026-10-07T03:59:02.0185006Z [modified] backend/src/routes/auth.ts
+2026-10-07T03:59:02.0185636Z [modified] backend/src/routes/serverSettings.ts
+2026-10-07T03:59:02.0186295Z [modified] backend/src/routes/user.ts
+2026-10-07T03:59:02.0187244Z [added] backend/src/scripts/grantServerAdmin.ts
+2026-10-07T03:59:02.0188011Z [modified] backend/src/services/accountLifecycle.ts
+2026-10-07T03:59:02.0188727Z [added] backend/src/services/serverAccess.ts
+2026-10-07T03:59:02.0189391Z [modified] backend/src/services/serverSettings.ts
+2026-10-07T03:59:02.0190100Z [modified] backend/test/account-lifecycle.test.js
+2026-10-07T03:59:02.0190847Z [modified] backend/test/routes-account-recovery.test.js
+2026-10-07T03:59:02.0191580Z [modified] backend/test/routes-auth-mobile.test.js
+2026-10-07T03:59:02.0192232Z [modified] backend/test/routes-auth.test.js
+2026-10-07T03:59:02.0192865Z [modified] backend/test/routes-user.test.js
+2026-10-07T03:59:02.0193972Z [added] backend/test/server-access-postgres.test.js
+2026-10-07T03:59:02.0194909Z [added] backend/test/server-admin-command.test.js
+2026-10-07T03:59:02.0196145Z [modified] backend/test/server-settings.test.js
+2026-10-07T03:59:02.0196898Z [modified] deploy/.env.example
+2026-10-07T03:59:02.0197747Z [modified] deploy/README.md
+2026-10-07T03:59:02.0198873Z [modified] docs/account-access-and-recovery.md
+2026-10-07T03:59:02.0199839Z [modified] docs/openapi/v1.yaml
+2026-10-07T03:59:02.0200435Z [modified] docs/visual-design.md
+2026-10-07T03:59:02.0201354Z [modified] e2e/expo-web/fixtures.ts
+2026-10-07T03:59:02.0202796Z [modified] e2e/expo-web/launch-18-settings-trust-center.spec.ts
+2026-10-07T03:59:02.0204613Z [modified] e2e/expo-web/server-admin.spec.ts
+2026-10-07T03:59:02.0205711Z [modified] knip.json
+2026-10-07T03:59:02.0206373Z [modified] mobile/app/(auth)/login.tsx
+2026-10-07T03:59:02.0207155Z [modified] mobile/app/(auth)/register.tsx
+2026-10-07T03:59:02.0207948Z [modified] mobile/app/(tabs)/(settings)/advanced.tsx
+2026-10-07T03:59:02.0208717Z [added] mobile/app/(tabs)/(settings)/service.tsx
+2026-10-07T03:59:02.0209394Z [modified] mobile/app/(tabs)/(settings)/settings.tsx
+2026-10-07T03:59:02.0210067Z [modified] mobile/app/forgot-password.tsx
+2026-10-07T03:59:02.0210747Z [modified] mobile/src/auth/AuthContext.test.tsx
+2026-10-07T03:59:02.0211404Z [modified] mobile/src/auth/AuthContext.tsx
+2026-10-07T03:59:02.0212040Z [modified] mobile/src/auth/AuthContext.web.test.tsx
+2026-10-07T03:59:02.0212732Z [modified] mobile/src/auth/AuthContext.web.tsx
+2026-10-07T03:59:02.0213424Z [modified] mobile/src/auth/authScreenNavigation.test.tsx
+2026-10-07T03:59:02.0214167Z [added] mobile/src/auth/passwordResetServer.test.tsx
+2026-10-07T03:59:02.0214897Z [modified] mobile/src/components/ServerUrlControl.test.tsx
+2026-10-07T03:59:02.0215678Z [modified] mobile/src/components/ServerUrlControl.tsx
+2026-10-07T03:59:02.0216454Z [modified] mobile/src/errors/presentation.test.ts
+2026-10-07T03:59:02.0217428Z [modified] mobile/src/errors/presentation.ts
+2026-10-07T03:59:02.0218188Z [modified] mobile/src/navigation/routeRegistry.ts
+2026-10-07T03:59:02.0219319Z [modified] mobile/src/screens/AdvancedSettingsScreen.test.tsx
+2026-10-07T03:59:02.0220207Z [added] mobile/src/screens/ServiceSettingsScreen.test.tsx
+2026-10-07T03:59:02.0221060Z [added] mobile/src/serverSettings/ServerOverview.tsx
+2026-10-07T03:59:02.0221922Z [modified] mobile/src/serverSettings/ServerSettingsScreen.test.tsx
+2026-10-07T03:59:02.0222867Z [modified] mobile/src/serverSettings/ServerSettingsScreen.tsx
+2026-10-07T03:59:02.0223770Z [added] mobile/src/serverSettings/ServerUserManagement.tsx
+2026-10-07T03:59:02.0224663Z [modified] mobile/src/settings/SettingsCategoryPage.test.tsx
+2026-10-07T03:59:02.0225501Z [modified] mobile/src/settings/SettingsCategoryPage.tsx
+2026-10-07T03:59:02.0226281Z [modified] mobile/src/settings/SettingsHome.test.tsx
+2026-10-07T03:59:02.0227328Z [modified] mobile/src/settings/SettingsHome.tsx
+2026-10-07T03:59:02.0228117Z [modified] packages/api-client/src/client.ts
+2026-10-07T03:59:02.0228861Z [modified] packages/api-client/src/generated/v1.ts
+2026-10-07T03:59:02.0229514Z [modified] packages/api-client/src/types.ts
+2026-10-07T03:59:02.0230203Z [added] packages/api-client/test/server-settings.test.ts
+2026-10-07T03:59:02.0231401Z [modified] scripts/knip-config.test.mjs
+2026-10-07T03:59:02.0232064Z [modified] scripts/postgres-rollback-smoke.mjs
+2026-10-07T03:59:02.0233280Z ##[endgroup]
+2026-10-07T03:59:02.0233713Z Detected 63 changed files
+2026-10-07T03:59:02.0234631Z Results:
+2026-10-07T03:59:02.0235993Z ##[group]Filter release_config = true
+2026-10-07T03:59:02.0236893Z Matching files:
+2026-10-07T03:59:02.0237960Z .github/workflows/tests.yml [modified]
+2026-10-07T03:59:02.0239218Z backend/package.json [modified]
+2026-10-07T03:59:02.0240360Z deploy/.env.example [modified]
+2026-10-07T03:59:02.0241502Z deploy/README.md [modified]
+2026-10-07T03:59:02.0242610Z docs/openapi/v1.yaml [modified]
+2026-10-07T03:59:02.0244118Z packages/api-client/src/generated/v1.ts [modified]
+2026-10-07T03:59:02.0245344Z scripts/knip-config.test.mjs [modified]
+2026-10-07T03:59:02.0246616Z scripts/postgres-rollback-smoke.mjs [modified]
+2026-10-07T03:59:02.0248496Z ##[endgroup]
+2026-10-07T03:59:02.0249865Z ##[group]Filter backend = true
+2026-10-07T03:59:02.0250784Z Matching files:
+2026-10-07T03:59:02.0251808Z backend/package.json [modified]
+2026-10-07T03:59:02.0253313Z backend/prisma/migrations/0042_persistent_server_roles/migration.sql [added]
+2026-10-07T03:59:02.0254621Z backend/prisma/schema.prisma [modified]
+2026-10-07T03:59:02.0255775Z backend/src/index.ts [modified]
+2026-10-07T03:59:02.0256866Z backend/src/routes/auth.ts [modified]
+2026-10-07T03:59:02.0258164Z backend/src/routes/serverSettings.ts [modified]
+2026-10-07T03:59:02.0258958Z backend/src/routes/user.ts [modified]
+2026-10-07T03:59:02.0259575Z backend/src/scripts/grantServerAdmin.ts [added]
+2026-10-07T03:59:02.0260334Z backend/src/services/accountLifecycle.ts [modified]
+2026-10-07T03:59:02.0261011Z backend/src/services/serverAccess.ts [added]
+2026-10-07T03:59:02.0261679Z backend/src/services/serverSettings.ts [modified]
+2026-10-07T03:59:02.0262402Z backend/test/account-lifecycle.test.js [modified]
+2026-10-07T03:59:02.0263130Z backend/test/routes-account-recovery.test.js [modified]
+2026-10-07T03:59:02.0263833Z backend/test/routes-auth-mobile.test.js [modified]
+2026-10-07T03:59:02.0264617Z backend/test/routes-auth.test.js [modified]
+2026-10-07T03:59:02.0265598Z backend/test/routes-user.test.js [modified]
+2026-10-07T03:59:02.0266352Z backend/test/server-access-postgres.test.js [added]
+2026-10-07T03:59:02.0267474Z backend/test/server-admin-command.test.js [added]
+2026-10-07T03:59:02.0268884Z backend/test/server-settings.test.js [modified]
+2026-10-07T03:59:02.0270219Z ##[endgroup]
+2026-10-07T03:59:02.0271004Z ##[group]Filter web = true
+2026-10-07T03:59:02.0271519Z Matching files:
+2026-10-07T03:59:02.0272045Z e2e/expo-web/fixtures.ts [modified]
+2026-10-07T03:59:02.0272688Z mobile/app/(auth)/login.tsx [modified]
+2026-10-07T03:59:02.0273364Z mobile/app/(auth)/register.tsx [modified]
+2026-10-07T03:59:02.0274042Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+2026-10-07T03:59:02.0274980Z mobile/app/(tabs)/(settings)/service.tsx [added]
+2026-10-07T03:59:02.0275719Z mobile/app/(tabs)/(settings)/settings.tsx [modified]
+2026-10-07T03:59:02.0276446Z mobile/app/forgot-password.tsx [modified]
+2026-10-07T03:59:02.0277284Z mobile/src/auth/AuthContext.test.tsx [modified]
+2026-10-07T03:59:02.0277981Z mobile/src/auth/AuthContext.tsx [modified]
+2026-10-07T03:59:02.0278675Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+2026-10-07T03:59:02.0279389Z mobile/src/auth/AuthContext.web.tsx [modified]
+2026-10-07T03:59:02.0280136Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+2026-10-07T03:59:02.0280955Z mobile/src/auth/passwordResetServer.test.tsx [added]
+2026-10-07T03:59:02.0281758Z mobile/src/components/ServerUrlControl.test.tsx [modified]
+2026-10-07T03:59:02.0282552Z mobile/src/components/ServerUrlControl.tsx [modified]
+2026-10-07T03:59:02.0283318Z mobile/src/errors/presentation.test.ts [modified]
+2026-10-07T03:59:02.0284067Z mobile/src/errors/presentation.ts [modified]
+2026-10-07T03:59:02.0284817Z mobile/src/navigation/routeRegistry.ts [modified]
+2026-10-07T03:59:02.0285602Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+2026-10-07T03:59:02.0286475Z mobile/src/screens/ServiceSettingsScreen.test.tsx [added]
+2026-10-07T03:59:02.0287547Z mobile/src/serverSettings/ServerOverview.tsx [added]
+2026-10-07T03:59:02.0288448Z mobile/src/serverSettings/ServerSettingsScreen.test.tsx [modified]
+2026-10-07T03:59:02.0289375Z mobile/src/serverSettings/ServerSettingsScreen.tsx [modified]
+2026-10-07T03:59:02.0290286Z mobile/src/serverSettings/ServerUserManagement.tsx [added]
+2026-10-07T03:59:02.0291123Z mobile/src/settings/SettingsCategoryPage.test.tsx [modified]
+2026-10-07T03:59:02.0291920Z mobile/src/settings/SettingsCategoryPage.tsx [modified]
+2026-10-07T03:59:02.0292685Z mobile/src/settings/SettingsHome.test.tsx [modified]
+2026-10-07T03:59:02.0293518Z mobile/src/settings/SettingsHome.tsx [modified]
+2026-10-07T03:59:02.0294215Z packages/api-client/src/client.ts [modified]
+2026-10-07T03:59:02.0294911Z packages/api-client/src/generated/v1.ts [modified]
+2026-10-07T03:59:02.0295928Z packages/api-client/src/types.ts [modified]
+2026-10-07T03:59:02.0297420Z packages/api-client/test/server-settings.test.ts [added]
+2026-10-07T03:59:02.0298635Z ##[endgroup]
+2026-10-07T03:59:02.0299429Z ##[group]Filter wear = false
+2026-10-07T03:59:02.0299939Z Matching files: none
+2026-10-07T03:59:02.0300646Z ##[endgroup]
+2026-10-07T03:59:02.0301344Z ##[group]Filter native_runtime = true
+2026-10-07T03:59:02.0301879Z Matching files:
+2026-10-07T03:59:02.0302366Z mobile/app/(auth)/login.tsx [modified]
+2026-10-07T03:59:02.0303015Z mobile/app/(auth)/register.tsx [modified]
+2026-10-07T03:59:02.0303692Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+2026-10-07T03:59:02.0304368Z mobile/app/(tabs)/(settings)/service.tsx [added]
+2026-10-07T03:59:02.0305048Z mobile/app/(tabs)/(settings)/settings.tsx [modified]
+2026-10-07T03:59:02.0305702Z mobile/app/forgot-password.tsx [modified]
+2026-10-07T03:59:02.0306332Z mobile/src/auth/AuthContext.test.tsx [modified]
+2026-10-07T03:59:02.0307407Z mobile/src/auth/AuthContext.tsx [modified]
+2026-10-07T03:59:02.0308577Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+2026-10-07T03:59:02.0309817Z mobile/src/auth/AuthContext.web.tsx [modified]
+2026-10-07T03:59:02.0311021Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+2026-10-07T03:59:02.0312012Z mobile/src/auth/passwordResetServer.test.tsx [added]
+2026-10-07T03:59:02.0313277Z mobile/src/components/ServerUrlControl.test.tsx [modified]
+2026-10-07T03:59:02.0314531Z mobile/src/components/ServerUrlControl.tsx [modified]
+2026-10-07T03:59:02.0315682Z mobile/src/errors/presentation.test.ts [modified]
+2026-10-07T03:59:02.0316804Z mobile/src/errors/presentation.ts [modified]
+2026-10-07T03:59:02.0318085Z mobile/src/navigation/routeRegistry.ts [modified]
+2026-10-07T03:59:02.0319349Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+2026-10-07T03:59:02.0320699Z mobile/src/screens/ServiceSettingsScreen.test.tsx [added]
+2026-10-07T03:59:02.0322155Z mobile/src/serverSettings/ServerOverview.tsx [added]
+2026-10-07T03:59:02.0323488Z mobile/src/serverSettings/ServerSettingsScreen.test.tsx [modified]
+2026-10-07T03:59:02.0324933Z mobile/src/serverSettings/ServerSettingsScreen.tsx [modified]
+2026-10-07T03:59:02.0326271Z mobile/src/serverSettings/ServerUserManagement.tsx [added]
+2026-10-07T03:59:02.0327854Z mobile/src/settings/SettingsCategoryPage.test.tsx [modified]
+2026-10-07T03:59:02.0329179Z mobile/src/settings/SettingsCategoryPage.tsx [modified]
+2026-10-07T03:59:02.0330387Z mobile/src/settings/SettingsHome.test.tsx [modified]
+2026-10-07T03:59:02.0331463Z mobile/src/settings/SettingsHome.tsx [modified]
+2026-10-07T03:59:02.0332508Z packages/api-client/src/client.ts [modified]
+2026-10-07T03:59:02.0333566Z packages/api-client/src/generated/v1.ts [modified]
+2026-10-07T03:59:02.0334632Z packages/api-client/src/types.ts [modified]
+2026-10-07T03:59:02.0335743Z packages/api-client/test/server-settings.test.ts [added]
+2026-10-07T03:59:02.0337472Z ##[endgroup]
+2026-10-07T03:59:02.0338629Z ##[group]Filter native_package = false
+2026-10-07T03:59:02.0339461Z Matching files: none
+2026-10-07T03:59:02.0340681Z ##[endgroup]
+2026-10-07T03:59:02.0341671Z Changes output set to ["release_config","backend","web","native_runtime"]
+2026-10-07T03:59:02.0585584Z ##[group]Run dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad
+2026-10-07T03:59:02.0586344Z with:
+2026-10-07T03:59:02.0586801Z   predicate-quantifier: every
+2026-10-07T03:59:02.0588841Z   filters: non_release_mirror:
+  - '**'
+  - '!backend/package-lock.json'
+  - '!backend/package.json'
+  - '!docs/openapi/v1.yaml'
+  - '!package-lock.json'
+  - '!package.json'
+  - '!packages/api-client/src/generated/v1.ts'
+  - '!shared/client-diagnostic-versions.json'
+  - '!shared/release.json'
+
+2026-10-07T03:59:02.0593988Z   token: ***
+2026-10-07T03:59:02.0594415Z   list-files: none
+2026-10-07T03:59:02.0594873Z   initial-fetch-depth: 100
+2026-10-07T03:59:02.0595352Z ##[endgroup]
+2026-10-07T03:59:02.1477948Z ##[group]Fetching list of changed files for PR#439 from Github API
+2026-10-07T03:59:02.1559126Z Invoking listFiles(pull_number: 439, per_page: 100)
+2026-10-07T03:59:02.5073340Z Received 63 items
+2026-10-07T03:59:02.5074641Z [modified] .env.example
+2026-10-07T03:59:02.5078555Z [modified] .github/workflows/tests.yml
+2026-10-07T03:59:02.5080125Z [modified] backend/package.json
+2026-10-07T03:59:02.5081930Z [added] backend/prisma/migrations/0042_persistent_server_roles/migration.sql
+2026-10-07T03:59:02.5083907Z [modified] backend/prisma/schema.prisma
+2026-10-07T03:59:02.5085594Z [modified] backend/src/index.ts
+2026-10-07T03:59:02.5087685Z [modified] backend/src/routes/auth.ts
+2026-10-07T03:59:02.5090465Z [modified] backend/src/routes/serverSettings.ts
+2026-10-07T03:59:02.5092504Z [modified] backend/src/routes/user.ts
+2026-10-07T03:59:02.5094361Z [added] backend/src/scripts/grantServerAdmin.ts
+2026-10-07T03:59:02.5107398Z [modified] backend/src/services/accountLifecycle.ts
+2026-10-07T03:59:02.5109256Z [added] backend/src/services/serverAccess.ts
+2026-10-07T03:59:02.5111029Z [modified] backend/src/services/serverSettings.ts
+2026-10-07T03:59:02.5114337Z [modified] backend/test/account-lifecycle.test.js
+2026-10-07T03:59:02.5116350Z [modified] backend/test/routes-account-recovery.test.js
+2026-10-07T03:59:02.5118839Z [modified] backend/test/routes-auth-mobile.test.js
+2026-10-07T03:59:02.5120797Z [modified] backend/test/routes-auth.test.js
+2026-10-07T03:59:02.5122671Z [modified] backend/test/routes-user.test.js
+2026-10-07T03:59:02.5124810Z [added] backend/test/server-access-postgres.test.js
+2026-10-07T03:59:02.5126926Z [added] backend/test/server-admin-command.test.js
+2026-10-07T03:59:02.5128971Z [modified] backend/test/server-settings.test.js
+2026-10-07T03:59:02.5130665Z [modified] deploy/.env.example
+2026-10-07T03:59:02.5132191Z [modified] deploy/README.md
+2026-10-07T03:59:02.5133748Z [modified] docs/account-access-and-recovery.md
+2026-10-07T03:59:02.5135625Z [modified] docs/openapi/v1.yaml
+2026-10-07T03:59:02.5137962Z [modified] docs/visual-design.md
+2026-10-07T03:59:02.5139556Z [modified] e2e/expo-web/fixtures.ts
+2026-10-07T03:59:02.5141434Z [modified] e2e/expo-web/launch-18-settings-trust-center.spec.ts
+2026-10-07T03:59:02.5143824Z [modified] e2e/expo-web/server-admin.spec.ts
+2026-10-07T03:59:02.5145593Z [modified] knip.json
+2026-10-07T03:59:02.5147279Z [modified] mobile/app/(auth)/login.tsx
+2026-10-07T03:59:02.5148865Z [modified] mobile/app/(auth)/register.tsx
+2026-10-07T03:59:02.5150536Z [modified] mobile/app/(tabs)/(settings)/advanced.tsx
+2026-10-07T03:59:02.5152237Z [added] mobile/app/(tabs)/(settings)/service.tsx
+2026-10-07T03:59:02.5153849Z [modified] mobile/app/(tabs)/(settings)/settings.tsx
+2026-10-07T03:59:02.5155372Z [modified] mobile/app/forgot-password.tsx
+2026-10-07T03:59:02.5156827Z [modified] mobile/src/auth/AuthContext.test.tsx
+2026-10-07T03:59:02.5158706Z [modified] mobile/src/auth/AuthContext.tsx
+2026-10-07T03:59:02.5160247Z [modified] mobile/src/auth/AuthContext.web.test.tsx
+2026-10-07T03:59:02.5161879Z [modified] mobile/src/auth/AuthContext.web.tsx
+2026-10-07T03:59:02.5163554Z [modified] mobile/src/auth/authScreenNavigation.test.tsx
+2026-10-07T03:59:02.5165217Z [added] mobile/src/auth/passwordResetServer.test.tsx
+2026-10-07T03:59:02.5167676Z [modified] mobile/src/components/ServerUrlControl.test.tsx
+2026-10-07T03:59:02.5169623Z [modified] mobile/src/components/ServerUrlControl.tsx
+2026-10-07T03:59:02.5171265Z [modified] mobile/src/errors/presentation.test.ts
+2026-10-07T03:59:02.5172895Z [modified] mobile/src/errors/presentation.ts
+2026-10-07T03:59:02.5174803Z [modified] mobile/src/navigation/routeRegistry.ts
+2026-10-07T03:59:02.5176524Z [modified] mobile/src/screens/AdvancedSettingsScreen.test.tsx
+2026-10-07T03:59:02.5178683Z [added] mobile/src/screens/ServiceSettingsScreen.test.tsx
+2026-10-07T03:59:02.5180427Z [added] mobile/src/serverSettings/ServerOverview.tsx
+2026-10-07T03:59:02.5182295Z [modified] mobile/src/serverSettings/ServerSettingsScreen.test.tsx
+2026-10-07T03:59:02.5184497Z [modified] mobile/src/serverSettings/ServerSettingsScreen.tsx
+2026-10-07T03:59:02.5186563Z [added] mobile/src/serverSettings/ServerUserManagement.tsx
+2026-10-07T03:59:02.5188705Z [modified] mobile/src/settings/SettingsCategoryPage.test.tsx
+2026-10-07T03:59:02.5191008Z [modified] mobile/src/settings/SettingsCategoryPage.tsx
+2026-10-07T03:59:02.5192943Z [modified] mobile/src/settings/SettingsHome.test.tsx
+2026-10-07T03:59:02.5194728Z [modified] mobile/src/settings/SettingsHome.tsx
+2026-10-07T03:59:02.5196513Z [modified] packages/api-client/src/client.ts
+2026-10-07T03:59:02.5198677Z [modified] packages/api-client/src/generated/v1.ts
+2026-10-07T03:59:02.5200563Z [modified] packages/api-client/src/types.ts
+2026-10-07T03:59:02.5202497Z [added] packages/api-client/test/server-settings.test.ts
+2026-10-07T03:59:02.5204416Z [modified] scripts/knip-config.test.mjs
+2026-10-07T03:59:02.5206111Z [modified] scripts/postgres-rollback-smoke.mjs
+2026-10-07T03:59:02.5208811Z ##[endgroup]
+2026-10-07T03:59:02.5211223Z Detected 63 changed files
+2026-10-07T03:59:02.5213038Z Results:
+2026-10-07T03:59:02.5215701Z ##[group]Filter non_release_mirror = true
+2026-10-07T03:59:02.5217982Z Matching files:
+2026-10-07T03:59:02.5224493Z .env.example [modified]
+2026-10-07T03:59:02.5226273Z .github/workflows/tests.yml [modified]
+2026-10-07T03:59:02.5229010Z backend/prisma/migrations/0042_persistent_server_roles/migration.sql [added]
+2026-10-07T03:59:02.5231675Z backend/prisma/schema.prisma [modified]
+2026-10-07T03:59:02.5235699Z backend/src/index.ts [modified]
+2026-10-07T03:59:02.5237798Z backend/src/routes/auth.ts [modified]
+2026-10-07T03:59:02.5239666Z backend/src/routes/serverSettings.ts [modified]
+2026-10-07T03:59:02.5241598Z backend/src/routes/user.ts [modified]
+2026-10-07T03:59:02.5243622Z backend/src/scripts/grantServerAdmin.ts [added]
+2026-10-07T03:59:02.5245808Z backend/src/services/accountLifecycle.ts [modified]
+2026-10-07T03:59:02.5248242Z backend/src/services/serverAccess.ts [added]
+2026-10-07T03:59:02.5250300Z backend/src/services/serverSettings.ts [modified]
+2026-10-07T03:59:02.5288178Z backend/test/account-lifecycle.test.js [modified]
+2026-10-07T03:59:02.5294568Z backend/test/routes-account-recovery.test.js [modified]
+2026-10-07T03:59:02.5296498Z backend/test/routes-auth-mobile.test.js [modified]
+2026-10-07T03:59:02.5298525Z backend/test/routes-auth.test.js [modified]
+2026-10-07T03:59:02.5299817Z backend/test/routes-user.test.js [modified]
+2026-10-07T03:59:02.5300968Z backend/test/server-access-postgres.test.js [added]
+2026-10-07T03:59:02.5302171Z backend/test/server-admin-command.test.js [added]
+2026-10-07T03:59:02.5303334Z backend/test/server-settings.test.js [modified]
+2026-10-07T03:59:02.5304415Z deploy/.env.example [modified]
+2026-10-07T03:59:02.5305396Z deploy/README.md [modified]
+2026-10-07T03:59:02.5306410Z docs/account-access-and-recovery.md [modified]
+2026-10-07T03:59:02.5307866Z docs/visual-design.md [modified]
+2026-10-07T03:59:02.5308897Z e2e/expo-web/fixtures.ts [modified]
+2026-10-07T03:59:02.5310094Z e2e/expo-web/launch-18-settings-trust-center.spec.ts [modified]
+2026-10-07T03:59:02.5311388Z e2e/expo-web/server-admin.spec.ts [modified]
+2026-10-07T03:59:02.5312448Z knip.json [modified]
+2026-10-07T03:59:02.5313367Z mobile/app/(auth)/login.tsx [modified]
+2026-10-07T03:59:02.5314431Z mobile/app/(auth)/register.tsx [modified]
+2026-10-07T03:59:02.5315803Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+2026-10-07T03:59:02.5317414Z mobile/app/(tabs)/(settings)/service.tsx [added]
+2026-10-07T03:59:02.5318710Z mobile/app/(tabs)/(settings)/settings.tsx [modified]
+2026-10-07T03:59:02.5319883Z mobile/app/forgot-password.tsx [modified]
+2026-10-07T03:59:02.5320998Z mobile/src/auth/AuthContext.test.tsx [modified]
+2026-10-07T03:59:02.5322126Z mobile/src/auth/AuthContext.tsx [modified]
+2026-10-07T03:59:02.5323249Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+2026-10-07T03:59:02.5324428Z mobile/src/auth/AuthContext.web.tsx [modified]
+2026-10-07T03:59:02.5325607Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+2026-10-07T03:59:02.5326865Z mobile/src/auth/passwordResetServer.test.tsx [added]
+2026-10-07T03:59:02.5328387Z mobile/src/components/ServerUrlControl.test.tsx [modified]
+2026-10-07T03:59:02.5329604Z mobile/src/components/ServerUrlControl.tsx [modified]
+2026-10-07T03:59:02.5330759Z mobile/src/errors/presentation.test.ts [modified]
+2026-10-07T03:59:02.5331855Z mobile/src/errors/presentation.ts [modified]
+2026-10-07T03:59:02.5332926Z mobile/src/navigation/routeRegistry.ts [modified]
+2026-10-07T03:59:02.5334143Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+2026-10-07T03:59:02.5335470Z mobile/src/screens/ServiceSettingsScreen.test.tsx [added]
+2026-10-07T03:59:02.5336715Z mobile/src/serverSettings/ServerOverview.tsx [added]
+2026-10-07T03:59:02.5338421Z mobile/src/serverSettings/ServerSettingsScreen.test.tsx [modified]
+2026-10-07T03:59:02.5339892Z mobile/src/serverSettings/ServerSettingsScreen.tsx [modified]
+2026-10-07T03:59:02.5341267Z mobile/src/serverSettings/ServerUserManagement.tsx [added]
+2026-10-07T03:59:02.5342637Z mobile/src/settings/SettingsCategoryPage.test.tsx [modified]
+2026-10-07T03:59:02.5343964Z mobile/src/settings/SettingsCategoryPage.tsx [modified]
+2026-10-07T03:59:02.5345203Z mobile/src/settings/SettingsHome.test.tsx [modified]
+2026-10-07T03:59:02.5346398Z mobile/src/settings/SettingsHome.tsx [modified]
+2026-10-07T03:59:02.5348167Z packages/api-client/src/client.ts [modified]
+2026-10-07T03:59:02.5349298Z packages/api-client/src/types.ts [modified]
+2026-10-07T03:59:02.5350501Z packages/api-client/test/server-settings.test.ts [added]
+2026-10-07T03:59:02.5351684Z scripts/knip-config.test.mjs [modified]
+2026-10-07T03:59:02.5352747Z scripts/postgres-rollback-smoke.mjs [modified]
+2026-10-07T03:59:02.5354433Z ##[endgroup]
+2026-10-07T03:59:02.5355446Z Changes output set to ["non_release_mirror"]
+2026-10-07T03:59:02.5497414Z ##[group]Run release_config=false
+2026-10-07T03:59:02.5498643Z [36;1mrelease_config=false[0m
+2026-10-07T03:59:02.5499648Z [36;1mbackend=false[0m
+2026-10-07T03:59:02.5500539Z [36;1mweb=false[0m
+2026-10-07T03:59:02.5501549Z [36;1mwear=false[0m
+2026-10-07T03:59:02.5502404Z [36;1mnative_runtime=false[0m
+2026-10-07T03:59:02.5503393Z [36;1mnative_package=false[0m
+2026-10-07T03:59:02.5504371Z [36;1mweb_release=false[0m
+2026-10-07T03:59:02.5505331Z [36;1mnative_release=false[0m
+2026-10-07T03:59:02.5506312Z [36;1mnative_upgrade=false[0m
+2026-10-07T03:59:02.5507412Z [36;1m[0m
+2026-10-07T03:59:02.5508385Z [36;1mif [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then[0m
+2026-10-07T03:59:02.5509730Z [36;1m  release_config=true[0m
+2026-10-07T03:59:02.5510830Z [36;1m  case "${MANUAL_VALIDATION_SCOPE}" in[0m
+2026-10-07T03:59:02.5511985Z [36;1m    web)[0m
+2026-10-07T03:59:02.5512767Z [36;1m      web=true[0m
+2026-10-07T03:59:02.5513658Z [36;1m      web_release=true[0m
+2026-10-07T03:59:02.5514661Z [36;1m      ;;[0m
+2026-10-07T03:59:02.5515441Z [36;1m    native)[0m
+2026-10-07T03:59:02.5516260Z [36;1m      wear=true[0m
+2026-10-07T03:59:02.5517331Z [36;1m      native_runtime=true[0m
+2026-10-07T03:59:02.5518393Z [36;1m      native_package=true[0m
+2026-10-07T03:59:02.5519439Z [36;1m      native_release=true[0m
+2026-10-07T03:59:02.5520443Z [36;1m      ;;[0m
+2026-10-07T03:59:02.5521248Z [36;1m    web-and-native)[0m
+2026-10-07T03:59:02.5522179Z [36;1m      web=true[0m
+2026-10-07T03:59:02.5523041Z [36;1m      wear=true[0m
+2026-10-07T03:59:02.5523952Z [36;1m      native_runtime=true[0m
+2026-10-07T03:59:02.5524970Z [36;1m      native_package=true[0m
+2026-10-07T03:59:02.5525990Z [36;1m      web_release=true[0m
+2026-10-07T03:59:02.5527195Z [36;1m      native_release=true[0m
+2026-10-07T03:59:02.5528284Z [36;1m      ;;[0m
+2026-10-07T03:59:02.5529100Z [36;1m    configuration-only)[0m
+2026-10-07T03:59:02.5530072Z [36;1m      ;;[0m
+2026-10-07T03:59:02.5530840Z [36;1m    *)[0m
+2026-10-07T03:59:02.5532135Z [36;1m      echo "Unknown manual validation scope: ${MANUAL_VALIDATION_SCOPE}" >&2[0m
+2026-10-07T03:59:02.5533765Z [36;1m      exit 1[0m
+2026-10-07T03:59:02.5534579Z [36;1m      ;;[0m
+2026-10-07T03:59:02.5535337Z [36;1m  esac[0m
+2026-10-07T03:59:02.5536302Z [36;1m  if [[ "${MANUAL_NATIVE_UPGRADE}" == "true" ]]; then[0m
+2026-10-07T03:59:02.5537725Z [36;1m    native_upgrade=true[0m
+2026-10-07T03:59:02.5538687Z [36;1m  fi[0m
+2026-10-07T03:59:02.5539427Z [36;1melse[0m
+2026-10-07T03:59:02.5540334Z [36;1m  release_config=${RELEASE_CONFIG_CHANGED}[0m
+2026-10-07T03:59:02.5542047Z [36;1m  if [[ "${HEAD_REF}" == release/v* && "${NON_RELEASE_MIRROR_CHANGED}" != "true" ]]; then[0m
+2026-10-07T03:59:02.5544531Z [36;1m    echo "Generated version-only release PR: platform build fan-out is intentionally suppressed."[0m
+2026-10-07T03:59:02.5546458Z [36;1m  else[0m
+2026-10-07T03:59:02.5547395Z [36;1m    backend=${BACKEND_CHANGED}[0m
+2026-10-07T03:59:02.5548463Z [36;1m    web=${WEB_CHANGED}[0m
+2026-10-07T03:59:02.5549425Z [36;1m    wear=${WEAR_CHANGED}[0m
+2026-10-07T03:59:02.5550544Z [36;1m    native_runtime=${NATIVE_RUNTIME_CHANGED}[0m
+2026-10-07T03:59:02.5551888Z [36;1m    native_package=${NATIVE_PACKAGE_CHANGED}[0m
+2026-10-07T03:59:02.5553053Z [36;1m  fi[0m
+2026-10-07T03:59:02.5553786Z [36;1mfi[0m
+2026-10-07T03:59:02.5554500Z [36;1m[0m
+2026-10-07T03:59:02.5555576Z [36;1mecho "release_config=${release_config}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5557328Z [36;1mecho "backend=${backend}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5558651Z [36;1mecho "web=${web}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5559919Z [36;1mecho "wear=${wear}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5561429Z [36;1mecho "native_runtime=${native_runtime}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5563222Z [36;1mecho "native_package=${native_package}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5565134Z [36;1mecho "web_release=${web_release}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5566882Z [36;1mecho "native_release=${native_release}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5568961Z [36;1mecho "native_upgrade=${native_upgrade}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-07T03:59:02.5839166Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-07T03:59:02.5840499Z env:
+2026-10-07T03:59:02.5841257Z   EVENT_NAME: pull_request
+2026-10-07T03:59:02.5842243Z   HEAD_REF: mchartier/self-hosting-438
+2026-10-07T03:59:02.5843333Z   RELEASE_CONFIG_CHANGED: true
+2026-10-07T03:59:02.5844298Z   BACKEND_CHANGED: true
+2026-10-07T03:59:02.5845166Z   WEB_CHANGED: true
+2026-10-07T03:59:02.5845994Z   WEAR_CHANGED: false
+2026-10-07T03:59:02.5846896Z   NATIVE_RUNTIME_CHANGED: true
+2026-10-07T03:59:02.5848085Z   NATIVE_PACKAGE_CHANGED: false
+2026-10-07T03:59:02.5849107Z   NON_RELEASE_MIRROR_CHANGED: true
+2026-10-07T03:59:02.5850239Z   MANUAL_VALIDATION_SCOPE: configuration-only
+2026-10-07T03:59:02.5851422Z   MANUAL_NATIVE_UPGRADE: false
+2026-10-07T03:59:02.5852414Z ##[endgroup]
+2026-10-07T03:59:02.6084058Z Evaluate and set job outputs
+2026-10-07T03:59:02.6094373Z Set output 'release_config'
+2026-10-07T03:59:02.6097297Z Set output 'backend'
+2026-10-07T03:59:02.6098952Z Set output 'web'
+2026-10-07T03:59:02.6100074Z Set output 'wear'
+2026-10-07T03:59:02.6101204Z Set output 'native_runtime'
+2026-10-07T03:59:02.6102454Z Set output 'native_package'
+2026-10-07T03:59:02.6103687Z Set output 'web_release'
+2026-10-07T03:59:02.6104897Z Set output 'native_release'
+2026-10-07T03:59:02.6106149Z Set output 'native_upgrade'
+2026-10-07T03:59:02.6108063Z Cleaning up orphan processes
+2026-10-07T03:59:02.6512035Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

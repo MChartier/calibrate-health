@@ -1,0 +1,13 @@
+PASS src/auth/AuthContext.test.tsx
+PASS src/serverSettings/ServerSettingsScreen.test.tsx (10.545 s)
+PASS src/auth/authScreenNavigation.test.tsx
+PASS src/auth/AuthContext.web.test.tsx
+PASS src/components/ServerUrlControl.test.tsx
+PASS src/screens/ServiceSettingsScreen.test.tsx
+PASS src/auth/passwordResetServer.test.tsx
+
+Test Suites: 7 passed, 7 total
+Tests:       86 passed, 86 total
+Snapshots:   0 total
+Time:        21.534 s
+Ran all test suites within paths "src/components/ServerUrlControl.test.tsx", "src/screens/ServiceSettingsScreen.test.tsx", "src/auth/authScreenNavigation.test.tsx", "src/auth/passwordResetServer.test.tsx", "src/auth/AuthContext.test.tsx", "src/auth/AuthContext.web.test.tsx", "src/serverSettings/ServerSettingsScreen.test.tsx".

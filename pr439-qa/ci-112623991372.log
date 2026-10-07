@@ -1,0 +1,949 @@
+﻿2026-10-07T03:59:07.1440704Z Current runner version: '2.337.0'
+2026-10-07T03:59:07.1460167Z ##[group]Runner Image Provisioner
+2026-10-07T03:59:07.1460865Z Hosted Compute Agent
+2026-10-07T03:59:07.1461333Z Version: 20260901.588
+2026-10-07T03:59:07.1461716Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-07T03:59:07.1462262Z Build Date: 2026-09-01T19:56:44Z
+2026-10-07T03:59:07.1462668Z Worker ID: {8b8c3d7c-7a20-465e-b321-8762b87facb2}
+2026-10-07T03:59:07.1463327Z Azure Region: centralus
+2026-10-07T03:59:07.1463764Z ##[endgroup]
+2026-10-07T03:59:07.1464677Z ##[group]Operating System
+2026-10-07T03:59:07.1465080Z Ubuntu
+2026-10-07T03:59:07.1465442Z 24.04.5
+2026-10-07T03:59:07.1465751Z LTS
+2026-10-07T03:59:07.1466139Z ##[endgroup]
+2026-10-07T03:59:07.1466529Z ##[group]Runner Image
+2026-10-07T03:59:07.1466943Z Image: ubuntu-24.04
+2026-10-07T03:59:07.1467302Z Version: 20260927.320.1
+2026-10-07T03:59:07.1468129Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-07T03:59:07.1469007Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-07T03:59:07.1469585Z ##[endgroup]
+2026-10-07T03:59:07.1470339Z ##[group]GITHUB_TOKEN Permissions
+2026-10-07T03:59:07.1471618Z Contents: read
+2026-10-07T03:59:07.1471982Z Metadata: read
+2026-10-07T03:59:07.1472325Z ##[endgroup]
+2026-10-07T03:59:07.1474224Z Secret source: Actions
+2026-10-07T03:59:07.1474842Z Cache mode: write
+2026-10-07T03:59:07.1475334Z Prepare workflow directory
+2026-10-07T03:59:07.1757068Z Prepare all required actions
+2026-10-07T03:59:07.1790060Z Getting action download info
+2026-10-07T03:59:07.4039658Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-07T03:59:07.5779584Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-07T03:59:08.0788340Z Complete job name: Populated Postgres Upgrade
+2026-10-07T03:59:08.1166784Z ##[group]Checking docker version
+2026-10-07T03:59:08.1175965Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-10-07T03:59:08.2348171Z '1.48'
+2026-10-07T03:59:08.2356205Z Docker daemon API version: '1.48'
+2026-10-07T03:59:08.2356763Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-10-07T03:59:08.2504275Z '1.48'
+2026-10-07T03:59:08.2506864Z Docker client API version: '1.48'
+2026-10-07T03:59:08.2513573Z ##[endgroup]
+2026-10-07T03:59:08.2515068Z ##[group]Clean up resources from previous jobs
+2026-10-07T03:59:08.2518945Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=d3e8e9"
+2026-10-07T03:59:08.2634258Z ##[command]/usr/bin/docker network prune --force --filter "label=d3e8e9"
+2026-10-07T03:59:08.2741500Z ##[endgroup]
+2026-10-07T03:59:08.2741886Z ##[group]Create local container network
+2026-10-07T03:59:08.2749875Z ##[command]/usr/bin/docker network create --label d3e8e9 github_network_d941b234ce214a57ac1cabb2b74bd6b1
+2026-10-07T03:59:08.5467497Z 48dd8de8bcac1a3aecfc0a1275ac9b87f214055abd10d63692b8cee7be17f99b
+2026-10-07T03:59:08.5485319Z ##[endgroup]
+2026-10-07T03:59:08.5502661Z ##[group]Starting postgres service container
+2026-10-07T03:59:08.5517219Z ##[command]/usr/bin/docker pull postgres:15-alpine
+2026-10-07T03:59:09.5304066Z 15-alpine: Pulling from library/postgres
+2026-10-07T03:59:10.0814259Z e2de96513ba9: Already exists
+2026-10-07T03:59:10.2512218Z 2c2e40dd947e: Pulling fs layer
+2026-10-07T03:59:10.2512703Z 2e9987a42d41: Pulling fs layer
+2026-10-07T03:59:10.2513119Z 3f49193fd82d: Pulling fs layer
+2026-10-07T03:59:10.2513401Z bc2205dd5a3a: Pulling fs layer
+2026-10-07T03:59:10.2513670Z e9516be90840: Pulling fs layer
+2026-10-07T03:59:10.2513924Z 4f83103187f5: Pulling fs layer
+2026-10-07T03:59:10.2514176Z c020dab2e853: Pulling fs layer
+2026-10-07T03:59:10.2514441Z 0976f43b012c: Pulling fs layer
+2026-10-07T03:59:10.2514718Z 6ba2251a51ae: Pulling fs layer
+2026-10-07T03:59:10.2514999Z 277e2289225f: Pulling fs layer
+2026-10-07T03:59:10.2515380Z 6ba2251a51ae: Waiting
+2026-10-07T03:59:10.2515972Z 277e2289225f: Waiting
+2026-10-07T03:59:10.2516287Z bc2205dd5a3a: Waiting
+2026-10-07T03:59:10.2516496Z e9516be90840: Waiting
+2026-10-07T03:59:10.2516645Z 4f83103187f5: Waiting
+2026-10-07T03:59:10.2516786Z c020dab2e853: Waiting
+2026-10-07T03:59:10.2517006Z 0976f43b012c: Waiting
+2026-10-07T03:59:10.3712387Z 3f49193fd82d: Verifying Checksum
+2026-10-07T03:59:10.3713328Z 2c2e40dd947e: Verifying Checksum
+2026-10-07T03:59:10.3714014Z 2c2e40dd947e: Download complete
+2026-10-07T03:59:10.3715005Z 3f49193fd82d: Download complete
+2026-10-07T03:59:10.4650790Z 2e9987a42d41: Verifying Checksum
+2026-10-07T03:59:10.4651228Z 2e9987a42d41: Download complete
+2026-10-07T03:59:10.5220369Z bc2205dd5a3a: Verifying Checksum
+2026-10-07T03:59:10.5223626Z bc2205dd5a3a: Download complete
+2026-10-07T03:59:10.6087828Z 4f83103187f5: Verifying Checksum
+2026-10-07T03:59:10.6088249Z 4f83103187f5: Download complete
+2026-10-07T03:59:10.6643269Z c020dab2e853: Download complete
+2026-10-07T03:59:10.7610607Z 0976f43b012c: Verifying Checksum
+2026-10-07T03:59:10.7613899Z 0976f43b012c: Download complete
+2026-10-07T03:59:10.7956246Z 6ba2251a51ae: Verifying Checksum
+2026-10-07T03:59:10.7956507Z 6ba2251a51ae: Download complete
+2026-10-07T03:59:10.9111529Z 277e2289225f: Verifying Checksum
+2026-10-07T03:59:10.9111888Z 277e2289225f: Download complete
+2026-10-07T03:59:11.1064422Z e9516be90840: Verifying Checksum
+2026-10-07T03:59:11.1064682Z e9516be90840: Download complete
+2026-10-07T03:59:16.5472287Z 2c2e40dd947e: Pull complete
+2026-10-07T03:59:16.5942309Z 2e9987a42d41: Pull complete
+2026-10-07T03:59:16.6018985Z 3f49193fd82d: Pull complete
+2026-10-07T03:59:16.6087329Z bc2205dd5a3a: Pull complete
+2026-10-07T03:59:19.5257354Z e9516be90840: Pull complete
+2026-10-07T03:59:19.5402633Z 4f83103187f5: Pull complete
+2026-10-07T03:59:19.5469775Z c020dab2e853: Pull complete
+2026-10-07T03:59:19.5547242Z 0976f43b012c: Pull complete
+2026-10-07T03:59:19.5631630Z 6ba2251a51ae: Pull complete
+2026-10-07T03:59:19.5697266Z 277e2289225f: Pull complete
+2026-10-07T03:59:19.5743848Z Digest: sha256:f7d23353e1b15400d22ebe31189f4d314b87a4c129cc400c8c2d8d4ca127bf81
+2026-10-07T03:59:19.5755289Z Status: Downloaded newer image for postgres:15-alpine
+2026-10-07T03:59:19.5763843Z docker.io/library/postgres:15-alpine
+2026-10-07T03:59:19.5814431Z ##[command]/usr/bin/docker create --name 8ef05fa0031e4eb7896fcd9549d4a5ac_postgres15alpine_d58e26 --label d3e8e9 --network github_network_d941b234ce214a57ac1cabb2b74bd6b1 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U calibrate -d calibrate" --health-interval 2s --health-timeout 5s --health-retries 10 -e "POSTGRES_USER=calibrate" -e "POSTGRES_PASSWORD=calibrate" -e "POSTGRES_DB=calibrate" -e GITHUB_ACTIONS=true -e CI=true postgres:15-alpine
+2026-10-07T03:59:19.6017674Z 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:19.6039073Z ##[command]/usr/bin/docker start 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:19.7750420Z 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:19.7767796Z ##[command]/usr/bin/docker ps --all --filter id=1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-10-07T03:59:19.7864224Z 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc Up Less than a second (health: starting)
+2026-10-07T03:59:19.7890968Z ##[command]/usr/bin/docker port 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:19.7985975Z 5432/tcp -> 0.0.0.0:5432
+2026-10-07T03:59:19.7986475Z 5432/tcp -> [::]:5432
+2026-10-07T03:59:19.8023021Z ##[endgroup]
+2026-10-07T03:59:19.8028931Z ##[group]Waiting for all services to be ready
+2026-10-07T03:59:19.8038223Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:19.8144083Z starting
+2026-10-07T03:59:19.8160998Z postgres service is starting, waiting 2 seconds before checking again.
+2026-10-07T03:59:21.8159466Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:21.8251879Z healthy
+2026-10-07T03:59:21.8265769Z postgres service is healthy.
+2026-10-07T03:59:21.8266027Z ##[endgroup]
+2026-10-07T03:59:21.8517941Z ##[group]Run actions/checkout@v4
+2026-10-07T03:59:21.8518256Z with:
+2026-10-07T03:59:21.8518392Z   ref: ce8543483db55800034e6ed2622eeb4b9ac7f3b6
+2026-10-07T03:59:21.8518570Z   repository: MChartier/calibrate-health
+2026-10-07T03:59:21.8520189Z   token: ***
+2026-10-07T03:59:21.8520306Z   ssh-strict: true
+2026-10-07T03:59:21.8520428Z   ssh-user: git
+2026-10-07T03:59:21.8520549Z   persist-credentials: true
+2026-10-07T03:59:21.8520683Z   clean: true
+2026-10-07T03:59:21.8520809Z   sparse-checkout-cone-mode: true
+2026-10-07T03:59:21.8520951Z   fetch-depth: 1
+2026-10-07T03:59:21.8521065Z   fetch-tags: false
+2026-10-07T03:59:21.8521201Z   show-progress: true
+2026-10-07T03:59:21.8521319Z   lfs: false
+2026-10-07T03:59:21.8521424Z   submodules: false
+2026-10-07T03:59:21.8521544Z   set-safe-directory: true
+2026-10-07T03:59:21.8521684Z   allow-unsafe-pr-checkout: false
+2026-10-07T03:59:21.8522150Z env:
+2026-10-07T03:59:21.8522461Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:21.8522674Z ##[endgroup]
+2026-10-07T03:59:21.9274073Z Syncing repository: MChartier/calibrate-health
+2026-10-07T03:59:21.9275268Z ##[group]Getting Git version info
+2026-10-07T03:59:21.9275527Z Working directory is '/home/runner/work/calibrate-health/calibrate-health'
+2026-10-07T03:59:21.9275946Z [command]/usr/bin/git version
+2026-10-07T03:59:21.9333051Z git version 2.55.0
+2026-10-07T03:59:21.9348260Z ##[endgroup]
+2026-10-07T03:59:21.9361109Z Temporarily overriding HOME='/home/runner/work/_temp/cf00d665-b2ef-47b7-b3a4-f137db6dc69a' before making global git config changes
+2026-10-07T03:59:21.9361916Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T03:59:21.9365878Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+2026-10-07T03:59:21.9417159Z Deleting the contents of '/home/runner/work/calibrate-health/calibrate-health'
+2026-10-07T03:59:21.9422135Z ##[group]Initializing the repository
+2026-10-07T03:59:21.9429316Z [command]/usr/bin/git init /home/runner/work/calibrate-health/calibrate-health
+2026-10-07T03:59:21.9547294Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-07T03:59:21.9547813Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-07T03:59:21.9548358Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-07T03:59:21.9548597Z hint: call:
+2026-10-07T03:59:21.9548713Z hint:
+2026-10-07T03:59:21.9548901Z hint: 	git config --global init.defaultBranch <name>
+2026-10-07T03:59:21.9549108Z hint:
+2026-10-07T03:59:21.9549367Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-07T03:59:21.9549715Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-07T03:59:21.9549958Z hint:
+2026-10-07T03:59:21.9550100Z hint: 	git branch -m <name>
+2026-10-07T03:59:21.9550231Z hint:
+2026-10-07T03:59:21.9550430Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-07T03:59:21.9550793Z Initialized empty Git repository in /home/runner/work/calibrate-health/calibrate-health/.git/
+2026-10-07T03:59:21.9560512Z [command]/usr/bin/git remote add origin https://github.com/MChartier/calibrate-health
+2026-10-07T03:59:21.9609621Z ##[endgroup]
+2026-10-07T03:59:21.9609990Z ##[group]Disabling automatic garbage collection
+2026-10-07T03:59:21.9614194Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-07T03:59:21.9645370Z ##[endgroup]
+2026-10-07T03:59:21.9645695Z ##[group]Setting up auth
+2026-10-07T03:59:21.9651749Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T03:59:21.9685899Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-07T03:59:21.9996383Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T03:59:22.0028370Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-07T03:59:22.0207605Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T03:59:22.0236636Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-07T03:59:22.0405300Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-07T03:59:22.0438669Z ##[endgroup]
+2026-10-07T03:59:22.0439112Z ##[group]Fetching the repository
+2026-10-07T03:59:22.0444791Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin ce8543483db55800034e6ed2622eeb4b9ac7f3b6
+2026-10-07T03:59:23.8836148Z From https://github.com/MChartier/calibrate-health
+2026-10-07T03:59:23.8836877Z  * branch            ce8543483db55800034e6ed2622eeb4b9ac7f3b6 -> FETCH_HEAD
+2026-10-07T03:59:23.8840202Z ##[endgroup]
+2026-10-07T03:59:23.8840590Z ##[group]Determining the checkout info
+2026-10-07T03:59:23.8842570Z ##[endgroup]
+2026-10-07T03:59:23.8848148Z [command]/usr/bin/git sparse-checkout disable
+2026-10-07T03:59:23.8894502Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-07T03:59:23.8926928Z ##[group]Checking out the ref
+2026-10-07T03:59:23.8929604Z [command]/usr/bin/git checkout --progress --force ce8543483db55800034e6ed2622eeb4b9ac7f3b6
+2026-10-07T03:59:24.0365262Z Note: switching to 'ce8543483db55800034e6ed2622eeb4b9ac7f3b6'.
+2026-10-07T03:59:24.0365765Z 
+2026-10-07T03:59:24.0365900Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-07T03:59:24.0366153Z changes and commit them, and you can discard any commits you make in this
+2026-10-07T03:59:24.0366411Z state without impacting any branches by switching back to a branch.
+2026-10-07T03:59:24.0366661Z 
+2026-10-07T03:59:24.0366765Z If you want to create a new branch to retain commits you create, you may
+2026-10-07T03:59:24.0367003Z do so (now or later) by using -c with the switch command. Example:
+2026-10-07T03:59:24.0367136Z 
+2026-10-07T03:59:24.0367202Z   git switch -c <new-branch-name>
+2026-10-07T03:59:24.0367296Z 
+2026-10-07T03:59:24.0367358Z Or undo this operation with:
+2026-10-07T03:59:24.0367446Z 
+2026-10-07T03:59:24.0367494Z   git switch -
+2026-10-07T03:59:24.0367577Z 
+2026-10-07T03:59:24.0367689Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-07T03:59:24.0367852Z 
+2026-10-07T03:59:24.0367993Z HEAD is now at ce85434 Complete managed-first hosting and persistent server administration
+2026-10-07T03:59:24.0379821Z ##[endgroup]
+2026-10-07T03:59:24.0420914Z [command]/usr/bin/git log -1 --format=%H
+2026-10-07T03:59:24.0442524Z ce8543483db55800034e6ed2622eeb4b9ac7f3b6
+2026-10-07T03:59:24.0618394Z ##[group]Run actions/setup-node@v4
+2026-10-07T03:59:24.0618546Z with:
+2026-10-07T03:59:24.0618676Z   node-version: 20
+2026-10-07T03:59:24.0618787Z   cache: npm
+2026-10-07T03:59:24.0618922Z   cache-dependency-path: backend/package-lock.json
+2026-10-07T03:59:24.0619091Z   always-auth: false
+2026-10-07T03:59:24.0619210Z   check-latest: false
+2026-10-07T03:59:24.0620667Z   token: ***
+2026-10-07T03:59:24.0620771Z env:
+2026-10-07T03:59:24.0621022Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:24.0621189Z ##[endgroup]
+2026-10-07T03:59:24.1515628Z Attempting to download 20...
+2026-10-07T03:59:24.1587523Z (node:2509) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-07T03:59:24.1588248Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-07T03:59:24.8968407Z Acquiring 20.20.2 - x64 from https://github.com/actions/node-versions/releases/download/20.20.2-23521894959/node-20.20.2-linux-x64.tar.gz
+2026-10-07T03:59:25.4085862Z Extracting ...
+2026-10-07T03:59:25.4168641Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/81cdfbb1-af81-4091-8a80-b3e63bb52abc -f /home/runner/work/_temp/72308abc-f3ce-4b6f-bcdb-25e4110252b1
+2026-10-07T03:59:26.1669651Z Adding to the cache ...
+2026-10-07T03:59:27.7394292Z ##[group]Environment details
+2026-10-07T03:59:27.8889414Z node: v20.20.2
+2026-10-07T03:59:27.8889707Z npm: 10.8.2
+2026-10-07T03:59:27.8889879Z yarn: 1.22.22
+2026-10-07T03:59:27.8890359Z ##[endgroup]
+2026-10-07T03:59:27.8907855Z [command]/opt/hostedtoolcache/node/20.20.2/x64/bin/npm config get cache
+2026-10-07T03:59:27.9579917Z /home/runner/.npm
+2026-10-07T03:59:28.0895393Z npm cache is not found
+2026-10-07T03:59:28.1034540Z ##[group]Run npm --prefix backend ci --no-audit --fund=false
+2026-10-07T03:59:28.1034854Z [36;1mnpm --prefix backend ci --no-audit --fund=false[0m
+2026-10-07T03:59:28.1291963Z shell: /usr/bin/bash -e {0}
+2026-10-07T03:59:28.1292142Z env:
+2026-10-07T03:59:28.1292596Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:28.1292988Z ##[endgroup]
+2026-10-07T03:59:28.3890631Z npm warn EBADENGINE Unsupported engine {
+2026-10-07T03:59:28.3891695Z npm warn EBADENGINE   package: '@prisma/streams-local@0.1.11',
+2026-10-07T03:59:28.3892340Z npm warn EBADENGINE   required: { bun: '>=1.2.0', node: '>=22.0.0' },
+2026-10-07T03:59:28.3893116Z npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+2026-10-07T03:59:28.3893687Z npm warn EBADENGINE }
+2026-10-07T03:59:33.4511184Z 
+2026-10-07T03:59:33.4511886Z added 430 packages in 5s
+2026-10-07T03:59:33.4750448Z ##[group]Run npm run prisma:generate
+2026-10-07T03:59:33.4750668Z [36;1mnpm run prisma:generate[0m
+2026-10-07T03:59:33.4809657Z shell: /usr/bin/bash -e {0}
+2026-10-07T03:59:33.4809809Z env:
+2026-10-07T03:59:33.4810204Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:33.4810385Z ##[endgroup]
+2026-10-07T03:59:33.5576586Z 
+2026-10-07T03:59:33.5577080Z > cal-io@0.38.0 prisma:generate
+2026-10-07T03:59:33.5577463Z > npm --prefix backend run prisma:generate
+2026-10-07T03:59:33.5577658Z 
+2026-10-07T03:59:33.6288085Z 
+2026-10-07T03:59:33.6307282Z > backend@0.38.0 prisma:generate
+2026-10-07T03:59:33.6307697Z > prisma generate
+2026-10-07T03:59:33.6307825Z 
+2026-10-07T03:59:34.3113203Z Loaded Prisma config from prisma.config.ts.
+2026-10-07T03:59:34.3113409Z 
+2026-10-07T03:59:34.4190171Z Prisma schema loaded from prisma/schema.prisma.
+2026-10-07T03:59:35.0206194Z 
+2026-10-07T03:59:35.0207933Z ✔ Generated Prisma Client (v7.9.0) to ./node_modules/@prisma/client in 371ms
+2026-10-07T03:59:35.0208536Z 
+2026-10-07T03:59:35.0208967Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-10-07T03:59:35.0209444Z 
+2026-10-07T03:59:35.0212357Z 
+2026-10-07T03:59:35.0593986Z ##[group]Run node --test scripts/postgres-populated-upgrade-smoke.test.mjs
+2026-10-07T03:59:35.0594333Z [36;1mnode --test scripts/postgres-populated-upgrade-smoke.test.mjs[0m
+2026-10-07T03:59:35.0647671Z shell: /usr/bin/bash -e {0}
+2026-10-07T03:59:35.0647822Z env:
+2026-10-07T03:59:35.0648306Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:35.0648487Z ##[endgroup]
+2026-10-07T03:59:35.1016771Z TAP version 13
+2026-10-07T03:59:35.1585702Z # Subtest: migrationOrdinal accepts tracked ordinal names and rejects malformed names
+2026-10-07T03:59:35.1591459Z ok 1 - migrationOrdinal accepts tracked ordinal names and rejects malformed names
+2026-10-07T03:59:35.1592381Z   ---
+2026-10-07T03:59:35.1592597Z   duration_ms: 0.962879
+2026-10-07T03:59:35.1605387Z   ...
+2026-10-07T03:59:35.1605829Z # Subtest: databaseUrlForSchema preserves connection options while replacing schema
+2026-10-07T03:59:35.1606944Z ok 2 - databaseUrlForSchema preserves connection options while replacing schema
+2026-10-07T03:59:35.1607360Z   ---
+2026-10-07T03:59:35.1607565Z   duration_ms: 0.591154
+2026-10-07T03:59:35.1607952Z   ...
+2026-10-07T03:59:35.1608411Z # Subtest: legacy migration tree includes every migration through 0020 and no native migrations
+2026-10-07T03:59:35.1609114Z ok 3 - legacy migration tree includes every migration through 0020 and no native migrations
+2026-10-07T03:59:35.1609550Z   ---
+2026-10-07T03:59:35.1609745Z   duration_ms: 19.933239
+2026-10-07T03:59:35.1610003Z   ...
+2026-10-07T03:59:35.1685084Z 1..3
+2026-10-07T03:59:35.1685589Z # tests 3
+2026-10-07T03:59:35.1685911Z # suites 0
+2026-10-07T03:59:35.1686295Z # pass 3
+2026-10-07T03:59:35.1686682Z # fail 0
+2026-10-07T03:59:35.1687014Z # cancelled 0
+2026-10-07T03:59:35.1687338Z # skipped 0
+2026-10-07T03:59:35.1687805Z # todo 0
+2026-10-07T03:59:35.1690788Z # duration_ms 73.245366
+2026-10-07T03:59:35.1746690Z ##[group]Run node scripts/postgres-populated-upgrade-smoke.mjs
+2026-10-07T03:59:35.1746975Z [36;1mnode scripts/postgres-populated-upgrade-smoke.mjs[0m
+2026-10-07T03:59:35.1800989Z shell: /usr/bin/bash -e {0}
+2026-10-07T03:59:35.1801132Z env:
+2026-10-07T03:59:35.1801496Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:35.1801675Z ##[endgroup]
+2026-10-07T03:59:35.2702452Z [db-upgrade-smoke] Applying 24 migrations through 0020.
+2026-10-07T03:59:35.8224278Z Loaded Prisma config from prisma.config.ts.
+2026-10-07T03:59:35.8224893Z 
+2026-10-07T03:59:35.9246181Z Prisma schema loaded from ../../../../../../tmp/calibrate-upgrade-aftmCI/prisma/schema.prisma.
+2026-10-07T03:59:35.9304059Z Datasource "db": PostgreSQL database "calibrate", schema "calibrate_upgrade_smoke_2766_6864f5209ca5" at "localhost:5432"
+2026-10-07T03:59:35.9822356Z 
+2026-10-07T03:59:35.9823421Z 24 migrations found in prisma/migrations
+2026-10-07T03:59:35.9823789Z 
+2026-10-07T03:59:36.0984035Z Applying migration `0001_init`
+2026-10-07T03:59:36.1215955Z Applying migration `0002_weight_units_grams`
+2026-10-07T03:59:36.1310434Z Applying migration `0003_bodymetric_date_only`
+2026-10-07T03:59:36.1400490Z Applying migration `0004_add_profile_fields`
+2026-10-07T03:59:36.1434829Z Applying migration `0005_add_user_timezone`
+2026-10-07T03:59:36.1459370Z Applying migration `0006_foodlog_local_date`
+2026-10-07T03:59:36.1624059Z Applying migration `0007_height_unit_preference`
+2026-10-07T03:59:36.1666263Z Applying migration `0008_meal_period_enum`
+2026-10-07T03:59:36.1785420Z Applying migration `0009_add_user_profile_image`
+2026-10-07T03:59:36.1826010Z Applying migration `0010_my_foods`
+2026-10-07T03:59:36.2017187Z Applying migration `0011_add_user_language`
+2026-10-07T03:59:36.2041113Z Applying migration `0012_session_store`
+2026-10-07T03:59:36.2098614Z Applying migration `0013_food_log_day_completion`
+2026-10-07T03:59:36.2169296Z Applying migration `0013_push_subscriptions`
+2026-10-07T03:59:36.2262311Z Applying migration `0014_push_subscription_reminders`
+2026-10-07T03:59:36.2283195Z Applying migration `0014_push_subscription_user_endpoint_uniqueness`
+2026-10-07T03:59:36.2320601Z Applying migration `0015_reminder_preference_flags`
+2026-10-07T03:59:36.2346366Z Applying migration `0016_bodymetric_trend_precompute`
+2026-10-07T03:59:36.2409578Z Applying migration `0016_in_app_notifications`
+2026-10-07T03:59:36.2510027Z Applying migration `0017_haptics_preference`
+2026-10-07T03:59:36.2535240Z Applying migration `0017_notification_delivery_channels`
+2026-10-07T03:59:36.2598526Z Applying migration `0018_food_log_external_snapshots`
+2026-10-07T03:59:36.2627069Z Applying migration `0019_backend_server_audit_indexes`
+2026-10-07T03:59:36.2656674Z Applying migration `0020_goal_active_lookup_index`
+2026-10-07T03:59:36.2693190Z 
+2026-10-07T03:59:36.2704046Z The following migration(s) have been applied:
+2026-10-07T03:59:36.2704656Z 
+2026-10-07T03:59:36.2721813Z migrations/
+2026-10-07T03:59:36.2722540Z   └─ 0001_init/
+2026-10-07T03:59:36.2723191Z     └─ migration.sql
+2026-10-07T03:59:36.2723882Z   └─ 0002_weight_units_grams/
+2026-10-07T03:59:36.2724283Z     └─ migration.sql
+2026-10-07T03:59:36.2724694Z   └─ 0003_bodymetric_date_only/
+2026-10-07T03:59:36.2725091Z     └─ migration.sql
+2026-10-07T03:59:36.2725468Z   └─ 0004_add_profile_fields/
+2026-10-07T03:59:36.2725855Z     └─ migration.sql
+2026-10-07T03:59:36.2726227Z   └─ 0005_add_user_timezone/
+2026-10-07T03:59:36.2726611Z     └─ migration.sql
+2026-10-07T03:59:36.2726985Z   └─ 0006_foodlog_local_date/
+2026-10-07T03:59:36.2727365Z     └─ migration.sql
+2026-10-07T03:59:36.2727767Z   └─ 0007_height_unit_preference/
+2026-10-07T03:59:36.2728164Z     └─ migration.sql
+2026-10-07T03:59:36.2728536Z   └─ 0008_meal_period_enum/
+2026-10-07T03:59:36.2728949Z     └─ migration.sql
+2026-10-07T03:59:36.2729360Z   └─ 0009_add_user_profile_image/
+2026-10-07T03:59:36.2729754Z     └─ migration.sql
+2026-10-07T03:59:36.2730110Z   └─ 0010_my_foods/
+2026-10-07T03:59:36.2730499Z     └─ migration.sql
+2026-10-07T03:59:36.2731096Z   └─ 0011_add_user_language/
+2026-10-07T03:59:36.2731494Z     └─ migration.sql
+2026-10-07T03:59:36.2731865Z   └─ 0012_session_store/
+2026-10-07T03:59:36.2732235Z     └─ migration.sql
+2026-10-07T03:59:36.2732635Z   └─ 0013_food_log_day_completion/
+2026-10-07T03:59:36.2733198Z     └─ migration.sql
+2026-10-07T03:59:36.2733576Z   └─ 0013_push_subscriptions/
+2026-10-07T03:59:36.2733963Z     └─ migration.sql
+2026-10-07T03:59:36.2734376Z   └─ 0014_push_subscription_reminders/
+2026-10-07T03:59:36.2734792Z     └─ migration.sql
+2026-10-07T03:59:36.2735259Z   └─ 0014_push_subscription_user_endpoint_uniqueness/
+2026-10-07T03:59:36.2735710Z     └─ migration.sql
+2026-10-07T03:59:36.2736156Z   └─ 0015_reminder_preference_flags/
+2026-10-07T03:59:36.2736563Z     └─ migration.sql
+2026-10-07T03:59:36.2736965Z   └─ 0016_bodymetric_trend_precompute/
+2026-10-07T03:59:36.2737376Z     └─ migration.sql
+2026-10-07T03:59:36.2737768Z   └─ 0016_in_app_notifications/
+2026-10-07T03:59:36.2738159Z     └─ migration.sql
+2026-10-07T03:59:36.2738563Z   └─ 0017_haptics_preference/
+2026-10-07T03:59:36.2738961Z     └─ migration.sql
+2026-10-07T03:59:36.2739373Z   └─ 0017_notification_delivery_channels/
+2026-10-07T03:59:36.2739790Z     └─ migration.sql
+2026-10-07T03:59:36.2740191Z   └─ 0018_food_log_external_snapshots/
+2026-10-07T03:59:36.2740595Z     └─ migration.sql
+2026-10-07T03:59:36.2741001Z   └─ 0019_backend_server_audit_indexes/
+2026-10-07T03:59:36.2741409Z     └─ migration.sql
+2026-10-07T03:59:36.2741808Z   └─ 0020_goal_active_lookup_index/
+2026-10-07T03:59:36.2742366Z     └─ migration.sql
+2026-10-07T03:59:36.2742642Z 
+2026-10-07T03:59:36.2743053Z All migrations have been successfully applied.
+2026-10-07T03:59:36.2966023Z [db-upgrade-smoke] Applying migrations 0021-0045 to populated data.
+2026-10-07T03:59:36.7929335Z Loaded Prisma config from prisma.config.ts.
+2026-10-07T03:59:36.7929523Z 
+2026-10-07T03:59:36.8753014Z Prisma schema loaded from prisma/schema.prisma.
+2026-10-07T03:59:36.8793776Z Datasource "db": PostgreSQL database "calibrate", schema "calibrate_upgrade_smoke_2766_6864f5209ca5" at "localhost:5432"
+2026-10-07T03:59:36.9326154Z 
+2026-10-07T03:59:36.9326857Z 49 migrations found in prisma/migrations
+2026-10-07T03:59:36.9327104Z 
+2026-10-07T03:59:36.9828604Z Applying migration `0021_mobile_native_client`
+2026-10-07T03:59:37.0085754Z Applying migration `0022_bind_native_push_to_mobile_session`
+2026-10-07T03:59:37.0177570Z Applying migration `0023_client_sync_foundation`
+2026-10-07T03:59:37.0332110Z Applying migration `0024_account_lifecycle`
+2026-10-07T03:59:37.0529084Z Applying migration `0025_my_food_pinning`
+2026-10-07T03:59:37.0565607Z Applying migration `0026_health_connect_activity`
+2026-10-07T03:59:37.1059299Z Applying migration `0027_wear_os_pairing`
+2026-10-07T03:59:37.1194656Z Applying migration `0028_watch_operation_provenance`
+2026-10-07T03:59:37.1242747Z Applying migration `0029_push_subscription_endpoint_ownership`
+2026-10-07T03:59:37.1304389Z Applying migration `0030_day_resolution_and_tracking_pauses`
+2026-10-07T03:59:37.1433876Z Applying migration `0031_calibration_insights`
+2026-10-07T03:59:37.1622705Z Applying migration `0032_weight_trend_v2`
+2026-10-07T03:59:37.1655626Z Applying migration `0033_weight_trend_source_revision`
+2026-10-07T03:59:37.1678282Z Applying migration `0034_calorie_safety_policy`
+2026-10-07T03:59:37.2333505Z Applying migration `0035_account_verification_and_legal_consent`
+2026-10-07T03:59:37.2502664Z Applying migration `0036_atomic_onboarding`
+2026-10-07T03:59:37.2532928Z Applying migration `0037_saved_foods_library`
+2026-10-07T03:59:37.2560939Z Applying migration `0038_settings_trust_center`
+2026-10-07T03:59:37.2787523Z Applying migration `0039_mcp_oauth`
+2026-10-07T03:59:37.3168367Z Applying migration `0040_ios_native_support`
+2026-10-07T03:59:37.3187984Z Applying migration `0041_server_settings`
+2026-10-07T03:59:37.6364585Z Applying migration `0042_persistent_server_roles`
+2026-10-07T03:59:37.6457891Z Applying migration `0043_food_day_comparison`
+2026-10-07T03:59:37.6481599Z Applying migration `0044_goal_pace_history`
+2026-10-07T03:59:37.6500543Z Applying migration `0045_firebase_identity_foundation`
+2026-10-07T03:59:37.6624731Z 
+2026-10-07T03:59:37.6648133Z ┌─────────────────────────────────────────────────────────┐
+2026-10-07T03:59:37.6648803Z │  Update available 7.9.0 -> 8.0.0-rc.20                  │
+2026-10-07T03:59:37.6649194Z The following migration(s) have been applied:
+2026-10-07T03:59:37.6649387Z 
+2026-10-07T03:59:37.6649469Z migrations/
+2026-10-07T03:59:37.6649732Z   └─ 0021_mobile_native_client/
+2026-10-07T03:59:37.6649992Z     └─ migration.sql
+2026-10-07T03:59:37.6650285Z   └─ 0022_bind_native_push_to_mobile_session/
+2026-10-07T03:59:37.6650570Z     └─ migration.sql
+2026-10-07T03:59:37.6650829Z   └─ 0023_client_sync_foundation/
+2026-10-07T03:59:37.6651077Z     └─ migration.sql
+2026-10-07T03:59:37.6651312Z   └─ 0024_account_lifecycle/
+2026-10-07T03:59:37.6651549Z     └─ migration.sql
+2026-10-07T03:59:37.6651778Z   └─ 0025_my_food_pinning/
+2026-10-07T03:59:37.6652061Z     └─ migration.sql
+2026-10-07T03:59:37.6652330Z   └─ 0026_health_connect_activity/
+2026-10-07T03:59:37.6652569Z     └─ migration.sql
+2026-10-07T03:59:37.6652965Z   └─ 0027_wear_os_pairing/
+2026-10-07T03:59:37.6653198Z     └─ migration.sql
+2026-10-07T03:59:37.6653464Z   └─ 0028_watch_operation_provenance/
+2026-10-07T03:59:37.6653725Z     └─ migration.sql
+2026-10-07T03:59:37.6654014Z   └─ 0029_push_subscription_endpoint_ownership/
+2026-10-07T03:59:37.6654281Z     └─ migration.sql
+2026-10-07T03:59:37.6654453Z   └─ 0030_day_resolution_and_tracking_pauses/
+2026-10-07T03:59:37.6654624Z     └─ migration.sql
+2026-10-07T03:59:37.6654777Z   └─ 0031_calibration_insights/
+2026-10-07T03:59:37.6654929Z     └─ migration.sql
+2026-10-07T03:59:37.6655069Z   └─ 0032_weight_trend_v2/
+2026-10-07T03:59:37.6655211Z     └─ migration.sql
+2026-10-07T03:59:37.6655371Z   └─ 0033_weight_trend_source_revision/
+2026-10-07T03:59:37.6655538Z     └─ migration.sql
+2026-10-07T03:59:37.6655691Z   └─ 0034_calorie_safety_policy/
+2026-10-07T03:59:37.6655853Z     └─ migration.sql
+2026-10-07T03:59:37.6656033Z   └─ 0035_account_verification_and_legal_consent/
+2026-10-07T03:59:37.6656296Z │                                                         │
+2026-10-07T03:59:37.6656560Z │  This is a major update - please follow the guide at    │
+2026-10-07T03:59:37.6656857Z │  https://pris.ly/d/major-version-upgrade                │
+2026-10-07T03:59:37.6657108Z │                                                         │
+2026-10-07T03:59:37.6657345Z │  Run the following to update                            │
+2026-10-07T03:59:37.6657600Z │    npm i --save-dev prisma@latest                       │
+2026-10-07T03:59:37.6657849Z │    npm i @prisma/client@latest                          │
+2026-10-07T03:59:37.6658112Z └─────────────────────────────────────────────────────────┘
+2026-10-07T03:59:37.6658289Z     └─ migration.sql
+2026-10-07T03:59:37.6658434Z   └─ 0036_atomic_onboarding/
+2026-10-07T03:59:37.6658582Z     └─ migration.sql
+2026-10-07T03:59:37.6658749Z   └─ 0037_saved_foods_library/
+2026-10-07T03:59:37.6659125Z     └─ migration.sql
+2026-10-07T03:59:37.6659282Z   └─ 0038_settings_trust_center/
+2026-10-07T03:59:37.6659434Z     └─ migration.sql
+2026-10-07T03:59:37.6659568Z   └─ 0039_mcp_oauth/
+2026-10-07T03:59:37.6659699Z     └─ migration.sql
+2026-10-07T03:59:37.6659842Z   └─ 0040_ios_native_support/
+2026-10-07T03:59:37.6659989Z     └─ migration.sql
+2026-10-07T03:59:37.6660133Z   └─ 0041_server_settings/
+2026-10-07T03:59:37.6660272Z     └─ migration.sql
+2026-10-07T03:59:37.6660429Z   └─ 0042_persistent_server_roles/
+2026-10-07T03:59:37.6660583Z     └─ migration.sql
+2026-10-07T03:59:37.6660733Z   └─ 0043_food_day_comparison/
+2026-10-07T03:59:37.6660880Z     └─ migration.sql
+2026-10-07T03:59:37.6661024Z   └─ 0044_goal_pace_history/
+2026-10-07T03:59:37.6661168Z     └─ migration.sql
+2026-10-07T03:59:37.6661327Z   └─ 0045_firebase_identity_foundation/
+2026-10-07T03:59:37.6661487Z     └─ migration.sql
+2026-10-07T03:59:37.6661563Z 
+2026-10-07T03:59:37.6661810Z All migrations have been successfully applied.
+2026-10-07T03:59:37.7209365Z [db-upgrade-smoke] PASS: immutable mapping, local deletion cascade and monotonic credential security version.
+2026-10-07T03:59:37.7213742Z [db-upgrade-smoke] PASS: retained core data across 49 migrations.
+2026-10-07T03:59:37.8762006Z ##[group]Run node scripts/postgres-weight-trend-concurrency-smoke.mjs
+2026-10-07T03:59:37.8762322Z [36;1mnode scripts/postgres-weight-trend-concurrency-smoke.mjs[0m
+2026-10-07T03:59:37.8815935Z shell: /usr/bin/bash -e {0}
+2026-10-07T03:59:37.8816080Z env:
+2026-10-07T03:59:37.8816446Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:37.8816621Z ##[endgroup]
+2026-10-07T03:59:38.4335425Z Loaded Prisma config from prisma.config.ts.
+2026-10-07T03:59:38.5157568Z 
+2026-10-07T03:59:38.5158105Z Prisma schema loaded from prisma/schema.prisma.
+2026-10-07T03:59:38.5224621Z Datasource "db": PostgreSQL database "calibrate", schema "calibrate_upgrade_smoke_weight_trend_2877_d6d4003078f0" at "localhost:5432"
+2026-10-07T03:59:38.5753025Z 
+2026-10-07T03:59:38.5753725Z 49 migrations found in prisma/migrations
+2026-10-07T03:59:38.5753935Z 
+2026-10-07T03:59:38.6311820Z Applying migration `0001_init`
+2026-10-07T03:59:38.6521603Z Applying migration `0002_weight_units_grams`
+2026-10-07T03:59:38.6604490Z Applying migration `0003_bodymetric_date_only`
+2026-10-07T03:59:38.6687228Z Applying migration `0004_add_profile_fields`
+2026-10-07T03:59:38.6719701Z Applying migration `0005_add_user_timezone`
+2026-10-07T03:59:38.6784990Z Applying migration `0006_foodlog_local_date`
+2026-10-07T03:59:38.6913782Z Applying migration `0007_height_unit_preference`
+2026-10-07T03:59:38.6950913Z Applying migration `0008_meal_period_enum`
+2026-10-07T03:59:38.7033191Z Applying migration `0009_add_user_profile_image`
+2026-10-07T03:59:38.7053549Z Applying migration `0010_my_foods`
+2026-10-07T03:59:38.7226784Z Applying migration `0011_add_user_language`
+2026-10-07T03:59:38.7248314Z Applying migration `0012_session_store`
+2026-10-07T03:59:38.7298466Z Applying migration `0013_food_log_day_completion`
+2026-10-07T03:59:38.7359546Z Applying migration `0013_push_subscriptions`
+2026-10-07T03:59:38.7441362Z Applying migration `0014_push_subscription_reminders`
+2026-10-07T03:59:38.7460164Z Applying migration `0014_push_subscription_user_endpoint_uniqueness`
+2026-10-07T03:59:38.7497108Z Applying migration `0015_reminder_preference_flags`
+2026-10-07T03:59:38.7521406Z Applying migration `0016_bodymetric_trend_precompute`
+2026-10-07T03:59:38.7579783Z Applying migration `0016_in_app_notifications`
+2026-10-07T03:59:38.7677466Z Applying migration `0017_haptics_preference`
+2026-10-07T03:59:38.7700196Z Applying migration `0017_notification_delivery_channels`
+2026-10-07T03:59:38.7753505Z Applying migration `0018_food_log_external_snapshots`
+2026-10-07T03:59:38.7779492Z Applying migration `0019_backend_server_audit_indexes`
+2026-10-07T03:59:38.7807456Z Applying migration `0020_goal_active_lookup_index`
+2026-10-07T03:59:38.7824006Z Applying migration `0021_mobile_native_client`
+2026-10-07T03:59:38.8184605Z Applying migration `0022_bind_native_push_to_mobile_session`
+2026-10-07T03:59:38.8264145Z Applying migration `0023_client_sync_foundation`
+2026-10-07T03:59:38.8419921Z Applying migration `0024_account_lifecycle`
+2026-10-07T03:59:38.8603055Z Applying migration `0025_my_food_pinning`
+2026-10-07T03:59:38.8640701Z Applying migration `0026_health_connect_activity`
+2026-10-07T03:59:38.9007196Z Applying migration `0027_wear_os_pairing`
+2026-10-07T03:59:38.9141304Z Applying migration `0028_watch_operation_provenance`
+2026-10-07T03:59:38.9188537Z Applying migration `0029_push_subscription_endpoint_ownership`
+2026-10-07T03:59:38.9246649Z Applying migration `0030_day_resolution_and_tracking_pauses`
+2026-10-07T03:59:38.9367450Z Applying migration `0031_calibration_insights`
+2026-10-07T03:59:38.9662149Z Applying migration `0032_weight_trend_v2`
+2026-10-07T03:59:38.9691818Z Applying migration `0033_weight_trend_source_revision`
+2026-10-07T03:59:38.9711777Z Applying migration `0034_calorie_safety_policy`
+2026-10-07T03:59:38.9921733Z Applying migration `0035_account_verification_and_legal_consent`
+2026-10-07T03:59:39.0093502Z Applying migration `0036_atomic_onboarding`
+2026-10-07T03:59:39.0122553Z Applying migration `0037_saved_foods_library`
+2026-10-07T03:59:39.0152502Z Applying migration `0038_settings_trust_center`
+2026-10-07T03:59:39.0385233Z Applying migration `0039_mcp_oauth`
+2026-10-07T03:59:39.0935165Z Applying migration `0040_ios_native_support`
+2026-10-07T03:59:39.0954694Z Applying migration `0041_server_settings`
+2026-10-07T03:59:39.0988117Z Applying migration `0042_persistent_server_roles`
+2026-10-07T03:59:39.1044689Z Applying migration `0043_food_day_comparison`
+2026-10-07T03:59:39.1064550Z Applying migration `0044_goal_pace_history`
+2026-10-07T03:59:39.1083099Z Applying migration `0045_firebase_identity_foundation`
+2026-10-07T03:59:39.1189345Z 
+2026-10-07T03:59:39.1198762Z The following migration(s) have been applied:
+2026-10-07T03:59:39.1199147Z 
+2026-10-07T03:59:39.1199488Z migrations/
+2026-10-07T03:59:39.1200195Z   └─ 0001_init/
+2026-10-07T03:59:39.1200577Z     └─ migration.sql
+2026-10-07T03:59:39.1200947Z   └─ 0002_weight_units_grams/
+2026-10-07T03:59:39.1201310Z     └─ migration.sql
+2026-10-07T03:59:39.1201805Z   └─ 0003_bodymetric_date_only/
+2026-10-07T03:59:39.1204950Z     └─ migration.sql
+2026-10-07T03:59:39.1205336Z   └─ 0004_add_profile_fields/
+2026-10-07T03:59:39.1205702Z     └─ migration.sql
+2026-10-07T03:59:39.1206055Z   └─ 0005_add_user_timezone/
+2026-10-07T03:59:39.1206414Z     └─ migration.sql
+2026-10-07T03:59:39.1206807Z   └─ 0006_foodlog_local_date/
+2026-10-07T03:59:39.1207168Z     └─ migration.sql
+2026-10-07T03:59:39.1207581Z   └─ 0007_height_unit_preference/
+2026-10-07T03:59:39.1207985Z     └─ migration.sql
+2026-10-07T03:59:39.1208380Z   └─ 0008_meal_period_enum/
+2026-10-07T03:59:39.1208744Z     └─ migration.sql
+2026-10-07T03:59:39.1209101Z   └─ 0009_add_user_profile_image/
+2026-10-07T03:59:39.1209460Z     └─ migration.sql
+2026-10-07T03:59:39.1209818Z   └─ 0010_my_foods/
+2026-10-07T03:59:39.1210163Z     └─ migration.sql
+2026-10-07T03:59:39.1210501Z   └─ 0011_add_user_language/
+2026-10-07T03:59:39.1210885Z     └─ migration.sql
+2026-10-07T03:59:39.1211231Z   └─ 0012_session_store/
+2026-10-07T03:59:39.1211629Z     └─ migration.sql
+2026-10-07T03:59:39.1212053Z   └─ 0013_food_log_day_completion/
+2026-10-07T03:59:39.1212458Z     └─ migration.sql
+2026-10-07T03:59:39.1212912Z   └─ 0013_push_subscriptions/
+2026-10-07T03:59:39.1213275Z     └─ migration.sql
+2026-10-07T03:59:39.1213655Z   └─ 0014_push_subscription_reminders/
+2026-10-07T03:59:39.1214030Z     └─ migration.sql
+2026-10-07T03:59:39.1214456Z   └─ 0014_push_subscription_user_endpoint_uniqueness/
+2026-10-07T03:59:39.1214870Z     └─ migration.sql
+2026-10-07T03:59:39.1215237Z   └─ 0015_reminder_preference_flags/
+2026-10-07T03:59:39.1215602Z     └─ migration.sql
+2026-10-07T03:59:39.1216031Z   └─ 0016_bodymetric_trend_precompute/
+2026-10-07T03:59:39.1216420Z     └─ migration.sql
+2026-10-07T03:59:39.1216786Z   └─ 0016_in_app_notifications/
+2026-10-07T03:59:39.1217397Z     └─ migration.sql
+2026-10-07T03:59:39.1217738Z   └─ 0017_haptics_preference/
+2026-10-07T03:59:39.1218086Z     └─ migration.sql
+2026-10-07T03:59:39.1218457Z   └─ 0017_notification_delivery_channels/
+2026-10-07T03:59:39.1218853Z     └─ migration.sql
+2026-10-07T03:59:39.1219817Z   └─ 0018_food_log_external_snapshots/
+2026-10-07T03:59:39.1220255Z     └─ migration.sql
+2026-10-07T03:59:39.1220539Z   └─ 0019_backend_server_audit_indexes/
+2026-10-07T03:59:39.1220816Z     └─ migration.sql
+2026-10-07T03:59:39.1221093Z   └─ 0020_goal_active_lookup_index/
+2026-10-07T03:59:39.1221363Z     └─ migration.sql
+2026-10-07T03:59:39.1221628Z   └─ 0021_mobile_native_client/
+2026-10-07T03:59:39.1221893Z     └─ migration.sql
+2026-10-07T03:59:39.1222208Z   └─ 0022_bind_native_push_to_mobile_session/
+2026-10-07T03:59:39.1222497Z     └─ migration.sql
+2026-10-07T03:59:39.1222897Z   └─ 0023_client_sync_foundation/
+2026-10-07T03:59:39.1223224Z     └─ migration.sql
+2026-10-07T03:59:39.1223450Z   └─ 0024_account_lifecycle/
+2026-10-07T03:59:39.1223685Z     └─ migration.sql
+2026-10-07T03:59:39.1223896Z   └─ 0025_my_food_pinning/
+2026-10-07T03:59:39.1224142Z     └─ migration.sql
+2026-10-07T03:59:39.1224305Z   └─ 0026_health_connect_activity/
+2026-10-07T03:59:39.1224663Z     └─ migration.sql
+2026-10-07T03:59:39.1224801Z   └─ 0027_wear_os_pairing/
+2026-10-07T03:59:39.1224941Z     └─ migration.sql
+2026-10-07T03:59:39.1225098Z   └─ 0028_watch_operation_provenance/
+2026-10-07T03:59:39.1225258Z     └─ migration.sql
+2026-10-07T03:59:39.1225432Z   └─ 0029_push_subscription_endpoint_ownership/
+2026-10-07T03:59:39.1225605Z     └─ migration.sql
+2026-10-07T03:59:39.1225771Z   └─ 0030_day_resolution_and_tracking_pauses/
+2026-10-07T03:59:39.1226010Z     └─ migration.sql
+2026-10-07T03:59:39.1226231Z   └─ 0031_calibration_insights/
+2026-10-07T03:59:39.1226453Z     └─ migration.sql
+2026-10-07T03:59:39.1226788Z   └─ 0032_weight_trend_v2/
+2026-10-07T03:59:39.1227001Z     └─ migration.sql
+2026-10-07T03:59:39.1227299Z   └─ 0033_weight_trend_source_revision/
+2026-10-07T03:59:39.1227575Z     └─ migration.sql
+2026-10-07T03:59:39.1227787Z   └─ 0034_calorie_safety_policy/
+2026-10-07T03:59:39.1228049Z     └─ migration.sql
+2026-10-07T03:59:39.1228334Z   └─ 0035_account_verification_and_legal_consent/
+2026-10-07T03:59:39.1228601Z     └─ migration.sql
+2026-10-07T03:59:39.1228822Z   └─ 0036_atomic_onboarding/
+2026-10-07T03:59:39.1229051Z     └─ migration.sql
+2026-10-07T03:59:39.1229318Z   └─ 0037_saved_foods_library/
+2026-10-07T03:59:39.1229619Z     └─ migration.sql
+2026-10-07T03:59:39.1241828Z   └─ 0038_settings_trust_center/
+2026-10-07T03:59:39.1242150Z     └─ migration.sql
+2026-10-07T03:59:39.1242296Z   └─ 0039_mcp_oauth/
+2026-10-07T03:59:39.1242451Z     └─ migration.sql
+2026-10-07T03:59:39.1242595Z   └─ 0040_ios_native_support/
+2026-10-07T03:59:39.1242863Z     └─ migration.sql
+2026-10-07T03:59:39.1243065Z   └─ 0041_server_settings/
+2026-10-07T03:59:39.1243226Z     └─ migration.sql
+2026-10-07T03:59:39.1243388Z   └─ 0042_persistent_server_roles/
+2026-10-07T03:59:39.1243750Z     └─ migration.sql
+2026-10-07T03:59:39.1243917Z   └─ 0043_food_day_comparison/
+2026-10-07T03:59:39.1244071Z     └─ migration.sql
+2026-10-07T03:59:39.1244229Z   └─ 0044_goal_pace_history/
+2026-10-07T03:59:39.1244400Z     └─ migration.sql
+2026-10-07T03:59:39.1244561Z   └─ 0045_firebase_identity_foundation/
+2026-10-07T03:59:39.1244744Z     └─ migration.sql
+2026-10-07T03:59:39.1244814Z 
+2026-10-07T03:59:39.1244932Z All migrations have been successfully applied.
+2026-10-07T03:59:39.7634343Z [weight-trend-concurrency-smoke] PASS: two same-user recomputations queued on the advisory lock and produced one 12-row source revision.
+2026-10-07T03:59:39.9693380Z ##[group]Run node scripts/postgres-goal-pace-smoke.mjs
+2026-10-07T03:59:39.9693643Z [36;1mnode scripts/postgres-goal-pace-smoke.mjs[0m
+2026-10-07T03:59:39.9747246Z shell: /usr/bin/bash -e {0}
+2026-10-07T03:59:39.9747427Z env:
+2026-10-07T03:59:39.9747828Z   DATABASE_URL: ***localhost:5432/calibrate?schema=public
+2026-10-07T03:59:39.9749017Z ##[endgroup]
+2026-10-07T03:59:40.5498442Z Loaded Prisma config from prisma.config.ts.
+2026-10-07T03:59:40.5498767Z 
+2026-10-07T03:59:40.6310571Z Prisma schema loaded from prisma/schema.prisma.
+2026-10-07T03:59:40.6374461Z Datasource "db": PostgreSQL database "calibrate", schema "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae" at "localhost:5432"
+2026-10-07T03:59:40.6941041Z 
+2026-10-07T03:59:40.6941860Z 49 migrations found in prisma/migrations
+2026-10-07T03:59:40.6942084Z 
+2026-10-07T03:59:40.7718932Z Applying migration `0001_init`
+2026-10-07T03:59:40.7939642Z Applying migration `0002_weight_units_grams`
+2026-10-07T03:59:40.8157074Z Applying migration `0003_bodymetric_date_only`
+2026-10-07T03:59:40.8242399Z Applying migration `0004_add_profile_fields`
+2026-10-07T03:59:40.8276453Z Applying migration `0005_add_user_timezone`
+2026-10-07T03:59:40.8298625Z Applying migration `0006_foodlog_local_date`
+2026-10-07T03:59:40.8336397Z Applying migration `0007_height_unit_preference`
+2026-10-07T03:59:40.8373233Z Applying migration `0008_meal_period_enum`
+2026-10-07T03:59:40.8457945Z Applying migration `0009_add_user_profile_image`
+2026-10-07T03:59:40.8477110Z Applying migration `0010_my_foods`
+2026-10-07T03:59:40.8798157Z Applying migration `0011_add_user_language`
+2026-10-07T03:59:40.8819463Z Applying migration `0012_session_store`
+2026-10-07T03:59:40.8871858Z Applying migration `0013_food_log_day_completion`
+2026-10-07T03:59:40.8935161Z Applying migration `0013_push_subscriptions`
+2026-10-07T03:59:40.9018306Z Applying migration `0014_push_subscription_reminders`
+2026-10-07T03:59:40.9037587Z Applying migration `0014_push_subscription_user_endpoint_uniqueness`
+2026-10-07T03:59:40.9071938Z Applying migration `0015_reminder_preference_flags`
+2026-10-07T03:59:40.9096669Z Applying migration `0016_bodymetric_trend_precompute`
+2026-10-07T03:59:40.9155582Z Applying migration `0016_in_app_notifications`
+2026-10-07T03:59:40.9251723Z Applying migration `0017_haptics_preference`
+2026-10-07T03:59:40.9273017Z Applying migration `0017_notification_delivery_channels`
+2026-10-07T03:59:40.9513171Z Applying migration `0018_food_log_external_snapshots`
+2026-10-07T03:59:40.9540675Z Applying migration `0019_backend_server_audit_indexes`
+2026-10-07T03:59:40.9570713Z Applying migration `0020_goal_active_lookup_index`
+2026-10-07T03:59:40.9587818Z Applying migration `0021_mobile_native_client`
+2026-10-07T03:59:40.9786597Z Applying migration `0022_bind_native_push_to_mobile_session`
+2026-10-07T03:59:40.9863881Z Applying migration `0023_client_sync_foundation`
+2026-10-07T03:59:41.0010777Z Applying migration `0024_account_lifecycle`
+2026-10-07T03:59:41.0195358Z Applying migration `0025_my_food_pinning`
+2026-10-07T03:59:41.0235011Z Applying migration `0026_health_connect_activity`
+2026-10-07T03:59:41.0556589Z Applying migration `0027_wear_os_pairing`
+2026-10-07T03:59:41.0866995Z Applying migration `0028_watch_operation_provenance`
+2026-10-07T03:59:41.0914204Z Applying migration `0029_push_subscription_endpoint_ownership`
+2026-10-07T03:59:41.0978129Z Applying migration `0030_day_resolution_and_tracking_pauses`
+2026-10-07T03:59:41.1094284Z Applying migration `0031_calibration_insights`
+2026-10-07T03:59:41.1282605Z Applying migration `0032_weight_trend_v2`
+2026-10-07T03:59:41.1307857Z Applying migration `0033_weight_trend_source_revision`
+2026-10-07T03:59:41.1327159Z Applying migration `0034_calorie_safety_policy`
+2026-10-07T03:59:41.1526389Z Applying migration `0035_account_verification_and_legal_consent`
+2026-10-07T03:59:41.1688434Z Applying migration `0036_atomic_onboarding`
+2026-10-07T03:59:41.1716447Z Applying migration `0037_saved_foods_library`
+2026-10-07T03:59:41.1746316Z Applying migration `0038_settings_trust_center`
+2026-10-07T03:59:41.1977119Z Applying migration `0039_mcp_oauth`
+2026-10-07T03:59:41.2513229Z Applying migration `0040_ios_native_support`
+2026-10-07T03:59:41.2533869Z Applying migration `0041_server_settings`
+2026-10-07T03:59:41.2568531Z Applying migration `0042_persistent_server_roles`
+2026-10-07T03:59:41.2622215Z Applying migration `0043_food_day_comparison`
+2026-10-07T03:59:41.2643881Z Applying migration `0044_goal_pace_history`
+2026-10-07T03:59:41.2662210Z Applying migration `0045_firebase_identity_foundation`
+2026-10-07T03:59:41.2782109Z 
+2026-10-07T03:59:41.2790397Z The following migration(s) have been applied:
+2026-10-07T03:59:41.2790709Z 
+2026-10-07T03:59:41.2790794Z migrations/
+2026-10-07T03:59:41.2791242Z   └─ 0001_init/
+2026-10-07T03:59:41.2791512Z     └─ migration.sql
+2026-10-07T03:59:41.2791782Z   └─ 0002_weight_units_grams/
+2026-10-07T03:59:41.2792038Z     └─ migration.sql
+2026-10-07T03:59:41.2792323Z   └─ 0003_bodymetric_date_only/
+2026-10-07T03:59:41.2792633Z     └─ migration.sql
+2026-10-07T03:59:41.2793225Z   └─ 0004_add_profile_fields/
+2026-10-07T03:59:41.2793467Z     └─ migration.sql
+2026-10-07T03:59:41.2793747Z   └─ 0005_add_user_timezone/
+2026-10-07T03:59:41.2793973Z     └─ migration.sql
+2026-10-07T03:59:41.2794192Z   └─ 0006_foodlog_local_date/
+2026-10-07T03:59:41.2794425Z     └─ migration.sql
+2026-10-07T03:59:41.2794675Z   └─ 0007_height_unit_preference/
+2026-10-07T03:59:41.2794947Z     └─ migration.sql
+2026-10-07T03:59:41.2795177Z   └─ 0008_meal_period_enum/
+2026-10-07T03:59:41.2795399Z     └─ migration.sql
+2026-10-07T03:59:41.2795640Z   └─ 0009_add_user_profile_image/
+2026-10-07T03:59:41.2795886Z     └─ migration.sql
+2026-10-07T03:59:41.2796094Z   └─ 0010_my_foods/
+2026-10-07T03:59:41.2796348Z     └─ migration.sql
+2026-10-07T03:59:41.2796579Z   └─ 0011_add_user_language/
+2026-10-07T03:59:41.2796806Z     └─ migration.sql
+2026-10-07T03:59:41.2797017Z   └─ 0012_session_store/
+2026-10-07T03:59:41.2797237Z     └─ migration.sql
+2026-10-07T03:59:41.2797510Z   └─ 0013_food_log_day_completion/
+2026-10-07T03:59:41.2797756Z     └─ migration.sql
+2026-10-07T03:59:41.2797984Z   └─ 0013_push_subscriptions/
+2026-10-07T03:59:41.2798209Z     └─ migration.sql
+2026-10-07T03:59:41.2798460Z   └─ 0014_push_subscription_reminders/
+2026-10-07T03:59:41.2798694Z     └─ migration.sql
+2026-10-07T03:59:41.2799479Z   └─ 0014_push_subscription_user_endpoint_uniqueness/
+2026-10-07T03:59:41.2799790Z     └─ migration.sql
+2026-10-07T03:59:41.2800035Z   └─ 0015_reminder_preference_flags/
+2026-10-07T03:59:41.2800279Z     └─ migration.sql
+2026-10-07T03:59:41.2800523Z   └─ 0016_bodymetric_trend_precompute/
+2026-10-07T03:59:41.2800771Z     └─ migration.sql
+2026-10-07T03:59:41.2801006Z   └─ 0016_in_app_notifications/
+2026-10-07T03:59:41.2801239Z     └─ migration.sql
+2026-10-07T03:59:41.2801455Z   └─ 0017_haptics_preference/
+2026-10-07T03:59:41.2801674Z     └─ migration.sql
+2026-10-07T03:59:41.2801924Z   └─ 0017_notification_delivery_channels/
+2026-10-07T03:59:41.2802173Z     └─ migration.sql
+2026-10-07T03:59:41.2802437Z   └─ 0018_food_log_external_snapshots/
+2026-10-07T03:59:41.2802676Z     └─ migration.sql
+2026-10-07T03:59:41.2803078Z   └─ 0019_backend_server_audit_indexes/
+2026-10-07T03:59:41.2803316Z     └─ migration.sql
+2026-10-07T03:59:41.2803553Z   └─ 0020_goal_active_lookup_index/
+2026-10-07T03:59:41.2803791Z     └─ migration.sql
+2026-10-07T03:59:41.2804022Z   └─ 0021_mobile_native_client/
+2026-10-07T03:59:41.2804580Z     └─ migration.sql
+2026-10-07T03:59:41.2804844Z   └─ 0022_bind_native_push_to_mobile_session/
+2026-10-07T03:59:41.2805108Z     └─ migration.sql
+2026-10-07T03:59:41.2805346Z   └─ 0023_client_sync_foundation/
+2026-10-07T03:59:41.2805580Z     └─ migration.sql
+2026-10-07T03:59:41.2805795Z   └─ 0024_account_lifecycle/
+2026-10-07T03:59:41.2806017Z     └─ migration.sql
+2026-10-07T03:59:41.2806239Z   └─ 0025_my_food_pinning/
+2026-10-07T03:59:41.2806480Z     └─ migration.sql
+2026-10-07T03:59:41.2806730Z   └─ 0026_health_connect_activity/
+2026-10-07T03:59:41.2806990Z     └─ migration.sql
+2026-10-07T03:59:41.2807382Z   └─ 0027_wear_os_pairing/
+2026-10-07T03:59:41.2807597Z     └─ migration.sql
+2026-10-07T03:59:41.2807851Z   └─ 0028_watch_operation_provenance/
+2026-10-07T03:59:41.2808095Z     └─ migration.sql
+2026-10-07T03:59:41.2808410Z   └─ 0029_push_subscription_endpoint_ownership/
+2026-10-07T03:59:41.2808691Z     └─ migration.sql
+2026-10-07T03:59:41.2808945Z   └─ 0030_day_resolution_and_tracking_pauses/
+2026-10-07T03:59:41.2809227Z     └─ migration.sql
+2026-10-07T03:59:41.2809464Z   └─ 0031_calibration_insights/
+2026-10-07T03:59:41.2809689Z     └─ migration.sql
+2026-10-07T03:59:41.2809902Z   └─ 0032_weight_trend_v2/
+2026-10-07T03:59:41.2810158Z     └─ migration.sql
+2026-10-07T03:59:41.2810405Z   └─ 0033_weight_trend_source_revision/
+2026-10-07T03:59:41.2810659Z     └─ migration.sql
+2026-10-07T03:59:41.2810898Z   └─ 0034_calorie_safety_policy/
+2026-10-07T03:59:41.2811128Z     └─ migration.sql
+2026-10-07T03:59:41.2811393Z   └─ 0035_account_verification_and_legal_consent/
+2026-10-07T03:59:41.2811675Z     └─ migration.sql
+2026-10-07T03:59:41.2811887Z   └─ 0036_atomic_onboarding/
+2026-10-07T03:59:41.2812108Z     └─ migration.sql
+2026-10-07T03:59:41.2812338Z   └─ 0037_saved_foods_library/
+2026-10-07T03:59:41.2812557Z     └─ migration.sql
+2026-10-07T03:59:41.2812912Z   └─ 0038_settings_trust_center/
+2026-10-07T03:59:41.2813143Z     └─ migration.sql
+2026-10-07T03:59:41.2813342Z   └─ 0039_mcp_oauth/
+2026-10-07T03:59:41.2813548Z     └─ migration.sql
+2026-10-07T03:59:41.2813763Z   └─ 0040_ios_native_support/
+2026-10-07T03:59:41.2813990Z     └─ migration.sql
+2026-10-07T03:59:41.2814197Z   └─ 0041_server_settings/
+2026-10-07T03:59:41.2814407Z     └─ migration.sql
+2026-10-07T03:59:41.2814640Z   └─ 0042_persistent_server_roles/
+2026-10-07T03:59:41.2814870Z     └─ migration.sql
+2026-10-07T03:59:41.2815096Z   └─ 0043_food_day_comparison/
+2026-10-07T03:59:41.2815321Z     └─ migration.sql
+2026-10-07T03:59:41.2815532Z   └─ 0044_goal_pace_history/
+2026-10-07T03:59:41.2815748Z     └─ migration.sql
+2026-10-07T03:59:41.2816002Z   └─ 0045_firebase_identity_foundation/
+2026-10-07T03:59:41.2816245Z     └─ migration.sql
+2026-10-07T03:59:41.2816354Z 
+2026-10-07T03:59:41.2816505Z All migrations have been successfully applied.
+2026-10-07T03:59:42.3491655Z [goal-pace-smoke] PASS: overlapping weight route commits; stale pace returns409 with no revision.
+2026-10-07T03:59:42.3829126Z [goal-pace-smoke] PASS: overlapping timezone route commits; stale pace returns409 with no revision.
+2026-10-07T03:59:42.4488431Z [goal-pace-smoke] PASS: pace-first profile conflict returns retryable409, rolls back, and succeeds on fresh retry.
+2026-10-07T03:59:42.4994435Z [goal-pace-smoke] PASS: pace-first overlap makes the later weight safety check review the accepted pace.
+2026-10-07T03:59:42.4995720Z [goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.
+2026-10-07T03:59:42.6897171Z Post job cleanup.
+2026-10-07T03:59:42.7705758Z (node:3040) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-07T03:59:42.7706238Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-07T03:59:42.7854567Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/calibrate-health/calibrate-health --files-from manifest.txt --use-compress-program zstdmt
+2026-10-07T03:59:43.0534395Z Failed to save: Unable to reserve cache with key node-cache-Linux-x64-npm-21f1f8a072d5a972931e4055a0e67b80177f38405103b76c2d02578078b6444d, another job may be creating this cache.
+2026-10-07T03:59:43.0743593Z Post job cleanup.
+2026-10-07T03:59:43.1318189Z [command]/usr/bin/git version
+2026-10-07T03:59:43.1355835Z git version 2.55.0
+2026-10-07T03:59:43.1382006Z Temporarily overriding HOME='/home/runner/work/_temp/6a62093a-1d21-436a-b4e8-4282b8dfce46' before making global git config changes
+2026-10-07T03:59:43.1383174Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T03:59:43.1386408Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+2026-10-07T03:59:43.1433951Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T03:59:43.1465712Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-07T03:59:43.1672082Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T03:59:43.1696455Z http.https://github.com/.extraheader
+2026-10-07T03:59:43.1704798Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-07T03:59:43.1743657Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-07T03:59:43.1950465Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T03:59:43.1983529Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-07T03:59:43.2266841Z Print service container logs: 8ef05fa0031e4eb7896fcd9549d4a5ac_postgres15alpine_d58e26
+2026-10-07T03:59:43.2269532Z ##[command]/usr/bin/docker logs --details 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:43.2372568Z  The files belonging to this database system will be owned by user "postgres".
+2026-10-07T03:59:43.2373244Z  This user must also own the server process.
+2026-10-07T03:59:43.2375942Z  sh: locale: not found
+2026-10-07T03:59:43.2376408Z  2026-10-07 03:59:20.178 UTC [35] WARNING:  no usable system locales were found
+2026-10-07T03:59:43.2376716Z  
+2026-10-07T03:59:43.2376999Z  initdb: warning: enabling "trust" authentication for local connections
+2026-10-07T03:59:43.2377581Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-10-07T03:59:43.2378125Z  2026-10-07 03:59:20.994 UTC [1] LOG:  starting PostgreSQL 15.19 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-10-07T03:59:43.2378464Z  2026-10-07 03:59:20.994 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-10-07T03:59:43.2378722Z  2026-10-07 03:59:20.994 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-10-07T03:59:43.2378999Z  2026-10-07 03:59:20.995 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-10-07T03:59:43.2379300Z  2026-10-07 03:59:20.997 UTC [57] LOG:  database system was shut down at 2026-10-07 03:59:20 UTC
+2026-10-07T03:59:43.2379567Z  2026-10-07 03:59:21.001 UTC [1] LOG:  database system is ready to accept connections
+2026-10-07T03:59:43.2379820Z  2026-10-07 03:59:37.703 UTC [110] ERROR:  Firebase identity mapping is immutable
+2026-10-07T03:59:43.2380205Z  2026-10-07 03:59:37.703 UTC [110] CONTEXT:  PL/pgSQL function calibrate_upgrade_smoke_2766_6864f5209ca5.calibrate_immutable_firebase_identity() line 15 at RAISE
+2026-10-07T03:59:43.2380727Z  2026-10-07 03:59:37.703 UTC [110] STATEMENT:  UPDATE "calibrate_upgrade_smoke_2766_6864f5209ca5"."FirebaseIdentity" SET "uid" = 'changed-uid' WHERE "user_id" = $1
+2026-10-07T03:59:43.2381424Z  2026-10-07 03:59:37.704 UTC [110] ERROR:  Firebase identity mapping cannot be removed from a live account
+2026-10-07T03:59:43.2381860Z  2026-10-07 03:59:37.704 UTC [110] CONTEXT:  PL/pgSQL function calibrate_upgrade_smoke_2766_6864f5209ca5.calibrate_immutable_firebase_identity() line 8 at RAISE
+2026-10-07T03:59:43.2382332Z  2026-10-07 03:59:37.704 UTC [110] STATEMENT:  DELETE FROM "calibrate_upgrade_smoke_2766_6864f5209ca5"."FirebaseIdentity" WHERE "user_id" = $1
+2026-10-07T03:59:43.2382753Z  2026-10-07 03:59:37.705 UTC [110] ERROR:  duplicate key value violates unique constraint "FirebaseIdentity_project_id_uid_key"
+2026-10-07T03:59:43.2383305Z  2026-10-07 03:59:37.705 UTC [110] DETAIL:  Key (project_id, uid)=(synthetic-project, synthetic-uid) already exists.
+2026-10-07T03:59:43.2383783Z  2026-10-07 03:59:37.705 UTC [110] STATEMENT:  INSERT INTO "calibrate_upgrade_smoke_2766_6864f5209ca5"."FirebaseIdentity" ("user_id", "installation_id", "source_id", "project_id", "uid")
+2026-10-07T03:59:43.2384241Z  	      VALUES ($1, 'synthetic-install', 'synthetic-source', 'synthetic-project', 'synthetic-uid')
+2026-10-07T03:59:43.2384536Z  2026-10-07 03:59:37.720 UTC [110] ERROR:  Credential security version cannot decrease
+2026-10-07T03:59:43.2384920Z  2026-10-07 03:59:37.720 UTC [110] CONTEXT:  PL/pgSQL function calibrate_upgrade_smoke_2766_6864f5209ca5.calibrate_credential_security_version() line 4 at RAISE
+2026-10-07T03:59:43.2385421Z  2026-10-07 03:59:37.720 UTC [110] STATEMENT:  UPDATE "calibrate_upgrade_smoke_2766_6864f5209ca5"."User" SET "credential_security_version" = 0 WHERE "id" = $1
+2026-10-07T03:59:43.2385856Z  2026-10-07 03:59:39.710 UTC [134] ERROR:  duplicate key value violates unique constraint "BodyMetricTrend_pkey"
+2026-10-07T03:59:43.2386185Z  2026-10-07 03:59:39.710 UTC [134] DETAIL:  Key (metric_id)=(1700000000) already exists.
+2026-10-07T03:59:43.2387641Z  2026-10-07 03:59:39.710 UTC [134] STATEMENT:  INSERT INTO "calibrate_upgrade_smoke_weight_trend_2877_d6d4003078f0"."BodyMetricTrend" ("metric_id","user_id","date","trend_weight_grams","trend_ci_lower_grams","trend_ci_upper_grams","trend_std_grams","trend_rate_grams_per_day","trend_rate_std_grams_per_day","model_version","source_revision","computed_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12), ($13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24), ($25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36), ($37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48), ($49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60), ($61,$62,$63,$64,$65,$66,$67,$68,$69,$70,$71,$72), ($73,$74,$75,$76,$77,$78,$79,$80,$81,$82,$83,$84), ($85,$86,$87,$88,$89,$90,$91,$92,$93,$94,$95,$96), ($97,$98,$99,$100,$101,$102,$103,$104,$105,$106,$107,$108), ($109,$110,$111,$112,$113,$114,$115,$116,$117,$118,$119,$120), ($121,$122,$123,$124,$125,$126,$127,$128,$129,$130,$131,$132), ($133,$134,$135,$136,$137,$138,$139,$140,$141,$142,$143,$144)
+2026-10-07T03:59:43.2389830Z  2026-10-07 03:59:42.223 UTC [145] ERROR:  duplicate key value violates unique constraint "ClientOperation_user_id_operation_id_key"
+2026-10-07T03:59:43.2390443Z  2026-10-07 03:59:42.223 UTC [145] DETAIL:  Key (user_id, operation_id)=(1, 151e7c12-dff3-4137-9a6f-04a2395830e9) already exists.
+2026-10-07T03:59:43.2392559Z  2026-10-07 03:59:42.223 UTC [145] STATEMENT:  INSERT INTO "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation" ("user_id","operation_id","operation_kind","request_hash","created_at") VALUES ($1,$2,$3,$4,$5) RETURNING "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."id", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."user_id", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."mobile_auth_session_id", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."operation_id", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."operation_kind", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."request_hash", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."response_status", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."response_body", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."created_at", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."ClientOperation"."completed_at"
+2026-10-07T03:59:43.2394960Z  2026-10-07 03:59:42.296 UTC [152] ERROR:  could not serialize access due to concurrent update
+2026-10-07T03:59:43.2395333Z  2026-10-07 03:59:42.296 UTC [152] STATEMENT:  UPDATE "User" SET "timezone" = "timezone" WHERE "id" = $1
+2026-10-07T03:59:43.2406739Z  2026-10-07 03:59:42.334 UTC [145] ERROR:  could not serialize access due to concurrent update
+2026-10-07T03:59:43.2407226Z  2026-10-07 03:59:42.334 UTC [145] STATEMENT:  UPDATE "User" SET "timezone" = "timezone" WHERE "id" = $1
+2026-10-07T03:59:43.2407665Z  2026-10-07 03:59:42.380 UTC [145] ERROR:  could not serialize access due to concurrent update
+2026-10-07T03:59:43.2407962Z  2026-10-07 03:59:42.380 UTC [145] STATEMENT:  UPDATE "User" SET "timezone" = "timezone" WHERE "id" = $1
+2026-10-07T03:59:43.2408260Z  2026-10-07 03:59:42.436 UTC [152] ERROR:  could not serialize access due to concurrent update
+2026-10-07T03:59:43.2411680Z  2026-10-07 03:59:42.436 UTC [152] STATEMENT:  UPDATE "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User" SET "timezone" = $1 WHERE ("calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."id" = $2 AND 1=1) RETURNING "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."id", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."email", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."created_at", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."onboarding_completed_at", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."weight_unit"::text, "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."height_unit"::text, "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."timezone", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."language", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."reminder_log_weight_enabled", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."reminder_log_food_enabled", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."reminder_log_weight_minute", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."reminder_log_food_minute", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."reminder_quiet_hours_start_minute", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."reminder_quiet_hours_end_minute", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."haptics_enabled", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."date_of_birth", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."sex"::text, "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."height_mm", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."activity_level"::text, "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."profile_image", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."profile_image_mime_type", "calibrate_upgrade_smoke_goal_pace_6c58dbb0919a54ae"."User"."email_verified_at"
+2026-10-07T03:59:43.2415149Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-10-07T03:59:43.2415384Z  The default database encoding has accordingly been set to "UTF8".
+2026-10-07T03:59:43.2415607Z  The default text search configuration will be set to "english".
+2026-10-07T03:59:43.2415778Z  
+2026-10-07T03:59:43.2415903Z  Data page checksums are disabled.
+2026-10-07T03:59:43.2416035Z  
+2026-10-07T03:59:43.2416195Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+2026-10-07T03:59:43.2416401Z  creating subdirectories ... ok
+2026-10-07T03:59:43.2416572Z  selecting dynamic shared memory implementation ... posix
+2026-10-07T03:59:43.2416757Z  selecting default max_connections ... 100
+2026-10-07T03:59:43.2416928Z  selecting default shared_buffers ... 128MB
+2026-10-07T03:59:43.2417173Z  selecting default time zone ... UTC
+2026-10-07T03:59:43.2417319Z  creating configuration files ... ok
+2026-10-07T03:59:43.2417464Z  running bootstrap script ... ok
+2026-10-07T03:59:43.2417623Z  performing post-bootstrap initialization ... ok
+2026-10-07T03:59:43.2417789Z  syncing data to disk ... ok
+2026-10-07T03:59:43.2417912Z  
+2026-10-07T03:59:43.2418003Z  
+2026-10-07T03:59:43.2418126Z  Success. You can now start the database server using:
+2026-10-07T03:59:43.2418282Z  
+2026-10-07T03:59:43.2418417Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+2026-10-07T03:59:43.2418576Z  
+2026-10-07T03:59:43.2418866Z  waiting for server to start....2026-10-07 03:59:20.732 UTC [41] LOG:  starting PostgreSQL 15.19 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-10-07T03:59:43.2419283Z  2026-10-07 03:59:20.732 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-10-07T03:59:43.2419577Z  2026-10-07 03:59:20.734 UTC [44] LOG:  database system was shut down at 2026-10-07 03:59:20 UTC
+2026-10-07T03:59:43.2419847Z  2026-10-07 03:59:20.737 UTC [41] LOG:  database system is ready to accept connections
+2026-10-07T03:59:43.2420042Z   done
+2026-10-07T03:59:43.2420140Z  server started
+2026-10-07T03:59:43.2420253Z  CREATE DATABASE
+2026-10-07T03:59:43.2420355Z  
+2026-10-07T03:59:43.2420443Z  
+2026-10-07T03:59:43.2420614Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-10-07T03:59:43.2420817Z  
+2026-10-07T03:59:43.2421006Z  waiting for server to shut down...2026-10-07 03:59:20.868 UTC [41] LOG:  received fast shutdown request
+2026-10-07T03:59:43.2421279Z  .2026-10-07 03:59:20.868 UTC [41] LOG:  aborting any active transactions
+2026-10-07T03:59:43.2421584Z  2026-10-07 03:59:20.870 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+2026-10-07T03:59:43.2421859Z  2026-10-07 03:59:20.871 UTC [42] LOG:  shutting down
+2026-10-07T03:59:43.2422196Z  2026-10-07 03:59:20.871 UTC [42] LOG:  checkpoint starting: shutdown immediate
+2026-10-07T03:59:43.2422716Z  2026-10-07 03:59:20.948 UTC [42] LOG:  checkpoint complete: wrote 922 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.057 s, sync=0.020 s, total=0.078 s; sync files=301, longest=0.018 s, average=0.001 s; distance=4249 kB, estimate=4249 kB
+2026-10-07T03:59:43.2423429Z  2026-10-07 03:59:20.955 UTC [41] LOG:  database system is shut down
+2026-10-07T03:59:43.2423600Z   done
+2026-10-07T03:59:43.2423700Z  server stopped
+2026-10-07T03:59:43.2423806Z  
+2026-10-07T03:59:43.2423934Z  PostgreSQL init process complete; ready for start up.
+2026-10-07T03:59:43.2424090Z  
+2026-10-07T03:59:43.2428723Z Stop and remove container: 8ef05fa0031e4eb7896fcd9549d4a5ac_postgres15alpine_d58e26
+2026-10-07T03:59:43.2432970Z ##[command]/usr/bin/docker rm --force 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:48.2342503Z 1f11f7c7e92f424aad8262cf9ffcd5b8fcff5a38eb9fe6e9dcbd0801bbe3cafc
+2026-10-07T03:59:48.2368215Z Remove container network: github_network_d941b234ce214a57ac1cabb2b74bd6b1
+2026-10-07T03:59:48.2371157Z ##[command]/usr/bin/docker network rm github_network_d941b234ce214a57ac1cabb2b74bd6b1
+2026-10-07T03:59:48.3305003Z github_network_d941b234ce214a57ac1cabb2b74bd6b1
+2026-10-07T03:59:48.3350613Z Cleaning up orphan processes
+2026-10-07T03:59:48.3609792Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,11 @@
+
+Running 4 tests using 1 worker
+
+(node:28792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [qa-desktop-chromium] › qa-source\e2e\expo-web\server-admin.spec.ts:5:5 › administrator changes persist and gate scanner entry points (1.3s)
+  ok 2 [qa-desktop-chromium] › qa-source\e2e\expo-web\server-admin.spec.ts:41:5 › members cannot access administrator controls through navigation or a direct URL (481ms)
+  ok 3 [qa-desktop-chromium] › qa-source\e2e\expo-web\server-admin.spec.ts:51:5 › administrators confirm role changes and can cancel without saving (1.3s)
+  ok 4 [qa-desktop-chromium] › qa-source\e2e\expo-web\server-admin.spec.ts:79:5 › service settings explain browser origin boundaries and return to Settings (506ms)
+
+  4 passed (4.2s)

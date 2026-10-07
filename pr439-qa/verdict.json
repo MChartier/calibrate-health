@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "verdict": "evidence-incomplete",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "prCommunicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/439",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/438",
+  "reviewerChat": "01a114c0-dd68-76bb-9c8a-4ef9eb507024",
+  "supersedesVerdictCommentId": null,
+  "checkedAtUtc": "2026-10-07T05:26:38.794Z",
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "prBodySha256": "ad55ce850a10e17ad32127546863be2fca0fe79ef0fa738416715abe527b0656",
+  "environment": {
+    "host": "mchartier_zbook",
+    "isolatedWorktree": "C:/Users/MChar/Documents/Codex/2026-10-06/task-18/qa-source",
+    "detached": true,
+    "trackedClean": true,
+    "independentOfOwner": "01a1145f-aae2-70e0-af56-3952f0eab012",
+    "dependencyReuse": "Read-only same-head installed dependency directories; no install or source mutation"
+  },
+  "gates": {
+    "value": "pass: issue438 carries the authorized managed-first service choice and safe self-hosted account administration outcome; replacement scope is proportionate.",
+    "outcome": "evidence-incomplete: source, tests and browser behavior support the acceptance criteria; actual native chooser proof remains unavailable.",
+    "code": "pass within reviewed scope: all published commits and all63 actual-master paths inspected; no new blocking code defect found; original directory-lock finding independently verified fixed.",
+    "engineeringReview": "evidence-incomplete: no submitted PR439 review, inline review or actual current-head quota refusal is present. Independent source QA completed; configured review completion/exception remains unestablished.",
+    "ci": "pass for configured PR policy:25 completed checks =16 success and9 justified path/manual-policy skips. Exact-head logs prove786 backend (including8 real PostgreSQL scenarios),1319 mobile and75 API tests, fresh/populated migration and encrypted rollback. Skipped emulator jobs do not establish native evidence.",
+    "behavior": "pass for independently exercised scope:86 component/session +41 backend +6 API tests and4 actual desktop Chromium scenarios passed. Native behavior only has component proof.",
+    "evidence": "evidence-incomplete: two genuine matched browser pairs, source/build/fixture/harness identities and all pixels independently verified; actual native chooser proof absent.",
+    "communication": "pass with honest limitation: final-state opening explains user/operator problem and outcome; behavioral Test plan connects expected and observed boundaries; visible Before/After embeds accompany concise actual-master/head context. Native and review gaps remain explicit. Owner/coordinator should reconcile pending QA wording after this verdict without implying readiness.",
+    "stack": "pass: directly based on actual master, no code parents. PR431/437 remain unchanged and are not required unrelated merges; future Firebase auth integration requires its own coordination."
+  },
+  "evidence": [
+    {
+      "path": "independent-scope.json",
+      "purpose": "Complete ordered published commits/parents and changed paths with scope and hashes"
+    },
+    {
+      "path": "independent-mobile.log",
+      "sha256": "8dbd1875970cb0e659527c0052e6b9ac12e2d36ff2df524d3cb6ce33be200967"
+    },
+    {
+      "path": "independent-backend.log",
+      "sha256": "eac7279ebd1bd3c4028a9f562304f451c68999417ccc39c192f07855f56b0d0c"
+    },
+    {
+      "path": "independent-api.log",
+      "sha256": "eaec14efc539f68af75cdce5d8e755a0e03f42cd2f51dd1fec6bbd72e58264e8"
+    },
+    {
+      "path": "independent-browser.log",
+      "sha256": "54b7ae5ff3707f242dac0178f83fde484160cf6d9e26d42859e51993214339ef"
+    },
+    {
+      "path": "log-verification.json",
+      "sha256": "f3ab59f66f962d2a63c39d5aabf8c67f58d6a0037368a0ae2ae3a43c9d9d8e65"
+    },
+    {
+      "path": "build-verification.json",
+      "sha256": "b799f51a34cc4c9ec0c011d780ccaf86a50679eb8169567413a4371ded68639b"
+    },
+    {
+      "path": "artifact-verification.json",
+      "sha256": "caef36a4fcdefc939d6627276a3a6a5562d190560ca8789faaa1feb3cb7309e8"
+    },
+    {
+      "path": "retention-verification.json",
+      "sha256": "c157206d6584e193ec2d49af8611be8d72aa3841a61287e3bd97c9dad91bc2a9"
+    },
+    {
+      "path": "original-ci-verification.json",
+      "sha256": "b9c904a207093b1141509b2b56c2cfb2b37ea37d8b229f266c857a0e66255502"
+    },
+    {
+      "path": "pre-publication.json",
+      "sha256": "00ec506b734a41a7271083785634ab6b2f9b96569a05e28d94c12ade5aad2f76"
+    },
+    {
+      "path": "pre-check.json",
+      "sha256": "51f598235f250a8cd80a5c8ff00fb97e1a49f0347f315dbccd71dbf2aa47b81c"
+    },
+    {
+      "path": "native-availability.json",
+      "sha256": "53165a2a120cb8dedf05a70582a6eda27a1946d2478b3566725cd311b1410fbd"
+    },
+    {
+      "path": "project-linkage.json",
+      "sha256": "9aead887a4233ff69c44f4bfc244d147d367e551435e85c0a9ac57ba79f5949e"
+    },
+    {
+      "url": "https://github.com/MChartier/calibrate-health/blob/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json",
+      "sha256": "c53200e649797431826629a899be9bf9fed9bbaaf72ec36da83ec6919a61b0f5",
+      "purpose": "Exact owner handoff read as claims, independently checked"
+    },
+    {
+      "url": "https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json",
+      "sha256": "283f23ae1b2b4db67acac3f0af47fefbb5592aff71bce2599cf330414e9de40e",
+      "purpose": "Original evidence retention verified; historical14 After-only captures are not current baseline proof"
+    }
+  ],
+  "codeObservations": [
+    "First-owner registration is serialized by the singleton row FOR UPDATE in a ReadCommitted transaction. Managed hosting and populated upgrades do not bootstrap. Supplied roles cannot self-promote; strict bounded existing legacy IDs are imported once.",
+    "Every privileged operation requires a freshly loaded verified administrator. Role removal and account deletion share the ownership lock and preserve a verified administrator; nonprivileged identity paths remain scoped to the authenticated user.",
+    "Directory reads no longer acquire the ownership lock; fresh authorization is checked before and after the bounded projection. Real PostgreSQL tests use an external pg connection holding FOR UPDATE and separate Prisma work, and a paused query with concurrent registration/demotion. This is real execution, not a skipped unit substitute.",
+    "Failed initial verification mail preserves the unverified owner without effective administrator privileges. Operator recovery accepts only an existing verified account; ambiguous case-variant emails fail closed, with explicit existing ID recovery supported.",
+    "Native service selection checks availability without committing selection; cancellation preserves credentials, confirmation clears credentials and consent. Pending/unknown offline queue state blocks switching. Browser remains bound to its origin.",
+    "Session epochs prevent old server/identity callbacks from acquiring or clearing a newer session; canceled role/feature mutations cannot replay after late 401 refresh. Role queries and confirmation state are scoped and reset on session/access changes.",
+    "Migration0042 and generated OpenAPI contract are required product changes. Fresh/populated migration and encrypted backup/rollback/restore/reupgrade execution passed. Existing later Firebase foundation migrations are retained; PR431/437 staged verification/session contracts remain separate and unchanged."
+  ],
+  "uiEvidence": {
+    "applicable": true,
+    "representativeCoverage": "Settings service/admin navigation and administrator capabilities/directory browser pairs cover the visible web change. Native chooser remains materially uncovered.",
+    "pairs": [
+      {
+        "state": "Settings service entry",
+        "before": {
+          "sourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-settings.png",
+          "sha256": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb"
+        },
+        "after": {
+          "sourceSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-settings.png",
+          "sha256": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4"
+        },
+        "viewport": {
+          "width": 1280,
+          "height": 1500
+        },
+        "scale": 1,
+        "theme": "light",
+        "fixtureSha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+        "independentlyInspectedPixels": true
+      },
+      {
+        "state": "Administrator capabilities and user roles",
+        "before": {
+          "sourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/before-administration.png",
+          "sha256": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6"
+        },
+        "after": {
+          "sourceSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+          "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/after-administration.png",
+          "sha256": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c"
+        },
+        "viewport": {
+          "width": 1280,
+          "height": 2500
+        },
+        "scale": 1,
+        "theme": "light",
+        "fixtureSha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+        "independentlyInspectedPixels": true
+      }
+    ],
+    "provenanceRecords": [
+      {
+        "pairs": [
+          "Settings service entry",
+          "Administrator capabilities and user roles"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/provenance.json",
+        "commitSha": "8457ed1a3bbb0f0381b48e22a40aac52b223ae6c",
+        "sha256": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e",
+        "referencedArtifacts": [
+          {
+            "path": "capture.config.ts",
+            "sha256": "741d873d29e5fbc0807db66e4b32df9faba0273303eef7e86561aad6ba48fc4c",
+            "bytes": 505
+          },
+          {
+            "path": "capture.spec.ts",
+            "sha256": "bbafaec9f0d9765b22b3655571b1dc64a9980cabaf029e8af477997cb86b1ae5",
+            "bytes": 2746
+          },
+          {
+            "path": "capture-run.mjs",
+            "sha256": "26cc33bc13df595210bbd491933220a22ddf6c1cf44dce3edc38ce4ffc5f6241",
+            "bytes": 976
+          },
+          {
+            "path": "before-capture.json",
+            "sha256": "d9bfee6a9d334a017b51166739b865492a77fb6d2db4b04a1158f8b200a3d084",
+            "bytes": 767
+          },
+          {
+            "path": "after-capture.json",
+            "sha256": "56a13d5831442c9ca64db4b9662b02e792e2c10145b22719f08f61ddeb4b7941",
+            "bytes": 766
+          },
+          {
+            "path": "before-settings.png",
+            "sha256": "d4beb90eac9215d51bae7954bc82243725b8fa1ab7c5e7feda96a26327f5e5bb",
+            "bytes": 55685
+          },
+          {
+            "path": "after-settings.png",
+            "sha256": "b68e2b3a02f434d811daaec8a029dfeb0d1c8bb426a1e653a0d1f13cf3db97b4",
+            "bytes": 63862
+          },
+          {
+            "path": "before-administration.png",
+            "sha256": "c5ceba8a1e03b122ff30e83f0f59d41b44097f0a08c73fe1ca1e2abcdf7230b6",
+            "bytes": 44861
+          },
+          {
+            "path": "after-administration.png",
+            "sha256": "a2ec13420fea11f0a74f3aa67e8d604b0387979ac3e9a89d111eda3deac6243c",
+            "bytes": 140354
+          },
+          {
+            "path": "published-scope.json",
+            "sha256": "789b2230b5dc4e6938b49743eb73a6a3fa23e3a3a12fd1020e7807d0d5d78858",
+            "bytes": 21404
+          },
+          {
+            "path": "build-identities.json",
+            "sha256": "2dbc6124530046e0d9908d797be2899943608ed7eefc4ee7c19d0579cfc74a23",
+            "bytes": 66435
+          }
+        ],
+        "fixture": {
+          "url": "https://github.com/MChartier/calibrate-health/blob/ce8543483db55800034e6ed2622eeb4b9ac7f3b6/e2e/expo-web/fixtures.ts",
+          "sourceCommit": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+          "sha256": "b823a4508e4d67ed6aaf65d2cdb1345461a5b65def337c4d8be10334af42697b",
+          "normalization": "Identical maintained populated synthetic fixture and API overrides; frozen clock and randomness; only unrelated transient PWA notices suppressed, no compared UI hidden."
+        }
+      }
+    ],
+    "provenanceAssessment": "Exact immutable manifest and every referenced capture/harness/build artifact fetched and hash-verified. All170 baseline and174 final export files matched build identities; clean source heads/trees and actual loaded JS digests match. Both pairs share synthetic fixture, frozen clock/randomness, locale/timezone, scale/light theme; unrelated transient PWA suppression is disclosed. No image edits/crops/redaction.",
+    "pixelObservations": "Opened all four original PNGs independently. Settings preserves the same synthetic profile/goal/rail and adds current-origin Service & hosting and Administration entry. Administration expands the old feature-switch screen to server/capability details and two verified synthetic accounts with role controls; switch remains Off. Matched dimensions/theme and fixture show no misleading difference. Browser-only evidence does not show native chooser.",
+    "renderedPrInspection": {
+      "url": "https://github.com/MChartier/calibrate-health/pull/439",
+      "checkedAtUtc": null,
+      "observations": "Not performed; explicitly waived only for actual GitHub page rendering by trusted issue405 comment6022754087."
+    },
+    "nonUiObservableContract": null,
+    "scopedHumanBaselineWaiver": null,
+    "renderedPageWaiver": "https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6022754087"
+  },
+  "relatedUnchangedPullRequests": [
+    {
+      "number": 402,
+      "headSha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "baseSha": "014f19669cbe4b62cb9b98514830d7874660e994",
+      "state": "open"
+    },
+    {
+      "number": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "baseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+      "state": "open"
+    },
+    {
+      "number": 437,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "baseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open"
+    }
+  ],
+  "policyAcknowledgement": {
+    "packetRead": true,
+    "authenticatedLiveAmendments": [
+      5984018358,
+      5987999201,
+      5997739454,
+      6002971212,
+      6006523068,
+      6008280372,
+      6008834896,
+      6020948896,
+      6021105604,
+      6021281028,
+      6022754087,
+      6026521080
+    ]
+  },
+  "limitations": [
+    "Actual native chooser baseline/final evidence remains unperformed: adb has no targets and neither configured nor conventional SDK has an emulator executable. No native install, emulator creation or provider/device action was attempted. Little Say native deferral does not apply.",
+    "No PR439 submitted engineering review or actual quota refusal binds this current head. Independent QA inspected the complete code/scope, but does not invent configured GitHub Codex review completion or apply another PR's quota refusal. Establish the current-head configured review or exact applicable refusal/authorized fallback without retry spam.",
+    "PostgreSQL and whole-suite execution were assessed from fresh exact-head CI logs rather than rerun locally; targeted local tests independently ran. Browser fixture scenarios are synthetic, not production/provider execution.",
+    "Actual GitHub rendered PR-page inspection waived under issue405 comment6022754087. The waiver does not cover screenshot pixels, provenance or native evidence; no rendered-page pass claimed.",
+    "Assessment covers only recorded head/base/body/evidence. Future changes require affected-gate review; no silent reassessment, readiness mutation, merge, closure or deployment."
+  ],
+  "nextAction": "Coordinator should arrange authorized native baseline/final chooser evidence (including failure/cancel and confirmed credential/consent clearing), or obtain an explicit applicable human decision, and establish current-head configured engineering review or an exact applicable quota-refusal/authorized fallback. Route corrections to the existing owner. Return for affected-gate QA without silently accepting later revisions. Preserve original402 and staged431/437; no readiness award."
+}
