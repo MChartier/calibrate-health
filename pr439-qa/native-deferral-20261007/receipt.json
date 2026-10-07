@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "verdictCommentId": 6044100869,
+  "verdictCommentUrl": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6044100869",
+  "verdictBodySha256": "56eb3dd39297368a0e8ab587d8a015b31c55abde4ddc6bb46425e3d870d0a4ef",
+  "verdictUpdatedAt": "2026-10-07T18:20:09Z",
+  "checkedAtUtc": "2026-10-07T18:20:12.033Z",
+  "supersedesVerdictCommentId": 6032159061,
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "actualBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "parentBodySha256": [],
+  "prBodySha256": "40b95e1adaba4e7d52a238893839e81ddff70e8ffb292f0ce07ed7915b5052e2",
+  "issueBodySha256": "e4a62eca4b1c55f934c4742f4899711b4717ef49bebf65cc3bdff4683799040c",
+  "relatedPrBodyBindings": [
+    {
+      "pullRequest": 402,
+      "headSha": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+      "bodySha256": "24f9f6d844a9cea11eb771adbaeb11a626113cd7cb7b4c9bce6fd181018f030b",
+      "isParentOf439": false
+    },
+    {
+      "pullRequest": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "bodySha256": "408e99d2726bed567256f64b03b89f54b04f042710a2cbbe221033b4ce42b4c8",
+      "isParentOf439": false
+    },
+    {
+      "pullRequest": 437,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "bodySha256": "a125ab27c6193d0477223728900c0199440ca538e86bf6fc63d76270b9ec88b9",
+      "isParentOf439": false
+    }
+  ],
+  "publishedScope": {
+    "commits": 1,
+    "files": 63,
+    "additions": 3360,
+    "deletions": 729,
+    "inventorySha256": "d87ce5486b7ff530257cc3abaf654683fc816b7a3e278812873015fa58dc1251"
+  },
+  "assessmentCommitSha": "77526a8d64ce7c098732c5f0845db385d9ddd50d",
+  "assessmentUrl": "https://github.com/MChartier/calibrate-health/blob/77526a8d64ce7c098732c5f0845db385d9ddd50d/pr439-qa/native-deferral-20261007/verdict.json",
+  "assessmentSha256": "23c95a092fc99b1400f416908093abf832619a75b1c5a29ddb34242e0fb918be",
+  "nativeDeferral": {
+    "commentId": 6041659686,
+    "bodySha256": "c821f39f0892512600f7547fc610f0565c15dcbd5dd9d2c99c59152c351e860b",
+    "updatedAt": "2026-10-07T15:58:13Z",
+    "executionStatus": "unexecuted",
+    "scope": "review readiness only"
+  },
+  "browserProvenance": {
+    "commitSha": "8457ed1a3bbb0f0381b48e22a40aac52b223ae6c",
+    "sha256": "f74b2638db2641559a4c0438c13cbe38c18e8adc6d0d480802f67845ebd79f3e"
+  },
+  "workflowPin": "f0919b184b6344d6279178b2388190936ca432a9",
+  "prReviewPin": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "digestRule": "SHA256 of exact entire API-decoded comment body encoded UTF8; no trimming, newline normalization or added newline",
+  "receiptNavigation": "The short comment links this dedicated receipt path on the retained evidence ref. The trusted task handoff supplies its exact immutable receipt commit after publication.",
+  "coordinatorResponsibility": "Independently verify and retain a separate durable receipt before any readiness transition; this QA did not change labels, draft status, Project, closure or merge/release state."
+}
