@@ -1,0 +1,10 @@
+{
+  "head": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "parentTarget": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "bodySha256": "a125ab27c6193d0477223728900c0199440ca538e86bf6fc63d76270b9ec88b9",
+  "updated_at": "2026-10-07T03:14:35Z",
+  "priorReceipt": "66c79ebcfc54e84f6f243af7b8e7e87a98042a85/preparation-evidence/atomic-login-a0fdefe8-final/receipt.json",
+  "priorBodySha256": "6c95ea55bd3681843a04f6ba1afe269b7d72f00493fd6da210f8a2c1f06bef0f",
+  "change": "Opening precisely attributes stale-session creation to password-change races; SQL foreign keys already prevent creating a session for a deleted user. New deletion guard provides the same generic rejection and transaction ordering. Code, tests, evidence and all other body content unchanged.",
+  "presentation": "Final API body read; actual-page rendering waiver applies; no fresh rendering claim."
+}
