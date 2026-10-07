@@ -1,0 +1,266 @@
+{
+  "checkedAtUtc": "2026-10-07T05:24:11.962Z",
+  "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "runs": [
+    {
+      "id": 37575683447,
+      "name": "Database Upgrade",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37575683447",
+      "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "event": "pull_request",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "updatedAt": "2026-10-07T05:18:56Z"
+    },
+    {
+      "id": 37575683395,
+      "name": "Tests",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37575683395",
+      "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "event": "pull_request",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "updatedAt": "2026-10-07T05:20:02Z"
+    },
+    {
+      "id": 37575683509,
+      "name": "Lint",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37575683509",
+      "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "event": "pull_request",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "updatedAt": "2026-10-07T05:19:44Z"
+    },
+    {
+      "id": 37575683376,
+      "name": "Production Container Scan",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37575683376",
+      "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "event": "pull_request",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "updatedAt": "2026-10-07T05:21:35Z"
+    },
+    {
+      "id": 37575683422,
+      "name": "Builds",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422",
+      "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "event": "pull_request",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "updatedAt": "2026-10-07T05:21:44Z"
+    }
+  ],
+  "checks": [
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643978672",
+      "name": "Expo Web Build",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643978553",
+      "name": "Release Configuration",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643978613",
+      "name": "Web Critical Smoke",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643980229",
+      "name": "Mobile Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643979578",
+      "name": "Full Exported Web and PWA End-to-End",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643981022",
+      "name": "Android Emulator End-to-End",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643979611",
+      "name": "Native Two-Emulator Package Upgrade",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643979750",
+      "name": "Wear Release Emulator Smoke",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643979932",
+      "name": "Wear Build and JVM Tests",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643979604",
+      "name": "Backend Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643980222",
+      "name": "iOS Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643980549",
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643980210",
+      "name": "UX Accessibility and Visual Regression",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643980517",
+      "name": "Six-State Data-Backed Route Acceptance",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683395/job/112643964785",
+      "name": "Mobile Tests",
+      "state": "SUCCESS",
+      "workflow": "Tests"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683376/job/112643960195",
+      "name": "High and Critical Vulnerabilities",
+      "state": "SUCCESS",
+      "workflow": "Production Container Scan"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683447/job/112643970094",
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "state": "SKIPPED",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683447/job/112643969544",
+      "name": "Populated Postgres Upgrade",
+      "state": "SKIPPED",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683395/job/112643966004",
+      "name": "Backend Tests",
+      "state": "SKIPPED",
+      "workflow": "Tests"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643945897",
+      "name": "Classify Build Inputs",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683395/job/112643936242",
+      "name": "Classify Test Inputs",
+      "state": "SUCCESS",
+      "workflow": "Tests"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683447/job/112643936659",
+      "name": "Classify Database Inputs",
+      "state": "SUCCESS",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683509/job/112643937307",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "state": "SUCCESS",
+      "workflow": "Lint"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37575683376/job/112643936404",
+      "name": "Classify Production Image Inputs",
+      "state": "SUCCESS",
+      "workflow": "Production Container Scan"
+    }
+  ],
+  "hostedReleaseJob": {
+    "id": 112643978553,
+    "url": "https://github.com/MChartier/calibrate-health/actions/runs/37575683422/job/112643978553",
+    "releaseTests": {
+      "passed": 154,
+      "skipped": 2,
+      "skipReason": "Two historical v0.35.0 fixtures unavailable in hosted shallow checkout; both passed in the full local checkout."
+    },
+    "nativeTests": {
+      "passed": 253,
+      "skipped": 1,
+      "skipReason": "Windows-only archive extraction test; passed on local Windows."
+    },
+    "publisherShellCases": "Both Windows-skipped publisher shell cases executed and passed on Linux."
+  },
+  "engineeringReview": {
+    "requestedAtCommentId": 6031502531,
+    "quotaRefusal": {
+      "commentId": 6031504125,
+      "updatedAt": "2026-10-07T05:19:26Z",
+      "bodySha256": "e39b189a2ed6388c9d919876a2893ca0216a023301e11d788df190b4366991b9",
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review)."
+    },
+    "disposition": "Quota-only refusal follows issue405 amendment6006523068; no retries. No actual review findings or approval were produced. Independent QA is pending."
+  },
+  "reviews": [],
+  "inlineFindings": [],
+  "reviewThreads": [],
+  "presentation": "API body and GitHub-generated HTML structure inspected. No visual PR-page rendering inspection claimed; use the human waiver at issue405#issuecomment-6022754087. Non-UI observable contract applies.",
+  "provenance": {
+    "behaviorRecordCommit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+    "originalRetentionCommit": "f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07"
+  },
+  "originalAndScope": "Original PR401 remains open and original source/evidence refs unchanged. Successor contains one commit, 30 paths, +625/-785. No screenshot archive, copied source, capture harness or one-off log is in its published commit history."
+}
