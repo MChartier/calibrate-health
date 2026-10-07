@@ -1,0 +1,39 @@
+{
+  "oldLocal": {
+    "sha256": "c53200e649797431826629a899be9bf9fed9bbaaf72ec36da83ec6919a61b0f5",
+    "bytes": 46140
+  },
+  "authoritative": {
+    "name": "checkpoint.json",
+    "revision": "5bc914fa7e3120fc8f872488459d7095ee621511",
+    "path": "pr439-evidence/checkpoint.json",
+    "gitBlob": "837e0435078cd45ee0fdc4321a36b137cfa8cc0f",
+    "sha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+    "bytes": 45450,
+    "publicRawMatches": true,
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json"
+  },
+  "sameParsedJson": false,
+  "serializationMatches": {
+    "compact": {
+      "bytes": 38983,
+      "sha256": "5717b29920fa344a60bb9e4536396ff119038ec1d680e3a969ef556c10978d1f",
+      "matchesOld": false
+    },
+    "pretty2": {
+      "bytes": 45450,
+      "sha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+      "matchesOld": false
+    },
+    "pretty2Lf": {
+      "bytes": 45451,
+      "sha256": "74b2f3ce1ffcf7089ae110be4bde6cca6c70d0071e08d17b9354f42bf45f7987",
+      "matchesOld": false
+    },
+    "pretty2Crlf": {
+      "bytes": 46071,
+      "sha256": "09e201d18fcca4a29c8cb2399a804d77c2be93939d85c2eaf1e2068e043abd9d",
+      "matchesOld": false
+    }
+  }
+}

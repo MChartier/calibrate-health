@@ -1,0 +1,45 @@
+{
+  "checkedAtUtc": "2026-10-07T05:40:26.562Z",
+  "headSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+  "actualBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "request": {
+    "head": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "commentId": 6031679377,
+    "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031679377",
+    "body": "@codex review\n\nPlease review current head `ce8543483db55800034e6ed2622eeb4b9ac7f3b6` against master. This is the single configured engineering-review request for PR439 at this revision.",
+    "updatedAt": "2026-10-07T05:34:16Z",
+    "bodySha256": "fe20cf1b5836cf8634b01c453cd73e2dbfe2ed59e098fa514eec4e42d466c3e1"
+  },
+  "reviewResult": {
+    "commentId": 6031728424,
+    "url": "https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6031728424",
+    "author": "chatgpt-codex-connector[bot]",
+    "body": "Codex Review: Didn't find any major issues. Keep them coming!\n\n**Reviewed commit:** `ce8543483d`\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+    "bodySha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf",
+    "createdAt": "2026-10-07T05:38:36Z",
+    "updatedAt": "2026-10-07T05:38:36Z",
+    "reviewedCommitPrefix": "ce8543483d",
+    "resolvedHeadSha": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "status": "completed-no-major-issues",
+    "submittedReviewCount": 0,
+    "inlineFindingCount": 0
+  },
+  "beforeBodySha256": "ad55ce850a10e17ad32127546863be2fca0fe79ef0fa738416715abe527b0656",
+  "afterBodySha256": "50ce47c1c3b0c9bbf34fdf49a13e06a9d6468fee751793983228a979fa39228a",
+  "sourceUnchanged": true,
+  "draft": true,
+  "labels": [],
+  "requiresSameQaReassessment": [
+    "Final body/review receipt",
+    "Owner-checkpoint hash correction in a new superseding QA record",
+    "Native chooser evidence remains incomplete; no applicable native waiver"
+  ],
+  "qaHistorical": {
+    "commentId": 6031629809,
+    "verdictCommit": "e83d376cfb37b4927ed21bae39eb6f6453fca509",
+    "verdict": "evidence-incomplete"
+  },
+  "pr402": "Remain open; no closure or branch/evidence modification.",
+  "runtimePinsUnchanged": true
+}

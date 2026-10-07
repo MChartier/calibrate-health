@@ -1,0 +1,20 @@
+[
+  {
+    "transformation": "cp437Utf8",
+    "bytes": 45519,
+    "sha256": "29558fcdf35286424e5e7304af9949e9ee2ea7207c78b5ee681c32ad7609e956",
+    "matchesOriginalLocal": false
+  },
+  {
+    "transformation": "cp437Utf8Crlf",
+    "bytes": 46138,
+    "sha256": "7b98b8e98060f0f31ab9ae8f7febf275dba9caa427921555da8023ca445f7d5c",
+    "matchesOriginalLocal": false
+  },
+  {
+    "transformation": "cp437Utf8CrlfFinalNewline",
+    "bytes": 46140,
+    "sha256": "c53200e649797431826629a899be9bf9fed9bbaaf72ec36da83ec6919a61b0f5",
+    "matchesOriginalLocal": true
+  }
+]

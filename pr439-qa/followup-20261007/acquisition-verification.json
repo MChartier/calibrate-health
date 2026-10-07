@@ -1,0 +1,32 @@
+{
+  "checkedAtUtc": "2026-10-07T05:44:50.493Z",
+  "artifacts": [
+    {
+      "name": "checkpoint.json",
+      "revision": "5bc914fa7e3120fc8f872488459d7095ee621511",
+      "path": "pr439-evidence/checkpoint.json",
+      "gitBlob": "837e0435078cd45ee0fdc4321a36b137cfa8cc0f",
+      "sha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+      "bytes": 45450,
+      "publicRawMatches": true,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json"
+    },
+    {
+      "name": "review-and-body-receipt.json",
+      "revision": "1b6fcdf5fe12689c65ce3ce4bf77aabcf3e42dae",
+      "path": "review-followup-20261007/review-and-body-receipt.json",
+      "gitBlob": "5c2eb8c92e4c550ec36f8c15660dbd4cd219a83e",
+      "sha256": "829fb24a394353e9d593aa402522d769ecbde6adc43fc06417259b24d3d8e4b0",
+      "bytes": 2682,
+      "publicRawMatches": true,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/1b6fcdf5fe12689c65ce3ce4bf77aabcf3e42dae/review-followup-20261007/review-and-body-receipt.json"
+    }
+  ],
+  "review": {
+    "id": 6031728424,
+    "bodySha256": "131029badffe85457da690de34696093f3718ff9aa7e95ebbd6be2949c041ebf",
+    "updatedAt": "2026-10-07T05:38:36Z",
+    "author": "chatgpt-codex-connector[bot]",
+    "body": "Codex Review: Didn't find any major issues. Keep them coming!\n\n**Reviewed commit:** `ce8543483d`\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "oldLocal": {
+    "sha256": "c53200e649797431826629a899be9bf9fed9bbaaf72ec36da83ec6919a61b0f5",
+    "bytes": 46140
+  },
+  "authoritative": {
+    "name": "checkpoint.json",
+    "revision": "5bc914fa7e3120fc8f872488459d7095ee621511",
+    "path": "pr439-evidence/checkpoint.json",
+    "gitBlob": "837e0435078cd45ee0fdc4321a36b137cfa8cc0f",
+    "sha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+    "bytes": 45450,
+    "publicRawMatches": true,
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/5bc914fa7e3120fc8f872488459d7095ee621511/pr439-evidence/checkpoint.json"
+  },
+  "sameParsedJson": false,
+  "serializationMatches": {
+    "compact": {
+      "bytes": 38983,
+      "sha256": "5717b29920fa344a60bb9e4536396ff119038ec1d680e3a969ef556c10978d1f",
+      "matchesOld": false
+    },
+    "pretty2": {
+      "bytes": 45450,
+      "sha256": "b95d7187e362f3a93dcf72ba68c493aadd34483af755d43e9b5f33537618ba05",
+      "matchesOld": false
+    },
+    "pretty2Lf": {
+      "bytes": 45451,
+      "sha256": "74b2f3ce1ffcf7089ae110be4bde6cca6c70d0071e08d17b9354f42bf45f7987",
+      "matchesOld": false
+    },
+    "pretty2Crlf": {
+      "bytes": 46071,
+      "sha256": "09e201d18fcca4a29c8cb2399a804d77c2be93939d85c2eaf1e2068e043abd9d",
+      "matchesOld": false
+    }
+  },
+  "correction": "Previous verdict incorrectly bound a transformed local file hash to the immutable GitHub artifact URL. Authoritative GitHub contents base64 decoding and public raw bytes agree on the corrected SHA256 and Git blob. This is a QA acquisition/binding error, not a changed immutable source artifact.",
+  "transformation": "Decode authoritative UTF8 bytes as code page437; convert LF line endings to CRLF; append final CRLF; write UTF8 without BOM.",
+  "reproduction": [
+    {
+      "transformation": "cp437Utf8",
+      "bytes": 45519,
+      "sha256": "29558fcdf35286424e5e7304af9949e9ee2ea7207c78b5ee681c32ad7609e956",
+      "matchesOriginalLocal": false
+    },
+    {
+      "transformation": "cp437Utf8Crlf",
+      "bytes": 46138,
+      "sha256": "7b98b8e98060f0f31ab9ae8f7febf275dba9caa427921555da8023ca445f7d5c",
+      "matchesOriginalLocal": false
+    },
+    {
+      "transformation": "cp437Utf8CrlfFinalNewline",
+      "bytes": 46140,
+      "sha256": "c53200e649797431826629a899be9bf9fed9bbaaf72ec36da83ec6919a61b0f5",
+      "matchesOriginalLocal": true
+    }
+  ],
+  "exactTransformedFileMatch": true,
+  "commandAttribution": "The transformation is proven byte for byte. The original acquisition command could not be independently read: automatic approval review rejected access to protected Codex session logs. A Windows text/native-output decoding and redirection path is consistent with the exact transformation, but the particular command is not asserted.",
+  "affectedJsonPaths": [
+    "/prBody",
+    "/fullFeedback/402/comments/0/body",
+    "/fullFeedback/402/reviews/0/body",
+    "/fullFeedback/402/inline/0/body",
+    "/fullFeedback/438/comments/0/body"
+  ],
+  "impact": "Only Unicode-bearing text fields differ after parsing. Source/base/tree/CI/evidence numeric and ASCII identities are unchanged. Independent QA fetched current feedback through JSON-decoded Node API reads, and browser provenance/images through byte-preserving fetch; those exact identities were freshly reverified. No source/test/capture reevaluation required.",
+  "additionalAffectedLocalCopies": [
+    5997739454,
+    6002971212,
+    6006523068,
+    6008280372,
+    6008834896
+  ],
+  "policyImpact": "Five archived amendment text copies share exactly the CP437 misdecoding. Fresh authenticated copies are retained in this superseding record; no policy text change or pin migration occurred. Historical copies remain retained. Full operative content was supplied directly in the trusted task packet.",
+  "preservation": {
+    "oldComment": 6031629809,
+    "oldVerdictCommit": "e83d376cfb37b4927ed21bae39eb6f6453fca509",
+    "oldReceiptCommit": "901623726146da075fdd49172af20f30cc5abf5c",
+    "oldLocalCopy": "checkpoint-corrupted-local.json",
+    "correctArtifactCopy": "checkpoint.json"
+  }
+}
