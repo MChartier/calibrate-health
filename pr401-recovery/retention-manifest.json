@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Preserve exact PR401 source, published history, documentation evidence and ownership while preparing a focused successor. Nonmerged retention only; never a product merge target.",
+  "repository": "MChartier/calibrate-health",
+  "custodianTaskId": "01a114af-c6d1-705c-ade9-39553731d038",
+  "coordinatorTaskId": "01a0f838-69d6-75b3-8cc0-f768175aa03e",
+  "originalOwner": "/root/streamline_calibrate_deployment",
+  "retention": "No automatic expiry. Keep original branch and retained refs. No deletion, force update or history rewriting is authorized. Any future disposition requires explicit recorded owner/coordinator review under human authority.",
+  "refs": [
+    {
+      "ref": "refs/heads/evidence/pr401-original-0f53ed82",
+      "commit": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+      "tree": "3cf70fe21ded502e941b334b58c37e32ec340ecf",
+      "role": "Exact final head and three original documentation screenshots/provenance",
+      "verified": true
+    },
+    {
+      "ref": "refs/heads/evidence/pr401-source-001fcaa",
+      "commit": "001fcaad8cdc639809db3133571f2b95cb4e5e20",
+      "tree": "760aa7c2cff42e06c6bb55b0987c0bc1eac3d7fe",
+      "role": "Exact original product/source commit used for the doc captures",
+      "verified": true
+    }
+  ],
+  "originalBranch": {
+    "ref": "refs/heads/mchartier/streamline-deployment",
+    "commit": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+    "preservedUnchanged": true
+  },
+  "recordRef": "refs/heads/evidence/pr401-recovery-records",
+  "recordHistory": "Separate root commit containing retention/scoping records only, without product source or workflow files.",
+  "actualBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "originalMergeBase": "014f19669cbe4b62cb9b98514830d7874660e994",
+  "artifacts": [
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/README.md",
+      "sourceCommit": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+      "gitBlob": "14c04b0966b4b099e23686f1cc8404d5e6238e91",
+      "sha256": "a7a982491c740412e23b2ac4faf2bacff43509d18aa6e01f935b1f45299c40c7",
+      "bytes": 946,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/README.md",
+      "httpStatus": 200,
+      "readbackMatches": true
+    },
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/release-chooser.jpg",
+      "sourceCommit": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+      "gitBlob": "6ac0136efd945ec834e29333d1a08e25f92cf1b4",
+      "sha256": "32615f7c8466a4b220f0b091c793b762fbf6099e0fb0778e886e99464f32763e",
+      "bytes": 111970,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/release-chooser.jpg",
+      "httpStatus": 200,
+      "readbackMatches": true
+    },
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/recovery-options.jpg",
+      "sourceCommit": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+      "gitBlob": "c887e07b01bd150c7399c21dfa89affd0f1df008",
+      "sha256": "eda861c93a0981a516d4af3b94a58bc0d713be9253285fa076272824228a1bdc",
+      "bytes": 132710,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/recovery-options.jpg",
+      "httpStatus": 200,
+      "readbackMatches": true
+    },
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/native-release.jpg",
+      "sourceCommit": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+      "gitBlob": "e2aec4bfcf608e6c3bf27b845b9429e1e4aa5977",
+      "sha256": "2a653f732d3ad153289897b08eac31b90e1635510cbd6886b4bf90d399f8f093",
+      "bytes": 113506,
+      "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/native-release.jpg",
+      "httpStatus": 200,
+      "readbackMatches": true
+    }
+  ],
+  "recordFiles": [
+    {
+      "path": "original-pr-body.md",
+      "sha256": "8e8ac4c8c2e337f642540f0aae28897c40b6598f31e0b590c6b306b601ca9d5a",
+      "bytes": 3236
+    },
+    {
+      "path": "owner-handoff.json",
+      "sha256": "71c4249175a7285bac4545c59792df7d602820b870cce6144e977a7613efb1be",
+      "bytes": 1621
+    },
+    {
+      "path": "published-scope.json",
+      "sha256": "33af365bd3beb30deb8b94e30a3f47bb58391978e2c3e8b2a007601921d0788d",
+      "bytes": 9178
+    },
+    {
+      "path": "README.md",
+      "sha256": "c135af24ece946d175d45d8782e91eea2394ed90c166914d3c95b897069391dc",
+      "bytes": 7352
+    }
+  ],
+  "visualAssessment": "All three 1165x747 JPEGs independently opened during assessment. They visibly show GitHub-rendered deployment documentation at original product commit. Chooser, recovery and native-command text match the original guide. They are historical After-only documentation evidence, not current paired behavior, release execution or a new QA verdict. Actual PR-page rendering was not checked; general rendering waiver 6022754087 is acknowledged.",
+  "reviewerAccess": "Repository remains public; authenticated MChartier access is admin. All four original immutable raw artifacts freshly returned HTTP 200 with identical SHA-256 bytes. Source refs read back at their exact intended commits. No visibility or permission changes.",
+  "originalCaptureProvenance": "Original README: captured 2026-10-01 in cloud browser from GitHub Markdown preview at product commit, unedited 1165x747 JPEG viewport captures; tree collapsed, heading permalinks used. Preserve exact README; do not add retroactive capture detail or relabel as current source.",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "amendments": [
+    "5984018358",
+    "5987999201",
+    "5997739454",
+    "6002971212",
+    "6006523068",
+    "6008280372",
+    "6008834896",
+    "6020948896",
+    "6021105604",
+    "6021281028",
+    "6022754087",
+    "6026521080"
+  ],
+  "checkedAtUtc": "2026-10-07T05:02:18.6539099Z"
+}

@@ -1,0 +1,270 @@
+{
+  "repository": "MChartier/calibrate-health",
+  "targetRef": "master",
+  "actualTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "014f19669cbe4b62cb9b98514830d7874660e994",
+  "prApiBaseSha": "014f19669cbe4b62cb9b98514830d7874660e994",
+  "head": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+  "commits": [
+    {
+      "sha": "001fcaad8cdc639809db3133571f2b95cb4e5e20",
+      "parents": [
+        "014f19669cbe4b62cb9b98514830d7874660e994"
+      ],
+      "message": "Simplify server and native release workflows"
+    },
+    {
+      "sha": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+      "parents": [
+        "001fcaad8cdc639809db3133571f2b95cb4e5e20"
+      ],
+      "message": "Add rendered deployment guide screenshot evidence"
+    }
+  ],
+  "totals": {
+    "commits": 2,
+    "deletions": 774,
+    "additions": 625,
+    "files": 34
+  },
+  "files": [
+    {
+      "path": ".github/workflows/container-handler.yml",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 121,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": ".github/workflows/container-request.yml",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 81,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": ".github/workflows/cut-release-handler.yml",
+      "status": "modified",
+      "additions": 47,
+      "deletions": 8,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": ".github/workflows/cut-release-request.yml",
+      "status": "modified",
+      "additions": 62,
+      "deletions": 16,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": ".github/workflows/cut-release.yml",
+      "status": "modified",
+      "additions": 12,
+      "deletions": 12,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": ".github/workflows/publish-release-handler.yml",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 121,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": ".github/workflows/publish-release-request.yml",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 73,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "AGENTS.md",
+      "status": "modified",
+      "additions": 18,
+      "deletions": 15,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "README.md",
+      "status": "modified",
+      "additions": 11,
+      "deletions": 46,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "deploy/README.md",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "deploy/self-hosted/README.md",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 3,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/android-internal-testing.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/architecture/0002-canonical-release-manifest.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/architecture/0008-explicit-server-releases.md",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/database-rollback-rehearsal.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/deployment.md",
+      "status": "added",
+      "additions": 111,
+      "deletions": 0,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/mobile-release.md",
+      "status": "modified",
+      "additions": 51,
+      "deletions": 87,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/native-store-release.md",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 4,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/README.md",
+      "status": "added",
+      "additions": 21,
+      "deletions": 0,
+      "disposition": "Retain historical evidence outside successor product history"
+    },
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/native-release.jpg",
+      "status": "added",
+      "additions": 0,
+      "deletions": 0,
+      "disposition": "Retain historical evidence outside successor product history"
+    },
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/recovery-options.jpg",
+      "status": "added",
+      "additions": 0,
+      "deletions": 0,
+      "disposition": "Retain historical evidence outside successor product history"
+    },
+    {
+      "path": "docs/pr-screenshots/deployment-cleanup/release-chooser.jpg",
+      "status": "added",
+      "additions": 0,
+      "deletions": 0,
+      "disposition": "Retain historical evidence outside successor product history"
+    },
+    {
+      "path": "docs/release-acceptance.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/release-compatibility.md",
+      "status": "modified",
+      "additions": 17,
+      "deletions": 38,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "docs/ux-regression-gates.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "mobile/README.md",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 2,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "package.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "scripts/native-config.test.mjs",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 3,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "scripts/native-internal-release.mjs",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 2,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "scripts/native.mjs",
+      "status": "modified",
+      "additions": 50,
+      "deletions": 21,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "scripts/native.test.mjs",
+      "status": "modified",
+      "additions": 64,
+      "deletions": 19,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "scripts/release-request.mjs",
+      "status": "modified",
+      "additions": 29,
+      "deletions": 21,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "scripts/release-request.test.mjs",
+      "status": "modified",
+      "additions": 67,
+      "deletions": 33,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    },
+    {
+      "path": "scripts/release-workflow-contract.test.mjs",
+      "status": "modified",
+      "additions": 38,
+      "deletions": 41,
+      "disposition": "Useful remainder; selectively port against current CI/recovery/audit contracts"
+    }
+  ]
+}

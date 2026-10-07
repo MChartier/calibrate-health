@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "originalOwner": "cloud collaboration /root/streamline_calibrate_deployment",
+  "originalNativeTaskId": null,
+  "originalBranch": "mchartier/streamline-deployment",
+  "originalHead": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+  "originalTree": "3cf70fe21ded502e941b334b58c37e32ec340ecf",
+  "handoff": "Trusted coordinator supplied original owner confirmation: idle, no child writers, product/source/evidence preserved. This task has not independently contacted or resumed the cloud owner.",
+  "handoffSource": "https://github.com/MChartier/calibrate-health/pull/401#issuecomment-6031123360",
+  "trustedCoordinatorTaskId": "01a0f838-69d6-75b3-8cc0-f768175aa03e",
+  "verifiedContinuationTaskId": "01a114af-c6d1-705c-ade9-39553731d038",
+  "continuationRole": "Proposed sole native implementation owner; currently scoping/retention only",
+  "implementationStarted": false,
+  "implementationBranchCreated": false,
+  "originalBranchAdopted": false,
+  "authority": "Original human release-cleanup request and active-backlog progression, followed by explicit trusted coordinator delegation to create one scoped issue, retention refs and a pre-dispatch claim. No product implementation is authorized in this phase.",
+  "checks": "Current original branch/head/PR unchanged; no duplicate recovery issue/ref/branch in authenticated GitHub inventory. Native task inventory identifies this task; original owner has no native UUID. Original no-child-writer status is trusted handoff evidence, not a newly observed cloud process inventory.",
+  "checkedAtUtc": "2026-10-07T05:01:33.8780309Z"
+}
