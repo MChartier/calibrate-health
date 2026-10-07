@@ -1,0 +1,18 @@
+{
+  "head": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "capturedAtUtc": "2026-10-07T05:42:58.8553834Z",
+  "files": [
+    "5\t9\tbackend/src/index.ts",
+    "14\t2\tbackend/src/routes/auth.ts",
+    "38\t0\tbackend/src/utils/browserLoginCredentials.ts",
+    "58\t8\tbackend/src/utils/postgresSessionStore.ts",
+    "200\t0\tbackend/test/browser-login-postgres.test.js",
+    "40\t0\tbackend/test/postgres-session-store.test.js",
+    "26\t0\tbackend/test/routes-auth.test.js"
+  ],
+  "master": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parent": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "commits": [
+    "4751d8d89301c18fb0fed7244c3354477e804c2b a0fdefe8bca51c25306f36cccc8181bd35672341 fix(auth): persist browser password logins atomically"
+  ]
+}

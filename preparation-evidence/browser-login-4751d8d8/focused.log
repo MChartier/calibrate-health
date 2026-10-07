@@ -1,0 +1,37 @@
+Γ£ö PostgresSessionStore.initialize verifies the session schema exists (0.7525ms)
+Γ£ö PostgresSessionStore.initialize throws a helpful error for missing tables (0.3854ms)
+Γ£ö PostgresSessionStore.initialize surfaces unexpected database errors (0.1348ms)
+Γ£ö PostgresSessionStore.get returns null when no session exists (0.1434ms)
+Γ£ö PostgresSessionStore.get prunes expired sessions (1.734ms)
+Γ£ö PostgresSessionStore.get returns parsed JSON sessions (0.6142ms)
+Γ£ö PostgresSessionStore.get forwards query errors to the callback (0.1484ms)
+Γ£ö PostgresSessionStore.set stores sessions using the cookie expiration when provided (0.2752ms)
+Γ£ö PostgresSessionStore.set falls back to the store TTL when no cookie timing is set (0.1399ms)
+Γ£ö PostgresSessionStore links authenticated Passport sessions to their user (0.2493ms)
+Γ£ö PostgresSessionStore leaves unauthenticated session ownership null (0.0946ms)
+Γ£ö PostgresSessionStore.touch updates expiry using cookie maxAge (0.1646ms)
+Γ£ö PostgresSessionStore.touch refreshes Passport session ownership (0.1234ms)
+Γ£ö PostgresSessionStore.destroy deletes stored sessions (0.0921ms)
+Γ£ö verified browser save rejects stale identity and cannot retry as an unguarded upsert (0.437ms)
+Γ£ö verified browser save commits once and later saves only update the existing session (0.2462ms)
+auth.login_cleanup failed (request_id=unavailable, error_type=Error).
+Γ£ö auth route: POST /register returns 400 when the email already exists (2055.0838ms)
+Γ£ö auth route: POST /register validates email and password inputs (11.8791ms)
+Γ£ö auth route: POST /register creates a user and logs them in (11.3673ms)
+Γ£ö auth route: POST /login normalizes credentials, logs in, and returns the serialized user (11.637ms)
+Γ£ö auth route: POST /login returns JSON errors for invalid or rejected credentials (9.8876ms)
+Γ£ö auth route: POST /logout forwards errors from req.logout (10.8575ms)
+Γ£ö auth route: POST /logout destroys the session and clears its cookie (9.2594ms)
+Γ£ö auth route: GET /me returns 401 when not authenticated (9.7366ms)
+Γ£ö hosted registration requires explicit current legal versions (14.7735ms)
+Γ£ö auth route: hosted registration fails closed when account email is unavailable (9.1957ms)
+Γ£ö auth route: verification resend and reset request do not reveal account existence (8.478ms)
+Γ£ö browser login clears rejected authenticated state even when session cleanup fails (9.9468ms)
+Γä╣ tests 28
+Γä╣ suites 0
+Γä╣ pass 28
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 2404.2742
