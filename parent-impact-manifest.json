@@ -1,0 +1,19 @@
+{
+  "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "actualTarget": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "purpose": "Retained parent documentation impact evidence; never merge into product history.",
+  "files": [
+    {
+      "path": "parent-impact.json",
+      "sha256": "9efc052824d8bd51e1aef931a9a6a80e500f2713fe2fe806af7c689adf8f2b96"
+    },
+    {
+      "path": "parent-impact.patch",
+      "sha256": "8dee32e4754b2cffb1217cef7de95282e82bf768f8c81b71ebf4327f926a907b"
+    },
+    {
+      "path": "parent-impact-original-pr-body.txt",
+      "sha256": "0b9afeb4c5b1608ec1020a86775ac12329b144258aa87b9fe4f991598153fc6a"
+    }
+  ]
+}

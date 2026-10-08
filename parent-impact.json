@@ -1,0 +1,195 @@
+{
+  "schema": 1,
+  "checkedAtUtc": "2026-10-08T23:14:49.457Z",
+  "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "sourceParent": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "actualTarget": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "targetRef": "mchartier/release-entrypoints-recovery",
+  "reportedPrBase": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "ultimateTarget": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "sourceMergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentReceipt": {
+    "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+    "path": "final-receipt.json",
+    "sha256": "a4570fac4eb3478278ee470c37a10154d0b88407233027d2a1497f409566b114"
+  },
+  "files": [
+    "README.md",
+    "docs/deployment.md"
+  ],
+  "checks": [
+    {
+      "file": "README.md",
+      "unchangedInlineCode": true,
+      "unchangedLinkDestinations": true,
+      "localLinksVerified": 12,
+      "integratedDocumentEqualsActualTarget": true
+    },
+    {
+      "file": "docs/deployment.md",
+      "unchangedInlineCode": true,
+      "unchangedLinkDestinations": true,
+      "localLinksVerified": 13,
+      "integratedDocumentEqualsActualTarget": true
+    }
+  ],
+  "syntheticIntegration": {
+    "tree": "4b1d8a0c6529baedfb5ef25a9883602b91d96a57",
+    "conflictFree": true,
+    "committed": false,
+    "childPatchByteIdenticalAgainstActualTarget": true,
+    "onlyChangesFromChild": [
+      "README.md",
+      "docs/deployment.md"
+    ],
+    "scope": "Conflict/tree/doc applicability evidence only, not a replacement for actual published range or fresh hosted CI."
+  },
+  "publishedScope": {
+    "commits": [
+      {
+        "sha": "70b8e125eb874d9b8c2b21fd0aa394971b0da67c",
+        "parents": [
+          "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+        ],
+        "subject": "Prepare selective release planning and recovery contracts",
+        "paths": [
+          "M\tmobile/app.config.js",
+          "M\tmobile/app.config.test.cjs",
+          "M\tmobile/app.json",
+          "M\tpackage.json",
+          "A\tscripts/ios-release.mjs",
+          "A\tscripts/ios-release.test.mjs",
+          "M\tscripts/native-config.mjs",
+          "M\tscripts/native-config.test.mjs",
+          "M\tscripts/native-eas-credentials.mjs",
+          "M\tscripts/native-internal-release.mjs",
+          "M\tscripts/native-internal-release.test.mjs",
+          "M\tscripts/native.test.mjs",
+          "A\tscripts/release-candidate.mjs",
+          "A\tscripts/release-candidate.test.mjs",
+          "M\tscripts/release-config.mjs",
+          "A\tscripts/release-inputs.mjs",
+          "A\tscripts/release-inputs.test.mjs",
+          "A\tscripts/release-journal.mjs",
+          "A\tscripts/release-journal.test.mjs",
+          "A\tscripts/release-operation.mjs",
+          "A\tscripts/release-plan.mjs",
+          "A\tscripts/release-plan.test.mjs",
+          "A\tscripts/release-retirement.mjs",
+          "A\tshared/ios-release.json"
+        ]
+      },
+      {
+        "sha": "a8539c3b90bd8c69a761c234869e5a0553f8ed08",
+        "parents": [
+          "70b8e125eb874d9b8c2b21fd0aa394971b0da67c"
+        ],
+        "subject": "Wire selective release workers and verified artifact receipts",
+        "paths": [
+          "A\t.github/ios-release-attestation-trusted-workflow-shas",
+          "M\t.github/workflows/builds.yml",
+          "M\t.github/workflows/cut-release.yml",
+          "M\t.github/workflows/expo-ota-update.yml",
+          "A\t.github/workflows/native-ios-release.yml",
+          "M\t.github/workflows/native-release.yml",
+          "M\t.github/workflows/publish-release.yml",
+          "A\t.github/workflows/unified-ota-release.yml",
+          "A\t.github/workflows/unified-release-handler.yml",
+          "A\t.github/workflows/unified-release.yml",
+          "A\t.github/workflows/unified-server-handler.yml",
+          "A\t.github/workflows/unified-server-request.yml",
+          "A\tdocs/unified-releases.md",
+          "M\tmobile/app.config.js",
+          "M\tmobile/eas.json",
+          "M\tpackage.json",
+          "M\tscripts/expo-ota-artifact.mjs",
+          "M\tscripts/expo-ota-artifact.test.mjs",
+          "M\tscripts/ghcr-release-receipt.mjs",
+          "M\tscripts/ghcr-release-receipt.test.mjs",
+          "A\tscripts/ios-app-config.test.mjs",
+          "A\tscripts/ios-artifact.mjs",
+          "A\tscripts/ios-artifact.test.mjs",
+          "A\tscripts/ios-ota-artifact.mjs",
+          "A\tscripts/ios-ota-artifact.test.mjs",
+          "M\tscripts/ios-release.mjs",
+          "M\tscripts/ios-release.test.mjs",
+          "M\tscripts/native-play-receipt.mjs",
+          "M\tscripts/native-play-receipt.test.mjs",
+          "M\tscripts/native-release-build.mjs",
+          "M\tscripts/native-release-build.test.mjs",
+          "A\tscripts/release-baselines.mjs",
+          "A\tscripts/release-baselines.test.mjs",
+          "A\tscripts/release-build-config.mjs",
+          "A\tscripts/release-build-config.test.mjs",
+          "M\tscripts/release-candidate.mjs",
+          "M\tscripts/release-candidate.test.mjs",
+          "A\tscripts/release-controller.mjs",
+          "A\tscripts/release-controller.test.mjs",
+          "A\tscripts/release-github.mjs",
+          "A\tscripts/release-github.test.mjs",
+          "A\tscripts/release-image.mjs",
+          "A\tscripts/release-image.test.mjs",
+          "M\tscripts/release-inputs.mjs",
+          "M\tscripts/release-inputs.test.mjs",
+          "A\tscripts/release-ios-receipt.mjs",
+          "A\tscripts/release-ios-receipt.test.mjs",
+          "A\tscripts/release-ios-worker.mjs",
+          "A\tscripts/release-ios-worker.test.mjs",
+          "M\tscripts/release-journal.mjs",
+          "M\tscripts/release-journal.test.mjs",
+          "M\tscripts/release-operation.mjs",
+          "A\tscripts/release-ota-provider.mjs",
+          "A\tscripts/release-ota-provider.test.mjs",
+          "A\tscripts/release-ota-worker.mjs",
+          "A\tscripts/release-ota-worker.test.mjs",
+          "M\tscripts/release-plan.mjs",
+          "M\tscripts/release-plan.test.mjs",
+          "A\tscripts/release-providers.mjs",
+          "A\tscripts/release-providers.test.mjs",
+          "M\tscripts/release-request.mjs",
+          "M\tscripts/release-request.test.mjs",
+          "A\tscripts/release-retirement-github.mjs",
+          "A\tscripts/release-retirement-github.test.mjs",
+          "M\tscripts/release-retirement.mjs",
+          "A\tscripts/release-runner.mjs",
+          "A\tscripts/release-runner.test.mjs",
+          "A\tscripts/release-server-handoff.mjs",
+          "A\tscripts/release-server-handoff.test.mjs",
+          "A\tscripts/release-snapshot.mjs",
+          "A\tscripts/release-snapshot.test.mjs",
+          "A\tscripts/release-source.mjs",
+          "A\tscripts/release-source.test.mjs",
+          "M\tscripts/release-workflow-contract.test.mjs",
+          "A\tscripts/unified-release.mjs",
+          "A\tscripts/unified-release.test.mjs"
+        ]
+      },
+      {
+        "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+        "parents": [
+          "a8539c3b90bd8c69a761c234869e5a0553f8ed08"
+        ],
+        "subject": "Keep release implementation helpers private",
+        "paths": [
+          "M\tscripts/ios-artifact.mjs",
+          "M\tscripts/ios-release.mjs",
+          "M\tscripts/release-ota-provider.mjs",
+          "M\tscripts/release-plan.mjs",
+          "M\tscripts/release-retirement.mjs"
+        ]
+      }
+    ],
+    "files": 86,
+    "evidenceCommit": "ced19a3b2b32f67aa5fdf1abea2b7b9342326a03",
+    "unchanged": true
+  },
+  "applicability": {
+    "codeConfigurationFixturesWorkflowsUnchanged": true,
+    "behavior": "Original parent has no unified planner; documentation wording change adds none. Existing before/after CLI plans, workers and journal behavior remain applicable.",
+    "tests": "Five successful hosted runs at unchanged child head used source parent 0c26cea. Not rerun or relabeled as CI against cd8932. Exact unchanged executable/workflow tree and byte-identical integrated child patch support applicability; no expensive unaffected suites rerun.",
+    "documentation": "New maintainer/internal wording agrees with managed-hosted intent and docs/unified-releases.md. Existing commands and link destinations remain unchanged. Legacy release entrypoints remain valid; no runtime picker or provider behavior change.",
+    "review": "Bot quota-only refusal remains recorded; no retry or completed review claim. Parent441 QA and independent452 QA remain coordinator-owned and pending."
+  },
+  "originalPrBodySha256": "0b9afeb4c5b1608ec1020a86775ac12329b144258aa87b9fe4f991598153fc6a",
+  "mutation": "Evidence and PR narrative only; no product commit/rebase/merge/force-push, provider operation or schedule operation."
+}
