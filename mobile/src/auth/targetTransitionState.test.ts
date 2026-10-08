@@ -8,10 +8,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { inspectTargetTransitionState } from './targetTransitionState';
+import { ACTIVITY_RECORD_TYPES } from '@calibrate/shared';
 
 const origin = 'https://previous.example';
 const encoded = encodeURIComponent(origin);
 beforeEach(async () => { await AsyncStorage.clear(); jest.clearAllMocks(); mockRows.mockResolvedValue([]); mockInbox.mockReturnValue([]); });
+
+it.each(Object.values(ACTIVITY_RECORD_TYPES))('preserves a completed Health Connect %s checkpoint', async recordType => {
+    const key = '@calibrate/health-connect/token/v1/' + encoded + '/7/' + recordType;
+    const checkpoint = JSON.stringify({ token: 'synthetic-checkpoint', timeZone: 'UTC' });
+    await AsyncStorage.setItem(key, checkpoint);
+    await expect(inspectTargetTransitionState(origin)).resolves.toEqual({ hasState: true });
+    expect(await AsyncStorage.getItem(key)).toBe(checkpoint);
+});
+
+it('blocks unknown Health Connect record types', async () => {
+    await AsyncStorage.setItem('@calibrate/health-connect/token/v1/' + encoded + '/7/Unknown', '{}');
+    await expect(inspectTargetTransitionState(origin)).rejects.toThrow('Unknown Health Connect');
+});
 
 it.each(['pending', 'failed', 'replaying', 'unknown'])('blocks every outbox state, including another account: %s', async state => {
     mockRows.mockResolvedValue([{ namespace: 'https://other.example::user:99', state }]);

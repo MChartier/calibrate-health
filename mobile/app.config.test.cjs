@@ -35,7 +35,7 @@ test('static Expo config supports iPhone, iPad, and iOS Simulator builds', () =>
     associatedDomains: ['applinks:calibratehealth.app'],
     infoPlist: {
       NSLocalNetworkUsageDescription:
-        'Allow calibrate to connect to a self-hosted server on your local network.',
+        'Allow calibrate development builds to connect to the configured local service.',
       NSAppTransportSecurity: {
         NSAllowsLocalNetworking: true
       }

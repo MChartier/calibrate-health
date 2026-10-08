@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { openOutboxDatabase } from '../offline/database';
 import { storedOrigin } from './targetTransition';
 import { isOnboardingFormState } from '../onboarding/completionState';
+import { ACTIVITY_RECORD_TYPES } from '@calibrate/shared';
 
 /** Inspect every account's queues, not just the last visible account. Never alter retained data. */
 export async function inspectTargetTransitionState(previousOrigin?: string): Promise<{ hasState: boolean }> {
@@ -29,8 +30,14 @@ export async function inspectTargetTransitionState(previousOrigin?: string): Pro
         if (!/^@calibrate\/(offline-workspace|onboarding-draft|food-day-receipts|health-connect\/(preferences|last-success|token)|wear\/pairings)\/v1\//.test(key)) {
             throw new Error('Unrecognized saved data namespace.');
         }
-        const match = key.match(/\/v1\/([^/]+)(?:\/([1-9]\d*))?$/);
+        const isHealthToken = key.startsWith('@calibrate/health-connect/token/');
+        const match = key.match(isHealthToken
+            ? /\/v1\/([^/]+)\/([1-9]\d*)\/([^/]+)$/
+            : /\/v1\/([^/]+)(?:\/([1-9]\d*))?$/);
         if (!match) throw new Error('Unrecognized saved data namespace.');
+        if (isHealthToken && !Object.values(ACTIVITY_RECORD_TYPES).some(recordType => recordType === match[3])) {
+            throw new Error('Unknown Health Connect record type.');
+        }
         const decoded = decodeURIComponent(match[1]);
         if (key.startsWith('@calibrate/food-day-receipts/') && !/::user:[1-9]\d*$/.test(decoded)) {
             throw new Error('Saved tracking account identity is unknown.');

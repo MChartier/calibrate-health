@@ -11,6 +11,14 @@ jest.mock('../config/server', () => ({ getDefaultServerUrl: () => 'https://confi
 jest.mock('./targetTransitionState', () => ({ inspectTargetTransitionState: async () => ({ hasState: false }) }));
 import { clearStoredTokens, readStoredTokens, writeStoredTokens, readServerUrl } from './storage';
 
+it('accepts an existing empty installation with only a device ID', async () => {
+    mockValues.clear();
+    mockValues.set('calibrate.mobile.deviceId', 'existing-device');
+    await expect(readServerUrl()).resolves.toBe('https://configured.example');
+    await expect(readStoredTokens()).resolves.toEqual({ accessToken: null, refreshToken: null });
+    expect(mockValues.get('calibrate.mobile.deviceId')).toBe('existing-device');
+});
+
 it('orders an in-flight old token write before logout clearing and replacement-account persistence', async () => {
     await readServerUrl();
     let release!: () => void;

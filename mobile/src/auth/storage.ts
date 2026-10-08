@@ -78,7 +78,6 @@ export async function readServerUrl(): Promise<string> {
                     AsyncStorage.getItem(SERVER_URL_KEY),
                     SecureStore.getItemAsync(ACCESS_TOKEN_KEY), SecureStore.getItemAsync(REFRESH_TOKEN_KEY)
                 ]);
-                if (origin === null && await SecureStore.getItemAsync(DEVICE_ID_KEY)) throw new Error('Previous installation identity is unknown.');
                 return { origin, accessToken, refreshToken };
             },
             inspectLocalState: inspectTargetTransitionState,
