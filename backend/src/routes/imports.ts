@@ -138,11 +138,6 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   }
 
   const bodyFatByDate = new Map(parsed.bodyFat.map((entry) => [entry.localDate, entry.value]));
-  const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
-  const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, currentLocalDate);
-  const boundedWeights = partitionWeightsByPolicy(partitionedWeights.eligible, options.value.weightUnit);
-  const futureWeightWarning = buildFutureWeightWarning(partitionedWeights.future.length);
-  const invalidWeightWarning = buildInvalidWeightWarning(boundedWeights.invalid.length);
 
   let importedFoodLogs = 0;
   let skippedFoodLogs = 0;
@@ -169,6 +164,8 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
     await lockCaloriePlanningInputs(tx, user.id);
     const currentUser = await tx.user.findUniqueOrThrow({ where: { id: user.id }, select: { timezone: true } });
     const today = getSafeUtcTodayDateOnlyInTimeZone(currentUser.timezone);
+    const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, today);
+    const boundedWeights = partitionWeightsByPolicy(partitionedWeights.eligible, options.value.weightUnit);
     const result = await applyWeightImports({
       database: tx,
       userId: user.id,
@@ -186,13 +183,15 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
       await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
     }
     if (correctedGoal) await recordCorrectedGoalStartingWeight(tx, user.id, correctedGoal.id);
-    return result;
+    return { ...result, futureCount: partitionedWeights.future.length, invalidCount: boundedWeights.invalid.length };
   });
 
   importedWeights = weightResult.imported;
   updatedWeights = weightResult.updated;
-  skippedWeights = weightResult.skipped + partitionedWeights.future.length + boundedWeights.invalid.length;
+  skippedWeights = weightResult.skipped + weightResult.futureCount + weightResult.invalidCount;
   updatedBodyFat = weightResult.bodyFatUpdated;
+  const futureWeightWarning = buildFutureWeightWarning(weightResult.futureCount);
+  const invalidWeightWarning = buildInvalidWeightWarning(weightResult.invalidCount);
   if (importedWeights > 0 || updatedWeights > 0) {
     await refreshMaterializedWeightTrendsBestEffort(user.id);
   }

@@ -362,6 +362,36 @@ try {
     assert.equal(await eventCount(), beforeImportEvents + 2);
     assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
     console.log('[goal-pace-smoke] PASS: import create/overwrite corrects only the same-day baseline and sync; KEEP, historical edits and repeated identical imports preserve baseline/history without duplicate goal events.');
+    globalThis.Date = class extends NativeDate {
+        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
+        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
+    };
+    try {
+        for (const oldZone of ['America/Los_Angeles', 'UTC']) {
+            for (const importDate of ['2026-10-08', '2026-10-09']) {
+                const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
+                const acceptedDay = nextZone === 'UTC' ? '2026-10-09' : '2026-10-08';
+                await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
+                user.timezone = oldZone;
+                await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date('2026-10-09T01:00:00Z'), start_weight_grams: 90000 } });
+                const [profile, imported] = await orderedWriters(
+                    () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
+                    () => importWeight(importDate, 82, 'OVERWRITE'));
+                assert.equal(profile.statusCode, 200);
+                const isFuture = importDate > acceptedDay;
+                assert.equal(imported.importedWeights + imported.updatedWeights, isFuture ? 0 : 1);
+                assert.equal(imported.skippedWeights, isFuture ? 1 : 0);
+                assert.equal(imported.warnings.some(warning => warning.includes('future')), isFuture);
+                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams,
+                    importDate === acceptedDay ? 82000 : 90000);
+            }
+        }
+        console.log('[goal-pace-smoke] PASS: import timezone overlap repartitions rows, counts and future warnings using the locked account day in both directions; only that day corrects the baseline.');
+    } finally {
+        globalThis.Date = NativeDate;
+        user.timezone = 'UTC';
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+    }
     console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
 }
 finally {
