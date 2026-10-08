@@ -1,0 +1,614 @@
+{
+  "checkedAtUtc": "2026-10-08T23:07:13.894Z",
+  "host": "MCHARTIER_ZBOOK",
+  "head": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "actualTarget": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "targetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "parentRevisions": [],
+  "bodySha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553",
+  "bodyUpdatedAt": "2026-10-08T23:04:16Z",
+  "scope": {
+    "commits": [
+      {
+        "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+        ],
+        "subject": "Simplify manual server and local native release entrypoints"
+      },
+      {
+        "sha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+        "parents": [
+          "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+        ],
+        "subject": "Frame release deployment guidance for maintainer operations"
+      }
+    ],
+    "files": [
+      {
+        "path": ".github/workflows/container-handler.yml",
+        "status": "removed",
+        "previousFilename": null,
+        "additions": 0,
+        "deletions": 121
+      },
+      {
+        "path": ".github/workflows/container-request.yml",
+        "status": "removed",
+        "previousFilename": null,
+        "additions": 0,
+        "deletions": 81
+      },
+      {
+        "path": ".github/workflows/cut-release-handler.yml",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 47,
+        "deletions": 8
+      },
+      {
+        "path": ".github/workflows/cut-release-request.yml",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 62,
+        "deletions": 16
+      },
+      {
+        "path": ".github/workflows/cut-release.yml",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 15,
+        "deletions": 15
+      },
+      {
+        "path": ".github/workflows/publish-release-handler.yml",
+        "status": "removed",
+        "previousFilename": null,
+        "additions": 0,
+        "deletions": 121
+      },
+      {
+        "path": ".github/workflows/publish-release-request.yml",
+        "status": "removed",
+        "previousFilename": null,
+        "additions": 0,
+        "deletions": 73
+      },
+      {
+        "path": "AGENTS.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 16,
+        "deletions": 13
+      },
+      {
+        "path": "README.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 11,
+        "deletions": 46
+      },
+      {
+        "path": "deploy/README.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 4,
+        "deletions": 0
+      },
+      {
+        "path": "deploy/self-hosted/README.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 6,
+        "deletions": 5
+      },
+      {
+        "path": "docs/android-internal-testing.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "path": "docs/architecture/0002-canonical-release-manifest.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "path": "docs/architecture/0008-explicit-server-releases.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 4,
+        "deletions": 2
+      },
+      {
+        "path": "docs/database-rollback-rehearsal.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "path": "docs/deployment.md",
+        "status": "added",
+        "previousFilename": null,
+        "additions": 117,
+        "deletions": 0
+      },
+      {
+        "path": "docs/mobile-release.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 51,
+        "deletions": 87
+      },
+      {
+        "path": "docs/native-store-release.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 4,
+        "deletions": 4
+      },
+      {
+        "path": "docs/release-acceptance.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 3,
+        "deletions": 3
+      },
+      {
+        "path": "docs/release-compatibility.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 28,
+        "deletions": 43
+      },
+      {
+        "path": "docs/ux-regression-gates.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "path": "mobile/README.md",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 3,
+        "deletions": 2
+      },
+      {
+        "path": "package.json",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "path": "scripts/native-config.test.mjs",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 2,
+        "deletions": 3
+      },
+      {
+        "path": "scripts/native-internal-release.mjs",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 1,
+        "deletions": 2
+      },
+      {
+        "path": "scripts/native.mjs",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 50,
+        "deletions": 21
+      },
+      {
+        "path": "scripts/native.test.mjs",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 64,
+        "deletions": 19
+      },
+      {
+        "path": "scripts/release-request.mjs",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 29,
+        "deletions": 21
+      },
+      {
+        "path": "scripts/release-request.test.mjs",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 67,
+        "deletions": 33
+      },
+      {
+        "path": "scripts/release-workflow-contract.test.mjs",
+        "status": "modified",
+        "previousFilename": null,
+        "additions": 38,
+        "deletions": 41
+      }
+    ],
+    "totals": {
+      "commits": 2,
+      "files": 30,
+      "additions": 627,
+      "deletions": 785
+    }
+  },
+  "checks": [
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584429921",
+      "name": "Release Configuration",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584429946",
+      "name": "Web Critical Smoke",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584429975",
+      "name": "Expo Web Build",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431096",
+      "name": "Mobile Build",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431276",
+      "name": "Full Exported Web and PWA End-to-End",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584432689",
+      "name": "Android Emulator End-to-End",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431335",
+      "name": "Native Two-Emulator Package Upgrade",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431987",
+      "name": "Wear Release Emulator Smoke",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279526/job/113584418758",
+      "name": "High and Critical Vulnerabilities",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431025",
+      "name": "Backend Build",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431805",
+      "name": "Wear Build and JVM Tests",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279508/job/113584423042",
+      "name": "Mobile Tests",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431195",
+      "name": "iOS Build",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431796",
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584431311",
+      "name": "UX Accessibility and Visual Regression",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584432130",
+      "name": "Six-State Data-Backed Route Acceptance",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279530/job/113584426377",
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279508/job/113584424657",
+      "name": "Backend Tests",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "skipping",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279530/job/113584425929",
+      "name": "Populated Postgres Upgrade",
+      "state": "SKIPPED"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279508/job/113584386512",
+      "name": "Classify Test Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279533/job/113584387565",
+      "name": "Classify Build Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279530/job/113584385927",
+      "name": "Classify Database Inputs",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279507/job/113584385893",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37857279526/job/113584386044",
+      "name": "Classify Production Image Inputs",
+      "state": "SUCCESS"
+    }
+  ],
+  "workflows": [
+    {
+      "conclusion": "success",
+      "databaseId": 37857279530,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "name": "Database Upgrade",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37857279507,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "name": "Lint",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37857279508,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "name": "Tests",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37857279526,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "name": "Production Container Scan",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 37857279533,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "name": "Builds",
+      "status": "completed"
+    }
+  ],
+  "feedback": {
+    "issues/440/comments": [
+      {
+        "id": 6031309241,
+        "updatedAt": "2026-10-07T05:04:12Z",
+        "body": "Pre-dispatch claim for this single recovery outcome: proposed sole native continuation owner is verified task `01a114af-c6d1-705c-ade9-39553731d038`. **Implementation is not started**; `mchartier/release-entrypoints-recovery` is only a proposed branch. Coordinator admission/dispatch and a fresh base/ownership check must precede code work.\n\nThe original cloud owner's idle handoff and PR #401 branch remain preserved. Current master is `4cbcbc74`; current original head is `0f53ed82`. [Immutable plan, exact source/evidence refs, ownership and no-expiry retention](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md) were read back and verified, including all original image bytes. Coordinate shared documentation with #439/#404; import neither branch. Keep #434's CI gate and historical image-receipt callers intact.\n\nThis claim authorizes no product port, replacement PR, closure, merge, release/build/upload/provider action or workflow execution. Fixed execution/review pins and live amendments remain unchanged.",
+        "bodySha256": "5ebb7809a400ab4c5ff643439908d34ad50659280bede0eae98d4cf7b65bc3d8"
+      },
+      {
+        "id": 6031358833,
+        "updatedAt": "2026-10-07T05:08:50Z",
+        "body": "Execution checkpoint: coordinator accepted intake and claim 6031309241 and dispatched the existing native owner, task `01a114af-c6d1-705c-ade9-39553731d038`. Actual designated host and master `4cbcbc74` were reverified; isolated branch `mchartier/release-entrypoints-recovery` is created. This supersedes only the prior claim's scoping-only execution status.\n\nOriginal #401 and all three retention refs remain unchanged. The #439 owner independently reports idle/unchanged; its deploy README edits concern server administration, separate from this publishing-guide link. #404 remains untouched; its README index/package-alias edits were inspected read-only. No stack/restructure is needed. Porting and fixture/mock validation begin under the existing CI, receipt, credential and manual-publication contracts. No real release, signing, upload or deployment will run.",
+        "bodySha256": "30075c02a962f33211126596582fd03e7c9d7b5735470a902b2b58f34fa79e88"
+      },
+      {
+        "id": 6031572461,
+        "updatedAt": "2026-10-07T05:26:13Z",
+        "body": "Implementation complete in draft [PR #441](https://github.com/MChartier/calibrate-health/pull/441) at `0c26cea12e3ecdbc962eebaeb140af35f54ab95a`, base `4cbcbc740fbe5fa5646b4de31951c79a653176d5`. One published commit, 30 files, +625/-785; all are product workflows/CLI, maintained tests or maintained guides. Exact CI/receipt/native isolation contracts are preserved; no operator release, signing, native package build, upload or deployment ran; hosted CI performed its authorized builds/smoke checks.\n\n[Source-bound behavior, logs and full scope](https://github.com/MChartier/calibrate-health/blob/aead6ffa9e6a6002c4195f9ef440511238cba6d9/issue440-evidence/README.md) and [final CI/review evidence](https://github.com/MChartier/calibrate-health/blob/fa378d82eb524b33ada2de4291eb34bc8d312be5/issue440-evidence/CI.md) are verified on nonmerged refs. All five hosted workflows passed. The configured review produced only the documented quota refusal; independent QA remains required. Final PR body SHA-256: `7e28879c0f21b5b63edc2fdf600ec3e7aa39a4652edfd7549608f3844a41d539`.\n\nNative issue association and Project Current PRs were read back as #441. The Project's older Queued/Blocked by fields remain coordinator-owned and need reconciliation to this checkpoint. Original #401 remains open, branch and original source/evidence refs unchanged; #404/#439 were not adopted. Owner task `01a114af-c6d1-705c-ade9-39553731d038` is stopped from writing and available for review fixes. No readiness, draft-to-ready transition or closure was applied.",
+        "bodySha256": "426f9402fe8d8a79272a5203be3910a6b787ec60a224cc08a8f1de917a9ebab5"
+      },
+      {
+        "id": 6031805319,
+        "updatedAt": "2026-10-07T05:45:15Z",
+        "body": "Description history preserved before the communication-only correction requested in [QA6031764310](https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6031764310). These are exact previous words, not a current status or new verdict. Requirements remain unchanged. Implementation results remain in [checkpoint6031572461](https://github.com/MChartier/calibrate-health/issues/440#issuecomment-6031572461) and its retained evidence links.\n\nPrior issue body: SHA-256 `90b694aba7ec092140cd0d5cdd50bf268a058ed06cf4306709d2b8437dd051af`, API updated_at `2026-10-07T05:26:13Z`. Exact sections and execution sentence removed from the issue narrative:\n\n> ## Implementation plan\n> \n> Follow the [source-backed staged plan and exact retention record](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md). Source/evidence retention is complete. Master and ownership were reverified; the isolated `mchartier/release-entrypoints-recovery` branch starts at `4cbcbc74`. The useful port and current recovery guidance are complete; fixture release/native/deployment checks passed. All five hosted workflows passed; independent full-scope QA is next.\n> \n> Coordinate `deploy/README.md` with #439 and README/package edits with #404 before shared-file changes; import neither branch. Implementation and a draft successor PR are now authorized. No broad hygiene, Firebase/GCP work, original-PR closure, real release/build/upload/provider action or settings change is authorized.\n> \n\n> ## Implementing Codex task\n> \n> Assigned sole native implementation owner: verified task ID `01a114af-c6d1-705c-ade9-39553731d038`. Implementation is published as draft PR #441 at `0c26cea1`; all five hosted workflows passed; the quota-only Codex review refusal is recorded and independent QA is pending. No publication operations. Preserve the [original cloud owner's idle handoff and ownership](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/owner-handoff.json); no original native UUID existed.\n> \n\n> The assigned owner has started execution from verified current master.\n\nPrior PR body: SHA-256 `7e28879c0f21b5b63edc2fdf600ec3e7aa39a4652edfd7549608f3844a41d539`, API updated_at `2026-10-07T05:41:44Z`. Exact stale clause replaced with a stable pointer to revision-scoped QA verdicts:\n\n> ; independent QA remains pending.",
+        "bodySha256": "f0df0116711a920a86d73839bf0e77c630750d0b176405e6169b675be9c14de4"
+      },
+      {
+        "id": 6032314538,
+        "updatedAt": "2026-10-07T06:26:42Z",
+        "body": "Exact issue440 description preserved before the lifecycle-link correction following [PR401 replacement record6032144733](https://github.com/MChartier/calibrate-health/pull/401#issuecomment-6032144733). Historical snapshot only; temporary statuses below are not current.\n\nOriginal API updated_at: `2026-10-07T05:45:17Z`. SHA-256 of the exact API-decoded UTF-8 body, without trimming or newline normalization: `398c9c64339f6868ac1e82337e5f3410dd0c754538131d966240246fe1bb28a9`.\n\n<details>\n<summary>Exact previous issue body</summary>\n\n```markdown\n## Problem\n\nMaintainers still choose among three server release forms and run native build and submit separately. Original PR #401 contains a useful simplification, but its recovery guidance predates the CI safeguards now merged in #434. Recover that outcome on current master without weakening publication or credential boundaries.\n\nAuthority: the original human release-cleanup request and active-backlog progression, followed by the coordinator's accepted intake and explicit implementation dispatch.\n\n## Requirements and acceptance\n\n1. Provide one manual **Release server** entrypoint with `patch`, `minor`, `major`, `resume`, and `image-only`. Preserve exact request/run/attempt/ref/source verification and operation-specific permissions; reject unknown or mixed inputs. Remove four duplicate request/handler files only after equivalent routing exists.\n2. `resume` verifies the exact merged prepared source and reuses publication without a new version. `image-only` recovers only the image, never OTA/deployment; `publish_latest` defaults false and is allowed only for the highest stable tag. Preserve immutable receipt verification and historical `cut-release-handler.yml`, `publish-release-handler.yml`, and `container-handler.yml` certificate identities, including current allow/revoke enforcement.\n3. Preserve #434's complete exact-candidate CI gate, PR/tested-base binding, bounded approval wait, failure/missing/stale rejection, final ref rechecks and explicit publication dependency. Retain blocked validated candidates; retry only with unchanged refs, and reconcile drift before another cut. Never use post-merge recovery for an unmerged candidate.\n4. `native:release` awaits existing build/sign/verification before submit/readback; failed builds cannot submit. `--skip-build` re-verifies retained artifacts without rebuilding, re-signing or loading signing settings. Keep consuming-stage credential isolation, internal tracks, the internal submit worker, and manual build/install/OTA choices.\n5. Add a concise deployment chooser and consistent maintained guidance. Keep the current weekly/manual package-audit policy and PR container OS checks. Demonstrate request, recovery, receipt, CI and native failure/retry boundaries with maintained non-UI tests; keep historical screenshots and one-off records outside product history.\n\n## Implementation plan\n\nFollow the [source-backed pre-implementation plan and retention contract](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md). Use isolated branch `mchartier/release-entrypoints-recovery` from verified current master. Selectively port the server/native entrypoints, reconcile recovery guidance with #434, and validate the request, recovery and credential boundaries with maintained release/native/deployment checks and hosted PR CI. Obtain independent full-scope QA before coordinator readiness.\n\nCoordinate `deploy/README.md` with #439 and README/package edits with #404 before shared-file changes; import neither branch. Implementation and a draft successor PR are authorized. No broad hygiene, Firebase/GCP work, original-PR closure, real release/build/upload/provider action or settings change is authorized.\n\nKeep results and workflow history in the [execution checkpoint](https://github.com/MChartier/calibrate-health/issues/440#issuecomment-6031572461), its retained records, and the [preserved description history](https://github.com/MChartier/calibrate-health/issues/440#issuecomment-6031805319).\n\n## Implementing Codex task\n\nSole native implementation owner: verified task ID `01a114af-c6d1-705c-ade9-39553731d038`. Preserve the [original cloud owner's idle handoff and ownership](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/owner-handoff.json); no original native UUID existed.\n\n## Implementing PR\n\nSuccessor PR: [#441](https://github.com/MChartier/calibrate-health/pull/441), a focused draft against current master with native `Closes #440` linkage. Original source: [PR #401](https://github.com/MChartier/calibrate-health/pull/401), still open with its branch and evidence unchanged. It is not yet superseded; any later closure requires coordinator verification of the replacement, retention and dependencies.\n```\n</details>",
+        "bodySha256": "71b83b44aa86884c38f0009f439b2cd91179eff1aa6455bd6d8cdfc65e47565d"
+      },
+      {
+        "id": 6070577296,
+        "updatedAt": "2026-10-08T22:47:32Z",
+        "body": "The user explicitly approved a replacement owner for the narrow PR441 documentation correction on October 8 at 22:45 UTC. The original owner remains completed/idle with history and evidence retained; supported resumption attempts did not admit a new turn. A full pinned replacement handoff is prepared, but no replacement task has been dispatched. It is queued for shared implementation capacity, not blocked on that approval anymore.\n\nScope is the reserved README Releases/deployment wording and docs/deployment.md operator framing, plus C1's accurate actual-target/historical-base PR description. PR450's owner confirmed no hunk overlap; PR452's owner checkpointed its child work with these parent documentation files untouched. Preserve parent head `0c26cea12e3ecdbc962eebaeb140af35f54ab95a` until the new owner is admitted; coordinate child impact before any parent advancement. No release or merge is authorized.",
+        "bodySha256": "f9651a6f39aaefc0c50f5580e2468be6b518d06adcc46b68fa3be44fbf48331b"
+      },
+      {
+        "id": 6070615491,
+        "updatedAt": "2026-10-08T22:50:38Z",
+        "body": "The approved replacement correction is admitted to native task `01a11db5-8540-740a-a673-1026c0b90007`, turn `01a11db5-8dcb-733c-bfa0-f871baf47ca0`, with the full pinned packet and exact user approval. Actual host/read acknowledgment and execution output are still awaited; this records admission only. The original completed owner/history remain preserved. The narrow reserved documentation scope and coordination with PR452's active child remain unchanged; no parent source advancement or readiness is claimed.",
+        "bodySha256": "3742e12ecfddf18fd165a6ad11339b0e54c6e3c2fc3daa04497b453f78407a9f"
+      }
+    ],
+    "issues/441/comments": [
+      {
+        "id": 6031502531,
+        "updatedAt": "2026-10-07T05:19:19Z",
+        "body": "@codex review",
+        "bodySha256": "7750379659fbba413136c8bf4f500a59f1e03f0c36c0ab16b0a2475eb13ecb1a"
+      },
+      {
+        "id": 6031504125,
+        "updatedAt": "2026-10-07T05:19:26Z",
+        "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+        "bodySha256": "e39b189a2ed6388c9d919876a2893ca0216a023301e11d788df190b4366991b9"
+      },
+      {
+        "id": 6031670755,
+        "updatedAt": "2026-10-07T05:33:29Z",
+        "body": "Independent QA assignment is next after the completed self-hosting assessment. The existing release-process reviewer will assess this exact focused successor against current master, including preservation of PR434’s CI gates, historical recovery receipt identities, native credential-stage isolation and complete published scope. PR401 remains open until replacement/evidence/dependency checks are complete; no real release execution is part of this assessment.",
+        "bodySha256": "0cbe457bf4d7b64d5426f70c5521f39d380a109a1cbb37e3da8b9bfc45db0dd3"
+      },
+      {
+        "id": 6031764310,
+        "updatedAt": "2026-10-07T05:41:43Z",
+        "body": "Independent QA: **changes-required, communication only** at 0c26cea1 against master 4cbcbc74.\n\n- Issue440 repeats completed implementation, CI and QA status in its plan/task sections. Keep the required problem/requirements/pre-created plan and verified task/PR links; retain results and workflow history in the existing linked records/comments.\n- Remove “independent QA remains pending” from PR441 now that this assessment is complete. Its problem-first Summary and behavioral evidence table otherwise pass.\n\nCode, complete one-commit/30-file scope, behavior, CI and preservation gates pass:117 focused tests independently passed, all five workflows are green, and original PR401 source/artifacts remain accessible with matching hashes. Release CI/receipt safeguards and native credential-stage isolation are preserved. The bot's quota-only refusal is accurately recorded. No code correction or unrelated expensive rerun is requested.\n\n[Immutable detailed assessment, exact bindings, feedback dispositions and evidence](https://github.com/MChartier/calibrate-health/blob/34a5f58833b2f2ae044425ae1e68a9fe4f3e5c3d/verdict.json). Return the final issue/PR descriptions to this same QA for a communication-only reassessment. PR401 remains open; no readiness or lifecycle mutation was performed. First PR441 verdict; supersedes none.",
+        "bodySha256": "10c02e446974561bb5547303bf44979f11c668bc7b43d6f6e428ab8eb50fb3ef"
+      },
+      {
+        "id": 6031981280,
+        "updatedAt": "2026-10-07T05:59:42Z",
+        "body": "Independent QA: **ready** for PR441 at 0c26cea1 against master 4cbcbc74. This supersedes [the communication-only verdict](https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6031764310).\n\nBoth corrections pass: issue440 retains its requirements, plan and active task/PR links without duplicating results; PR441 now has a concise final-change narrative without stale pending-QA language. Source, complete published scope, evidence and five successful workflows are unchanged. The prior independent 117-test result remains applicable; no unaffected suites were rerun. The quota-only bot refusal remains explicitly recorded.\n\n[Immutable detailed verdict, exact revision/body bindings, feedback dispositions and evidence](https://github.com/MChartier/calibrate-health/blob/2755f6fa65e2f816eac2fc12ed5023ee80e176c3/verdict.json). PR401 replacement and retention checks support coordinator closure after readiness and owner/lifecycle reconciliation; its original refs remain intact and no open PR targets its branch. QA did not change readiness, draft state or PR401 lifecycle.",
+        "bodySha256": "7f043aaf2cacb75c586fef6828ecb608f2c51dd71f1b7f09e93f05a9d8ec1712"
+      },
+      {
+        "id": 6032060810,
+        "updatedAt": "2026-10-07T06:08:22Z",
+        "body": "<!-- codex-pull-request-review-summary -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-07T06:08:21.231593Z\">2026-10-07T06:08:21.231593Z</relative-time> | `0c26cea` | Draft marked ready |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+        "bodySha256": "594e0af3ae188e1a09bb414a98a1b405ecbb7c9972f9f73f1c89146a15ffaac2"
+      },
+      {
+        "id": 6032367378,
+        "updatedAt": "2026-10-07T06:30:58Z",
+        "body": "Independent QA: **ready** — issue lifecycle-only rebind, superseding [6031981280](https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6031981280).\n\nIssue440 now accurately links current PR441 and historical superseded PR401. Requirements and every preceding section are unchanged; the exact original description is preserved and verified. PR401 is closed unmerged with original refs retained. PR441 source, base, description and prior behavioral evidence remain applicable; all five workflows remain successful. The current-head automatic review reports Completed with no findings; the earlier quota refusal is historical. All current feedback was reread. No tests or captures were rerun.\n\n[Immutable detailed verdict and exact bindings](https://github.com/MChartier/calibrate-health/blob/261a8b9feffad73e1bc30daacc3776d2accb5d18/verdict.json). No source, Project, readiness or lifecycle changes by QA. Project approval remains separately pending with the user.",
+        "bodySha256": "8bc48821b21be26888e79bfe21301773153a6b9b255c319ee81b33e637ac43bf"
+      },
+      {
+        "id": 6032519419,
+        "updatedAt": "2026-10-07T06:42:56Z",
+        "body": "Independent QA: **ready**, superseding [6032367378](https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6032367378) to correct one stale inherited limitation in the linked record.\n\nPR401 was closed unmerged on 2026-10-07 at 06:12:59 UTC; its original branch, source refs and evidence remain preserved. No further PR401 lifecycle action is required by this assessment. I checked the complete new verdict for contradictory status; prior records and comments remain unchanged.\n\n[Corrected immutable verdict and exact bindings](https://github.com/MChartier/calibrate-health/blob/0308a6c950e1420f2d824761f1dc1b768f5b5c86/verdict.json). Current source/body/issue bindings, complete feedback and five successful workflows were rechecked; the current-head review remains completed without findings. No tests, captures, source, readiness or Project changes. Project permission remains separately pending.",
+        "bodySha256": "3948d752a0429256c80acc91097299bed09c5afb5fa200eb599f48212695a5c1"
+      },
+      {
+        "id": 6067443903,
+        "updatedAt": "2026-10-08T19:27:17Z",
+        "body": "Readiness withdrawn after the human merge of PR436 advanced actual master to `9dc0739e36168aa273530fe00ae5f85fb9c8a3fe` at 19:25:18 UTC. The previously assessed ultimate base was `4cbcbc740fbe5fa5646b4de31951c79a653176d5`. This PR's published source and draft status are unchanged; the human-ready label was removed. Existing owners and the same independent QA will assess the base impact and revalidate affected gates before readiness can be restored. Prior verdicts remain historical evidence; no automatic rebase, merge or reopening is performed.",
+        "bodySha256": "c8bb12432c1160856a8810658f3c178c4fca0a15341d177e794de7be1b4b0feb"
+      },
+      {
+        "id": 6068012907,
+        "updatedAt": "2026-10-08T20:01:39Z",
+        "body": "Independent target-impact QA: **changes-required**, superseding comment 6032519419. Its original trusted receipt was recovered and verified; historical records remain unchanged.\n\n- **C1:** Qualify `4cbcbc74` as the source merge-base/captured baseline and identify actual master `9dc0739`; do not present the old SHA as the current target.\n- **R2:** Apply the managed-hosted amendment to the changed README and deployment chooser: remove end-user “Advanced self-hosting” positioning and frame retained Compose/deployment guidance as maintainer/internal operations. Preserve useful tooling and coordinate shared docs with the managed-hosted owner.\n\nThe complete published scope and incoming PR436 impact pass technical review; all nine critical release safeguards match current master. Existing behavior/CI evidence remains applicable. The original reviewer’s 117 tests are historical, not newly executed here. PR401 stays closed unmerged; PR447 remains separately owned and unassessed.\n\n[Immutable findings, exact bindings and preserved originals](https://github.com/MChartier/calibrate-health/blob/c218350e629c3a7c3bf1440e606ae9f9e2c51d94/verdict.json), SHA-256 `3096164f3531110d70c1b4b72ef3d09ee12ff7585019d0c91ed7bd2385d01259`. Return focused corrections to the same QA lane. No source/body/readiness/draft/Project mutation by QA.",
+        "bodySha256": "9fa5c95ff7c4c03cb729ec8476e05ef4ee8b4d696b0495eb4892cc948e8fb45b"
+      },
+      {
+        "id": 6070780526,
+        "updatedAt": "2026-10-08T23:04:08Z",
+        "body": "@codex review",
+        "bodySha256": "7750379659fbba413136c8bf4f500a59f1e03f0c36c0ab16b0a2475eb13ecb1a"
+      },
+      {
+        "id": 6070781981,
+        "updatedAt": "2026-10-08T23:04:16Z",
+        "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+        "bodySha256": "e39b189a2ed6388c9d919876a2893ca0216a023301e11d788df190b4366991b9"
+      }
+    ],
+    "pulls/441/reviews": [],
+    "pulls/441/comments": []
+  },
+  "review": {
+    "requestCommentId": 6070780526,
+    "quotaRefusalCommentId": 6070781981,
+    "disposition": "One current-head request refused solely for code-review quota; no retry. Apply direct quota-only exception; independent same-lane QA still required."
+  },
+  "evidence": {
+    "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+    "ref": "refs/heads/evidence/pr441-doc-correction-cd8932b2",
+    "url": "https://github.com/MChartier/calibrate-health/blob/02833792aef31b534cb1010e2edb4d7081400ea7/README.md",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "e844e12232868e7e59683812d0a3bf927fb6d772d11e8a49133801774aa81011"
+      },
+      {
+        "path": "pr-body-before.md",
+        "sha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30"
+      },
+      {
+        "path": "correction-evidence.json",
+        "sha256": "b9b932a5b8fa7e6331c3aeeed9125d31b908e1330d3ed205378b3bab915f5462"
+      },
+      {
+        "path": "correction.patch",
+        "sha256": "8dee32e4754b2cffb1217cef7de95282e82bf768f8c81b71ebf4327f926a907b"
+      },
+      {
+        "path": "doc-checks.json",
+        "sha256": "51f49a15b3b93e9b2d55c0ef159db46b529691a0b9afbc68956ac0c88627e106"
+      },
+      {
+        "path": "deployment-tests.log",
+        "sha256": "a248ccb31f1b1c8ee1864c2329521900e480ac2660491f93b71bed776cb16e1a"
+      },
+      {
+        "path": "check-docs.cjs",
+        "sha256": "fa0f54ee19c6b6be6b32b299dcd0651d52fbf90b69a7a5abff3251efd684b648"
+      }
+    ],
+    "readbackVerified": true
+  },
+  "child452": {
+    "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+    "apiBase": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+    "baseRef": "mchartier/release-entrypoints-recovery",
+    "coordinatorImpactComment": 6070751643,
+    "disposition": "Unchanged source; coordinator owns separately affected parent bindings/reassessment."
+  },
+  "pr401": {
+    "state": "closed",
+    "merged": false
+  },
+  "draft": false,
+  "labels": [],
+  "idleCheckpoint": "Clean detached isolated worktree at final head; no child changes, no rebase or force-push. No further source/body work pending known C1/R2 corrections; independent QA required."
+}
