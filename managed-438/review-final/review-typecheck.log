@@ -1,0 +1,16 @@
+npm notice run mobile@0.2.7 typecheck
+npm notice run tsc --noEmit
+src/auth/AuthContext.web.tsx(53,7): error TS6133: 'browserAuthentication' is declared but its value is never read.
+src/auth/AuthContext.web.tsx(69,11): error TS6133: 'authenticationTail' is declared but its value is never read.
+src/auth/AuthContext.web.tsx(70,11): error TS6133: 'pendingAuthentication' is declared but its value is never read.
+src/auth/AuthContext.web.tsx(72,9): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?
+src/auth/AuthContext.web.tsx(73,22): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?
+src/auth/AuthContext.web.tsx(73,69): error TS2304: Cannot find name 'authentication'.
+src/auth/AuthContext.web.tsx(74,9): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?
+src/auth/AuthContext.web.tsx(134,17): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?
+src/auth/AuthContext.web.tsx(147,10): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?
+src/auth/AuthContext.web.tsx(323,17): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?
+src/auth/AuthContext.web.tsx(323,71): error TS2304: Cannot find name 'recoveryEpoch'.
+src/auth/AuthContext.web.tsx(330,17): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?
+src/auth/AuthContext.web.tsx(330,71): error TS2304: Cannot find name 'recoveryEpoch'.
+src/auth/AuthContext.web.tsx(335,21): error TS2552: Cannot find name 'authentication'. Did you mean 'authenticationTail'?

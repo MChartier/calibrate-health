@@ -1,0 +1,48 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth/AuthContext.web.test.tsx src/auth/storage.test.ts src/auth/targetTransitionState.test.ts
+FAIL src/auth/AuthContext.web.test.tsx
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ revokes the stale register cookie before sending replacement credentials
+
+    TypeError: (0 , _server.normalizeServerUrl) is not a function
+
+      17 | /** Only accounts created on the official hosted service accept Calibrate's legal documents. */
+      18 | export function requiresHostedLegalAcceptance(serverUrl: string): boolean {
+    > 19 |     return normalizeServerUrl(serverUrl) === HOSTED_SERVER_URL;
+         |                              ^
+      20 | }
+      21 |
+      22 | export function requireRegistrationLegalAcceptance(
+
+      at requiresHostedLegalAcceptance (src/auth/accountAccess.ts:19:30)
+      at Object.authenticate (src/auth/AuthContext.web.tsx:264:70)
+      at authenticate (src/auth/serverSwitch.ts:21:20)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ revokes the stale register cookie before sending replacement credentials
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      118 |         let old!: Promise<boolean>;
+      119 |         act(() => { old = method === 'login' ? result.current.login('old@example.invalid', 'password') : result.current.register('old@example.invalid', 'password', { acceptTerms: true, acceptPrivacy: true }); });
+    > 120 |         await waitFor(() => expect(first).toHaveBeenCalled());
+          |                      ^
+      121 |         mockLoginBrowser.mockImplementationOnce(async () => { expect(cookie).toBeNull(); cookie = 8; events.push('replacement'); return { user: { ...USER, id: 8 } }; });
+      122 |         let replacement!: Promise<boolean>;
+      123 |         act(() => { replacement = result.current.login('new@example.invalid', 'password'); });
+
+      at src/auth/AuthContext.web.test.tsx:120:22
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS src/auth/targetTransitionState.test.ts
+PASS src/auth/storage.test.ts
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       1 failed, 39 passed, 40 total
+Snapshots:   0 total
+Time:        3.949 s
+Ran all test suites matching /src\\auth\\AuthContext.web.test.tsx|src\\auth\\storage.test.ts|src\\auth\\targetTransitionState.test.ts/i.

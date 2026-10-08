@@ -1,0 +1,50 @@
+[
+  {
+    "file": "provenance.json",
+    "status": 200,
+    "sha256": "08e3f6ec0867f9b28cc3141b1a8995c36eb4dddb7cd1631cad651bbe9c7c8dbd",
+    "bytes": 18645
+  },
+  {
+    "file": "provenance-notes.json",
+    "status": 200,
+    "sha256": "297e76a3daa742a48c2a5ca424dfc1102a8e71601804947b6f0f172f0435e424",
+    "bytes": 917
+  },
+  {
+    "file": "artifact-digests.json",
+    "status": 200,
+    "sha256": "723260575a898da706803145b29b02793455d260d73faf88ddae3d5ca2baa7d9",
+    "bytes": 5907
+  },
+  {
+    "file": "fixture-used.ts",
+    "status": 200,
+    "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+    "bytes": 33191
+  },
+  {
+    "file": "before-advanced.png",
+    "status": 200,
+    "sha256": "f06b869520b56a0cf26c889860967ebbad8f1c89764bf88c549189b9de72eae1",
+    "bytes": 54605
+  },
+  {
+    "file": "after-advanced.png",
+    "status": 200,
+    "sha256": "8cd74869f72400196f11b04b0dd1e8e4ef23ca0040b980a02f4bf4fcecf3453a",
+    "bytes": 47315
+  },
+  {
+    "file": "before-recovery-failure.png",
+    "status": 200,
+    "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad",
+    "bytes": 27894
+  },
+  {
+    "file": "after-recovery-failure.png",
+    "status": 200,
+    "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad",
+    "bytes": 27894
+  }
+]

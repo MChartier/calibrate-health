@@ -1,0 +1,25 @@
+{
+  "checkedAtUtc": "2026-10-08T18:18:58.073Z",
+  "repository": "MChartier/calibrate-health",
+  "pullRequest": 450,
+  "head": "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36",
+  "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  ],
+  "parentRevisions": [],
+  "prBodySha256": "5af266893a4d8c74ec8791dc55403ec173ed1806a483b5e5927f3fc8ed7fe895",
+  "prBodyUpdatedAt": "2026-10-08T18:14:26Z",
+  "productCommits": 1,
+  "productFiles": 35,
+  "additions": 754,
+  "deletions": 798,
+  "evidenceCommit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+  "originalFilesByteVerified": 41,
+  "provenanceSha256": "08e3f6ec0867f9b28cc3141b1a8995c36eb4dddb7cd1631cad651bbe9c7c8dbd",
+  "provenanceNotesSha256": "297e76a3daa742a48c2a5ca424dfc1102a8e71601804947b6f0f172f0435e424",
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "nativeIssueAssociation": "GraphQL closingIssuesReferences readback includes issue438",
+  "projectCurrentPR": "GraphQL mutation and readback confirmed PR450",
+  "readiness": "Not awarded; independent QA pending"
+}

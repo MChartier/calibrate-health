@@ -1,0 +1,712 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth/AuthContext.web.test.tsx src/auth/storage.test.ts src/auth/targetTransitionState.test.ts
+FAIL src/auth/AuthContext.web.test.tsx
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ clears the current account draft on logout
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:60:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (src/auth/AuthContext.web.test.tsx:66:6)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ clears the current account draft on clearLocalSession
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:60:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (src/auth/AuthContext.web.test.tsx:66:6)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ keeps restored and same-account drafts, but clears the former account after a different login
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:69:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ retains progress for a network failure during initial session restoration
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:82:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ still ends the session and clears browser caches if draft deletion fails
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:89:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ a stale browser unauthorized response cannot clear a newer session
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:97:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ revokes the stale login cookie before sending replacement credentials
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:111:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (src/auth/AuthContext.web.test.tsx:133:6)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ revokes the stale register cookie before sending replacement credentials
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:111:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (src/auth/AuthContext.web.test.tsx:133:6)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ blocks replacement credentials while stale cookie revocation fails, then recovers
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:136:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ revokes an old provider cookie before a remounted provider restores a session
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:157:23)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ browser onboarding draft cleanup ΓÇ║ ends a browser cookie delivered after logout instead of restoring it on reload
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:177:23)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ browser offline workspace restoration ΓÇ║ keeps scoped local identity across network outage and restart
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:207:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ browser offline workspace restoration ΓÇ║ keeps scoped local identity across provider outage and restart
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:207:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ browser offline workspace restoration ΓÇ║ refuses to attach an offline workspace to a different recovered cookie account
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:219:28)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ persists a verified user access update without waiting for another tracking query
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:230:24)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ keeps the established identity and enters reconnection after a completed timeout
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:240:24)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ ignores a successful reconnection response that arrives after explicit logout
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:251:24)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ stays explicitly signed out across failed invalidation, restart, recovery and another-account login
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:265:19)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ clears UI and revokes the cookie session when writing logout intent fails
+
+    ReferenceError: authentication is not defined
+
+      145 |             if (sessionEpochRef.current === sessionEpoch) return clearSession();
+      146 |         }
+    > 147 |     }), [authentication, clearSession, serverUrl, sessionEpoch]);
+          |          ^
+      148 |
+      149 |     useEffect(() => {
+      150 |         let active = true;
+
+      at authentication (src/auth/AuthContext.web.tsx:147:10)
+      at Object.react_stack_bottom_frame (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:15670:20)
+      at renderWithHooks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4863:22)
+      at updateFunctionComponent (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7018:19)
+      at beginWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8499:18)
+      at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at performUnitOfWork (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13224:22)
+      at workLoopSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13068:41)
+      at renderRootSync (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13049:11)
+      at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12253:39)
+      at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2908:7)
+      at flushActQueue (../node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:884:10)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at renderWithAct (../node_modules/@testing-library/react-native/src/render-act.ts:13:11)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:69:33)
+      at renderInternal (../node_modules/@testing-library/react-native/src/render.tsx:44:10)
+      at renderHook (../node_modules/@testing-library/react-native/src/render-hook.tsx:55:58)
+      at renderAuth (src/auth/AuthContext.web.test.tsx:47:22)
+      at Object.renderAuth (src/auth/AuthContext.web.test.tsx:291:24)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+PASS src/auth/targetTransitionState.test.ts
+PASS src/auth/storage.test.ts
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       19 failed, 23 passed, 42 total
+Snapshots:   0 total
+Time:        1.706 s, estimated 3 s
+Ran all test suites matching /src\\auth\\AuthContext.web.test.tsx|src\\auth\\storage.test.ts|src\\auth\\targetTransitionState.test.ts/i.
