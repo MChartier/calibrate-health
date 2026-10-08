@@ -1,0 +1,11 @@
+[
+  {
+    "repo": "MChartier/calibrate-health",
+    "commit": "c218350e629c3a7c3bf1440e606ae9f9e2c51d94",
+    "path": "verdict.json",
+    "destination": "recheck441/prior-verdict.json",
+    "gitBlobSha": "5d271c16423a7959db0792a04efd430c09a4d9d2",
+    "bytes": 13077,
+    "sha256": "3096164f3531110d70c1b4b72ef3d09ee12ff7585019d0c91ed7bd2385d01259"
+  }
+]

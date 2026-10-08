@@ -1,0 +1,353 @@
+{
+  "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "headParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "targetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "parentRevisions": [],
+  "schemaVersion": 1,
+  "verdict": "changes-required",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewOverlay": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/441",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/440",
+  "targetRepository": "MChartier/calibrate-health",
+  "targetRef": "master",
+  "checkedAtUtc": "2026-10-08T23:24:22.826335+00:00",
+  "supersedesVerdictCommentId": 6068012907,
+  "prBodySha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553",
+  "issueBodySha256": "a1afb81d9a1d2e144ddeff7426531cd16c92dc9464098bc75c6b220023ca10fa",
+  "fullStandardsAcknowledgment": "Full supplied execution role/common texts, pr-review-v3 overlay/templates and direct amendments read and applied; actual host and current checkout AGENTS.md verified/read in full. Pins unchanged. This trusted replacement QA task performed this recheck; original reviewer history and receipts remain separately attributed.",
+  "scope": {
+    "commits": [
+      {
+        "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+        ]
+      },
+      {
+        "sha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+        "parents": [
+          "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+        ]
+      }
+    ],
+    "paths": [
+      ".github/workflows/container-handler.yml",
+      ".github/workflows/container-request.yml",
+      ".github/workflows/cut-release-handler.yml",
+      ".github/workflows/cut-release-request.yml",
+      ".github/workflows/cut-release.yml",
+      ".github/workflows/publish-release-handler.yml",
+      ".github/workflows/publish-release-request.yml",
+      "AGENTS.md",
+      "README.md",
+      "deploy/README.md",
+      "deploy/self-hosted/README.md",
+      "docs/android-internal-testing.md",
+      "docs/architecture/0002-canonical-release-manifest.md",
+      "docs/architecture/0008-explicit-server-releases.md",
+      "docs/database-rollback-rehearsal.md",
+      "docs/deployment.md",
+      "docs/mobile-release.md",
+      "docs/native-store-release.md",
+      "docs/release-acceptance.md",
+      "docs/release-compatibility.md",
+      "docs/ux-regression-gates.md",
+      "mobile/README.md",
+      "package.json",
+      "scripts/native-config.test.mjs",
+      "scripts/native-internal-release.mjs",
+      "scripts/native.mjs",
+      "scripts/native.test.mjs",
+      "scripts/release-request.mjs",
+      "scripts/release-request.test.mjs",
+      "scripts/release-workflow-contract.test.mjs"
+    ],
+    "additions": 627,
+    "deletions": 785
+  },
+  "correctionScope": {
+    "commits": 1,
+    "files": [
+      "README.md",
+      "docs/deployment.md"
+    ],
+    "additions": 14,
+    "deletions": 12,
+    "assessment": "Only reserved README Releases/deployment section and maintainer framing in deployment guide changed since0c26cea. All code tokens, fenced commands and link targets unchanged; local paths exist. README outside the section and runtime/release workers/tests unchanged. Full two-commit range remains focused product workflows/CLI, four maintained regression files and maintained documentation; no temporary artifact history."
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1",
+      "disposition": "resolved",
+      "evidence": "Final PR explicitly names actual master9dc0739 and separately labels4cbcbc74 as source merge-base/captured evidence baseline/API base. Historical source-bound observations and original117-test execution are not relabeled."
+    },
+    {
+      "id": "R2",
+      "disposition": "resolved",
+      "evidence": "Changed README addresses maintainers; deployment guide explicitly states managed end-user hosting and maintainer-operated infrastructure. Advanced self-hosting/customer install positioning removed from scoped guidance. Existing Compose/backup/restore/internal WireGuard workflows retained; no endpoint, domain, role, Docker or credential change."
+    }
+  ],
+  "findings": [
+    {
+      "id": "C2",
+      "priority": "P2",
+      "category": "communication-only",
+      "location": "issue440 / Implementing Codex task",
+      "observed": "Current body still calls task01a114af-c6d1-705c-ade9-39553731d038 the sole native implementation owner and omits approved replacement01a11db5-8540-740a-a673-1026c0b90007. Current comments6070577296/6070615491 and the trusted dispatch establish the replacement, which authored the assessed correction.",
+      "expected": "The fixed issue template must identify the current implementing Codex task using verified task ID when no shareable URL is available, preserving earlier owner/history separately.",
+      "consequence": "The primary issue task association directs reviewers to the historical owner as though it were current; it contradicts the live replacement handoff.",
+      "ownerAction": "Coordinator or authorized replacement owner updates only the task metadata section: current correction owner01a11db5-8540-740a-a673-1026c0b90007; identify original implementation owner01a114af-c6d1-705c-ade9-39553731d038 as historical, retain existing original-cloud history/evidence links and exact prior body. Return final issue digest for same-lane communication reread. No product/PR-body change, shareable URL request or test rerun required.",
+      "authority": "Direct fixed issue-template/current-association amendment6021281028 plus task-ID fallback6022754087 and concise/current communication standard."
+    }
+  ],
+  "gates": {
+    "value": "pass: existing authorized release-entrypoint simplification and narrowly requested C1/R2 correction; no new product scope.",
+    "outcome": "pass for product and original findings; remaining current issue task association requires C2.",
+    "code": "pass: full ordered two-commit/30-path published scope reconciled with Git/API; original full-scope assessment retained and all non-documentation blobs unchanged. Current dispatcher/native code and retained tests inspected; five routes, strict request metadata/inputs, operation-specific permissions, awaited native build and skip-build boundary preserved. All nine critical master release safeguards match prior verified identities.",
+    "engineeringReview": "pass under quota-only exception: request6070780526 at this head received exact quota-only refusal6070781981. Historical completed review6032060810 is for0c26cea, not current head. Full current issue/PR conversations, submitted reviews and inline threads read; no source finding excused by quota.",
+    "ci": "pass: five live current-head workflow runs successful;24 terminal checks comprise10success/14configured skips. Skips are not execution. Exact workflow/check identities retained in verification.json and prepublish.json.",
+    "behavior": "pass: correction changes wording only and preserves command tokens/links. Owner26 deployment tests verified from exact retained log; no fresh QA suite claimed. Historical117 independent tests belong to original reviewer01a1128e-30ca-76da-bdf8-6e588e957030. Source-bound before/after request routing and mocked native build/failure/retry observations remain applicable because workers/tests are unchanged and actual target has not advanced since prior impact review.",
+    "evidence": "pass:16 current correction/handoff Git blobs verified by exact size/GitSHA1/SHA256. Given final-receipt SHA a4570fac4eb3478278ee470c37a10154d0b88407233027d2a1497f409566b114 matches exact bytes. Prior verdict c218350e SHA3096164f3531110d70c1b4b72ef3d09ee12ff7585019d0c91ed7bd2385d01259 and both historical API comment receipts independently reread/verified. Original evidence remains at its existing immutable identities.",
+    "communication": "changes-required only for C2. Final PR problem/solution and behavioral table are readable, concise and accurate; C1/R2 pass, captured baseline/current target and executed/skipped checks honestly distinguished. Issue440 retains good problem/requirements/plan/PR association but task section is stale after replacement.",
+    "stack": "pass for441 scope: no parentPR; immediate parent0c26cea; actual master9dc0739, API/source merge-base4cbcbc74 separately bound. Child452 owner/impact is separate; no child certification. PR401 remains closed/unmerged."
+  },
+  "targetImpact": "PR436 adds persisted calorie-comparison reads to food-day GET/completion and Watch completion responses. Same validated integer user identity and existing authenticated access remain; no changes to local credential verification, restricted recovery, credential-security-version, session/token/cookie formats, revocation/deletion, Firebase enablement, schema, dependencies or release workflow/helpers. All three incoming commits including both merge parents and ten paths inspected. Existing auth/release behavior evidence remains applicable.",
+  "priorTestsApplicability": "Only two documentation files changed since independently reviewed0c26cea; original runtime/workflows/tests and nine master safeguards byte-identical. Actual master remains the same as prior target-impact assessment; incoming food-day commits do not affect release contracts. Historical117 original-reviewer tests and source-bound fixtures reused, not newly executed.",
+  "criticalUnchanged": [
+    {
+      "path": "scripts/release-ci-gate.mjs",
+      "headAndActualTargetBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
+    },
+    {
+      "path": "scripts/release-ci-gate.test.mjs",
+      "headAndActualTargetBlob": "5a739a178adf706349b22a742a82ba347923fe5a"
+    },
+    {
+      "path": ".github/workflows/container.yml",
+      "headAndActualTargetBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4"
+    },
+    {
+      "path": ".github/workflows/publish-release.yml",
+      "headAndActualTargetBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1"
+    },
+    {
+      "path": "scripts/ghcr-release-policy.mjs",
+      "headAndActualTargetBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984"
+    },
+    {
+      "path": "scripts/ghcr-release-receipt.mjs",
+      "headAndActualTargetBlob": "afdc549612071d6c3e496b8720ab27257eaee767"
+    },
+    {
+      "path": "scripts/native-tag-attestation.mjs",
+      "headAndActualTargetBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec"
+    },
+    {
+      "path": "scripts/release-config.mjs",
+      "headAndActualTargetBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341"
+    },
+    {
+      "path": ".github/release-image-attestation-trusted-workflow-shas",
+      "headAndActualTargetBlob": "760e82a4dd87bc383213d07193d585041d1231dd"
+    }
+  ],
+  "historicalReceipts": [
+    {
+      "verdictCommentId": 6068012907,
+      "verdictBodySha256": "9fa5c95ff7c4c03cb729ec8476e05ef4ee8b4d696b0495eb4892cc948e8fb45b",
+      "verdictUpdatedAt": "2026-10-08T20:01:39Z"
+    },
+    {
+      "verdictCommentId": 6032519419,
+      "verdictBodySha256": "3948d752a0429256c80acc91097299bed09c5afb5fa200eb599f48212695a5c1",
+      "verdictUpdatedAt": "2026-10-07T06:42:56Z"
+    }
+  ],
+  "retainedOriginals": {
+    "priorVerdictCommit": "c218350e629c3a7c3bf1440e606ae9f9e2c51d94",
+    "priorVerdictSha256": "3096164f3531110d70c1b4b72ef3d09ee12ff7585019d0c91ed7bd2385d01259",
+    "originalQaVerdictCommit": "0308a6c950e1420f2d824761f1dc1b768f5b5c86",
+    "sourceBehaviorEvidenceCommit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+    "historicalCiCommit": "fa378d82eb524b33ada2de4291eb34bc8d312be5",
+    "original401RetentionCommit": "f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07",
+    "priorBodySha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30",
+    "policy": "Preserved unchanged; no old receipt or source observation rebound to current head."
+  },
+  "evidence": [
+    {
+      "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+      "path": "README.md",
+      "bytes": 1994,
+      "gitBlobSha": "8968748a8b309a82203a3cc4852b93b5833699b1",
+      "sha256": "e844e12232868e7e59683812d0a3bf927fb6d772d11e8a49133801774aa81011"
+    },
+    {
+      "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+      "path": "check-docs.cjs",
+      "bytes": 2420,
+      "gitBlobSha": "4df95d1742a4d666c177c4a69a77e6b3a8d4c30e",
+      "sha256": "fa0f54ee19c6b6be6b32b299dcd0651d52fbf90b69a7a5abff3251efd684b648"
+    },
+    {
+      "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+      "path": "correction-evidence.json",
+      "bytes": 11331,
+      "gitBlobSha": "a642fc7c85ec697d5cbaacb0905b5e7a568e2e1a",
+      "sha256": "b9b932a5b8fa7e6331c3aeeed9125d31b908e1330d3ed205378b3bab915f5462"
+    },
+    {
+      "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+      "path": "correction.patch",
+      "bytes": 6622,
+      "gitBlobSha": "29d444827b3c6a19f48f10364af0c5c889d5693c",
+      "sha256": "8dee32e4754b2cffb1217cef7de95282e82bf768f8c81b71ebf4327f926a907b"
+    },
+    {
+      "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+      "path": "deployment-tests.log",
+      "bytes": 2459,
+      "gitBlobSha": "00a1ab3f9f6e944d1a247d12ca07e2d7306b4231",
+      "sha256": "a248ccb31f1b1c8ee1864c2329521900e480ac2660491f93b71bed776cb16e1a"
+    },
+    {
+      "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+      "path": "doc-checks.json",
+      "bytes": 602,
+      "gitBlobSha": "615a9e1282547b699f847fe55e97ed6487cb10f4",
+      "sha256": "51f49a15b3b93e9b2d55c0ef159db46b529691a0b9afbc68956ac0c88627e106"
+    },
+    {
+      "commit": "02833792aef31b534cb1010e2edb4d7081400ea7",
+      "path": "pr-body-before.md",
+      "bytes": 3828,
+      "gitBlobSha": "0d6512e00f41891fb7a4af21ee93337cc116d3d3",
+      "sha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "README.md",
+      "bytes": 1994,
+      "gitBlobSha": "8968748a8b309a82203a3cc4852b93b5833699b1",
+      "sha256": "e844e12232868e7e59683812d0a3bf927fb6d772d11e8a49133801774aa81011"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "check-docs.cjs",
+      "bytes": 2420,
+      "gitBlobSha": "4df95d1742a4d666c177c4a69a77e6b3a8d4c30e",
+      "sha256": "fa0f54ee19c6b6be6b32b299dcd0651d52fbf90b69a7a5abff3251efd684b648"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "correction-evidence.json",
+      "bytes": 11331,
+      "gitBlobSha": "a642fc7c85ec697d5cbaacb0905b5e7a568e2e1a",
+      "sha256": "b9b932a5b8fa7e6331c3aeeed9125d31b908e1330d3ed205378b3bab915f5462"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "correction.patch",
+      "bytes": 6622,
+      "gitBlobSha": "29d444827b3c6a19f48f10364af0c5c889d5693c",
+      "sha256": "8dee32e4754b2cffb1217cef7de95282e82bf768f8c81b71ebf4327f926a907b"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "deployment-tests.log",
+      "bytes": 2459,
+      "gitBlobSha": "00a1ab3f9f6e944d1a247d12ca07e2d7306b4231",
+      "sha256": "a248ccb31f1b1c8ee1864c2329521900e480ac2660491f93b71bed776cb16e1a"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "doc-checks.json",
+      "bytes": 602,
+      "gitBlobSha": "615a9e1282547b699f847fe55e97ed6487cb10f4",
+      "sha256": "51f49a15b3b93e9b2d55c0ef159db46b529691a0b9afbc68956ac0c88627e106"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "final-receipt.json",
+      "bytes": 39436,
+      "gitBlobSha": "da0de20b84e6d528c819e51ea8c4927000bd63d1",
+      "sha256": "a4570fac4eb3478278ee470c37a10154d0b88407233027d2a1497f409566b114"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "pr-body-before.md",
+      "bytes": 3828,
+      "gitBlobSha": "0d6512e00f41891fb7a4af21ee93337cc116d3d3",
+      "sha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30"
+    },
+    {
+      "commit": "4852cccf92047a17d72014674a1e0f5371255b3d",
+      "path": "pr-body-final.md",
+      "bytes": 4742,
+      "gitBlobSha": "f00eebd185c10760278a89b1a46b8026dd86b07e",
+      "sha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553"
+    }
+  ],
+  "uiEvidence": {
+    "applicable": false,
+    "pairs": [],
+    "reason": "Non-UI CLI/workflow contract. No new screenshot/render/device execution claimed; general rendering waiver does not change source/behavior sufficiency."
+  },
+  "linkage": {
+    "nativeClosingIssue": 440,
+    "implementingPrCorrect": true,
+    "implementingTask": "C2 stale sole-owner wording",
+    "project": "No Project writes or whole-board coverage certificate. Positive readiness withheld; coordinator retains Project ownership."
+  },
+  "limitations": [
+    "No fresh expensive suites; historical117 QA tests correctly attributed and reused with explicit byte-level/target applicability. Owner26 deployment tests and current hosted workflows are verified evidence, not this lane execution.",
+    "No release workflow dispatch, device install/build/signing, Play upload, image/OTA publication, deployment, provider/credential/security mutation. Native execution remains deferred.",
+    "No child452 source or readiness assessment; its separately owned parent-impact record is not adopted as this QA result.",
+    "No user approval or new product decision required. C2 is ordinary metadata correction within existing authorized workflow."
+  ],
+  "nextAction": "Apply C2 to issue440 through authorized metadata owner, retain original bytes, and return exact final issue body for communication-only reassessment. Keep source/head/PRbody unchanged; do not rerun unaffected tests. Coordinator must separately save/verify this new API-comment receipt; readiness remains withheld.",
+  "checkpoint": "Complete and idle; no suite or database running, isolated checkout clean; no next QA started.",
+  "artifactIdentities": {
+    "verification.json": {
+      "bytes": 93444,
+      "sha256": "59f4e17e6877385d41d789ec753400ce98baee4440dc29ea7788575fa35225e8"
+    },
+    "prepublish.json": {
+      "bytes": 443496,
+      "sha256": "a05601c97e9effac3d20860ca2bfc1c818f5eff1106610fb7b5e2c5b13376630"
+    },
+    "native.json": {
+      "bytes": 572,
+      "sha256": "17b4882a9e3829e33aaa801295986daeda0932c95300a136cf84013e4899a234"
+    },
+    "prior-verdict.json": {
+      "bytes": 13077,
+      "sha256": "3096164f3531110d70c1b4b72ef3d09ee12ff7585019d0c91ed7bd2385d01259"
+    },
+    "prior-identities.json": {
+      "bytes": 366,
+      "sha256": "07d2fa71daba0ce64773930cf37ed76cdd1ebab1187f933109cbbf32cc052ec4"
+    },
+    "identities.json": {
+      "bytes": 4188,
+      "sha256": "2e67313126dc7be9a1a0deaf0121bab52357f9ba0128017054e583e3685ab774"
+    },
+    "verify.py": {
+      "bytes": 5332,
+      "sha256": "e2af4cc28f72b4fc81e38b73fc67a85a03decd16a7e167ec684682630476dae8"
+    }
+  }
+}
