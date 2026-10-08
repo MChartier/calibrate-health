@@ -104,7 +104,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
         expect(clearStoredTokens).not.toHaveBeenCalled();
         fireEvent.press(view.getByRole('button', { name: 'Retry' }));
         await waitFor(() => expect(mockRefreshMobile).toHaveBeenCalled());
-    });
+    }, 15000); // First themed-screen render includes cold native UI transforms on CI.
     beforeEach(() => {
         jest.clearAllMocks();
         mockGetClientConfig.mockReset();
