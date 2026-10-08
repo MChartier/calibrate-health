@@ -148,10 +148,6 @@ test('credentialed release workflows pin external actions and the EAS CLI immuta
     'container.yml',
     'cut-release-request.yml',
     'cut-release-handler.yml',
-    'publish-release-request.yml',
-    'publish-release-handler.yml',
-    'container-request.yml',
-    'container-handler.yml',
     'expo-ota-update.yml',
     'native-release.yml',
     'dependency-audit.yml'
@@ -236,39 +232,26 @@ test('credentialed release workflows pin external actions and the EAS CLI immuta
 
 test('server publication accepts read-only master requests through protected default-branch handlers', () => {
   const cases = [
-    {
-      request: 'cut-release-request.yml',
-      handler: 'cut-release-handler.yml',
-      staticName: 'Cut release',
-      path: '.github/workflows/cut-release-request.yml',
-      artifact: 'cut-release-request',
-      operation: 'cut-release',
-      worker: 'cut-release.yml'
-    },
-    {
-      request: 'publish-release-request.yml',
-      handler: 'publish-release-handler.yml',
-      staticName: 'Publish prepared release',
-      path: '.github/workflows/publish-release-request.yml',
-      artifact: 'publish-prepared-release-request',
-      operation: 'publish-prepared-release',
-      worker: 'publish-release.yml'
-    },
-    {
-      request: 'container-request.yml',
-      handler: 'container-handler.yml',
-      staticName: 'Build Release Image',
-      path: '.github/workflows/container-request.yml',
-      artifact: 'build-release-image-request',
-      operation: 'build-release-image',
-      worker: 'container.yml'
-    }
-  ];
+    { worker: 'cut-release.yml', job: 'cut_release', selected: 'cut-release' },
+    { worker: 'publish-release.yml', job: 'resume_release', selected: 'publish-prepared-release' },
+    { worker: 'container.yml', job: 'recover_image', selected: 'build-release-image' }
+  ].map((entry) => ({
+    ...entry,
+    request: 'cut-release-request.yml',
+    handler: 'cut-release-handler.yml',
+    staticName: 'Release server',
+    path: '.github/workflows/cut-release-request.yml',
+    artifact: 'server-release-request',
+    operation: 'server-release'
+  }));
 
   for (const entry of cases) {
     const request = readWorkflow(entry.request);
     const handler = readWorkflow(entry.handler);
     const worker = readWorkflow(entry.worker);
+    const routedJob = workflowJobBlock(handler, entry.job);
+    assert.ok(routedJob.includes(`if: needs.verify_request.outputs.operation == '${entry.selected}'`));
+    assert.match(routedJob, /needs: verify_request/);
 
     assert.match(request, /\n  workflow_dispatch:/);
     assert.doesNotMatch(request, /workflow_run:|workflow_call:|\n\s+push:|\n\s+pull_request:/);
@@ -331,6 +314,19 @@ test('server publication accepts read-only master requests through protected def
   assert.match(releaseDocs, /production approval remain in force/);
 });
 
+test('server operations share one manual entrypoint without redundant request handlers', () => {
+  for (const name of ['publish-release-request.yml', 'publish-release-handler.yml', 'container-request.yml', 'container-handler.yml']) {
+    assert.equal(existsSync(path.join(workflowsDirectory, name)), false);
+  }
+  const handler = readWorkflow('cut-release-handler.yml');
+  const common = { actions: 'read', attestations: 'write', contents: 'write', 'id-token': 'write', packages: 'write' };
+  assert.deepEqual(workflowPermissions(workflowJobBlock(handler, 'cut_release'), 4), { ...common, 'pull-requests': 'write' });
+  assert.deepEqual(workflowPermissions(workflowJobBlock(handler, 'resume_release'), 4), common);
+  assert.deepEqual(workflowPermissions(workflowJobBlock(handler, 'recover_image'), 4), { ...common, contents: 'read' });
+  assert.doesNotMatch(workflowJobBlock(handler, 'recover_image'), /EXPO_TOKEN|publish-release\.yml|deploy-self-hosted/);
+  assert.match(handler, /publish_latest: \$\{\{ fromJSON\(needs\.verify_request\.outputs\.publish_latest \|\| 'false'\) \}\}/);
+});
+
 test('server publication grants only the operation-specific built-in token permissions', () => {
   const cases = [
     ['cut-release.yml', 'prepare', { contents: 'read' }],
@@ -351,7 +347,7 @@ test('server publication grants only the operation-specific built-in token permi
     assert.deepEqual(workflowPermissions(job, 4), expected, workflowName + ' ' + jobName);
     assert.doesNotMatch(job, /environment:|SERVER_RELEASE_APP_|GHCR_PUBLISH_|create-github-app-token|server-release-tag-protection/);
   }
-  for (const workflowName of ['cut-release-handler.yml', 'publish-release-handler.yml', 'cut-release.yml', 'publish-release.yml']) {
+  for (const workflowName of ['cut-release-handler.yml', 'cut-release.yml', 'publish-release.yml']) {
     const workflow = readWorkflow(workflowName);
     assert.match(workflow, /EXPO_TOKEN: \$\{\{ secrets\.EXPO_TOKEN \}\}/);
     assert.doesNotMatch(workflow, /secrets: inherit/);
@@ -371,14 +367,14 @@ test('Cut release uses a read-only request, protected handler, and scoped token 
   const cleanup = workflowJobBlock(workflow, 'cleanup-candidate');
   const publish = workflowJobBlock(workflow, 'publish');
 
-  assert.match(request, /workflow_dispatch:[\s\S]*bump:[\s\S]*type: choice/);
+  assert.match(request, /workflow_dispatch:[\s\S]*operation:[\s\S]*type: choice/);
   assert.match(request, /options:\s*\n\s+- patch\s*\n\s+- minor\s*\n\s+- major/);
   assert.match(request, /permissions:\s*\n\s+contents: read/);
   assert.doesNotMatch(request, /environment:|secrets\.|actions\/checkout|contents: write|packages: write/);
   assert.match(request, /head_sha "\$\{GITHUB_SHA\}"/);
-  assert.match(request, /name: cut-release-request[\s\S]*overwrite: true/);
+  assert.match(request, /name: server-release-request[\s\S]*overwrite: true/);
 
-  assert.match(handler, /workflow_run:[\s\S]*workflows:\s*\n\s+- Cut release/);
+  assert.match(handler, /workflow_run:[\s\S]*workflows:\s*\n\s+- Release server/);
   assert.match(handler, /permissions:\s*\n\s+actions: read\s*\n\s+contents: read\s*\n\s+pull-requests: read/);
   assert.match(handler, /release-handler-event\.mjs verify/);
   assert.match(handler, /release-request\.mjs verify/);
@@ -1383,9 +1379,9 @@ test('release images publish immutable identity and guard the moving latest tag'
   assert.match(agentGuide, /missing\/deleted\/flooded legitimate evidence still fails closed/);
 
   const attestationCallChain = [
-    ['container-handler.yml', 'run_release', '.github/workflows/container.yml'],
-    ['publish-release-handler.yml', 'run_release', '.github/workflows/publish-release.yml'],
-    ['cut-release-handler.yml', 'run_release', '.github/workflows/cut-release.yml'],
+    ['cut-release-handler.yml', 'recover_image', '.github/workflows/container.yml'],
+    ['cut-release-handler.yml', 'resume_release', '.github/workflows/publish-release.yml'],
+    ['cut-release-handler.yml', 'cut_release', '.github/workflows/cut-release.yml'],
     ['publish-release.yml', 'build_release_image', '.github/workflows/container.yml'],
     ['cut-release.yml', 'publish', '.github/workflows/publish-release.yml']
   ];
@@ -1397,7 +1393,7 @@ test('release images publish immutable identity and guard the moving latest tag'
     assert.match(callJob, new RegExp(`uses: \\.\\/${calledWorkflow.replaceAll('.', '\\.')}`));
     assert.match(callJob, /permissions:[\s\S]*attestations: write[\s\S]*contents: (?:read|write)[\s\S]*id-token: write/);
   }
-  for (const handlerName of ['container-handler.yml', 'publish-release-handler.yml', 'cut-release-handler.yml']) {
+  for (const handlerName of ['cut-release-handler.yml']) {
     const verifier = workflowJobBlock(readWorkflow(handlerName), 'verify_request');
     assert.match(verifier, /permissions:[\s\S]*actions: read[\s\S]*contents: read/);
     assert.doesNotMatch(verifier, /attestations: write|id-token: write/);
@@ -2015,7 +2011,8 @@ test('native Android store releases build one paired candidate and promote it wi
   );
   const packageConfig = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'));
   assert.equal(packageConfig.scripts['native:build'], 'node scripts/native.mjs build');
-  assert.equal(packageConfig.scripts['native:submit'], 'node scripts/native.mjs submit');
+  assert.equal(packageConfig.scripts['native:release'], 'node scripts/native.mjs release');
+  assert.equal(packageConfig.scripts['native:submit'], undefined);
   assert.equal(packageConfig.scripts['ota:publish'], 'node scripts/native.mjs ota');
   assert.equal(packageConfig.scripts.native, undefined);
   assert.equal(packageConfig.scripts['prepare:native:release'], undefined);

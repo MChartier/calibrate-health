@@ -16,7 +16,7 @@ const ACTIONS = {
   build: 'Build signed phone and Wear APKs/AABs for manual upload, install or submit.',
   ota: 'Publish compatible phone JavaScript/assets through Expo.',
   install: 'Install and verify the last build on a local phone and watch.',
-  submit: 'Upload the last verified AABs through Play API to qa and wear:qa.',
+  release: 'Build, verify, and submit phone/Wear to Play internal tracks (qa and wear:qa).',
   configure: 'Download EAS Android signing and assigned Play credentials for local releases.',
   setup: 'Install/check Windows native tools and repository dependencies.'
 };
@@ -24,7 +24,7 @@ const EXAMPLES = {
   build: '',
   ota: '--dry-run --message "Describe this update"',
   install: '[--phone-serial SERIAL] [--watch-serial SERIAL] [--no-launch] [--replace-incompatible]',
-  submit: '',
+  release: '[--skip-build]',
   configure: '[--service-account-file C:\\secure\\healthtracker\\play-testing.json]',
   setup: '[--check] [--skip-deps] [--accept-licenses]'
 };
@@ -44,12 +44,13 @@ function help(action) {
       'For a new Play release, commit unused native version codes first; see docs/mobile-release.md.',
       'Prebuild, signing, phone/Wear APK/AAB builds, and verification are included.'
     );
-    if (action === 'submit') lines.push(
+    if (action === 'release') lines.push(
       'Requires Play Console onboarding and an external testing service-account file.',
-      'Uses native:configure settings; --service-account-file FILE overrides Play credentials for this run.',
+      'Uses native:configure settings; --credentials-file FILE and --service-account-file FILE override paths for this run.',
       'No confirmation flag or prompt. Coordinate other Console/API writers before submitting.',
-      'Re-verifies and uploads the retained build, commits the internal release, and reads it back.',
-      'No install, OTA publish, or separate status command is required between build and submit.'
+      'Builds once, re-verifies and uploads the AABs, commits the internal release, and reads it back.',
+      '--skip-build submits the retained verified artifacts, for a tested build or an upload retry.',
+      'Commit unused native version codes first. No install or OTA publication is required.'
     );
     if (action === 'configure') lines.push(
       'Automatically downloads the default Android signing key and assigned Play key for net.darkmachines.healthtracker.',
@@ -77,7 +78,7 @@ function help(action) {
     '',
     ...Object.entries(ACTIONS).map(([name, description]) => '  ' + npmScript(name).padEnd(17) + description),
     '',
-    'Build once, then choose manual AAB upload, install, or submit.',
+    'Release to Play internal in one command, or build only for manual upload/device testing.',
     'Local builds use calibratehealth.darkmachines.net and Expo channel internal.',
     'Production store releases use the protected GitHub workflow.',
     'Run npm run <script> -- --help for options. See docs/mobile-release.md.'
@@ -94,7 +95,25 @@ export function parseNativeArguments(argv) {
   if (action === 'configure') config = parseNativeConfigureArguments(args);
   else if (action === 'setup') config = parseNativeSetupArguments(args);
   else if (action === 'ota') config = parseNativeOtaArgs(args);
-  else if (action === 'install') {
+  else if (action === 'release') {
+    const values = {};
+    for (let index = 0; index < args.length; index += 1) {
+      const option = args[index];
+      if (!['--skip-build', '--credentials-file', '--service-account-file'].includes(option) || Object.hasOwn(values, option)) {
+        throw new Error('Unknown or duplicate release option: ' + option);
+      }
+      if (option === '--skip-build') values[option] = true;
+      else {
+        const value = args[++index];
+        if (!value || value.startsWith('--')) throw new Error(option + ' requires a value.');
+        values[option] = value;
+      }
+    }
+    if (values['--skip-build'] && values['--credentials-file']) {
+      throw new Error('--credentials-file cannot be used with --skip-build; retained artifacts are never re-signed.');
+    }
+    config = { values };
+  } else if (action === 'install') {
     const allowed = new Set(['--phone-serial', '--watch-serial', '--no-launch', '--replace-incompatible']);
     const seen = new Set();
     for (let index = 0; index < args.length; index += 1) {
@@ -107,9 +126,7 @@ export function parseNativeArguments(argv) {
     }
     config = parseNativeReleaseDeviceArgs(['--skip-build', ...args]);
   } else {
-    const internalArgs = [...args];
-    if (action === 'submit' && !internalArgs.includes('--confirm-play-console-clean')) internalArgs.push('--confirm-play-console-clean');
-    config = parseLocalInternalArgs([action, ...internalArgs], { requireCredentials: false });
+    config = parseLocalInternalArgs([action, ...args], { requireCredentials: false });
   }
   return { action, args, config };
 }
@@ -126,15 +143,19 @@ export async function runNative(argv = [], options = {}) {
   const configurationOptions = { root, environment, platform: options.platform ?? process.platform };
   if (action === 'configure') return (options.configure ?? configureNative)(config, configurationOptions);
   let internalArgs = [action, ...args];
-  if (['build', 'submit'].includes(action)) {
-    const field = action === 'build' ? 'credentialsFile' : 'serviceAccountFile';
-    const flag = action === 'build' ? '--credentials-file' : '--service-account-file';
-    const file = (options.resolveCredentialFile ?? resolveNativeCredentialFile)(field, config.values[flag], configurationOptions);
-    internalArgs = [action, flag, file];
-    if (action === 'submit') internalArgs.push('--confirm-play-console-clean');
+  const credentialFile = (field, flag) => (options.resolveCredentialFile ?? resolveNativeCredentialFile)(
+    field, config.values[flag], configurationOptions
+  );
+  let playFile;
+  if (action === 'release') {
+    // Resolve both paths before a long build, but the worker opens each secret only at its consuming stage.
+    playFile = credentialFile('serviceAccountFile', '--service-account-file');
+  }
+  if (action === 'build' || (action === 'release' && !config.values['--skip-build'])) {
+    internalArgs = ['build', '--credentials-file', credentialFile('credentialsFile', '--credentials-file')];
   }
   if (action === 'setup') return (options.setup ?? setupNative)(args, { root, environment });
-  if (['build', 'install', 'submit'].includes(action) &&
+  if (['build', 'install', 'release'].includes(action) &&
       (options.platform ?? process.platform) === 'win32') {
     const saved = (options.readUserEnvironment ?? readNativeUserEnvironment)(environment);
     for (const key of NATIVE_ENVIRONMENT_KEYS) {
@@ -149,9 +170,17 @@ export async function runNative(argv = [], options = {}) {
     await (options.verifyArtifacts ?? verifyLocalInternalArtifacts)({ root, environment: local });
     return (options.devices ?? runNativeReleaseDevices)({ repositoryRoot: root, environment: local, config });
   }
-  if (action === 'submit') (options.log ?? console.log)(
-    '[native] Submitting the paired internal release. Play commits can include other pending Console changes; coordinate other Console/API writers.'
-  );
+  if (action === 'release') {
+    const internal = options.internal ?? runLocalInternalCli;
+    (options.log ?? console.log)(
+      '[native] This command will submit the paired internal release. Play commits can include other pending Console changes; coordinate other Console/API writers.'
+    );
+    if (!config.values['--skip-build']) {
+      const build = await internal(internalArgs, { root, environment });
+      if (build?.ok === false) throw new Error('Native build verification failed; nothing was submitted.');
+    }
+    return internal(['submit', '--service-account-file', playFile, '--confirm-play-console-clean'], { root, environment });
+  }
   return (options.internal ?? runLocalInternalCli)(
     internalArgs, { root, environment }
   );

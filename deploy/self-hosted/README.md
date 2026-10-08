@@ -4,14 +4,15 @@ An optional GitHub-hosted job deploys the verified published GHCR digest to one 
 It joins your existing WireGuard network, invokes a restricted SSH command, and exits. No registry polling,
 public application endpoint, webhook receiver, or persistent GitHub runner is needed.
 
-`Publish prepared release` starts deployment after `build_release_image`, alongside Expo OTA publication.
+The prepared-release worker behind **Release server** starts deployment after `build_release_image`, alongside Expo OTA publication.
 Deployment failure is visible in Actions but does not prevent the sibling OTA job from running or require its
 production approval. An offline server must be retried explicitly; there is no background reconciliation.
 Deployment also runs when an unavailable native baseline causes OTA to be skipped. The image publisher exposes
 its immutable digest only after verifying the release receipt and registry aliases; recovered publication uses that
-attested identity even if the new credential-free rebuild differs. Existing release requests, publication approvals,
-attestations, and recovery handlers remain unchanged.
-`Build Release Image` remains an image-only recovery action.
+attested identity even if the new credential-free rebuild differs. Publication approvals, attestations, and recovery
+guarantees remain unchanged.
+**Release server** with `image-only` recovers only the image, without deploying or publishing OTA.
+See the [deployment guide](../../docs/deployment.md) for the operation chooser.
 
 This choice follows GitHub's [WireGuard networking guidance](https://docs.github.com/en/actions/how-tos/manage-runners/github-hosted-runners/connect-to-a-private-network/connect-with-wireguard).
 The repository is public, so a Docker-capable persistent runner on the application host would expose it to the
@@ -165,7 +166,7 @@ and verifies it without restarting. Use this to validate routing, SSH, and confi
 Copy the `Verified release image` from the image publisher's Actions summary. This is the authoritative registry
 manifest digest, not the credential-free build's local image/config ID.
 
-Subsequent **Cut release** and **Publish prepared release** runs automatically deploy their published digest.
+Subsequent **Release server** new-release and `resume` runs automatically deploy their published digest.
 The host checks the current stack against its saved state, checks backup freshness, pulls the digest, saves a pending
 deployment, and writes `/var/lib/calibrate-deploy/image.env`. It then recreates only `app` using Compose
 `up --no-deps --no-build --pull never --wait`. It checks the actual container image ID, Docker health status,

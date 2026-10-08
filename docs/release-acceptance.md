@@ -26,8 +26,8 @@ The Builds workflow provides these focused checks:
 Database populated-upgrade checks run for database-relevant changes. Pull requests run the encrypted rollback
 rehearsal when Prisma migrations or the rollback workflow/harness change. Production-image build/startup/web smoke
 and OS-vulnerability checks remain automatic for affected inputs. Full image scans, including package libraries,
-run on the existing Monday 14:15 UTC schedule or manual dispatch. **Cut release** does not replay the PR checks
-against its generated version-only candidate.
+run on the existing Monday 14:15 UTC schedule or manual dispatch. The new-release worker runs exact metadata/image
+validation and waits for its candidate PR checks to pass; it does not duplicate those checks in release jobs.
 
 Generated version-only `release/v*` pull requests still validate synchronized release configuration, but suppress
 unrelated web, phone, and Wear build fan-out.
@@ -59,7 +59,7 @@ review aid and does not authorize or record an external launch.
 
 ## Cut server/web release
 
-After the desired changes land on `master`, **Cut release** creates and validates an exact version-only server/web
+After the desired changes land on `master`, **Release server** creates and validates an exact version-only server/web
 candidate. It verifies the candidate identity, parent commit, synchronized release configuration, and exact set of
 generated version mirrors. It then builds the production image, starts it against Postgres, and verifies readiness and
 the served web application.

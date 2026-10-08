@@ -35,7 +35,8 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 
 - Weight trend model: `docs/weight-trend-model.md`
 - MCP, OAuth, and the Codex plugin: `docs/mcp.md`
-- Deployment (Compose self-hosting): `deploy/README.md`
+- Release and deployment commands: [docs/deployment.md](docs/deployment.md)
+- Compose self-hosting: [deploy/README.md](deploy/README.md)
 - Database connections and optional pool bounds: [configuration](docs/database-connections.md)
 - Expo web dev/build/PWA: `docs/expo-web.md`
 - Expo Android client: `mobile/README.md`
@@ -45,56 +46,20 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Security model and release threat review: `docs/security.md`, `docs/security-release-threat-model.md`
 - Architecture decisions: `docs/architecture/`
 
-## Advanced: self-hosting
+## Releases and deployment
 
-### Docker Compose (single machine)
+Maintainers use the [deployment guide](docs/deployment.md) to choose a release or internal deployment operation:
 
-The portable production Compose files under `deploy/` support either Caddy or an existing Traefik deployment, with
-either external Postgres or a private in-stack Postgres volume. An optional backup overlay creates age-encrypted
-automated dumps with retention. The deployment intentionally has no AWS/Terraform dependency.
+- Server/web: GitHub Actions **Release server** publishes a versioned image and attempts compatible OTA
+- Local Android phone + Wear: `npm run native:release` builds and submits to Play internal tracks
+- Local phone JavaScript/assets: `npm run ota:publish -- --message "Describe the update"`
+- Public Play store builds and promotions: [protected store workflow](docs/native-store-release.md)
 
-Quick start:
-
-1. Build the production image:
-
-   ```sh
-   docker build -f Dockerfile.app -t calibrate:local .
-   ```
-
-2. Copy `deploy/.env.example` to `deploy/.env`, set `APP_IMAGE`, `APP_HOST`, `SESSION_SECRET`, and configure the chosen
-   database mode. Generate an age identity and set its public recipient if using the recommended backup overlay.
-
-3. Start the stack:
-
-   ```sh
-   cd deploy
-   docker compose --env-file .env \
-     -f docker-compose.yml \
-     -f docker-compose.postgres.yml \
-     -f docker-compose.backup.yml \
-     up -d --build
-   ```
-
-   Omit `docker-compose.postgres.yml` when using external Postgres. Replace `docker-compose.yml` with
-   `docker-compose.traefik.yml` when the host already runs Traefik.
-
-Notes:
-
-- Caddy needs ports 80/443 reachable from the internet and DNS pointing at the machine. Traefik uses its existing
-  external network and certificate resolver.
-- The app runs committed Prisma migrations before becoming ready. Compose and both proxies use DB-backed readiness.
-- Restore drills refuse non-empty databases and require the age private identity plus explicit confirmation.
-
-See [deploy/README.md](deploy/README.md) for external/in-stack commands, upgrade behavior, resource guidance,
-encrypted backup monitoring, and the clean-instance restore procedure.
+For maintainer-managed infrastructure, [deploy/README.md](deploy/README.md) covers Caddy or Traefik, external or in-stack
+Postgres, encrypted backups, upgrades, and restore. Use a published image; building one locally is optional.
+Publication deploys an internal host only when maintainers enable the documented WireGuard/SSH deployment.
 
 ## Development
-
-For Android phone and Wear releases, use the [local native guide](docs/mobile-release.md):
-build packages with `npm run native:build`, publish Expo updates with `ota:publish`,
-install the last build with `native:install`, or submit its AABs with `native:submit`.
-Run `npm run <script> -- --help` for required options. Protected production releases have a
-[separate maintainer guide](docs/native-store-release.md).
 
 ### One-command quickstart
 

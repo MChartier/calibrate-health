@@ -1,7 +1,7 @@
 # Google Play internal testing onboarding
 
 Use [Local native builds and releases](mobile-release.md) for the daily commands: `native:build`, `native:install`,
-`native:submit`, and `ota:publish`. This companion guide covers one-time signing and Play Console setup for the
+`native:release`, and `ota:publish`. This companion guide covers one-time signing and Play Console setup for the
 local private-backend profile. Run `npm.cmd run native:setup` before the first build.
 
 The application ID is `net.darkmachines.healthtracker`. Both phone and Wear use

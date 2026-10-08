@@ -261,11 +261,12 @@ UI code style:
 
 ## Release Versioning
 
+- Start operator guidance at `docs/deployment.md`; keep recovery and specialist setup in linked references.
 - Ordinary feature and fix PRs must not change `shared/release.json` `server.version` or its package, lockfile,
   diagnostic, OpenAPI, and generated-client mirrors.
-- After the desired changes land on `master`, run **Cut release** in GitHub Actions and choose `patch`, `minor`, or
+- After the desired changes land on `master`, run **Release server** in GitHub Actions and choose `patch`, `minor`, or
   `major`. The action owns the synchronized release commit, version-only PR, tag, and GHCR publication.
-- The visible server release Actions are read-only request workflows. Default-branch `workflow_run` handlers verify
+- The visible **Release server** Action is a read-only request workflow. Its default-branch `workflow_run` handler verifies
   exact requests before calling reusable workers. Keep build and verification jobs read-only. Use job-scoped
   `GITHUB_TOKEN` writes only for candidate/tag publication, PR finalization/cleanup, and GHCR publication; callers must
   propagate every required reusable-workflow permission. Finalization waits for the exact candidate PR CI (including
@@ -288,14 +289,14 @@ UI code style:
 - Server release jobs run automatically with the configured Actions identity. Cleanup is eligible only after
   read-only exact-ref inspection and must not remove a merged or moved candidate. Job isolation is not an external
   credential boundary against a user who can edit or rerun write-enabled workflows.
-- **Cut release** revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
+- The new-release operation revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
   workflows own full tests, production-image scanning, and database upgrade/rollback validation. Package dependency
   audits run only during weekly/manual maintenance; do not add them or expiring advisory exceptions to PR or release gates.
   Keep container OS-vulnerability checks on PRs; scan package libraries in the scheduled/manual full image scans.
 - A CI-blocked validated candidate is retained. Approve pending PR workflows or repair their failure, then rerun only
   failed release jobs while master and candidate remain unchanged. Do not cut another version or use the prepared
   publisher before merge. If master advances, stop and explicitly reconcile the retained candidate before a fresh
-  Cut release; do not rebase, overwrite or manually merge it.
+  release request; do not rebase, overwrite or manually merge it.
 - Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are
   globally unique: phone uses the odd lane and Wear uses the even lane. Use `node scripts/release-config.mjs prepare-native --bump patch` for a paired
   store version only after its current manifest tag is verified as a signed annotated tag against the reviewed public
@@ -304,10 +305,11 @@ UI code style:
   evidence. Merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
   uploads phone/Wear to Play internal tracks, and promotes those exact codes through closed testing before the
   protected production operation.
-- Local Android package operations use `native:build`, `native:install`, and `native:submit`.
+- Local Android package operations use `native:release` (build and submit), `native:build`, and `native:install`.
+  `native:release -- --skip-build` submits a retained tested build or retries its upload without rebuilding.
   Phone JavaScript/assets updates use `ota:publish`. Run these scripts through `npm run <script> -- <options>`.
   `native:configure` and `native:setup` are the only supporting root commands; `native:setup -- --check`
-  checks prerequisites without changes, and submit includes upload readback. Keep diagnostic and version-maintenance
+  checks prerequisites without changes, and release includes upload readback. Keep diagnostic and version-maintenance
   workers under `scripts/` rather than adding root aliases.
   Configure uses the locked EAS CLI for authentication/first-time setup, then automatically downloads the
   default Android signing key and assigned Play key for the exact linked project and `net.darkmachines.healthtracker`.
@@ -319,7 +321,7 @@ UI code style:
   An unassigned Play key permits build/install but clears stale submission settings. Explicit local Play files
   remain an optional override; configure never uploads them or authenticates to Google. Build/submit use these
   paths by default; explicit file flags override them for one run. Keep credential contents out of saved settings.
-  The public submit command supplies Console-coordination acknowledgement implicitly, with a reminder but no
+  The public release command supplies Console-coordination acknowledgement implicitly, with a reminder but no
   confirmation flag or prompt. Preserve the protected CI publisher and its independent credential boundaries.
   The existing `node scripts/native-internal-release.mjs prepare --bump patch` helper can allocate a native version
   without a published tag. The local path uses
@@ -328,8 +330,8 @@ UI code style:
   only after credential-free prebuild, verifies all four artifacts,
   and records local provenance. It never creates authoritative `native-v*` tags or adopts uploads into the protected
   workflow. Install and submit verify and reuse the retained build without rebuilding.
-  After tool/credential/Play onboarding and committing unused version codes, build followed by submit is sufficient
-  for the local internal-track release. Build owns prebuild/signing/verification; submit owns upload and readback.
+  After tool/credential/Play onboarding and committing unused version codes, `native:release` is sufficient for the
+  local internal-track release. It runs build then submit; the workers retain separate credential stages and upload readback.
   Install and OTA publication are optional separate operations, not prerequisites to submit.
   Follow `docs/mobile-release.md` for local commands, `docs/android-internal-testing.md` for onboarding, and
   `docs/native-store-release.md` for protected releases; the server/web version stays unchanged. A later protected
@@ -340,8 +342,8 @@ UI code style:
   identical bytes solely from singleton Play observations, scrub Play authentication, then verify the original exact
   workflow/source certificate under the fresh-master allow/revoke policy. A mutable Play name is not provenance;
   missing/legacy/revoked evidence requires a fresh higher odd/even pair, never adoption or tag creation.
-- After the GHCR image is published, **Cut release** publishes the exact release commit to Expo only when the native
-  tag from `shared/release.json` is a verified signed release attestation. Expo uses the configured repository
+- After the GHCR image is published, the new-release operation publishes the exact release commit to Expo only when the
+  native tag from `shared/release.json` is a verified signed release attestation. Expo uses the configured repository
   `EXPO_TOKEN`, `preview` environment, and one reviewer-protected `production` approval after internal publication.
   That approval gates production environment resolution, export, and publication. Keep the four credential stages
   separate from source export. The token has project-wide update authority; the approval controls workflow sequencing
@@ -373,10 +375,11 @@ UI code style:
 - Protected production approval is the current public-channel promotion gate. A future explicit readiness signal may
   cover the release owner's declared server rollout, but independent self-hosts still require the runtime guard. Do
   not poll independent private servers to gate OTA. The optional deployment job verifies only its configured target.
-- Use **Publish prepared release** with the recorded release commit and branch to recover post-merge tag/image
+- Use **Release server** with `resume`, the recorded release commit, and tag to recover post-merge tag/image
   failures and OTA failures whose prepared manifest already records a compatible protected native tag. Historical releases
   with an incompatible recorded native baseline require **Publish Expo OTA Update** from an exact compatible source
-  that descends from the installed build. **Build Release Image** remains an image-only recovery tool.
+  that descends from the installed build. **Release server** with `image-only` recovers existing images without OTA or deployment.
+  Keep historical handler identities in the GHCR receipt verifier even after removing their duplicate workflow files.
 
 ## Git And PR Workflow
 

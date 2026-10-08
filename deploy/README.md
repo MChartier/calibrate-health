@@ -9,6 +9,10 @@ The published `Dockerfile.app` image serves the Expo Router/React Native Web sta
 origin. Expo documents, the service worker, and the install manifest are revalidated; hashed bundles use immutable
 caching.
 
+For publishing a new image or choosing a native/OTA release, start with the [deployment guide](../docs/deployment.md).
+This guide starts with an already published image. A local `docker build -f Dockerfile.app -t calibrate:local .`
+from the repository root is optional; set `APP_IMAGE=calibrate:local` if using it.
+
 ## Stack combinations
 
 | Proxy | Database | Compose files |
