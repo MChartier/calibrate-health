@@ -1,0 +1,12 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/components/WeightEntrySheet.test.tsx src/components/GoalProgressCard.test.tsx src/offline/replayInvalidation.test.ts src/offline/trackingProjection.test.ts
+PASS src/components/WeightEntrySheet.test.tsx (10.314 s)
+PASS src/components/GoalProgressCard.test.tsx
+PASS src/offline/trackingProjection.test.ts
+PASS src/offline/replayInvalidation.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       35 passed, 35 total
+Snapshots:   0 total
+Time:        11.629 s
+Ran all test suites matching /src\\components\\WeightEntrySheet.test.tsx|src\\components\\GoalProgressCard.test.tsx|src\\offline\\replayInvalidation.test.ts|src\\offline\\trackingProjection.test.ts/i.

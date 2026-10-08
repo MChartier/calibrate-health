@@ -1,0 +1,50 @@
+{
+  "metric": {
+    "body_fat_percent": null,
+    "date": {},
+    "id": 12,
+    "progress_update": {
+      "current_weight_grams": 85000,
+      "goal": {
+        "current_progress_percent": 33.3,
+        "id": 46,
+        "is_complete": false,
+        "mode": "lose",
+        "previous_progress_percent": 0,
+        "reached_local_date": null,
+        "remaining_weight_grams": 10000
+      },
+      "is_current_day": true,
+      "local_date": "2026-07-21",
+      "recognitions": [
+        {
+          "threshold_percent": 25,
+          "type": "goal_percent"
+        }
+      ],
+      "save_kind": "updated"
+    },
+    "user_id": 7,
+    "weight": 85
+  },
+  "goal": {
+    "id": 46,
+    "user_id": 7,
+    "created_at": "2026-07-21T19:00:00.000Z",
+    "start_weight_grams": 90000,
+    "target_weight_grams": 75000,
+    "target_date": null,
+    "daily_deficit": 500,
+    "calorie_plan_review_status": "CLEAR",
+    "calorie_plan_review_reason": null,
+    "start_weight": 90,
+    "target_weight": 75,
+    "plan_status": "available",
+    "plan_reason_code": null,
+    "projection": {
+      "status": "projected",
+      "projected_end_date": "2027-02-01",
+      "reason_code": null
+    }
+  }
+}

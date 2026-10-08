@@ -1,0 +1,58 @@
+[
+  {
+    "Hash": "7D4FF6DC630EFD079B4B7D2BE6B1670357316C80ABFD8DE3516DA792E2DF91FD",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\after-response.json"
+  },
+  {
+    "Hash": "77271AAF9FEFC5A02F7B460FCD282F6FBAB02CE697954C7D6B9578BA497AFCF1",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\after-weight-screen.png"
+  },
+  {
+    "Hash": "D7D0859EF5BF8F5C369556EBB20216AB05946061D8BA965EB430F3745B2E66A4",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\after.png"
+  },
+  {
+    "Hash": "9BF3B6529970640457051EEE041A70B58BDF7130E6F4D72D152A0A6FD66CF5DE",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\backend-check.txt"
+  },
+  {
+    "Hash": "4FEE1D1595C3106304F8B72CDEB8E2436CB7E2A5BD16DA9670921540F1B16CBB",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\before-response.json"
+  },
+  {
+    "Hash": "84172CE88AD5256185DFA0583E8EDA29C26CF23EA738588F9CAAAB718D023307",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\before-weight-screen.png"
+  },
+  {
+    "Hash": "7AEAA3CBE18FE3C6F27A9BF2D191FB840C5D7D9551258308A3B817D9801190BD",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\before.png"
+  },
+  {
+    "Hash": "916F8A563BDDB92DBAED93A96697D4C43097D3F736BCD850DB68F28DFF550DA4",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\build-manifests.json"
+  },
+  {
+    "Hash": "F0F62AB850F25B94DDAE669639AC6B0A9FD09F398F01D2E80A0B0C71106CC096",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\capture.spec.ts"
+  },
+  {
+    "Hash": "1351D03B94FF5A477ABA5FC4B51C7485CC30EBDE0621AEDDA75EDFA32B60A4A3",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\client-check.txt"
+  },
+  {
+    "Hash": "086F065EA8AD837705E2410EC099F8BE4FC239701F4C1D2BACC752FED839E00F",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\expo-fixtures.ts"
+  },
+  {
+    "Hash": "95DB3BF82B2A532679A380E8432277A5136E822F3E7700CF6F26917FD59E904F",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\playwright.config.ts"
+  },
+  {
+    "Hash": "7BC502BC5AD65B7EBC784B42507AE842FEEAE9E37094E9B7F26EA3C278F6B13E",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\route-server.cjs"
+  },
+  {
+    "Hash": "84F96EBBD84615C83A5407E530B3EAE4C567AE8A59746A8999CF1017CE729914",
+    "Path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\routes-metrics.fixture-source.js"
+  }
+]
