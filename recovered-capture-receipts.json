@@ -1,0 +1,436 @@
+{
+  "sourceTask": "01a11c77-0cff-76e7-b21f-6f5702949026",
+  "retrieval": "Native read_thread; selected command receipts, output truncation flags preserved",
+  "receipts": [
+    {
+      "type": "commandExecution",
+      "id": "exec-900895ac-1420-45ab-bddd-6f464e740d87",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"Get-Content AGENTS.md\nGet-Content ..\\\\evidence446\\\\capture.spec.ts\nGet-Content ..\\\\backend446-check.txt -Tail 12\nGet-ChildItem ..\\\\evidence446 | Select-Object Name,Length\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 317,
+      "output": {
+        "text": "# calibrate Agent Guide\r\n\r\nThis file is for AI/code agents working in this repo. Keep changes aligned with\r\nthe product shape, current architecture, and the workflow conventions that have\r\nalready been validated here.\r\n\r\n## Product Contract\r\n\r\ncalibrate is a responsive calorie tracker for desktop and mobile web. Users log\r\nfood and weight, then compare daily calorie intake with an estimated target from\r\ntheir profile and goal.\r\n\r\nCore requirements:\r\n\r\n- Multi-user email/password auth with cookie sessions.\r\n- Required profile data for calorie math: date of birth or age, sex, height,\r\n  current weight, timezone, unit preference, language, and activity level.\r\n- Goal setup with start weight, target weight, and signed `daily_deficit`.\r\n- Allowed daily deficit/surplus magnitudes are defined in `shared/goalDeficit.ts`\r\n  and must remain `0`, `250`, `500`, `750`, `1000` kcal/day.\r\n- Positive `daily_deficit` means deficit/weight loss. Negative means surplus/\r\n  weight gain. `0` means maintenance.\r\n- Food logging is organized by fixed meal periods: Breakfast, Morning Snack,\r\n  Lunch, Afternoon Snack, Dinner, Evening Snack.\r\n- Weight and food \"day\" grouping must follow the user's IANA timezone, not the\r\n  server timezone.\r\n- Visualization should support calories consumed vs target, weight trend, and\r\n  steady-rate goal projection. Maintenance goals do not show a projection date.\r\n\r\nCalorie math:\r\n\r\n- BMR uses Mifflin-St Jeor.\r\n- TDEE is `BMR * activityMultiplier`.\r\n- Baseline daily target is `TDEE - daily_deficit`.\r\n- A user-approved calibration revision may add a bounded target correction while\r\n  leaving the configured deficit and profile-estimated TDEE unchanged.\r\n- Projection uses a constant rate of `3500 kcal/lb` or `7700 kcal/kg`.\r\n- \"Calories out\" remains the profile-estimated TDEE. Weight and intake trends\r\n  may support a bounded calorie-target correction, but must not replace or be\r\n  displayed as the user's TDEE.\r\n\r\nNon-goals for MVP:\r\n\r\n- No activity-driven automatic calorie-target adjustment.\r\n- No smart deficit adjustment to hit a target date.\r\n- No advanced body composition modeling beyond optional stored fields.\r\n\r\n## Architecture Map\r\n\r\n- Client: Expo Router + React Native + React Native Web, TypeScript, React Query.\r\n- Backend: Node.js + TypeScript + Express.\r\n- Persistence: Postgres through Prisma under `backend/prisma/`.\r\n- Shared domain constants live under `shared/`.\r\n- Browser and native routes live under `mobile/app/`; shared client code lives\r\n  under `mobile/src/`.\r\n- Supported server-side language values live in `backend/src/utils/language.ts`.\r\n- Food providers live in `backend/src/services/foodData/`.\r\n- Self-hosting uses `deploy/` and expects an external Postgres unless a deployer\r\n  explicitly adds one.\r\n\r\n## Agent Operating Defaults\r\n\r\n- Read the relevant code before proposing changes. Prefer existing patterns over\r\n  new abstractions.\r\n- If the user asks for a fix, upgrade, rebase, issue update, audit pass, or UI\r\n  overhaul, implement it directly when feasible.\r\n- Keep repo-owned workflows first. Prefer tracked scripts, Codex actions, and\r\n  documented commands over one-off local instructions.\r\n- Preserve disposable worktree and Codex app workflows. Do not steer back to\r\n  static worktrees or CLI-only operation unless the app workflow is blocked.\r\n- Treat Windows-host execution as a first-class path. Host-side scripts should\r\n  use Node entrypoints rather than shell assumptions when practical.\r\n- When diagnosing setup failures, start from the exact failing command/log and\r\n  verify the repo-owned setup path before changing app code.\r\n- Keep secrets out of the database. Provider API keys and client IDs are sourced\r\n  from environment variables unless the product direction changes explicitly.\r\n- Keep Codex and validation commands on the host. Use the repo-owned Compose\r\n  launcher for the live application stack; do not add container-shell wrappers\r\n  for ordinary tests, linting, builds, or Prisma work.\r\n\r\n## Local Development\r\n\r\nPrimary workflows:\r\n\r\n- Codex setup: `node .codex/local-environment.setup.mjs`\r\n- Host dependency setup: `npm run setup`\r\n- Windows Android build setup: `npm run native:setup` (add `-- --check` for a read-only prerequisite check)\r\n- Prepare the worktree stack: `npm run dev:setup`\r\n- Local dev server: `npm run dev`\r\n- Native Expo dev-client bundler: `npm run dev:expo` (with the Compose stack\r\n  running separately)\r\n- Local dev without seeded-user auto-login: `npm run dev:manual-auth`\r\n- Inspect the current stack: `npm run dev:status`\r\n- Reset test-user onboarding: `npm run dev:reset-test-user-onboarding`\r\n- Local CI equivalent: `npm run ci:local`\r\n\r\nWorktree stack notes:\r\n\r\n- `scripts/dev-stack.mjs` owns Docker/Compose lifecycle, stable ports, and the\r\n  current worktree database. It always targets the current checkout.\r\n- `scripts/dev-env.mjs` owns host dependency setup, Prisma commands, and local\r\n  CI. Host dependency caches are lockfile-and-runtime based; keep cache-hit and\r\n  cache-miss output explicit when editing setup.\r\n- `compose.dev.yaml` runs separate `web`, `backend`, and `postgres` services.\r\n  Compose Watch syncs source changes; package-lock and Prisma changes rebuild\r\n  the affected image.\r\n- Codex setup installs host dependencies and allocates `.dev.env`, but it does\r\n  not start containers. This prevents idle stacks in code-only worktrees.\r\n- `npm run dev:down` retains the current database volume. `npm run dev:reset`\r\n  resets only that worktree's database.\r\n- Repo root `.env` is gitignored. Do not assume it propagates to new worktrees\r\n  unless setup copies it or the user sets machine/user environment variables.\r\n\r\nEnvironment conventions:\r\n\r\n- Root `.env` stores user-provided application credentials.\r\n- `.dev.env` is generated, gitignored, worktree-specific, and contains only the\r\n  allowlisted application configuration plus local ports/secrets.\r\n- Direct backend package runs may use `backend/.env`; standard root database\r\n  commands inject the current worktree database automatically.\r\n- The seeded account is `test@calibratehealth.app`.\r\n- `AUTO_LOGIN_TEST_USER=true` enables local auto-login for that seeded account.\r\n\r\n## Validation\r\n\r\nChoose validation proportional to the change, and report what ran.\r\n\r\nCommon checks:\r\n\r\n- Full local CI: `npm run ci:local`\r\n- All TypeScript surfaces: `npm run lint`\r\n- Backend type-check: `npm --prefix backend run typecheck`\r\n- Shared API client type-check: `npm --prefix packages/api-client run typecheck`\r\n- Expo client type-check: `npm --prefix mobile run typecheck`\r\n- Expo web build: `npm run build:expo-web`\r\n- Expo client tests: `npm --prefix mobile test`\r\n- Expo web release checks: `npm run test:expo-web:release`\r\n- Backend tests: `npm --prefix backend test`\r\n- Backend build: `npm --prefix backend run build`\r\n- Audit from the root/mobile dependency context: `npm audit`\r\n- Diff hygiene: `git diff --check`\r\n\r\nWindows-specific note:\r\n\r\n- Use `npm.cmd --prefix mobile run typecheck`, `npm.cmd --prefix mobile test --\r\n  --runInBand`, and `npm.cmd --prefix mobile run build:web` when an issue or\r\n  reviewer calls for the Windows-host Expo gates.\r\n\r\nClient dependency/audit fixes:\r\n\r\n- Keep remediation narrow. Prefer lockfile-only or targeted override fixes when\r\n  they address the advisory.\r\n- After lockfile-only work, run a full install if `eslint`, `tsc`, or other local\r\n  binaries are missing before trusting lint/build results.\r\n\r\n## Data And Domain Rules\r\n\r\n- Store weights in grams and heights in millimeters; convert at API/UI edges.\r\n- Store `FoodLog.local_date`, `FoodLogDay.local_date`, `BodyMetric.date`, and\r\n  notification local dates as date-only values derived from `User.timezone`.\r\n- Use shared timezone helpers for local-day calculations. Avoid duplicating date\r\n  math or relying on server-local time.\r\n- Food logs are immutable snapshots. My Foods and recipe edits must not\r\n  retroactively mutate existing `FoodLog` entries.\r\n- Preserve external provider and serving snapshot fields when editing food logs.\r\n- Keep FatSecret attribution intact in client search/barcode results. The Expo\r\n  barcode path is implemented through `mobile/src/barcode/workflow.ts`.\r\n- Profile photos are stored inline as small processed avatars; respect\r\n  `backend/src/utils/profileImage.ts` caps and parsing rules.\r\n- Prisma migrations use ordinal folder names such as `0001_init`. If\r\n  `prisma migrate dev` creates timestamped local folders, rename them to the\r\n  ordinal style before sharing if they are still unapplied elsewhere.\r\n\r\nFood provider behavior:\r\n\r\n- `FOOD_DATA_PROVIDER` selects the preferred provider: `fatsecret`, `usda`, or\r\n  `openfoodfacts`.\r\n- FatSecret requires `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET`.\r\n- USDA requires `USDA_API_KEY`, though local development may use USDA `DEMO_KEY` for\r\n  local fallback when no provider credentials exist.\r\n- Missing credentials should not crash normal dev search. Detect available\r\n  providers and use deterministic fallback order with the configured/default\r\n  provider first.\r\n- Keep provider identity stable across paginated text-search results. Do not\r\n  switch providers on later empty pages if the client is appending results\r\n  under first-page provider metadata.\r\n- Do not merge provider results unless explicitly requested; the validated shape\r\n  is sequential fallback.\r\n\r\n## Expo Client Practices\r\n\r\n- Keep browser and native behavior in the shared Expo source tree. Use matching\r\n  `.web` and `.native` modules or the contracts under `mobile/src/platform/`\r\n  when behavior must differ by runtime.\r\n- Keep primary Expo Router navigation fast. Treat route splitting and deferred\r\n  bundles as release behavior that requires browser and device validation.\r\n- Preserve the app-like PWA experience. PWA toasts should be actionable: offline,\r\n  back-online, update-ready, and update-failed are appropriate; lifecycle-only\r\n  \"ready for offline launch\" messaging is not.\r\n- Runtime PWA state should use React-safe external-store patterns such as\r\n  `useSyncExternalStore` rather than setting component state from service-worker\r\n  effects.\r\n- Installed-app polish belongs in the Expo app shell. `mobile/app/_layout.tsx`,\r\n  `mobile/app/_layout.web.tsx`, and `mobile/app/(tabs)/_layout.tsx` own global\r\n  providers, browser shell behavior, and tab navigation.\r\n- Keep mobile navigation focused. Do not reintroduce redundant profile/\"More\"\r\n  bottom-nav entry points when top app-bar/account-menu access is sufficient.\r\n- For public/auth/onboarding/account surfaces, keep one cohesive layout language\r\n  across adjacent pages instead of polishing one page in isolation.\r\n- Reuse the auth primitives under `mobile/src/components/auth/` for\r\n  login/register shell work.\r\n- Use `mobile/src/components/AppCard.tsx` and existing screen/card primitives\r\n  only for intentional containment. Ordinary content uses `AppSection`, navigation uses\r\n  `AppActionRow`, and consequential notices use `AppNotice`. Follow `docs/visual-design.md`\r\n  for page widths, section rhythm, action hierarchy, and visual acceptance.\r\n- Keep generic primitives under `mobile/src/components/`; put feature-specific\r\n  behavior in the corresponding `mobile/src/` feature folder.\r\n- Keep public privacy and account-deletion copy centralized in\r\n  `mobile/src/legal/publicLegalContent.ts`.\r\n- Prefer ASCII punctuation in UI strings (`|`, `-`, `...`) over bullets,\r\n  ellipses, or curly punctuation.\r\n\r\nUI code style:\r\n\r\n- Avoid magic numbers for layout/styling. Prefer named constants, theme tokens,\r\n  or wrapper presets.\r\n- Add a short comment to new layout/motion constants explaining what they\r\n  control.\r\n- Keep JSX readable. Move heavy `sx` logic, one-of-N render branches, and state\r\n  to label/variant mappings into named variables or helpers.\r\n- Avoid nested ternaries. Use `if`/`switch` when mapping state to UI text,\r\n  variants, or render branches.\r\n- Use shared constants/enums for domain string unions use",
+        "truncated": true,
+        "originalChars": 30655
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-78dbc88a-6475-4386-87af-baaf7220005a",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"Get-ChildItem .. | Select-Object Name\nGet-Content ..\\\\evidence446\\\\route-server.cjs\nGet-Content backend\\\\package.json -TotalCount 45\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 255,
+      "output": {
+        "text": "\r\nName\r\n----\r\nevidence446\r\ngoal-446\r\ngoal446-before\r\nbackend446-check.txt\r\nclient446-check.txt\r\nissue446-next.txt\r\nissue446-prior.txt\r\n// Synthetic persistence adapter around the actual selected source's metric route.\r\nconst fs = require('node:fs');\r\nconst path = require('node:path');\r\nconst vm = require('node:vm');\r\nconst http = require('node:http');\r\nconst { createRequire } = require('node:module');\r\nconst source = path.resolve(process.argv[2]);\r\nconst port = Number(process.argv[3]);\r\nconst NativeDate = Date;\r\nglobal.Date = class extends NativeDate {\r\n  constructor(...args) { super(...(args.length ? args : ['2026-07-21T19:00:00Z'])); }\r\n  static now() { return NativeDate.parse('2026-07-21T19:00:00Z'); }\r\n};\r\nconst sourceRequire = createRequire(path.join(source, 'backend/test/routes-metrics.test.js'));\r\nconst fixtureText = fs.readFileSync(path.resolve(__dirname, '../goal-446/backend/test/routes-metrics.test.js'), 'utf8');\r\nconst fixtureRequire = Object.assign(name => name === 'node:test' ? (() => {}) : sourceRequire(name), sourceRequire);\r\nconst context = { require: fixtureRequire,\r\n  module: { exports: {} }, console, Date, structuredClone };\r\nvm.runInNewContext(fixtureText + '\\nmodule.exports = { baselineFixture };', context);\r\nconst fixture = context.module.exports.baselineFixture({ timeZone: 'America/Los_Angeles' });\r\nhttp.createServer(async (req, res) => {\r\n  try {\r\n    let result;\r\n    if (req.method === 'POST') {\r\n      let body = ''; for await (const chunk of req) body += chunk;\r\n      result = await fixture.save(JSON.parse(body), {}, req.headers['x-client-operation-id']);\r\n    } else if (req.url === '/goals') {\r\n      const goal = fixture.goal;\r\n      result = { statusCode: 200, body: { ...goal, start_weight: goal.start_weight_grams / 1000,\r\n        target_weight: goal.target_weight_grams / 1000, plan_status: 'available', plan_reason_code: null,\r\n        projection: { status: 'projected', projected_end_date: '2027-02-01', reason_code: null } } };\r\n    } else {\r\n      const metric = fixture.metric;\r\n      result = { statusCode: 200, body: metric ? [{ ...metric, weight: metric.weight_grams / 1000 }] : [] };\r\n    }\r\n    res.writeHead(result.statusCode, { 'content-type': 'application/json' });\r\n    res.end(JSON.stringify(result.body));\r\n  } catch (error) { res.writeHead(500); res.end(String(error.stack)); }\r\n}).listen(port, '127.0.0.1', () => console.log(`Actual route fixture ${source} on ${port}`));\r\n{\r\n  \"name\": \"backend\",\r\n  \"version\": \"0.38.0\",\r\n  \"scripts\": {\r\n    \"prebuild\": \"npm run prisma:generate\",\r\n    \"build\": \"tsc -p tsconfig.build.json\",\r\n    \"pretypecheck\": \"npm run prisma:generate\",\r\n    \"typecheck\": \"tsc --noEmit -p tsconfig.build.json\",\r\n    \"db:migrate\": \"prisma migrate deploy\",\r\n    \"db:migrate:dev\": \"prisma migrate dev\",\r\n    \"db:reset\": \"prisma migrate reset\",\r\n    \"db:push:reset\": \"prisma db push --force-reset\",\r\n    \"predb:seed\": \"npm run prisma:generate\",\r\n    \"db:seed\": \"ts-node --transpile-only prisma/seed.ts\",\r\n    \"db:studio\": \"prisma studio\",\r\n    \"prisma:generate\": \"prisma generate\",\r\n    \"start\": \"node dist/backend/src/index.js\",\r\n    \"start:prod\": \"bash scripts/start-prod.sh\",\r\n    \"pretest\": \"npm run prisma:generate\",\r\n    \"test\": \"node -r ts-node/register --test\",\r\n    \"test:weight-trend-lab\": \"node -r ts-node/register --test test/weight-trend-benchmark.test.js test/weight-trend-governance.test.js\",\r\n    \"weight-trend:tuning-report\": \"node -r ts-node/register scripts/weight-trend-tuning-report.js\",\r\n    \"weight-trend:tuning-report:check\": \"node -r ts-node/register scripts/weight-trend-tuning-report.js --check\",\r\n    \"performance:regression\": \"node -r ts-node/register scripts/performance-regression.js\",\r\n    \"pretest:coverage\": \"npm run prisma:generate\",\r\n    \"test:coverage\": \"c8 node -r ts-node/register --test\",\r\n    \"dev\": \"nodemon --watch src --watch ../shared --ext ts,json --exec ts-node src/index.ts\"\r\n  },\r\n  \"keywords\": [],\r\n  \"author\": \"\",\r\n  \"license\": \"ISC\",\r\n  \"description\": \"\",\r\n  \"dependencies\": {\r\n    \"@modelcontextprotocol/sdk\": \"^1.30.0\",\r\n    \"@prisma/adapter-pg\": \"^7.9.0\",\r\n    \"@prisma/client\": \"^7.9.0\",\r\n    \"@tesseract.js-data/eng\": \"^1.0.0\",\r\n    \"adm-zip\": \"^0.6.0\",\r\n    \"bcryptjs\": \"^3.0.3\",\r\n    \"cors\": \"^2.8.5\",\r\n    \"dotenv\": \"^17.2.3\",\r\n    \"express\": \"^5.2.1\",\r\n    \"express-rate-limit\": \"^8.5.2\",\r\n    \"express-session\": \"^1.18.2\",\r\n    \"helmet\": \"^8.2.0\",\r\n\r\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-1c689d22-07b6-46e6-bba1-378eaeba45b7",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"Copy-Item -LiteralPath ..\\\\backend446-check.txt -Destination ..\\\\evidence446\\\\backend-check.txt\nCopy-Item -LiteralPath ..\\\\client446-check.txt -Destination ..\\\\evidence446\\\\client-check.txt\nCopy-Item -LiteralPath backend\\\\test\\\\routes-metrics.test.js -Destination ..\\\\evidence446\\\\routes-metrics.fixture-source.js\nCopy-Item -LiteralPath e2e\\\\expo-web\\\\fixtures.ts -Destination ..\\\\evidence446\\\\expo-fixtures.ts\n\"'$manifest = foreach ($label in @('\"'before','after')) { \"'$folder = if ($label -eq '\"'before') { '..\\\\goal446-before\\\\mobile\\\\dist' } else { 'mobile\\\\dist' }; \"'$rootPath = (Resolve-Path $folder).Path; Get-ChildItem -LiteralPath $rootPath -Recurse -File | Sort-Object FullName | ForEach-Object { [pscustomobject]@{ build=$label; path=$_.FullName.Substring($rootPath.Length+1).Replace('\"'\\\\','/'); sha256=(Get-FileHash -LiteralPath \"'$_.FullName -Algorithm SHA256).Hash.ToLower() } } }\n$manifest | ConvertTo-Json -Depth 4 | Set-Content ..'\"\\\\evidence446\\\\build-manifests.json -Encoding utf8\nGet-ChildItem ..\\\\evidence446 -File | Get-FileHash -Algorithm SHA256 | Select-Object Hash,Path | ConvertTo-Json | Set-Content ..\\\\evidence446\\\\artifact-hashes.json -Encoding utf8\n git push -u origin mchartier/goal-start-weight-446\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3553,
+      "output": {
+        "text": "remote: \nremote: Create a pull request for 'mchartier/goal-start-weight-446' on GitHub by visiting:        \nremote:      https://github.com/MChartier/calibrate-health/pull/new/mchartier/goal-start-weight-446        \nremote: \nTo github.com:MChartier/calibrate-health.git\n * [new branch]        mchartier/goal-start-weight-446 -> mchartier/goal-start-weight-446\nbranch 'mchartier/goal-start-weight-446' set up to track 'origin/mchartier/goal-start-weight-446'.\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-388a6142-1eea-41e8-aa4c-ea802acb9f5a",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git init -b evidence/issue446-baseline\n git add README.md artifact-hashes.json build-manifests.json before.png after.png before-response.json after-response.json before-weight-screen.png after-weight-screen.png capture.spec.ts playwright.config.ts route-server.cjs routes-metrics.fixture-source.js expo-fixtures.ts backend-check.txt client-check.txt\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Retain issue446 matched baseline evidence'\n git remote add origin git@github.com:MChartier/calibrate-health.git\n git rev-parse HEAD\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 1015,
+      "output": {
+        "text": "Initialized empty Git repository in C:/Users/MChar/Documents/Codex/2026-10-08/task-5/evidence446/.git/\nwarning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'after-response.json', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'before-response.json', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'capture.spec.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'expo-fixtures.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'playwright.config.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'route-server.cjs', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'routes-metrics.fixture-source.js', LF will be replaced by CRLF the next time Git touches it\n[evidence/issue446-baseline (root-commit) b9c116b] Retain issue446 matched baseline evidence\n 16 files changed, 4783 insertions(+)\n create mode 100644 README.md\n create mode 100644 after-response.json\n create mode 100644 after-weight-screen.png\n create mode 100644 after.png\n create mode 100644 artifact-hashes.json\n create mode 100644 backend-check.txt\n create mode 100644 before-response.json\n create mode 100644 before-weight-screen.png\n create mode 100644 before.png\n create mode 100644 build-manifests.json\n create mode 100644 capture.spec.ts\n create mode 100644 client-check.txt\n create mode 100644 expo-fixtures.ts\n create mode 100644 playwright.config.ts\n create mode 100644 route-server.cjs\n create mode 100644 routes-metrics.fixture-source.js\nb9c116b458bb5973de44b4e12136c7ff9acd5b86\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-7be81c60-137e-4d22-86d0-486ebfd4fea1",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command '$env:TS_NODE_PROJECT='\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal446-before\\\\backend\\\\tsconfig.json'\nnode -r ./backend/node_modules/ts-node/register ../evidence446/route-server.cjs . 18446\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal446-before",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 223394,
+      "output": {
+        "text": "Actual route fixture C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal446-before on 18446\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-7df0dd27-50dc-453b-b81b-3174f3651680",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'node scripts/expo-web-static-server.mjs --port 18444'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal446-before",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 218080,
+      "output": {
+        "text": "Expo web static preview listening at http://127.0.0.1:18444\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-cb8e2888-9982-45ab-aabb-e221b60c270a",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"gh pr view 449 --repo MChartier/calibrate-health --json statusCheckRollup,reviews,comments --jq '{checks: [.statusCheckRollup[] | {name,status,conclusion}],reviews,comments}'\nGet-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { \"'$_.LocalPort -in @(18444,18445,18446,18447) } | Select-Object LocalAddress,LocalPort,OwningProcess'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 1933,
+      "output": {
+        "text": "{\"checks\":[{\"conclusion\":\"SUCCESS\",\"name\":\"Classify Build Inputs\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SUCCESS\",\"name\":\"Classify Database Inputs\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SUCCESS\",\"name\":\"Backend, Shared, API Client, and Mobile Typecheck\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SUCCESS\",\"name\":\"Classify Production Image Inputs\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SUCCESS\",\"name\":\"Classify Test Inputs\",\"status\":\"COMPLETED\"},{\"conclusion\":\"\",\"name\":\"High and Critical Vulnerabilities\",\"status\":\"IN_PROGRESS\"},{\"conclusion\":\"\",\"name\":\"Backend Tests\",\"status\":\"IN_PROGRESS\"},{\"conclusion\":\"SUCCESS\",\"name\":\"Release Configuration\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SUCCESS\",\"name\":\"Populated Postgres Upgrade\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"v0.14.0 Upgrade and Encrypted Rollback\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Mobile Tests\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SUCCESS\",\"name\":\"Backend Build\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Expo Web Build\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Web Critical Smoke\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Full Exported Web and PWA End-to-End\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Six-State Data-Backed Route Acceptance\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"UX Accessibility and Visual Regression\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"${{ matrix.platform }} Runtime Bundle\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Mobile Build\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"iOS Build\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Wear Build and JVM Tests\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Wear Release Emulator Smoke\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Native Two-Emulator Package Upgrade\",\"status\":\"COMPLETED\"},{\"conclusion\":\"SKIPPED\",\"name\":\"Android Emulator End-to-End\",\"status\":\"COMPLETED\"}],\"comments\":[],\"reviews\":[]}\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-05b891f8-eb86-4321-baff-ee97a2cea85d",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'npm.cmd --prefix mobile run build:web'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 14229,
+      "output": {
+        "text": "npm notice run mobile@0.2.7 prebuild:web\nnpm notice run npm --prefix ../shared run build\nnpm warn Unknown env config \"global-ignore-file\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n> @calibrate/shared@0.0.0 build\n> tsc -p tsconfig.build.json\n\nnpm notice run mobile@0.2.7 build:web\nnpm notice run node ../scripts/expo-web-build.mjs\nExpo Autolinking module resolution enabled\nStarting Metro Bundler\n\nStatic rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/\n| (node:34580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n| (node:34580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\nλ Bundled 5505ms node_modules\\expo\\node_modules\\@expo\\cli\\node_modules\\@expo\\router-server\\node\\render.js (1834 modules)\nWeb Bundled 5999ms mobile\\index.js (1865 modules)\n\n› web bundles (6):\n_expo/static/js/web/ImagePicker-2d2f736cda07d949c8c3c036e9de9f4f.js (8.6KB)\n_expo/static/js/web/index-087e1f824fb02dd8276c178a70c3a8f3.js (59KB)\n_expo/static/js/web/index-26b0da47eaa59e95e90893ba0030cb66.js (2.1KB)\n_expo/static/js/web/index-3c15885ba2112fb755a6537a49bef1f2.js (45KB)\n_expo/static/js/web/index-d47de390078bc2dde9f726859fb905e4.js (3.8MB)\n_expo/static/js/web/ProgressExpansionContent-562ef02e7308ed37847ba2a597dde2be.js (587B)\n\n› Static routes (119):\n/log (25KB)\n/data (25KB)\n/help (25KB)\n/ (index) (24KB)\n/terms (33KB)\n/login (24KB)\n/goals (25KB)\n/about (25KB)\n/watch (25KB)\n/today (25KB)\n/weight (25KB)\n/barcode (22KB)\n/privacy (44KB)\n/support (30KB)\n/devices (25KB)\n/profile (25KB)\n/_sitemap (23KB)\n/register (24KB)\n/progress (25KB)\n/activity (25KB)\n/advanced (25KB)\n/my-foods (25KB)\n/security (25KB)\n/settings (25KB)\n/food-log (25KB)\n/+not-found (20KB)\n/onboarding (24KB)\n/plan-check (25KB)\n/(tabs)/log (25KB)\n/connections (25KB)\n/(tabs)/data (25KB)\n/(tabs)/help (25KB)\n/preferences (25KB)\n/(today)/log (25KB)\n/legal-update (24KB)\n/verify-email (27KB)\n/(auth)/login (24KB)\n/(tabs)/goals (25KB)\n/weight-trend (25KB)\n/(tabs)/about (25KB)\n/server-admin (25KB)\n/(tabs)/watch (25KB)\n/(tabs)/today (25KB)\n/(tabs)/weight (25KB)\n/(today)/today (25KB)\n/reset-password (28KB)\n/connected-apps (25KB)\n/(tabs)/devices (25KB)\n/health-connect (25KB)\n/(tabs)/profile (25KB)\n/forgot-password (26KB)\n/nutrition-label (24KB)\n/(auth)/register (24KB)\n/(tabs)/progress (25KB)\n/(tabs)/activity (25KB)\n/(tabs)/advanced (25KB)\n/(settings)/data (25KB)\n/(settings)/help (25KB)\n/(tabs)/my-foods (25KB)\n/profile-details (25KB)\n/(tabs)/security (25KB)\n/(tabs)/settings (25KB)\n/(tabs)/food-log (25KB)\n/account-deletion (30KB)\n/(progress)/goals (25KB)\n/(settings)/about (25KB)\n/(settings)/watch (25KB)\n/(today)/food-log (25KB)\n/(tabs)/plan-check (25KB)\n/(progress)/weight (25KB)\n/(tabs)/connections (25KB)\n/(settings)/devices (25KB)\n/(tabs)/preferences (25KB)\n/(settings)/profile (25KB)\n/(tabs)/(today)/log (25KB)\n/(progress)/progress (25KB)\n/(tabs)/weight-trend (25KB)\n/(settings)/activity (25KB)\n/(settings)/advanced (25KB)\n/(settings)/my-foods (25KB)\n/(settings)/security (25KB)\n/(tabs)/server-admin (25KB)\n/(settings)/settings (25KB)\n/(tabs)/(today)/today (25KB)\n/(progress)/plan-check (25KB)\n/(tabs)/connected-apps (25KB)\n/(tabs)/health-connect (25KB)\n/health-connect-privacy (28KB)\n/(settings)/connections (25KB)\n/(tabs)/(settings)/data (25KB)\n/(tabs)/(settings)/help (25KB)\n/(settings)/preferences (25KB)\n/(tabs)/profile-details (25KB)\n/(tabs)/(progress)/goals (25KB)\n/(progress)/weight-trend (25KB)\n/(tabs)/(settings)/about (25KB)\n/(settings)/server-admin (25KB)\n/(tabs)/(settings)/watch (25KB)\n/(tabs)/(today)/food-log (25KB)\n/(tabs)/(progress)/weight (25KB)\n/(settings)/connected-apps (25KB)\n/(tabs)/(settings)/devices (25KB)\n/(settings)/health-connect (25KB)\n/(tabs)/(settings)/profile (25KB)\n/(tabs)/(progress)/progress (25KB)\n/(tabs)/(settings)/activity (25KB)\n/(tabs)/(settings)/advanced (25KB)\n/(tabs)/(settings)/my-foods (25KB)\n/(settings)/profile-details (25KB)\n/(tabs)/(settings)/security (25KB)\n/(tabs)/(settings)/settings (25KB)\n/(tabs)/(progress)/plan-check (25KB)\n/(tabs)/(settings)/connections (25KB)\n/(tabs)/(settings)/preferences (25KB)\n/(tabs)/(progress)/weight-trend (25KB)\n/(tabs)/(settings)/server-admin (25KB)\n/(tabs)/(settings)/connected-apps (25KB)\n/(tabs)/(settings)/health-connect (25KB)\n/(tabs)/(settings)/profile-details (25KB)\n\nExported: dist\nBuilt Expo web static-routes release artifact: 4 reachable bundles; 161 precached paths.\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-301a7c4f-abb9-4651-8d58-2cc1abd607f4",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command '$env:NODE_PATH = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules'\n\"'$env:TS_NODE_PROJECT = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\tsconfig.json'\nnode -r 'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules\\\\ts-node\\\\register' ..\\\\evidence446\\\\route-server.cjs ..\\\\goal446-before 18446\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 1488,
+      "output": {
+        "text": "TypeError: require.resolve is not a function\n    at loadMetricsRouter (evalmachine.<anonymous>:29:26)\n    at Object.baselineFixture (evalmachine.<anonymous>:225:35)\n    at Object.<anonymous> (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\route-server.cjs:19:40)\n    at Module._compile (node:internal/modules/cjs/loader:1872:14)\n    at node:internal/modules/cjs/loader:2003:10\n    at Object.require.extensions.<computed> [as .js] (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:1608:43)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n    at Module._load (node:internal/modules/cjs/loader:1396:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-3ebed6ca-1395-4543-b7aa-4bc8c2441b74",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command '$env:NODE_PATH = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules'\n\"'$env:TS_NODE_PROJECT = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\tsconfig.json'\nnode -r 'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules\\\\ts-node\\\\register' ..\\\\evidence446\\\\route-server.cjs ..\\\\goal-446 18447\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 1283,
+      "output": {
+        "text": "TypeError: require.resolve is not a function\n    at loadMetricsRouter (evalmachine.<anonymous>:29:26)\n    at Object.baselineFixture (evalmachine.<anonymous>:225:35)\n    at Object.<anonymous> (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\route-server.cjs:19:40)\n    at Module._compile (node:internal/modules/cjs/loader:1872:14)\n    at node:internal/modules/cjs/loader:2003:10\n    at Object.require.extensions.<computed> [as .js] (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:1608:43)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n    at Module._load (node:internal/modules/cjs/loader:1396:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-c389db3c-05f9-40ee-957c-fb473d5c3e67",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command '$env:NODE_PATH = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules'\n\"'$env:TS_NODE_PROJECT = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\tsconfig.json'\nnode -r 'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules\\\\ts-node\\\\register' ..\\\\evidence446\\\\route-server.cjs ..\\\\goal446-before 18446\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 1480,
+      "output": {
+        "text": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:859\n    return new TSError(diagnosticText, diagnosticCodes, diagnostics);\n           ^\nTSError: ⨯ Unable to compile TypeScript:\n../goal446-before/backend/src/routes/metrics.ts(1,21): error TS2307: Cannot find module 'express' or its corresponding type declarations.\r\n../goal446-before/backend/src/routes/metrics.ts(2,68): error TS2307: Cannot find module '@prisma/client' or its corresponding type declarations.\r\n../goal446-before/backend/src/routes/metrics.ts(658,24): error TS7006: Parameter 'req' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(658,29): error TS7006: Parameter 'res' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(717,64): error TS7006: Parameter 'metric' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(739,41): error TS7006: Parameter 'metric' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(752,21): error TS2345: Argument of type '{ date: Date; }[]' is not assignable to parameter of type 'MetricRecordWithTrend[]'.\r\n  Type '{ date: Date; }' is not assignable to type 'MetricRecordWithTrend'.\r\n    Type '{ date: Date; }' is missing the following properties from type 'MetricRecord': id, user_id, weight_grams, body_fat_percent\r\n../goal446-before/backend/src/routes/metrics.ts(781,28): error TS7006: Parameter 'metric' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(783,62): error TS7031: Binding element 'metric' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(792,22): error TS18046: 'row' is of type 'unknown'.\r\n../goal446-before/backend/src/routes/metrics.ts(795,35): error TS2345: Argument of type 'unknown[]' is not assignable to parameter of type '{ metric: MetricRecord; averageWeightGrams: number; }[]'.\r\n  Type 'unknown' is not assignable to type '{ metric: MetricRecord; averageWeightGrams: number; }'.\r\n../goal446-before/backend/src/routes/metrics.ts(801,25): error TS7006: Parameter 'req' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(801,30): error TS7006: Parameter 'res' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(917,56): error TS7006: Parameter 'metric' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(1001,30): error TS7006: Parameter 'req' implicitly has an 'any' type.\r\n../goal446-before/backend/src/routes/metrics.ts(1001,35): error TS7006: Parameter 'res' implicitly has an 'any' type.\r\n\n    at createTSError (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:859:12)\n    at reportTSError (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:863:19)\n    at getOutput (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:1077:36)\n    at Object.compile (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:1433:41)\n    at Module.m._compile (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:1617:30)\n    at node:internal/modules/cjs/loader:2003:10\n    at Object.require.extensions.<computed> [as .ts] (C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446\\backend\\node_modules\\ts-node\\src\\index.ts:1621:12)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n    at Module._load (node:internal/modules/cjs/loader:1396:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19) {\n  diagnosticCodes: [\n    2307,  2307, 7006, 7006,\n    7006,  7006, 2345, 7006,\n    7031, 18046, 2345, 7006,\n    7006,  7006, 7006, 7006\n  ]\n}\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-0ded32c5-07d1-437e-95cd-1ed230a0b40b",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'npm.cmd ci --prefix backend --ignore-scripts --no-audit --fund=false --prefer-offline\nnpm.cmd --prefix backend run prisma:generate\nnpm.cmd ci --ignore-scripts --no-audit --fund=false --prefer-offline\nnpm.cmd --prefix mobile run build:web'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal446-before",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 63302,
+      "output": {
+        "text": "\nadded 426 packages in 14s\nnpm notice run backend@0.38.0 prisma:generate\nnpm notice run prisma generate\nLoaded Prisma config from prisma.config.ts.\n\nPrisma schema loaded from prisma\\schema.prisma.\n\n✔ Generated Prisma Client (v7.9.0) to .\\node_modules\\@prisma\\client in 751ms\n\nStart by importing your Prisma Client (See: https://pris.ly/d/importing-client)\n\n\nnpm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.\nnpm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me\nnpm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me\nnpm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me\nnpm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me\n\nadded 881 packages in 33s\nnpm notice run mobile@0.2.7 prebuild:web\nnpm notice run npm --prefix ../shared run build\nnpm warn Unknown env config \"global-ignore-file\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n> @calibrate/shared@0.0.0 build\n> tsc -p tsconfig.build.json\n\nnpm notice run mobile@0.2.7 build:web\nnpm notice run node ../scripts/expo-web-build.mjs\nExpo Autolinking module resolution enabled\nStarting Metro Bundler\n\nStatic rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/\n| (node:28064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n| (node:28064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\nλ Bundled 2680ms node_modules\\expo\\node_modules\\@expo\\cli\\node_modules\\@expo\\router-server\\node\\render.js (1897 modules)\nWeb Bundled 3097ms mobile\\index.js (1747 modules)\n\n› web bundles (6):\n_expo/static/js/web/ImagePicker-2d2f736cda07d949c8c3c036e9de9f4f.js (8.6KB)\n_expo/static/js/web/index-087e1f824fb02dd8276c178a70c3a8f3.js (59KB)\n_expo/static/js/web/index-26b0da47eaa59e95e90893ba0030cb66.js (2.1KB)\n_expo/static/js/web/index-3c15885ba2112fb755a6537a49bef1f2.js (45KB)\n_expo/static/js/web/index-d47de390078bc2dde9f726859fb905e4.js (3.8MB)\n_expo/static/js/web/ProgressExpansionContent-562ef02e7308ed37847ba2a597dde2be.js (587B)\n\n› Static routes (119):\n/log (25KB)\n/data (25KB)\n/help (25KB)\n/ (index) (24KB)\n/terms (33KB)\n/login (24KB)\n/goals (25KB)\n/about (25KB)\n/watch (25KB)\n/today (25KB)\n/weight (25KB)\n/barcode (22KB)\n/privacy (44KB)\n/support (30KB)\n/devices (25KB)\n/profile (25KB)\n/_sitemap (23KB)\n/register (24KB)\n/progress (25KB)\n/activity (25KB)\n/advanced (25KB)\n/my-foods (25KB)\n/security (25KB)\n/settings (25KB)\n/food-log (25KB)\n/+not-found (20KB)\n/onboarding (24KB)\n/plan-check (25KB)\n/(tabs)/log (25KB)\n/connections (25KB)\n/(tabs)/data (25KB)\n/(tabs)/help (25KB)\n/preferences (25KB)\n/(today)/log (25KB)\n/legal-update (24KB)\n/verify-email (27KB)\n/(auth)/login (24KB)\n/(tabs)/goals (25KB)\n/weight-trend (25KB)\n/(tabs)/about (25KB)\n/server-admin (25KB)\n/(tabs)/watch (25KB)\n/(tabs)/today (25KB)\n/(tabs)/weight (25KB)\n/(today)/today (25KB)\n/reset-password (28KB)\n/connected-apps (25KB)\n/(tabs)/devices (25KB)\n/health-connect (25KB)\n/(tabs)/profile (25KB)\n/forgot-password (26KB)\n/nutrition-label (24KB)\n/(auth)/register (24KB)\n/(tabs)/progress (25KB)\n/(tabs)/activity (25KB)\n/(tabs)/advanced (25KB)\n/(settings)/data (25KB)\n/(settings)/help (25KB)\n/(tabs)/my-foods (25KB)\n/profile-details (25KB)\n/(tabs)/security (25KB)\n/(tabs)/settings (25KB)\n/(tabs)/food-log (25KB)\n/account-deletion (30KB)\n/(progress)/goals (25KB)\n/(settings)/about (25KB)\n/(settings)/watch (25KB)\n/(today)/food-log (25KB)\n/(tabs)/plan-check (25KB)\n/(progress)/weight (25KB)\n/(tabs)/connections (25KB)\n/(settings)/devices (25KB)\n/(tabs)/preferences (25KB)\n/(settings)/profile (25KB)\n/(tabs)/(today)/log (25KB)\n/(progress)/progress (25KB)\n/(tabs)/weight-trend (25KB)\n/(settings)/activity (25KB)\n/(settings)/advanced (25KB)\n/(settings)/my-foods (25KB)\n/(settings)/security (25KB)\n/(tabs)/server-admin (25KB)\n/(settings)/settings (25KB)\n/(tabs)/(today)/today (25KB)\n/(progress)/plan-check (25KB)\n/(tabs)/connected-apps (25KB)\n/(tabs)/health-connect (25KB)\n/health-connect-privacy (28KB)\n/(settings)/connections (25KB)\n/(tabs)/(settings)/data (25KB)\n/(tabs)/(settings)/help (25KB)\n/(settings)/preferences (25KB)\n/(tabs)/profile-details (25KB)\n/(tabs)/(progress)/goals (25KB)\n/(progress)/weight-trend (25KB)\n/(tabs)/(settings)/about (25KB)\n/(settings)/server-admin (25KB)\n/(tabs)/(settings)/watch (25KB)\n/(tabs)/(today)/food-log (25KB)\n/(tabs)/(progress)/weight (25KB)\n/(settings)/connected-apps (25KB)\n/(tabs)/(settings)/devices (25KB)\n/(settings)/health-connect (25KB)\n/(tabs)/(settings)/profile (25KB)\n/(tabs)/(progress)/progress (25KB)\n/(tabs)/(settings)/activity (25KB)\n/(tabs)/(settings)/advanced (25KB)\n/(tabs)/(settings)/my-foods (25KB)\n/(settings)/profile-details (25KB)\n/(tabs)/(settings)/security (25KB)\n/(tabs)/(settings)/settings (25KB)\n/(tabs)/(progress)/plan-check (25KB)\n/(tabs)/(settings)/connections (25KB)\n/(tabs)/(settings)/preferences (25KB)\n/(tabs)/(progress)/weight-trend (25KB)\n/(tabs)/(settings)/server-admin (25KB)\n/(tabs)/(settings)/connected-apps (25KB)\n/(tabs)/(settings)/health-connect (25KB)\n/(tabs)/(settings)/profile-details (25KB)\n\nExported: dist\nBuilt Expo web static-routes release artifact: 4 reachable bundles; 161 precached paths.\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-f3fb7cfc-d293-425f-9a70-0290b6ea422e",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'node scripts/expo-web-static-server.mjs --port 18445'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 698339,
+      "output": {
+        "text": "Expo web static preview listening at http://127.0.0.1:18445\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-ff20f9de-c763-4785-8a22-583f863185e3",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command '$env:NODE_PATH = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules'\n\"'$env:TS_NODE_PROJECT = '\"'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\tsconfig.json'\nnode -r 'C:\\\\Users\\\\MChar\\\\Documents\\\\Codex\\\\2026-10-08\\\\task-5\\\\goal-446\\\\backend\\\\node_modules\\\\ts-node\\\\register' ..\\\\evidence446\\\\route-server.cjs ..\\\\goal-446 18447\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 649850,
+      "output": {
+        "text": "Actual route fixture C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446 on 18447\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\nUnable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-08df8a94-abb5-4813-9580-7125a20b5cd3",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git diff --check\n git add backend/src/routes/metrics.ts backend/src/services/watch.ts backend/src/routes/imports.ts backend/test/routes-metrics.test.js backend/test/import-calorie-safety.test.js scripts/postgres-goal-pace-smoke.mjs docs/goal-starting-weight.md\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Use current timezone and consistent metric writer lock order'\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 2411,
+      "output": {
+        "text": "[mchartier/goal-start-weight-446 70e982f7] Use current timezone and consistent metric writer lock order\n 7 files changed, 125 insertions(+), 10 deletions(-)\nTo github.com:MChartier/calibrate-health.git\n   eb142dd0..70e982f7  mchartier/goal-start-weight-446 -> mchartier/goal-start-weight-446\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-1875009e-c1f5-4fbd-9f43-a987147eb7e8",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"Copy-Item -LiteralPath ..\\\\review446-tests.txt -Destination review-fix-tests.txt\n git add review-fixes.md review-fix-tests.txt\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Retain PR449 review-fix validation and evidence applicability'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 2809,
+      "output": {
+        "text": "[evidence/issue446-baseline 51bbbca] Retain PR449 review-fix validation and evidence applicability\n 2 files changed, 117 insertions(+)\n create mode 100644 review-fix-tests.txt\n create mode 100644 review-fixes.md\n51bbbca76600fc007f7af18a58d3b54a9d081955\nTo github.com:MChartier/calibrate-health.git\n   ce02f46..51bbbca  evidence/issue446-baseline -> evidence/issue446-baseline\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-310948bc-4ada-4859-ad2d-7f61414d9841",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git add backend/src/services/goalStartingWeight.ts backend/src/routes/imports.ts backend/src/routes/metrics.ts backend/src/services/watch.ts backend/test/import-calorie-safety.test.js docs/goal-starting-weight.md scripts/postgres-goal-pace-smoke.mjs\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Apply same-day baseline correction to Wear and imported weights'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3302,
+      "output": {
+        "text": "[mchartier/goal-start-weight-446 61b8dfc4] Apply same-day baseline correction to Wear and imported weights\n 7 files changed, 113 insertions(+), 16 deletions(-)\n create mode 100644 backend/src/services/goalStartingWeight.ts\n61b8dfc433d09532169e03b91a1482495c3b5a83\nTo github.com:MChartier/calibrate-health.git\n   70e982f7..61b8dfc4  mchartier/goal-start-weight-446 -> mchartier/goal-start-weight-446\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-3664d43f-c469-4b1a-8fb2-cc24c4b1117a",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"Copy-Item -LiteralPath ..\\\\review446-writers-tests.txt -Destination writer-path-tests.txt\n git add writer-path-follow-up.md writer-path-tests.txt\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Retain writer-path review fixes and capture applicability'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3553,
+      "output": {
+        "text": "[evidence/issue446-baseline f531785] Retain writer-path review fixes and capture applicability\n 2 files changed, 113 insertions(+)\n create mode 100644 writer-path-follow-up.md\n create mode 100644 writer-path-tests.txt\nf531785638f8367e36d7b64d74e6e83ec6473ee3\nTo github.com:MChartier/calibrate-health.git\n   51bbbca..f531785  evidence/issue446-baseline -> evidence/issue446-baseline\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-fd4c1d43-653f-4d7a-837b-1b4ea6accabe",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git add backend/src/routes/imports.ts scripts/postgres-goal-pace-smoke.mjs\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Classify imported weight dates after acquiring the planning lock'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3917,
+      "output": {
+        "text": "[mchartier/goal-start-weight-446 521fc625] Classify imported weight dates after acquiring the planning lock\n 2 files changed, 36 insertions(+), 7 deletions(-)\n521fc625824259ec1236b664301c02bea1b516f6\nTo github.com:MChartier/calibrate-health.git\n   61b8dfc4..521fc625  mchartier/goal-start-weight-446 -> mchartier/goal-start-weight-446\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-801f9666-bd8a-4a42-ac4c-94cb206dc468",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git add import-timezone-follow-up.md\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Retain import-timezone correction and evidence applicability'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 2468,
+      "output": {
+        "text": "[evidence/issue446-baseline 6c0f1d4] Retain import-timezone correction and evidence applicability\n 1 file changed, 24 insertions(+)\n create mode 100644 import-timezone-follow-up.md\n6c0f1d4ea203edabe0fc6bfdc8234504bb4a6a1c\nTo github.com:MChartier/calibrate-health.git\n   f531785..6c0f1d4  evidence/issue446-baseline -> evidence/issue446-baseline\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-02e7f205-b80e-4c0c-8aae-0065c275f34b",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git diff --check\n git add backend/src/services/watch.ts backend/test/watch-service.test.js scripts/postgres-goal-pace-smoke.mjs\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Revalidate Wear metric dates after the planning lock'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 3535,
+      "output": {
+        "text": "[mchartier/goal-start-weight-446 f805e687] Revalidate Wear metric dates after the planning lock\n 3 files changed, 41 insertions(+)\nf805e6872c94000156219ddba0e8e01b0c8d490c\nTo github.com:MChartier/calibrate-health.git\n   521fc625..f805e687  mchartier/goal-start-weight-446 -> mchartier/goal-start-weight-446\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-3c58ab30-58bd-4cab-9271-c811a11150f1",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git add wear-date-final-verification.md\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Retain final Wear date concurrency verification'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 4321,
+      "output": {
+        "text": "[evidence/issue446-baseline f028596] Retain final Wear date concurrency verification\n 1 file changed, 34 insertions(+)\n create mode 100644 wear-date-final-verification.md\nf02859672e502c0ca6753ee82ac87588b960da76\nTo github.com:MChartier/calibrate-health.git\n   6c0f1d4..f028596  evidence/issue446-baseline -> evidence/issue446-baseline\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-32b22ac5-5c10-4054-98cf-02fa10125346",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git diff --check\n git add backend/src/services/watch.ts backend/test/watch-service.test.js scripts/postgres-goal-pace-smoke.mjs\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Defer Wear calendar eligibility to the locked transaction'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 2360,
+      "output": {
+        "text": "[mchartier/goal-start-weight-446 650862e1] Defer Wear calendar eligibility to the locked transaction\n 3 files changed, 21 insertions(+), 10 deletions(-)\n650862e1c13be66fe5ec05495320cc66ac32f8bb\nTo github.com:MChartier/calibrate-health.git\n   f805e687..650862e1  mchartier/goal-start-weight-446 -> mchartier/goal-start-weight-446\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-447691d0-bd60-49d3-883a-9c69e8679a3d",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git add final-source-binding.md\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Bind final transaction-owned Wear date behavior to retained evidence'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 2687,
+      "output": {
+        "text": "[evidence/issue446-baseline 458ff9f] Bind final transaction-owned Wear date behavior to retained evidence\n 1 file changed, 41 insertions(+)\n create mode 100644 final-source-binding.md\n458ff9fa117ca51b2c07c565069d809ecb8518d5\nTo github.com:MChartier/calibrate-health.git\n   f028596..458ff9f  evidence/issue446-baseline -> evidence/issue446-baseline\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-199d816c-24de-4b42-816c-25ea832ba854",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'node node_modules/@playwright/test/cli.js test --config ../evidence446/playwright.config.ts'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 8297,
+      "output": {
+        "text": "\nRunning 2 tests using 1 worker\n\n(node:33940) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n  ok 1 ..\\evidence446\\capture.spec.ts:6:7 › before same-day weight correction (891ms)\n[expo-web failure] route=/progress viewport=1100x900 project= last_failed_request=GET /assets/_node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.b4eb097d35f44ed943676fd56f6bdc51.ttf (net::ERR_ABORTED)\n  x  2 ..\\evidence446\\capture.spec.ts:6:7 › after same-day weight correction (5.6s)\n\n\n  1) ..\\evidence446\\capture.spec.ts:6:7 › after same-day weight correction ─────────────────────────\n\n    Error: expect(locator).toBeVisible() failed\n\n    Locator: getByText('Start 85 kg', { exact: true })\n    Expected: visible\n    Timeout: 5000ms\n    Error: element(s) not found\n\n    Call log:\n      - Expect \"toBeVisible\" with timeout 5000ms\n      - waiting for getByText('Start 85 kg', { exact: true })\n\n\n      34 |     await page.goto(origin + '/progress');\n      35 |     await hideTransientPwaNotices(page);\n    > 36 |     await expect(page.getByText(`Start ${expectedStart} kg`, { exact: true })).toBeVisible();\n         |                                                                                ^\n      37 |     await page.screenshot({ path: path.resolve(__dirname, label + '.png'), fullPage: true });\n      38 |     fs.writeFileSync(path.resolve(__dirname, label + '-response.json'), JSON.stringify({ metric: await corrected.json(), goal: await (await request.get(`http://127.0.0.1:${port}/goals`)).json() }, null, 2));\n      39 |   });\n        at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\capture.spec.ts:36:80\n\n    Error Context: test-results\\capture-after-same-day-weight-correction\\error-context.md\n\n  1 failed\n    ..\\evidence446\\capture.spec.ts:6:7 › after same-day weight correction ──────────────────────────\n  1 passed (7.6s)\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-846073a1-a850-4cd3-848c-6d437e61c022",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'node node_modules/@playwright/test/cli.js test --config ../evidence446/playwright.config.ts'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 4013,
+      "output": {
+        "text": "\nRunning 2 tests using 1 worker\n\n(node:35936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n  ok 1 ..\\evidence446\\capture.spec.ts:7:7 › before same-day weight correction (1.1s)\n  ok 2 ..\\evidence446\\capture.spec.ts:7:7 › after same-day weight correction (915ms)\n\n  2 passed (3.2s)\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-53ba6dfd-2cb2-4013-9921-1e58d5547af8",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git add backend/src/routes/metrics.ts backend/test/routes-metrics.test.js scripts/postgres-goal-pace-smoke.mjs docs/goal-starting-weight.md\n git commit -m 'Fix same-day goal baseline after weight corrections'\n git rev-parse HEAD\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 475,
+      "output": {
+        "text": "Author identity unknown\n\n*** Please tell me who you are.\n\nRun\n\n  git config --global user.email \"you@example.com\"\n  git config --global user.name \"Your Name\"\n\nto set your account's default identity.\nOmit --global to set the identity only in this repository.\n\nfatal: unable to auto-detect email address (got 'MChar@mchartier_zbook.(none)')\n4cbcbc740fbe5fa5646b4de31951c79a653176d5\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-598b7b17-2f46-4f7a-9530-ea06eb9cd38b",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Fix same-day goal baseline after weight corrections'\n git rev-parse HEAD\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 655,
+      "output": {
+        "text": "[mchartier/goal-start-weight-446 eb142dd0] Fix same-day goal baseline after weight corrections\n 4 files changed, 277 insertions(+), 5 deletions(-)\n create mode 100644 docs/goal-starting-weight.md\neb142dd0bcc527398e83b91d29d4514fd9b4e516\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-96525ec4-6314-4f48-bee2-86687732b7d5",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"Set-Content -LiteralPath .gitattributes -Value '* -text' -Encoding ascii\n git add --renormalize .\n git add .gitattributes\n git -c user.name=Codex -c user.email=codex@openai.com commit --amend --no-edit\n git rev-parse HEAD\n git push -u origin evidence/issue446-baseline\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 2258,
+      "output": {
+        "text": "[evidence/issue446-baseline c35989b] Retain issue446 matched baseline evidence\n Date: Thu Oct 8 10:58:49 2026 -0700\n 17 files changed, 4784 insertions(+)\n create mode 100644 .gitattributes\n create mode 100644 README.md\n create mode 100644 after-response.json\n create mode 100644 after-weight-screen.png\n create mode 100644 after.png\n create mode 100644 artifact-hashes.json\n create mode 100644 backend-check.txt\n create mode 100644 before-response.json\n create mode 100644 before-weight-screen.png\n create mode 100644 before.png\n create mode 100644 build-manifests.json\n create mode 100644 capture.spec.ts\n create mode 100644 client-check.txt\n create mode 100644 expo-fixtures.ts\n create mode 100644 playwright.config.ts\n create mode 100644 route-server.cjs\n create mode 100644 routes-metrics.fixture-source.js\nc35989b9a362eccd633fbe2ad1c3f6b0f219212f\nremote: \nremote: Create a pull request for 'evidence/issue446-baseline' on GitHub by visiting:        \nremote:      https://github.com/MChartier/calibrate-health/pull/new/evidence/issue446-baseline        \nremote: \nTo github.com:MChartier/calibrate-health.git\n * [new branch]      evidence/issue446-baseline -> evidence/issue446-baseline\nbranch 'evidence/issue446-baseline' set up to track 'origin/evidence/issue446-baseline'.\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-869cc8dd-8a31-4381-b9d9-15f6d9309dcd",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git add README.md\n git -c user.name=Codex -c user.email=codex@openai.com commit -m 'Record capture browser version and scale'\n git rev-parse HEAD\n git push\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 2594,
+      "output": {
+        "text": "[evidence/issue446-baseline ce02f46] Record capture browser version and scale\n 1 file changed, 2 insertions(+), 1 deletion(-)\nce02f46f2d6b3794d3911a74a7c29a63ac6960c4\nTo github.com:MChartier/calibrate-health.git\n   c35989b..ce02f46  evidence/issue446-baseline -> evidence/issue446-baseline\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-71191e53-4008-4350-8ad1-be9398742ec4",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command \"git worktree add --detach ..\\\\goal446-before 4cbcbc740fbe5fa5646b4de31951c79a653176d5\nnpm.cmd --prefix mobile test -- --runInBand src/components/WeightEntrySheet.test.tsx src/components/GoalProgressCard.test.tsx src/offline/replayInvalidation.test.ts src/offline/trackingProjection.test.ts > ..\\\\client446-check.txt 2>&1\nGet-Content ..\\\\client446-check.txt -Tail 12\"",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "completed",
+      "exitCode": 0,
+      "durationMs": 20668,
+      "output": {
+        "text": "Preparing worktree (detached HEAD 4cbcbc74)\nUpdating files:  15% (272/1800)\rUpdating files:  16% (288/1800)\rUpdating files:  17% (306/1800)\rUpdating files:  18% (324/1800)\rUpdating files:  19% (342/1800)\rUpdating files:  20% (360/1800)\rUpdating files:  21% (378/1800)\rUpdating files:  22% (396/1800)\rUpdating files:  23% (414/1800)\rUpdating files:  24% (432/1800)\rUpdating files:  25% (450/1800)\rUpdating files:  26% (468/1800)\rUpdating files:  27% (486/1800)\rUpdating files:  27% (503/1800)\rUpdating files:  28% (504/1800)\rUpdating files:  29% (522/1800)\rUpdating files:  30% (540/1800)\rUpdating files:  31% (558/1800)\rUpdating files:  32% (576/1800)\rUpdating files:  33% (594/1800)\rUpdating files:  34% (612/1800)\rUpdating files:  35% (630/1800)\rUpdating files:  36% (648/1800)\rUpdating files:  37% (666/1800)\rUpdating files:  38% (684/1800)\rUpdating files:  39% (702/1800)\rUpdating files:  40% (720/1800)\rUpdating files:  41% (738/1800)\rUpdating files:  42% (756/1800)\rUpdating files:  43% (774/1800)\rUpdating files:  44% (792/1800)\rUpdating files:  45% (810/1800)\rUpdating files:  46% (828/1800)\rUpdating files:  47% (846/1800)\rUpdating files:  48% (864/1800)\rUpdating files:  49% (882/1800)\rUpdating files:  50% (900/1800)\rUpdating files:  51% (918/1800)\rUpdating files:  52% (936/1800)\rUpdating files:  52% (949/1800)\rUpdating files:  53% (954/1800)\rUpdating files:  54% (972/1800)\rUpdating files:  55% (990/1800)\rUpdating files:  56% (1008/1800)\rUpdating files:  57% (1026/1800)\rUpdating files:  58% (1044/1800)\rUpdating files:  59% (1062/1800)\rUpdating files:  60% (1080/1800)\rUpdating files:  61% (1098/1800)\rUpdating files:  62% (1116/1800)\rUpdating files:  63% (1134/1800)\rUpdating files:  64% (1152/1800)\rUpdating files:  65% (1170/1800)\rUpdating files:  66% (1188/1800)\rUpdating files:  66% (1198/1800)\rUpdating files:  67% (1206/1800)\rUpdating files:  68% (1224/1800)\rUpdating files:  69% (1242/1800)\rUpdating files:  70% (1260/1800)\rUpdating files:  71% (1278/1800)\rUpdating files:  72% (1296/1800)\rUpdating files:  73% (1314/1800)\rUpdating files:  74% (1332/1800)\rUpdating files:  75% (1350/1800)\rUpdating files:  76% (1368/1800)\rUpdating files:  77% (1386/1800)\rUpdating files:  78% (1404/1800)\rUpdating files:  79% (1422/1800)\rUpdating files:  80% (1440/1800)\rUpdating files:  81% (1458/1800)\rUpdating files:  82% (1476/1800)\rUpdating files:  83% (1494/1800)\rUpdating files:  84% (1512/1800)\rUpdating files:  85% (1530/1800)\rUpdating files:  86% (1548/1800)\rUpdating files:  87% (1566/1800)\rUpdating files:  88% (1584/1800)\rUpdating files:  89% (1602/1800)\rUpdating files:  90% (1620/1800)\rUpdating files:  91% (1638/1800)\rUpdating files:  92% (1656/1800)\rUpdating files:  92% (1663/1800)\rUpdating files:  93% (1674/1800)\rUpdating files:  94% (1692/1800)\rUpdating files:  95% (1710/1800)\rUpdating files:  96% (1728/1800)\rUpdating files:  97% (1746/1800)\rUpdating files:  98% (1764/1800)\rUpdating files:  99% (1782/1800)\rUpdating files: 100% (1800/1800)\rUpdating files: 100% (1800/1800), done.\nHEAD is now at 4cbcbc74 Block release finalization until exact candidate CI succeeds (#434)\nnpm notice run mobile@0.2.7 test\r\nnpm notice run jest --runInBand src/components/WeightEntrySheet.test.tsx src/components/GoalProgressCard.test.tsx src/offline/replayInvalidation.test.ts src/offline/trackingProjection.test.ts\r\nPASS src/components/WeightEntrySheet.test.tsx (10.314 s)\r\nPASS src/components/GoalProgressCard.test.tsx\r\nPASS src/offline/trackingProjection.test.ts\r\nPASS src/offline/replayInvalidation.test.ts\r\n\r\nTest Suites: 4 passed, 4 total\r\nTests:       35 passed, 35 total\r\nSnapshots:   0 total\r\nTime:        11.629 s\r\nRan all test suites matching /src\\\\components\\\\WeightEntrySheet.test.tsx|src\\\\components\\\\GoalProgressCard.test.tsx|src\\\\offline\\\\replayInvalidation.test.ts|src\\\\offline\\\\trackingProjection.test.ts/i.\r\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-024bc7d3-6ac7-4b62-8f36-26a911f3f198",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'node node_modules/@playwright/test/cli.js test --config ../evidence446/playwright.config.ts'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 3530,
+      "output": {
+        "text": "\nRunning 2 tests using 1 worker\n\n(node:5144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n[expo-web failure] route=blank viewport=1100x900 project= last_failed_request=none\n  x  1 ..\\evidence446\\capture.spec.ts:6:7 › before same-day weight correction (235ms)\n(node:34948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n[expo-web failure] route=blank viewport=1100x900 project= last_failed_request=none\n  x  2 ..\\evidence446\\capture.spec.ts:6:7 › after same-day weight correction (239ms)\n\n\n  1) ..\\evidence446\\capture.spec.ts:6:7 › before same-day weight correction ────────────────────────\n\n    Error: apiRequestContext.post: connect ECONNREFUSED 127.0.0.1:18446\n    Call log:\n      - → POST http://127.0.0.1:18446/metrics\n        - user-agent: Playwright/1.61.1 (x64; windows 10.0) node/24.19\n        - accept: */*\n        - accept-encoding: gzip,deflate,br\n        - content-type: application/json\n        - content-length: 33\n\n\n      22 |     });\n      23 |     // Seed through the actual route, then correct through the app's weight editor.\n    > 24 |     const seed = await request.post(`http://127.0.0.1:${port}/metrics`, { data: { date: '2026-07-21', weight: 90 } });\n         |                                ^\n      25 |     expect(seed.status()).toBe(200);\n      26 |     await page.goto('/weight');\n      27 |     await hideTransientPwaNotices(page);\n        at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\capture.spec.ts:24:32\n\n    Error Context: test-results\\capture-before-same-day-weight-correction\\error-context.md\n\n  2) ..\\evidence446\\capture.spec.ts:6:7 › after same-day weight correction ─────────────────────────\n\n    Error: apiRequestContext.post: connect ECONNREFUSED 127.0.0.1:18447\n    Call log:\n      - → POST http://127.0.0.1:18447/metrics\n        - user-agent: Playwright/1.61.1 (x64; windows 10.0) node/24.19\n        - accept: */*\n        - accept-encoding: gzip,deflate,br\n        - content-type: application/json\n        - content-length: 33\n\n\n      22 |     });\n      23 |     // Seed through the actual route, then correct through the app's weight editor.\n    > 24 |     const seed = await request.post(`http://127.0.0.1:${port}/metrics`, { data: { date: '2026-07-21', weight: 90 } });\n         |                                ^\n      25 |     expect(seed.status()).toBe(200);\n      26 |     await page.goto('/weight');\n      27 |     await hideTransientPwaNotices(page);\n        at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\capture.spec.ts:24:32\n\n    Error Context: test-results\\capture-after-same-day-weight-correction\\error-context.md\n\n  2 failed\n    ..\\evidence446\\capture.spec.ts:6:7 › before same-day weight correction ─────────────────────────\n    ..\\evidence446\\capture.spec.ts:6:7 › after same-day weight correction ──────────────────────────\n",
+        "truncated": false
+      }
+    },
+    {
+      "type": "commandExecution",
+      "id": "exec-270ee8a7-85d4-4e8a-852e-dd72f18ac877",
+      "command": "\"C:\\\\Users\\\\MChar\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -NoProfile -Command 'node node_modules/@playwright/test/cli.js test --config ../evidence446/playwright.config.ts'",
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\goal-446",
+      "status": "failed",
+      "exitCode": 1,
+      "durationMs": 3633,
+      "output": {
+        "text": "\nRunning 2 tests using 1 worker\n\n(node:27740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n[expo-web failure] route=blank viewport=1100x900 project= last_failed_request=none\n  x  1 ..\\evidence446\\capture.spec.ts:6:7 › before same-day weight correction (217ms)\n(node:8396) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n(Use `node --trace-warnings ...` to show where the warning was created)\n  ok 2 ..\\evidence446\\capture.spec.ts:6:7 › after same-day weight correction (827ms)\n\n\n  1) ..\\evidence446\\capture.spec.ts:6:7 › before same-day weight correction ────────────────────────\n\n    Error: apiRequestContext.post: connect ECONNREFUSED 127.0.0.1:18446\n    Call log:\n      - → POST http://127.0.0.1:18446/metrics\n        - user-agent: Playwright/1.61.1 (x64; windows 10.0) node/24.19\n        - accept: */*\n        - accept-encoding: gzip,deflate,br\n        - content-type: application/json\n        - content-length: 33\n\n\n      22 |     });\n      23 |     // Seed through the actual route, then correct through the app's weight editor.\n    > 24 |     const seed = await request.post(`http://127.0.0.1:${port}/metrics`, { data: { date: '2026-07-21', weight: 90 } });\n         |                                ^\n      25 |     expect(seed.status()).toBe(200);\n      26 |     await page.goto('/weight');\n      27 |     await hideTransientPwaNotices(page);\n        at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-5\\evidence446\\capture.spec.ts:24:32\n\n    Error Context: test-results\\capture-before-same-day-weight-correction\\error-context.md\n\n  1 failed\n    ..\\evidence446\\capture.spec.ts:6:7 › before same-day weight correction ─────────────────────────\n  1 passed (3.0s)\n",
+        "truncated": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "headRefOid": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "baseRefOid": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "closingIssuesReferences": {
+          "nodes": [
+            {
+              "number": 446,
+              "state": "OPEN",
+              "url": "https://github.com/MChartier/calibrate-health/issues/446"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        },
+        "reviewThreads": {
+          "nodes": [
+            {
+              "id": "PRRT_kwDOQbBgUs6qfrvL",
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Read the timezone again after acquiring the planning lock**\n\nUse the transactionally current `User.timezone` for this eligibility check. The `timeZone` variable was hydrated before the transaction, but a concurrent profile update can change the timezone, commit, and release this same user-row lock before the metric continues; `acceptedToday` and `createdLocalDate` are then calculated in the former timezone and can rewrite the baseline on the wrong account-local day. Fetch the timezone through `tx` after the lock and derive both dates from that value.\n\nAGENTS.md reference: [AGENTS.md:L159-L162](https://github.com/MChartier/calibrate-health/blob/eb142dd0bcc527398e83b91d29d4514fd9b4e516/AGENTS.md#L159-L162)\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.",
+                    "databaseId": 4222581328
+                  },
+                  {
+                    "body": "Fixed in 70e982f77752400d4b4f688280a0609a99713262. The route now rereads User.timezone through tx after the planning lock and uses it for goal/acceptance dates, implicit metric date and future-date validation. Hosted PostgreSQL run 37824272218 passes forced profile-before-metric overlap in both LA/UTC directions with explicit and omitted dates, plus stable receipt replay. Original same-day/no-history-rewrite boundaries remain intact.",
+                    "databaseId": 4222709025
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            },
+            {
+              "id": "PRRT_kwDOQbBgUs6qfrvS",
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Apply the planning lock before every competing metric write**\n\nStandardize this lock-first ordering in the other weight writers before introducing it here. For example, a concurrent Wear `metric.upsert` in `backend/src/services/watch.ts:359-385` locks the same `BodyMetric` row and only afterward calls `markCurrentCaloriePlanForReviewIfUnsafe`, which locks the user row; this handler now locks the user first and later upserts that metric row. When both update the same day, each transaction can wait for the other's lock and PostgreSQL aborts one as a deadlock, surfaced by both routes as a 500.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.",
+                    "databaseId": 4222581338
+                  },
+                  {
+                    "body": "Fixed in 70e982f77752400d4b4f688280a0609a99713262. Wear metric upserts now take the planning guard before the metric read/write; weight imports had the same inverse order and now also lock first. Onboarding already locks the user first. Hosted PostgreSQL run 37824272218 passes forced web/Wear overlap in both writer orders, preserves Wear stale-revision 409 and receipt replay, and confirms the final metric without deadlock.",
+                    "databaseId": 4222709264
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            },
+            {
+              "id": "PRRT_kwDOQbBgUs6qgCbP",
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Apply baseline correction to Wear weight writes**\n\nWhen a user creates a goal and then enters or corrects that local day's weight from Wear, this branch now acquires the planning lock but only updates `BodyMetric`; it never updates the current goal's `start_weight_grams` or emits the corresponding goal sync change. This leaves goal progress and projections dependent on whether the same correction was submitted through the web/mobile metric endpoint, contrary to the same-day behavior documented in `docs/goal-starting-weight.md`.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.",
+                    "databaseId": 4222728419
+                  },
+                  {
+                    "body": "Fixed in 61b8dfc433d09532169e03b91a1482495c3b5a83. Wear now uses the shared same-day baseline correction and emits the goal sync event after safety evaluation within its idempotent transaction. PostgreSQL run 37825529039 passes both writer orders, one Wear goal event, persisted baseline, historical negative control, stale revision conflict and receipt replay.",
+                    "databaseId": 4222801889
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            },
+            {
+              "id": "PRRT_kwDOQbBgUs6qgCbX",
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Apply baseline correction to imported current-day weights**\n\nWhen a Lose It import creates today's weight after today's goal was created, or overwrites today's existing weight, this transaction serializes the writer but never aligns the goal's starting weight with the imported metric. The newly documented same-day invariant therefore remains broken for imports, leaving a stale baseline and incorrect progress until another correction is submitted through `POST /metrics`.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.",
+                    "databaseId": 4222728430
+                  },
+                  {
+                    "body": "Fixed in 61b8dfc433d09532169e03b91a1482495c3b5a83. Import create/overwrite uses the same baseline correction and final-state goal sync in the weight transaction, only for a current-day weight actually written. PostgreSQL run 37825529039 exercises the actual import route and ZIP parser: create and overwrite correct the baseline; KEEP, historical rows and identical repeat preserve it without duplicate goal events; completed food history is unchanged.",
+                    "databaseId": 4222802108
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            },
+            {
+              "id": "PRRT_kwDOQbBgUs6qgPgT",
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Repartition imported weights using the locked timezone**\n\nWhen an import crosses local midnight or a concurrent profile update changes the account timezone, `today` reflects the transaction-current timezone but `boundedWeights.eligible` was already partitioned using the earlier authenticated-user snapshot. Consequently, a weight that is now today's can remain classified as future and be skipped, or a date that is now tomorrow can be imported without correcting the baseline; the returned counts and warnings are stale as well. Repartition the parsed weights after acquiring the lock and reading `currentUser.timezone`.\n\nAGENTS.md reference: [AGENTS.md:L159-L162](https://github.com/MChartier/calibrate-health/blob/61b8dfc433d09532169e03b91a1482495c3b5a83/AGENTS.md#L159-L162)\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.",
+                    "databaseId": 4222813175
+                  },
+                  {
+                    "body": "Fixed in 521fc625824259ec1236b664301c02bea1b516f6. Execute now partitions parsed weights after the planning lock and transaction-current timezone read; skipped counts and warnings come from that same result. PostgreSQL run 37826423169 passes forced timezone overlap in both directions for both candidate dates, checking eligibility, accepted/skipped counts, future warnings and the baseline. Six affected import tests and backend typecheck pass.",
+                    "databaseId": 4222856865
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            },
+            {
+              "id": "PRRT_kwDOQbBgUs6qgbos",
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Revalidate Wear dates after taking the planning lock**\n\nWhen a Wear mutation is parsed just before a concurrent timezone change, its future-date check uses the authenticated user's old timezone; this code then rereads the transaction-current timezone but proceeds without comparing `mutation.metricDate` with `today`. For example, near midnight a change from UTC (October 9) to America/Los_Angeles (October 8) can commit first, after which an October 9 weight is persisted as a future `BodyMetric` and omitted from current-day planning. Reapply the future-date validation using the locked `today`, as the metrics and import paths do.\n\nAGENTS.md reference: [AGENTS.md:L159-L162](https://github.com/MChartier/calibrate-health/blob/521fc625824259ec1236b664301c02bea1b516f6/AGENTS.md#L159-L162)\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.",
+                    "databaseId": 4222892570
+                  },
+                  {
+                    "body": "Fixed in f805e6872c94000156219ddba0e8e01b0c8d490c. Wear rechecks metricDate against the transaction-current today immediately after the lock/timezone read, before any metric read or write. PostgreSQL run 37827497809 passes a forced UTC-to-LA overlap: a previously parsed October 9 mutation is rejected as future, metric/goal/sync remain unchanged, and retry after switching back to UTC preserves the original rejection. Fourteen affected tests and backend typecheck also pass.",
+                    "databaseId": 4222942200
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            },
+            {
+              "id": "PRRT_kwDOQbBgUs6qgl07",
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Defer Wear date rejection until the locked timezone is known**\n\nFresh evidence in the current tree shows that `parseWatchMutation` still returns 400 at lines 154-156 before this post-lock check can run. If authentication captured `America/Los_Angeles` on October 8 and a concurrent profile update commits `UTC` on October 9, a valid October 9 Wear weight is rejected as future using the stale timezone and never reaches the transaction-current timezone read here. Parse the date syntactically first and perform the future-day comparison only after acquiring the planning lock.\n\nAGENTS.md reference: [AGENTS.md:L159-L162](https://github.com/MChartier/calibrate-health/blob/f805e6872c94000156219ddba0e8e01b0c8d490c/AGENTS.md#L159-L162)\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.",
+                    "databaseId": 4222957799
+                  },
+                  {
+                    "body": "Fixed in 650862e1c13be66fe5ec05495320cc66ac32f8bb. The parser now validates only date syntax; future-day eligibility is decided exclusively after the planning lock and current timezone read. PostgreSQL run 37828422760 passes both directions: newly future dates reject without writes, and dates parsed under LA that become current after UTC commits are accepted with one baseline sync event and stable receipt replay. Fourteen affected Wear tests and backend typecheck pass.",
+                    "databaseId": 4222998376
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    }
+  }
+}
