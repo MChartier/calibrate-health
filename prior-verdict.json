@@ -1,0 +1,430 @@
+{
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "technicalVerdict": "pass",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "reviewerStatus": "New independent trusted reassessment, not original conversation migration. Full pinned standards and direct amendments acknowledged.",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/437",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/444",
+  "parentIssue": "https://github.com/MChartier/calibrate-health/issues/421",
+  "supersedesVerdictCommentId": 6065935045,
+  "checkedAtUtc": "2026-10-08T18:18:09.911018+00:00",
+  "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "baseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "mergeBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "actualTargetRef": "mchartier/credential-verification-421",
+  "ultimateTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [
+    {
+      "pullRequest": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open",
+      "draft": false
+    }
+  ],
+  "commitParents": [
+    "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+  ],
+  "prBodySha256": "c137a6aa31691d6537cdf8f078d0a6bca6a34457c33de585a7cfc8f86ec96e6c",
+  "issueBodySha256": "d1d1a61f42dcfb937af858ccbb381b73214e08869ea44cc3dabf6781800f3834",
+  "findings": [],
+  "gates": {
+    "value": "pass: authorized stale native credential race checkpoint",
+    "outcome": "technical pass for child444 only, full421 unfinished",
+    "code": "pass: independently read all6 published files and relevant password trigger, revocation and token issuance. Conditional User version update orders with writers/deletion before session insert; returns only after transaction commit.",
+    "engineeringReview": "quota-only refusal6030076999; independent review performed, no bot completion claimed",
+    "ci": "10 success14 configured skips; exact-head job112611401048 live log independently read775pass0fail0skip, five real PostgreSQL race/rollback subtests",
+    "behavior": "Verified retained47-test independent log and all11 owner manifest artifact hashes. No new local test run. Current head,parent,ultimate master unchanged since prior technical QA; body/child/linkage updates do not affect these contracts.",
+    "evidence": "pass: existing source-bound evidence retained and verified; new native association confirmed; artifact hash correction explicitly supersedes old claim",
+    "communication": "pass: concise race problem, atomic solution, expected/observed table with honest local database skip versus realCI, partial lifecycle and parent dependency",
+    "stack": "complete one-commit6-file +195/-3 child diff inspected; actual431 parent and ultimate master independently bound. PR431 reviewed first in this new task; parent must merge first; no unrelated churn Native linkage finding now resolved; parent-first order remains."
+  },
+  "scope": {
+    "commits": [
+      {
+        "sha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+        "parents": [
+          "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+        ]
+      }
+    ],
+    "files": [
+      {
+        "path": ".github/workflows/tests.yml",
+        "sha": "a4b37df416fac5a804c844f1557dc61c7c3bbb93",
+        "status": "modified",
+        "additions": 2,
+        "deletions": 0
+      },
+      {
+        "path": "backend/src/routes/auth.ts",
+        "sha": "145021ef1b367ad9e9ac431007cfcd7590ef9a89",
+        "status": "modified",
+        "additions": 5,
+        "deletions": 3
+      },
+      {
+        "path": "backend/src/services/mobileAuth.ts",
+        "sha": "79db50afdd79b2f700e4a25aea1557bf7d433ff8",
+        "status": "modified",
+        "additions": 22,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/mobile-auth.test.js",
+        "sha": "674f1e5d94d192e70b9410ba24672e7818bca7f0",
+        "status": "modified",
+        "additions": 42,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/mobile-session-issuance-postgres.test.js",
+        "sha": "e6a7baa9b9f58cec14700f532edcb952bd12348a",
+        "status": "added",
+        "additions": 102,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth-mobile.test.js",
+        "sha": "b5656f2cb9e64000b8a349f852d686dfad66ada8",
+        "status": "modified",
+        "additions": 22,
+        "deletions": 0
+      }
+    ],
+    "pages": {
+      "commits": [
+        1,
+        0
+      ],
+      "files": [
+        6,
+        0
+      ]
+    }
+  },
+  "feedback": {
+    "prComments": 6,
+    "childComments": 0,
+    "parent421Comments": 33,
+    "reviews": 0,
+    "inline": 0,
+    "nativeThreads": 0,
+    "fullCurrentBodiesRead": true,
+    "disposition": "All prior text unchanged; previous native-association finding now independently verified resolved. Only added PR comment is own previous verdict; no unresolved actionable request."
+  },
+  "linkage": {
+    "checkedAtUtc": "2026-10-08T18:18:09.912018+00:00",
+    "closingIssuesReferences": [
+      444
+    ],
+    "closingCount": 1,
+    "closingHasNextPage": false,
+    "childState": "OPEN",
+    "nativeThreads": 0,
+    "projectItemId": "PVTI_lAHOABMy1c4Bl3Eqzg_RXQ0",
+    "builtInLinkedPullRequests": [
+      437
+    ],
+    "customCurrentPrs": "https://github.com/MChartier/calibrate-health/pull/437",
+    "allPaginationComplete": true,
+    "projectLimitation": "Blocked by/Verified at text remains historical and awaits coordinator metadata reconciliation; does not override actual verified native association. No board completion certificate."
+  },
+  "evidence": {
+    "manifestSha256": "4fe2e1e1e6fada8a3b9732a7cbdc83889028bec0bd7d56d58b660e77291fcf9b",
+    "commitSha": "6f1e22d2d23ea0b8a4817336a74e7ee411f29dc4",
+    "path": "preparation-evidence/atomic-login-a0fdefe8/manifest.json",
+    "artifacts": [
+      {
+        "path": ".gitattributes",
+        "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+      },
+      {
+        "path": "backend.log",
+        "sha256": "3a3c6f3e465582b2fe75df97f6569240531ed5bbb1660911a9a28bcf01641796"
+      },
+      {
+        "path": "ci-backend.log",
+        "sha256": "14d7819279cce404895720fa7cdbc076c97b02c4c977cecba4a779fa584b1c6b"
+      },
+      {
+        "path": "ci-runs.json",
+        "sha256": "34d86fb9b1e7baa06ad61fafdd5a640f0e2f52a60216c4fd860f44bb9e213316"
+      },
+      {
+        "path": "focused.log",
+        "sha256": "1df047ae91fcb600edf2618b5d1733f4f109ad94867b7a843130ac4367c6498d"
+      },
+      {
+        "path": "initial-pr-readback.json",
+        "sha256": "1de1b7caa86d0b85ae13c6df932db39c20819dacbd00ec5f6630fab02628cf49"
+      },
+      {
+        "path": "knip.log",
+        "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+      },
+      {
+        "path": "product.diff",
+        "sha256": "60b430faa190ceeb1c478cdcecab05ae036c9ee3de4bbc8934b868f0f2e265d8"
+      },
+      {
+        "path": "README.md",
+        "sha256": "9f454330754ca8bfc6f61cb1f05f908b4ba231150eee7d63c9232716190c4d43"
+      },
+      {
+        "path": "scope.json",
+        "sha256": "df84e34dbed5e87313a924a13c9d154c433152ed2a2a8c2f2e3367535d37585b"
+      },
+      {
+        "path": "typecheck.log",
+        "sha256": "07651999ed6d847b5a7384b5e38af1c310ab49cded3dbd28aebd7bfbec1afc50"
+      }
+    ],
+    "priorRecords": [
+      {
+        "commitSha": "10cff3953b37d55e28d13ffbf232f3540c6295ae",
+        "path": "qa/issue421/pr437/v1/focused-tests.log",
+        "sha256": "5d9b995b8f5fa7d3a320e478cc7748e7b014a9c7b52d9bf795f9dc56ff0fd17e"
+      },
+      {
+        "commitSha": "71f5859e7f18e1d6eef4943b0189c50ae293ea86",
+        "path": "preparation-evidence/atomic-login-a0fdefe8-description/receipt.json",
+        "sha256": "edec28957c495b7aa177847bf60e01858276ed09b23ceccb0ffa05339a5f49e1"
+      }
+    ]
+  },
+  "historicalReceipt": {
+    "verdictCommentId": 6065935045,
+    "verdictBodySha256": "3eb666079ec5bafebebcf4eda19c905c459330d078d21a29a5a09b3f8a9f48da",
+    "verdictUpdatedAt": "2026-10-08T17:58:31Z",
+    "recordCommit": "082133e19dfe9f78b5b72d7167865341f2272c96",
+    "previouslyClaimedArtifactSha256": "a60c29c5d91763dbae36029a22e9edca6e05ef22a106bc63991dd70ac021d789",
+    "actualPublishedArtifactSha256": "a4faec5b335be58ea8f5a8459b53ea7e30373e8e400e35f3a4600f7a38541822",
+    "assessment": "Old failure reason, original comment and wrong artifact claim preserved. This explicitly supersedes both linkage finding and byte-identity error; no silent replacement."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "nonUiObservableContract": "Persisted native session validity under concurrent password mutation/deletion and rollback; no changed UI",
+    "renderedPrInspection": "No new page rendering claim; general human waiver6022754087"
+  },
+  "limitations": [
+    "No new local tests, database execution or device checks; old47-test log plus exact-head CI independently verified and reused.",
+    "PostgreSQL fixture reproduces password update plus revocation ordering, not end-to-end reset-link UI. Infrastructure revocation failure is not newly solved.",
+    "No Firebase provider, live account, cross-store deletion, migration, deployment or release certification.",
+    "No source, PR body, labels, draft, Project or product branch changes."
+  ],
+  "nextAction": "Coordinator independently save exact newreceipt and recheck allbindings/fullfeedback/nativeassociation before and after readiness; preserve parent-first431->437->442 and unfinished421. No QA label/draft/Project/merge mutation.",
+  "resolvedFindings": [
+    {
+      "gate": "native child issue association",
+      "priorFailure": "closingIssuesReferences was empty despite closing text; Project custom text was not a native association.",
+      "currentVerifiedResult": "Native closingIssuesReferences exactly child444, no next page; child remains OPEN. Built-in Project Linked pull requests exactlyPR437; Current PRs agrees. Parent421 is not a closing reference.",
+      "authority": "Coordinator reported authorized metadata correction; this QA performed fresh read-only native verification, no writes."
+    }
+  ],
+  "historicalAssessmentReceipt": {
+    "commentId": 6030655375,
+    "fullBodySha256": "9ec1a359a5350751e41be6851b57fa91ea03a530203edb52b27ebf75bc0bf301",
+    "updated_at": "2026-10-07T04:02:48Z",
+    "retainedRecord": "https://github.com/MChartier/calibrate-health/blob/10cff3953b37d55e28d13ffbf232f3540c6295ae/qa/issue421/pr437/v1/verdict.json",
+    "scope": "Exact observed API bytes retained, no silent adoption as a current trusted receipt."
+  },
+  "artifactIdentityCorrection": {
+    "reason": "Prior recorded hash had finalCRLF; actual published blob endedLF. PowerShell/tool text reconstruction and trimEnd+LF caused mismatch. New transport preserves exact text through JSON escaping; newGitHubbase64blob bytes verified before comment publication.",
+    "audit": "https://github.com/MChartier/calibrate-health/blob/a92993b2803c3c9d881bcc28b6db6ff1864dad9a/identity-audit.json",
+    "auditSha256": "8c59f0050ee491ec382cf21c4c39d0f9b26fcbfc459ff500d3298d7b7805785f"
+  },
+  "affectedGateReassessment": {
+    "sourceBodyBaseUnchanged": true,
+    "fullCurrentFeedbackCompared": true,
+    "previousCommentBodiesUnchanged": true,
+    "onlyAddedPrComment": "Own previous verdict; no new human request.",
+    "ci": [
+      {
+        "id": 112611403638,
+        "name": "High and Critical Vulnerabilities",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611401090,
+        "name": "Mobile Tests",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611401048,
+        "name": "Backend Tests",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611400962,
+        "name": "v0.14.0 Upgrade and Encrypted Rollback",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611400695,
+        "name": "Populated Postgres Upgrade",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399709,
+        "name": "Android Emulator End-to-End",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399425,
+        "name": "${{ matrix.platform }} Runtime Bundle",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399339,
+        "name": "Mobile Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399325,
+        "name": "Web Critical Smoke",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399318,
+        "name": "Wear Build and JVM Tests",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399285,
+        "name": "Six-State Data-Backed Route Acceptance",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399264,
+        "name": "Native Two-Emulator Package Upgrade",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399245,
+        "name": "Full Exported Web and PWA End-to-End",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399221,
+        "name": "Wear Release Emulator Smoke",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611399010,
+        "name": "iOS Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611398847,
+        "name": "UX Accessibility and Visual Regression",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611398653,
+        "name": "Expo Web Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611397814,
+        "name": "Backend Build",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611397791,
+        "name": "Release Configuration",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611373943,
+        "name": "Classify Database Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611373626,
+        "name": "Classify Build Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611373606,
+        "name": "Backend, Shared, API Client, and Mobile Typecheck",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611373476,
+        "name": "Classify Test Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      },
+      {
+        "id": 112611373195,
+        "name": "Classify Production Image Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      }
+    ],
+    "behavior": "No tests rerun; existing source-bound independent and exact-headCI evidence unchanged and applicable. Reassessment limited to native association and explicit artifact-byte correction."
+  },
+  "priorFeedbackAssessment": {
+    "prComments": 5,
+    "issue444Comments": 0,
+    "issue421Comments": 33,
+    "reviews": 0,
+    "inline": 0,
+    "nativeThreads": 0,
+    "finalFullRereadUnchanged": true,
+    "disposition": "No unresolved actionable code request. Historical linkage decision now has child444 but native association still absent; original receipt not rebound."
+  }
+}

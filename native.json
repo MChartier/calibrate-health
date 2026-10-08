@@ -1,0 +1,32 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "headRefOid": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+        "baseRefOid": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+        "closingIssuesReferences": {
+          "nodes": [
+            {
+              "number": 444,
+              "url": "https://github.com/MChartier/calibrate-health/issues/444"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        },
+        "reviewThreads": {
+          "totalCount": 0,
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      "issue": {
+        "state": "OPEN",
+        "body": "## Problem\n\nA password can change after native login verifies it but before the session is created, allowing stale verification to issue a session. This is a bounded child of #421, not the complete Firebase migration.\n\n## Requirements and acceptance\n\n- Recheck account existence and credential version in the same transaction that creates the native session.\n- Ensure password changes/deletion either prevent stale issuance or revoke/remove an earlier issued session; rollback must return no tokens and persist no session.\n- Preserve restricted recovery access, local authentication, user identity, token format and lifetime; Firebase remains disabled.\n- Maintain service/route regressions and real PostgreSQL race/rollback coverage, including CI execution; cover the full six-file PR437 scope.\n- No live account reads/imports, Firebase activation/provisioning, credential changes, deployment or release. Full #421 remains open and unfinished.\n\n## Implementation plan\n\nBuild on PR431. Update the existing native login transaction and route boundary, with deterministic tests for both race orders and rollback. Review parent PR431 first. Existing implementation evidence stays in PR437; independent QA must reassess final issue/body/linkage before readiness.\n\n## Implementing Codex task\n\nVerified existing task ID: `01a10cfe-a79f-7198-9e8f-2b4dc6703031`. Shareable link unavailable through current tools.\n\n## Implementing PR\n\n[PR437](https://github.com/MChartier/calibrate-health/pull/437). This PR implements only this checkpoint; #421 remains the nonclosing parent outcome.\n"
+      }
+    }
+  }
+}
