@@ -1,0 +1,312 @@
+{
+  "checkedAtUtc": "2026-10-08T22:54:46.520Z",
+  "host": "MCHARTIER_ZBOOK",
+  "owner": "01a11db5-8540-740a-a673-1026c0b90007",
+  "standards": {
+    "workflow": "workflow-v3",
+    "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+    "communication": "pr-review-v3",
+    "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+    "acknowledgment": "Full supplied implementation role, standards, amendments, pinned deployment and current source AGENTS.md read. Current direct amendments govern superseded pinned values."
+  },
+  "head": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "originalPublishedHead": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "target": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "targetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "parentRevisions": [],
+  "child452": {
+    "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+    "pinnedParent": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+    "impact": "Parent advance requires separately recorded affected binding reassessment; child not modified."
+  },
+  "total": {
+    "commits": 2,
+    "files": 30,
+    "additions": 627,
+    "deletions": 785
+  },
+  "commits": [
+    {
+      "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "subject": "Simplify manual server and local native release entrypoints",
+      "files": [
+        "D\t.github/workflows/container-handler.yml",
+        "D\t.github/workflows/container-request.yml",
+        "M\t.github/workflows/cut-release-handler.yml",
+        "M\t.github/workflows/cut-release-request.yml",
+        "M\t.github/workflows/cut-release.yml",
+        "D\t.github/workflows/publish-release-handler.yml",
+        "D\t.github/workflows/publish-release-request.yml",
+        "M\tAGENTS.md",
+        "M\tREADME.md",
+        "M\tdeploy/README.md",
+        "M\tdeploy/self-hosted/README.md",
+        "M\tdocs/android-internal-testing.md",
+        "M\tdocs/architecture/0002-canonical-release-manifest.md",
+        "M\tdocs/architecture/0008-explicit-server-releases.md",
+        "M\tdocs/database-rollback-rehearsal.md",
+        "A\tdocs/deployment.md",
+        "M\tdocs/mobile-release.md",
+        "M\tdocs/native-store-release.md",
+        "M\tdocs/release-acceptance.md",
+        "M\tdocs/release-compatibility.md",
+        "M\tdocs/ux-regression-gates.md",
+        "M\tmobile/README.md",
+        "M\tpackage.json",
+        "M\tscripts/native-config.test.mjs",
+        "M\tscripts/native-internal-release.mjs",
+        "M\tscripts/native.mjs",
+        "M\tscripts/native.test.mjs",
+        "M\tscripts/release-request.mjs",
+        "M\tscripts/release-request.test.mjs",
+        "M\tscripts/release-workflow-contract.test.mjs"
+      ]
+    },
+    {
+      "sha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "parents": [
+        "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+      ],
+      "subject": "Frame release deployment guidance for maintainer operations",
+      "files": [
+        "M\tREADME.md",
+        "M\tdocs/deployment.md"
+      ]
+    }
+  ],
+  "inventory": [
+    {
+      "path": ".github/workflows/container-handler.yml",
+      "additions": 0,
+      "deletions": 121,
+      "rationale": "Issue440 release entrypoint routing and publication boundaries"
+    },
+    {
+      "path": ".github/workflows/container-request.yml",
+      "additions": 0,
+      "deletions": 81,
+      "rationale": "Issue440 release entrypoint routing and publication boundaries"
+    },
+    {
+      "path": ".github/workflows/cut-release-handler.yml",
+      "additions": 47,
+      "deletions": 8,
+      "rationale": "Issue440 release entrypoint routing and publication boundaries"
+    },
+    {
+      "path": ".github/workflows/cut-release-request.yml",
+      "additions": 62,
+      "deletions": 16,
+      "rationale": "Issue440 release entrypoint routing and publication boundaries"
+    },
+    {
+      "path": ".github/workflows/cut-release.yml",
+      "additions": 15,
+      "deletions": 15,
+      "rationale": "Issue440 release entrypoint routing and publication boundaries"
+    },
+    {
+      "path": ".github/workflows/publish-release-handler.yml",
+      "additions": 0,
+      "deletions": 121,
+      "rationale": "Issue440 release entrypoint routing and publication boundaries"
+    },
+    {
+      "path": ".github/workflows/publish-release-request.yml",
+      "additions": 0,
+      "deletions": 73,
+      "rationale": "Issue440 release entrypoint routing and publication boundaries"
+    },
+    {
+      "path": "AGENTS.md",
+      "additions": 16,
+      "deletions": 13,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "README.md",
+      "additions": 11,
+      "deletions": 46,
+      "rationale": "Maintained release and internal deployment guidance; R2 wording correction"
+    },
+    {
+      "path": "deploy/README.md",
+      "additions": 4,
+      "deletions": 0,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "deploy/self-hosted/README.md",
+      "additions": 6,
+      "deletions": 5,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/android-internal-testing.md",
+      "additions": 1,
+      "deletions": 1,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/architecture/0002-canonical-release-manifest.md",
+      "additions": 1,
+      "deletions": 1,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/architecture/0008-explicit-server-releases.md",
+      "additions": 4,
+      "deletions": 2,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/database-rollback-rehearsal.md",
+      "additions": 1,
+      "deletions": 1,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/deployment.md",
+      "additions": 117,
+      "deletions": 0,
+      "rationale": "Maintained release and internal deployment guidance; R2 wording correction"
+    },
+    {
+      "path": "docs/mobile-release.md",
+      "additions": 51,
+      "deletions": 87,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/native-store-release.md",
+      "additions": 4,
+      "deletions": 4,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/release-acceptance.md",
+      "additions": 3,
+      "deletions": 3,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/release-compatibility.md",
+      "additions": 28,
+      "deletions": 43,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "docs/ux-regression-gates.md",
+      "additions": 1,
+      "deletions": 1,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "mobile/README.md",
+      "additions": 3,
+      "deletions": 2,
+      "rationale": "Maintained issue440 release/native/deployment guidance"
+    },
+    {
+      "path": "package.json",
+      "additions": 1,
+      "deletions": 1,
+      "rationale": "Issue440 native release command entrypoint"
+    },
+    {
+      "path": "scripts/native-config.test.mjs",
+      "additions": 2,
+      "deletions": 3,
+      "rationale": "Maintained regression coverage for release/native/deployment contracts"
+    },
+    {
+      "path": "scripts/native-internal-release.mjs",
+      "additions": 1,
+      "deletions": 2,
+      "rationale": "Issue440 release/native entrypoints"
+    },
+    {
+      "path": "scripts/native.mjs",
+      "additions": 50,
+      "deletions": 21,
+      "rationale": "Issue440 release/native entrypoints"
+    },
+    {
+      "path": "scripts/native.test.mjs",
+      "additions": 64,
+      "deletions": 19,
+      "rationale": "Maintained regression coverage for release/native/deployment contracts"
+    },
+    {
+      "path": "scripts/release-request.mjs",
+      "additions": 29,
+      "deletions": 21,
+      "rationale": "Issue440 release/native entrypoints"
+    },
+    {
+      "path": "scripts/release-request.test.mjs",
+      "additions": 67,
+      "deletions": 33,
+      "rationale": "Maintained regression coverage for release/native/deployment contracts"
+    },
+    {
+      "path": "scripts/release-workflow-contract.test.mjs",
+      "additions": 38,
+      "deletions": 41,
+      "rationale": "Maintained regression coverage for release/native/deployment contracts"
+    }
+  ],
+  "originalBodySha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30",
+  "checks": {
+    "checkedAtUtc": "2026-10-08T22:53:19.650Z",
+    "host": "MCHARTIER_ZBOOK",
+    "original": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+    "files": [
+      "README.md",
+      "docs/deployment.md"
+    ],
+    "localLinksVerified": 25,
+    "checks": [
+      "two-file boundary",
+      "README changes limited to Releases and deployment",
+      "all inline code and commands unchanged",
+      "all Markdown link targets unchanged",
+      "local link paths exist",
+      "native and OTA instructions unchanged",
+      "git diff --check"
+    ],
+    "beforeBodySha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30"
+  },
+  "maintainedTests": {
+    "command": "node --test deploy/test/deployment-config.test.mjs deploy/test/self-hosted-deploy.test.mjs",
+    "passed": 26,
+    "failed": 0,
+    "skipped": 0,
+    "log": "deployment-tests.log"
+  },
+  "impact": "Only two documentation files change from original head. All commands, link targets, worker names, native/OTA blocks and technical safeguards retained. Existing CLI/JSON observations and historical CI remain tied to original sources. Incoming PR436 target impact is the existing independent assessment; no new QA verdict or integrated runtime execution claimed.",
+  "feedback": "Read all pages of current issue440 and PR441 comments, submitted reviews and inline comments; submitted and inline lists are empty. C1/R2 are the current requested corrections. Original lifecycle and prior QA identities preserved.",
+  "limitations": [
+    "This evidence describes the validated additive commit before its source publication; final API bindings and CI/review will be recorded separately.",
+    "Historical source/behavior/test identities remain unchanged; no new independent QA verdict claimed.",
+    "No release, build/signing, provider, deployment, merge, readiness or lifecycle operation performed."
+  ],
+  "clean": true,
+  "childImpactRecord": "https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6070751643",
+  "retention": {
+    "purpose": "PR441 C1/R2 documentation correction evidence and exact prior PR body",
+    "owner": "01a11db5-8540-740a-a673-1026c0b90007",
+    "policy": "Retain without expiry on dedicated nonmerged evidence ref; never merge evidence into product branch or relabel historical records."
+  }
+}

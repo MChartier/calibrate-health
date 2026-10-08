@@ -1,0 +1,34 @@
+✔ Caddy and Traefik share DB-backed app readiness semantics (1.6574ms)
+✔ production image and Compose serve the Expo web artifact (0.5576ms)
+✔ in-stack Postgres remains private and gates app startup on DB health (0.2567ms)
+✔ backup pipeline encrypts before promotion and limits retention to completed dumps (0.3145ms)
+✔ restore refuses accidental destructive use and never writes a plaintext dump to the backup volume (0.3032ms)
+✔ production startup retries migrations before opening the app process (0.2697ms)
+✔ deployment remains portable and does not restore removed cloud infrastructure (1.0445ms)
+✔ only the configured image repository, exact digest, and canonical release tag are accepted (1.2606ms)
+✔ first deployment adopts the running digest, preserves secrets, and updates only app (22.453ms)
+✔ repeating a healthy release checks it without pulling or restarting (18.5685ms)
+✔ numeric release ordering and digest identity prevent stale jobs and tag rewrites (24.4254ms)
+✔ invalid host configuration and multiple replicas stop before mutation (22.4484ms)
+✔ missing, stale, future, and invalid backup markers prevent deployment (45.5126ms)
+✔ pull failure preserves deployment state and desired image (11.0603ms)
+✔ a Compose file ignoring APP_IMAGE cannot restart with the wrong image (16.8744ms)
+✔ failed deployment retains pending identity without rollback: {"upFailure":true} (18.5234ms)
+✔ failed deployment retains pending identity without rollback: {"wrongImage":true} (20.0473ms)
+✔ failed deployment retains pending identity without rollback: {"wrongVersion":"99.0.0"} (15.8741ms)
+✔ failed deployment retains pending identity without rollback: {"unhealthy":true} (14.2891ms)
+✔ an interrupted deployment can retry only its exact release and digest (22.3517ms)
+✔ manual stack drift is detected before overwriting a deployment (12.1117ms)
+✔ pending retries recreate a container removed by an interrupted Compose operation (25.2824ms)
+✔ runner rejects malformed network configuration before creating any tunnel (1.6128ms)
+✔ runner pins SSH host key, limits routing, and cleans secrets/tunnel: success (5.5817ms)
+✔ runner pins SSH host key, limits routing, and cleans secrets/tunnel: wg (4.9209ms)
+✔ runner pins SSH host key, limits routing, and cleans secrets/tunnel: ssh (7.2773ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 381.4685
