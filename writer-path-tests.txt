@@ -1,0 +1,84 @@
+Γ£ö Lose It weight import and sticky plan review roll back together when review marking fails (2591.7483ms)
+Γ£ö parseLoseItExport parses Lose It exports with warnings for invalid rows (17.6399ms)
+Γ£ö parseLoseItExport throws when food and weight CSVs are missing (1.5556ms)
+Γ£ö inferLoseItWeightUnit uses profile hints, then height heuristics, then fallback (1.0429ms)
+Γ£ö partitionLoseItWeightImportsByAsOfDate excludes future local dates (0.3211ms)
+Γ£ö buildImportTimestamp uses midday UTC without mutating inputs (0.1623ms)
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Unable to refresh materialized weight trends for user 7; the last-known-good trend snapshot was preserved. Return raw measurements if a read-time refresh also fails, and check weight_trend_recompute diagnostics and database health if this persists.
+Γ£ö metrics baseline: same-day first weight and correction preserve the goal and synchronize its baseline (1645.4679ms)
+Γ£ö metrics baseline: an older goal or historical metric never changes the baseline (61.9008ms)
+Γ£ö metrics baseline: uses the account day rather than UTC and preserves canonical pounds precision (28.5914ms)
+Γ£ö metrics baseline: late first replay preserves history; committed retry cannot overwrite a newer correction (36.4691ms)
+Γ£ö metrics baseline: evaluates eligibility after waiting for the planning lock (26.0033ms)
+Γ£ö metrics baseline: a sync failure rolls back metric, goal and operation receipt together (29.3425ms)
+Γ£ö metrics baseline: timezone committed while waiting determines eligibility and default date (61.9671ms)
+Γ£ö metrics baseline: reads the goal created by a writer that held the planning guard first (26.688ms)
+Γ£ö metrics baseline: weight-first baseline is unchanged and unsafe correction synchronizes final safety state (28.7152ms)
+Γ£ö metrics route: rejects unauthenticated requests via router.use middleware (26.9942ms)
+Γ£ö metrics route: GET / validates start/end query params when provided (24.0969ms)
+Γ£ö metrics route: GET / validates include_trend query values (23.3402ms)
+Γ£ö metrics route: GET / validates range query values (26.1768ms)
+Γ£ö metrics route: GET / uses inclusive comparison endpoints for relative ranges (87.1416ms)
+Γ£ö metrics route: GET / anchors a relative trend range to an explicit historical end date (26.5576ms)
+Γ£ö metrics route: GET / returns metrics with weight converted to the user unit (23.9362ms)
+Γ£ö metrics route: GET / returns trend-augmented payload when include_trend=true (27.241ms)
+Γ£ö metrics route: GET / adds scoped v2 evidence and freshness metadata (26.4998ms)
+Γ£ö metrics route: GET / derives point bands and summary from one raw source revision (27.2309ms)
+Γ£ö metrics route: GET / preserves raw measurements and marks trend unavailable after refresh failure (25.415ms)
+Γ£ö metrics route: GET / degrades after a same-day source edit when read-time refitting still fails (25.3582ms)
+Γ£ö metrics route: GET / catches a fitting race and still returns raw measurements (24.9448ms)
+Γ£ö metrics route: GET / keeps legacy fallback when last-known-good trends do not cover newest raw data (23.8234ms)
+Γ£ö metrics route: GET / excludes future rows and suppresses outdated pace (21.301ms)
+Γ£ö metrics route: GET / applies current, stale, and outdated freshness boundaries (95.4091ms)
+Γ£ö metrics route: GET / keeps stale as-of metadata when a narrow range has no returned weigh-ins (26.5527ms)
+Γ£ö metrics route: GET / recomputes a bounded historical trend as of the requested end date (20.9274ms)
+Γ£ö metrics route: GET / legacy weekly rate ignores a pre-gap reversal (21.9325ms)
+Γ£ö metrics route: GET / trend payload stays unit-invariant across KG and LB preferences (20.9163ms)
+Γ£ö metrics route: GET / ignores trend rows older than the active trend horizon (20.3607ms)
+Γ£ö metrics route: POST / rejects invalid date values (20.3906ms)
+Γ£ö metrics route: POST / rejects future account-local weight dates (15.7509ms)
+Γ£ö metrics route: POST / rejects malformed or out-of-range body fat percentages (17.9746ms)
+Γ£ö metrics route: POST / rejects empty updates (17.0089ms)
+Γ£ö metrics route: POST / requires weight when creating a new day via body_fat_percent-only update (19.0666ms)
+Γ£ö metrics route: POST / updates existing metrics when weight is omitted (14.35ms)
+Γ£ö metrics route: POST / upserts metrics when weight is provided (18.0448ms)
+Γ£ö metrics route: POST / evaluates goal recognition from pre-save history inside the transaction (19.4471ms)
+Γ£ö metrics route: DELETE /:id validates ids and handles not-found deletes (15.4217ms)
+Γ£ö metrics route: DELETE /:id returns 204 when a row is deleted (14.7726ms)
+Γ£ö metrics route: POST / saves a bounded weight but suppresses an unsafe goal progress receipt and marks review (17.0446ms)
+Γ£ö metrics route: DELETE /:id marks the current plan when deleting the latest weight makes it unsafe (22.3531ms)
+Γ£ö watch routes reject non-Wear principals (1195.617ms)
+Γ£ö watch snapshot returns a private ETag and supports conditional 304 (27.7781ms)
+Γ£ö watch mutations require an operation id and trusted session provenance (34.3814ms)
+Γ£ö watch mutation parser accepts canonical grams and rejects unknown fields (3786.9722ms)
+Γ£ö watch snapshot rejects an invalid stored timezone before reading any guessed local day (20.0741ms)
+Γ£ö watch snapshot is bounded, timezone-local, and derives current-session undo (23.9599ms)
+Γ£ö watch goal progress covers loss, gain, maintenance, missing goals, and completed targets (16.7477ms)
+Γ£ö watch food creation snapshots My Food and records trusted session provenance (19.7998ms)
+Γ£ö watch food creation rejects paused days before inserting (17.6483ms)
+Γ£ö watch food deletion is limited to the current session undo candidate (19.6884ms)
+Γ£ö watch undo is invalidated by a later phone edit and never walks to an older create (25.224ms)
+Γ£ö watch metric and completion mutations use canonical date-only upserts (19.3314ms)
+Γ£ö watch metric and completion mutations reject stale snapshot revisions (18.6627ms)
+Γä╣ tests 61
+Γä╣ suites 0
+Γä╣ pass 61
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 4572.7502
