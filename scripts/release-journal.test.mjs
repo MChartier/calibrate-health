@@ -93,9 +93,10 @@ async function retiredFixture() {
   await f.store.create(source);
   const plan = { schema: 1, runId: '10', repository: 'example/app', source };
   await f.store.put('plan.json', plan);
-  const observation = { plan, run: { id: 10, head_sha: source, head_branch: 'master', event: 'workflow_run',
+  const observation = { plan, run: { id: 10, run_attempt: 1, head_sha: source, head_branch: 'master', event: 'workflow_run',
     path: '.github/workflows/unified-release-handler.yml', status: 'completed', conclusion: 'cancelled' },
-    jobs: [{ name: 'prepare', conclusion: 'cancelled' }, { name: 'build', conclusion: 'skipped' }], jobsTotal: 2,
+    jobs: [{ name: 'Inspect immutable inputs and verified successful receipts', run_attempt: 1, status: 'completed', conclusion: 'success' },
+      { name: 'Run only the verified selected stages', run_attempt: 1, status: 'completed', conclusion: 'cancelled' }], jobsTotal: 2,
     currentSource: 'b'.repeat(40), completionExists: false, candidateRefAbsent: true };
   return { ...f, observation, inspect: async () => structuredClone(observation), close: async () => { throw Error('No PR should be closed'); } };
 }

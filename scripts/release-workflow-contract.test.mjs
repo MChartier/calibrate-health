@@ -2786,6 +2786,19 @@ test('iOS build and source-free IPA attestation have separate authority and neve
   assert.doesNotMatch(workflow, /\n\s+(?:push|pull_request|schedule):/);
 });
 
+test('selected OTA approval precedes environment resolution and every dependent production stage', () => {
+  const workflow = readWorkflow('unified-ota-release.yml');
+  const stages = ['environment', 'export', 'intent', 'publish'];
+  const blocks = stages.map(name => workflowJobBlock(workflow, name));
+  assert.match(blocks[0], /\n    environment: \$\{\{ inputs\.profile == 'production' && 'production' \|\| 'preview' \}\}/);
+  assert.match(blocks[0], /release-ota-worker\.mjs environment/);
+  for (let index = 1; index < stages.length; index++) {
+    assert.match(blocks[index], new RegExp(`\\n    needs: ${stages[index - 1]}\\n`));
+    assert.doesNotMatch(blocks[index], /\n    if:/, 'dependent stages must retain implicit success-only scheduling');
+    assert.doesNotMatch(blocks[index], /\n    environment:/, 'one upstream approval gates the entire chain');
+  }
+});
+
 test('selected OTA separates source export, durable GitHub intent and source-free Expo publication', () => {
   const workflow = readWorkflow('unified-ota-release.yml');
   const exporting = workflowJobBlock(workflow, 'export'), intent = workflowJobBlock(workflow, 'intent');
@@ -2800,7 +2813,7 @@ test('selected OTA separates source export, durable GitHub intent and source-fre
     assert.match(job, /release-ota-worker\.mjs verify/);
   }
   assert.match(intent, /needs: export/); assert.match(publisher, /needs: intent/);
-  assert.match(publisher, /environment: \$\{\{ inputs\.profile == 'production' && 'production' \|\| 'preview' \}\}/);
+  assert.match(environment, /environment: \$\{\{ inputs\.profile == 'production' && 'production' \|\| 'preview' \}\}/);
   assert.match(publisher, /sparse-checkout:/); assert.doesNotMatch(publisher, /npm ci --ignore-scripts|expo export|--auto-submit/);
   assert.match(publisher, /release-ota-worker\.mjs publish/);
   assert.match(publisher, /actions\/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d/);

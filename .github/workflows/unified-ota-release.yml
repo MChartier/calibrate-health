@@ -45,6 +45,7 @@ env:
 jobs:
   environment:
     name: Resolve the verified public EAS environment
+    environment: ${{ inputs.profile == 'production' && 'production' || 'preview' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -301,7 +302,6 @@ jobs:
   publish:
     name: Publish and verify the inert export with no GitHub writer
     needs: intent
-    environment: ${{ inputs.profile == 'production' && 'production' || 'preview' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

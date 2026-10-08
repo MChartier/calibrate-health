@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { hash, SHA } from './release-plan.mjs';
 import { readAsset, putAsset, verifyRetirement } from './release-journal.mjs';
 
-/** All-attempt job evidence proves absence of provider work; a missing receipt cannot prove it. */
+/** Complete known phases plus absence of durable provider intent are both required. */
 function retirementReason({ release, run, jobs, jobsTotal, plan, candidate, pull, currentSource, candidateValidated, completionExists, candidateRefAbsent }) {
   assert(release.draft && release.author?.login === 'github-actions[bot]', 'Unverified journal ownership.');
   assert(release.assets.every(a => ['plan.json', 'configuration.json', 'candidate.json', 'retirement.json', 'retirement-complete.json'].includes(a.name)),
@@ -11,8 +11,24 @@ function retirementReason({ release, run, jobs, jobsTotal, plan, candidate, pull
   assert(SHA.test(source) && String(run.id) === release.tag_name.split('/').at(-1) && run.head_sha === source &&
     run.head_branch === 'master' && run.event === 'workflow_run' && run.path === '.github/workflows/unified-release-handler.yml', 'Workflow/source ownership differs.');
   assert(run.status === 'completed' && ['failure', 'cancelled', 'timed_out'].includes(run.conclusion), 'Active or nonterminal run cannot retire.');
-  assert(Array.isArray(jobs) && jobs.length === jobsTotal && jobs.some(j => j.name === 'prepare') &&
-    jobs.every(j => j.name === 'prepare' || j.conclusion === 'skipped'), 'All-attempt job evidence cannot rule out provider activity.');
+  const planJob = 'Inspect immutable inputs and verified successful receipts';
+  const executeJob = 'Run only the verified selected stages';
+  const terminal = ['success', 'failure', 'cancelled', 'timed_out', 'skipped'];
+  assert(Number.isSafeInteger(run.run_attempt) && run.run_attempt > 0 && Array.isArray(jobs) && jobs.length === jobsTotal &&
+    jobs.every(j => j.status === 'completed' && Number.isSafeInteger(j.run_attempt) && j.run_attempt >= 1 &&
+      j.run_attempt <= run.run_attempt && [planJob, executeJob].includes(j.name) && terminal.includes(j.conclusion)),
+  'All-attempt job evidence cannot rule out provider activity.');
+  for (let attempt = 1; attempt <= run.run_attempt; attempt++) {
+    const phases = jobs.filter(j => j.run_attempt === attempt);
+    const planning = phases.find(j => j.name === planJob), execution = phases.find(j => j.name === executeJob);
+    assert(phases.length === 2 && planning && execution && execution.conclusion !== 'success' &&
+      (execution.conclusion === 'skipped' || planning.conclusion === 'success'),
+    'All-attempt job evidence has missing, duplicated or inconsistent phases.');
+  }
+  // A cancelled execute may have stopped after journal allocation, before plan persistence.
+  // It may also have reached a provider: every provider start/adoption must first persist an
+  // op.* intent. The asset allowlist above rejects that intent even when no receipt exists.
+  // A successful execute without completion is contradictory, not proof of no publication.
   assert(!completionExists, 'Completed publication exists.');
   assert(!pull?.auto_merge, 'Queued merge must be reconciled.');
   if (!plan) {

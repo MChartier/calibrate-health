@@ -54,7 +54,9 @@ stream; it does **not** select a backend URL. The environment, endpoint, project
 profile, source and native fingerprint are bound together. A mismatch rejects
 the build/export. Existing channel mappings must contain one active branch;
 the worker never creates or remaps a channel or continues through a rollout.
-OTA publication retains the existing production/preview GitHub environment gate.
+The existing production/preview GitHub environment approval precedes environment
+resolution, source export and publication. Each subsequent job requires the
+preceding job to succeed; source export still has no provider credentials.
 
 Backend targeting is build-time only. These endpoint/project values are embedded
 in clients and are observable. They are not credentials. Temporary OTA exports
