@@ -7,6 +7,8 @@ function fixture() {
   const calls = [];
   const environment = {
     PATH: 'tools', JAVA_HOME: 'explicit-java',
+    EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://synthetic.invalid',
+    EXPO_PUBLIC_EAS_PROJECT_ID: '11111111-1111-4111-8111-111111111111',
     CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: 'signing-secret',
     google_play_access_token: 'play-secret', GOOGLE_APPLICATION_CREDENTIALS: 'secret-file',
     EXPO_TOKEN: 'expo-secret'
@@ -100,7 +102,8 @@ test('build uses external credentials after isolating inherited secrets and rest
   await runNative(['build', '--credentials-file', 'external.json'], options);
   assert.deepEqual(calls.map(([name]) => name), ['settings', 'internal']);
   assert.deepEqual(calls[1][1], ['build', '--credentials-file', 'external.json']);
-  assert.deepEqual(calls[1][2].environment, { PATH: 'tools', JAVA_HOME: 'explicit-java', BUNDLETOOL_JAR: 'saved-bundletool' });
+  assert.deepEqual(calls[1][2].environment, { PATH: 'tools', JAVA_HOME: 'explicit-java', BUNDLETOOL_JAR: 'saved-bundletool',
+    EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://synthetic.invalid', EXPO_PUBLIC_EAS_PROJECT_ID: '11111111-1111-4111-8111-111111111111' });
   assert.equal(environment.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD, 'signing-secret');
   assert.equal(environment.BUNDLETOOL_JAR, undefined);
 });

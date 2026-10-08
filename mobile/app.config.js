@@ -6,6 +6,13 @@ const CHANNEL_PATTERN = /^[a-z0-9][a-z0-9._-]*$/i;
  * normal web development usable while making release builds explicit and reproducible.
  */
 function createExpoConfig({ config }) {
+  const iosRelease = require('../shared/ios-release.json');
+  if (config.ios) config = { ...config, ios: { ...config.ios, buildNumber: iosRelease.buildNumber,
+    runtimeVersion: `ios-${iosRelease.version}-${iosRelease.buildNumber}` } };
+  if (process.env.EAS_BUILD_PLATFORM === 'ios' || process.env.CALIBRATE_NATIVE_PLATFORM === 'ios') {
+    config = { ...config, version: iosRelease.version };
+  }
+  if (process.env.EAS_ACCOUNT) config = { ...config, owner: process.env.EAS_ACCOUNT };
   const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID?.trim() || config.extra?.eas?.projectId;
   if (!projectId) return config;
   if (!PROJECT_ID_PATTERN.test(projectId)) {

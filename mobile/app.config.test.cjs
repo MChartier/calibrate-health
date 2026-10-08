@@ -95,3 +95,13 @@ test('Expo config rejects malformed project IDs and channel names', () => {
   process.env.EXPO_UPDATES_CHANNEL = 'internal channel';
   assert.throws(() => createExpoConfig({ config: {} }), /EXPO_UPDATES_CHANNEL/);
 });
+
+test('iOS runtime and build allocation are independent of the Android phone counter', () => {
+  const ios = require('../shared/ios-release.json');
+  delete process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+  const result = createExpoConfig({ config: { version: '9.9.9', ios: { buildNumber: '999' }, android: { versionCode: 999 } } });
+  assert.equal(result.ios.buildNumber, ios.buildNumber);
+  assert.equal(result.ios.runtimeVersion, `ios-${ios.version}-${ios.buildNumber}`);
+  assert.equal(result.android.versionCode, 999);
+  assert.equal(result.version, '9.9.9');
+});

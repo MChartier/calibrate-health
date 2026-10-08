@@ -10,15 +10,14 @@ import { nativeReleaseToolEnvironment, resolveNativeReleaseDeviceTooling } from 
 import { readNativeOtaBaseline } from './native-ota-contract.mjs';
 import { assertNativeNodeVersion, inspectNativeToolchain, NATIVE_TOOLCHAIN } from './native-toolchain.mjs';
 import { inspectNativeEasDependency, inspectNativeHostDependencies } from './native-setup.mjs';
+import { buildConfiguration } from './release-plan.mjs';
 import {
   createGooglePlayPublisher, createNativePlayReleasePlan, inspectLocalNativePlayInternal,
   resolveGooglePlayAccessToken, uploadLocalNativePlayInternal, verifyNativePlayArtifacts
 } from './native-play-release.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const INTERNAL_SERVER_URL = 'https://calibratehealth.darkmachines.net';
 export const INTERNAL_CHANNEL = 'internal';
-export const INTERNAL_PROJECT_ID = 'fda8f8c5-e646-47ac-82fb-35003c9cbec7';
 export const LOCAL_RECORD_PATH = 'build/native-local-internal.json';
 const RECORD_KIND = 'local-internal';
 const WINDOWS_CMAKE_VERSION = NATIVE_TOOLCHAIN.cmake;
@@ -55,17 +54,26 @@ export function parseLocalInternalArgs(argv, { requireCredentials = true } = {})
 }
 
 export function localInternalEnvironment(environment = process.env) {
+  const configuration = localBuildConfiguration(environment);
   const publicEnvironment = Object.fromEntries(Object.entries(environment).filter(([name]) => {
     const key = name.toUpperCase();
     return !key.startsWith('GOOGLE_PLAY_') && key !== 'GOOGLE_APPLICATION_CREDENTIALS';
   }));
   return {
     ...publicEnvironment,
-    EXPO_PUBLIC_CALIBRATE_SERVER_URL: INTERNAL_SERVER_URL,
-    EXPO_PUBLIC_EAS_PROJECT_ID: INTERNAL_PROJECT_ID,
+    EXPO_PUBLIC_CALIBRATE_SERVER_URL: configuration.serverUrl,
+    EXPO_PUBLIC_EAS_PROJECT_ID: configuration.projectId,
     EXPO_UPDATES_CHANNEL: INTERNAL_CHANNEL,
+    EAS_ENVIRONMENT: configuration.environment,
     ANDROID_BUILD_TOOLS_VERSION: NATIVE_TOOLCHAIN.buildTools
   };
+}
+
+export function localBuildConfiguration(environment = process.env, eas = JSON.parse(fs.readFileSync(path.join(ROOT, 'mobile/eas.json'), 'utf8'))) {
+  return buildConfiguration({ profile: 'internal', environment: environment.EAS_ENVIRONMENT ?? 'preview',
+    channel: environment.EXPO_UPDATES_CHANNEL ?? INTERNAL_CHANNEL,
+    projectId: environment.EXPO_PUBLIC_EAS_PROJECT_ID, serverUrl: environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL
+  }, eas);
 }
 
 function isWithin(root, file) {
@@ -166,13 +174,14 @@ function metadataValue(xml, name) {
   return value?.replaceAll('&quot;', '"').replaceAll('&amp;', '&');
 }
 
-export function validateInternalBundleManifest(xml, role, versionName, resolveResource = () => null) {
+export function validateInternalBundleManifest(xml, role, versionName, resolveResource = () => null, environment = process.env) {
+  const configuration = localBuildConfiguration(environment);
   if (!/android:usesCleartextTraffic="false"/.test(xml) || /android:debuggable="true"/.test(xml)) {
     throw new Error(`${role} bundle must be a non-debuggable HTTPS-only release.`);
   }
   if (role === 'phone') {
     const expected = {
-      'expo.modules.updates.EXPO_UPDATE_URL': `https://u.expo.dev/${INTERNAL_PROJECT_ID}`,
+      'expo.modules.updates.EXPO_UPDATE_URL': `https://u.expo.dev/${configuration.projectId}`,
       'expo.modules.updates.EXPO_RUNTIME_VERSION': versionName
     };
     for (const [name, value] of Object.entries(expected)) {
@@ -199,6 +208,7 @@ export function parseBundleResourceValue(dump) {
 
 /** Read final AABs, including compiled JS/DEX, rather than trusting build-time environment alone. */
 function inspectInternalBundleConfiguration({ root, plan, tooling, environment }) {
+  const configuration = localBuildConfiguration(environment);
   const jar = path.join(tooling.javaHome, 'bin', process.platform === 'win32' ? 'jar.exe' : 'jar');
   const observations = {};
   for (const role of ['phone', 'watch']) {
@@ -209,7 +219,7 @@ function inspectInternalBundleConfiguration({ root, plan, tooling, environment }
       const dump = inspectCommand(tooling.java, ['-jar', tooling.bundletoolJar, 'dump', 'resources',
         `--bundle=${file}`, `--resource=${resource}`, '--values'], environment);
       return parseBundleResourceValue(dump);
-    });
+    }, environment);
     const listing = inspectCommand(jar, ['tf', file], environment).split(/\r?\n/);
     const entries = listing.filter((entry) => role === 'phone'
       ? entry === 'base/assets/index.android.bundle'
@@ -218,21 +228,22 @@ function inspectInternalBundleConfiguration({ root, plan, tooling, environment }
     const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-bundle-inspection-'));
     try {
       inspectCommand(jar, ['xf', file, ...entries], environment, { cwd: temporary });
-      const hasOrigin = entries.some((entry) => fs.readFileSync(path.join(temporary, entry)).includes(Buffer.from(INTERNAL_SERVER_URL)));
-      if (!hasOrigin) throw new Error(`${role} compiled bundle does not contain the private backend origin.`);
+      const hasOrigin = entries.some((entry) => fs.readFileSync(path.join(temporary, entry)).includes(Buffer.from(configuration.serverUrl)));
+      if (!hasOrigin) throw new Error(`${role} compiled bundle does not contain the configured backend origin.`);
     } finally {
       fs.rmSync(temporary, { recursive: true, force: true });
     }
-    observations[role] = { serverUrl: INTERNAL_SERVER_URL, cleartext: false };
+    observations[role] = { serverUrl: configuration.serverUrl, cleartext: false };
   }
   return observations;
 }
 
-export function validateLocalInternalBaseline(baseline, plan) {
+export function validateLocalInternalBaseline(baseline, plan, environment = process.env) {
+  const configuration = localBuildConfiguration(environment);
   if (baseline.commit !== plan.sourceCommit || baseline.platform !== 'android' ||
-      baseline.server_url !== INTERNAL_SERVER_URL || baseline.channel !== INTERNAL_CHANNEL ||
-      baseline.project_id !== INTERNAL_PROJECT_ID || baseline.runtime_version !== plan.versionName) {
-    throw new Error('Local build baseline must match this source, private backend, Expo project, runtime, and internal channel. Rebuild the candidate.');
+      baseline.server_url !== configuration.serverUrl || baseline.channel !== INTERNAL_CHANNEL ||
+      baseline.project_id !== configuration.projectId || baseline.runtime_version !== plan.versionName) {
+    throw new Error('Local build baseline must match this source, configured backend, Expo project, runtime, and internal channel. Rebuild the candidate.');
   }
 }
 
@@ -240,7 +251,7 @@ function verifyCandidate(root, plan, environment, dependencies = {}) {
   const verify = dependencies.verifyArtifacts ?? verifyNativePlayArtifacts;
   const verification = verify({ root, plan, environment });
   const { baseline } = (dependencies.readBaseline ?? readNativeOtaBaseline)(root);
-  validateLocalInternalBaseline(baseline, plan);
+  validateLocalInternalBaseline(baseline, plan, environment);
   const inspect = dependencies.inspectConfiguration ?? inspectInternalBundleConfiguration;
   const tooling = dependencies.tooling ?? resolveNativeReleaseDeviceTooling(environment);
   const configuration = inspect({ root, plan, tooling, environment });
@@ -287,7 +298,7 @@ export async function buildLocalInternalRelease({ root = ROOT, credentialsFile, 
   const plan = createLocalInternalPlan(root, sourceCommit);
   const record = verifyCandidate(root, plan, env, dependencies);
   writeLocalRecord(root, record);
-  return { provenance: RECORD_KIND, sourceCommit, serverUrl: INTERNAL_SERVER_URL, candidates: plan.candidates, record: LOCAL_RECORD_PATH };
+  return { provenance: RECORD_KIND, sourceCommit, candidates: plan.candidates, record: LOCAL_RECORD_PATH };
 }
 
 async function internalReleaseDoctor(root = ROOT, environment = process.env, dependencies = {}) {
@@ -301,19 +312,19 @@ async function internalReleaseDoctor(root = ROOT, environment = process.env, dep
   await check('release configuration', () => assertReleaseConfiguration(root).then((manifest) => manifest.android));
   checks.push(inspectNativeHostDependencies(root), inspectNativeEasDependency(root));
   checks.push(...(dependencies.inspectToolchain ?? inspectNativeToolchain)(env));
-  await check('private backend compatibility', async () => {
+  await check('configured backend compatibility', async () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'shared/release.json'), 'utf8'));
-    const response = await (dependencies.fetchImpl ?? fetch)(`${INTERNAL_SERVER_URL}/api/v1/client-config`, {
+    const response = await (dependencies.fetchImpl ?? fetch)(`${env.EXPO_PUBLIC_CALIBRATE_SERVER_URL}/api/v1/client-config`, {
       cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(CONNECTION_TIMEOUT_MS)
     });
-    if (!response.ok) throw new Error(`Server returned HTTP ${response.status}. Check WireGuard and the backend.`);
+    if (!response.ok) throw new Error(`Server returned HTTP ${response.status}. Check access to the configured backend.`);
     const config = await response.json();
     const { compareClientServerCompatibility } = await import(pathToFileURL(path.join(root, 'shared/dist/cjs/releaseCompatibility.js')).href);
     if (config.api_versions?.current !== manifest.server.api.current ||
         compareClientServerCompatibility(manifest.server.version, config.server_version) !== 'compatible') {
       throw new Error(`Backend ${config.server_version ?? 'unknown'} is incompatible with client contract ${manifest.server.version}.`);
     }
-    return { serverUrl: INTERNAL_SERVER_URL, serverVersion: config.server_version, capabilities: config.capabilities };
+    return { serverVersion: config.server_version, capabilities: config.capabilities };
   });
   return { ok: checks.every((check) => check.ok), checks };
 }
@@ -326,7 +337,7 @@ Maintainer helpers (not additional build/submit stages):
   node scripts/native-internal-release.mjs doctor
   node scripts/native-internal-release.mjs prepare --bump patch|minor|major
   node scripts/native-internal-release.mjs status --service-account-file ABSOLUTE_EXTERNAL_FILE
-Backend: ${INTERNAL_SERVER_URL}; Expo channel: ${INTERNAL_CHANNEL}.
+Set EXPO_PUBLIC_CALIBRATE_SERVER_URL and EXPO_PUBLIC_EAS_PROJECT_ID externally; Expo channel: ${INTERNAL_CHANNEL}.
 Commit all source/version changes before build. Keep credentials outside the repository.`;
 
 export async function runLocalInternalCli(argv, options = {}) {

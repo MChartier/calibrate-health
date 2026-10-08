@@ -2,7 +2,6 @@
   "expo": {
     "name": "Calibrate",
     "slug": "calibrate-health-app",
-    "owner": "calibrate-health",
     "scheme": "calibrate",
     "version": "0.2.7",
     "orientation": "default",
@@ -133,9 +132,6 @@
       },
       "router": {
         "origin": false
-      },
-      "eas": {
-        "projectId": "fda8f8c5-e646-47ac-82fb-35003c9cbec7"
       }
     }
   }

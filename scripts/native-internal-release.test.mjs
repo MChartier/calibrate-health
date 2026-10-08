@@ -4,13 +4,21 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
-  buildLocalInternalRelease, configureLocalInternalToolchain, createLocalInternalPlan, inspectWindowsCmake, INTERNAL_CHANNEL, INTERNAL_PROJECT_ID,
-  INTERNAL_SERVER_URL, LOCAL_RECORD_PATH, loadLocalSigningEnvironment, localInternalEnvironment,
+  buildLocalInternalRelease, configureLocalInternalToolchain, createLocalInternalPlan, inspectWindowsCmake, INTERNAL_CHANNEL,
+  LOCAL_RECORD_PATH, loadLocalSigningEnvironment, localInternalEnvironment,
   parseBundleResourceValue, parseLocalInternalArgs, requireExternalFile, validateInternalBundleManifest,
   validateLocalInternalBaseline, verifyLocalRecord, verifyLocalInternalArtifacts
 } from './native-internal-release.mjs';
 
 const COMMIT = 'a'.repeat(40);
+const INTERNAL_SERVER_URL = 'https://synthetic.invalid';
+const INTERNAL_PROJECT_ID = '11111111-1111-4111-8111-111111111111';
+const ENV = { EXPO_PUBLIC_CALIBRATE_SERVER_URL: INTERNAL_SERVER_URL, EXPO_PUBLIC_EAS_PROJECT_ID: INTERNAL_PROJECT_ID };
+const previousEnvironment = { ...process.env };
+test.beforeEach(() => Object.assign(process.env, ENV));
+test.afterEach(() => { for (const key of Object.keys(ENV)) {
+  if (previousEnvironment[key] === undefined) delete process.env[key]; else process.env[key] = previousEnvironment[key];
+} });
 function fixture(t) {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-local-internal-'));
   t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
@@ -42,10 +50,9 @@ test('CLI accepts only command-specific internal options and requires Console co
   assert.equal(parseLocalInternalArgs(['submit', '--service-account-file', 'a', '--confirm-play-console-clean']).command, 'submit');
 });
 
-test('local build pins private origin, project and channel and removes Play authentication', () => {
+test('local build validates external origin and project, pins internal channel and removes Play authentication', () => {
   const env = localInternalEnvironment({
-    EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://wrong.example', EXPO_UPDATES_CHANNEL: 'production',
-    EXPO_PUBLIC_EAS_PROJECT_ID: 'wrong', GOOGLE_PLAY_ACCESS_TOKEN: 'secret',
+    ...ENV, GOOGLE_PLAY_ACCESS_TOKEN: 'secret',
     google_application_credentials: 'secret-file', PATH: 'tools'
   });
   assert.equal(env.EXPO_PUBLIC_CALIBRATE_SERVER_URL, INTERNAL_SERVER_URL);
@@ -53,6 +60,8 @@ test('local build pins private origin, project and channel and removes Play auth
   assert.equal(env.EXPO_UPDATES_CHANNEL, INTERNAL_CHANNEL);
   assert.equal(env.PATH, 'tools');
   assert.equal(Object.keys(env).some((key) => key.toUpperCase().startsWith('GOOGLE_')), false);
+  assert.throws(() => localInternalEnvironment({ ...ENV, EXPO_UPDATES_CHANNEL: 'production' }), /match/);
+  assert.throws(() => localInternalEnvironment({}), /UUID/);
 });
 
 test('external Expo keystore config maps to shared signing without logging or accepting checkout secrets', (t) => {
@@ -119,7 +128,7 @@ test('final bundle configuration rejects cleartext, debug mode and wrong Expo id
 test('build admits signing only after preparation and verifies without signing/Play secrets', async (t) => {
   const { root, baseline } = fixture(t);
   const order = [];
-  const result = await buildLocalInternalRelease({ root, credentialsFile: 'external.json', environment: {} }, {
+  const result = await buildLocalInternalRelease({ root, credentialsFile: 'external.json', environment: ENV }, {
     readSource: () => COMMIT,
     runStage: (_root, stage, env) => {
       order.push(stage);
@@ -151,7 +160,7 @@ test('failed preparation never reads signing and invalidates any previous local 
   const { root } = fixture(t);
   fs.mkdirSync(path.join(root, 'build'));
   fs.writeFileSync(path.join(root, LOCAL_RECORD_PATH), 'old evidence');
-  await assert.rejects(buildLocalInternalRelease({ root, credentialsFile: 'external.json', environment: {} }, {
+  await assert.rejects(buildLocalInternalRelease({ root, credentialsFile: 'external.json', environment: ENV }, {
     readSource: () => COMMIT,
     runStage: () => { throw new Error('prebuild failed'); },
     loadSigning: () => assert.fail('must not read credentials')
@@ -170,7 +179,7 @@ test('retained local artifacts must match clean source, actual metadata, and rec
     verifyArtifacts: () => verification, readBaseline: () => ({ baseline }),
     tooling: {}, inspectConfiguration: () => ({ inspected: true })
   };
-  const request = { root, environment: {}, credentialsFile: 'external.json' };
+  const request = { root, environment: ENV, credentialsFile: 'external.json' };
   await buildLocalInternalRelease(request, dependencies);
   assert.equal((await verifyLocalInternalArtifacts(request, dependencies)).plan.sourceCommit, COMMIT);
   verification = { artifacts: [{ sha256: 'b'.repeat(64) }] };
@@ -184,6 +193,7 @@ test('retained local artifacts must match clean source, actual metadata, and rec
 test('an already-admitted signing environment cannot enter preparation', async (t) => {
   const { root } = fixture(t);
   await assert.rejects(buildLocalInternalRelease({ root, credentialsFile: 'external.json', environment: {
+    ...ENV,
     CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD: 'secret'
   } }, { readSource: () => COMMIT, runStage: () => assert.fail('no prebuild') }), /rejects admitted/);
 });
