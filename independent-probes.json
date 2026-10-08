@@ -1,0 +1,19 @@
+{
+  "sourceHead": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "retirement": {
+    "actualNames": [
+      "Inspect immutable inputs and verified successful receipts",
+      "Run only the verified selected stages"
+    ],
+    "rejection": "All-attempt job evidence cannot rule out provider activity.",
+    "retained": "candidate/unified/42",
+    "nextAllocationBlocked": true,
+    "positiveControl": "abandoned/unified/42"
+  },
+  "productionApproval": {
+    "environmentResolutionBeforeApproval": true,
+    "sourceExportBeforeApproval": true,
+    "approvalOnlyOnPublish": true
+  },
+  "externalRequests": 0
+}

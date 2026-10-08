@@ -1,0 +1,27 @@
+{
+  "records": [
+    {
+      "commit": "80703680c484c534bcfa0f7ee18760870d2acc6f",
+      "path": "manifest.json",
+      "sha256": "83649ab0cea682e1233955b8d65dce8670e33cd70ded3b17dd32d067c6dcf826"
+    },
+    {
+      "commit": "ced19a3b2b32f67aa5fdf1abea2b7b9342326a03",
+      "path": "final-scope.json",
+      "sha256": "a3bf26a146e1a73c88dd11b1c4b789baa815fc2f8471c3aedebcd4c54c7f339c"
+    },
+    {
+      "commit": "55bacb9c21794edccd17628ba4b969a4dcb19016",
+      "path": "final-handoff.json",
+      "sha256": "0d6be5725e901356b05116cb5a6c6c4bed7eb267a66bf894c6bff1603ab60324"
+    },
+    {
+      "commit": "5ca053672cb7049b7f818643027c1d5be0bcb743",
+      "path": "parent-impact-receipt.json",
+      "sha256": "b18de8aa484f97947c38d05c08a497cacce4c9d0fb0e5f98989fd217d8bdf2d0"
+    }
+  ],
+  "manifestAllFilesMatched": 16,
+  "allDownloadedBlobsVerified": "identities.json",
+  "historicalBindings": "Original a8539c behavior and 0c26 parent preserved. Final handoff old body 0b9afeb remains historical; parent-impact receipt binds current f051f329. No historical identity rebound."
+}

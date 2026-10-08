@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "verdict": "changes-required",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "standardsAcknowledgment": "Read full pinned execution texts, pr-review-v3 overlay and full direct amendments, current root AGENTS.md and issue/PR feedback. No runtime pin migration. Sole independent QA; new trusted task, not original reviewer migration.",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/452",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/447",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "supersedesVerdictCommentId": null,
+  "checkedAtUtc": "2026-10-08T23:51:40.102512+00:00",
+  "headSha": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "baseSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "apiBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "mergeBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "targetRef": "mchartier/release-entrypoints-recovery",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "ultimateMergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "a8539c3b90bd8c69a761c234869e5a0553f8ed08"
+  ],
+  "targetParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "parentRevisions": [
+    {
+      "pr": 441,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "sourceParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "state": "open/unmerged",
+      "gate": "C1/R2 passed in prior same-task assessment; C2 issue-owner metadata pending coordinator correction, not source failure. No positive readiness before cleared."
+    }
+  ],
+  "prBodySha256": "f051f32990fde876035884150d8efaf827f9f98ba021f8aaa95d43bc65397fee",
+  "findings": [
+    {
+      "id": "R1",
+      "priority": "P2",
+      "path": "scripts/release-retirement.mjs",
+      "lines": [
+        14,
+        15
+      ],
+      "title": "Retirement checks a job name the actual handler never emits",
+      "observed": "All-attempt admission requires prepare. GitHub adapter preserves actual display names: Inspect immutable inputs and verified successful receipts / Run only the verified selected stages. A cancelled run immediately after journal allocation, with no plan/candidate/provider intent, is rejected and candidate/unified/42 blocks subsequent allocation. The obsolete prepare positive control retires.",
+      "expected": "Terminal unpublished candidates with proved absence of provider work retire through retained tombstone/readback, while ambiguous or provider-active candidates remain recoverable.",
+      "correction": "Align retirement with actual unified handler phases and API job evidence, including cancellation during execute before provider intent. Preserve complete all-attempt inventory and fail-closed provider-effect checks; do not merely allow any execute job to retire. Add maintained adapter-to-workflow regression fixtures using actual job names and negative partial/provider cases.",
+      "evidence": "independent-probes.mjs and independent-probes.json"
+    },
+    {
+      "id": "R2",
+      "priority": "P1",
+      "path": ".github/workflows/unified-ota-release.yml",
+      "lines": [
+        46,
+        122,
+        132,
+        206,
+        301,
+        304
+      ],
+      "title": "Production approval occurs after production environment resolution and source export",
+      "observed": "environment resolves production EAS inputs with EXPO_TOKEN; export depends on environment, intent on export. Only publish declares the protected production environment. Unified handler has no preceding production approval.",
+      "expected": "Repository AGENTS.md lines 347-349 requires production approval to gate environment resolution, export and publication, preserving credential stages separate from source export.",
+      "correction": "Place the protected production approval before production environment resolution and export, preserving existing credential/source separation and exact-input checks. Add a workflow dependency/approval ordering regression that covers every production stage rather than only publisher environment presence. No live protection or provider changes are requested.",
+      "evidence": "independent-probes.mjs; actual source workflow and AGENTS.md"
+    }
+  ],
+  "gates": {
+    "value": "pass: authorized selective-release preparation reduces unnecessary builds and uncertain retries; no provider execution authorized.",
+    "outcome": "changes-required: terminal recovery and production approval ordering fail R1/R2.",
+    "code": "changes-required after complete three-commit/86-path review.",
+    "engineeringReview": "Independent complete scope/security review performed. Configured bot refused solely for review quota at older a8539c; current-head bot completion not claimed. No submitted reviews/inline findings.",
+    "ci": "25 exact-head checks completed: 16 success, 9 skipped; five run identities verified successful. Classification supports no database/migration changes; manual/opt-in broad UI/emulator and unchanged Wear jobs remain unexecuted. Android debug/iOS simulator builds are not IPA/device execution.",
+    "behavior": "67 focused maintained tests passed serially. Independent real-adapter retirement and static workflow-order probes reproduce R1/R2 without external operations. Earlier 272-pass/2-skip release and 273-pass native logs retained; six unused-export removals and two parent documentation files do not alter tested executable behavior.",
+    "evidence": "Owner 127 downloaded blobs verified against Git blob/size/SHA256; original and final manifest identities retained. Synthetic plans/recovery input/output explain non-UI contract. Does not establish live provider readiness.",
+    "communication": "Summary is concise problem/solution; table ties synthetic inputs to expected/observed outputs, preserves preparation and unrun limits. Correct recovery claims with R1/R2 fixes. Optional clarity: label 4cbcbc7 ultimate-master merge-base, separately identify actual PR merge-base 0c26cea.",
+    "stack": "Actual target cd8932 separately bound from lagging API/source parent 0c26cea. Two incoming documentation-only files do not overlap child. Full published scope verified; no synthetic integration used as substitute. Parent C2 and separate PR450 integration remain outside this readiness certificate."
+  },
+  "publishedScope": {
+    "commits": 3,
+    "files": 86,
+    "additions": 6219,
+    "deletions": 110
+  },
+  "scopeEvidence": "scope-verification.json",
+  "securityAssessment": {
+    "authority": "Manual request and workflow_run repository/actor/source/run/attempt identities; immutable candidate tree and exact CI rechecks; expected-head merge API; no direct master writes.",
+    "providerEffects": "Intent precedes provider start; lost responses reconcile singleton; unknown empty retry does not establish absence; existing completed results reverified; R1 actual retirement wiring fails.",
+    "receipts": "Canonical byte/digest and sequence/predecessor identities, exact signer/caller/source/ref and current allow/revoke policy. Android signed-tag and paired Play receipt maintained.",
+    "ios": "Source build separate from source-free IPA attester; frozen credentials, exact build selection, bounded extraction and Apple signature/profile/platform/runtime/config validation. No live IPA/Apple execution performed.",
+    "ota": "Source-free provider publication, exact delivered manifest/assets, compatible runtime and channel mapping, durable intent; R2 protected approval is too late.",
+    "server": "Manual ancestor authority and fresh selected-stage handoff; original candidate/image receipts retained, selective mode suppresses implicit downstream OTA/deployment."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "nonUiObservableContract": "Release CLI/JSON selection and durable provider/journal state, with synthetic controlled inputs and observable outputs. No changed application UI flow.",
+    "provenanceRecords": [
+      {
+        "commit": "80703680c484c534bcfa0f7ee18760870d2acc6f",
+        "path": "manifest.json",
+        "sha256": "83649ab0cea682e1233955b8d65dce8670e33cd70ded3b17dd32d067c6dcf826"
+      },
+      {
+        "commit": "ced19a3b2b32f67aa5fdf1abea2b7b9342326a03",
+        "path": "final-scope.json",
+        "sha256": "a3bf26a146e1a73c88dd11b1c4b789baa815fc2f8471c3aedebcd4c54c7f339c"
+      },
+      {
+        "commit": "55bacb9c21794edccd17628ba4b969a4dcb19016",
+        "path": "final-handoff.json",
+        "sha256": "0d6be5725e901356b05116cb5a6c6c4bed7eb267a66bf894c6bff1603ab60324"
+      },
+      {
+        "commit": "5ca053672cb7049b7f818643027c1d5be0bcb743",
+        "path": "parent-impact-receipt.json",
+        "sha256": "b18de8aa484f97947c38d05c08a497cacce4c9d0fb0e5f98989fd217d8bdf2d0"
+      }
+    ]
+  },
+  "lint": "Raw actionlint 1.7.12 rerun at exact source and parent: 68 vs 61 diagnostics. Seven additions are four queue:max and three job.workflow_sha occurrences accepted by current official GitHub Cloud semantics. Unfiltered logs retained; not clean lint.",
+  "evidence": [
+    "scope-verification.json",
+    "independent-probes.mjs",
+    "independent-probes.json",
+    "focused-tests-permitted.log",
+    "focused-tests.log",
+    "owner-evidence-verification.json",
+    "identities.json",
+    "lint-verification.json",
+    "actionlint-head.json",
+    "actionlint-parent.json",
+    "ci-runs.json",
+    "prepublish.json",
+    "native.json"
+  ],
+  "limitations": [
+    "No paid cloud build, IPA/provider validation, credential setup, publication/upload/TestFlight/store rollout, release, deployment or device installation. Native-device checks deferred; not confused with native build gates.",
+    "Default sandbox Node test spawning failed EPERM; narrowly approved execution passed. Exact initial failure retained; no ACL/sandbox weakening.",
+    "No product/source/body/branch/readiness/draft/Project/merge changes. Evidence-only retention and concise verdict publication.",
+    "No new user approval required for findings; owner corrections and parent metadata are ordinary workflow work, not human review queue actions."
+  ],
+  "nextAction": "Coordinator returns R1/R2 to frozen implementation owner 01a11cd8-3e02-703c-831c-fdc6176d7028. Preserve historical evidence, correct source/tests/final narrative, then same sole QA reassesses affected gates. Clear PR441 C2 separately before any readiness."
+}

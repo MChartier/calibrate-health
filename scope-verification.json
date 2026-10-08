@@ -1,0 +1,592 @@
+{
+  "checkedAtUtc": "2026-10-08T23:49:29.348547+00:00",
+  "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "actualTarget": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "apiBase": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "mergeBase": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "ultimateTarget": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "ultimateMergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "a8539c3b90bd8c69a761c234869e5a0553f8ed08"
+  ],
+  "targetParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "commits": [
+    {
+      "sha": "70b8e125eb874d9b8c2b21fd0aa394971b0da67c",
+      "parents": [
+        "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+      ],
+      "subject": "Prepare selective release planning and recovery contracts",
+      "paths": [
+        "M\tmobile/app.config.js",
+        "M\tmobile/app.config.test.cjs",
+        "M\tmobile/app.json",
+        "M\tpackage.json",
+        "A\tscripts/ios-release.mjs",
+        "A\tscripts/ios-release.test.mjs",
+        "M\tscripts/native-config.mjs",
+        "M\tscripts/native-config.test.mjs",
+        "M\tscripts/native-eas-credentials.mjs",
+        "M\tscripts/native-internal-release.mjs",
+        "M\tscripts/native-internal-release.test.mjs",
+        "M\tscripts/native.test.mjs",
+        "A\tscripts/release-candidate.mjs",
+        "A\tscripts/release-candidate.test.mjs",
+        "M\tscripts/release-config.mjs",
+        "A\tscripts/release-inputs.mjs",
+        "A\tscripts/release-inputs.test.mjs",
+        "A\tscripts/release-journal.mjs",
+        "A\tscripts/release-journal.test.mjs",
+        "A\tscripts/release-operation.mjs",
+        "A\tscripts/release-plan.mjs",
+        "A\tscripts/release-plan.test.mjs",
+        "A\tscripts/release-retirement.mjs",
+        "A\tshared/ios-release.json"
+      ]
+    },
+    {
+      "sha": "a8539c3b90bd8c69a761c234869e5a0553f8ed08",
+      "parents": [
+        "70b8e125eb874d9b8c2b21fd0aa394971b0da67c"
+      ],
+      "subject": "Wire selective release workers and verified artifact receipts",
+      "paths": [
+        "A\t.github/ios-release-attestation-trusted-workflow-shas",
+        "M\t.github/workflows/builds.yml",
+        "M\t.github/workflows/cut-release.yml",
+        "M\t.github/workflows/expo-ota-update.yml",
+        "A\t.github/workflows/native-ios-release.yml",
+        "M\t.github/workflows/native-release.yml",
+        "M\t.github/workflows/publish-release.yml",
+        "A\t.github/workflows/unified-ota-release.yml",
+        "A\t.github/workflows/unified-release-handler.yml",
+        "A\t.github/workflows/unified-release.yml",
+        "A\t.github/workflows/unified-server-handler.yml",
+        "A\t.github/workflows/unified-server-request.yml",
+        "A\tdocs/unified-releases.md",
+        "M\tmobile/app.config.js",
+        "M\tmobile/eas.json",
+        "M\tpackage.json",
+        "M\tscripts/expo-ota-artifact.mjs",
+        "M\tscripts/expo-ota-artifact.test.mjs",
+        "M\tscripts/ghcr-release-receipt.mjs",
+        "M\tscripts/ghcr-release-receipt.test.mjs",
+        "A\tscripts/ios-app-config.test.mjs",
+        "A\tscripts/ios-artifact.mjs",
+        "A\tscripts/ios-artifact.test.mjs",
+        "A\tscripts/ios-ota-artifact.mjs",
+        "A\tscripts/ios-ota-artifact.test.mjs",
+        "M\tscripts/ios-release.mjs",
+        "M\tscripts/ios-release.test.mjs",
+        "M\tscripts/native-play-receipt.mjs",
+        "M\tscripts/native-play-receipt.test.mjs",
+        "M\tscripts/native-release-build.mjs",
+        "M\tscripts/native-release-build.test.mjs",
+        "A\tscripts/release-baselines.mjs",
+        "A\tscripts/release-baselines.test.mjs",
+        "A\tscripts/release-build-config.mjs",
+        "A\tscripts/release-build-config.test.mjs",
+        "M\tscripts/release-candidate.mjs",
+        "M\tscripts/release-candidate.test.mjs",
+        "A\tscripts/release-controller.mjs",
+        "A\tscripts/release-controller.test.mjs",
+        "A\tscripts/release-github.mjs",
+        "A\tscripts/release-github.test.mjs",
+        "A\tscripts/release-image.mjs",
+        "A\tscripts/release-image.test.mjs",
+        "M\tscripts/release-inputs.mjs",
+        "M\tscripts/release-inputs.test.mjs",
+        "A\tscripts/release-ios-receipt.mjs",
+        "A\tscripts/release-ios-receipt.test.mjs",
+        "A\tscripts/release-ios-worker.mjs",
+        "A\tscripts/release-ios-worker.test.mjs",
+        "M\tscripts/release-journal.mjs",
+        "M\tscripts/release-journal.test.mjs",
+        "M\tscripts/release-operation.mjs",
+        "A\tscripts/release-ota-provider.mjs",
+        "A\tscripts/release-ota-provider.test.mjs",
+        "A\tscripts/release-ota-worker.mjs",
+        "A\tscripts/release-ota-worker.test.mjs",
+        "M\tscripts/release-plan.mjs",
+        "M\tscripts/release-plan.test.mjs",
+        "A\tscripts/release-providers.mjs",
+        "A\tscripts/release-providers.test.mjs",
+        "M\tscripts/release-request.mjs",
+        "M\tscripts/release-request.test.mjs",
+        "A\tscripts/release-retirement-github.mjs",
+        "A\tscripts/release-retirement-github.test.mjs",
+        "M\tscripts/release-retirement.mjs",
+        "A\tscripts/release-runner.mjs",
+        "A\tscripts/release-runner.test.mjs",
+        "A\tscripts/release-server-handoff.mjs",
+        "A\tscripts/release-server-handoff.test.mjs",
+        "A\tscripts/release-snapshot.mjs",
+        "A\tscripts/release-snapshot.test.mjs",
+        "A\tscripts/release-source.mjs",
+        "A\tscripts/release-source.test.mjs",
+        "M\tscripts/release-workflow-contract.test.mjs",
+        "A\tscripts/unified-release.mjs",
+        "A\tscripts/unified-release.test.mjs"
+      ]
+    },
+    {
+      "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+      "parents": [
+        "a8539c3b90bd8c69a761c234869e5a0553f8ed08"
+      ],
+      "subject": "Keep release implementation helpers private",
+      "paths": [
+        "M\tscripts/ios-artifact.mjs",
+        "M\tscripts/ios-release.mjs",
+        "M\tscripts/release-ota-provider.mjs",
+        "M\tscripts/release-plan.mjs",
+        "M\tscripts/release-retirement.mjs"
+      ]
+    }
+  ],
+  "inventory": [
+    {
+      "path": ".github/ios-release-attestation-trusted-workflow-shas",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "2ec25cc939f3fd11acfd08c124b3b1d8cfe140f3902980849f8c4a8df7a0944b"
+    },
+    {
+      "path": ".github/workflows/builds.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "b2d05fec80ea3a867430d059d87b3b55b94926ac0d80f67904eed938502b228a"
+    },
+    {
+      "path": ".github/workflows/cut-release.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "9435b2e82d082a04223365454f858fd5b737f89be7759f4a005970e9c6e442bb"
+    },
+    {
+      "path": ".github/workflows/expo-ota-update.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "5111e6bbf2ae1b076350ce6eca2629a7272ca39d6956e425065d8e6a2b5b79f6"
+    },
+    {
+      "path": ".github/workflows/native-ios-release.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "a74ef98fc4f2a1d198358326ce62f0becfa5a5ceef5e81b29e4ab3d225c96418"
+    },
+    {
+      "path": ".github/workflows/native-release.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "ef432ff332b58488ebea77c6f1e8981f2836e0ae980c4a0a7c7569db4098f294"
+    },
+    {
+      "path": ".github/workflows/publish-release.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "e710f56716ea273259130bd2fd077228b6edf8f7caacff97a6d4c88b01cd9ac7"
+    },
+    {
+      "path": ".github/workflows/unified-ota-release.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "7521a28b9a6cd345f1faa383c9a3f420a1245a511cf3c93877035fea7bdb31a0"
+    },
+    {
+      "path": ".github/workflows/unified-release-handler.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "427020641c179c974c3759e254c6df66f72b8f57780a5eae09f583784840a4dd"
+    },
+    {
+      "path": ".github/workflows/unified-release.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "038f0495e281aea79c4406478968d5531847367c9eed17f5661a9e21339aaa24"
+    },
+    {
+      "path": ".github/workflows/unified-server-handler.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "e587da45d9d520c71483d60996b347d065f5309f0aa33feb78cc13d4668f52d0"
+    },
+    {
+      "path": ".github/workflows/unified-server-request.yml",
+      "purpose": "Workflow authority and receipt trust",
+      "sha256": "e65d7c625c2f7db8230037399eef56287ab7679380353b7a1c080cb3517c639f"
+    },
+    {
+      "path": "docs/unified-releases.md",
+      "purpose": "Maintained operator guide",
+      "sha256": "ebed7307f5d0c445b46aba87f9881bb1ffde012a99eb4b6944441a5da60e160c"
+    },
+    {
+      "path": "mobile/app.config.js",
+      "purpose": "Explicit build configuration / independent iOS version",
+      "sha256": "55f5b30b67ce3e9a0132b5774c96a760e545e005c71e1f074e4665855c6dbcbc"
+    },
+    {
+      "path": "mobile/app.config.test.cjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "b9f41888c729866215c7adacbf214e9fea321f58e52d12fc2856dd5e714e671c"
+    },
+    {
+      "path": "mobile/app.json",
+      "purpose": "Explicit build configuration / independent iOS version",
+      "sha256": "d50f3617dd87d98f636321cee50926369a082f1451764debaf4303f47d1183ef"
+    },
+    {
+      "path": "mobile/eas.json",
+      "purpose": "Explicit build configuration / independent iOS version",
+      "sha256": "111676cb8f5ebfd7c8650a70fcd64daabdfa3a32634cd0302638f6fefb7e6cdd"
+    },
+    {
+      "path": "package.json",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "4ea38dabc23d3f4ee31ae8cfdec541342bdb690612bcd8cb02bfee6fac9fcbf1"
+    },
+    {
+      "path": "scripts/expo-ota-artifact.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "674384748eabf309853f23c8b1153248559d67403ccf2818bc2db9d9328a0abc"
+    },
+    {
+      "path": "scripts/expo-ota-artifact.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "39f64cd92fc2430a853602c355f2b04754e5de2d6ca6d04191bb1bdc14a7a70f"
+    },
+    {
+      "path": "scripts/ghcr-release-receipt.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "0f17033edbe7e2be109ef5dc27e2983ee7ed7e0621980378f97d589a171b32b2"
+    },
+    {
+      "path": "scripts/ghcr-release-receipt.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "b8b1dc531576548145d5529a00cdeefca43823b68a545d7b7b9f00513a60b3f4"
+    },
+    {
+      "path": "scripts/ios-app-config.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "2f9dff9b1a49288a081d63aaf5a6be8e607180310b92116394c23e2ff680ee8c"
+    },
+    {
+      "path": "scripts/ios-artifact.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "3a209631a65199daec0531fe4d5b7e24aa5554e582561806a3dd885b534a74ad"
+    },
+    {
+      "path": "scripts/ios-artifact.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "267f441ab84760a6ba167e335274e21b23874d514a5c0e88a7dd400480ae1f45"
+    },
+    {
+      "path": "scripts/ios-ota-artifact.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "95e891e74c7d50eda54c72fcf9f709d981ecbd70352d706678448d37dad8f82d"
+    },
+    {
+      "path": "scripts/ios-ota-artifact.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "977368549918b498feb3b7c0f7224dd936d2732dd8b465c2ef6596bbdd0ef93f"
+    },
+    {
+      "path": "scripts/ios-release.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "f16fcf5df718e6c9970581c0054d073a41ca9e303e8c08f0367cd8d909ad7d19"
+    },
+    {
+      "path": "scripts/ios-release.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "aa60ee8581080f595536620b439a1e967113718f25089a078283b85777b6d0bf"
+    },
+    {
+      "path": "scripts/native-config.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "3d56a06d50bcfb3183296df425bcd15e328a2fd9dc674ecd198c6f759e2d652b"
+    },
+    {
+      "path": "scripts/native-config.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "fd31aac0f701dcc9cbe8367e4247268199677d9d50fa99721a37d58a7824d2d8"
+    },
+    {
+      "path": "scripts/native-eas-credentials.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "bd7d32dd9b7dfe25c4b6c927d5bb13b00fe98d74fd45de231cc8eb228acd3220"
+    },
+    {
+      "path": "scripts/native-internal-release.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "c46e9809dd5efefa5e3f8d9f4738640e9338fd9b5d0f15d56b32663593a43d0f"
+    },
+    {
+      "path": "scripts/native-internal-release.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "041b38b3ac66755ff565d85f128f5bec751fc9edd6a1f9c58228c1cb850e0e23"
+    },
+    {
+      "path": "scripts/native-play-receipt.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "455c2d7faff362196b567c426b1a32d137baf96b4d6c6bd9290dc8d1b070e3b3"
+    },
+    {
+      "path": "scripts/native-play-receipt.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "65c186a4c9f81b1493fe0d0d351b33b53724ae62f0f7225d96dc9cbc5288f28e"
+    },
+    {
+      "path": "scripts/native-release-build.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "3aff8d3001ec9b183ef3cb8e6a4d78de45d278e52518c0019fd7523a81c60da6"
+    },
+    {
+      "path": "scripts/native-release-build.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "b03be7e9905f072439a86a20f90cb7cea25d486c2e74b5bb4777c18b88b1bbc9"
+    },
+    {
+      "path": "scripts/native.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "b0ab75f100519fbe5daf1baa039e08eb76cd154c090a0da8ba51fd90b4b2d412"
+    },
+    {
+      "path": "scripts/release-baselines.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "9d3ee7298bded4b4492510dde01d94102ab94500f2ad4b1396d32d4b1af09cbb"
+    },
+    {
+      "path": "scripts/release-baselines.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "6a8f4266a4a44baae19e6d52045e776e8e1a7d0aaa3817b001826e6e8facc996"
+    },
+    {
+      "path": "scripts/release-build-config.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "dc0d5efd30dcdba58a751868d3699d1a156068a001733566396f463583ea1448"
+    },
+    {
+      "path": "scripts/release-build-config.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "8ded46da87ad439c0884c9f261301ba1447a4f444d040267f646578c3b44a7f3"
+    },
+    {
+      "path": "scripts/release-candidate.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "a346b06c3e03e1e52fc39af312963344f91d6de2be949f8fbff1b9640d9589ff"
+    },
+    {
+      "path": "scripts/release-candidate.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "e4491355864486869a5660929c82625905fedf908f759bf79a0161b80edd4ed1"
+    },
+    {
+      "path": "scripts/release-config.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "fb4e0ec96a4ef94b35790f53c238dfebaedeb5f1ff49e29878a97bc89eca0181"
+    },
+    {
+      "path": "scripts/release-controller.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "30d1cc0f55a975f3b0b86d77224979ad0a920381b03e9db6e00e8d1c416163d8"
+    },
+    {
+      "path": "scripts/release-controller.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "611ff4ba4112908848ca1af4c4c7fcdb504c1102217f3a2eaaad3a0324ec36bc"
+    },
+    {
+      "path": "scripts/release-github.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "c68575feef6a9060ce97f7f52704de4cf14ea6860485a7fa6f624e743fdba209"
+    },
+    {
+      "path": "scripts/release-github.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "d128aa98bcc5a9e3cd8aebf0ffa7e5d97a3e1549afa21ea1eaae3532a0d6d33c"
+    },
+    {
+      "path": "scripts/release-image.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "8837aa01c1a1b8b27d5c622e98fc3acacd7dd8bbf8f19540f3c01d94456e143f"
+    },
+    {
+      "path": "scripts/release-image.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "ea3d696b401c353b8feb6b766ac85f2a51789b4323572fb44a0737f898e82613"
+    },
+    {
+      "path": "scripts/release-inputs.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "5eb371c501d6e653e9dd5d6cd7f35685031e699488bd91e42841cb5646a8779e"
+    },
+    {
+      "path": "scripts/release-inputs.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "37479f7903e342103a51ee21ac43034139c4c8a5395aae3b7333e42aac5e79ca"
+    },
+    {
+      "path": "scripts/release-ios-receipt.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "6b4bdd9c636bdd3f25c22ed2a3b8ffdae01347557c1febb153c415236bdf6c70"
+    },
+    {
+      "path": "scripts/release-ios-receipt.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "bae7664a76433e78d692062f45cacffa4d8b1ed0bed6f53a5240b0cd76812629"
+    },
+    {
+      "path": "scripts/release-ios-worker.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "e6374931fd851af01f0e991119a53b86c6d517b4d4367f975358855a9f19e7d3"
+    },
+    {
+      "path": "scripts/release-ios-worker.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "c4a80617a7a5e82cc697ada7aaf96d47e770e79ffb6b1f6c1e57f08e7c1dc6e0"
+    },
+    {
+      "path": "scripts/release-journal.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "9e83a109d2d3d695a8703016ebd98e21263c572d415e6b299596fab9a537ff5f"
+    },
+    {
+      "path": "scripts/release-journal.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "1a34934bd7b59df49194edd3be2f26e0128cfd0588b64bb69ce65c249811d84f"
+    },
+    {
+      "path": "scripts/release-operation.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "a4e489b3c1b983bcb98d9cddf5b4ffcdc257c92df3b96550149dd173f9db662f"
+    },
+    {
+      "path": "scripts/release-ota-provider.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "cdab018a15e1bbd39b626491c28a96a5215c94b11e5fec3688d407717f4d33f7"
+    },
+    {
+      "path": "scripts/release-ota-provider.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "5f12d031be64613f489877448c5ae2864c2faea664914f7fae070e8cae84c931"
+    },
+    {
+      "path": "scripts/release-ota-worker.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "6a025f03b13544dd7530ff905ae58b62a6b1d50e2a5259f60570eaea2272fd60"
+    },
+    {
+      "path": "scripts/release-ota-worker.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "9b8d5f069634a27a79abe35556748409c5fea1b7a98655999a73cd0649d44bf7"
+    },
+    {
+      "path": "scripts/release-plan.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "cede0ad55be687020fdf65e1f51fe0d439b5eb7ace762e2f9cd8b35769df1237"
+    },
+    {
+      "path": "scripts/release-plan.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "731e2859c17aa695570b460f7c415523d04cee6cf169bd10390e26d3648911fe"
+    },
+    {
+      "path": "scripts/release-providers.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "c2154f5a39acb719aae5634acbb1ce5ee7c3b26c91cd1163e3ad4f4d952b7d16"
+    },
+    {
+      "path": "scripts/release-providers.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "491685c13451452520ae4bdec0c415bf4e593bbd938f94a78433dc518d205d85"
+    },
+    {
+      "path": "scripts/release-request.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "d6321762cec369a7ca5132b2a2b4d33029c538b840b1a7017c212f86a8ccbb62"
+    },
+    {
+      "path": "scripts/release-request.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "807220b7d299748767af4c891f69844056b1d24a9b71183f9ddf6f5fe362a9f5"
+    },
+    {
+      "path": "scripts/release-retirement-github.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "17357b600abe7ee0f048f1622945f9dba70635f502cf038b87c656a6ca1a0574"
+    },
+    {
+      "path": "scripts/release-retirement-github.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "03a77c5b84afd86cda148bf37be4e9d204855783db72bba84bec100384a7607c"
+    },
+    {
+      "path": "scripts/release-retirement.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "c18991a13ff0c11cf0c840ef355e095a957ff6fffcb57f7e363e13291ccf5392"
+    },
+    {
+      "path": "scripts/release-runner.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "42893de4dfd8848894ca57da3fd00c7a069b199acd652d84364adf5f7d157af2"
+    },
+    {
+      "path": "scripts/release-runner.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "622e44bf36441459d9d4142b028c7f06a0be677738c732bb7c8c654702192b9a"
+    },
+    {
+      "path": "scripts/release-server-handoff.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "f8e13ab52156b53b0f99e22a5f22679e756feda4d1ab9af22b30903502b3a8e9"
+    },
+    {
+      "path": "scripts/release-server-handoff.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "bbef6609110235dd9bc2c983dc56ee5ae27ee9793e624244833079da7d6ac237"
+    },
+    {
+      "path": "scripts/release-snapshot.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "f131d0b31fe04b845446a93ea030418216a7bf3b0b853f0946e6a6c6c80f39e5"
+    },
+    {
+      "path": "scripts/release-snapshot.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "dc34bc6b0dc5092575d84437b6735a71a94ddec4dd3f6a1efb71fc31188c5d49"
+    },
+    {
+      "path": "scripts/release-source.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "168527667790fa74804e7b635a5a9471ae88f61c7fbd338e55b05346373dc3f6"
+    },
+    {
+      "path": "scripts/release-source.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "37b86638389dda12e94eb588dc4cb0816c2eb1f48dade4e620dd1823702f9268"
+    },
+    {
+      "path": "scripts/release-workflow-contract.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "50c5e867219eae1a152a174d9547a3e87583dad75f1fff5446d80122d9b91249"
+    },
+    {
+      "path": "scripts/unified-release.mjs",
+      "purpose": "Release orchestration, provider verification and recovery",
+      "sha256": "8303a8b8ac2201c287cf844ae3967f1db64f48602f3e96ffaff824c9e8beba71"
+    },
+    {
+      "path": "scripts/unified-release.test.mjs",
+      "purpose": "Maintained release safety regression",
+      "sha256": "2704759f817d053812459c15d434c08dc134b1a7e31d75c82b0839da38628419"
+    },
+    {
+      "path": "shared/ios-release.json",
+      "purpose": "Explicit build configuration / independent iOS version",
+      "sha256": "35482ebf61da0c641125c6478aa8f07aa165405c4a54bde8de4cf460bcf2e7c8"
+    }
+  ],
+  "totals": {
+    "commits": 3,
+    "files": 86,
+    "additions": 6219,
+    "deletions": 110
+  },
+  "parentDelta": [
+    "README.md",
+    "docs/deployment.md"
+  ],
+  "impact": "Actual published ordered range and paths independently match API. Parent advancement changes only two documentation files not touched by child; executable/workflow/configuration input unchanged. Existing child tests remain applicable to executable contracts; not relabeled as hosted CI on new target. Final six export removals exactly match retained owner diff and do not alter logic. No product evidence/history churn."
+}

@@ -1,0 +1,174 @@
+﻿2026-10-08T22:34:20.7156947Z Current runner version: '2.337.0'
+2026-10-08T22:34:20.7175898Z ##[group]Runner Image Provisioner
+2026-10-08T22:34:20.7176438Z Hosted Compute Agent
+2026-10-08T22:34:20.7176777Z Version: 20261002.596
+2026-10-08T22:34:20.7177203Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-08T22:34:20.7177668Z Build Date: 2026-10-02T22:28:27Z
+2026-10-08T22:34:20.7178115Z Worker ID: {ac4967e3-3270-4001-b96f-ea5b809b26d2}
+2026-10-08T22:34:20.7178554Z Region: centralus
+2026-10-08T22:34:20.7178906Z Cloud: Azure
+2026-10-08T22:34:20.7179277Z ##[endgroup]
+2026-10-08T22:34:20.7180070Z ##[group]Operating System
+2026-10-08T22:34:20.7180462Z Ubuntu
+2026-10-08T22:34:20.7180790Z 24.04.5
+2026-10-08T22:34:20.7181100Z LTS
+2026-10-08T22:34:20.7181446Z ##[endgroup]
+2026-10-08T22:34:20.7181802Z ##[group]Runner Image
+2026-10-08T22:34:20.7182140Z Image: ubuntu-24.04
+2026-10-08T22:34:20.7182527Z Version: 20261004.327.1
+2026-10-08T22:34:20.7183277Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-08T22:34:20.7184353Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-08T22:34:20.7184914Z ##[endgroup]
+2026-10-08T22:34:20.7185679Z ##[group]GITHUB_TOKEN Permissions
+2026-10-08T22:34:20.7186925Z Contents: read
+2026-10-08T22:34:20.7187309Z Metadata: read
+2026-10-08T22:34:20.7187645Z PullRequests: read
+2026-10-08T22:34:20.7188024Z ##[endgroup]
+2026-10-08T22:34:20.7189377Z Secret source: Actions
+2026-10-08T22:34:20.7190010Z Cache mode: write
+2026-10-08T22:34:20.7190431Z Prepare workflow directory
+2026-10-08T22:34:20.7401120Z Prepare all required actions
+2026-10-08T22:34:20.7433470Z Getting action download info
+2026-10-08T22:34:20.9559684Z Download action repository 'dorny/paths-filter@v3' (SHA:0e4a8c6effa4802afeda77dc8d303f8176d7dfad)
+2026-10-08T22:34:21.3591667Z Complete job name: Classify Database Inputs
+2026-10-08T22:34:21.4047525Z ##[group]Run dorny/paths-filter@v3
+2026-10-08T22:34:21.4047957Z with:
+2026-10-08T22:34:21.4050176Z   filters: database:
+  - '.github/workflows/database-upgrade.yml'
+  - 'backend/package.json'
+  - 'backend/package-lock.json'
+  - 'backend/prisma.config.ts'
+  - 'backend/prisma/**'
+  - 'backend/src/config/database.ts'
+  - 'backend/src/config/databaseUtils.ts'
+  - 'backend/src/observability.ts'
+  - 'backend/src/services/materializedWeightTrend.ts'
+  - 'backend/src/services/weightTrend*.ts'
+  - 'backend/src/utils/date.ts'
+  - 'backend/tsconfig.json'
+  - 'deploy/backup/**'
+  - 'scripts/postgres-*.mjs'
+  - 'shared/weightTrend*.ts'
+migrations:
+  - '.github/workflows/database-upgrade.yml'
+  - 'backend/prisma/migrations/**'
+  - 'scripts/postgres-rollback-smoke.mjs'
+  - 'scripts/postgres-rollback-smoke.test.mjs'
+
+2026-10-08T22:34:21.4054389Z   token: ***
+2026-10-08T22:34:21.4054631Z   list-files: none
+2026-10-08T22:34:21.4055002Z   initial-fetch-depth: 100
+2026-10-08T22:34:21.4055540Z   predicate-quantifier: some
+2026-10-08T22:34:21.4055995Z ##[endgroup]
+2026-10-08T22:34:21.4699521Z ##[group]Fetching list of changed files for PR#452 from Github API
+2026-10-08T22:34:21.4700219Z Invoking listFiles(pull_number: 452, per_page: 100)
+2026-10-08T22:34:22.0370788Z Received 86 items
+2026-10-08T22:34:22.0371697Z [added] .github/ios-release-attestation-trusted-workflow-shas
+2026-10-08T22:34:22.0372491Z [modified] .github/workflows/builds.yml
+2026-10-08T22:34:22.0373090Z [modified] .github/workflows/cut-release.yml
+2026-10-08T22:34:22.0373727Z [modified] .github/workflows/expo-ota-update.yml
+2026-10-08T22:34:22.0374633Z [added] .github/workflows/native-ios-release.yml
+2026-10-08T22:34:22.0375301Z [modified] .github/workflows/native-release.yml
+2026-10-08T22:34:22.0376007Z [modified] .github/workflows/publish-release.yml
+2026-10-08T22:34:22.0376687Z [added] .github/workflows/unified-ota-release.yml
+2026-10-08T22:34:22.0377377Z [added] .github/workflows/unified-release-handler.yml
+2026-10-08T22:34:22.0378198Z [added] .github/workflows/unified-release.yml
+2026-10-08T22:34:22.0378867Z [added] .github/workflows/unified-server-handler.yml
+2026-10-08T22:34:22.0380329Z [added] .github/workflows/unified-server-request.yml
+2026-10-08T22:34:22.0381083Z [added] docs/unified-releases.md
+2026-10-08T22:34:22.0381742Z [modified] mobile/app.config.js
+2026-10-08T22:34:22.0382356Z [modified] mobile/app.config.test.cjs
+2026-10-08T22:34:22.0383006Z [modified] mobile/app.json
+2026-10-08T22:34:22.0383552Z [modified] mobile/eas.json
+2026-10-08T22:34:22.0384244Z [modified] package.json
+2026-10-08T22:34:22.0385065Z [modified] scripts/expo-ota-artifact.mjs
+2026-10-08T22:34:22.0385803Z [modified] scripts/expo-ota-artifact.test.mjs
+2026-10-08T22:34:22.0386593Z [modified] scripts/ghcr-release-receipt.mjs
+2026-10-08T22:34:22.0387242Z [modified] scripts/ghcr-release-receipt.test.mjs
+2026-10-08T22:34:22.0387988Z [added] scripts/ios-app-config.test.mjs
+2026-10-08T22:34:22.0388671Z [added] scripts/ios-artifact.mjs
+2026-10-08T22:34:22.0389212Z [added] scripts/ios-artifact.test.mjs
+2026-10-08T22:34:22.0389793Z [added] scripts/ios-ota-artifact.mjs
+2026-10-08T22:34:22.0390364Z [added] scripts/ios-ota-artifact.test.mjs
+2026-10-08T22:34:22.0390955Z [added] scripts/ios-release.mjs
+2026-10-08T22:34:22.0391523Z [added] scripts/ios-release.test.mjs
+2026-10-08T22:34:22.0392083Z [modified] scripts/native-config.mjs
+2026-10-08T22:34:22.0392635Z [modified] scripts/native-config.test.mjs
+2026-10-08T22:34:22.0393222Z [modified] scripts/native-eas-credentials.mjs
+2026-10-08T22:34:22.0393879Z [modified] scripts/native-internal-release.mjs
+2026-10-08T22:34:22.0394680Z [modified] scripts/native-internal-release.test.mjs
+2026-10-08T22:34:22.0395305Z [modified] scripts/native-play-receipt.mjs
+2026-10-08T22:34:22.0395929Z [modified] scripts/native-play-receipt.test.mjs
+2026-10-08T22:34:22.0396604Z [modified] scripts/native-release-build.mjs
+2026-10-08T22:34:22.0397252Z [modified] scripts/native-release-build.test.mjs
+2026-10-08T22:34:22.0398056Z [modified] scripts/native.test.mjs
+2026-10-08T22:34:22.0398600Z [added] scripts/release-baselines.mjs
+2026-10-08T22:34:22.0399360Z [added] scripts/release-baselines.test.mjs
+2026-10-08T22:34:22.0400074Z [added] scripts/release-build-config.mjs
+2026-10-08T22:34:22.0400648Z [added] scripts/release-build-config.test.mjs
+2026-10-08T22:34:22.0401241Z [added] scripts/release-candidate.mjs
+2026-10-08T22:34:22.0401815Z [added] scripts/release-candidate.test.mjs
+2026-10-08T22:34:22.0402414Z [modified] scripts/release-config.mjs
+2026-10-08T22:34:22.0403016Z [added] scripts/release-controller.mjs
+2026-10-08T22:34:22.0403565Z [added] scripts/release-controller.test.mjs
+2026-10-08T22:34:22.0404254Z [added] scripts/release-github.mjs
+2026-10-08T22:34:22.0404873Z [added] scripts/release-github.test.mjs
+2026-10-08T22:34:22.0405384Z [added] scripts/release-image.mjs
+2026-10-08T22:34:22.0405877Z [added] scripts/release-image.test.mjs
+2026-10-08T22:34:22.0406384Z [added] scripts/release-inputs.mjs
+2026-10-08T22:34:22.0406891Z [added] scripts/release-inputs.test.mjs
+2026-10-08T22:34:22.0407415Z [added] scripts/release-ios-receipt.mjs
+2026-10-08T22:34:22.0408005Z [added] scripts/release-ios-receipt.test.mjs
+2026-10-08T22:34:22.0408614Z [added] scripts/release-ios-worker.mjs
+2026-10-08T22:34:22.0409166Z [added] scripts/release-ios-worker.test.mjs
+2026-10-08T22:34:22.0409768Z [added] scripts/release-journal.mjs
+2026-10-08T22:34:22.0410328Z [added] scripts/release-journal.test.mjs
+2026-10-08T22:34:22.0410928Z [added] scripts/release-operation.mjs
+2026-10-08T22:34:22.0411521Z [added] scripts/release-ota-provider.mjs
+2026-10-08T22:34:22.0412157Z [added] scripts/release-ota-provider.test.mjs
+2026-10-08T22:34:22.0412838Z [added] scripts/release-ota-worker.mjs
+2026-10-08T22:34:22.0413456Z [added] scripts/release-ota-worker.test.mjs
+2026-10-08T22:34:22.0414039Z [added] scripts/release-plan.mjs
+2026-10-08T22:34:22.0414717Z [added] scripts/release-plan.test.mjs
+2026-10-08T22:34:22.0415301Z [added] scripts/release-providers.mjs
+2026-10-08T22:34:22.0415944Z [added] scripts/release-providers.test.mjs
+2026-10-08T22:34:22.0416522Z [modified] scripts/release-request.mjs
+2026-10-08T22:34:22.0417310Z [modified] scripts/release-request.test.mjs
+2026-10-08T22:34:22.0418014Z [added] scripts/release-retirement-github.mjs
+2026-10-08T22:34:22.0418711Z [added] scripts/release-retirement-github.test.mjs
+2026-10-08T22:34:22.0419362Z [added] scripts/release-retirement.mjs
+2026-10-08T22:34:22.0419969Z [added] scripts/release-runner.mjs
+2026-10-08T22:34:22.0420537Z [added] scripts/release-runner.test.mjs
+2026-10-08T22:34:22.0421144Z [added] scripts/release-server-handoff.mjs
+2026-10-08T22:34:22.0421913Z [added] scripts/release-server-handoff.test.mjs
+2026-10-08T22:34:22.0422577Z [added] scripts/release-snapshot.mjs
+2026-10-08T22:34:22.0423160Z [added] scripts/release-snapshot.test.mjs
+2026-10-08T22:34:22.0423780Z [added] scripts/release-source.mjs
+2026-10-08T22:34:22.0424484Z [added] scripts/release-source.test.mjs
+2026-10-08T22:34:22.0425159Z [modified] scripts/release-workflow-contract.test.mjs
+2026-10-08T22:34:22.0425846Z [added] scripts/unified-release.mjs
+2026-10-08T22:34:22.0426423Z [added] scripts/unified-release.test.mjs
+2026-10-08T22:34:22.0427021Z [added] shared/ios-release.json
+2026-10-08T22:34:22.0428967Z ##[endgroup]
+2026-10-08T22:34:22.0429423Z Detected 86 changed files
+2026-10-08T22:34:22.0430019Z Results:
+2026-10-08T22:34:22.0430885Z ##[group]Filter database = false
+2026-10-08T22:34:22.0431397Z Matching files: none
+2026-10-08T22:34:22.0432099Z ##[endgroup]
+2026-10-08T22:34:22.0432778Z ##[group]Filter migrations = false
+2026-10-08T22:34:22.0433300Z Matching files: none
+2026-10-08T22:34:22.0433994Z ##[endgroup]
+2026-10-08T22:34:22.0434530Z Changes output set to []
+2026-10-08T22:34:22.0631125Z ##[group]Run echo "database=${DATABASE_CHANGED}" >> "${GITHUB_OUTPUT}"
+2026-10-08T22:34:22.0631764Z [36;1mecho "database=${DATABASE_CHANGED}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-08T22:34:22.0632309Z [36;1mecho "migrations=${MIGRATIONS_CHANGED}" >> "${GITHUB_OUTPUT}"[0m
+2026-10-08T22:34:22.0865379Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-08T22:34:22.0865834Z env:
+2026-10-08T22:34:22.0866143Z   DATABASE_CHANGED: false
+2026-10-08T22:34:22.0866442Z   MIGRATIONS_CHANGED: false
+2026-10-08T22:34:22.0866735Z ##[endgroup]
+2026-10-08T22:34:22.1022208Z Evaluate and set job outputs
+2026-10-08T22:34:22.1028038Z Set output 'database'
+2026-10-08T22:34:22.1029243Z Set output 'migrations'
+2026-10-08T22:34:22.1030095Z Cleaning up orphan processes
+2026-10-08T22:34:22.1259170Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: dorny/paths-filter@v3. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

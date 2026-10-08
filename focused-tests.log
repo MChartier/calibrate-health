@@ -1,0 +1,238 @@
+Γ£û scripts\release-controller.test.mjs (7.0758ms)
+Γ£û scripts\release-github.test.mjs (5.8155ms)
+Γ£û scripts\release-ios-receipt.test.mjs (5.3268ms)
+Γ£û scripts\release-ios-worker.test.mjs (4.89ms)
+Γ£û scripts\release-journal.test.mjs (4.1553ms)
+Γ£û scripts\release-ota-provider.test.mjs (3.7562ms)
+Γ£û scripts\release-ota-worker.test.mjs (3.3769ms)
+Γ£û scripts\release-providers.test.mjs (3.0153ms)
+Γ£û scripts\release-retirement-github.test.mjs (2.6519ms)
+Γ£û scripts\release-runner.test.mjs (2.3151ms)
+Γ£û scripts\release-server-handoff.test.mjs (1.9569ms)
+Γ£û scripts\release-source.test.mjs (1.3516ms)
+Γä╣ tests 12
+Γä╣ suites 0
+Γä╣ pass 0
+Γä╣ fail 12
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 13.8804
+
+Γ£û failing tests:
+
+test at scripts\release-controller.test.mjs:1:1
+Γ£û scripts\release-controller.test.mjs (7.0758ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-github.test.mjs:1:1
+Γ£û scripts\release-github.test.mjs (5.8155ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-ios-receipt.test.mjs:1:1
+Γ£û scripts\release-ios-receipt.test.mjs (5.3268ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-ios-worker.test.mjs:1:1
+Γ£û scripts\release-ios-worker.test.mjs (4.89ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-journal.test.mjs:1:1
+Γ£û scripts\release-journal.test.mjs (4.1553ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-ota-provider.test.mjs:1:1
+Γ£û scripts\release-ota-provider.test.mjs (3.7562ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-ota-worker.test.mjs:1:1
+Γ£û scripts\release-ota-worker.test.mjs (3.3769ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-providers.test.mjs:1:1
+Γ£û scripts\release-providers.test.mjs (3.0153ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-retirement-github.test.mjs:1:1
+Γ£û scripts\release-retirement-github.test.mjs (2.6519ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-runner.test.mjs:1:1
+Γ£û scripts\release-runner.test.mjs (2.3151ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-server-handoff.test.mjs:1:1
+Γ£û scripts\release-server-handoff.test.mjs (1.9569ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
+
+test at scripts\release-source.test.mjs:1:1
+Γ£û scripts\release-source.test.mjs (1.3516ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }
