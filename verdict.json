@@ -13,7 +13,7 @@
   "issue": "https://github.com/MChartier/calibrate-health/issues/444",
   "parentIssue": "https://github.com/MChartier/calibrate-health/issues/421",
   "supersedesVerdictCommentId": 6065935045,
-  "checkedAtUtc": "2026-10-08T18:16:45.524935+00:00",
+  "checkedAtUtc": "2026-10-08T18:18:09.911018+00:00",
   "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
   "baseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
   "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
@@ -110,17 +110,17 @@
     }
   },
   "feedback": {
-    "prComments": 5,
-    "issue444Comments": 0,
-    "issue421Comments": 33,
+    "prComments": 6,
+    "childComments": 0,
+    "parent421Comments": 33,
     "reviews": 0,
     "inline": 0,
     "nativeThreads": 0,
-    "finalFullRereadUnchanged": true,
-    "disposition": "No unresolved actionable code request. Historical linkage decision now has child444 but native association still absent; original receipt not rebound."
+    "fullCurrentBodiesRead": true,
+    "disposition": "All prior text unchanged; previous native-association finding now independently verified resolved. Only added PR comment is own previous verdict; no unresolved actionable request."
   },
   "linkage": {
-    "checkedAtUtc": "2026-10-08T18:16:45.524935+00:00",
+    "checkedAtUtc": "2026-10-08T18:18:09.912018+00:00",
     "closingIssuesReferences": [
       444
     ],
@@ -416,5 +416,15 @@
       }
     ],
     "behavior": "No tests rerun; existing source-bound independent and exact-headCI evidence unchanged and applicable. Reassessment limited to native association and explicit artifact-byte correction."
+  },
+  "priorFeedbackAssessment": {
+    "prComments": 5,
+    "issue444Comments": 0,
+    "issue421Comments": 33,
+    "reviews": 0,
+    "inline": 0,
+    "nativeThreads": 0,
+    "finalFullRereadUnchanged": true,
+    "disposition": "No unresolved actionable code request. Historical linkage decision now has child444 but native association still absent; original receipt not rebound."
   }
 }
