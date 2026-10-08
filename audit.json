@@ -1,0 +1,606 @@
+{
+  "criticalUnchanged": [
+    {
+      "path": "scripts/release-ci-gate.mjs",
+      "headAndActualTargetBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
+    },
+    {
+      "path": "scripts/release-ci-gate.test.mjs",
+      "headAndActualTargetBlob": "5a739a178adf706349b22a742a82ba347923fe5a"
+    },
+    {
+      "path": ".github/workflows/container.yml",
+      "headAndActualTargetBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4"
+    },
+    {
+      "path": ".github/workflows/publish-release.yml",
+      "headAndActualTargetBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1"
+    },
+    {
+      "path": "scripts/ghcr-release-policy.mjs",
+      "headAndActualTargetBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984"
+    },
+    {
+      "path": "scripts/ghcr-release-receipt.mjs",
+      "headAndActualTargetBlob": "afdc549612071d6c3e496b8720ab27257eaee767"
+    },
+    {
+      "path": "scripts/native-tag-attestation.mjs",
+      "headAndActualTargetBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec"
+    },
+    {
+      "path": "scripts/release-config.mjs",
+      "headAndActualTargetBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341"
+    },
+    {
+      "path": ".github/release-image-attestation-trusted-workflow-shas",
+      "headAndActualTargetBlob": "760e82a4dd87bc383213d07193d585041d1231dd"
+    }
+  ],
+  "records": [
+    {
+      "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+      "artifacts": [
+        {
+          "path": "issue440-evidence/README.md",
+          "bytes": 4037,
+          "gitBlobSha": "896d1354c71b5eccf1495ab42a88a3efb1604917",
+          "sha256": "0ca1e8c44bcfcc49b81322b73fee635d0a89898ffa7b54b883038fadf24ac3a7"
+        },
+        {
+          "path": "issue440-evidence/behavior.json",
+          "bytes": 9278,
+          "gitBlobSha": "33ae7958148e940df3a28ba961ab9f43b12d4432",
+          "sha256": "87528257b3716f577a7b665b550247fcca07a68591b2b7de8e4d6d33cce52822"
+        },
+        {
+          "path": "issue440-evidence/check-exit-codes.json",
+          "bytes": 69,
+          "gitBlobSha": "427c2aa998bcb2c0aa7125df336fc889ccc0bf30",
+          "sha256": "61fcbd87b2583e0a4e6aa5a392f7340f010e604fcae7939b2b8fbc4b30851d51"
+        },
+        {
+          "path": "issue440-evidence/deploy-tests.log",
+          "bytes": 2696,
+          "gitBlobSha": "269f5b4e2505b373cb6a2a1f2f3aaef2ee357b63",
+          "sha256": "18f576d3b5cc6ef1fcdcb649a4dc85df4fb03ee97a0c55efa28271e48737465d"
+        },
+        {
+          "path": "issue440-evidence/final-contract-tests.log",
+          "bytes": 3376,
+          "gitBlobSha": "e32b485a20f69078d390cad644f3994f8ba319e0",
+          "sha256": "83c3e2009be5fccf45402b2eac75eb717a440ac79ed2715c69ab121c4bf27820"
+        },
+        {
+          "path": "issue440-evidence/manifest.json",
+          "bytes": 1718,
+          "gitBlobSha": "f66f70383c26acd66736928eab5ab23907d88372",
+          "sha256": "069540c1dfece1dcff0e6f32eb4b2eba1a38a08f39f0739d93da14e8967ec51e"
+        },
+        {
+          "path": "issue440-evidence/native-tests.log",
+          "bytes": 26174,
+          "gitBlobSha": "2289bcdf9839cceb9a94106cfee4e4bda6c9cb46",
+          "sha256": "2ab53aa9fc217244b5b71890b5015e2e30722aa707dcc301aa89f1cbbe41ba21"
+        },
+        {
+          "path": "issue440-evidence/observe-behavior.mjs",
+          "bytes": 6108,
+          "gitBlobSha": "ad96f3412e91c383231f04228c71512e9d27c566",
+          "sha256": "289683b220692e0cab5a7faf67ac92901e92b505b000c34aa27a9c3c1684ad3f"
+        },
+        {
+          "path": "issue440-evidence/release-check.log",
+          "bytes": 348,
+          "gitBlobSha": "f359dc87969e8633925d7cbfa712d92d96c7a244",
+          "sha256": "d44d5f4b3cf0b56b2b6c14bd2421a54b6c0100b66570dedd21fb63a84a655278"
+        },
+        {
+          "path": "issue440-evidence/release-tests.log",
+          "bytes": 15593,
+          "gitBlobSha": "f00af61d1f1d957251b5c794d36d769409313bd2",
+          "sha256": "53e06708948b5845dd14a3fe6d669805064e441d9bf593502e8056459e84729d"
+        },
+        {
+          "path": "issue440-evidence/scope.json",
+          "bytes": 8040,
+          "gitBlobSha": "45b7cb45ae42dcfea8bb9260053a7d40299f74a1",
+          "sha256": "95431045f7bb355cc0d1a0b8c9f6eac0f9bc86b13d5b48d9df35bc9d8b1fa3dd"
+        }
+      ]
+    },
+    {
+      "commit": "fa378d82eb524b33ada2de4291eb34bc8d312be5",
+      "artifacts": [
+        {
+          "path": "issue440-evidence/CI.md",
+          "bytes": 1559,
+          "gitBlobSha": "7927a3b3ad7e5496d338308c9a54223503a17da6",
+          "sha256": "9524a79835b9e3d6bd94335acd96e0d25127b4b1fed8aacc3c9885804ed3083a"
+        },
+        {
+          "path": "issue440-evidence/README.md",
+          "bytes": 4037,
+          "gitBlobSha": "896d1354c71b5eccf1495ab42a88a3efb1604917",
+          "sha256": "0ca1e8c44bcfcc49b81322b73fee635d0a89898ffa7b54b883038fadf24ac3a7"
+        },
+        {
+          "path": "issue440-evidence/behavior.json",
+          "bytes": 9278,
+          "gitBlobSha": "33ae7958148e940df3a28ba961ab9f43b12d4432",
+          "sha256": "87528257b3716f577a7b665b550247fcca07a68591b2b7de8e4d6d33cce52822"
+        },
+        {
+          "path": "issue440-evidence/check-exit-codes.json",
+          "bytes": 69,
+          "gitBlobSha": "427c2aa998bcb2c0aa7125df336fc889ccc0bf30",
+          "sha256": "61fcbd87b2583e0a4e6aa5a392f7340f010e604fcae7939b2b8fbc4b30851d51"
+        },
+        {
+          "path": "issue440-evidence/ci-completion.json",
+          "bytes": 9986,
+          "gitBlobSha": "a86a63fdc939ee422a851ad221b1866aea70e318",
+          "sha256": "19e839dc0364e05cfdf3190b3701995f1973d371f2066e047cd894bb5ebb88a8"
+        },
+        {
+          "path": "issue440-evidence/ci-manifest.json",
+          "bytes": 600,
+          "gitBlobSha": "8b6c3a812e8516a7f5d3391b0aa2230f94057132",
+          "sha256": "672d2bdb71cc961648d88979068df279035d8cd0c4dc244ada10c965f084ce00"
+        },
+        {
+          "path": "issue440-evidence/deploy-tests.log",
+          "bytes": 2696,
+          "gitBlobSha": "269f5b4e2505b373cb6a2a1f2f3aaef2ee357b63",
+          "sha256": "18f576d3b5cc6ef1fcdcb649a4dc85df4fb03ee97a0c55efa28271e48737465d"
+        },
+        {
+          "path": "issue440-evidence/final-contract-tests.log",
+          "bytes": 3376,
+          "gitBlobSha": "e32b485a20f69078d390cad644f3994f8ba319e0",
+          "sha256": "83c3e2009be5fccf45402b2eac75eb717a440ac79ed2715c69ab121c4bf27820"
+        },
+        {
+          "path": "issue440-evidence/hosted-release-configuration.log",
+          "bytes": 352421,
+          "gitBlobSha": "fc747ff0db17aa42747d56f04e59045e7cde4381",
+          "sha256": "3c2992286e50bee9561b642e66f8d32fa22f7c3796f8b0de8efe07dd5580a64a"
+        },
+        {
+          "path": "issue440-evidence/manifest.json",
+          "bytes": 1718,
+          "gitBlobSha": "f66f70383c26acd66736928eab5ab23907d88372",
+          "sha256": "069540c1dfece1dcff0e6f32eb4b2eba1a38a08f39f0739d93da14e8967ec51e"
+        },
+        {
+          "path": "issue440-evidence/native-tests.log",
+          "bytes": 26174,
+          "gitBlobSha": "2289bcdf9839cceb9a94106cfee4e4bda6c9cb46",
+          "sha256": "2ab53aa9fc217244b5b71890b5015e2e30722aa707dcc301aa89f1cbbe41ba21"
+        },
+        {
+          "path": "issue440-evidence/observe-behavior.mjs",
+          "bytes": 6108,
+          "gitBlobSha": "ad96f3412e91c383231f04228c71512e9d27c566",
+          "sha256": "289683b220692e0cab5a7faf67ac92901e92b505b000c34aa27a9c3c1684ad3f"
+        },
+        {
+          "path": "issue440-evidence/release-check.log",
+          "bytes": 348,
+          "gitBlobSha": "f359dc87969e8633925d7cbfa712d92d96c7a244",
+          "sha256": "d44d5f4b3cf0b56b2b6c14bd2421a54b6c0100b66570dedd21fb63a84a655278"
+        },
+        {
+          "path": "issue440-evidence/release-tests.log",
+          "bytes": 15593,
+          "gitBlobSha": "f00af61d1f1d957251b5c794d36d769409313bd2",
+          "sha256": "53e06708948b5845dd14a3fe6d669805064e441d9bf593502e8056459e84729d"
+        },
+        {
+          "path": "issue440-evidence/scope.json",
+          "bytes": 8040,
+          "gitBlobSha": "45b7cb45ae42dcfea8bb9260053a7d40299f74a1",
+          "sha256": "95431045f7bb355cc0d1a0b8c9f6eac0f9bc86b13d5b48d9df35bc9d8b1fa3dd"
+        }
+      ]
+    },
+    {
+      "commit": "f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07",
+      "artifacts": [
+        {
+          "path": "pr401-recovery/README.md",
+          "bytes": 7352,
+          "gitBlobSha": "c9630242c05ddc4222f228e7330116f03823d3a2",
+          "sha256": "c135af24ece946d175d45d8782e91eea2394ed90c166914d3c95b897069391dc"
+        },
+        {
+          "path": "pr401-recovery/original-pr-body.md",
+          "bytes": 3236,
+          "gitBlobSha": "44f961c83736d96bd28208d4f1ade129f1468834",
+          "sha256": "8e8ac4c8c2e337f642540f0aae28897c40b6598f31e0b590c6b306b601ca9d5a"
+        },
+        {
+          "path": "pr401-recovery/owner-handoff.json",
+          "bytes": 1621,
+          "gitBlobSha": "27fd3eb6c0b95a55216b431ed5b970eca84eaa92",
+          "sha256": "71c4249175a7285bac4545c59792df7d602820b870cce6144e977a7613efb1be"
+        },
+        {
+          "path": "pr401-recovery/published-scope.json",
+          "bytes": 9178,
+          "gitBlobSha": "5e2ab31f52863fd419241972f262417f6f4ca271",
+          "sha256": "33af365bd3beb30deb8b94e30a3f47bb58391978e2c3e8b2a007601921d0788d"
+        },
+        {
+          "path": "pr401-recovery/retention-manifest.json",
+          "bytes": 6219,
+          "gitBlobSha": "cb69e131b864bae6a1e90a4939d36adbf38dd9f6",
+          "sha256": "8c5237a4100af11c6929b8dd0472da3edc63b1d60f2bb320a847c263059dd51c"
+        }
+      ]
+    }
+  ],
+  "original401": {
+    "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/401",
+    "id": 4707922866,
+    "node_id": "PR_kwDOQbBgUs8AAAABGJ0zsg",
+    "html_url": "https://github.com/MChartier/calibrate-health/pull/401",
+    "diff_url": "https://github.com/MChartier/calibrate-health/pull/401.diff",
+    "patch_url": "https://github.com/MChartier/calibrate-health/pull/401.patch",
+    "issue_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/401",
+    "number": 401,
+    "state": "closed",
+    "locked": false,
+    "title": "Simplify server and native release workflows",
+    "user": {
+      "login": "MChartier",
+      "id": 1258197,
+      "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MChartier",
+      "html_url": "https://github.com/MChartier",
+      "followers_url": "https://api.github.com/users/MChartier/followers",
+      "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+      "organizations_url": "https://api.github.com/users/MChartier/orgs",
+      "repos_url": "https://api.github.com/users/MChartier/repos",
+      "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MChartier/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "## Summary\n- Replace three manual server publication forms with one **Release server** action: patch/minor/major, prepared-release recovery, or image-only recovery. Remove four duplicate request/handler workflows while preserving exact request validation and operation-specific permissions.\n- Add `native:release` to build, verify, and submit phone/Wear packages to Play internal tracks. `--skip-build` reuses tested artifacts or retries an upload and replaces `native:submit`.\n- Add `docs/deployment.md` as the common starting point, simplify linked guides, and correct stale release/rehearsal instructions.\n\n## Safety and compatibility\n- Publication remains manual. Image-only recovery does not trigger OTA or deployment.\n- Existing signing/credential boundaries, production approvals, immutable-image verification, and historical receipt identities are unchanged.\n- Server/native versions and application/admin behavior are unchanged.\n\n## Validation\n- Release tooling: 148 tests passed\n- Native tooling: 253 passed; one Windows-only archive test skipped on Linux\n- Deployment tooling: 26 tests passed\n- Backend, shared, API-client, and mobile typechecks passed\n- `npm run release:check`, workflow YAML parsing, documentation link checks, and diff hygiene passed\n- Actual request-building shell verified six valid input combinations and rejected eight invalid combinations\n- Independent review found no correctness or security issues\n\nNo live GitHub dispatch, native package build, Play upload, OTA publication, or server deployment was performed. Full application/browser/container smoke was not rerun for this tooling/documentation change; the cloud host lacks the Docker daemon prerequisites and browser socket support for those smoke flows.\n\nPublished through the GitHub connector because this checkout has no Git/CLI credentials. The implementation commit `001fcaa` tree was verified identical to the reviewed local commit: `760aa7c2cff42e06c6bb55b0987c0bc1eac3d7fe`.\n\n## Screenshot evidence\n\nGenuine, unedited cloud-browser screenshots of GitHub's rendered `docs/deployment.md` at implementation commit `001fcaad8cdc639809db3133571f2b95cb4e5e20`. These document the release instructions and recovery choices; no release workflow, Play upload, OTA publication, or server deployment was run to capture them.\n\n### Release chooser\n![GitHub-rendered release chooser](https://raw.githubusercontent.com/MChartier/calibrate-health/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/release-chooser.jpg)\n\n### Recovery choices\n![GitHub-rendered recovery choices](https://raw.githubusercontent.com/MChartier/calibrate-health/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/recovery-options.jpg)\n\n### One-command native release\n![GitHub-rendered one-command native release guide](https://raw.githubusercontent.com/MChartier/calibrate-health/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/native-release.jpg)\n\nCapture provenance and originals: [evidence README](https://github.com/MChartier/calibrate-health/blob/0f53ed8239633c34d03b7f41afccfee2b8cd7b13/docs/pr-screenshots/deployment-cleanup/README.md). This follow-up commit adds evidence only.\n",
+    "created_at": "2026-10-01T18:33:13Z",
+    "updated_at": "2026-10-07T06:12:59Z",
+    "closed_at": "2026-10-07T06:12:59Z",
+    "merged_at": null,
+    "merge_commit_sha": null,
+    "assignees": [],
+    "requested_reviewers": [],
+    "requested_teams": [],
+    "labels": [],
+    "milestone": null,
+    "draft": true,
+    "commits_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/401/commits",
+    "review_comments_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/401/comments",
+    "review_comment_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments{/number}",
+    "comments_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/401/comments",
+    "statuses_url": "https://api.github.com/repos/MChartier/calibrate-health/statuses/0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+    "head": {
+      "label": "MChartier:mchartier/streamline-deployment",
+      "ref": "mchartier/streamline-deployment",
+      "sha": "0f53ed8239633c34d03b7f41afccfee2b8cd7b13",
+      "user": {
+        "login": "MChartier",
+        "id": 1258197,
+        "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/MChartier",
+        "html_url": "https://github.com/MChartier",
+        "followers_url": "https://api.github.com/users/MChartier/followers",
+        "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+        "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+        "organizations_url": "https://api.github.com/users/MChartier/orgs",
+        "repos_url": "https://api.github.com/users/MChartier/repos",
+        "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/MChartier/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "repo": {
+        "id": 1102078034,
+        "node_id": "R_kgDOQbBgUg",
+        "name": "calibrate-health",
+        "full_name": "MChartier/calibrate-health",
+        "private": false,
+        "owner": {
+          "login": "MChartier",
+          "id": 1258197,
+          "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/MChartier",
+          "html_url": "https://github.com/MChartier",
+          "followers_url": "https://api.github.com/users/MChartier/followers",
+          "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+          "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+          "organizations_url": "https://api.github.com/users/MChartier/orgs",
+          "repos_url": "https://api.github.com/users/MChartier/repos",
+          "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/MChartier/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/MChartier/calibrate-health",
+        "description": "calibrate is a responsive calorie tracker (desktop + mobile web) for people who want to lose (or maintain) weight by logging food and weight.",
+        "fork": false,
+        "url": "https://api.github.com/repos/MChartier/calibrate-health",
+        "forks_url": "https://api.github.com/repos/MChartier/calibrate-health/forks",
+        "keys_url": "https://api.github.com/repos/MChartier/calibrate-health/keys{/key_id}",
+        "collaborators_url": "https://api.github.com/repos/MChartier/calibrate-health/collaborators{/collaborator}",
+        "teams_url": "https://api.github.com/repos/MChartier/calibrate-health/teams",
+        "hooks_url": "https://api.github.com/repos/MChartier/calibrate-health/hooks",
+        "issue_events_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/events{/number}",
+        "events_url": "https://api.github.com/repos/MChartier/calibrate-health/events",
+        "assignees_url": "https://api.github.com/repos/MChartier/calibrate-health/assignees{/user}",
+        "branches_url": "https://api.github.com/repos/MChartier/calibrate-health/branches{/branch}",
+        "tags_url": "https://api.github.com/repos/MChartier/calibrate-health/tags",
+        "blobs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/blobs{/sha}",
+        "git_tags_url": "https://api.github.com/repos/MChartier/calibrate-health/git/tags{/sha}",
+        "git_refs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/refs{/sha}",
+        "trees_url": "https://api.github.com/repos/MChartier/calibrate-health/git/trees{/sha}",
+        "statuses_url": "https://api.github.com/repos/MChartier/calibrate-health/statuses/{sha}",
+        "languages_url": "https://api.github.com/repos/MChartier/calibrate-health/languages",
+        "stargazers_url": "https://api.github.com/repos/MChartier/calibrate-health/stargazers",
+        "contributors_url": "https://api.github.com/repos/MChartier/calibrate-health/contributors",
+        "subscribers_url": "https://api.github.com/repos/MChartier/calibrate-health/subscribers",
+        "subscription_url": "https://api.github.com/repos/MChartier/calibrate-health/subscription",
+        "commits_url": "https://api.github.com/repos/MChartier/calibrate-health/commits{/sha}",
+        "git_commits_url": "https://api.github.com/repos/MChartier/calibrate-health/git/commits{/sha}",
+        "comments_url": "https://api.github.com/repos/MChartier/calibrate-health/comments{/number}",
+        "issue_comment_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments{/number}",
+        "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/{+path}",
+        "compare_url": "https://api.github.com/repos/MChartier/calibrate-health/compare/{base}...{head}",
+        "merges_url": "https://api.github.com/repos/MChartier/calibrate-health/merges",
+        "archive_url": "https://api.github.com/repos/MChartier/calibrate-health/{archive_format}{/ref}",
+        "downloads_url": "https://api.github.com/repos/MChartier/calibrate-health/downloads",
+        "issues_url": "https://api.github.com/repos/MChartier/calibrate-health/issues{/number}",
+        "pulls_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls{/number}",
+        "milestones_url": "https://api.github.com/repos/MChartier/calibrate-health/milestones{/number}",
+        "notifications_url": "https://api.github.com/repos/MChartier/calibrate-health/notifications{?since,all,participating}",
+        "labels_url": "https://api.github.com/repos/MChartier/calibrate-health/labels{/name}",
+        "releases_url": "https://api.github.com/repos/MChartier/calibrate-health/releases{/id}",
+        "deployments_url": "https://api.github.com/repos/MChartier/calibrate-health/deployments",
+        "created_at": "2025-11-22T19:23:03Z",
+        "updated_at": "2026-10-08T19:25:25Z",
+        "pushed_at": "2026-10-08T19:57:15Z",
+        "git_url": "git://github.com/MChartier/calibrate-health.git",
+        "ssh_url": "git@github.com:MChartier/calibrate-health.git",
+        "clone_url": "https://github.com/MChartier/calibrate-health.git",
+        "svn_url": "https://github.com/MChartier/calibrate-health",
+        "homepage": "https://calibratehealth.app",
+        "size": 86760,
+        "stargazers_count": 1,
+        "watchers_count": 1,
+        "language": "TypeScript",
+        "has_issues": true,
+        "has_projects": true,
+        "has_downloads": false,
+        "has_wiki": false,
+        "has_pages": false,
+        "has_discussions": false,
+        "forks_count": 0,
+        "mirror_url": null,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 28,
+        "license": {
+          "key": "apache-2.0",
+          "name": "Apache License 2.0",
+          "spdx_id": "Apache-2.0",
+          "url": "https://api.github.com/licenses/apache-2.0",
+          "node_id": "MDc6TGljZW5zZTI="
+        },
+        "allow_forking": true,
+        "is_template": false,
+        "web_commit_signoff_required": false,
+        "has_pull_requests": true,
+        "pull_request_creation_policy": "all",
+        "topics": [],
+        "visibility": "public",
+        "forks": 0,
+        "open_issues": 28,
+        "watchers": 1,
+        "default_branch": "master"
+      }
+    },
+    "base": {
+      "label": "MChartier:master",
+      "ref": "master",
+      "sha": "014f19669cbe4b62cb9b98514830d7874660e994",
+      "user": {
+        "login": "MChartier",
+        "id": 1258197,
+        "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/MChartier",
+        "html_url": "https://github.com/MChartier",
+        "followers_url": "https://api.github.com/users/MChartier/followers",
+        "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+        "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+        "organizations_url": "https://api.github.com/users/MChartier/orgs",
+        "repos_url": "https://api.github.com/users/MChartier/repos",
+        "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/MChartier/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "repo": {
+        "id": 1102078034,
+        "node_id": "R_kgDOQbBgUg",
+        "name": "calibrate-health",
+        "full_name": "MChartier/calibrate-health",
+        "private": false,
+        "owner": {
+          "login": "MChartier",
+          "id": 1258197,
+          "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+          "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/MChartier",
+          "html_url": "https://github.com/MChartier",
+          "followers_url": "https://api.github.com/users/MChartier/followers",
+          "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+          "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+          "organizations_url": "https://api.github.com/users/MChartier/orgs",
+          "repos_url": "https://api.github.com/users/MChartier/repos",
+          "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/MChartier/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/MChartier/calibrate-health",
+        "description": "calibrate is a responsive calorie tracker (desktop + mobile web) for people who want to lose (or maintain) weight by logging food and weight.",
+        "fork": false,
+        "url": "https://api.github.com/repos/MChartier/calibrate-health",
+        "forks_url": "https://api.github.com/repos/MChartier/calibrate-health/forks",
+        "keys_url": "https://api.github.com/repos/MChartier/calibrate-health/keys{/key_id}",
+        "collaborators_url": "https://api.github.com/repos/MChartier/calibrate-health/collaborators{/collaborator}",
+        "teams_url": "https://api.github.com/repos/MChartier/calibrate-health/teams",
+        "hooks_url": "https://api.github.com/repos/MChartier/calibrate-health/hooks",
+        "issue_events_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/events{/number}",
+        "events_url": "https://api.github.com/repos/MChartier/calibrate-health/events",
+        "assignees_url": "https://api.github.com/repos/MChartier/calibrate-health/assignees{/user}",
+        "branches_url": "https://api.github.com/repos/MChartier/calibrate-health/branches{/branch}",
+        "tags_url": "https://api.github.com/repos/MChartier/calibrate-health/tags",
+        "blobs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/blobs{/sha}",
+        "git_tags_url": "https://api.github.com/repos/MChartier/calibrate-health/git/tags{/sha}",
+        "git_refs_url": "https://api.github.com/repos/MChartier/calibrate-health/git/refs{/sha}",
+        "trees_url": "https://api.github.com/repos/MChartier/calibrate-health/git/trees{/sha}",
+        "statuses_url": "https://api.github.com/repos/MChartier/calibrate-health/statuses/{sha}",
+        "languages_url": "https://api.github.com/repos/MChartier/calibrate-health/languages",
+        "stargazers_url": "https://api.github.com/repos/MChartier/calibrate-health/stargazers",
+        "contributors_url": "https://api.github.com/repos/MChartier/calibrate-health/contributors",
+        "subscribers_url": "https://api.github.com/repos/MChartier/calibrate-health/subscribers",
+        "subscription_url": "https://api.github.com/repos/MChartier/calibrate-health/subscription",
+        "commits_url": "https://api.github.com/repos/MChartier/calibrate-health/commits{/sha}",
+        "git_commits_url": "https://api.github.com/repos/MChartier/calibrate-health/git/commits{/sha}",
+        "comments_url": "https://api.github.com/repos/MChartier/calibrate-health/comments{/number}",
+        "issue_comment_url": "https://api.github.com/repos/MChartier/calibrate-health/issues/comments{/number}",
+        "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/{+path}",
+        "compare_url": "https://api.github.com/repos/MChartier/calibrate-health/compare/{base}...{head}",
+        "merges_url": "https://api.github.com/repos/MChartier/calibrate-health/merges",
+        "archive_url": "https://api.github.com/repos/MChartier/calibrate-health/{archive_format}{/ref}",
+        "downloads_url": "https://api.github.com/repos/MChartier/calibrate-health/downloads",
+        "issues_url": "https://api.github.com/repos/MChartier/calibrate-health/issues{/number}",
+        "pulls_url": "https://api.github.com/repos/MChartier/calibrate-health/pulls{/number}",
+        "milestones_url": "https://api.github.com/repos/MChartier/calibrate-health/milestones{/number}",
+        "notifications_url": "https://api.github.com/repos/MChartier/calibrate-health/notifications{?since,all,participating}",
+        "labels_url": "https://api.github.com/repos/MChartier/calibrate-health/labels{/name}",
+        "releases_url": "https://api.github.com/repos/MChartier/calibrate-health/releases{/id}",
+        "deployments_url": "https://api.github.com/repos/MChartier/calibrate-health/deployments",
+        "created_at": "2025-11-22T19:23:03Z",
+        "updated_at": "2026-10-08T19:25:25Z",
+        "pushed_at": "2026-10-08T19:57:15Z",
+        "git_url": "git://github.com/MChartier/calibrate-health.git",
+        "ssh_url": "git@github.com:MChartier/calibrate-health.git",
+        "clone_url": "https://github.com/MChartier/calibrate-health.git",
+        "svn_url": "https://github.com/MChartier/calibrate-health",
+        "homepage": "https://calibratehealth.app",
+        "size": 86760,
+        "stargazers_count": 1,
+        "watchers_count": 1,
+        "language": "TypeScript",
+        "has_issues": true,
+        "has_projects": true,
+        "has_downloads": false,
+        "has_wiki": false,
+        "has_pages": false,
+        "has_discussions": false,
+        "forks_count": 0,
+        "mirror_url": null,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 28,
+        "license": {
+          "key": "apache-2.0",
+          "name": "Apache License 2.0",
+          "spdx_id": "Apache-2.0",
+          "url": "https://api.github.com/licenses/apache-2.0",
+          "node_id": "MDc6TGljZW5zZTI="
+        },
+        "allow_forking": true,
+        "is_template": false,
+        "web_commit_signoff_required": false,
+        "has_pull_requests": true,
+        "pull_request_creation_policy": "all",
+        "topics": [],
+        "visibility": "public",
+        "forks": 0,
+        "open_issues": 28,
+        "watchers": 1,
+        "default_branch": "master"
+      }
+    },
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/401"
+      },
+      "html": {
+        "href": "https://github.com/MChartier/calibrate-health/pull/401"
+      },
+      "issue": {
+        "href": "https://api.github.com/repos/MChartier/calibrate-health/issues/401"
+      },
+      "comments": {
+        "href": "https://api.github.com/repos/MChartier/calibrate-health/issues/401/comments"
+      },
+      "review_comments": {
+        "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/401/comments"
+      },
+      "review_comment": {
+        "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/comments{/number}"
+      },
+      "commits": {
+        "href": "https://api.github.com/repos/MChartier/calibrate-health/pulls/401/commits"
+      },
+      "statuses": {
+        "href": "https://api.github.com/repos/MChartier/calibrate-health/statuses/0f53ed8239633c34d03b7f41afccfee2b8cd7b13"
+      }
+    },
+    "author_association": "OWNER",
+    "auto_merge": null,
+    "assignee": null,
+    "active_lock_reason": null,
+    "merged": false,
+    "mergeable": false,
+    "rebaseable": false,
+    "mergeable_state": "dirty",
+    "merged_by": null,
+    "comments": 2,
+    "review_comments": 0,
+    "maintainer_can_modify": false,
+    "commits": 2,
+    "additions": 625,
+    "deletions": 774,
+    "changed_files": 34
+  }
+}

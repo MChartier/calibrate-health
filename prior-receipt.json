@@ -1,0 +1,8 @@
+{
+  "verdictCommentId": 6032519419,
+  "evidenceCommit": "0308a6c950e1420f2d824761f1dc1b768f5b5c86",
+  "observedArtifactSha256": "a2d084b1f9f295dfb73a1c5d34d0903d113fc6fbf9689382fdf0a164081da781",
+  "verdictBodySha256": "3948d752a0429256c80acc91097299bed09c5afb5fa200eb599f48212695a5c1",
+  "verdictUpdatedAt": "2026-10-07T06:42:56Z",
+  "trustedRecovery": "Read original QA task01a1128e-30ca-76da-bdf8-6e588e957030 completed turn01a11518-2d2e-70d2-ab1b-b91a2f73a9cc final answer through native read_thread. Original task remains idle; no migration inferred."
+}

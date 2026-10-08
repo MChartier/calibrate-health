@@ -1,0 +1,32 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "headRefOid": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+        "baseRefOid": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "closingIssuesReferences": {
+          "nodes": [
+            {
+              "number": 440,
+              "url": "https://github.com/MChartier/calibrate-health/issues/440"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        },
+        "reviewThreads": {
+          "totalCount": 0,
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      "issue": {
+        "state": "OPEN",
+        "body": "## Problem\n\nMaintainers still choose among three server release forms and run native build and submit separately. Original PR #401 contains a useful simplification, but its recovery guidance predates the CI safeguards now merged in #434. Recover that outcome on current master without weakening publication or credential boundaries.\n\nAuthority: the original human release-cleanup request and active-backlog progression, followed by the coordinator's accepted intake and explicit implementation dispatch.\n\n## Requirements and acceptance\n\n1. Provide one manual **Release server** entrypoint with `patch`, `minor`, `major`, `resume`, and `image-only`. Preserve exact request/run/attempt/ref/source verification and operation-specific permissions; reject unknown or mixed inputs. Remove four duplicate request/handler files only after equivalent routing exists.\n2. `resume` verifies the exact merged prepared source and reuses publication without a new version. `image-only` recovers only the image, never OTA/deployment; `publish_latest` defaults false and is allowed only for the highest stable tag. Preserve immutable receipt verification and historical `cut-release-handler.yml`, `publish-release-handler.yml`, and `container-handler.yml` certificate identities, including current allow/revoke enforcement.\n3. Preserve #434's complete exact-candidate CI gate, PR/tested-base binding, bounded approval wait, failure/missing/stale rejection, final ref rechecks and explicit publication dependency. Retain blocked validated candidates; retry only with unchanged refs, and reconcile drift before another cut. Never use post-merge recovery for an unmerged candidate.\n4. `native:release` awaits existing build/sign/verification before submit/readback; failed builds cannot submit. `--skip-build` re-verifies retained artifacts without rebuilding, re-signing or loading signing settings. Keep consuming-stage credential isolation, internal tracks, the internal submit worker, and manual build/install/OTA choices.\n5. Add a concise deployment chooser and consistent maintained guidance. Keep the current weekly/manual package-audit policy and PR container OS checks. Demonstrate request, recovery, receipt, CI and native failure/retry boundaries with maintained non-UI tests; keep historical screenshots and one-off records outside product history.\n\n## Implementation plan\n\nFollow the [source-backed pre-implementation plan and retention contract](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md). Use isolated branch `mchartier/release-entrypoints-recovery` from verified current master. Selectively port the server/native entrypoints, reconcile recovery guidance with #434, and validate the request, recovery and credential boundaries with maintained release/native/deployment checks and hosted PR CI. Obtain independent full-scope QA before coordinator readiness.\n\nCoordinate `deploy/README.md` with #439 and README/package edits with #404 before shared-file changes; import neither branch. Implementation and a draft successor PR are authorized. No broad hygiene, Firebase/GCP work, original-PR closure, real release/build/upload/provider action or settings change is authorized.\n\nKeep results and workflow history in the [execution checkpoint](https://github.com/MChartier/calibrate-health/issues/440#issuecomment-6031572461), its retained records, and the [preserved description history](https://github.com/MChartier/calibrate-health/issues/440#issuecomment-6031805319).\n\n## Implementing Codex task\n\nSole native implementation owner: verified task ID `01a114af-c6d1-705c-ade9-39553731d038`. Preserve the [original cloud owner's idle handoff and ownership](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/owner-handoff.json); no original native UUID existed.\n\n## Implementing PR\n\nCurrent PR: [#441](https://github.com/MChartier/calibrate-health/pull/441), with native `Closes #440` linkage.\n\nHistorical, superseded PR: [#401](https://github.com/MChartier/calibrate-health/pull/401), replaced by #441. See the [replacement record](https://github.com/MChartier/calibrate-health/pull/401#issuecomment-6032144733) and [retained original source and evidence](https://github.com/MChartier/calibrate-health/blob/f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07/pr401-recovery/README.md)."
+      }
+    }
+  }
+}

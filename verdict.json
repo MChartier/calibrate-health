@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "verdict": "changes-required",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "fullStandardsAcknowledgment": "Full supplied pinned standards and direct amendments read. Full PR441 head AGENTS.md read separately because this PR changes it; incoming target does not change instructions. Current direct managed-hosted amendment supersedes inherited customer self-hosting guidance. Runtime pins unchanged.",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/441",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/440",
+  "checkedAtUtc": "2026-10-08T20:01:00.430245+00:00",
+  "supersedesVerdictCommentId": 6032519419,
+  "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "headParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  ],
+  "targetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "ultimateTargetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "parentRevisions": [],
+  "prBodySha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30",
+  "historicalReceipt": {
+    "verdictCommentId": 6032519419,
+    "evidenceCommit": "0308a6c950e1420f2d824761f1dc1b768f5b5c86",
+    "observedArtifactSha256": "a2d084b1f9f295dfb73a1c5d34d0903d113fc6fbf9689382fdf0a164081da781",
+    "verdictBodySha256": "3948d752a0429256c80acc91097299bed09c5afb5fa200eb599f48212695a5c1",
+    "verdictUpdatedAt": "2026-10-07T06:42:56Z",
+    "trustedRecovery": "Read original QA task01a1128e-30ca-76da-bdf8-6e588e957030 completed turn01a11518-2d2e-70d2-ab1b-b91a2f73a9cc final answer through native read_thread. Original task remains idle; no migration inferred."
+  },
+  "historicalAssessment": "prior-verdict.json is preserved exact original bytes and is not relabeled as current-target execution. Current assessment concerns incoming target impact and all current feedback/body/scope gates.",
+  "scope": {
+    "commits": 1,
+    "files": 30,
+    "additions": 625,
+    "deletions": 785
+  },
+  "gates": {
+    "value": "Pass for bounded release-entrypoint simplification.",
+    "outcome": "Release entrypoint/credential/CI contracts pass; maintained documentation requires managed-hosted alignment under6049386828.",
+    "code": "Runtime/workflow review passes: complete1commit30files+625/-785 inspected; correct five-way routing; malformed inputs rejected; image-only reduced permission and noOTA/deploy; native build awaited and skip-build no signing path. Maintained README/new guide contain requested policy correction R2.",
+    "engineeringReview": "Original quota refusal6031504125 retained historically. Later summary6032060810 reports completed exact-head review2026-10-07T06:08:21Z; zero submitted/inline/native thread findings. Complete independent scope/code review performed.",
+    "ci": "Current exact-head checks read; applicable successes and classifier skips retained in initial.json. No rerun or target-integration CI claimed.",
+    "behavior": "Owner retained actual baseline/final source imports, five routing cases, malformed-input rejection, eight shell-prefix cases and mocked native build/submit/failure observations inspected. Exact13 behavior/CI manifest artifacts verified. Historical117 focused tests belong to original reviewer01a1128e, not this lane. No suites rerun: unchanged source and nine critical safeguards; incoming food-day code has no release dependency impact.",
+    "evidence": "Exact immutable artifacts read through Git blob API; sizes and GitSHA1 checked; all13 manifest entries match SHA256. Original trusted comment receipt recovered from completed native QA task and verified. Original401 closed unmerged, retained original record verified. audit.json contains full identities.",
+    "communication": "Changes required: current PR body calls old4cbcbc target simply Base; distinguish source merge-base/captured baseline from actual target9dc0739. Main problem/solution and behavioral table otherwise pass.",
+    "stack": "Direct target, lagging API base, source merge-base and ultimate master separately bound; conflict probe clean, without claiming integrated runtime execution."
+  },
+  "baseImpact": "PR436 adds persisted calorie-comparison reads to food-day GET/completion and Watch completion responses. Same validated integer user identity and existing authenticated access remain; no changes to local credential verification, restricted recovery, credential-security-version, session/token/cookie formats, revocation/deletion, Firebase enablement, schema, dependencies or release workflow/helpers. All three incoming commits including both merge parents and ten paths inspected. Existing auth/release behavior evidence remains applicable.",
+  "feedback": {
+    "fullIssueAndPrCommentsRead": true,
+    "submittedReviewsRead": true,
+    "inlineThreadsRead": true,
+    "newActionableRequest": "Target revalidation completed; current direct managed-hosted amendment creates scoped documentation correction R2. Existing issue/PR feedback and lifecycle history read in full; prior implementation findings resolved.",
+    "nativeReadback": "native.json"
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "reason": "No visual change in these bounded source patches; existing observable contract evidence retained. General GitHub rendering waiver recorded, no new render/device check claimed."
+  },
+  "limitations": [
+    "No new tests: prior117 independent tests remain attributed to original reviewer; owner fixture tests and exact-head hosted CI reused with source/target impact justification.",
+    "No real release, signing, store upload, provider access, device build/install, image/OTA publication, deployment, credentials or protection mutation.",
+    "Conflict-only probe is not integrated runtime execution.",
+    "PR401 remains closed unmerged; no further lifecycle action or stale Project-permission hold. PR447 is a separately owned child, not assessed or rewritten here.",
+    "Coordinator must preserve old receipts and obtain same-lane final source/body evidence reassessment before readiness."
+  ],
+  "nextAction": "Return C1/R2 to existing PR441 owner via coordinator. Preserve branch and447 dependency; publish focused documentation/body correction, refresh affected evidence and exact-head gates only as applicable. Readiness withheld; no user decision required.",
+  "findings": [
+    {
+      "id": "C1",
+      "priority": "P2",
+      "location": "PR body final Base/Head paragraph",
+      "observed": "Base4cbcbc740fbe5fa5646b4de31951c79a653176d5 is presented without qualification, but actual master9dc0739e36168aa273530fe00ae5f85fb9c8a3fe advanced through436.",
+      "expected": "Identify4cbcbc as source merge-base/captured baseline, actual master separately, and link concise incoming impact assessment without relabeling old observations.",
+      "ownerAction": "Original PR441 owner correct final description, preserve historical body/evidence, return exact final body digest for same-lane communication reassessment. No unrelated tests required."
+    },
+    {
+      "id": "R2",
+      "priority": "P2",
+      "location": "README.md changed Releases and deployment section and docs/deployment.md operation chooser",
+      "observed": "Changed README still advertises Advanced self-hosting and new guide offers Compose self-hosting to install/upgrade on your host, without framing retained infrastructure as maintainer/internal operations.",
+      "expected": "Apply direct managed-hosted amendment6049386828: managed hosted product positioning; self-hosting is not an end-user feature. Preserve useful existing infrastructure/development tooling.",
+      "ownerAction": "Reword scoped README/guide content to managed hosted product and explicitly maintainer/internal deployment/recovery guidance. Coordinate shared docs with active managed438 owner; do not delete Docker/backend/deploy capabilities, invent a production domain, modify447, or alter runtime endpoint/build bindings for this documentation correction."
+    }
+  ],
+  "audit": {
+    "path": "audit.json",
+    "sha256": "4f9bada18ea23211f0697074af7b79e8eeede60a23707cfcc999399656f111b4",
+    "criticalUnchanged": [
+      {
+        "path": "scripts/release-ci-gate.mjs",
+        "headAndActualTargetBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
+      },
+      {
+        "path": "scripts/release-ci-gate.test.mjs",
+        "headAndActualTargetBlob": "5a739a178adf706349b22a742a82ba347923fe5a"
+      },
+      {
+        "path": ".github/workflows/container.yml",
+        "headAndActualTargetBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4"
+      },
+      {
+        "path": ".github/workflows/publish-release.yml",
+        "headAndActualTargetBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1"
+      },
+      {
+        "path": "scripts/ghcr-release-policy.mjs",
+        "headAndActualTargetBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984"
+      },
+      {
+        "path": "scripts/ghcr-release-receipt.mjs",
+        "headAndActualTargetBlob": "afdc549612071d6c3e496b8720ab27257eaee767"
+      },
+      {
+        "path": "scripts/native-tag-attestation.mjs",
+        "headAndActualTargetBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec"
+      },
+      {
+        "path": "scripts/release-config.mjs",
+        "headAndActualTargetBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341"
+      },
+      {
+        "path": ".github/release-image-attestation-trusted-workflow-shas",
+        "headAndActualTargetBlob": "760e82a4dd87bc383213d07193d585041d1231dd"
+      }
+    ],
+    "verifiedManifestEntries": [
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "behavior.json",
+        "sha256": "87528257b3716f577a7b665b550247fcca07a68591b2b7de8e4d6d33cce52822",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "check-exit-codes.json",
+        "sha256": "61fcbd87b2583e0a4e6aa5a392f7340f010e604fcae7939b2b8fbc4b30851d51",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "deploy-tests.log",
+        "sha256": "18f576d3b5cc6ef1fcdcb649a4dc85df4fb03ee97a0c55efa28271e48737465d",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "final-contract-tests.log",
+        "sha256": "83c3e2009be5fccf45402b2eac75eb717a440ac79ed2715c69ab121c4bf27820",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "native-tests.log",
+        "sha256": "2ab53aa9fc217244b5b71890b5015e2e30722aa707dcc301aa89f1cbbe41ba21",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "observe-behavior.mjs",
+        "sha256": "289683b220692e0cab5a7faf67ac92901e92b505b000c34aa27a9c3c1684ad3f",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "README.md",
+        "sha256": "0ca1e8c44bcfcc49b81322b73fee635d0a89898ffa7b54b883038fadf24ac3a7",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "release-check.log",
+        "sha256": "d44d5f4b3cf0b56b2b6c14bd2421a54b6c0100b66570dedd21fb63a84a655278",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "release-tests.log",
+        "sha256": "53e06708948b5845dd14a3fe6d669805064e441d9bf593502e8056459e84729d",
+        "verified": true
+      },
+      {
+        "commit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+        "path": "scope.json",
+        "sha256": "95431045f7bb355cc0d1a0b8c9f6eac0f9bc86b13d5b48d9df35bc9d8b1fa3dd",
+        "verified": true
+      },
+      {
+        "commit": "fa378d82eb524b33ada2de4291eb34bc8d312be5",
+        "path": "ci-completion.json",
+        "sha256": "19e839dc0364e05cfdf3190b3701995f1973d371f2066e047cd894bb5ebb88a8",
+        "verified": true
+      },
+      {
+        "commit": "fa378d82eb524b33ada2de4291eb34bc8d312be5",
+        "path": "CI.md",
+        "sha256": "9524a79835b9e3d6bd94335acd96e0d25127b4b1fed8aacc3c9885804ed3083a",
+        "verified": true
+      },
+      {
+        "commit": "fa378d82eb524b33ada2de4291eb34bc8d312be5",
+        "path": "hosted-release-configuration.log",
+        "sha256": "3c2992286e50bee9561b642e66f8d32fa22f7c3796f8b0de8efe07dd5580a64a",
+        "verified": true
+      }
+    ]
+  }
+}
