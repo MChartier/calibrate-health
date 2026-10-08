@@ -27,7 +27,8 @@ the original sibling checkout layout; restore those paths to reproduce.
 Both builds used npm ci and npm --prefix mobile run build:web. Original build
 file SHA256 manifests are in build-manifests.json. artifact-hashes.json records
 the original images, responses, harnesses, fixture inputs and test logs.
-Node 24.19; Playwright 1.61.1, Chrome channel. Commands:
+Node 24.19; Playwright 1.61.1, Chrome 154.0.8037.98, device scale factor 1.
+Capture files were produced October 8 2026 around 17:56 UTC. Commands:
 
 ```
 # In each checkout, with TS_NODE_PROJECT set to its backend/tsconfig.json:
