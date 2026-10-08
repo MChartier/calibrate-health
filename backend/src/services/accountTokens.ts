@@ -57,7 +57,7 @@ async function invalidateIssuedToken(
 /** Create and deliver a verification link, invalidating the credential if delivery fails. */
 export async function sendEmailVerification(userId: number): Promise<boolean> {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userId, deletion_pending: false },
     select: { email: true, email_verified_at: true }
   });
   if (!user || user.email_verified_at) return true;

@@ -32,6 +32,7 @@ export type AccountAccessSource = Prisma.UserGetPayload<{ select: typeof ACCOUNT
 
 /** Reuse the same durable trust boundary for background jobs that bypass request middleware. */
 export const CURRENT_ACCOUNT_ACCESS_WHERE = {
+  deletion_pending: false,
   email_verified_at: { not: null },
   ...(isHostedServiceDeployment() ? {
     legal_acceptances: {

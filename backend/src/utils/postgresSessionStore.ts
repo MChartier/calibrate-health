@@ -102,7 +102,7 @@ export class PostgresSessionStore extends session.Store {
       try {
         await client.query('BEGIN');
         const current = await client.query(
-          'UPDATE "User" SET credential_security_version = credential_security_version WHERE id = $1 AND credential_security_version = $2 RETURNING id',
+          'UPDATE "User" SET credential_security_version = credential_security_version WHERE id = $1 AND credential_security_version = $2 AND NOT deletion_pending RETURNING id',
           [userId, guard.version]
         );
         if (current.rowCount !== 1) throw new BrowserLoginRejected();

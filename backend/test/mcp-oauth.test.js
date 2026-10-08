@@ -209,7 +209,7 @@ test('MCP OAuth approval cannot create a code after the security version changes
   };
   const tx = {
     user: { updateMany: async ({ where, data }) => {
-      assert.deepEqual(where, { id: 7, credential_security_version: 3 });
+      assert.deepEqual(where, { id: 7, credential_security_version: 3, deletion_pending: false });
       assert.deepEqual(data, { credential_security_version: 3 });
       const currentVersion = 4;
       return { count: where.credential_security_version === currentVersion ? 1 : 0 };

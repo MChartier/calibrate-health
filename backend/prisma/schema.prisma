@@ -112,6 +112,7 @@ model User {
   password_hash     String
   /// Monotonic credential/security generation; database trigger advances it on password changes.
   credential_security_version Int @default(0)
+  deletion_pending Boolean @default(false)
   /// Prepared immutable provider mapping; existence does not switch credential authority.
   firebase_identity FirebaseIdentity?
   created_at        DateTime  @default(now())
@@ -190,6 +191,26 @@ model User {
   mcp_oauth_authorization_codes McpOAuthAuthorizationCode[]
   /// Revocable OAuth grants that let remote MCP clients read this account's selected data.
   mcp_oauth_grants McpOAuthGrant[]
+}
+
+/// Internal durable deletion receipt. Deliberately independent of the account cascade.
+model AccountDeletion {
+  operation_id String @id
+  user_id Int @unique
+  installation_id String
+  source_id String
+  project_id String
+  uid String
+  credential_version Int
+  state String @default("pending_provider")
+  claim_generation Int @default(0)
+  claim_until DateTime?
+  last_outcome String?
+  created_at DateTime @default(now())
+  completed_at DateTime?
+
+  @@unique([project_id, uid])
+  @@index([state, claim_until])
 }
 
 model FirebaseIdentity {

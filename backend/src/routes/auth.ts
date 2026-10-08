@@ -285,7 +285,7 @@ router.post('/email-verification/resend', async (req, res) => {
             const email = normalizeEmailCredential(req.body?.email);
             if (email) {
                 const user = await prisma.user.findFirst({
-                    where: { email: { equals: email, mode: 'insensitive' } },
+                    where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
                     select: { id: true }
                 });
                 userId = user?.id ?? null;
@@ -333,7 +333,7 @@ router.post('/password-reset/request', async (req, res) => {
         const email = normalizeEmailCredential(req.body?.email);
         if (email) {
             const user = await prisma.user.findFirst({
-                where: { email: { equals: email, mode: 'insensitive' } },
+                where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
                 select: { id: true, email: true }
             });
             if (user) {
@@ -430,7 +430,7 @@ router.post('/mobile/login', async (req, res) => {
 
     try {
         const user = await prisma.user.findFirst({
-            where: { email: { equals: email, mode: 'insensitive' } },
+            where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
             select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true }
         });
         const isMatch = await verifyLocalPassword(password, user?.password_hash);
@@ -682,7 +682,7 @@ router.get('/me', async (req, res) => {
         const user = getAuthenticatedUser(req);
         try {
             // Refresh from the database to avoid stale session snapshots.
-            const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: USER_CLIENT_SELECT });
+            const dbUser = await prisma.user.findUnique({ where: { id: user.id, deletion_pending: false }, select: USER_CLIENT_SELECT });
             if (!dbUser) {
                 return res.status(401).json({ message: 'Not authenticated' });
             }

@@ -213,7 +213,7 @@ export class McpOAuthService {
 
     const email = normalizeEmailCredential(input.email);
     const user = email ? await this.database.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
       select: APPROVAL_USER_SELECT
     }) : null;
     const passwordWithinLimit = validateBcryptPasswordByteLength(input.password) === null;
@@ -232,7 +232,7 @@ export class McpOAuthService {
       // Serialize approval against password change/reset. Whichever transaction commits second
       // observes or deletes the other's authorization code, so an old password cannot mint access.
       const credentialStillCurrent = await tx.user.updateMany({
-        where: { id: user.id, credential_security_version: user.credential_security_version },
+        where: { id: user.id, credential_security_version: user.credential_security_version, deletion_pending: false },
         data: { credential_security_version: user.credential_security_version }
       });
       if (credentialStillCurrent.count !== 1) {

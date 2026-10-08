@@ -56,6 +56,7 @@ test('account access is full only when verification and current consent are pres
 });
 test('self-hosted background jobs require verification without hosted legal consent', () => {
   assert.deepEqual(CURRENT_ACCOUNT_ACCESS_WHERE, {
+    deletion_pending: false,
     email_verified_at: { not: null }
   });
 });

@@ -121,7 +121,7 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
         return dbUser;
       },
       updateMany: async ({ where }) => {
-        assert.deepEqual(where, { id: dbUser.id, credential_security_version: 3 });
+        assert.deepEqual(where, { id: dbUser.id, credential_security_version: 3, deletion_pending: false });
         return { count: 1 };
       },
       findUnique: async () => dbUser
@@ -159,7 +159,7 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
   assert.ok(res.body.access_token);
   assert.ok(res.body.refresh_token);
   assert.deepEqual(userLookups[0].where, {
-    email: { equals: 'native@example.com', mode: 'insensitive' }
+    email: { equals: 'native@example.com', mode: 'insensitive' }, deletion_pending: false
   });
   assert.equal(sessionCreates[0].data.device_id, 'device-1');
 });
