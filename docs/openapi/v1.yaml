@@ -2230,7 +2230,7 @@ components:
       required: [date, status, origin, source, is_representative, is_complete, completed_at, updated_at]
       properties:
         calorie_comparison:
-          description: Range-only comparison against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs.
+          description: Comparison on day reads and completion responses against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs.
           oneOf:
             - $ref: '#/components/schemas/FoodDayCalorieComparison'
             - { type: 'null' }

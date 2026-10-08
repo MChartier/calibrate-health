@@ -509,6 +509,31 @@ test('watch metric and completion mutations use canonical date-only upserts', as
   assert.equal(dayArgs.where.user_id_local_date.local_date.toISOString(), '2026-07-11T00:00:00.000Z');
 });
 
+test('watch completion publishes saved comparison in its acknowledgement and sync change', async () => {
+  const capturedAt = new Date('2026-07-11T19:00:00Z');
+  const service = loadWatchMutationService({
+    foodLogDay: {
+      findUnique: async () => null,
+      upsert: async ({create}) => ({ id: 6, ...create, updated_at: capturedAt,
+        comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: capturedAt })
+    },
+    foodLog: { findMany: async ({where}) => {
+      assert.equal(where.user_id, 9);
+      assert.equal(where.local_date.toISOString(), '2026-07-11T00:00:00.000Z');
+      return [{calories: 1800}];
+    } }
+  });
+  const mutation = service.parseWatchMutation({ type: 'food_day.set_complete',
+    payload: { local_date: '2026-07-11', is_complete: true, expected_revision: null }
+  }, { timezone: 'UTC' });
+  const result = await service.executeWatchMutation({ userId: 9, mobileAuthSessionId: 73, operationId: 'watch-saved-plan', mutation });
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body.food_day.calorie_comparison, {
+    consumed_kcal: 1800, target_kcal: 2000, maintenance_kcal: 2500, captured_at: capturedAt.toISOString()
+  });
+  assert.deepEqual(service.captured.syncChanges[0].payload.calorie_comparison, result.body.food_day.calorie_comparison);
+});
+
 test('watch metric and completion mutations reject stale snapshot revisions', async () => {
   const metricRow = {
     id: 5,

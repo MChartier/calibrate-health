@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5432/test';
 const { captureFoodDayComparison, foodDayCalorieComparison } = require('../src/services/foodDayComparison');
-const { getEffectiveFoodDayRange } = require('../src/services/foodTracking');
+const { getEffectiveFoodDay, getEffectiveFoodDayRange } = require('../src/services/foodTracking');
 const now = new Date('2026-01-01T07:30:00Z'); // Still Dec 31 in Los Angeles.
 function fixture() {
   const day = { id: 1, user_id: 7, local_date: new Date('2025-12-31T00:00:00Z'), status: 'COMPLETE', origin: 'USER', completed_at: now, updated_at: now };
@@ -14,7 +14,7 @@ function fixture() {
     goal: { findFirst: async () => goal },
     bodyMetric: { findFirst: async () => ({ weight_grams: 90000 }) },
     caloriePlanRevision: { findFirst: async () => null, findMany: async () => [] },
-    foodLogDay: { findFirst: async () => day, findMany: async () => [day], update: async ({data}) => Object.assign(day, data) },
+    foodLogDay: { findUnique: async () => day, findFirst: async () => day, findMany: async () => [day], update: async ({data}) => Object.assign(day, data) },
     foodLog: { findFirst: async () => null, findMany: async () => logs },
     foodTrackingPause: { findFirst: async () => null, findMany: async () => [] }
   };
@@ -65,6 +65,39 @@ test('an invalid timezone leaves completion intact and comparison unavailable', 
   const {db,day,user} = fixture(); user.timezone = 'Invalid/Timezone';
   assert.equal(await captureFoodDayComparison(db,day,now),day);
   assert.equal(day.status,'COMPLETE'); assert.equal(foodDayCalorieComparison(day,0),null);
+});
+
+test('single-day reads match calendar history without rebuilding the current plan', async () => {
+  const {db, day, goal, setLogs} = fixture();
+  await captureFoodDayComparison(db, day, now);
+  const savedTarget = day.comparison_target_kcal;
+  goal.daily_deficit = -500;
+  db.goal.findFirst = async () => { throw new Error('Historical reads must not evaluate current goals'); };
+  for (const calories of [[], [1000, 800], [2600], [-1], [Number.MAX_SAFE_INTEGER, 1]]) {
+    setLogs(calories.map(value => ({local_date: day.local_date, calories: value})));
+    const single = await getEffectiveFoodDay(7, day.local_date, now, db);
+    const range = (await getEffectiveFoodDayRange(7, day.local_date, day.local_date, now, db))[0];
+    assert.deepEqual(single.calorie_comparison, range.calorie_comparison);
+    if (single.calorie_comparison) assert.equal(single.calorie_comparison.target_kcal, savedTarget);
+  }
+  day.status = 'OPEN';
+  assert.equal((await getEffectiveFoodDay(7, day.local_date, now, db)).calorie_comparison, null);
+});
+
+test('single-day reads leave legacy, partial and invalid snapshots unavailable', async () => {
+  const {db, day} = fixture();
+  const saved = {comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: now};
+  db.foodLog.findMany = async () => { throw new Error('No intake read needed without a valid snapshot'); };
+  for (const invalid of [
+    {comparison_target_kcal: null, comparison_maintenance_kcal: null, comparison_captured_at: null},
+    {...saved, comparison_target_kcal: undefined}, {...saved, comparison_maintenance_kcal: null},
+    {...saved, comparison_captured_at: null}, {...saved, comparison_target_kcal: -1}
+  ]) {
+    Object.assign(day, invalid);
+    const result = await getEffectiveFoodDay(7, day.local_date, now, db);
+    assert.equal(result.status, 'COMPLETE');
+    assert.equal(result.calorie_comparison, null);
+  }
 });
 
 test('retains adjusted target ordering when a positive-deficit plan crosses maintenance', async () => {
