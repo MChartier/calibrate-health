@@ -15,6 +15,7 @@ import { getFoodDayWriteBlock } from './foodTracking';
 import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from './caloriePlanReview';
 import { lockCaloriePlanningInputs } from './caloriePlanningLock';
+import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from './goalStartingWeight';
 import { calculateCanonicalGoalProgress } from '../../../shared/goalProgress';
 import { isPolicyWeight, localDateInTimeZone } from '../../../shared/caloriePolicy';
 
@@ -359,6 +360,9 @@ export async function executeWatchMutation(options: {
       }
       if (mutation.type === 'metric.upsert') {
         await lockCaloriePlanningInputs(tx, options.userId);
+        const user = await tx.user.findUnique({ where: { id: options.userId }, select: { timezone: true } });
+        if (!user) return { status: 404, body: { message: 'User not found' } };
+        const today = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
         const existing = await tx.bodyMetric.findUnique({
           where: { user_id_date: { user_id: options.userId, date: mutation.metricDate } }
         });
@@ -384,7 +388,12 @@ export async function executeWatchMutation(options: {
           create: { user_id: options.userId, date: mutation.metricDate, weight_grams: mutation.payload.weight_grams }
         });
         await recordSyncChange({ tx, userId: options.userId, entityType: 'body_metric', entityId: metric.id, action: 'upsert', operationId: claimedOperationId, payload: metric });
+        const correctedGoal = await correctSameDayGoalStartingWeight(tx, {
+          userId: options.userId, metricDate: mutation.metricDate, weightGrams: metric.weight_grams,
+          timezone: user.timezone, today
+        });
         await markCurrentCaloriePlanForReviewIfUnsafe(tx, options.userId);
+        if (correctedGoal) await recordCorrectedGoalStartingWeight(tx, options.userId, correctedGoal.id, claimedOperationId);
         return {
           status: 200,
           body: {

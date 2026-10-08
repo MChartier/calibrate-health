@@ -292,6 +292,8 @@ try {
     const session = await db.mobileAuthSession.create({ data: { user_id: user.id, device_id: 'synthetic-watch', device_platform: 'WEAR_OS',
         access_token_hash: crypto.randomUUID(), refresh_token_hash: crypto.randomUUID(),
         access_expires_at: new Date(Date.now() + 3600000), refresh_expires_at: new Date(Date.now() + 7200000) } });
+    const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+    await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date() } });
     for (const watchFirst of [true, false]) {
         await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter);
         const existing = await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: today } } });
@@ -312,8 +314,54 @@ try {
         if (!watchFirst) assert.equal(wearResult.body.code, 'ENTITY_CONFLICT');
         assert.deepEqual((await wear()).body, wearResult.body);
         assert.equal((await db.bodyMetric.findUniqueOrThrow({ where: { id: existing.id } })).weight_grams, 87000);
+        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 87000);
+        const wearGoalEvents = await db.syncChange.findMany({ where: { user_id: user.id, operation_id: watchOperation, entity_type: 'goal' } });
+        assert.equal(wearGoalEvents.length, watchFirst ? 1 : 0);
+        if (watchFirst) assert.equal(wearGoalEvents[0].payload.start_weight_grams, 86000);
     }
-    console.log('[goal-pace-smoke] PASS: web/Wear metric writes in both lock orders avoid deadlock, retain stale-revision conflict and replay committed receipts.');
+    const historicalDate = new Date(today.getTime() - 3 * 86400000);
+    const historicalKey = historicalDate.toISOString().slice(0, 10);
+    const historicalMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+        local_date: historicalKey, weight_grams: 89000, expected_revision: null
+    } }, { timezone: 'UTC' });
+    assert.equal((await watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
+        operationId: crypto.randomUUID(), mutation: historicalMutation })).status, 200);
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 87000);
+    console.log('[goal-pace-smoke] PASS: web/Wear metric writes in both lock orders avoid deadlock, correct same-day baseline with one goal sync event, retain historical baseline, stale-revision conflict and receipt replay.');
+
+    const importRouter = backendRequire('./src/routes/imports').default;
+    const importHandler = importRouter.stack.find(layer => layer.route?.path === '/loseit/execute').route.stack.at(-1).handle;
+    const AdmZip = backendRequire('adm-zip');
+    async function importWeight(date, weight, mode) {
+        const zip = new AdmZip();
+        const [year, month, day] = date.split('-');
+        zip.addFile('weights.csv', Buffer.from('Date,Weight,Last Updated,Deleted\n' + month + '/' + day + '/' + year + ',' + weight + ',,\n'));
+        const res = { statusCode: 200, status(value) { this.statusCode = value; return this; }, json(body) { this.body = body; return this; } };
+        await importHandler({ user, file: { buffer: zip.toBuffer() }, body: {
+            weight_unit: 'KG', food_conflict_mode: 'MERGE', weight_conflict_mode: mode, include_body_fat: false
+        } }, res);
+        assert.equal(res.statusCode, 200);
+        return res.body;
+    }
+    await db.bodyMetric.deleteMany({ where: { user_id: user.id, date: today } });
+    const goalBeforeImport = await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } });
+    const eventCount = () => db.syncChange.count({ where: { user_id: user.id, entity_type: 'goal', entity_id: String(currentGoal.id) } });
+    const beforeImportEvents = await eventCount();
+    await importWeight(metricDate, 85, 'KEEP');
+    assert.deepEqual(await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } }), { ...goalBeforeImport, start_weight_grams: 85000 });
+    assert.equal(await eventCount(), beforeImportEvents + 1);
+    await importWeight(metricDate, 86, 'KEEP');
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 85000);
+    assert.equal(await eventCount(), beforeImportEvents + 1);
+    await importWeight(metricDate, 84, 'OVERWRITE');
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 84000);
+    assert.equal(await eventCount(), beforeImportEvents + 2);
+    await importWeight(historicalKey, 83, 'OVERWRITE');
+    await importWeight(metricDate, 84, 'OVERWRITE');
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 84000);
+    assert.equal(await eventCount(), beforeImportEvents + 2);
+    assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
+    console.log('[goal-pace-smoke] PASS: import create/overwrite corrects only the same-day baseline and sync; KEEP, historical edits and repeated identical imports preserve baseline/history without duplicate goal events.');
     console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
 }
 finally {

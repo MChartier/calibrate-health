@@ -14,6 +14,9 @@ The timezone is reread inside that transaction after the lock, so a profile
 change that commits first determines eligibility and the default metric date.
 Wear and import weight writers acquire the same guard before metric rows to
 avoid reversing the lock order against normal corrections.
+Accepted Wear writes and imported current-day weights use the same correction
+and goal-sync rule. Imports that KEEP an existing weight, body-fat-only updates
+and historical import rows do not change the baseline.
 
 Offline weight intent remains `{ weight, date }` plus its stable operation ID.
 Until accepted, the app shows the pending metric and retains the server-owned

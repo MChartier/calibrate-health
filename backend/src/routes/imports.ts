@@ -6,6 +6,7 @@ import { parseWeightToGrams, isWeightUnit, type WeightUnit } from '../utils/unit
 import { isPolicyWeight } from '../../../shared/caloriePolicy';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
 import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
+import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from '../services/goalStartingWeight';
 import type { MutationDatabase } from '../services/clientOperations';
 import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 import { refreshMaterializedWeightTrendsBestEffort } from '../services/materializedWeightTrend';
@@ -166,6 +167,8 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
 
   const weightResult = await prisma.$transaction(async (tx) => {
     await lockCaloriePlanningInputs(tx, user.id);
+    const currentUser = await tx.user.findUniqueOrThrow({ where: { id: user.id }, select: { timezone: true } });
+    const today = getSafeUtcTodayDateOnlyInTimeZone(currentUser.timezone);
     const result = await applyWeightImports({
       database: tx,
       userId: user.id,
@@ -174,10 +177,15 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
       weightUnit: options.value.weightUnit,
       conflictMode: options.value.weightConflictMode,
       includeBodyFat: options.value.includeBodyFat,
+      baselineDate: today,
+    });
+    const correctedGoal = result.baselineWeightGrams === null ? null : await correctSameDayGoalStartingWeight(tx, {
+      userId: user.id, metricDate: today, weightGrams: result.baselineWeightGrams, timezone: currentUser.timezone, today
     });
     if (result.imported > 0 || result.updated > 0) {
       await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
     }
+    if (correctedGoal) await recordCorrectedGoalStartingWeight(tx, user.id, correctedGoal.id);
     return result;
   });
 
@@ -444,9 +452,10 @@ async function applyWeightImports(opts: {
   weightUnit: WeightUnit;
   conflictMode: WeightConflictMode;
   includeBodyFat: boolean;
-}): Promise<{ imported: number; updated: number; skipped: number; bodyFatUpdated: number }> {
+  baselineDate: Date;
+}): Promise<{ imported: number; updated: number; skipped: number; bodyFatUpdated: number; baselineWeightGrams: number | null }> {
   if (opts.imports.length === 0) {
-    return { imported: 0, updated: 0, skipped: 0, bodyFatUpdated: 0 };
+    return { imported: 0, updated: 0, skipped: 0, bodyFatUpdated: 0, baselineWeightGrams: null };
   }
 
   const dateValues = opts.imports.map((entry) => entry.localDateValue);
@@ -467,6 +476,7 @@ async function applyWeightImports(opts: {
   let updated = 0;
   let skipped = 0;
   let bodyFatUpdated = 0;
+  let baselineWeightGrams: number | null = null;
 
   if (opts.conflictMode === 'KEEP') {
     const createRows = [];
@@ -492,6 +502,7 @@ async function applyWeightImports(opts: {
     if (createRows.length > 0) {
       await opts.database.bodyMetric.createMany({ data: createRows });
       imported = createRows.length;
+      baselineWeightGrams = createRows.find(row => row.date.getTime() === opts.baselineDate.getTime())?.weight_grams ?? null;
     }
 
     if (opts.includeBodyFat) {
@@ -510,7 +521,7 @@ async function applyWeightImports(opts: {
       }
     }
 
-    return { imported, updated, skipped, bodyFatUpdated };
+    return { imported, updated, skipped, bodyFatUpdated, baselineWeightGrams };
   }
 
   const upserts = opts.imports.map((entry) => {
@@ -541,6 +552,9 @@ async function applyWeightImports(opts: {
   }
 
   for (const entry of opts.imports) {
+    if (entry.localDateValue.getTime() === opts.baselineDate.getTime()) {
+      baselineWeightGrams = parseWeightToGrams(entry.weightValue, opts.weightUnit);
+    }
     if (existingByDate.has(entry.localDate)) {
       updated += 1;
     } else {
@@ -556,7 +570,7 @@ async function applyWeightImports(opts: {
     }
   }
 
-  return { imported, updated, skipped, bodyFatUpdated };
+  return { imported, updated, skipped, bodyFatUpdated, baselineWeightGrams };
 }
 
 /**

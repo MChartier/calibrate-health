@@ -4,6 +4,7 @@ import prisma from '../config/database';
 import { isPolicyWeight } from '../../../shared/caloriePolicy';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
 import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
+import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from '../services/goalStartingWeight';
 import {
     gramsToWeight,
     isWeightUnit,
@@ -907,12 +908,12 @@ router.post('/', async (req, res) => {
                         const createdLocalDate = formatLocalDateForTimeZone(activeGoal.created_at, acceptedTimeZone);
                         // created_at is the existing goal start date. A late first offline
                         // replay saves its metric but must not rewrite a historical baseline.
-                        if (createdLocalDate === acceptedLocalDate && savedLocalDate === acceptedLocalDate
-                            && activeGoal.start_weight_grams !== updateData.weight_grams) {
-                            activeGoal = await tx.goal.update({
-                                where: { id: activeGoal.id },
-                                data: { start_weight_grams: updateData.weight_grams }
-                            });
+                        const corrected = await correctSameDayGoalStartingWeight(tx, {
+                            userId: user.id, metricDate, weightGrams: updateData.weight_grams,
+                            timezone: acceptedTimeZone, today: acceptedToday, goal: activeGoal
+                        });
+                        if (corrected) {
+                            activeGoal = corrected;
                             correctedGoalId = activeGoal.id;
                         }
                         progressGoal = {
@@ -976,11 +977,7 @@ router.post('/', async (req, res) => {
                     : await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
                 if (correctedGoalId !== null) {
                     // Include any safety-review state set by the corrected weight in the sync event.
-                    const correctedGoal = await tx.goal.findUniqueOrThrow({ where: { id: correctedGoalId } });
-                    await recordSyncChange({
-                        tx, userId: user.id, entityType: 'goal', entityId: correctedGoalId,
-                        action: 'upsert', operationId: claimedOperationId, payload: correctedGoal
-                    });
+                    await recordCorrectedGoalStartingWeight(tx, user.id, correctedGoalId, claimedOperationId);
                 }
 
                 const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
