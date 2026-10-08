@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "technicalVerdict": "pass",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "reviewerStatus": "New independent trusted reassessment, not original conversation migration. Full pinned standards and all direct amendments acknowledged.",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/442",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/445",
+  "parentIssue": "https://github.com/MChartier/calibrate-health/issues/421",
+  "supersedesVerdictCommentId": 6065987020,
+  "checkedAtUtc": "2026-10-08T18:22:52.931883+00:00",
+  "headSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "baseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "apiBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "mergeBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "actualTargetRef": "mchartier/atomic-native-login-421",
+  "ultimateTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [
+    {
+      "pullRequest": 437,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "pullRequest": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open",
+      "draft": false
+    }
+  ],
+  "commitParents": [
+    "a0fdefe8bca51c25306f36cccc8181bd35672341"
+  ],
+  "prBodySha256": "5f9ed85faf20a8c7418893e6d5d0e3fb678fac340bb8c573a417f5646ff17667",
+  "issueBodySha256": "f7a0586a0117694341077a1f72360a5faa58440160706a20416a78138b43a9aa",
+  "findings": [],
+  "gates": {
+    "value": "pass: explicitly admitted stale browser login persistence race",
+    "outcome": "technical pass for child445 only, full421 unfinished",
+    "code": "pass: independently read all7 published files, first-save transaction, serializer server-only WeakMap, serialized save queue, terminal rejection and update-only accepted resaves. Route cleans request state/cookie even after cleanup failure. Integer identity and nonpassword-login behavior preserved.",
+    "engineeringReview": "completed exact-head bot review6031790637 and completion6031761800; full feedback read, no unresolved actionable code finding",
+    "ci": "8 success16 configured skips; exact-head job112649671287 live log786pass0fail0skip including all7 real Passport/Express PostgreSQL browser scenarios",
+    "behavior": "Retained52-test independent log plus concurrent-save experiment and11 owner artifacts verified exactly. No new local test execution. Source,parent,ancestor,ultimate master unchanged versus original technical QA; new child/body/linkage only, so reuse is justified.",
+    "evidence": "pass: existing source-bound evidence retained and verified; new native association confirmed; artifact hash correction explicitly supersedes old claim",
+    "communication": "pass: concise parent-relative problem/solution and expected/observed behavior table; honest database/local/device distinctions and unfinished migration",
+    "stack": "complete1-commit7-file +381/-19 published child range inspected; parent437 and ancestor431 live bindings retained; ultimate master4cbcbc74 separately assessed in431. No unrelated imported439 scope or evidence churn Native linkage finding now resolved; parent-first order remains."
+  },
+  "scope": {
+    "commits": [
+      {
+        "sha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+        "parents": [
+          "a0fdefe8bca51c25306f36cccc8181bd35672341"
+        ]
+      }
+    ],
+    "files": [
+      {
+        "path": "backend/src/index.ts",
+        "sha": "161df554cf9582aaa95491e3360fb5d34a2d5146",
+        "status": "modified",
+        "additions": 5,
+        "deletions": 9
+      },
+      {
+        "path": "backend/src/routes/auth.ts",
+        "sha": "e1ad18c7382a2a262c1cd3d5465acb9da208681c",
+        "status": "modified",
+        "additions": 14,
+        "deletions": 2
+      },
+      {
+        "path": "backend/src/utils/browserLoginCredentials.ts",
+        "sha": "77c82804eb41113613778fd5607e39163b4931f2",
+        "status": "added",
+        "additions": 38,
+        "deletions": 0
+      },
+      {
+        "path": "backend/src/utils/postgresSessionStore.ts",
+        "sha": "c1f11266431090d13551a7a340785a5942f7687e",
+        "status": "modified",
+        "additions": 58,
+        "deletions": 8
+      },
+      {
+        "path": "backend/test/browser-login-postgres.test.js",
+        "sha": "a559b1b1ab6382e1c083f42bbe4636eb3ce39169",
+        "status": "added",
+        "additions": 200,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/postgres-session-store.test.js",
+        "sha": "fe2c14985fbad0d7eb0bc7a2df2d1c0e12d40ef3",
+        "status": "modified",
+        "additions": 40,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth.test.js",
+        "sha": "7f20e115d479019cd51a51210a9406a80e85a231",
+        "status": "modified",
+        "additions": 26,
+        "deletions": 0
+      }
+    ],
+    "pages": {
+      "commits": [
+        1,
+        0
+      ],
+      "files": [
+        7,
+        0
+      ]
+    }
+  },
+  "feedback": {
+    "prComments": 7,
+    "childComments": 0,
+    "parent421Comments": 33,
+    "reviews": 0,
+    "inline": 0,
+    "nativeThreads": 0,
+    "fullCurrentBodiesRead": true,
+    "disposition": "All prior text unchanged; previous native-association finding now independently verified resolved. Only added PR comment is own previous verdict; no unresolved actionable request."
+  },
+  "linkage": {
+    "checkedAtUtc": "2026-10-08T18:22:52.931883+00:00",
+    "closingIssuesReferences": [
+      445
+    ],
+    "closingCount": 1,
+    "closingHasNextPage": false,
+    "childState": "OPEN",
+    "nativeThreads": 0,
+    "projectItemId": "PVTI_lAHOABMy1c4Bl3Eqzg_RXSs",
+    "builtInLinkedPullRequests": [
+      442
+    ],
+    "customCurrentPrs": "https://github.com/MChartier/calibrate-health/pull/442",
+    "allPaginationComplete": true,
+    "projectLimitation": "Blocked by/Verified at text remains historical and awaits coordinator metadata reconciliation; does not override actual verified native association. No board completion certificate."
+  },
+  "evidence": [
+    {
+      "commitSha": "5cc62e29a120058362e7254fa99ade0b491ae93e",
+      "path": "preparation-evidence/browser-login-4751d8d8-description/receipt.json",
+      "sha256": "fb4cc288f5f632d53af32e1565f77e679c3bbda17047e7ca383fd14eb182b48c"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/.gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/backend.log",
+      "sha256": "d87894ac5659d5e10d9895e8aadaf6f82484abe96dc17e4a2442337c125c8e2f"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/ci-backend.log",
+      "sha256": "40ba98f85aa4785e3a7f3e2073b7a51037abbadcb2a83896bd5056e4e49bab59"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/ci-runs.json",
+      "sha256": "50e055cef00c5a3f647f071f4954ea614ffb0cb0ea70464f6caafb9ff7061c0d"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/focused.log",
+      "sha256": "41b31f816ee8de230f1e533205de6cb3bbba2fd3d70c8c9c83592793f5b9cb39"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/knip.log",
+      "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/product.diff",
+      "sha256": "26f2ac84c6a4f40d3a859a23fb6ba2652c3e422267a963795bd16f7ecd62eade"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/README.md",
+      "sha256": "a19731db3f7c7a12441e082caffc63d7022db05b67493d9320ae0ab32376e76e"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/review.json",
+      "sha256": "f93e5f1db4bada6344f0d08dcfa73dbe6673f73e37967941c000c210266be8f3"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/scope.json",
+      "sha256": "9d9a36207dc8e919268e8b4660989bda215a069a7c9e1ef7c654380053d5c05b"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/typecheck.log",
+      "sha256": "d203b7901d4e592f545b8a1028ada15a2f6734cb69eae3a3bc002bec00c5e594"
+    },
+    {
+      "commitSha": "a4fe47b8f57402c7c79a5198947e3a63c36237d5",
+      "path": "qa/issue421/pr442/v1/focused-tests.log",
+      "sha256": "579f3e0db8b800ac32d67a4a8d0feea9632247a1b1d527d325e92db82d01cd48"
+    },
+    {
+      "commitSha": "a4fe47b8f57402c7c79a5198947e3a63c36237d5",
+      "path": "qa/issue421/pr442/v1/concurrent-save-check.cjs",
+      "sha256": "aa3dc1b892cb38607adbe01ab31eb4f136eaf99d05327ebe048d10d6d1c569ff"
+    },
+    {
+      "commitSha": "a4fe47b8f57402c7c79a5198947e3a63c36237d5",
+      "path": "qa/issue421/pr442/v1/concurrent-save-check.log",
+      "sha256": "d5d6c4aef2ee26889f35d6daaf0105aa7678c78b7054f8ce25e1ef18adcf835f"
+    }
+  ],
+  "historicalReceipt": {
+    "verdictCommentId": 6065987020,
+    "verdictBodySha256": "05459cc0ebe5f95339713ccc82b57e1c7ca97a97e0691ad0d51c01b8776ddfb3",
+    "verdictUpdatedAt": "2026-10-08T18:01:39Z",
+    "recordCommit": "44ded4ceaefb85890df28fe7a78adb46488e6866",
+    "previouslyClaimedArtifactSha256": "c31363b1f538cbc3d73cd181d0b2e97d6f5efce3afa445b82f7ab318b27d760a",
+    "actualPublishedArtifactSha256": "5d8f153c34e12350f45dc1f05a208231a90a51180835fbb35c632ea9812aceb7",
+    "assessment": "Old failure reason, original comment and wrong artifact claim preserved. This explicitly supersedes both linkage finding and byte-identity error; no silent replacement."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "nonUiObservableContract": "Real HTTP status/cookie authentication and durable session state under reset/deletion races, rollback and rejected saves",
+    "renderedPrInspection": "No new page rendering claim; general waiver6022754087"
+  },
+  "limitations": [
+    "No new local suites or PostgreSQL execution. Existing independent52-test/concurrency and exact-headCI reused after identity/content verification.",
+    "CI contains Cannot set headers after they are sent from test-only browser-login-postgres.test.js:76 unconditional error handler during issuance-first deletion. All7 scenarios and durable-session/cookie assertions pass. This is disclosed test-harness noise, not evidence of session resurrection; no silent claim of clean logs.",
+    "Real fixture mirrors LocalStrategy assembly while importing production serializer/store/routes/reset service. SQL deletion is controlled; rollback occurs before COMMIT, not ambiguous postcommit failure. Current-session case is direct mutation, not full password-change HTTP flow.",
+    "Guard covers fresh password-authenticated session objects, not blanket existing-session enforcement.",
+    "No live accounts/Firebase/migration/credentials/device/deployment/release certification; source,body,labels,draft,Project unchanged."
+  ],
+  "nextAction": "Coordinator independently save exact newreceipt and recheck allbindings/fullfeedback/nativeassociation before and after readiness; preserve parent-first431->437->442 and unfinished421. No QA label/draft/Project/merge mutation.",
+  "resolvedFindings": [
+    {
+      "gate": "native child issue association",
+      "priorFailure": "closingIssuesReferences was empty despite closing text; Project custom text was not a native association.",
+      "currentVerifiedResult": "Native closingIssuesReferences exactly child445, no next page; child remains OPEN. Built-in Project Linked pull requests exactlyPR442; Current PRs agrees. Parent421 is not a closing reference.",
+      "authority": "Coordinator reported authorized metadata correction; this QA performed fresh read-only native verification, no writes."
+    }
+  ],
+  "historicalAssessmentReceipt": {
+    "commentId": 6032082081,
+    "fullBodySha256": "7c08f190883cb979e7e7179624d2ab236fb1b8701c4cf3597c2c4cd9b58ca079",
+    "updated_at": "2026-10-07T06:07:43Z",
+    "retainedRecord": "https://github.com/MChartier/calibrate-health/blob/a4fe47b8f57402c7c79a5198947e3a63c36237d5/qa/issue421/pr442/v1/verdict.json",
+    "scope": "Exact observed API bytes retained; not rebound as current trusted receipt."
+  },
+  "artifactIdentityCorrection": {
+    "reason": "Prior recorded hash had finalCRLF; actual published blob endedLF. PowerShell/tool text reconstruction and trimEnd+LF caused mismatch. New transport preserves exact text through JSON escaping; newGitHubbase64blob bytes verified before comment publication.",
+    "audit": "https://github.com/MChartier/calibrate-health/blob/a92993b2803c3c9d881bcc28b6db6ff1864dad9a/identity-audit.json",
+    "auditSha256": "8c59f0050ee491ec382cf21c4c39d0f9b26fcbfc459ff500d3298d7b7805785f"
+  },
+  "affectedGateReassessment": {
+    "sourceBodyBaseUnchanged": true,
+    "fullCurrentFeedbackCompared": true,
+    "previousCommentBodiesUnchanged": true,
+    "onlyAddedPrComment": "Own previous verdict; no new human request.",
+    "ci": [
+      {
+        "id": 112649676271,
+        "name": "Populated Postgres Upgrade",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649675902,
+        "name": "v0.14.0 Upgrade and Encrypted Rollback",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649673995,
+        "name": "High and Critical Vulnerabilities",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649672767,
+        "name": "Mobile Tests",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671881,
+        "name": "Android Emulator End-to-End",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671415,
+        "name": "Mobile Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671348,
+        "name": "UX Accessibility and Visual Regression",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671300,
+        "name": "${{ matrix.platform }} Runtime Bundle",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671287,
+        "name": "Backend Tests",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671265,
+        "name": "Release Configuration",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671059,
+        "name": "Native Two-Emulator Package Upgrade",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649671013,
+        "name": "Wear Build and JVM Tests",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649670924,
+        "name": "iOS Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649670890,
+        "name": "Full Exported Web and PWA End-to-End",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649670849,
+        "name": "Wear Release Emulator Smoke",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649670687,
+        "name": "Six-State Data-Backed Route Acceptance",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649670556,
+        "name": "Web Critical Smoke",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649670521,
+        "name": "Expo Web Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649669788,
+        "name": "Backend Build",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649645633,
+        "name": "Classify Database Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649645349,
+        "name": "Classify Build Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649645294,
+        "name": "Classify Production Image Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649645134,
+        "name": "Classify Test Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      },
+      {
+        "id": 112649645038,
+        "name": "Backend, Shared, API Client, and Mobile Typecheck",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      }
+    ],
+    "behavior": "No tests rerun; existing source-bound independent and exact-headCI evidence unchanged and applicable. Reassessment limited to native association and explicit artifact-byte correction."
+  },
+  "priorFeedbackAssessment": {
+    "prComments": 6,
+    "issue445Comments": 0,
+    "issue421Comments": 33,
+    "reviews": 0,
+    "inline": 0,
+    "nativeThreads": 0,
+    "finalFullRereadUnchanged": true,
+    "disposition": "No actionable code request unresolved. Only unrelated repository push timestamp/open-issue count changed during reads; PR source/body/feedback unchanged. Historical partial-linkage decision now has child445 but native association remains absent."
+  }
+}

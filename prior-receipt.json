@@ -1,0 +1,40 @@
+{
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/442",
+  "verdict": "ready",
+  "verdictCommentId": 6066357362,
+  "verdictBodySha256": "9d971ba5a7f4b85d8bff347fc9cbf0069d6913602d37b7fcef81083f25aa02aa",
+  "verdictUpdatedAt": "2026-10-08T18:23:38Z",
+  "evidenceUrl": "https://github.com/MChartier/calibrate-health/blob/e7f3cb477dd4c5e5ecef6ab5e594aec67229f99e/verdict.json",
+  "evidenceCommit": "e7f3cb477dd4c5e5ecef6ab5e594aec67229f99e",
+  "evidenceBytes": 19813,
+  "evidenceSha256": "5fe1ffe119261b4259f59c41833a6fdd0698690283bdefb5632d60b3db8596fa",
+  "headSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "baseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "apiBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "mergeBase": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "targetRef": null,
+  "targetRepository": "MChartier/calibrate-health",
+  "parentRevisions": [
+    {
+      "pullRequest": 437,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "pullRequest": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open",
+      "draft": false
+    }
+  ],
+  "commitParents": [
+    "a0fdefe8bca51c25306f36cccc8181bd35672341"
+  ],
+  "prBodySha256": "5f9ed85faf20a8c7418893e6d5d0e3fb678fac340bb8c573a417f5646ff17667",
+  "checkedAtUtc": "2026-10-08T18:22:52.931883+00:00",
+  "supersedesVerdictCommentId": 6065987020,
+  "findings": [],
+  "exactCommentBody": "Independent QA: ready for coordinator verification. Supersedes verdict6065987020.\n\nNative association now resolves exactly to child issue445, and the Project\u2019s built-in Linked pull requests field agrees. Issue421 remains unfinished; review order remains431 \u2192437 \u2192442. Source, final body and applicable CI/behavior evidence are unchanged, so no suites were rerun.\n\nThe retained record explicitly corrects the prior artifact-byte digest error while preserving original comments and evidence. [Full bindings, findings, limitations and correction audit](https://github.com/MChartier/calibrate-health/blob/e7f3cb477dd4c5e5ecef6ab5e594aec67229f99e/verdict.json), SHA-256 `5fe1ffe119261b4259f59c41833a6fdd0698690283bdefb5632d60b3db8596fa`.\n\nReassessed by trusted QA task01a11c7c-11db-70b8-ba73-efe3693b003e on MCHARTIER_ZBOOK. No readiness, draft, Project or merge mutation.",
+  "observedArtifactSha256": "5fe1ffe119261b4259f59c41833a6fdd0698690283bdefb5632d60b3db8596fa"
+}

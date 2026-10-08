@@ -1,0 +1,32 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "headRefOid": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+        "baseRefOid": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+        "closingIssuesReferences": {
+          "nodes": [
+            {
+              "number": 445,
+              "url": "https://github.com/MChartier/calibrate-health/issues/445"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        },
+        "reviewThreads": {
+          "totalCount": 0,
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      "issue": {
+        "state": "OPEN",
+        "body": "## Problem\n\nA browser login can verify credentials before a concurrent reset/deletion and persist a session afterward, or recreate a removed session through a later save. This is a bounded child of #421, not the complete Firebase migration.\n\n## Requirements and acceptance\n\n- Validate the verified account and credential version when first persisting the regenerated Passport session; reject stale login with the existing generic response.\n- Make rejected saves terminal and accepted subsequent saves update-only so reset/deletion cannot be undone by session resurrection; rollback leaves no durable authenticated session.\n- Preserve integer principals, cookie format, restricted recovery, local registration/dev login and the current-session update exception; do not add blanket version checks to existing sessions.\n- Maintain real Passport/Express and PostgreSQL race/rollback regressions plus session-store/route tests; cover the full seven-file PR442 scope. Firebase remains disabled.\n- No live account reads/imports, Firebase activation/provisioning, credential changes, deployment or release. Full #421 remains open and unfinished.\n\n## Implementation plan\n\nBuild on PR437 after PR431. Guard the first password-login session save and subsequent update-only persistence. Test both mutation/save orders and failure recovery; do not change parent branches. Existing implementation evidence stays in PR442; independent QA must reassess final issue/body/linkage before readiness.\n\n## Implementing Codex task\n\nVerified existing task ID: `01a10cfe-a79f-7198-9e8f-2b4dc6703031`. Shareable link unavailable through current tools.\n\n## Implementing PR\n\n[PR442](https://github.com/MChartier/calibrate-health/pull/442). This PR implements only this checkpoint; #421 remains the nonclosing parent outcome.\n"
+      }
+    }
+  }
+}
