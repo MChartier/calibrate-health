@@ -18,6 +18,7 @@ const mockLogoutClientOptions: Array<typeof mockClientOptions[number]> = [];
 const mockGetClientConfig = jest.fn();
 const mockRefreshMobile = jest.fn();
 const mockLoginMobile = jest.fn();
+const mockRegisterMobile = jest.fn();
 const mockLogoutMobile = jest.fn(async (_refreshToken?: string) => undefined);
 
 jest.mock('@calibrate/api-client', () => {
@@ -38,6 +39,7 @@ jest.mock('@calibrate/api-client', () => {
             getClientConfig = (...args: unknown[]) => mockGetClientConfig(...args);
             refreshMobile = (...args: unknown[]) => mockRefreshMobile(...args);
             loginMobile = (...args: unknown[]) => mockLoginMobile(...args);
+            registerMobile = (...args: unknown[]) => mockRegisterMobile(...args);
             logoutMobile = (refreshToken?: string) => { mockLogoutClientOptions.push(this.options); return mockLogoutMobile(refreshToken); };
         }
     };
@@ -152,7 +154,7 @@ describe('AuthProvider client/server compatibility recovery', () => {
         expect(mockWriteStoredTokens).toHaveBeenCalledWith({
             accessToken: 'next-access',
             refreshToken: 'next-refresh'
-        });
+        }, expect.any(Function));
     });
 
     it('fails closed without refreshing when the server omits its release version', async () => {
@@ -296,7 +298,7 @@ describe('native onboarding draft cleanup', () => {
         await act(async () => { finish({ ...AUTH_PAYLOAD, refresh_token: 'old-rotated-refresh' }); await expect(pending).rejects.toThrow('Authentication scope changed'); });
         expect(result.current.user?.id).toBe(8);
         expect(result.current.accessToken).toBe('new-access');
-        expect(mockWriteStoredTokens).toHaveBeenLastCalledWith({ accessToken: 'new-access', refreshToken: 'new-refresh' });
+        expect(mockWriteStoredTokens).toHaveBeenLastCalledWith({ accessToken: 'new-access', refreshToken: 'new-refresh' }, expect.any(Function));
         expect(mockLogoutMobile).toHaveBeenCalledWith('old-rotated-refresh');
     });
 
@@ -431,4 +433,96 @@ it('clears UI and revokes the native token when writing logout intent fails', as
     await act(async () => result.current.logout());
     expect(result.current.user).toBeNull();
     expect(mockLogoutMobile).toHaveBeenCalledWith('refresh');
+});
+
+
+describe('native provider lifetime', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetClientConfig.mockReset().mockResolvedValue({ server_version: '1.2.0' });
+        mockRefreshMobile.mockReset().mockResolvedValue(AUTH_PAYLOAD);
+        mockLoginMobile.mockReset().mockResolvedValue(AUTH_PAYLOAD);
+        mockRegisterMobile.mockReset().mockResolvedValue(AUTH_PAYLOAD);
+        mockLogoutMobile.mockReset().mockResolvedValue(undefined);
+        jest.mocked(testCalibrateServerConnection).mockResolvedValue({ ok: true, url: 'https://health.example', config: {} as never, message: 'Connected' });
+    });
+
+    it.each(['login', 'register', 'refresh'] as const)('revokes late %s after remount without replacing the new account', async method => {
+        const first = renderAuth();
+        await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+        const oldClient = mockClientOptions.filter(options => options.getAccessToken).at(-1)!;
+        let finish!: (payload: typeof AUTH_PAYLOAD) => void;
+        const request = method === 'login' ? mockLoginMobile : method === 'register' ? mockRegisterMobile : mockRefreshMobile;
+        request.mockClear().mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+        let pending!: Promise<unknown>;
+        act(() => { pending = method === 'refresh' ? Promise.resolve(oldClient.refreshAccessToken!()) : method === 'login'
+            ? first.result.current.login('old@example.invalid', 'secret')
+            : first.result.current.register('old@example.invalid', 'secret', { acceptTerms: true, acceptPrivacy: true }); });
+        await waitFor(() => expect(request).toHaveBeenCalled());
+        first.unmount();
+        const second = renderAuth();
+        await waitFor(() => expect(second.result.current.isLoading).toBe(false));
+        mockLoginMobile.mockResolvedValueOnce({ ...AUTH_PAYLOAD, user: { id: 8, email: 'replacement@example.invalid' }, access_token: 'replacement-access', refresh_token: 'replacement-refresh' });
+        await act(async () => { expect(await second.result.current.login('replacement@example.invalid', 'secret')).toBe(true); });
+        const writes = mockWriteStoredTokens.mock.calls.length;
+        await act(async () => {
+            finish({ ...AUTH_PAYLOAD, access_token: 'late-old-access', refresh_token: 'late-old-refresh' });
+            if (method === 'refresh') await expect(pending).rejects.toThrow('Authentication scope changed');
+            else expect(await pending).toBe(false);
+        });
+        expect(mockWriteStoredTokens).toHaveBeenCalledTimes(writes);
+        expect(second.result.current.user?.id).toBe(8);
+        expect(second.result.current.accessToken).toBe('replacement-access');
+        expect(oldClient.getAccessToken!()).toBeNull();
+        await act(async () => oldClient.onUnauthorized!());
+        expect(second.result.current.user?.id).toBe(8);
+        await waitFor(() => expect(mockLogoutMobile).toHaveBeenCalledWith('late-old-refresh'));
+        expect(mockLogoutMobile).not.toHaveBeenCalledWith('replacement-refresh');
+        expect(mockLogoutClientOptions.at(-1)?.baseUrl).toBe('https://health.example');
+        const workspace = await restoreOfflineWorkspace('https://health.example', new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } }));
+        expect(workspace?.id).toBe(8);
+        second.unmount();
+    });
+
+    it('invalidates persistence already waiting when its provider unmounts', async () => {
+        const first = renderAuth();
+        await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+        let release!: () => void, entered!: () => void;
+        const started = new Promise<void>(resolve => { entered = resolve; });
+        const hold = new Promise<void>(resolve => { release = resolve; });
+        mockWriteStoredTokens.mockImplementationOnce(async (_tokens, isCurrent) => { entered(); await hold; if (!isCurrent?.()) throw new Error('Authentication scope changed during storage.'); });
+        mockLoginMobile.mockResolvedValueOnce({ ...AUTH_PAYLOAD, refresh_token: 'pending-persist-refresh' });
+        let pending!: Promise<boolean>;
+        act(() => { pending = first.result.current.login('old@example.invalid', 'secret'); });
+        await act(async () => { await started; });
+        first.unmount();
+        const second = renderAuth();
+        await waitFor(() => expect(second.result.current.isLoading).toBe(false));
+        mockLoginMobile.mockResolvedValueOnce({ ...AUTH_PAYLOAD, user: { id: 8, email: 'replacement@example.invalid' }, access_token: 'replacement-access', refresh_token: 'replacement-refresh' });
+        await act(async () => { await second.result.current.login('replacement@example.invalid', 'secret'); });
+        await act(async () => { release(); expect(await pending).toBe(false); });
+        expect(second.result.current.user?.id).toBe(8);
+        expect(second.result.current.accessToken).toBe('replacement-access');
+        expect(mockLogoutMobile).toHaveBeenCalledWith('pending-persist-refresh');
+        expect(mockLogoutMobile).not.toHaveBeenCalledWith('replacement-refresh');
+        expect((await restoreOfflineWorkspace('https://health.example', new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } })))?.id).toBe(8);
+        second.unmount();
+    });
+
+    it('does not invalidate another mounted provider or revoke an already committed session', async () => {
+        const first = renderAuth();
+        await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+        const client = mockClientOptions.filter(options => options.getAccessToken).at(-1)!;
+        const second = renderAuth();
+        await waitFor(() => expect(second.result.current.isLoading).toBe(false));
+        second.unmount();
+        expect(client.getAccessToken!()).toBe('access');
+        mockRefreshMobile.mockResolvedValueOnce({ ...AUTH_PAYLOAD, access_token: 'valid-rotated-access', refresh_token: 'valid-rotated-refresh' });
+        await act(async () => { expect(await client.refreshAccessToken!()).toBe(true); });
+        expect(first.result.current.accessToken).toBe('valid-rotated-access');
+        expect(mockLogoutMobile).not.toHaveBeenCalled();
+        first.unmount();
+        expect(mockLogoutMobile).not.toHaveBeenCalled();
+    });
+
 });

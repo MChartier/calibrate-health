@@ -33,3 +33,36 @@ it('orders an in-flight old token write before logout clearing and replacement-a
     await clearStoredTokens();
     await expect(readStoredTokens()).resolves.toEqual({ accessToken: null, refreshToken: null });
 });
+
+
+it('rejects a cancelled write before it enters the storage queue', async () => {
+    await readServerUrl();
+    await writeStoredTokens({ accessToken: 'kept-access', refreshToken: 'kept-refresh' });
+    let current = true;
+    const stale = writeStoredTokens({ accessToken: 'discard-access', refreshToken: 'discard-refresh' }, () => current);
+    current = false;
+    await expect(stale).rejects.toThrow('scope changed');
+    await expect(readStoredTokens()).resolves.toEqual({ accessToken: 'kept-access', refreshToken: 'kept-refresh' });
+});
+
+it.each([false, true])('restores an in-flight cancelled write before replacement reads (storage failure: %s)', async failRestore => {
+    await readServerUrl();
+    await writeStoredTokens({ accessToken: 'kept-access', refreshToken: 'kept-refresh' });
+    const store = jest.mocked(require('expo-secure-store').setItemAsync);
+    let release!: () => void, entered!: () => void;
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    const hold = new Promise<void>(resolve => { release = resolve; });
+    store.mockImplementationOnce(async (key: string, value: string) => { entered(); await hold; mockValues.set(key, value); });
+    let current = true;
+    const stale = writeStoredTokens({ accessToken: 'discard-access', refreshToken: 'discard-refresh' }, () => current);
+    const rejected = expect(stale).rejects.toThrow();
+    await started;
+    current = false;
+    if (failRestore) store.mockRejectedValueOnce(new Error('Storage unavailable')).mockRejectedValueOnce(new Error('Still unavailable'));
+    release();
+    await rejected;
+    if (failRestore) await expect(readStoredTokens()).rejects.toThrow('Still unavailable');
+    await expect(readStoredTokens()).resolves.toEqual({ accessToken: 'kept-access', refreshToken: 'kept-refresh' });
+    await writeStoredTokens({ accessToken: 'replacement-access', refreshToken: 'replacement-refresh' });
+    await expect(readStoredTokens()).resolves.toEqual({ accessToken: 'replacement-access', refreshToken: 'replacement-refresh' });
+});

@@ -104,6 +104,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const localOnlyRef = useRef(false);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
     const sessionEpochRef = useRef(0);
+    const providerActive = useRef(false);
+    useEffect(() => {
+        providerActive.current = true;
+        return () => {
+            providerActive.current = false;
+            sessionEpochRef.current += 1;
+            targetReady.current = false;
+            accountScopeRef.current = null;
+            accessTokenRef.current = null;
+            refreshTokenRef.current = null;
+        };
+    }, []);
     const [sessionEpoch, setSessionEpoch] = useState(0);
     const advanceSessionEpoch = useCallback(() => {
         sessionEpochRef.current += 1;
@@ -111,8 +123,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const clearSession = useCallback(async () => {
+        if (!providerActive.current) return;
         // Invalidate old API callbacks synchronously, before React unmounts their callers.
         advanceSessionEpoch();
+        const clearEpoch = sessionEpochRef.current;
         const scope = accountScopeRef.current;
         accountScopeRef.current = null;
         localOnlyRef.current = false;
@@ -127,12 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setClientUpgradeRequired(null);
         setClientServerIncompatibility(null);
         queryClient.clear();
-        await Promise.all([clearStoredTokens(), draftCleanup, workspaceCleanup]);
+        await Promise.all([clearStoredTokens(() => providerActive.current && sessionEpochRef.current === clearEpoch), draftCleanup, workspaceCleanup]);
     }, [advanceSessionEpoch, queryClient]);
 
     const handleClientUpgradeRequired = useCallback((requirement: ClientUpgradeRequirement) => {
         // Keep credentials and offline state intact so an in-place app update can resume the same session.
-        setClientUpgradeRequired(requirement);
+        if (providerActive.current) setClientUpgradeRequired(requirement);
     }, []);
 
     const persistAuthPayload = useCallback(async (payload: {
@@ -140,19 +154,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         access_token: string;
         refresh_token: string;
     }, newSession = false) => {
+        const origin = serverUrlRef.current;
+        const discard = async () => {
+            await queueNativeRevocation(origin, payload.refresh_token);
+            await flushExplicitLogout(origin).catch(() => undefined);
+            return false;
+        };
+        if (!providerActive.current) return discard();
         const previousScope = accountScopeRef.current;
-        const nextScope = { serverUrl: serverUrlRef.current, userId: payload.user.id };
-        if (newSession || !previousScope || previousScope.serverUrl !== nextScope.serverUrl || previousScope.userId !== nextScope.userId) {
-            advanceSessionEpoch();
-        }
+        const nextScope = { serverUrl: origin, userId: payload.user.id };
+        if (newSession || !previousScope || previousScope.serverUrl !== origin || previousScope.userId !== payload.user.id) advanceSessionEpoch();
+        const persistEpoch = sessionEpochRef.current;
         accountScopeRef.current = nextScope;
-        if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== serverUrlRef.current)) {
+        const isCurrent = () => providerActive.current && sessionEpochRef.current === persistEpoch && accountScopeRef.current === nextScope;
+        if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== origin)) {
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
         }
-        if (accountScopeRef.current !== nextScope) return false;
-        if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== nextScope.serverUrl)) queryClient.clear();
-        await hydrateVerifiedOfflineWorkspace(nextScope.serverUrl, payload.user.id, queryClient, () => accountScopeRef.current === nextScope);
-        if (accountScopeRef.current !== nextScope) return false;
+        if (!isCurrent()) return discard();
+        if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== origin)) queryClient.clear();
+        await hydrateVerifiedOfflineWorkspace(origin, payload.user.id, queryClient, isCurrent);
+        if (!isCurrent()) return discard();
+        try {
+            await writeStoredTokens({ accessToken: payload.access_token, refreshToken: payload.refresh_token }, isCurrent);
+        } catch (error) {
+            if (!isCurrent()) return discard();
+            throw error;
+        }
+        if (!isCurrent()) return discard();
         localOnlyRef.current = false;
         setPendingReconnection(false);
         setAuthError(null);
@@ -163,12 +191,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setClientServerIncompatibility(null);
         accessTokenRef.current = payload.access_token;
         refreshTokenRef.current = payload.refresh_token;
-        await writeStoredTokens({
-            accessToken: payload.access_token,
-            refreshToken: payload.refresh_token
-        });
-        if (accountScopeRef.current === nextScope) await saveOfflineWorkspace(nextScope.serverUrl, payload.user, queryClient).catch(() => undefined);
-        return accountScopeRef.current === nextScope;
+        await saveOfflineWorkspace(origin, payload.user, queryClient, isCurrent).catch(() => undefined);
+        // Durable authentication committed while current. A later unmount must not revoke
+        // that valid session while another provider is restoring it.
+        return true;
     }, [advanceSessionEpoch, queryClient]);
 
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
@@ -177,10 +203,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (serverUrlRef.current !== refreshServer) return false;
         const currentRefreshToken = refreshTokenRef.current;
         const scope = accountScopeRef.current;
-        const isCurrent = () => sessionEpochRef.current === refreshEpoch
+        const isCurrent = () => providerActive.current && sessionEpochRef.current === refreshEpoch
             && serverUrlRef.current === refreshServer
             && accountScopeRef.current === scope && refreshTokenRef.current === currentRefreshToken;
-        if (!currentRefreshToken) return false;
+        if (!isCurrent() || !currentRefreshToken) return false;
 
         const refreshClient = new CalibrateApiClient({
             baseUrl: serverUrl || HOSTED_SERVER_URL,
@@ -216,7 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const api = useMemo(() => {
         const requestServer = serverUrl || HOSTED_SERVER_URL;
-        const isCurrentSession = () => targetReady.current && sessionEpochRef.current === sessionEpoch
+        const isCurrentSession = () => providerActive.current && targetReady.current && sessionEpochRef.current === sessionEpoch
             && serverUrlRef.current === requestServer;
         return new CalibrateApiClient({
             baseUrl: requestServer,
@@ -247,6 +273,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         baseUrl: string,
         nextDeviceId: string
     ): Promise<MobileAuthResponse | null> => {
+        const epoch = sessionEpochRef.current;
+        const isCurrent = () => providerActive.current && sessionEpochRef.current === epoch;
+        if (!isCurrent()) return null;
         const bootstrapClient = new CalibrateApiClient({
             baseUrl,
             clientIdentity: MOBILE_CLIENT_IDENTITY,
@@ -260,6 +289,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // against an already-seeded local database.
         }
 
+        if (!isCurrent()) return null;
         let payload: MobileAuthResponse;
         try {
             payload = await bootstrapClient.loginMobile({
@@ -296,7 +326,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 serverUrlRef.current = storedServerUrl;
                 setServerUrlState(storedServerUrl);
                 setDeviceId(nextDeviceId);
-                if (await hasExplicitLogout(storedServerUrl)) {
+                const signedOut = await hasExplicitLogout(storedServerUrl);
+                if (!isMounted || sessionEpochRef.current !== restoreEpoch) return;
+                if (signedOut) {
                     await clearSession();
                     await flushExplicitLogout(storedServerUrl).catch(() => { if (isMounted) setAuthError('Signed out on this device. Server sign-out is pending connection.'); });
                     return;
@@ -309,7 +341,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setRefreshToken(null);
                     accessTokenRef.current = null;
                     refreshTokenRef.current = null;
-                    await clearStoredTokens().catch(() => undefined);
+                    await clearStoredTokens(() => isMounted && providerActive.current && sessionEpochRef.current === restoreEpoch).catch(() => undefined);
                     return;
                 }
                 setAccessToken(tokens.accessToken);
@@ -346,7 +378,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         if (!shouldDevAutoLogin(storedServerUrl) || !(refreshError instanceof ApiError) || refreshError.status !== 401) {
                             throw refreshError;
                         }
-                        await clearStoredTokens();
+                        if (!isMounted || sessionEpochRef.current !== restoreEpoch) return;
+                        await clearStoredTokens(() => isMounted && providerActive.current && sessionEpochRef.current === restoreEpoch);
                     }
                 }
 
@@ -393,9 +426,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [bootstrapAttempt, clearSession, getDevTestUserAuthPayload, handleClientUpgradeRequired, persistAuthPayload]);
 
     const recheckClientCompatibility = useCallback(async (): Promise<boolean> => {
+        const epoch = sessionEpochRef.current;
+        const isCurrent = () => providerActive.current && sessionEpochRef.current === epoch;
+        if (!isCurrent()) return false;
         try {
             const recovery = new CalibrateApiClient({ baseUrl: serverUrlRef.current, clientIdentity: MOBILE_CLIENT_IDENTITY });
             const config = await recovery.getClientConfig({ cache: 'no-store' });
+            if (!isCurrent()) return false;
             const compatibilityMismatch = getClientServerCompatibilityMismatch(
                 MOBILE_SERVER_RELEASE_VERSION,
                 config.server_version
@@ -436,7 +473,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             mobileVersion: Application.nativeApplicationVersion,
             clientServerVersion: MOBILE_SERVER_RELEASE_VERSION
         });
-        if (serverTestRequestRef.current === requestId) {
+        if (providerActive.current && serverTestRequestRef.current === requestId) {
             setServerConnection({
                 status: result.ok ? 'connected' : 'error',
                 testedInput: value.trim(),
@@ -455,26 +492,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [probeServerUrl]);
 
     const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
+        if (!providerActive.current) return;
         const scope = accountScopeRef.current;
         if (scope?.userId !== nextUser.id) return;
         setUser(nextUser);
-        void saveOfflineWorkspace(scope.serverUrl, nextUser, queryClient).catch(() => undefined);
+        void saveOfflineWorkspace(scope.serverUrl, nextUser, queryClient, () => providerActive.current && accountScopeRef.current === scope).catch(() => undefined);
     }, [queryClient]);
 
     const login = useCallback(
         async (email: string, password: string): Promise<boolean> => {
+            if (!providerActive.current) return false;
             advanceSessionEpoch();
             const authEpoch = sessionEpochRef.current;
+            const authServer = serverUrlRef.current;
             assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
             const payload = await authenticateAgainstConfirmedServer({
-                candidate: serverUrlRef.current,
+                candidate: authServer,
                 confirmServer: confirmCurrentServer,
                 authenticate: async (confirmedServerUrl) => {
-                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
+                    if (!providerActive.current || sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     await flushExplicitLogout(confirmedServerUrl);
-                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
+                    if (!providerActive.current || sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     const authClient = new CalibrateApiClient({
                         baseUrl: confirmedServerUrl,
                         clientIdentity: MOBILE_CLIENT_IDENTITY,
@@ -490,14 +530,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             });
             if (!payload) return false;
-            if (sessionEpochRef.current !== authEpoch) {
-                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
-                void flushExplicitLogout(serverUrlRef.current).catch(() => undefined);
+            if (!providerActive.current || sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(authServer, payload.refresh_token);
+                void flushExplicitLogout(authServer).catch(() => undefined);
                 return false;
             }
-            await finishExplicitLogin(serverUrlRef.current);
-            if (sessionEpochRef.current !== authEpoch) {
-                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
+            await finishExplicitLogin(authServer);
+            if (!providerActive.current || sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(authServer, payload.refresh_token);
                 return false;
             }
             return persistAuthPayload(payload, true);
@@ -511,18 +551,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             password: string,
             acceptance: RegistrationLegalAcceptance
         ): Promise<boolean> => {
+            if (!providerActive.current) return false;
             advanceSessionEpoch();
             const authEpoch = sessionEpochRef.current;
+            const authServer = serverUrlRef.current;
             assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
             const payload = await authenticateAgainstConfirmedServer({
-                candidate: serverUrlRef.current,
+                candidate: authServer,
                 confirmServer: confirmCurrentServer,
                 authenticate: async (confirmedServerUrl) => {
-                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
+                    if (!providerActive.current || sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     await flushExplicitLogout(confirmedServerUrl);
-                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
+                    if (!providerActive.current || sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     const legalAcceptance = requiresHostedLegalAcceptance(confirmedServerUrl)
                         ? requireRegistrationLegalAcceptance(acceptance)
                         : null;
@@ -547,14 +589,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             });
             if (!payload) return false;
-            if (sessionEpochRef.current !== authEpoch) {
-                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
-                void flushExplicitLogout(serverUrlRef.current).catch(() => undefined);
+            if (!providerActive.current || sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(authServer, payload.refresh_token);
+                void flushExplicitLogout(authServer).catch(() => undefined);
                 return false;
             }
-            await finishExplicitLogin(serverUrlRef.current);
-            if (sessionEpochRef.current !== authEpoch) {
-                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
+            await finishExplicitLogin(authServer);
+            if (!providerActive.current || sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(authServer, payload.refresh_token);
                 return false;
             }
             return persistAuthPayload(payload, true);
@@ -563,13 +605,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     const logout = useCallback(async () => {
+        if (!providerActive.current) return;
         advanceSessionEpoch();
         const logoutEpoch = sessionEpochRef.current;
         const target = serverUrl || HOSTED_SERVER_URL;
         let intentPersisted = true;
         await beginExplicitLogout(target, refreshTokenRef.current ?? undefined).catch(() => { intentPersisted = false; });
         try {
-            if (sessionEpochRef.current === logoutEpoch) await clearSession();
+            if (providerActive.current && sessionEpochRef.current === logoutEpoch) await clearSession();
         } finally {
             // Local cleanup failure must not suppress server session revocation.
             await flushExplicitLogout(target).catch(() => setAuthError(intentPersisted

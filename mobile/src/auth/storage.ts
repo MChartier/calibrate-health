@@ -17,6 +17,12 @@ export type StoredTokens = {
 
 const BINDING_KEY = 'calibrate.mobile.boundSession.v1';
 let activeOrigin: string | null = null;
+let interruptedSession: BoundSession | null = null;
+async function restoreInterruptedWrite(): Promise<void> {
+    if (!interruptedSession) return;
+    await SecureStore.setItemAsync(BINDING_KEY, JSON.stringify(interruptedSession));
+    interruptedSession = null;
+}
 
 let tokenUpdates: Promise<unknown> = Promise.resolve();
 function serializeTokens<T>(work: () => Promise<T>): Promise<T> {
@@ -26,6 +32,7 @@ function serializeTokens<T>(work: () => Promise<T>): Promise<T> {
 }
 
 async function readActiveSession(): Promise<BoundSession> {
+    await restoreInterruptedWrite();
     const raw = await SecureStore.getItemAsync(BINDING_KEY);
     if (!raw || !activeOrigin) throw new Error('Service preparation is incomplete.');
     const session = parseBoundSession(raw);
@@ -40,18 +47,32 @@ export async function readStoredTokens(): Promise<StoredTokens> {
     });
 }
 
-export async function writeStoredTokens(tokens: { accessToken: string; refreshToken: string }): Promise<void> {
+/** Keep cancelled provider writes from becoming visible to the next queued reader/writer. */
+async function updateStoredTokens(tokens: StoredTokens, isCurrent: () => boolean): Promise<void> {
     await serializeTokens(async () => {
+        if (!isCurrent()) throw new Error('Authentication scope changed before storage.');
         const session = await readActiveSession();
-        await SecureStore.setItemAsync(BINDING_KEY, JSON.stringify({ ...session, ...tokens }));
+        if (!isCurrent()) throw new Error('Authentication scope changed before storage.');
+        try {
+            await SecureStore.setItemAsync(BINDING_KEY, JSON.stringify({ ...session, ...tokens }));
+        } finally {
+            // SecureStore cannot cancel an in-flight write. Restore within the same queue slot,
+            // before a replacement provider can read or persist its own session.
+            if (!isCurrent()) {
+                interruptedSession = session;
+                await restoreInterruptedWrite();
+            }
+        }
+        if (!isCurrent()) throw new Error('Authentication scope changed during storage.');
     });
 }
 
-export async function clearStoredTokens(): Promise<void> {
-    await serializeTokens(async () => {
-        const session = await readActiveSession();
-        await SecureStore.setItemAsync(BINDING_KEY, JSON.stringify({ ...session, accessToken: null, refreshToken: null }));
-    });
+export async function writeStoredTokens(tokens: { accessToken: string; refreshToken: string }, isCurrent: () => boolean = () => true): Promise<void> {
+    await updateStoredTokens(tokens, isCurrent);
+}
+
+export async function clearStoredTokens(isCurrent: () => boolean = () => true): Promise<void> {
+    await updateStoredTokens({ accessToken: null, refreshToken: null }, isCurrent);
 }
 
 export async function getOrCreateDeviceId(): Promise<string> {
@@ -70,6 +91,7 @@ export async function getOrCreateDeviceId(): Promise<string> {
 /** Completes the fixed-target gate before any token read or authenticated request. */
 export async function readServerUrl(): Promise<string> {
     return serializeTokens(async () => {
+        await restoreInterruptedWrite();
         activeOrigin = null;
         const session = await prepareTarget(getDefaultServerUrl(), {
             readBinding: () => SecureStore.getItemAsync(BINDING_KEY),
