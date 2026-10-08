@@ -1,0 +1,78 @@
+{
+  "repository": "MChartier/calibrate-health",
+  "head": "d4b6d9f8f96226cbe9fdc4530ab0e0c329d7b661",
+  "parent": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "parentBranch": "mchartier/atomic-browser-login-421",
+  "ultimateTarget": "master",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "mergeBase": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "commits": [
+    "d4b6d9f8f96226cbe9fdc4530ab0e0c329d7b661 4751d8d89301c18fb0fed7244c3354477e804c2b Prepare durable dormant account deletion with fenced recovery"
+  ],
+  "paths": [
+    "A\tbackend/prisma/migrations/0046_dormant_account_deletion/migration.sql",
+    "A\tbackend/prisma/rollback/0046_dormant_account_deletion.sql",
+    "A\tbackend/prisma/rollback/account-deletion-contract.md",
+    "M\tbackend/prisma/schema.prisma",
+    "M\tbackend/src/index.ts",
+    "M\tbackend/src/routes/auth.ts",
+    "M\tbackend/src/services/accountAccess.ts",
+    "A\tbackend/src/services/accountDeletion.ts",
+    "M\tbackend/src/services/accountTokens.ts",
+    "M\tbackend/src/services/mcpOAuth.ts",
+    "M\tbackend/src/services/mobileAuth.ts",
+    "M\tbackend/src/utils/accountAccessSerialization.ts",
+    "M\tbackend/src/utils/postgresSessionStore.ts",
+    "M\tbackend/test/account-access.test.js",
+    "A\tbackend/test/account-deletion-postgres.test.js",
+    "A\tbackend/test/account-deletion.test.js",
+    "M\tbackend/test/food-tracking.test.js",
+    "M\tbackend/test/mcp-oauth.test.js",
+    "M\tbackend/test/mobile-auth.test.js",
+    "M\tbackend/test/routes-auth-mobile.test.js",
+    "M\tknip.json",
+    "M\tscripts/postgres-rollback-smoke.mjs",
+    "M\tscripts/postgres-rollback-smoke.test.mjs"
+  ],
+  "diffStat": ".../0046_dormant_account_deletion/migration.sql    | 122 ++++++\n .../rollback/0046_dormant_account_deletion.sql     |  24 ++\n .../prisma/rollback/account-deletion-contract.md   |  70 ++++\n backend/prisma/schema.prisma                       |  21 +\n backend/src/index.ts                               |   4 +-\n backend/src/routes/auth.ts                         |   8 +-\n backend/src/services/accountAccess.ts              |   2 +-\n backend/src/services/accountDeletion.ts            | 156 ++++++++\n backend/src/services/accountTokens.ts              |   2 +-\n backend/src/services/mcpOAuth.ts                   |   4 +-\n backend/src/services/mobileAuth.ts                 |   2 +-\n backend/src/utils/accountAccessSerialization.ts    |   1 +\n backend/src/utils/postgresSessionStore.ts          |   2 +-\n backend/test/account-access.test.js                |   1 +\n backend/test/account-deletion-postgres.test.js     | 423 +++++++++++++++++++++\n backend/test/account-deletion.test.js              |  42 ++\n backend/test/food-tracking.test.js                 |   2 +-\n backend/test/mcp-oauth.test.js                     |   2 +-\n backend/test/mobile-auth.test.js                   |   2 +-\n backend/test/routes-auth-mobile.test.js            |   4 +-\n knip.json                                          |   2 +-\n scripts/postgres-rollback-smoke.mjs                |   6 +-\n scripts/postgres-rollback-smoke.test.mjs           |   4 +-\n 23 files changed, 883 insertions(+), 23 deletions(-)",
+  "owner": "01a11d07-0279-75cd-8185-16209fa6301d",
+  "purpose": "Issue451 synthetic dormant deletion evidence, never a merge target",
+  "retention": "Preserve this immutable record and original identities until coordinator-authorized retirement.",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewOverlay": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "host": "mchartier_zbook",
+  "node": "24.19.0",
+  "postgres": "16.14 (isolated @embedded-postgres/windows-x64 16.14.0-beta.17)",
+  "logs": [
+    {
+      "name": "backend-final.log",
+      "sha256": "f74c59949b81511c8677a355b07a12a27d5de076f47a1b1f7f5dd5499d240470",
+      "bytes": 81243
+    },
+    {
+      "name": "deletion-final.log",
+      "sha256": "1d1d19c0f0ef366f008b4784904b305c33c2fb57fe1be9492e99563a72a8c6a7",
+      "bytes": 2820
+    },
+    {
+      "name": "lint.log",
+      "sha256": "d976b557a70121800e302c6b4727461be5c86eb5433a94bf0c77b26a3b0b91bc",
+      "bytes": 1454
+    },
+    {
+      "name": "dead-code.log",
+      "sha256": "87ea93cdcd1355d75412b279117908355aaf4160efd369f814b5030466a3c6b9",
+      "bytes": 866
+    },
+    {
+      "name": "populated-upgrade.log",
+      "sha256": "755272cc106f710ef6c81e466015f8d319b636cdc394660f4bd7bd2227c5d7b1",
+      "bytes": 7315
+    },
+    {
+      "name": "rollback-unit.log",
+      "sha256": "23164f54789c8c0aafd15c6ce134de0823367069097f64f9aa76218ead7b2266",
+      "bytes": 1366
+    }
+  ]
+}

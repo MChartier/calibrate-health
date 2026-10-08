@@ -1,0 +1,34 @@
+▶ durable deletion survives failures and process crashes and fences real PostgreSQL access
+  ✔ populated rollback and re-upgrade preserve ordinary accounts and data before any intent (240.1013ms)
+  ✔ stale or conflicting proofs and failed intent commit have no side effects (53.3935ms)
+  ✔ intent atomically revokes access and fences older session, recovery, grant and pairing writers (471.2178ms)
+  ✔ provider timeout, lost response and wrong identity retain SQL until authoritative reconciliation (243.8098ms)
+  ✔ SQL failure after provider confirmation rolls back cleanup and preserves a resumable receipt (94.3573ms)
+  ✔ a timed-out delete may finish remotely but cannot prematurely remove SQL data (136.1175ms)
+  ✔ expired claim and delayed old result cannot finalize a replacement worker claim (25.9864ms)
+  ✔ intent-first: mapped account lock orders native issuance and deletion (46.252ms)
+  ✔ issuance-first: mapped account lock orders native issuance and deletion (26.0424ms)
+  ✔ intent-first: older MCP grant writer serializes with deletion (52.6029ms)
+  ✔ writer-first: older MCP grant writer serializes with deletion (24.2845ms)
+  ✔ intent-first: older Wear pairing writer serializes with deletion (50.3428ms)
+  ✔ writer-first: older Wear pairing writer serializes with deletion (23.7545ms)
+  ✔ an older session-first writer can deadlock safely; retry cannot resurrect access (1060.0396ms)
+  ✔ intent-first: password reset cannot clear pending intent or reuse an old deletion proof (99.062ms)
+  ✔ reset-first: password reset cannot clear pending intent or reuse an old deletion proof (73.5652ms)
+  ✔ intent-first: a verified browser save cannot outlive accepted deletion (11.8159ms)
+  ✔ browser-first: a verified browser save cannot outlive accepted deletion (13.389ms)
+  ✔ actual process termination after intent resumes the same durable operation (1714.6386ms)
+  ✔ actual process termination after provider resumes the same durable operation (1633.2171ms)
+  ✔ actual process termination after complete resumes the same durable operation (1586.7574ms)
+  ✔ rollback refuses accepted receipts, and unrelated local accounts remain usable (74.5913ms)
+✔ durable deletion survives failures and process crashes and fences real PostgreSQL access (11935.1534ms)
+✔ dormant deletion has no runtime imports or provider construction and local configuration still rejects activation (55.3672ms)
+✔ proofs require a mapped identity, recent matching provider authentication, and the same coordinator (20.3024ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12179.2702

@@ -1,0 +1,331 @@
+{
+  "headSha": "d4b6d9f8f96226cbe9fdc4530ab0e0c329d7b661",
+  "baseSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "apiBaseSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "mergeBaseSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "headParents": [
+    "4751d8d89301c18fb0fed7244c3354477e804c2b"
+  ],
+  "targetParents": [
+    "a0fdefe8bca51c25306f36cccc8181bd35672341"
+  ],
+  "parentRevisions": [
+    {
+      "pr": 442,
+      "headSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+      "state": "open",
+      "baseRef": "mchartier/atomic-native-login-421",
+      "apiBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341"
+    },
+    {
+      "pr": 437,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "state": "open",
+      "baseRef": "mchartier/credential-verification-421",
+      "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+    },
+    {
+      "pr": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open",
+      "baseRef": "master",
+      "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+    }
+  ],
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/453",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/451",
+  "parentIssue": 421,
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "supersedesVerdictCommentId": null,
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewOverlay": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "checkedAtUtc": "2026-10-08T23:12:31.123120+00:00",
+  "prBodySha256": "f0af08f464c3bd818cb25d2565d7326e6fd261028e419f5698c3f31cb72a4bdc",
+  "issueBodySha256": "d66279eb52197d1b5b85318411fc4088e4d0e1fb14159468ee23f04ef54c37a4",
+  "targetRepository": "MChartier/calibrate-health",
+  "targetRef": "mchartier/atomic-browser-login-421",
+  "ultimateTargetRef": "master",
+  "findings": [],
+  "readAcknowledgment": "Full supplied pinned execution AGENTS/SKILL/README/coordinator/QA/intake/stacks/operations, full review overlay standards/templates and all admitted direct amendments read and applied without pin migration. Repository root AGENTS.md read in full; no nested tracked AGENTS or .agents instructions. Actual designated host verified. This trusted replacement task performed the independent assessment; no original conversation migration is claimed.",
+  "gates": {
+    "value": "pass: bounded original issue421 deletion preparation, admitted as child451. Durable cross-store failure handling is a concrete prerequisite; full Firebase migration remains unfinished.",
+    "outcome": "pass: all six child451 requirements map to the coordinator, additive schema guards, access gates and maintained real-PostgreSQL failure/race tests. No production caller, adapter, scheduler, endpoint or client cleanup change.",
+    "code": "pass: independently read all 23 changed paths, the entire one-commit published range and affected callers. Opaque WeakMap proof binds all five identity fields and credential version with recent authentication. User lock/recheck and deferred consistency guard make receipt, revocation and pending state atomic. Provider calls occur after claim transaction ends. Exact identity observations and claim generation/expiry fence provider-confirmed and SQL finalization. Final receipt and account cascade commit together; receipt survives and cannot rewind/delete through ordinary SQL. No blocking findings.",
+    "engineeringReview": "pass under quota-only amendment: exact refusal6070605496 follows the request for this head; bot did not complete review. This task independently reviewed full code, history, tests, behavior and communication. No submitted reviews or inline threads; no unresolved actionable feedback for child451/PR453.",
+    "ci": "pass: five current-head workflows success, 24 terminal check runs (11 success/13 configured skips). Backend 811 passed, zero failed/skipped, fresh migrations; populated upgrade49; encrypted v0.14 rollback/re-upgrade; all workspace types and both Knip graphs; affected builds/release config and container scan. Client/native paths unchanged and configured path filters justify their skips, not a blanket native waiver.",
+    "behavior": "pass: independent Windows Node24.19/PostgreSQL16.14 run of maintained focused suites:25 passed/0 failed/0 skipped. Actual process kill after intent/provider completion/SQL completion, both browser/native/MCP-grant/Wear-pairing/reset orders, lock-cycle abort, claim takeover, lost/late response, wrong identity, failed transactions, receipt survival and guarded rollback reproduced. Fresh trustworthy exact-head CI covers unchanged normal registration/recovery/deletion and current-session password-change behavior; no redundant full-suite rerun.",
+    "evidence": "pass:22 exact Git blobs read and SHA1/size/SHA256 verified across immutable implementation evidence and final handoff; all six log hashes match manifest. Original manifest and accepted issue contract separately verified. Source and test harness bound to actual published head. New execution logs retained separately; no synthetic integration substituted for published scope.",
+    "communication": "pass: actual final PR opens with two-store recovery problem and final dormant solution relative to pinned PR442. Short scenario table explains expected/observed failures, crash recovery, races and rollback. It accurately distinguishes synthetic provider/local PostgreSQL/hosted Docker and incomplete Firebase scope. Child issue follows fixed template with verified task ID/active PR. No changed UI exists; SQL/provider observables are appropriate. Pending independent-QA language records pre-verdict state and this append-only verdict supplies the result; future body edits require reread.",
+    "stack": "pass: actual target branch/API base/merge-base/head parent all4751d8d89301c18fb0fed7244c3354477e804c2b; parents437 and431 current and ancestral. One published commit23paths+883/-23, all scoped; no evidence churn or unrelated parent merges. Actual master9dc0739e36168aa273530fe00ae5f85fb9c8a3fe distinct from direct parent. Parent-first review/merge remains required; no standalone mergeability claim."
+  },
+  "accessPathAssessment": {
+    "browser": "Password lookup and deserialization exclude pending; verified-save version+pending predicate takes User lock. Legacy session insert/update trigger fences older saves; begin removes persisted sessions. Existing-session password-change behavior remains unchanged.",
+    "native": "Verified issuance rechecks pending under User lock; begin revokes sessions. Insert/update trigger covers older issuance, refresh rotation and last-used authentication touch. Race may safely abort, never mint surviving access after accepted intent.",
+    "recovery": "Reset/verification issuance and consumption encounter token/User guards; pending intent consumes old tokens. Reset-first increments security version and rejects stale deletion proof; intent-first cannot change password or clear pending.",
+    "MCP": "Approval lookup/version-lock excludes pending; code deletion and grant revocation occur during intent. Grant/code/access/refresh write triggers serialize on owning User; exchange and refresh cannot create a usable successor after pending. Existing reads still check grant revocation, with guarded touch.",
+    "Wear": "Intent consumes pairings and revokes phone/watch sessions and push. Pairing issuance/exchange touches guarded phone session and writes guarded pairing/session rows. Tests explicitly cover pairing writers in both orders; runtime exchange protection also inspected in unchanged service.",
+    "localAndOffline": "Unmapped active local users retain defaultfalse and previous lock ordering; current-session password exception stays intact. No client cache/outbox/identity change. Provider unavailability during proof returns null with no intent; after deliberate accepted intent it keeps SQL pending, never restores access."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "pairs": [],
+    "provenanceRecords": [],
+    "nonUiObservableContract": "Dormant internal SQL/provider protocol with no changed UI; exact synthetic identities, durable SQL state, independently persisted provider marker and process outcomes directly establish the accepted contract. No fabricated screenshots or device execution.",
+    "renderedPrInspection": {
+      "observations": "API-decoded final body read as a human reviewer; direct GitHub rendering not claimed. General rendering waiver applies if needed; no image gate exists for this non-UI change."
+    }
+  },
+  "scopeInventory": "verification.json contains ordered commit/parents, all paths/totals, actual parent chain and live CI; prepublish.json retains all API changed-file patches and conversation bodies.",
+  "evidence": [
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": ".gitattributes",
+      "bytes": 8,
+      "gitBlobSha": "fa1385d99a319b43c06f5309d1aae9fdd3adea46",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "README.md",
+      "bytes": 4549,
+      "gitBlobSha": "36713086b33ea139cdfec685bda4663d3227ca20",
+      "sha256": "464d25a7a96e71f2054694a641f3b406d7276568f0ab8bdeeab691a4233cfdb6"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "backend-final.log",
+      "bytes": 81243,
+      "gitBlobSha": "47c61a182108dbf0ebed06558f8cacc33387acc3",
+      "sha256": "f74c59949b81511c8677a355b07a12a27d5de076f47a1b1f7f5dd5499d240470"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "dead-code.log",
+      "bytes": 866,
+      "gitBlobSha": "05748a4cdb875f6debdb37e8ed81a2c4d8b54b96",
+      "sha256": "87ea93cdcd1355d75412b279117908355aaf4160efd369f814b5030466a3c6b9"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "deletion-final.log",
+      "bytes": 2820,
+      "gitBlobSha": "001ceea229aec4cece480de71d442f43902c9ff4",
+      "sha256": "1d1d19c0f0ef366f008b4784904b305c33c2fb57fe1be9492e99563a72a8c6a7"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "lint.log",
+      "bytes": 1454,
+      "gitBlobSha": "06135ca2c256f562e417da6d5b16e5c11d9374c4",
+      "sha256": "d976b557a70121800e302c6b4727461be5c86eb5433a94bf0c77b26a3b0b91bc"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "manifest.json",
+      "bytes": 4617,
+      "gitBlobSha": "f222dd1d263b29f1e30e24f09c28b7458ae19f8e",
+      "sha256": "065f880c9cc81657d088fa9410af2d8cf74ebf7904aa2adda66bd77bb8646026"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "populated-upgrade.log",
+      "bytes": 7315,
+      "gitBlobSha": "eb8be1b9f7ac3accec5c0ba77b8a7f9ee651925b",
+      "sha256": "755272cc106f710ef6c81e466015f8d319b636cdc394660f4bd7bd2227c5d7b1"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "path": "rollback-unit.log",
+      "bytes": 1366,
+      "gitBlobSha": "bcefec38fb9fbe0b6a50b80c0040a718237ed96f",
+      "sha256": "23164f54789c8c0aafd15c6ce134de0823367069097f64f9aa76218ead7b2266"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": ".gitattributes",
+      "bytes": 8,
+      "gitBlobSha": "fa1385d99a319b43c06f5309d1aae9fdd3adea46",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "README.md",
+      "bytes": 4549,
+      "gitBlobSha": "36713086b33ea139cdfec685bda4663d3227ca20",
+      "sha256": "464d25a7a96e71f2054694a641f3b406d7276568f0ab8bdeeab691a4233cfdb6"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "backend-final.log",
+      "bytes": 81243,
+      "gitBlobSha": "47c61a182108dbf0ebed06558f8cacc33387acc3",
+      "sha256": "f74c59949b81511c8677a355b07a12a27d5de076f47a1b1f7f5dd5499d240470"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "dead-code.log",
+      "bytes": 866,
+      "gitBlobSha": "05748a4cdb875f6debdb37e8ed81a2c4d8b54b96",
+      "sha256": "87ea93cdcd1355d75412b279117908355aaf4160efd369f814b5030466a3c6b9"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "deletion-final.log",
+      "bytes": 2820,
+      "gitBlobSha": "001ceea229aec4cece480de71d442f43902c9ff4",
+      "sha256": "1d1d19c0f0ef366f008b4784904b305c33c2fb57fe1be9492e99563a72a8c6a7"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "handoff.md",
+      "bytes": 3665,
+      "gitBlobSha": "e48fcebd0e670164deddc8228fecbcc64a37b4a6",
+      "sha256": "a5cc804fce1a4f437c6c451b828269284911cc526b2365a9c81bc567b40eee47"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "lint.log",
+      "bytes": 1454,
+      "gitBlobSha": "06135ca2c256f562e417da6d5b16e5c11d9374c4",
+      "sha256": "d976b557a70121800e302c6b4727461be5c86eb5433a94bf0c77b26a3b0b91bc"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "manifest.json",
+      "bytes": 4617,
+      "gitBlobSha": "f222dd1d263b29f1e30e24f09c28b7458ae19f8e",
+      "sha256": "065f880c9cc81657d088fa9410af2d8cf74ebf7904aa2adda66bd77bb8646026"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "populated-upgrade.log",
+      "bytes": 7315,
+      "gitBlobSha": "eb8be1b9f7ac3accec5c0ba77b8a7f9ee651925b",
+      "sha256": "755272cc106f710ef6c81e466015f8d319b636cdc394660f4bd7bd2227c5d7b1"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "pr453-body.md",
+      "bytes": 3428,
+      "gitBlobSha": "9718338b2f42ce9bc98bf0594895ac2fb404bc5a",
+      "sha256": "f0af08f464c3bd818cb25d2565d7326e6fd261028e419f5698c3f31cb72a4bdc"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "publication-initial.json",
+      "bytes": 12293,
+      "gitBlobSha": "d71ec361fa46c7b0748ea14c81d5a79af81b5666",
+      "sha256": "68768b343618fe41d5ce6d5315d0a81e7b47c0fd5419f8f28032fcb44e80c691"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "publication-readback.json",
+      "bytes": 12285,
+      "gitBlobSha": "c9b776add568159d984f46da94e4371d6b6ed9c6",
+      "sha256": "0ee3512ef21ae7a265e6ad102cef951834850130a9291ee25ce27de39cd64786"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "path": "rollback-unit.log",
+      "bytes": 1366,
+      "gitBlobSha": "bcefec38fb9fbe0b6a50b80c0040a718237ed96f",
+      "sha256": "23164f54789c8c0aafd15c6ce134de0823367069097f64f9aa76218ead7b2266"
+    }
+  ],
+  "retainedOriginals": [
+    {
+      "repo": "MChartier/calibrate-health",
+      "commit": "61d7132760365b0e76889c8680ea8af35c7f4138",
+      "path": "manifest.json",
+      "destination": "reassess453/original-manifest.json",
+      "gitBlobSha": "f222dd1d263b29f1e30e24f09c28b7458ae19f8e",
+      "bytes": 4617,
+      "sha256": "065f880c9cc81657d088fa9410af2d8cf74ebf7904aa2adda66bd77bb8646026"
+    },
+    {
+      "repo": "MChartier/calibrate-health",
+      "commit": "3eb583d972cc529509bd8145c8cefb504b3cd000",
+      "path": "preparation-evidence/communication-before-20261006/issue-body.md",
+      "destination": "reassess453/original-issue421.md",
+      "gitBlobSha": "54583c4659159405fcf044dec744516cf841f4d1",
+      "bytes": 16561,
+      "sha256": "c68d462e88675419e3b69792a198e0037afc458fddd7f4120bbd40ec43ab942e"
+    },
+    {
+      "commit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+      "purpose": "Exact implementation logs/manifest; preserved unchanged"
+    },
+    {
+      "commit": "46bdafe01bdc9c66f1ad4cf4ea63566eb4ca8981",
+      "purpose": "Historical publication handoff; its native-linkage limitation is superseded by current API association, not silently edited"
+    }
+  ],
+  "linkage": {
+    "nativeClosingIssues": [
+      451
+    ],
+    "parent421RemainsUnfinished": true,
+    "project": "No Project writes or board completion certification; ROOT owns coverage/state."
+  },
+  "limitations": [
+    "Synthetic provider only; no real Firebase adapter, authoritative absence/reuse contract, activation, dispatcher, production import or full421 completion certified. A future real adapter must establish identity reuse controls and idempotent exact-identity deletion; operation UUID is not provider idempotency.",
+    "Accepted pending intent intentionally cannot be cancelled/rewound; no receipt purge or final retention policy introduced.",
+    "Local encrypted Docker rehearsal unperformed; exact-head hosted encrypted rollback/re-upgrade executed and passed. Native devices deferred/unexecuted, no device claim.",
+    "Initial sandbox Node child spawn EPERM, network proxy refusal, and bundled PostgreSQL missing createdb.exe were preserved as execution limitations. Narrow reviewed host execution plus existing pg client enabled the same bounded check; no approval denial, ACL change or sandbox weakening.",
+    "Read-only existing locked dependency trees and matching generated Prisma model were used; source executed from this isolated QA checkout, own loopback database/schema. Generated schema differs only formatting/declaration ordering. No owner worktree modified."
+  ],
+  "nextAction": "Coordinator separately save exact trusted API-comment receipt; freshly recheck full feedback, parent/source/body/evidence/CI, then apply authorized readiness/draft lifecycle and reread. No source correction required. Any new parent/body/feedback drift invalidates affected gates.",
+  "checkpoint": "Independent QA completed; disposable database stopped, source checkout clean; no next QA task started.",
+  "retainedQaArtifacts": {
+    "focused.log": {
+      "bytes": 2677,
+      "sha256": "3c3c77eb6390bb88b0c131d86d175e98004145661aab2ae6ac18e5ed50137daf"
+    },
+    "execution.json": {
+      "bytes": 2121,
+      "sha256": "c4e3904ac2b10f587a88711ba940ebd3507a7030e96e83e51257acc9face7bcd"
+    },
+    "run-focused.py": {
+      "bytes": 1927,
+      "sha256": "5c508cd5c26bfcff388967ba18863de5a9f2aa293d8e514698a08c0c76fa4d2b"
+    },
+    "ci-tests.log": {
+      "bytes": 491509,
+      "sha256": "60103e287b3cd640adb2087885b1b41a6345daaaebaf0cd82de71032ccd2b9da"
+    },
+    "ci-database.log": {
+      "bytes": 246116,
+      "sha256": "1fda9b19e725c9ce254ee6d724d959fbc3fa1f8b478124551942a6f100324d70"
+    },
+    "ci-lint.log": {
+      "bytes": 41956,
+      "sha256": "456d93c945d4961f157a7f8a0fd60c3ac79460bed41b266033fdf8143ff5179c"
+    },
+    "verification.json": {
+      "bytes": 218528,
+      "sha256": "35802b4e5af76efaf1c43b7904e0c88054531c96cb4aee162726d133192d4b90"
+    },
+    "prepublish.json": {
+      "bytes": 329482,
+      "sha256": "91b8b1c1e46514ba5261b0ba491e163a39ab44ae7c0103fc927d9b27c7958851"
+    },
+    "native.json": {
+      "bytes": 572,
+      "sha256": "f77c53727188e590f41d8476b11bb613f64f85e6ac9402aab63ca948218358a5"
+    },
+    "identities.json": {
+      "bytes": 5721,
+      "sha256": "020ff76adcd260d7fefeedb2a62c4815acdbcc8651659ce74aa64e7cf82ae4d1"
+    },
+    "original-identities.json": {
+      "bytes": 787,
+      "sha256": "68a599b65d084babc3194003f89aaca227931ca167693e1f550573f20ccb3576"
+    }
+  }
+}

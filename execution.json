@@ -1,0 +1,59 @@
+{
+  "checkedAtUtc": "2026-10-08T23:11:19.741779+00:00",
+  "commands": [
+    {
+      "command": [
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-13\\pg-test-runtime\\node_modules\\@embedded-postgres\\windows-x64\\native\\bin\\pg_ctl.exe",
+        "-D",
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453\\pgdata",
+        "-l",
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453\\postgres.log",
+        "-o",
+        "-h 127.0.0.1 -p 55453",
+        "-w",
+        "start"
+      ],
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453",
+      "log": "start.log",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "node",
+        "-e",
+        "const {Client}=require('pg');(async()=>{const c=new Client({host:'127.0.0.1',port:55453,user:'postgres',database:'postgres'});await c.connect();try{await c.query('CREATE DATABASE calibrate_test_qa453')}finally{await c.end()}})().catch(e=>{console.error(e);process.exit(1)})"
+      ],
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\calibrate-auth-qa\\backend",
+      "log": "createdb-node.log",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "node",
+        "-r",
+        "ts-node/register",
+        "--test",
+        "test/account-deletion-postgres.test.js",
+        "test/account-deletion.test.js"
+      ],
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\calibrate-auth-qa\\backend",
+      "log": "focused.log",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-13\\pg-test-runtime\\node_modules\\@embedded-postgres\\windows-x64\\native\\bin\\pg_ctl.exe",
+        "-D",
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453\\pgdata",
+        "-m",
+        "fast",
+        "-w",
+        "stop"
+      ],
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453",
+      "log": "stop.log",
+      "exitCode": 0
+    }
+  ],
+  "databaseStopped": true
+}

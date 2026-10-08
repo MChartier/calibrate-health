@@ -1,0 +1,20 @@
+[
+  {
+    "repo": "MChartier/calibrate-health",
+    "commit": "61d7132760365b0e76889c8680ea8af35c7f4138",
+    "path": "manifest.json",
+    "destination": "reassess453/original-manifest.json",
+    "gitBlobSha": "f222dd1d263b29f1e30e24f09c28b7458ae19f8e",
+    "bytes": 4617,
+    "sha256": "065f880c9cc81657d088fa9410af2d8cf74ebf7904aa2adda66bd77bb8646026"
+  },
+  {
+    "repo": "MChartier/calibrate-health",
+    "commit": "3eb583d972cc529509bd8145c8cefb504b3cd000",
+    "path": "preparation-evidence/communication-before-20261006/issue-body.md",
+    "destination": "reassess453/original-issue421.md",
+    "gitBlobSha": "54583c4659159405fcf044dec744516cf841f4d1",
+    "bytes": 16561,
+    "sha256": "c68d462e88675419e3b69792a198e0037afc458fddd7f4120bbd40ec43ab942e"
+  }
+]

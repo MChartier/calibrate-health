@@ -1,0 +1,52 @@
+{
+  "checkedAtUtc": "2026-10-08T23:10:06.575403+00:00",
+  "commands": [
+    {
+      "command": [
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-13\\pg-test-runtime\\node_modules\\@embedded-postgres\\windows-x64\\native\\bin\\initdb.exe",
+        "-D",
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453\\pgdata",
+        "-U",
+        "postgres",
+        "-A",
+        "trust",
+        "--encoding=UTF8",
+        "--locale=C"
+      ],
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453",
+      "log": "initdb.log",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-13\\pg-test-runtime\\node_modules\\@embedded-postgres\\windows-x64\\native\\bin\\pg_ctl.exe",
+        "-D",
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453\\pgdata",
+        "-l",
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453\\postgres.log",
+        "-o",
+        "-h 127.0.0.1 -p 55453",
+        "-w",
+        "start"
+      ],
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453",
+      "log": "start.log",
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-13\\pg-test-runtime\\node_modules\\@embedded-postgres\\windows-x64\\native\\bin\\pg_ctl.exe",
+        "-D",
+        "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453\\pgdata",
+        "-m",
+        "fast",
+        "-w",
+        "stop"
+      ],
+      "cwd": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\reassess453",
+      "log": "stop.log",
+      "exitCode": 0
+    }
+  ],
+  "databaseStopped": true
+}
