@@ -48,16 +48,16 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 
 ## Releases and deployment
 
-Use the [deployment guide](docs/deployment.md) to choose the right operation:
+Maintainers use the [deployment guide](docs/deployment.md) to choose a release or internal deployment operation:
 
 - Server/web: GitHub Actions **Release server** publishes a versioned image and attempts compatible OTA
 - Local Android phone + Wear: `npm run native:release` builds and submits to Play internal tracks
 - Local phone JavaScript/assets: `npm run ota:publish -- --message "Describe the update"`
 - Public Play store builds and promotions: [protected store workflow](docs/native-store-release.md)
 
-For Advanced self-hosting, [deploy/README.md](deploy/README.md) covers Caddy or Traefik, external or in-stack
+For maintainer-managed infrastructure, [deploy/README.md](deploy/README.md) covers Caddy or Traefik, external or in-stack
 Postgres, encrypted backups, upgrades, and restore. Use a published image; building one locally is optional.
-Publication does not deploy your host unless you enable the documented WireGuard/SSH deployment.
+Publication deploys an internal host only when maintainers enable the documented WireGuard/SSH deployment.
 
 ## Development
 

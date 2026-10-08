@@ -1,16 +1,18 @@
-# Release and deploy
+# Maintainer release and deployment operations
 
-Start here for server/web releases, Android phone + Wear packages, and Expo OTA updates.
+Maintainers start here for server/web releases, Android phone + Wear packages, Expo OTA updates, and internal
+deployment and recovery. Calibrate's end-user experience is managed hosting; the retained Compose tooling supports
+maintainer-operated infrastructure.
 Publication is manual. Merging a feature PR does not publish an image, upload to Play, or publish OTA.
 Run local commands from the repository root; use `npm.cmd` instead of `npm` in Windows PowerShell.
 
-| What changed / what you need | Run | What it does |
+| Maintainer operation | Run | What it does |
 | --- | --- | --- |
-| Server, API, or web/PWA | GitHub Actions **Release server**, `patch`, `minor`, or `major` | Prepares a version-only PR, waits for its required CI and any workflow approval, merges and tags it, publishes the combined server/web image, then attempts compatible OTA and any opted-in self-host deployment |
+| Server, API, or web/PWA | GitHub Actions **Release server**, `patch`, `minor`, or `major` | Prepares a version-only PR, waits for its required CI and any workflow approval, merges and tags it, publishes the combined server/web image, then attempts compatible OTA and any opted-in internal host deployment |
 | Android native modules/configuration or Wear code; local internal testing | `npm run native:release` | Builds, signs, verifies, and submits phone + Wear to Play internal tracks |
 | Phone JavaScript/assets only; local internal testing | `npm run ota:publish -- --message "Describe the tested update"` | Publishes a compatible Expo update for the installed native baseline |
 | Public Play store release or promotion | **Native Android Store Release** | Uses the protected [store workflow](native-store-release.md), not the local internal profile |
-| Run an already published image | [Compose self-hosting](../deploy/README.md) | Installs/upgrades the server on your host; image publication alone does not deploy it |
+| Deploy an already published image to an internal host | [Compose operations](../deploy/README.md) | Installs/upgrades the server on maintainer-managed infrastructure; image publication alone does not deploy it |
 
 ## Server and web/PWA
 
@@ -29,9 +31,9 @@ It publishes internal first, then waits for the protected `production` approval.
 rollout supports the bundle before approving production. A missing/incompatible native baseline skips OTA;
 it does not fail the server release. The [compatibility policy](release-compatibility.md) explains this boundary.
 
-An existing self-host is redeployed only when explicitly enabled through the
+An existing internal host is redeployed only when explicitly enabled by maintainers through the
 [WireGuard deployment setup](../deploy/self-hosted/README.md). This job and OTA run independently after the image
-is published. Otherwise, upgrade your host manually with the published tag/digest using the Compose guide.
+is published. Otherwise, maintainers upgrade the internal host manually with the published tag/digest using the Compose guide.
 Keep a recent database backup; migrations are forward-only.
 
 ### Recovery, without a new version
@@ -52,7 +54,7 @@ A candidate that fails metadata/image validation is eligible for exact-ref clean
 starting a new request. `resume` is for the current stable release, not moving `latest` backward. Immutable aliases and receipts are verified in both recovery modes; conflicting or
 unattested existing images fail closed.
 
-If only host deployment needs retrying, use **Deploy self-hosted server** with the published immutable digest.
+If only internal host deployment needs retrying, maintainers use **Deploy self-hosted server** with the published immutable digest.
 If only OTA needs publishing, or a historical prepared manifest records an incompatible native baseline, use
 **Publish Expo OTA Update** with an exact compatible source and signed native tag as described in the
 [protected OTA guide](native-store-release.md#publish-ota-updates-from-github-actions). These operations do not rebuild server images.
@@ -108,7 +110,7 @@ A successful publish makes the update available; fully close/reopen the phone ap
 - [Compatibility and provenance](release-compatibility.md): version contracts, token boundaries, receipts, and recovery trust
 - [Protected Android store releases](native-store-release.md): signing, Play promotion, and signed native tags
 - [Compose operations](../deploy/README.md): host configuration, upgrades, backups, and restore
-- [Automated self-host deployment](../deploy/self-hosted/README.md): optional restricted WireGuard/SSH target
+- [Automated internal host deployment](../deploy/self-hosted/README.md): optional restricted WireGuard/SSH target
 
 The old **Cut release**, **Publish prepared release**, and **Build Release Image** manual forms are replaced by
 **Release server**. Their isolated workers remain implementation details. `native:submit` is replaced by
