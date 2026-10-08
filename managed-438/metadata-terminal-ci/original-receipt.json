@@ -1,0 +1,13 @@
+{
+  "readAtUtc": "2026-10-08T19:04:06.5995831Z",
+  "prUpdatedAt": "2026-10-08T18:43:36Z",
+  "head": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+  "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "actualMaster": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "bodyBeforeSha256": "d9510e687d6d9efae9c2f605657d03fac64f3b83bae4e2ddeabc2d0dd8aae858",
+  "checks": {
+    "skipped": 11,
+    "success": 14
+  },
+  "purpose": "Preserve exact API-decoded prior body before terminal-CI wording correction. Existing product source and capture/provenance identities stay unchanged."
+}
