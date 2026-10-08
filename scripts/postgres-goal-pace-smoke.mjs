@@ -227,6 +227,93 @@ try {
         releaseCreation();
         planningLock.lockCaloriePlanningInputs = originalLock;
     }
+    // Force overlap at the shared guard, exercising real PostgreSQL row locks.
+    async function orderedWriters(first, second) {
+        let releaseFirst, firstLocked, secondEntered;
+        const release = new Promise(resolve => { releaseFirst = resolve; });
+        const locked = new Promise(resolve => { firstLocked = resolve; });
+        const entered = new Promise(resolve => { secondEntered = resolve; });
+        let calls = 0;
+        planningLock.lockCaloriePlanningInputs = async (...args) => {
+            const ordinal = ++calls;
+            if (ordinal === 2) secondEntered();
+            await originalLock(...args);
+            if (ordinal === 1) { firstLocked(); await release; }
+        };
+        const firstResult = first();
+        let secondResult;
+        try {
+            await Promise.race([locked, firstResult.then(result => { throw new Error('first writer missed guard: ' + JSON.stringify(result)); })]);
+            secondResult = second();
+            await Promise.race([entered, secondResult.then(result => { throw new Error('second writer missed guard: ' + JSON.stringify(result)); })]);
+            releaseFirst();
+            return await Promise.all([firstResult, secondResult]);
+        } finally {
+            releaseFirst();
+            await Promise.allSettled([firstResult, secondResult]);
+            planningLock.lockCaloriePlanningInputs = originalLock;
+        }
+    }
+
+    const NativeDate = Date;
+    globalThis.Date = class extends NativeDate {
+        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
+        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
+    };
+    try {
+        for (const oldZone of ['America/Los_Angeles', 'UTC']) {
+            for (const explicitDate of [true, false]) {
+                const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
+                await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
+                user.timezone = oldZone; // Authentication snapshot deliberately predates the profile commit.
+                const latest = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+                await db.goal.update({ where: { id: latest.id }, data: { created_at: new Date('2026-10-08T19:00:00Z'), start_weight_grams: 90000 } });
+                const payload = { weight: 84, ...(explicitDate ? { date: '2026-10-08' } : {}) };
+                const operationId = crypto.randomUUID();
+                const [profile, metric] = await orderedWriters(
+                    () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
+                    () => call('post', '/', payload, operationId, metricsRouter));
+                assert.equal(profile.statusCode, 200);
+                assert.equal(metric.statusCode, 200);
+                assert.equal(metric.body.date.slice(0, 10), explicitDate || nextZone === 'America/Los_Angeles' ? '2026-10-08' : '2026-10-09');
+                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: latest.id } })).start_weight_grams,
+                    nextZone === 'America/Los_Angeles' ? 84000 : 90000);
+                assert.deepEqual((await call('post', '/', payload, operationId, metricsRouter)).body, metric.body);
+            }
+        }
+        console.log('[goal-pace-smoke] PASS: timezone commit before metric acceptance uses current account day, explicit/default dates and stable receipts in both timezone directions.');
+    } finally {
+        globalThis.Date = NativeDate;
+        user.timezone = 'UTC';
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+    }
+
+    const watch = backendRequire('./src/services/watch');
+    const session = await db.mobileAuthSession.create({ data: { user_id: user.id, device_id: 'synthetic-watch', device_platform: 'WEAR_OS',
+        access_token_hash: crypto.randomUUID(), refresh_token_hash: crypto.randomUUID(),
+        access_expires_at: new Date(Date.now() + 3600000), refresh_expires_at: new Date(Date.now() + 7200000) } });
+    for (const watchFirst of [true, false]) {
+        await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter);
+        const existing = await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: today } } });
+        const revision = crypto.createHash('sha256').update(JSON.stringify({ kind: 'body_metric', value: {
+            id: existing.id, local_date: metricDate, weight_grams: existing.weight_grams, body_fat_percent: existing.body_fat_percent ?? null
+        } })).digest('hex').slice(0, 24);
+        const watchOperation = crypto.randomUUID();
+        const mutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+            local_date: metricDate, weight_grams: 86000, expected_revision: revision
+        } }, { timezone: 'UTC' });
+        assert.equal(mutation.ok, true);
+        const wear = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id, operationId: watchOperation, mutation });
+        const web = () => call('post', '/', { date: metricDate, weight: 87 }, crypto.randomUUID(), metricsRouter);
+        const results = await orderedWriters(watchFirst ? wear : web, watchFirst ? web : wear);
+        const wearResult = results[watchFirst ? 0 : 1];
+        assert.equal(results[watchFirst ? 1 : 0].statusCode, 200);
+        assert.equal(wearResult.status, watchFirst ? 200 : 409);
+        if (!watchFirst) assert.equal(wearResult.body.code, 'ENTITY_CONFLICT');
+        assert.deepEqual((await wear()).body, wearResult.body);
+        assert.equal((await db.bodyMetric.findUniqueOrThrow({ where: { id: existing.id } })).weight_grams, 87000);
+    }
+    console.log('[goal-pace-smoke] PASS: web/Wear metric writes in both lock orders avoid deadlock, retain stale-revision conflict and replay committed receipts.');
     console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
 }
 finally {

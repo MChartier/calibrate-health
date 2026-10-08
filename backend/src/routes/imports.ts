@@ -5,6 +5,7 @@ import prisma from '../config/database';
 import { parseWeightToGrams, isWeightUnit, type WeightUnit } from '../utils/units';
 import { isPolicyWeight } from '../../../shared/caloriePolicy';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
 import type { MutationDatabase } from '../services/clientOperations';
 import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
 import { refreshMaterializedWeightTrendsBestEffort } from '../services/materializedWeightTrend';
@@ -164,6 +165,7 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
   skippedFoodLogs = foodLogsToInsert.skippedCount;
 
   const weightResult = await prisma.$transaction(async (tx) => {
+    await lockCaloriePlanningInputs(tx, user.id);
     const result = await applyWeightImports({
       database: tx,
       userId: user.id,

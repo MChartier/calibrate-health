@@ -14,6 +14,7 @@ import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightT
 import { getFoodDayWriteBlock } from './foodTracking';
 import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from './caloriePlanReview';
+import { lockCaloriePlanningInputs } from './caloriePlanningLock';
 import { calculateCanonicalGoalProgress } from '../../../shared/goalProgress';
 import { isPolicyWeight, localDateInTimeZone } from '../../../shared/caloriePolicy';
 
@@ -357,6 +358,7 @@ export async function executeWatchMutation(options: {
         return { status: 200, body: { type: 'food.delete', food_log_id: candidate.food_log_id, deleted: true } };
       }
       if (mutation.type === 'metric.upsert') {
+        await lockCaloriePlanningInputs(tx, options.userId);
         const existing = await tx.bodyMetric.findUnique({
           where: { user_id_date: { user_id: options.userId, date: mutation.metricDate } }
         });

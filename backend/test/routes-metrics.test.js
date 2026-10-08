@@ -308,6 +308,19 @@ test('metrics baseline: a sync failure rolls back metric, goal and operation rec
   assert.deepEqual(fixture.changes, []);
 });
 
+test('metrics baseline: timezone committed while waiting determines eligibility and default date', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
+  const fixture = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles',
+    onLock: () => { fixture.user.timezone = 'UTC'; } });
+  assert.equal((await fixture.save({ weight: 85, date: '2026-10-08' })).statusCode, 200);
+  assert.equal(fixture.goal.start_weight_grams, 90000);
+  const implicit = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles',
+    onLock: () => { implicit.user.timezone = 'UTC'; } });
+  assert.equal((await implicit.save({ weight: 85 })).statusCode, 200);
+  assert.equal(implicit.metric.date.toISOString().slice(0, 10), '2026-10-09');
+  assert.equal(implicit.goal.start_weight_grams, 90000);
+});
+
 test('metrics baseline: reads the goal created by a writer that held the planning guard first', async () => {
   let firstLock = true;
   const fixture = baselineFixture({ goalDate: addUtcDays(getUtcTodayDateOnly(), -3), onLock: () => {
