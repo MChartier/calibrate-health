@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { byteHash, SHA } from './release-plan.mjs';
 import { verifyIosArtifact } from './ios-release.mjs';
 
-export const IPA_EXTRACTION = `import pathlib, shutil, stat, sys, zipfile
+const IPA_EXTRACTION = `import pathlib, shutil, stat, sys, zipfile
 archive, destination = sys.argv[1:]
 root = pathlib.Path(destination).resolve()
 with zipfile.ZipFile(archive) as z:

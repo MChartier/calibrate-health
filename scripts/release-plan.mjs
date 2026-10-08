@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { nextReleaseVersion, getNextNativeVersionCodes } from './release-config.mjs';
 
-export const PLATFORMS = Object.freeze(['android', 'ios']);
+const PLATFORMS = Object.freeze(['android', 'ios']);
 export const SHA = /^[a-f0-9]{40}$/;
 export const DIGEST = /^[a-f0-9]{64}$/;
-export function canonical(value) {
+function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])]));
   return value;

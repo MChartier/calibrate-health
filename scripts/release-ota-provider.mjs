@@ -31,7 +31,7 @@ async function download(url, limit, fetchImpl) {
 }
 
 /** Compare the actual delivered manifest and asset bytes to the independently verified export. */
-export async function verifyPublishedOta({ update, identity, metadata, files, fetchImpl = fetch }) {
+async function verifyPublishedOta({ update, identity, metadata, files, fetchImpl = fetch }) {
   const manifestBytes = await download(update.manifestPermalink, 5 * 1024 * 1024, fetchImpl);
   const manifest = JSON.parse(manifestBytes);
   assert(manifest.id === update.id && manifest.runtimeVersion === identity.runtime &&

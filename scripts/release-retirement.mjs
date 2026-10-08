@@ -3,7 +3,7 @@ import { hash, SHA } from './release-plan.mjs';
 import { readAsset, putAsset, verifyRetirement } from './release-journal.mjs';
 
 /** All-attempt job evidence proves absence of provider work; a missing receipt cannot prove it. */
-export function retirementReason({ release, run, jobs, jobsTotal, plan, candidate, pull, currentSource, candidateValidated, completionExists, candidateRefAbsent }) {
+function retirementReason({ release, run, jobs, jobsTotal, plan, candidate, pull, currentSource, candidateValidated, completionExists, candidateRefAbsent }) {
   assert(release.draft && release.author?.login === 'github-actions[bot]', 'Unverified journal ownership.');
   assert(release.assets.every(a => ['plan.json', 'configuration.json', 'candidate.json', 'retirement.json', 'retirement-complete.json'].includes(a.name)),
     'Provider intent, partial publication or unknown assets must remain recoverable.');

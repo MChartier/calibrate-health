@@ -5,7 +5,7 @@ import { nextReleaseVersion, MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM } from 
 import { hash, SHA, DIGEST } from './release-plan.mjs';
 
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-export function iosVersion(value) {
+function iosVersion(value) {
   assert(value?.schemaVersion === 1 && VERSION.test(value.version) && VERSION.test(value.minimumSupportedVersion) &&
     /^[1-9]\d{0,8}$/.test(value.buildNumber), 'Invalid immutable iOS version contract.');
   return value;
