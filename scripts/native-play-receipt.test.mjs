@@ -8,6 +8,8 @@ import test from 'node:test';
 import {
   authorizeNativePlayReceiptWorkflow,
   createNativePlayReceipt,
+  createUnifiedAndroidReceipt,
+  serializeUnifiedAndroidReceipt,
   NATIVE_PLAY_RECEIPT_CRITICAL_PATHS,
   parseNativePlayAttestationWorkflowCandidates,
   parseNativePlayReceipt,
@@ -22,6 +24,17 @@ const CURRENT = 'b'.repeat(40);
 const REPOSITORY = 'calibratehealth/calibrate';
 const PHONE_SHA = '1'.repeat(64);
 const WATCH_SHA = '2'.repeat(64);
+
+test('unified Android binding retains the exact paired receipt without external account configuration', () => {
+  const original = createNativePlayReceipt(values());
+  const receipt = createUnifiedAndroidReceipt({ receipt: original, planDigest: '3'.repeat(64), configurationDigest: '4'.repeat(64), profile: 'internal' });
+  assert.deepEqual(receipt.pairedReceipt, original);
+  assert.equal(receipt.artifactSha256, PHONE_SHA);
+  assert.equal(receipt.runtime, '1.2.3');
+  assert.deepEqual(JSON.parse(serializeUnifiedAndroidReceipt(receipt)), receipt);
+  assert.throws(() => createUnifiedAndroidReceipt({ receipt: original, planDigest: '3'.repeat(64), configurationDigest: 'raw private configuration', profile: 'production' }), /configuration digest/);
+  assert.throws(() => createUnifiedAndroidReceipt({ receipt: original, planDigest: '3'.repeat(64), configurationDigest: '4'.repeat(64), profile: 'other' }), /profile/);
+});
 
 function values(overrides = {}) {
   return {

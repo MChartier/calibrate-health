@@ -224,7 +224,7 @@ export function nextReleaseVersion(version, bump) {
 }
 
 const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'ios', 'wear_os'];
-const MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM = 16;
+export const MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM = 16;
 
 // Only the exact pre-iOS recovery identity may use the historical native contract.
 function isExactHistoricalPreparedRelease(manifest, { validationMode, sourceCommit } = {}) {
@@ -263,12 +263,12 @@ export function validateClientDiagnosticVersionContract(manifest, diagnosticVers
   const currentVersions = {
     web: manifest?.server?.version,
     android_phone: manifest?.android?.mobile?.version_name,
-    ios: manifest?.android?.mobile?.version_name,
+    ios: validationOptions.iosRelease?.version ?? manifest?.android?.mobile?.version_name,
     wear_os: manifest?.android?.wear?.version_name
   };
   const minimumVersions = {
     android_phone: manifest?.android?.mobile?.minimum_supported_version,
-    ios: manifest?.android?.mobile?.minimum_supported_version,
+    ios: validationOptions.iosRelease?.minimumSupportedVersion ?? manifest?.android?.mobile?.minimum_supported_version,
     wear_os: manifest?.android?.wear?.minimum_supported_version
   };
 
@@ -470,6 +470,14 @@ export async function checkRepository(
     ? sourceCommit ?? tryGit(root, ['rev-parse', '--verify', 'HEAD^{commit}'])
     : null;
   const validationOptions = { validationMode, sourceCommit: resolvedSourceCommit };
+  const iosSource = await readOptionalFile(path.join(root, 'shared', 'ios-release.json'));
+  if (iosSource !== null) {
+    const iosRelease = JSON.parse(iosSource);
+    if (iosRelease.schemaVersion !== 1 || !STABLE_SEMVER_PATTERN.test(iosRelease.version ?? '') ||
+        !STABLE_SEMVER_PATTERN.test(iosRelease.minimumSupportedVersion ?? '') ||
+        !/^[1-9]\d{0,8}$/.test(iosRelease.buildNumber ?? '')) throw new Error('Invalid independent iOS version contract.');
+    validationOptions.iosRelease = iosRelease;
+  }
   const errors = validateManifest(manifest, validationOptions);
   const [
     rootPackage,
@@ -536,13 +544,13 @@ export async function checkRepository(
   );
   assertMatch(errors, 'mobile/app.json expo.version', expoConfig.expo?.version, manifest.android.mobile.version_name);
   assertMatch(errors, 'mobile/app.json expo.android.versionCode', expoConfig.expo?.android?.versionCode, manifest.android.mobile.version_code);
-  // Both platforms share the mobile counter; the exact pre-iOS recovery source has no iOS block.
+  // Historical sources share the phone counter; new sources allocate iOS independently.
   if (!isExactHistoricalPreparedRelease(manifest, validationOptions) || expoConfig.expo?.ios) {
     assertMatch(
       errors,
       'mobile/app.json expo.ios.buildNumber',
       expoConfig.expo?.ios?.buildNumber,
-      String(manifest.android.mobile.version_code)
+      validationOptions.iosRelease?.buildNumber ?? String(manifest.android.mobile.version_code)
     );
   }
   assertMatch(errors, 'mobile/app.json expo.android.package', expoConfig.expo?.android?.package, manifest.android.application_id);
@@ -1339,6 +1347,7 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
   const pairingPackage = JSON.parse(originals.pairingPackage);
   const currentPhoneDiagnosticVersions = [...diagnostics.supported_versions.android_phone];
   const currentIosDiagnosticVersions = [...diagnostics.supported_versions.ios];
+  const independentIos = await readOptionalFile(path.join(root, 'shared', 'ios-release.json')) !== null;
   const currentWearDiagnosticVersions = [...diagnostics.supported_versions.wear_os];
   const advanceDiagnosticVersions = (versions) =>
     [nextVersion, ...versions.filter((version) => version !== nextVersion)]
@@ -1350,14 +1359,14 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
   manifest.android.wear.version_name = nextVersion;
   manifest.android.wear.version_code = wearVersionCode;
   diagnostics.supported_versions.android_phone = advanceDiagnosticVersions(currentPhoneDiagnosticVersions);
-  diagnostics.supported_versions.ios = advanceDiagnosticVersions(currentIosDiagnosticVersions);
+  diagnostics.supported_versions.ios = independentIos ? currentIosDiagnosticVersions : advanceDiagnosticVersions(currentIosDiagnosticVersions);
   diagnostics.supported_versions.wear_os = advanceDiagnosticVersions(currentWearDiagnosticVersions);
   rootLock.packages.mobile.version = nextVersion;
   rootLock.packages['mobile/modules/wear-pairing'].version = nextVersion;
   mobilePackage.version = nextVersion;
   mobileApp.expo.version = nextVersion;
   mobileApp.expo.android.versionCode = mobileVersionCode;
-  mobileApp.expo.ios.buildNumber = String(mobileVersionCode);
+  if (!independentIos) mobileApp.expo.ios.buildNumber = String(mobileVersionCode);
   mobileApp.expo.extra.calibrate.nativeReleaseTag = nextNativeTag;
   pairingPackage.version = nextVersion;
 

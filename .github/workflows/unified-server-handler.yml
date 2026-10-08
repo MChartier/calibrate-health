@@ -1,0 +1,87 @@
+name: Handle selected unified server stage
+
+run-name: Unified server request ${{ github.event.workflow_run.id }}
+
+on:
+  workflow_run:
+    workflows:
+      - Request selected unified server stage
+    types:
+      - completed
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calibrate-server-release-publication
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  verify_request:
+    name: Verify selected server handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      source_sha: ${{ steps.verify.outputs.source_sha }}
+      bump: ${{ steps.verify.outputs.bump }}
+    steps:
+      - name: Require fresh protected server tooling
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          [[ "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          CURRENT_MASTER="$(curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" | jq -er '.object.sha')"
+          test "${CURRENT_MASTER}" = "${WORKFLOW_SHA}"
+
+      - name: Checkout exact protected verifier and candidate history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ job.workflow_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download exact automatic request
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: unified-server-request
+          path: ${{ runner.temp }}/unified-server-request
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify parent plan, prior artifacts and durable server intent
+        id: verify
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          REQUEST_DIRECTORY: ${{ runner.temp }}/unified-server-request
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: node scripts/release-server-handoff.mjs verify
+
+  server:
+    name: Run the selected canonical server release
+    needs: verify_request
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
+      packages: write
+      pull-requests: write
+    uses: ./.github/workflows/cut-release.yml
+    with:
+      source_sha: ${{ needs.verify_request.outputs.source_sha }}
+      bump: ${{ needs.verify_request.outputs.bump }}
+      selective: true

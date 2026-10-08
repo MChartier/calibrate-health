@@ -60,6 +60,7 @@ jobs:
             release_config:
               - '.github/native-release-tag-allowed-signers'
               - '.github/native-play-attestation-trusted-workflow-shas'
+              - '.github/ios-release-attestation-trusted-workflow-shas'
               - '.github/release-image-attestation-trusted-workflow-shas'
               - 'tools/eas-cli/**'
               - '.github/workflows/**'
@@ -80,6 +81,7 @@ jobs:
               - 'scripts/**'
               - 'shared/client-diagnostic-versions.json'
               - 'shared/release.json'
+              - 'shared/ios-release.json'
               - 'wear/**'
             backend:
               - 'backend/**'

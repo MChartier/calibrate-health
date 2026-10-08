@@ -1,0 +1,6 @@
+# Current protected master controls historical iOS and selective OTA receipt admission.
+# Byte-identical critical workflow/verifier files are accepted automatically.
+# When changing that code, retain an earlier reviewed signer explicitly with:
+# allow FULL_LOWERCASE_40_CHARACTER_SHA
+# Revoke an unsafe signer with: revoke FULL_LOWERCASE_40_CHARACTER_SHA
+# A revoke always overrides automatic or explicit retention.

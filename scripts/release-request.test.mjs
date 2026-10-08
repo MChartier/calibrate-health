@@ -16,6 +16,30 @@ const context = Object.freeze({
   headSha: 'a'.repeat(40)
 });
 
+test('unified manual requests bind exact profiles and real JSON confirmations', () => {
+  const expected = { ...context, operation: 'unified-release' };
+  const inputs = { profile: 'production', server_bump: 'patch', plan_only: true, confirm_play_console_clean: false };
+  const value = request({ operation: expected.operation, inputs });
+  assert.deepEqual(verifyReleaseRequest(value, expected), { operation: 'unified-release', ...inputs });
+  for (const changed of [{ plan_only: 'false' }, { confirm_play_console_clean: 1 }, { profile: 'arbitrary' },
+    { server_bump: 'latest' }, { endpoint: 'https://unselected.invalid' }]) {
+    assert.throws(() => verifyReleaseRequest({ ...value, inputs: { ...inputs, ...changed } }, expected));
+  }
+});
+
+test('unified server requests are exact planner-bound selections and always suppress downstream work', () => {
+  const expected = { ...context, operation: 'unified-server-release' };
+  const inputs = { server: true, source_commit: 'b'.repeat(40), bump: 'patch', plan_digest: 'c'.repeat(64), parent_run_id: '42' };
+  const value = request({ operation: expected.operation, inputs });
+  assert.deepEqual(verifyReleaseRequest(value, expected), { operation: 'cut-release', source_sha: inputs.source_commit,
+    bump: 'patch', plan_digest: inputs.plan_digest, parent_run_id: '42', selective: true });
+  assert.equal(verifyReleaseRequest({ ...value, inputs: { ...inputs, server: false } }, expected).operation, 'no-server');
+  for (const changed of [{ server: 'true' }, { source_commit: 'master' }, { plan_digest: 'mutable' }, { deploy: true }]) {
+    assert.throws(() => verifyReleaseRequest({ ...value, inputs: { ...inputs, ...changed } }, expected));
+  }
+  assert.throws(() => verifyReleaseRequest(value, context), /triggering workflow/);
+});
+
 function request(overrides = {}) {
   return {
     schema_version: 1,

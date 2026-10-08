@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { INTERNAL_PROJECT_ID, loadLocalSigningEnvironment, requireExternalFile } from './native-internal-release.mjs';
+import { loadLocalSigningEnvironment, requireExternalFile } from './native-internal-release.mjs';
+import { EXPO_PROJECT_ID_PATTERN } from './native-ota-contract.mjs';
 import { NATIVE_RELEASE_APPLICATION_ID } from './native-release-evidence.mjs';
 import { resolveLockedEasCliInvocation } from './native-ota-update.mjs';
 import { createGoogleServiceAccountAssertion } from './native-play-release.mjs';
@@ -44,10 +45,15 @@ export async function downloadEasCredentials({ root, directory, downloadPlay = t
   const staging = fs.realpathSync(directory);
   if (!path.basename(staging).startsWith('eas-android-')) throw new Error('Invalid EAS credential staging directory.');
   requireExternalFile(root, path.join(staging, 'app.json'), 'EAS credential workspace');
+  const project = JSON.parse(fs.readFileSync(path.join(staging, 'app.json'), 'utf8')).expo;
+  const projectId = project?.extra?.eas?.projectId;
+  if (!EXPO_PROJECT_ID_PATTERN.test(projectId ?? '') || project?.android?.package !== NATIVE_RELEASE_APPLICATION_ID) {
+    throw new Error('Credential workspace must bind an explicit EAS project and the exact Android application.');
+  }
   const request = query ?? authenticatedQuery(root);
   let response;
   try {
-    response = await request(QUERY, { projectId: INTERNAL_PROJECT_ID, applicationIdentifier: NATIVE_RELEASE_APPLICATION_ID, downloadPlay });
+    response = await request(QUERY, { projectId, applicationIdentifier: NATIVE_RELEASE_APPLICATION_ID, downloadPlay });
   } catch {
     throw new Error('EAS credential lookup failed. Check Expo access and retry native:configure.');
   }
@@ -55,7 +61,7 @@ export async function downloadEasCredentials({ root, directory, downloadPlay = t
   if (response?.error) throw new Error('EAS credential lookup failed. Check Expo access and retry native:configure.');
   const app = response?.data?.app?.byId;
   const credentials = app?.androidAppCredentials;
-  if (app?.id !== INTERNAL_PROJECT_ID || !Array.isArray(credentials) || credentials.length !== 1 ||
+  if (app?.id !== projectId || !Array.isArray(credentials) || credentials.length !== 1 ||
       credentials[0]?.applicationIdentifier !== NATIVE_RELEASE_APPLICATION_ID) {
     throw new Error('EAS did not return the exact linked project and Android application credentials.');
   }

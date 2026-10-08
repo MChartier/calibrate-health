@@ -42,6 +42,7 @@ const officialGradleWrapperJar = fs.readFileSync(
 );
 
 const signingEnvironment = {
+  EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://synthetic.invalid',
   CALIBRATE_ANDROID_SIGNING_STORE_FILE: 'signing/calibrate.p12',
   CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: 'store-password',
   CALIBRATE_ANDROID_SIGNING_KEY_ALIAS: 'calibrate',
@@ -64,13 +65,11 @@ test('native release environment enforces one complete signing identity and a pr
   assert.match(resolved.CALIBRATE_ANDROID_SIGNING_STORE_FILE, /signing[\\/]calibrate\.p12$/);
 });
 
-test('native release environment defaults to the official hosted service', () => {
-  const resolved = resolveNativeReleaseEnvironment(signingEnvironment, {
-    repositoryRoot: 'C:/repo',
-    fileExists: () => true
-  });
-
-  assert.equal(resolved.EXPO_PUBLIC_CALIBRATE_SERVER_URL, 'https://calibratehealth.app');
+test('native release environment requires an explicitly selected backend', () => {
+  const environment = { ...signingEnvironment }; delete environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL;
+  assert.throws(() => resolveNativeReleaseEnvironment(environment, {
+    repositoryRoot: 'C:/repo', fileExists: () => true
+  }), /credential-free HTTPS origin/);
 });
 
 test('native release environment rejects incomplete signing and non-origin HTTP URLs', () => {

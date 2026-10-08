@@ -23,7 +23,7 @@ function fixture(t) {
   fs.mkdirSync(userDirectory);
   const app = { expo: { name: 'Calibrate', owner: 'calibrate-health', slug: 'calibrate-health-app',
     android: { package: 'net.darkmachines.healthtracker' },
-    extra: { eas: { projectId: 'fda8f8c5-e646-47ac-82fb-35003c9cbec7' } }, plugins: ['must-not-run'] } };
+    extra: { eas: { projectId: '11111111-1111-4111-8111-111111111111' } }, plugins: ['must-not-run'] } };
   fs.writeFileSync(path.join(root, 'mobile/app.json'), JSON.stringify(app));
   const serviceAccountFile = path.join(temporary, 'play data.json');
   const signing = { keystorePath: 'credentials/android/keystore.jks',
@@ -33,6 +33,8 @@ function fixture(t) {
   const calls = [];
   const options = {
     root, platform: 'win32', environment: { LOCALAPPDATA: userDirectory, EXPO_TOKEN: 'expo-sentinel',
+      EXPO_PUBLIC_CALIBRATE_SERVER_URL: 'https://synthetic.invalid', EXPO_PUBLIC_EAS_PROJECT_ID: app.expo.extra.eas.projectId,
+      EAS_ACCOUNT: app.expo.owner,
       CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: 'signing-sentinel', GOOGLE_APPLICATION_CREDENTIALS: 'play-sentinel' },
     log: () => {},
     ensureEas: (_root, _npm, environment) => { calls.push(['ensure', environment]); },
@@ -192,16 +194,19 @@ test('cancelled, missing, or invalid downloads preserve prior credentials and re
   }
 });
 
-test('wrong EAS project or package is rejected before credential operations', (t) => {
+test('wrong package or malformed external EAS project is rejected before credential operations', (t) => {
   const f = fixture(t);
   for (const app of [
-    { ...f.app.expo, android: { package: 'old.package' } },
-    { ...f.app.expo, extra: { eas: { projectId: 'wrong-project' } } }
+    { ...f.app.expo, android: { package: 'old.package' } }
   ]) {
     fs.writeFileSync(path.join(f.root, 'mobile/app.json'), JSON.stringify({ expo: app }));
-    assert.throws(() => configureNative({}, f.options), /linked Calibrate EAS project/);
+    assert.throws(() => configureNative({}, f.options), /external EAS_ACCOUNT/);
     assert.deepEqual(f.calls, []);
   }
+  fs.writeFileSync(path.join(f.root, 'mobile/app.json'), JSON.stringify(f.app));
+  assert.throws(() => configureNative({}, { ...f.options, environment: { ...f.options.environment,
+    EXPO_PUBLIC_EAS_PROJECT_ID: 'wrong-project' } }), /UUID/);
+  assert.deepEqual(f.calls, []);
 });
 
 test('settings and downloaded keystores cannot resolve inside the checkout', (t) => {

@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { INTERNAL_PROJECT_ID, loadLocalSigningEnvironment, requireExternalFile } from './native-internal-release.mjs';
+import { localBuildConfiguration, loadLocalSigningEnvironment, requireExternalFile } from './native-internal-release.mjs';
 import { NATIVE_RELEASE_APPLICATION_ID } from './native-release-evidence.mjs';
 import { ensureNativeEasDependency, nativeSetupEnvironment } from './native-setup.mjs';
 import { resolveLockedEasCliInvocation } from './native-ota-update.mjs';
@@ -74,16 +74,17 @@ export function readNativeConfiguration({ root, environment = process.env, platf
   return { file, config };
 }
 
-function credentialProject(root) {
+function credentialProject(root, environment) {
+  const configuration = localBuildConfiguration(environment);
   const { expo } = JSON.parse(fs.readFileSync(path.join(root, 'mobile/app.json'), 'utf8'));
-  if (expo?.android?.package !== NATIVE_RELEASE_APPLICATION_ID || expo.extra?.eas?.projectId !== INTERNAL_PROJECT_ID ||
-      expo.owner !== 'calibrate-health' || expo.slug !== 'calibrate-health-app') {
-    throw new Error('Native credentials require the linked Calibrate EAS project and net.darkmachines.healthtracker package.');
+  if (expo?.android?.package !== NATIVE_RELEASE_APPLICATION_ID ||
+      !/^[a-z0-9][a-z0-9_-]*$/i.test(environment.EAS_ACCOUNT ?? '') || !expo.slug) {
+    throw new Error('Native credentials require external EAS_ACCOUNT, explicit build configuration and the Calibrate package.');
   }
   // A minimal external project keeps downloads out of the checkout and ignores stale generated Android files.
   return { expo: {
-    name: expo.name, slug: expo.slug, owner: expo.owner, android: { package: expo.android.package },
-    extra: { eas: { projectId: expo.extra.eas.projectId } }
+    name: expo.name, slug: expo.slug, owner: environment.EAS_ACCOUNT, android: { package: expo.android.package },
+    extra: { eas: { projectId: configuration.projectId } }
   } };
 }
 
@@ -127,7 +128,7 @@ function removeCredentialAttempt(parent, directory) {
 }
 
 function downloadCredentials(root, parent, environment, options, downloadPlay) {
-  const project = credentialProject(root);
+  const project = credentialProject(root, environment);
   const safe = nativeSetupEnvironment(environment);
   const npmCli = environment.npm_execpath || path.join(path.dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
   // Install only the locked CLI here so configure can precede Android SDK setup.
@@ -146,7 +147,7 @@ function downloadCredentials(root, parent, environment, options, downloadPlay) {
     if (environment.EXPO_TOKEN) easEnvironment.EXPO_TOKEN = environment.EXPO_TOKEN;
     const run = options.runEas ?? runEasCredentials;
     const log = options.log ?? console.log;
-    log('[native] EAS signing credentials for @calibrate-health/calibrate-health-app / ' + NATIVE_RELEASE_APPLICATION_ID + '.');
+    log('[native] EAS signing credentials for the explicitly configured project / ' + NATIVE_RELEASE_APPLICATION_ID + '.');
     run(root, ['credentials:configure-build', '--platform', 'android', '--profile', 'internal'], directory, easEnvironment);
     log('[native] Downloading the default Android signing key' + (downloadPlay ? ' and assigned Play key' : '') + ' from EAS.');
     const result = (options.runEasDownload ?? runEasDownload)(root, directory, easEnvironment, downloadPlay);

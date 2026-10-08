@@ -43,6 +43,25 @@ function requireEqual(actual, expected, label) {
 }
 
 function validateInputs(operation, inputs) {
+  if (operation === 'unified-release') {
+    exactKeys(inputs, ['profile', 'server_bump', 'plan_only', 'confirm_play_console_clean'], 'unified release inputs');
+    requireString(inputs.profile, 'native profile', /^(internal|production)$/);
+    requireString(inputs.server_bump, 'server bump', /^(patch|minor|major)$/);
+    if (typeof inputs.plan_only !== 'boolean' || typeof inputs.confirm_play_console_clean !== 'boolean') {
+      throw new Error('Unified release confirmations must be JSON booleans.');
+    }
+    return { operation: 'unified-release', ...inputs };
+  }
+  if (operation === 'unified-server-release') {
+    exactKeys(inputs, ['server', 'source_commit', 'bump', 'plan_digest', 'parent_run_id'], 'unified server request inputs');
+    if (typeof inputs.server !== 'boolean') throw new Error('Unified server selection must be a JSON boolean.');
+    requireString(inputs.source_commit, 'unified execution source', /^[0-9a-f]{40}$/);
+    requireString(inputs.plan_digest, 'unified plan digest', /^[0-9a-f]{64}$/);
+    requireString(inputs.parent_run_id, 'unified parent run', /^[1-9]\d*$/);
+    requireString(inputs.bump, 'unified server bump', /^(patch|minor|major)$/);
+    return { operation: inputs.server ? 'cut-release' : 'no-server', source_sha: inputs.source_commit,
+      bump: inputs.bump, plan_digest: inputs.plan_digest, parent_run_id: inputs.parent_run_id, selective: true };
+  }
   if (operation !== 'server-release') throw new Error(`Unsupported release request operation: ${operation}.`);
   exactKeys(inputs, SERVER_INPUT_KEYS, 'release request inputs');
   if (typeof inputs.publish_latest !== 'boolean') {

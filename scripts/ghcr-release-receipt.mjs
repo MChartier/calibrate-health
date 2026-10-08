@@ -12,6 +12,8 @@ const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
 const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 
 export const GHCR_RELEASE_ATTESTATION_CRITICAL_PATHS = Object.freeze([
+  '.github/workflows/unified-server-handler.yml',
+  'scripts/release-server-handoff.mjs',
   '.github/workflows/container.yml',
   'scripts/ghcr-release-policy.mjs',
   'scripts/ghcr-release-receipt.mjs',
@@ -98,6 +100,7 @@ export function parseGhcrAttestationWorkflowCandidates(contents, repository) {
   // Fulcio identifies the reusable signer separately from its top-level caller.
   const callerUris = new Set([
     'cut-release-handler.yml',
+    'unified-server-handler.yml',
     'publish-release-handler.yml',
     'container-handler.yml'
   ].map((name) => `${repositoryUri}/.github/workflows/${name}@refs/heads/master`));

@@ -668,7 +668,7 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.doesNotMatch(image, /secrets: inherit/);
   assert.match(image, /publish_latest: true/);
   assert.match(ota, /needs: \[tag_release, publish_release_tag, build_release_image\]/);
-  assert.match(ota, /if: needs\.tag_release\.outputs\.native_release_ready == 'true'/);
+  assert.match(ota, /if: \$\{\{ !inputs\.selective && needs\.tag_release\.outputs\.native_release_ready == 'true' \}\}/);
   assert.match(ota, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
   assert.match(ota, /source_ref: \$\{\{ inputs\.release_commit \}\}/);
   assert.match(ota, /native_build_ref: \$\{\{ needs\.tag_release\.outputs\.native_release_tag \}\}/);
@@ -766,6 +766,9 @@ test('pull requests build and smoke only Web-impacting changes while exhaustive 
     '0e4a8c6effa4802afeda77dc8d303f8176d7dfad'
   );
   const releaseConfig = workflowJobBlock(workflow, 'release-config');
+  for (const file of ['shared/ios-release.json', '.github/ios-release-attestation-trusted-workflow-shas']) {
+    assert.equal(pathFilterMatches(changes, 'release_config', file), true, 'iOS policy/allocation changes require maintained release checks');
+  }
 
   assert.match(workflow, /on:\s*\n\s+pull_request:/);
   assert.match(workflow, /workflow_dispatch:[\s\S]*validation_scope:[\s\S]*configuration-only/);
@@ -1901,7 +1904,7 @@ test('native Android store releases build one paired candidate and promote it wi
   assert.match(build, /CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD/);
   assert.doesNotMatch(build, /GOOGLE_PLAY_/);
   assert.doesNotMatch(build, /environment: play-internal/);
-  assert.match(build, /EXPO_UPDATES_CHANNEL: production/);
+  assert.match(build, /EXPO_UPDATES_CHANNEL: \$\{\{ inputs\.build_profile \}\}/);
   assert.match(build, /sdkmanager "build-tools;\$\{ANDROID_BUILD_TOOLS_VERSION\}" platform-tools/);
   assert.match(build, /google\/bundletool\/releases\/download\/\$\{BUNDLETOOL_VERSION\}/);
   assert.match(build, /sha256sum --check/);
@@ -2042,7 +2045,8 @@ test('native Android store releases build one paired candidate and promote it wi
     /Recheck current protected workflow authority immediately before attestation[\s\S]*"\$\{SOURCE_COMMIT\}" != "\$\{WORKFLOW_SHA\}" \|\| "\$\{WORKFLOW_SHA\}" != "\$\{LIVE_MASTER_SHA\}"/
   );
   assert.match(attesterSteps.at(-1), /actions\/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4\.2\.1/);
-  assert.match(attesterSteps.at(-1), /subject-path: \$\{\{ runner\.temp \}\}\/native-play-receipt\.json/);
+  assert.match(attesterSteps.at(-1), /subject-path: \|\s+\$\{\{ runner\.temp \}\}\/native-play-receipt\.json/);
+  assert.match(attesterSteps.at(-1), /inputs\.unified_plan_digest != '' && format\('\{0\}\/unified-android-receipt\.json', runner\.temp\) \|\| ''/);
   assert.match(attesterSteps.at(-1), /push-to-registry: false[\s\S]*create-storage-record: false/);
   assert.equal((workflow.match(/attestations: write/g) ?? []).length, 1);
   assert.equal((workflow.match(/id-token: write/g) ?? []).length, 1);
@@ -2712,4 +2716,105 @@ test('Optional Release Confidence is a manual owner-discretion exact-candidate c
   assert.deepEqual(ownerCapability.jobIds, ['owner-confidence']);
   assert.equal(plan.policy.externalReleaseApproval, 'owner-discretion');
   assert.equal(plan.policy.retainedEvidenceRequired, false);
+});
+
+test('selective image publication preserves legacy defaults and cannot implicitly publish OTA or deploy', () => {
+  const cut = readWorkflow('cut-release.yml'), publish = readWorkflow('publish-release.yml');
+  for (const workflow of [cut, publish]) {
+    assert.match(workflow, /selective:\s*\n\s+description: [^\n]+\n\s+required: false\n\s+default: false\n\s+type: boolean/);
+  }
+  assert.match(cut, /selective: \$\{\{ inputs\.selective \}\}/);
+  assert.match(workflowJobBlock(publish, 'publish_ota'), /!inputs\.selective && needs\.tag_release\.outputs\.native_release_ready == 'true'/);
+  assert.match(workflowJobBlock(publish, 'deploy_self_hosted'), /!inputs\.selective && vars\.SELF_HOSTED_DEPLOY_ENABLED == 'true'/);
+  assert.match(workflowJobBlock(publish, 'build_release_image'), /verify_published_release/);
+  assert.match(workflowJobBlock(cut, 'inspect_cleanup'), /!inputs\.selective/);
+});
+
+test('unified operator and automatic server requests are read-only and cannot run on merges', () => {
+  for (const name of ['unified-release.yml', 'unified-server-request.yml']) {
+    const workflow = readWorkflow(name);
+    assert.match(workflow, /workflow_dispatch:/);
+    assert.doesNotMatch(workflow, /\n\s+(?:push|pull_request|schedule):/);
+    assert.deepEqual(workflowPermissions(workflow, 0), { contents: 'read' });
+    assert.doesNotMatch(workflow, /secrets\.|permissions:[\s\S]*\bwrite\b|secrets: inherit/);
+    assert.match(workflow, /overwrite: true/);
+  }
+  const request = readWorkflow('unified-server-request.yml');
+  assert.match(request, /GITHUB_ACTOR.*github-actions\[bot\]/);
+  assert.match(request, /GITHUB_TRIGGERING_ACTOR.*github-actions\[bot\]/);
+  assert.match(request, /test "\$\{SOURCE_COMMIT\}" = "\$\{GITHUB_SHA\}"/);
+});
+
+test('fresh server handler verifies read-only before granting only the existing worker publication authority', () => {
+  const workflow = readWorkflow('unified-server-handler.yml');
+  const verify = workflowJobBlock(workflow, 'verify_request'), server = workflowJobBlock(workflow, 'server');
+  assert.match(workflow, /workflow_run:[\s\S]*- Request selected unified server stage/);
+  assert.match(workflow, /group: calibrate-server-release-publication/);
+  assert.deepEqual(workflowPermissions(verify, 4), { actions: 'read', contents: 'read' });
+  assert.doesNotMatch(verify, /secrets\.|secrets: inherit/);
+  assert.match(verify, /release-server-handoff\.mjs verify/);
+  assert.match(server, /needs: verify_request/);
+  assert.match(server, /uses: \.\/\.github\/workflows\/cut-release\.yml/);
+  assert.match(server, /source_sha: \$\{\{ needs\.verify_request\.outputs\.source_sha \}\}/);
+  assert.match(server, /selective: true/);
+  assert.doesNotMatch(server, /secrets:|EXPO_TOKEN/);
+});
+
+test('Android configuration validation runs from its actual exact-source checkout before signing', () => {
+  const build = workflowJobBlock(readWorkflow('native-release.yml'), 'build-internal');
+  assert.match(build, /ref: \$\{\{ inputs\.source_commit \}\}/);
+  assert.match(build, /node scripts\/release-build-config\.mjs --profile "\$\{BUILD_PROFILE\}" "\$\{args\[@\]\}"/);
+  assert.match(build, /args=\(--expected-digest "\$\{CONFIGURATION_DIGEST\}"\)/);
+  assert.doesNotMatch(build, /\.release-tooling\/scripts\/release-build-config/);
+  assert.ok(build.indexOf('Validate explicit build configuration') < build.indexOf('Generate and verify credential-free native Gradle state'));
+  assert.ok(build.indexOf('Validate explicit build configuration') < build.indexOf('Require native signing configuration'));
+});
+
+test('iOS build and source-free IPA attestation have separate authority and never submit automatically', () => {
+  const workflow = readWorkflow('native-ios-release.yml');
+  const build = workflowJobBlock(workflow, 'build'), attest = workflowJobBlock(workflow, 'attest');
+  assert.deepEqual(workflowPermissions(build, 4), { actions: 'read', contents: 'read' });
+  assert.deepEqual(workflowPermissions(attest, 4), { actions: 'read', contents: 'read', attestations: 'write', 'id-token': 'write' });
+  assert.match(build, /release-ios-worker\.mjs verify/);
+  assert.ok(build.indexOf('release-ios-worker.mjs verify') < build.indexOf('EXPO_TOKEN:'));
+  assert.match(build, /release-ios-worker\.mjs build/);
+  assert.match(attest, /sparse-checkout:[\s\S]*\/scripts\/[\s\S]*\/tools\/eas-cli\/[\s\S]*\/mobile\/eas\.json/);
+  assert.doesNotMatch(attest, /\/mobile\/app|npm ci --ignore-scripts|eas build|--auto-submit|eas submit/);
+  assert.match(attest, /release-ios-worker\.mjs receipt/);
+  assert.match(attest, /actions\/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d/);
+  assert.match(workflow, /EXPO_PUBLIC_EAS_PROJECT_ID: \$\{\{ secrets\.CALIBRATE_EAS_PROJECT_ID \}\}/);
+  assert.doesNotMatch(workflow, /\n\s+(?:push|pull_request|schedule):/);
+});
+
+test('selected OTA approval precedes environment resolution and every dependent production stage', () => {
+  const workflow = readWorkflow('unified-ota-release.yml');
+  const stages = ['environment', 'export', 'intent', 'publish'];
+  const blocks = stages.map(name => workflowJobBlock(workflow, name));
+  assert.match(blocks[0], /\n    environment: \$\{\{ inputs\.profile == 'production' && 'production' \|\| 'preview' \}\}/);
+  assert.match(blocks[0], /release-ota-worker\.mjs environment/);
+  for (let index = 1; index < stages.length; index++) {
+    assert.match(blocks[index], new RegExp(`\\n    needs: ${stages[index - 1]}\\n`));
+    assert.doesNotMatch(blocks[index], /\n    if:/, 'dependent stages must retain implicit success-only scheduling');
+    assert.doesNotMatch(blocks[index], /\n    environment:/, 'one upstream approval gates the entire chain');
+  }
+});
+
+test('selected OTA separates source export, durable GitHub intent and source-free Expo publication', () => {
+  const workflow = readWorkflow('unified-ota-release.yml');
+  const exporting = workflowJobBlock(workflow, 'export'), intent = workflowJobBlock(workflow, 'intent');
+  const publisher = workflowJobBlock(workflow, 'publish'), environment = workflowJobBlock(workflow, 'environment');
+  assert.doesNotMatch(workflow, /\n\s+(?:push|pull_request|schedule):/);
+  assert.deepEqual(workflowPermissions(exporting, 4), { actions: 'read', contents: 'read', attestations: 'read' });
+  assert.deepEqual(workflowPermissions(intent, 4), { actions: 'read', contents: 'write', attestations: 'read' });
+  assert.deepEqual(workflowPermissions(publisher, 4), { actions: 'read', contents: 'read', attestations: 'write', 'id-token': 'write' });
+  for (const job of [exporting, intent]) assert.doesNotMatch(job, /EXPO_TOKEN|secrets\.EXPO|id-token: write/);
+  for (const job of [environment, exporting, intent, publisher]) {
+    assert.ok(job.indexOf('Require protected tooling') < job.indexOf('uses: actions/checkout'));
+    assert.match(job, /release-ota-worker\.mjs verify/);
+  }
+  assert.match(intent, /needs: export/); assert.match(publisher, /needs: intent/);
+  assert.match(environment, /environment: \$\{\{ inputs\.profile == 'production' && 'production' \|\| 'preview' \}\}/);
+  assert.match(publisher, /sparse-checkout:/); assert.doesNotMatch(publisher, /npm ci --ignore-scripts|expo export|--auto-submit/);
+  assert.match(publisher, /release-ota-worker\.mjs publish/);
+  assert.match(publisher, /actions\/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d/);
 });

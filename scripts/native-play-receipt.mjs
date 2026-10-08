@@ -27,6 +27,8 @@ export const NATIVE_PLAY_RECEIPT_CRITICAL_PATHS = Object.freeze([
   'scripts/native-ota-contract.mjs',
   'scripts/native-tag-attestation.mjs',
   'scripts/release-config.mjs',
+  'scripts/release-build-config.mjs',
+  'scripts/release-plan.mjs',
   'mobile/plugins/nativeReleaseGradleWrapper.js',
   'mobile/plugins/withPinnedGradleWrapper.js'
 ]);
@@ -136,6 +138,22 @@ export function createNativePlayReceiptFromPlan({ repository, plan, releases }) 
 
 export function serializeNativePlayReceipt(values) {
   return `${JSON.stringify(createNativePlayReceipt(values), null, 2)}\n`;
+}
+
+/** Additional binding for the selective planner; the original paired receipt and its verifier remain unchanged. */
+export function createUnifiedAndroidReceipt({ receipt, planDigest, configurationDigest, profile }) {
+  const paired = createNativePlayReceipt(receipt);
+  requireText(planDigest, SHA256_PATTERN, 'Unified plan digest');
+  requireText(configurationDigest, SHA256_PATTERN, 'External configuration digest');
+  if (!['production', 'internal'].includes(profile)) throw new Error('Unknown unified Android build profile.');
+  return { schema: 1, kind: 'native', platform: 'android', source: paired.source_commit,
+    planDigest, configuration: configurationDigest, profile, runtime: paired.version_name,
+    artifactSha256: paired.releases.phone.aab_sha256, pairedReceipt: paired };
+}
+
+export function serializeUnifiedAndroidReceipt(value) {
+  return `${JSON.stringify(createUnifiedAndroidReceipt({ receipt: value.pairedReceipt, planDigest: value.planDigest,
+    configurationDigest: value.configuration, profile: value.profile }), null, 2)}\n`;
 }
 
 export function nativePlayReceiptSha256(values) {
@@ -417,14 +435,16 @@ export function authorizeNativePlayReceiptWorkflow({
 function parseArguments(args) {
   const command = args[0];
   if (![
-    'authorize-workflow', 'create', 'discover-workflows', 'trusted-workflows', 'verify', 'verify-files'
+    'authorize-workflow', 'create', 'discover-workflows', 'trusted-workflows', 'verify', 'verify-files', 'bind-unified'
   ].includes(command)) {
     throw new Error(
       'Expected command: authorize-workflow, create, discover-workflows, trusted-workflows, verify, or verify-files.'
     );
   }
   let allowed;
-  if (command === 'verify-files') {
+  if (command === 'bind-unified') {
+    allowed = new Set(['--receipt-file', '--plan-digest', '--configuration-digest', '--profile']);
+  } else if (command === 'verify-files') {
     allowed = new Set(['--receipt-file', '--expected-receipt-sha256', '--phone-aab', '--watch-aab']);
   } else if (command === 'trusted-workflows') {
     allowed = new Set(['--trust-file', '--current-workflow-revision']);
@@ -481,6 +501,12 @@ function receiptValuesFromOptions(values) {
 
 export function runNativePlayReceiptCli(args = process.argv.slice(2), output = process.stdout) {
   const { command, values } = parseArguments(args);
+  if (command === 'bind-unified') {
+    const receipt = createUnifiedAndroidReceipt({ receipt: readNativePlayReceipt(values['--receipt-file']),
+      planDigest: values['--plan-digest'], configurationDigest: values['--configuration-digest'], profile: values['--profile'] });
+    output.write(serializeUnifiedAndroidReceipt(receipt));
+    return receipt;
+  }
   if (command === 'verify-files') {
     return verifyNativePlayReceiptArtifacts({
       receiptFile: values['--receipt-file'],

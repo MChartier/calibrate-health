@@ -221,7 +221,7 @@ export function resolveNativeReleaseEnvironment(environment, options = {}) {
     throw new Error('CALIBRATE_ANDROID_SIGNING_STORE_FILE does not point to a file.');
   }
 
-  const configuredOrigin = environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL?.trim() || 'https://calibratehealth.app';
+  const configuredOrigin = environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL?.trim();
   let serverUrl;
   try {
     serverUrl = new URL(configuredOrigin);
