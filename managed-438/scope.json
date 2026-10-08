@@ -1,0 +1,198 @@
+{
+  "repository": "MChartier/calibrate-health",
+  "targetRef": "refs/heads/master",
+  "actualTarget": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "head": "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "headParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  ],
+  "orderedCommits": [
+    "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36 4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+  ],
+  "paths": [
+    {
+      "status": "M",
+      "path": "README.md",
+      "scope": "Maintained build/recovery and hosted-use documentation"
+    },
+    {
+      "status": "M",
+      "path": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/README.md",
+      "scope": "Maintained build/recovery and hosted-use documentation"
+    },
+    {
+      "status": "M",
+      "path": "mobile/app.json",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/app/(auth)/login.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/app/(auth)/register.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/app/(tabs)/(settings)/advanced.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/app/_layout.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/AuthContext.test.tsx",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/AuthContext.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/AuthContext.web.test.tsx",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/authScreenNavigation.test.tsx",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "D",
+      "path": "mobile/src/auth/authServerDraft.test.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "D",
+      "path": "mobile/src/auth/authServerDraft.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/serverSwitch.test.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/serverSwitch.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/storage.test.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/auth/storage.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "A",
+      "path": "mobile/src/auth/targetTransition.test.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "A",
+      "path": "mobile/src/auth/targetTransition.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "A",
+      "path": "mobile/src/auth/targetTransitionState.test.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "A",
+      "path": "mobile/src/auth/targetTransitionState.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/components/ClientServerIncompatibleScreen.test.tsx",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/components/ClientServerIncompatibleScreen.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/components/ClientUpgradeRequiredScreen.test.tsx",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/components/ClientUpgradeRequiredScreen.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "D",
+      "path": "mobile/src/components/ServerUrlControl.test.tsx",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "D",
+      "path": "mobile/src/components/ServerUrlControl.tsx",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/config/server.test.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/config/server.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/legal/publicLegalContent.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "A",
+      "path": "mobile/src/offline/database.test.ts",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/offline/database.ts",
+      "scope": "Managed client fixed targets, safe storage or customer-facing picker/promotion removal"
+    },
+    {
+      "status": "M",
+      "path": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+      "scope": "Maintained regression for target migration, isolation or picker absence"
+    }
+  ],
+  "totals": {
+    "files": 35,
+    "additions": 754,
+    "deletions": 798
+  },
+  "excluded": "No backend/admin/bootstrap, release helper, EAS/profile/project configuration, auth-stack commits, temporary harnesses, logs or captures in product history.",
+  "selectedPriorWork": "Only PR439 client session-generation guards and relevant maintained regressions were selectively reused; the full commit was not imported."
+}

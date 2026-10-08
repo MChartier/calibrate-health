@@ -1,0 +1,2 @@
+npm notice run mobile@0.2.7 typecheck
+npm notice run tsc --noEmit

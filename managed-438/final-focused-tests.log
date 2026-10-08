@@ -1,0 +1,26 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth src/config/server.test.ts src/offline/database.test.ts
+PASS src/auth/AuthContext.test.tsx
+PASS src/auth/AuthContext.web.test.tsx
+PASS src/auth/authScreenNavigation.test.tsx
+PASS src/auth/accountTrustRoutes.test.tsx
+PASS src/auth/hostedRoot.test.tsx
+PASS src/auth/accountAccess.test.ts
+PASS src/auth/apiClientAuth.test.ts
+PASS src/auth/offlineWorkspace.test.ts
+PASS src/auth/targetTransitionState.test.ts
+PASS src/auth/targetTransition.test.ts
+PASS src/auth/logoutIntentStore.test.ts
+PASS src/config/server.test.ts
+PASS src/offline/database.test.ts
+PASS src/auth/oneTimeToken.test.ts
+PASS src/auth/devAutoLogin.test.ts
+PASS src/auth/storage.test.ts
+PASS src/auth/authErrors.test.ts
+PASS src/auth/serverSwitch.test.ts
+
+Test Suites: 18 passed, 18 total
+Tests:       151 passed, 151 total
+Snapshots:   0 total
+Time:        6.574 s
+Ran all test suites matching /src\\auth|src\\config\\server.test.ts|src\\offline\\database.test.ts/i.

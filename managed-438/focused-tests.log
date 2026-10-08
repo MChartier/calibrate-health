@@ -1,0 +1,28 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth src/config/server.test.ts src/screens/AdvancedSettingsScreen.test.tsx src/components/ClientUpgradeRequiredScreen.test.tsx src/components/ClientServerIncompatibleScreen.test.tsx
+PASS src/auth/authScreenNavigation.test.tsx
+PASS src/screens/AdvancedSettingsScreen.test.tsx
+PASS src/auth/targetTransitionState.test.ts
+PASS src/auth/AuthContext.test.tsx
+PASS src/auth/AuthContext.web.test.tsx
+PASS src/config/server.test.ts
+PASS src/auth/accountTrustRoutes.test.tsx
+PASS src/auth/hostedRoot.test.tsx
+PASS src/components/ClientUpgradeRequiredScreen.test.tsx
+PASS src/components/ClientServerIncompatibleScreen.test.tsx
+PASS src/auth/apiClientAuth.test.ts
+PASS src/auth/offlineWorkspace.test.ts
+PASS src/auth/storage.test.ts
+PASS src/auth/targetTransition.test.ts
+PASS src/auth/devAutoLogin.test.ts
+PASS src/auth/serverSwitch.test.ts
+PASS src/auth/logoutIntentStore.test.ts
+PASS src/auth/authErrors.test.ts
+PASS src/auth/accountAccess.test.ts
+PASS src/auth/oneTimeToken.test.ts
+
+Test Suites: 20 passed, 20 total
+Tests:       157 passed, 157 total
+Snapshots:   0 total
+Time:        6.758 s, estimated 10 s
+Ran all test suites matching /src\\auth|src\\config\\server.test.ts|src\\screens\\AdvancedSettingsScreen.test.tsx|src\\components\\ClientUpgradeRequiredScreen.test.tsx|src\\components\\ClientServerIncompatibleScreen.test.tsx/i.

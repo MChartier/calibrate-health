@@ -1,0 +1,26 @@
+{
+  "source": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "state": "recovery",
+  "route": "/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+  "actualUrl": "http://127.0.0.1:4174/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+  "capturedAt": "2026-10-08T18:00:05.143Z",
+  "browser": "149.0.7827.55",
+  "fixedClock": "2026-07-21T19:00:00.000Z",
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+  "bundles": [
+    {
+      "pathname": "/_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+      "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/auth/me"
+    }
+  ],
+  "file": "before-recovery.png",
+  "sha256": "b305a2046b22faa4218e45e36a216b6b0c6c1201eb95bdc1471f75bce7c8c137",
+  "text": "Skip to main content\nCalibrate Health\nReset password\nEnter your account email. For privacy, the response is the same whether or not an account exists.\nEmail\nSend reset instructions\nBack to sign in"
+}

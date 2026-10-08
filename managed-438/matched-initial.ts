@@ -1,0 +1,31 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
+const root = process.env.CAPTURE_ROOT;
+const label = process.env.CAPTURE_LABEL;
+const { test, expect, hideTransientPwaNotices, FROZEN_NOW } = require(path.join(root, 'e2e/expo-web/fixtures.ts'));
+const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
+for (const state of ['advanced','login','recovery']) test(state, async ({page,ux,browser}) => {
+ const source = execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
+ if(execFileSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8'}).trim()) throw new Error('Source must be clean');
+ const bundles=[]; const pending=[]; const requests=[];
+ page.on('request',r=> {if(/\/auth\/|\/api\//.test(r.url())) requests.push({method:r.method(),url:r.url()});});
+ page.on('response',r=> {if(new URL(r.url()).pathname.endsWith('.js')) pending.push((async()=> {
+  const bytes=await r.body();const pathname=decodeURIComponent(new URL(r.url()).pathname);
+  expect(hash(bytes)).toBe(hash(fs.readFileSync(path.join(root,'mobile/dist',pathname))));
+  bundles.push({pathname,sha256:hash(bytes)});
+ })());});
+ await ux.install(state==='advanced'?'populated':'signed-out');
+ const route=state==='advanced'?'/advanced':state==='login'?'/login?serverUrl=https%3A%2F%2Fwrong.example':'/forgot-password?serverUrl=https%3A%2F%2Fwrong.example';
+ await page.goto(route);
+ if(state==='advanced') await expect(page.getByTestId('advanced-settings-page')).toBeVisible();
+ else if(state==='login') await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
+ else await expect(page.getByRole('heading',{level:1})).toBeVisible();
+ await hideTransientPwaNotices(page);
+ await page.evaluate(()=>document.fonts.ready);
+ const file=label+'-'+state+'.png';
+ await page.screenshot({path:path.join(__dirname,file),fullPage:true,animations:'disabled'});
+ await Promise.all(pending);
+ fs.writeFileSync(path.join(__dirname,label+'-'+state+'.json'),JSON.stringify({source,state,route,actualUrl:page.url(),capturedAt:new Date().toISOString(),browser:browser.version(),fixedClock:FROZEN_NOW,fixtureSha256:hash(fs.readFileSync(path.join(root,'e2e/expo-web/fixtures.ts'))),normalization:'Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.',bundles,requests,file,sha256:hash(fs.readFileSync(path.join(__dirname,file))),text:await page.locator('body').innerText()},null,2)+'\n');
+});

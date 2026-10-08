@@ -1,0 +1,10 @@
+[WebServer] (node:6212) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:28876) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 ..\evidence-438-01a11c7b\matched.spec.ts:9:73 ΓÇ║ recovery-failure (491ms)
+
+  1 passed (1.4s)
