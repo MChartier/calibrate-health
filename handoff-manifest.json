@@ -1,0 +1,18 @@
+{
+  "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "purpose": "Retained nonmerged final handoff and exact API-decoded body; never merge into product history.",
+  "files": [
+    {
+      "path": "final-handoff.json",
+      "sha256": "0d6be5725e901356b05116cb5a6c6c4bed7eb267a66bf894c6bff1603ab60324"
+    },
+    {
+      "path": "final-pr-body.txt",
+      "sha256": "0b9afeb4c5b1608ec1020a86775ac12329b144258aa87b9fe4f991598153fc6a"
+    },
+    {
+      "path": "original-issue-body.json",
+      "sha256": "86a75f421c0d7fa201eb8035919e18f8a57f798fa2cdbf793389fd025f1e9613"
+    }
+  ]
+}

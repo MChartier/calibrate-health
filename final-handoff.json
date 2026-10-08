@@ -1,0 +1,435 @@
+{
+  "schema": 1,
+  "checkedAtUtc": "2026-10-08T22:58:43.516Z",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "repository": "MChartier/calibrate-health",
+  "issue": 447,
+  "pr": 452,
+  "branch": "mchartier/unified-release-447",
+  "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "target": "mchartier/release-entrypoints-recovery",
+  "liveTargetSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "testedParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "parentPr": 441,
+  "parentState": {
+    "head": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+    "state": "open",
+    "merged": false,
+    "plannedDocumentationCorrection": "cd8932b24b76af564d7e50f69750dba8f44c8e68 (not yet published at readback); root requires explicit impact/revalidation when published; no child incorporation."
+  },
+  "ultimateTarget": "master",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "mergeBase": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "sourceMergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "prBodySha256": "0b9afeb4c5b1608ec1020a86775ac12329b144258aa87b9fe4f991598153fc6a",
+  "draft": true,
+  "publishedScope": {
+    "commits": 3,
+    "files": 86,
+    "additions": 6219,
+    "deletions": 110,
+    "evidenceCommit": "ced19a3b2b32f67aa5fdf1abea2b7b9342326a03",
+    "manifestSha256": "6c662600ea0eaf1cf5a1d6c741f0ffdf27ee21d27132856ff3a27c43861ba761"
+  },
+  "originalEvidence": {
+    "commit": "80703680c484c534bcfa0f7ee18760870d2acc6f",
+    "manifestSha256": "83649ab0cea682e1233955b8d65dce8670e33cd70ded3b17dd32d067c6dcf826",
+    "preserved": true
+  },
+  "ci": [
+    {
+      "id": 37854304173,
+      "name": "Database Upgrade",
+      "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37854304173",
+      "pullRequests": [
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/452",
+          "id": 4793552240,
+          "number": 452,
+          "head": {
+            "ref": "mchartier/unified-release-447",
+            "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          },
+          "base": {
+            "ref": "mchartier/release-entrypoints-recovery",
+            "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 37854304185,
+      "name": "Builds",
+      "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37854304185",
+      "pullRequests": [
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/452",
+          "id": 4793552240,
+          "number": 452,
+          "head": {
+            "ref": "mchartier/unified-release-447",
+            "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          },
+          "base": {
+            "ref": "mchartier/release-entrypoints-recovery",
+            "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 37854304275,
+      "name": "Lint",
+      "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37854304275",
+      "pullRequests": [
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/452",
+          "id": 4793552240,
+          "number": 452,
+          "head": {
+            "ref": "mchartier/unified-release-447",
+            "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          },
+          "base": {
+            "ref": "mchartier/release-entrypoints-recovery",
+            "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 37854304099,
+      "name": "Production Container Scan",
+      "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37854304099",
+      "pullRequests": [
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/452",
+          "id": 4793552240,
+          "number": 452,
+          "head": {
+            "ref": "mchartier/unified-release-447",
+            "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          },
+          "base": {
+            "ref": "mchartier/release-entrypoints-recovery",
+            "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 37854304157,
+      "name": "Tests",
+      "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37854304157",
+      "pullRequests": [
+        {
+          "url": "https://api.github.com/repos/MChartier/calibrate-health/pulls/452",
+          "id": 4793552240,
+          "number": 452,
+          "head": {
+            "ref": "mchartier/unified-release-447",
+            "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          },
+          "base": {
+            "ref": "mchartier/release-entrypoints-recovery",
+            "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+            "repo": {
+              "id": 1102078034,
+              "url": "https://api.github.com/repos/MChartier/calibrate-health",
+              "name": "calibrate-health"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "runId": 37854304275,
+      "id": 113574678248,
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304173,
+      "id": 113574677490,
+      "name": "Classify Database Inputs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304173,
+      "id": 113574711339,
+      "name": "Populated Postgres Upgrade",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304173,
+      "id": 113574711746,
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304099,
+      "id": 113574677529,
+      "name": "Classify Production Image Inputs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304099,
+      "id": 113574707427,
+      "name": "High and Critical Vulnerabilities",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304157,
+      "id": 113574677814,
+      "name": "Classify Test Inputs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304157,
+      "id": 113574714337,
+      "name": "Mobile Tests",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304157,
+      "id": 113574715268,
+      "name": "Backend Tests",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575207598,
+      "name": "Classify Build Inputs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575243851,
+      "name": "Web Critical Smoke",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575243856,
+      "name": "android Runtime Bundle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575243863,
+      "name": "Release Configuration",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575243906,
+      "name": "Expo Web Build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575243931,
+      "name": "iOS Build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575243943,
+      "name": "Mobile Build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575243947,
+      "name": "ios Runtime Bundle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575244009,
+      "name": "Backend Build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575245188,
+      "name": "Six-State Data-Backed Route Acceptance",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575245860,
+      "name": "Wear Build and JVM Tests",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575246042,
+      "name": "UX Accessibility and Visual Regression",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575246198,
+      "name": "Full Exported Web and PWA End-to-End",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575246484,
+      "name": "Native Two-Emulator Package Upgrade",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113575246573,
+      "name": "Wear Release Emulator Smoke",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "runId": 37854304185,
+      "id": 113579971793,
+      "name": "Android Emulator End-to-End",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "review": {
+    "requestedHead": "a8539c3b90bd8c69a761c234869e5a0553f8ed08",
+    "currentHeadReviewCompleted": false,
+    "quotaOnlyRefusal": [
+      {
+        "id": 6070334887,
+        "body": "@codex review\n\nPlease review the complete parent-relative preparation change at a8539c3b90bd8c69a761c234869e5a0553f8ed08, targeting preserved PR441 at 0c26cea12e3ecdbc962eebaeb140af35f54ab95a. Focus on exact-source/CI authority, credential separation, independently verified receipts, uncertain-provider retries and terminal-unpublished retirement. Synthetic evidence and complete scope are linked in the description. No release or provider operation has been executed.",
+        "url": "https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6070334887"
+      },
+      {
+        "id": 6070337167,
+        "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+        "url": "https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6070337167"
+      }
+    ],
+    "submittedReviews": [],
+    "inlineThreads": [],
+    "independentQA": "Coordinator owned; pending"
+  },
+  "actionlint": {
+    "rawExit": 1,
+    "inheritedDiagnostics": 61,
+    "addedDiagnostics": 7,
+    "assessment": "Only documented GitHub Cloud queue:max and job.workflow_sha unsupported by actionlint 1.7.12; exact unfiltered compatibility record retained. No clean-lint claim."
+  },
+  "associations": {
+    "issueBodyLinksCurrentPr": true,
+    "nativeNonclosingAssociation": "Not verified: available connector exposes no mutation for it.",
+    "projectCurrentPr": "Not verified: available connector exposes no Projects operation.",
+    "implementingTask": "01a11cd8-3e02-703c-831c-fdc6176d7028"
+  },
+  "remaining": [
+    "Coordinator-owned independent review/QA and human readiness",
+    "Parent documentation replacement, when published, requires explicit impact/revalidation through root",
+    "Real EAS build, IPA/provider verification, Apple upload/TestFlight processing and rollout unrun; no authorization requested",
+    "Native device checks deferred"
+  ],
+  "externalReleaseOperations": 0,
+  "checkpoint": "Idle after publication and readback; no running local test or source mutation; preserved own clone and PR441 history."
+}
