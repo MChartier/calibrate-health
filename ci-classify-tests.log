@@ -1,0 +1,157 @@
+Classify Test Inputs	Set up job	﻿2026-10-08T19:41:43.9585490Z Current runner version: '2.337.0'
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9600544Z ##[group]Runner Image Provisioner
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9601048Z Hosted Compute Agent
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9601426Z Version: 20261002.596
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9601791Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9602198Z Build Date: 2026-10-02T22:28:27Z
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9602650Z Worker ID: {74689c5e-739f-4e9f-9156-7bcafb6d9e2e}
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9603044Z Region: southcentralus
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9603366Z Cloud: Azure
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9603718Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9604427Z ##[group]Operating System
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9604837Z Ubuntu
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9605134Z 24.04.5
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9605417Z LTS
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9605752Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9606064Z ##[group]Runner Image
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9606460Z Image: ubuntu-24.04
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9606792Z Version: 20261004.327.1
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9607379Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9608583Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9609160Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9609852Z ##[group]GITHUB_TOKEN Permissions
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9610982Z Contents: read
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9611321Z Metadata: read
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9611671Z PullRequests: read
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9612058Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9613219Z Secret source: Actions
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9613765Z Cache mode: write
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9614143Z Prepare workflow directory
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9802321Z Prepare all required actions
+Classify Test Inputs	Set up job	2026-10-08T19:41:43.9830894Z Getting action download info
+Classify Test Inputs	Set up job	2026-10-08T19:41:44.1938545Z Download action repository 'dorny/paths-filter@v3' (SHA:0e4a8c6effa4802afeda77dc8d303f8176d7dfad)
+Classify Test Inputs	Set up job	2026-10-08T19:41:45.4064507Z Complete job name: Classify Test Inputs
+Classify Test Inputs	Detect affected test surfaces	﻿2026-10-08T19:41:45.4611318Z ##[group]Run dorny/paths-filter@v3
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.4611771Z with:
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.4613051Z   filters: backend:
+Classify Test Inputs	Detect affected test surfaces	  - '.github/workflows/tests.yml'
+Classify Test Inputs	Detect affected test surfaces	  - 'backend/**'
+Classify Test Inputs	Detect affected test surfaces	  - 'docs/openapi/v1.yaml'
+Classify Test Inputs	Detect affected test surfaces	  - 'docs/weight-trend-v2-tuning-report.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'shared/**'
+Classify Test Inputs	Detect affected test surfaces	mobile:
+Classify Test Inputs	Detect affected test surfaces	  - '.github/workflows/tests.yml'
+Classify Test Inputs	Detect affected test surfaces	  - 'backend/package.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'backend/package-lock.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'docs/openapi/v1.yaml'
+Classify Test Inputs	Detect affected test surfaces	  - 'mobile/**'
+Classify Test Inputs	Detect affected test surfaces	  - 'package.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'package-lock.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'packages/api-client/**'
+Classify Test Inputs	Detect affected test surfaces	  - 'shared/**'
+Classify Test Inputs	Detect affected test surfaces	
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.4616291Z   token: ***
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.4616540Z   list-files: none
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.4616809Z   initial-fetch-depth: 100
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.4617105Z   predicate-quantifier: some
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.4617757Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.5159883Z ##[group]Fetching list of changed files for PR#450 from Github API
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.5160928Z Invoking listFiles(pull_number: 450, per_page: 100)
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8772135Z Received 38 items
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8773091Z [modified] README.md
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8773967Z [modified] e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8774849Z [modified] mobile/README.md
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8775500Z [modified] mobile/app.config.test.cjs
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8776329Z [modified] mobile/app.json
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8776960Z [modified] mobile/app/(auth)/login.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8777812Z [modified] mobile/app/(auth)/register.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8778678Z [modified] mobile/app/(tabs)/(settings)/advanced.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8779508Z [modified] mobile/app/_layout.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8780228Z [modified] mobile/src/auth/AuthContext.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8781023Z [modified] mobile/src/auth/AuthContext.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8781834Z [modified] mobile/src/auth/AuthContext.web.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8782686Z [modified] mobile/src/auth/AuthContext.web.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8783835Z [modified] mobile/src/auth/authScreenNavigation.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8784936Z [removed] mobile/src/auth/authServerDraft.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8785764Z [removed] mobile/src/auth/authServerDraft.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8786832Z [modified] mobile/src/auth/offlineWorkspace.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8787876Z [modified] mobile/src/auth/offlineWorkspace.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8788733Z [modified] mobile/src/auth/serverSwitch.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8789575Z [modified] mobile/src/auth/serverSwitch.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8790402Z [modified] mobile/src/auth/storage.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8791349Z [modified] mobile/src/auth/storage.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8792489Z [added] mobile/src/auth/targetTransition.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8793531Z [added] mobile/src/auth/targetTransition.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8794627Z [added] mobile/src/auth/targetTransitionState.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8795867Z [added] mobile/src/auth/targetTransitionState.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8797215Z [modified] mobile/src/components/ClientServerIncompatibleScreen.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8799334Z [modified] mobile/src/components/ClientServerIncompatibleScreen.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8800889Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8802431Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8803763Z [removed] mobile/src/components/ServerUrlControl.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8805006Z [removed] mobile/src/components/ServerUrlControl.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8806208Z [modified] mobile/src/config/server.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8807221Z [modified] mobile/src/config/server.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8808580Z [modified] mobile/src/legal/publicLegalContent.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8810147Z [added] mobile/src/offline/database.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8811454Z [modified] mobile/src/offline/database.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8812960Z [modified] mobile/src/screens/AdvancedSettingsScreen.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8815714Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8816640Z Detected 38 changed files
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8817797Z Results:
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8819342Z ##[group]Filter backend = false
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8820326Z Matching files: none
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8821405Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8822449Z ##[group]Filter mobile = true
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8823199Z Matching files:
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8823834Z mobile/README.md [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8824589Z mobile/app.config.test.cjs [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8825398Z mobile/app.json [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8826139Z mobile/app/(auth)/login.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8826990Z mobile/app/(auth)/register.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8828072Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8829019Z mobile/app/_layout.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8829890Z mobile/src/auth/AuthContext.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8830818Z mobile/src/auth/AuthContext.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8831757Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8832733Z mobile/src/auth/AuthContext.web.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8833756Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8834802Z mobile/src/auth/authServerDraft.test.ts [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8835775Z mobile/src/auth/authServerDraft.ts [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8836740Z mobile/src/auth/offlineWorkspace.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8837848Z mobile/src/auth/offlineWorkspace.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8838812Z mobile/src/auth/serverSwitch.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8839748Z mobile/src/auth/serverSwitch.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8840636Z mobile/src/auth/storage.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8841494Z mobile/src/auth/storage.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8842389Z mobile/src/auth/targetTransition.test.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8843351Z mobile/src/auth/targetTransition.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8844346Z mobile/src/auth/targetTransitionState.test.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8845381Z mobile/src/auth/targetTransitionState.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8846681Z mobile/src/components/ClientServerIncompatibleScreen.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8849232Z mobile/src/components/ClientServerIncompatibleScreen.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8851088Z mobile/src/components/ClientUpgradeRequiredScreen.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8852444Z mobile/src/components/ClientUpgradeRequiredScreen.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8853663Z mobile/src/components/ServerUrlControl.test.tsx [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8854746Z mobile/src/components/ServerUrlControl.tsx [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8855697Z mobile/src/config/server.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8856556Z mobile/src/config/server.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8857556Z mobile/src/legal/publicLegalContent.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8858510Z mobile/src/offline/database.test.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8859372Z mobile/src/offline/database.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8860366Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8861696Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-08T19:41:45.8862272Z Changes output set to ["mobile"]
+Classify Test Inputs	Select test surfaces	﻿2026-10-08T19:41:45.9862504Z ##[group]Run echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
+Classify Test Inputs	Select test surfaces	2026-10-08T19:41:45.9864124Z ^[[36;1mecho "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Test Inputs	Select test surfaces	2026-10-08T19:41:45.9865576Z ^[[36;1mecho "mobile=${MOBILE_CHANGED}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Test Inputs	Select test surfaces	2026-10-08T19:41:46.1377008Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Classify Test Inputs	Select test surfaces	2026-10-08T19:41:46.1378075Z env:
+Classify Test Inputs	Select test surfaces	2026-10-08T19:41:46.1378577Z   BACKEND_CHANGED: false
+Classify Test Inputs	Select test surfaces	2026-10-08T19:41:46.1379169Z   MOBILE_CHANGED: true
+Classify Test Inputs	Select test surfaces	2026-10-08T19:41:46.1379729Z ##[endgroup]
+Classify Test Inputs	Complete job	﻿2026-10-08T19:41:46.1619982Z Evaluate and set job outputs
+Classify Test Inputs	Complete job	2026-10-08T19:41:46.1625050Z Set output 'backend'
+Classify Test Inputs	Complete job	2026-10-08T19:41:46.1626874Z Set output 'mobile'
+Classify Test Inputs	Complete job	2026-10-08T19:41:46.1628229Z Cleaning up orphan processes
+Classify Test Inputs	Complete job	2026-10-08T19:41:46.1926142Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: dorny/paths-filter@v3. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

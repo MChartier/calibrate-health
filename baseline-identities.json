@@ -1,0 +1,58 @@
+[
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/provenance.json",
+    "gitBlobSha": "d8654767165e2a8c5646ed0013d5472eecd9f1fc",
+    "bytes": 18645,
+    "sha256": "08e3f6ec0867f9b28cc3141b1a8995c36eb4dddb7cd1631cad651bbe9c7c8dbd"
+  },
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/capture.config.cjs",
+    "gitBlobSha": "f5acabf8c7c594c13d97d9296d797a6eec13cf11",
+    "bytes": 622,
+    "sha256": "432111cd54c6d947fb98a047a78b9afe7eefa477821c0d56421714528ed60709"
+  },
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/matched.spec.ts",
+    "gitBlobSha": "e0a2d705dadf6fa0781aa00cdd7bf928b791a8f6",
+    "bytes": 3381,
+    "sha256": "fa1fce3c97a157a2da052f01a7a9551319ea9b896bd07a8d7bea3cbed873054d"
+  },
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/fixture-used.ts",
+    "gitBlobSha": "a02797264bc3427ced91af3caab3ec9ea57ae7a8",
+    "bytes": 33191,
+    "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+  },
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/before-advanced.json",
+    "gitBlobSha": "f66e2fafab6bd0acc541d2e0a19fd328f78310f9",
+    "bytes": 2409,
+    "sha256": "3e2c0684e2de191a7a38ccc44b96420ab29b3509246f0004dbd4669e5f4a0fae"
+  },
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/before-advanced.png",
+    "gitBlobSha": "3f5bacebae87f26c0ed12774c0dc338de6666a81",
+    "bytes": 54605,
+    "sha256": "f06b869520b56a0cf26c889860967ebbad8f1c89764bf88c549189b9de72eae1"
+  },
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/before-recovery-failure.json",
+    "gitBlobSha": "c403f2ff236492d3ca03081d9ba7076b3fac1ce6",
+    "bytes": 1401,
+    "sha256": "bcb0ecc00e32d3f091d681098a2178a809c0fc322de98f4aa55b15d23647ba16"
+  },
+  {
+    "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "path": "managed-438/before-recovery-failure.png",
+    "gitBlobSha": "436678a8c3ef3fe65fc7af380fe2fc5510547253",
+    "bytes": 27894,
+    "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad"
+  }
+]

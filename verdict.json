@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewOverlay": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "acknowledgment": "Complete supplied pinned execution, QA role, shared standards, review overlay and direct amendments read/acknowledged. Repository AGENTS read in full and instruction scope verified unchanged. No runtime pin migration. Sole independent QA lane after PR38, no delegated reviewer or overlapping suite.",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "hostVerifiedAtUtc": "2026-10-08T20:14:57.9090599Z",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/450",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/438",
+  "supersedesVerdictCommentId": 6067468474,
+  "checkedAtUtc": "2026-10-08T20:25:13.369314+00:00",
+  "headSha": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+  "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "targetRepository": "MChartier/calibrate-health",
+  "targetRef": "refs/heads/master",
+  "headParents": [
+    "60eca5e0add3cf612041f8a5ad5400fbd33b7abe"
+  ],
+  "targetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "parentRevisions": [],
+  "prBodySha256": "2f99aa6cd7078a5e5afa690df2aaf0f90ed90661f821629ddfc76da5bd602a04",
+  "issueBodySha256": "5c413427dae18eff900e2a6fff49a57d6b969cdc38171efd1f0a28c2f22debb1",
+  "draft": true,
+  "labels": [],
+  "findings": [
+    {
+      "id": "R1",
+      "status": "resolved",
+      "revision": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+      "evidence": [
+        "before-result.json",
+        "after-result.json",
+        "strictmode-result.json",
+        "native-remount.test.tsx"
+      ],
+      "observed": "Independent original remount probe fails on60eca5e0: final stored credentials are late-old rather than replacement. Identical payload assertion passes onf417e84b. All38 affected maintained tests plus independent probe passed (39tests/four suites). Additional StrictMode-wrapped valid-provider and obsolete API callback test passed. Login/register/refresh late completion, waiting persistence, invalidated callbacks, captured-origin token revocation, replacement workspace, valid separate providers and guarded actual storage queues are covered.",
+      "assessment": "Cleanup invalidates providerActive and increments epoch, clears request/token/scope refs. Every auth completion is checked before persistence; manual requests capture origin. Token writes serialize and restore cancelled in-flight changes within their queue slot; replacement readers/writers wait, and restoration failure prevents exposure until recovery. Workspace snapshots are captured before queuing, guard live identity, roll back cancelled saves and preserve other origins. Committed valid sessions are not revoked merely because a provider later unmounts.",
+      "limitations": "Component/storage fixtures are simulated; no native-device, process-kill or live provider execution claimed."
+    },
+    {
+      "id": "C1",
+      "status": "resolved",
+      "observed": "Final body gives base-state problem and final solution, behavioral expected/observed scenarios including cancellation/persistence, current-head CI/review and prior-head QA context. Separately names actual target9dc, APIbase/Before4cb, fresh Afterf417 and target impact. Reassessment-pending statement was correct at handoff and does not require another status-only body edit."
+    }
+  ],
+  "gates": {
+    "value": "pass: direct managed-hosted human direction, no runtime endpoint picker or self-hosting promotion",
+    "outcome": "pass: fixed build/serving origins, credential and local-state preservation, recovery and lifetime isolation supported",
+    "code": "pass: six correction files inspected in full; previous complete source review remains applicable to unchanged first three commits, current scope/critical boundaries independently rechecked",
+    "scope": "pass: all four published commits and every parent/path reconciled;38files +1255/-881; maintained product/tests/docs only, no evidence churn",
+    "engineeringReview": "pass: exact-head review6067763994 completed with no major issues; three earlier findings verified fixed independently",
+    "ci": "pass:14successes,11justified skips, no pending/failure; allcurrenthead",
+    "behavior": "pass: red/green independent native remount experiment, affected maintained storage/auth tests and additional StrictMode/callback boundary; current fullCI and owner browser evidence support unchanged contracts",
+    "evidence": "pass: fresh final provenance, exact baseline identities, actual pixels and served bundles independently verified; GitHub rendering waived honestly",
+    "communication": "pass: concise final behavior and reproducible evidence, no development diary; native/skipped/merged-target limitations clear",
+    "stack": "pass: noPRparent; actual master9dc vs APIbase/mergebase4cb explicitly bound, current targetimpact independently assessed; native issue438association verified"
+  },
+  "publishedScope": {
+    "record": "target-scope.json",
+    "allPagesComplete": true,
+    "commits": 4,
+    "files": 38,
+    "additions": 1255,
+    "deletions": 881,
+    "assessment": "First commit focused managed client successor; second three review corrections plus maintained release expectation; third startup test timeout only; fourth native lifetime/persistence correction and maintained tests. No backend/admin/bootstrap, release-helper, EAS/profile/project configuration or auth-stack source imported. No source/body/branch changes by QA.",
+    "targetImpact": "Read all three incoming commits/parents and complete10file patch for saved completed-day calorie comparisons. None overlaps the final38paths, including new token/workspace persistence tests and runtime changes. Target modifies backend comparison reads/acknowledgements, tests and API comments; not auth/server resolution/storage/UI/capture fixtures. Final source conflict-only merge-tree succeeds. Current head tests and historical baseline captures remain applicable; no merged-target execution or synthetic substitute claimed."
+  },
+  "validation": {
+    "independentBefore": {
+      "head": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+      "result": "one expected behavioral failure, replacement credentials overwritten by late old provider",
+      "record": "before-result.json"
+    },
+    "independentAfter": {
+      "head": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+      "result": "39passed across4suites; separate2test run includes repeated original probe and new StrictMode/callback boundary,40distinct final assertions/tests in total",
+      "records": [
+        "after-result.json",
+        "strictmode-result.json"
+      ],
+      "environment": "Node24.19, React Native component/Jest with synthetic mocked platform/storage/API, isolated detached QA checkout; installed owner dependencies read-only, task-local Jest caches and outputs; not native-device execution"
+    },
+    "ci": {
+      "record": "prepublish.json",
+      "mobileLog": "ci-mobile-live.log",
+      "result": "235mobile suites/1342tests and69API-client tests confirmed in current live job log; Android/iOS builds and both runtime bundles, web smoke/build, release/type/security succeeded.",
+      "skips": "Backend/build and database/migration jobs are unchanged-surface skips; Wear unchanged; full web/PWA/six-state/visual/emulator/package-upgrade jobs require manual release-validation inputs. Existing workflow conditions and current classifier logs checked. None claimed executed.",
+      "classifiers": [
+        "ci-classify-build.log",
+        "ci-classify-tests.log"
+      ]
+    },
+    "owner": "Four maintained desktop/compact browser cases, local typecheck, fresh web build/captures and Android JS export logs inspected. No full local suite duplication. Fresh finalCI includes all maintained prior browser stale-cookie/target-state regressions.",
+    "managedBoundaries": "Productionweb serving-origin resolution and native explicitEXPO_PUBLIC_CALIBRATE_SERVER_URL checked; channels select update routing, not endpoints. Existing EAS internal/preview, production/production and simulator inheritance; app.config channel/header/runtime semantics inspected, unchanged by this PR. Native old choices migrate before tokens/replay; unknown/malformed/unreadable/pending states preserve and block, proven-empty device IDs retained, five supportedHealthConnect record checkpoints retained. No runtime/hiddenpicker, backend/authstack or releasehelper changes."
+  },
+  "feedback": {
+    "completeSnapshot": "prepublish.json",
+    "nativeThreads": "native.json",
+    "counts": {
+      "comments": 13,
+      "reviews": 4,
+      "inline": 6,
+      "issueComments": 9
+    },
+    "dispositions": [
+      {
+        "finding": 4222612212,
+        "reply": 4222712579,
+        "revision": "8e109f51598ce12a2fd0d69503d3432713696f4c",
+        "result": "Origin-specific browser auth sequence survives remounts; stale cookie session revoked before replacement, pending sequence blocksrequests. Current retained regression and fullCI pass."
+      },
+      {
+        "finding": 4222612223,
+        "reply": 4222713224,
+        "revision": "8e109f51598ce12a2fd0d69503d3432713696f4c",
+        "result": "Complete local-state check proves empty install; device ID alone no longer rejects safe initialization, original ID retained."
+      },
+      {
+        "finding": 4222612234,
+        "reply": 4222713947,
+        "revision": "8e109f51598ce12a2fd0d69503d3432713696f4c",
+        "result": "HealthConnect token key validates account/record-type component; known checkpoints retained and unknown types block."
+      }
+    ],
+    "threadStatus": "All three threads remain UI-unresolved/outdated. This is recorded, not silently marked resolved; current source/tests and explicit replies establish dispositions. No actionable finding remains solely from those flags.",
+    "reviewComment": 6067763994,
+    "fullRead": "Read full current issue438 and PR450 comments, submitted reviews and inline threads. No additional human change request or untracked blocker. Prior R1/C1 reassessed independently."
+  },
+  "uiEvidence": {
+    "applicable": true,
+    "representativeCoverage": "Two mandatory matched pairs: Advanced and reset failure; additional final login/recovery images inspected. Browser evidence, not a fabricated native Before/After.",
+    "pairs": [
+      {
+        "id": "advanced",
+        "before": {
+          "url": "https://github.com/MChartier/calibrate-health/blob/a7d2ad1648d2b743cdfda5ef66950f6feee741ad/managed-438/before-advanced.png",
+          "sha256": "f06b869520b56a0cf26c889860967ebbad8f1c89764bf88c549189b9de72eae1",
+          "sourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "capturedAtUtc": "2026-10-08T18:00:04.331Z"
+        },
+        "after": {
+          "url": "https://github.com/MChartier/calibrate-health/blob/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-advanced.png",
+          "sha256": "8cd74869f72400196f11b04b0dd1e8e4ef23ca0040b980a02f4bf4fcecf3453a",
+          "sourceSha": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+          "capturedAtUtc": "2026-10-08T19:42:59.534Z"
+        },
+        "observation": "Before promotes self-hosting and labels self-hosted service. After removes those elements while retaining the same service-address diagnostics, platform/runtime and software updates; layout closes the removed gap."
+      },
+      {
+        "id": "recovery-failure",
+        "before": {
+          "url": "https://github.com/MChartier/calibrate-health/blob/a7d2ad1648d2b743cdfda5ef66950f6feee741ad/managed-438/before-recovery-failure.png",
+          "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad",
+          "sourceSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "capturedAtUtc": "2026-10-08T18:04:44.468Z"
+        },
+        "after": {
+          "url": "https://github.com/MChartier/calibrate-health/blob/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-recovery-failure.png",
+          "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad",
+          "sourceSha": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+          "capturedAtUtc": "2026-10-08T19:43:00.797Z"
+        },
+        "observation": "Genuine independent baseline/final captures show the same email, synthetic503 failure and retry action. Captured POST destination remains the serving origin despite wrong.example route parameter."
+      }
+    ],
+    "provenanceRecords": [
+      {
+        "pairs": [
+          "advanced",
+          "recovery-failure"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/provenance.json",
+        "commitSha": "d108dee53ff3bfb2be8bb0110166ac6f06b09048",
+        "sha256": "9a02eeb7f19b56020094bbf7c46ac7ac3f02f46bd7873ce52f125750c6b22e31"
+      },
+      {
+        "pairs": [
+          "advanced",
+          "recovery-failure"
+        ],
+        "url": "https://github.com/MChartier/calibrate-health/blob/a7d2ad1648d2b743cdfda5ef66950f6feee741ad/managed-438/provenance.json",
+        "commitSha": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+        "sha256": "08e3f6ec0867f9b28cc3141b1a8995c36eb4dddb7cd1631cad651bbe9c7c8dbd",
+        "harness": {
+          "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+          "files": [
+            {
+              "path": "managed-438/capture.config.cjs",
+              "sha256": "432111cd54c6d947fb98a047a78b9afe7eefa477821c0d56421714528ed60709"
+            },
+            {
+              "path": "managed-438/matched.spec.ts",
+              "sha256": "fa1fce3c97a157a2da052f01a7a9551319ea9b896bd07a8d7bea3cbed873054d"
+            },
+            {
+              "path": "managed-438/fixture-used.ts",
+              "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+            }
+          ]
+        }
+      }
+    ],
+    "provenanceAssessment": "44new evidence/handoff Gitblobs exact-size/GitSHA1/SHA256 verified;8baseline/harness/image records freshly read back and compared unchanged. SourcefixtureGitblobs at Before/head/actualtarget identical. Artifact digests, capture JSON, runningresponse JS hashes and buildinventory reconcile;170actualowner-built export files independently hashed and match finalinventory. Harness uses separate clean builds with no reused server, fixed clock/random synthetic fixture and matched1280x1100scale1lightlocale/timezone. Equal transient PWA hiding disclosed; comparedUI pixels unaltered.",
+    "pixelObservations": "Advanced removes hosting promotion/servicecategory and keeps address/platform/runtime/update diagnostics. Reset failure images have identical pixels from separately recorded actual builds, with503retry guidance and same entered syntheticemail. Final login and reset show ordinary forms, no endpoint selector; recorded API/POSTdestinations remain127.0.0.1:4174 despite legacywrong.example parameter. No unrelated UI mismatch concealed.",
+    "renderedPrInspection": {
+      "url": "https://github.com/MChartier/calibrate-health/pull/450",
+      "observations": "GitHub page rendering waived under6022754087; not passed. Rawfinalbody embeds labeled pairs beside Testplan, genuine pixels and provenance independently inspected."
+    },
+    "nonUiObservableContract": null,
+    "scopedHumanBaselineWaiver": null
+  },
+  "retainedOriginals": {
+    "priorReceipt": {
+      "verdict": "changes-required",
+      "verdictCommentId": 6067468474,
+      "url": "https://github.com/MChartier/calibrate-health/pull/450#issuecomment-6067468474",
+      "verdictBodySha256": "115a13dde7f0d4c6ae4d7bee98ff98c26099613561e996ed829534b759fc4596",
+      "verdictUpdatedAt": "2026-10-08T19:28:43Z",
+      "headSha": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+      "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "headParents": [
+        "8e109f51598ce12a2fd0d69503d3432713696f4c"
+      ],
+      "parentRevisions": [],
+      "prBodySha256": "81ae48dc74f845e134d1178470e963aaf5c3a78d545a6674d24c329d5a527630",
+      "checkedAtUtc": "2026-10-08T19:28:21.408918+00:00",
+      "postPublicationRecheckedAtUtc": "2026-10-08T19:29:23.342020+00:00",
+      "evidenceCommit": "83bdc1a9a09e1e03dab0489651cde268264010b9",
+      "evidenceSha256": "c04aac5825ea51532b0479fe8f8522077ba4374c8881d4cf6bb809bfc57c9c0f",
+      "host": "mchartier_zbook",
+      "reviewerTask": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "checkpoint": "idle; no product/body/readiness/draft/Project/merge mutation; next QA not started",
+      "supersedesVerdictCommentId": 6067421414
+    },
+    "originalReceipt": {
+      "verdictCommentId": 6067421414,
+      "verdictBodySha256": "5dd79d9bbffc0228bd3f5107e7897647a13a16999fc07916aac69c57a94f80f8",
+      "verdictUpdatedAt": "2026-10-08T19:25:56Z",
+      "assessedTarget": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "status": "historical immediately superseded due to target drift; not readiness"
+    },
+    "priorEvidence": {
+      "commit": "83bdc1a9a09e1e03dab0489651cde268264010b9",
+      "path": "final-verdict.json",
+      "sha256": "c04aac5825ea51532b0479fe8f8522077ba4374c8881d4cf6bb809bfc57c9c0f"
+    },
+    "originalQaEvidence": {
+      "commit": "e1d6bad89ab4c4079156ab27ae99af20092bc17a",
+      "path": "verdict.json",
+      "sha256": "61f082465455d566d49e7f571f06fa122dc5328c82f6747b33ab2f4685abac65"
+    },
+    "ownerOriginals": [
+      "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+      "0ad646c474e5b95a4d6230419cb73528d0debcae",
+      "296ef4f724d2c0e8c808ea6192a06a10c7a24b73"
+    ],
+    "ownerRetention": {
+      "ref": "refs/heads/evidence/managed-438-01a11c7b",
+      "purpose": "Nonmerged original evidence and exact provenance, never a product merge target",
+      "ownerTask": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+      "policy": "Retain indefinitely with PR review/history; do not delete or rewrite without explicit authorization. Local independent source/build directories also retained.",
+      "priorOwner": "01a1145f-aae2-70e0-af56-3952f0eab012 completed/idle; explicit replacement owner, no migration claim",
+      "priorPR439Head": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+      "priorPR439Evidence": "8457ed1a3bbb0f0381b48e22a40aac52b223ae6c/pr439-evidence/provenance.json",
+      "priorPR402Evidence": "6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/retention-manifest.json",
+      "deferredScope": "PR439 backend administrator/bootstrap and superseded chooser remain on original branch/commits, open/unready; coordinator decides closure only after preservation verification. PR402 stays closed."
+    },
+    "assessment": "Both previous full comment bodies/updated_at match preserved trusted receipts. All old source/capture/verdict identities remain historical, never rebound. PR439 remains open/unready with deferredscope unchanged; no closure."
+  },
+  "evidence": {
+    "newOwnerIdentities": "identities.json",
+    "baselineIdentities": "baseline-identities.json",
+    "ownerHandoff": "https://github.com/MChartier/calibrate-health/blob/27f6a292704d42499d8169866729d1d1c5a8ae40/managed-438/r1-handoff/handoff.json",
+    "verification": "verification.json",
+    "scope": "target-scope.json",
+    "retention": "Dedicated nonmerged QA evidence ref in authorized repository; no product history additions."
+  },
+  "limitations": [
+    "Native-device/emulator and production-provider/storage execution remain unrun/deferred; component/browser/bundle checks distinguished.",
+    "11skipped CIjobs not execution evidence.",
+    "No actual merged-target build; documented final-source/targetimpact supports reuse.",
+    "Rollback failure/retry tested in simulated running process; no native power-loss/process-kill durability claim.",
+    "GitHub page rendering waived; actual pixels/provenance checked.",
+    "No source/body/owner branch/Project/readiness/draft/merge/release/credential/security changes."
+  ],
+  "nextAction": "Coordinator separately retain exact new comment receipt, recheck current head/actualtarget/APIbase/body/evidence/fullfeedback and CI before readiness/draft transition, then read back. This verdict is review readiness only, not human approval or merge/release authority. QA checkpoints idle with no next assignment."
+}

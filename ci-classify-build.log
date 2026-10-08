@@ -1,0 +1,448 @@
+Classify Build Inputs	Set up job	﻿2026-10-08T19:41:44.0345536Z Current runner version: '2.337.0'
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0361522Z ##[group]Runner Image Provisioner
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0362094Z Hosted Compute Agent
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0362708Z Version: 20261002.596
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0363169Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0363632Z Build Date: 2026-10-02T22:28:27Z
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0364053Z Worker ID: {e52f0657-7dd3-4f17-afe1-8b8de8b7f3fb}
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0364528Z Region: southcentralus
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0364909Z Cloud: Azure
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0365238Z ##[endgroup]
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0366019Z ##[group]Operating System
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0366440Z Ubuntu
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0366790Z 24.04.5
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0367140Z LTS
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0367496Z ##[endgroup]
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0367820Z ##[group]Runner Image
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0368223Z Image: ubuntu-24.04
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0368595Z Version: 20261004.327.1
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0369236Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0370256Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0370862Z ##[endgroup]
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0371603Z ##[group]GITHUB_TOKEN Permissions
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0373152Z Contents: read
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0373508Z Metadata: read
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0373885Z PullRequests: read
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0374277Z ##[endgroup]
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0375510Z Secret source: Actions
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0376109Z Cache mode: write
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0376519Z Prepare workflow directory
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0576744Z Prepare all required actions
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.0609176Z Getting action download info
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.2903657Z Download action repository 'dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad' (SHA:0e4a8c6effa4802afeda77dc8d303f8176d7dfad)
+Classify Build Inputs	Set up job	2026-10-08T19:41:44.9289170Z Complete job name: Classify Build Inputs
+Classify Build Inputs	Detect affected build surfaces	﻿2026-10-08T19:41:44.9851557Z ##[group]Run dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:44.9852130Z with:
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:44.9857987Z   filters: release_config:
+Classify Build Inputs	Detect affected build surfaces	  - '.github/native-release-tag-allowed-signers'
+Classify Build Inputs	Detect affected build surfaces	  - '.github/native-play-attestation-trusted-workflow-shas'
+Classify Build Inputs	Detect affected build surfaces	  - '.github/release-image-attestation-trusted-workflow-shas'
+Classify Build Inputs	Detect affected build surfaces	  - 'tools/eas-cli/**'
+Classify Build Inputs	Detect affected build surfaces	  - '.github/workflows/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'backend/package.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'backend/package-lock.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'deploy/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'docs/openapi/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'docs/release-acceptance.md'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/eas.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/package.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'package.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'package-lock.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'packages/api-client/src/generated/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'playwright.ux.config.ts'
+Classify Build Inputs	Detect affected build surfaces	  - 'quality/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'shared/client-diagnostic-versions.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'shared/release.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'wear/**'
+Classify Build Inputs	Detect affected build surfaces	backend:
+Classify Build Inputs	Detect affected build surfaces	  - 'backend/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'shared/**'
+Classify Build Inputs	Detect affected build surfaces	web:
+Classify Build Inputs	Detect affected build surfaces	  - 'e2e/expo-web/fixtures.ts'
+Classify Build Inputs	Detect affected build surfaces	  - 'e2e/expo-web/release-smoke.spec.ts'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/assets/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/public/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/src/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/babel.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/index.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/metro.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/modules/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/package.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/tsconfig.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'package.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'package-lock.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'packages/api-client/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'playwright.expo-web.config.ts'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/expo-cli-environment.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/expo-web-build.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/expo-web-playwright.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/expo-web-release.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/expo-web-release.test.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/expo-web-static-server.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/expo-web-static-server.test.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'shared/**'
+Classify Build Inputs	Detect affected build surfaces	wear:
+Classify Build Inputs	Detect affected build surfaces	  - 'wear/**'
+Classify Build Inputs	Detect affected build surfaces	native_runtime:
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/assets/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/src/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/babel.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/index.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/metro.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/modules/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/package.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'package-lock.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'packages/api-client/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'scripts/xcode-uuid-compatibility.test.mjs'
+Classify Build Inputs	Detect affected build surfaces	  - 'shared/**'
+Classify Build Inputs	Detect affected build surfaces	native_package:
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.config.js'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/app.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/eas.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/assets/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/modules/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/package.json'
+Classify Build Inputs	Detect affected build surfaces	  - 'mobile/plugins/**'
+Classify Build Inputs	Detect affected build surfaces	  - 'package-lock.json'
+Classify Build Inputs	Detect affected build surfaces	
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:44.9866624Z   token: ***
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:44.9866872Z   list-files: none
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:44.9867130Z   initial-fetch-depth: 100
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:44.9867412Z   predicate-quantifier: some
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:44.9867816Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.0474564Z ##[group]Fetching list of changed files for PR#450 from Github API
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.0475421Z Invoking listFiles(pull_number: 450, per_page: 100)
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5764123Z Received 38 items
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5780472Z [modified] README.md
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5781278Z [modified] e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5782958Z [modified] mobile/README.md
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5783433Z [modified] mobile/app.config.test.cjs
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5783964Z [modified] mobile/app.json
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5784473Z [modified] mobile/app/(auth)/login.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5785017Z [modified] mobile/app/(auth)/register.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5785568Z [modified] mobile/app/(tabs)/(settings)/advanced.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5786133Z [modified] mobile/app/_layout.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5786631Z [modified] mobile/src/auth/AuthContext.test.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5787193Z [modified] mobile/src/auth/AuthContext.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5787720Z [modified] mobile/src/auth/AuthContext.web.test.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5788311Z [modified] mobile/src/auth/AuthContext.web.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5788963Z [modified] mobile/src/auth/authScreenNavigation.test.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5789696Z [removed] mobile/src/auth/authServerDraft.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5790328Z [removed] mobile/src/auth/authServerDraft.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5790903Z [modified] mobile/src/auth/offlineWorkspace.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5791529Z [modified] mobile/src/auth/offlineWorkspace.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5792133Z [modified] mobile/src/auth/serverSwitch.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5793146Z [modified] mobile/src/auth/serverSwitch.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5793688Z [modified] mobile/src/auth/storage.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5794253Z [modified] mobile/src/auth/storage.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5794815Z [added] mobile/src/auth/targetTransition.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5795390Z [added] mobile/src/auth/targetTransition.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5795970Z [added] mobile/src/auth/targetTransitionState.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5796840Z [added] mobile/src/auth/targetTransitionState.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5797573Z [modified] mobile/src/components/ClientServerIncompatibleScreen.test.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5798351Z [modified] mobile/src/components/ClientServerIncompatibleScreen.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5799140Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.test.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5799949Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5800609Z [removed] mobile/src/components/ServerUrlControl.test.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5801310Z [removed] mobile/src/components/ServerUrlControl.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5801893Z [modified] mobile/src/config/server.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5802399Z [modified] mobile/src/config/server.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5803119Z [modified] mobile/src/legal/publicLegalContent.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5803701Z [added] mobile/src/offline/database.test.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5804215Z [modified] mobile/src/offline/database.ts
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5804871Z [modified] mobile/src/screens/AdvancedSettingsScreen.test.tsx
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5806323Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5806720Z Detected 38 changed files
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5807158Z Results:
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5807869Z ##[group]Filter release_config = true
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5808350Z Matching files:
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5808790Z mobile/app.json [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5809475Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5810091Z ##[group]Filter backend = false
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5810610Z Matching files: none
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5811350Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5812013Z ##[group]Filter web = true
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5812970Z Matching files:
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5813391Z mobile/app.json [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5813943Z mobile/app/(auth)/login.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5814506Z mobile/app/(auth)/register.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5815104Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5815698Z mobile/app/_layout.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5816240Z mobile/src/auth/AuthContext.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5816827Z mobile/src/auth/AuthContext.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5817418Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5818034Z mobile/src/auth/AuthContext.web.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5818701Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5819365Z mobile/src/auth/authServerDraft.test.ts [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5819965Z mobile/src/auth/authServerDraft.ts [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5820581Z mobile/src/auth/offlineWorkspace.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5821208Z mobile/src/auth/offlineWorkspace.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5821803Z mobile/src/auth/serverSwitch.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5822391Z mobile/src/auth/serverSwitch.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5823041Z mobile/src/auth/storage.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5823581Z mobile/src/auth/storage.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5824166Z mobile/src/auth/targetTransition.test.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5824787Z mobile/src/auth/targetTransition.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5825353Z mobile/src/auth/targetTransitionState.test.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5825962Z mobile/src/auth/targetTransitionState.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5826711Z mobile/src/components/ClientServerIncompatibleScreen.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5827573Z mobile/src/components/ClientServerIncompatibleScreen.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5828388Z mobile/src/components/ClientUpgradeRequiredScreen.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5829350Z mobile/src/components/ClientUpgradeRequiredScreen.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5829955Z mobile/src/components/ServerUrlControl.test.tsx [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5830392Z mobile/src/components/ServerUrlControl.tsx [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5830895Z mobile/src/config/server.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5831226Z mobile/src/config/server.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5831565Z mobile/src/legal/publicLegalContent.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5831919Z mobile/src/offline/database.test.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5832245Z mobile/src/offline/database.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5832815Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5833642Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5834046Z ##[group]Filter wear = false
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5834331Z Matching files: none
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5834722Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5835132Z ##[group]Filter native_runtime = true
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5835464Z Matching files:
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5835716Z mobile/app.json [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5836009Z mobile/app/(auth)/login.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5836328Z mobile/app/(auth)/register.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5836682Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5837039Z mobile/app/_layout.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5837365Z mobile/src/auth/AuthContext.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5837731Z mobile/src/auth/AuthContext.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5838187Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5838792Z mobile/src/auth/AuthContext.web.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5839415Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5839833Z mobile/src/auth/authServerDraft.test.ts [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5840250Z mobile/src/auth/authServerDraft.ts [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5840793Z mobile/src/auth/offlineWorkspace.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5841359Z mobile/src/auth/offlineWorkspace.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5841950Z mobile/src/auth/serverSwitch.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5842698Z mobile/src/auth/serverSwitch.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5843199Z mobile/src/auth/storage.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5843687Z mobile/src/auth/storage.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5844185Z mobile/src/auth/targetTransition.test.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5844722Z mobile/src/auth/targetTransition.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5845277Z mobile/src/auth/targetTransitionState.test.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5845859Z mobile/src/auth/targetTransitionState.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5846547Z mobile/src/components/ClientServerIncompatibleScreen.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5847357Z mobile/src/components/ClientServerIncompatibleScreen.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5848137Z mobile/src/components/ClientUpgradeRequiredScreen.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5848902Z mobile/src/components/ClientUpgradeRequiredScreen.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5849594Z mobile/src/components/ServerUrlControl.test.tsx [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5850220Z mobile/src/components/ServerUrlControl.tsx [deleted]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5850772Z mobile/src/config/server.test.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5851269Z mobile/src/config/server.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5851774Z mobile/src/legal/publicLegalContent.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5852317Z mobile/src/offline/database.test.ts [added]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5852949Z mobile/src/offline/database.ts [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5853534Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5854363Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5854972Z ##[group]Filter native_package = true
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5855422Z Matching files:
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5855821Z mobile/app.json [modified]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5856433Z ##[endgroup]
+Classify Build Inputs	Detect affected build surfaces	2026-10-08T19:41:45.5856961Z Changes output set to ["release_config","web","native_runtime","native_package"]
+Classify Build Inputs	Detect changes outside generated release mirrors	﻿2026-10-08T19:41:45.6310249Z ##[group]Run dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6310749Z with:
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6310998Z   predicate-quantifier: every
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6312286Z   filters: non_release_mirror:
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '**'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!backend/package-lock.json'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!backend/package.json'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!docs/openapi/v1.yaml'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!package-lock.json'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!package.json'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!packages/api-client/src/generated/v1.ts'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!shared/client-diagnostic-versions.json'
+Classify Build Inputs	Detect changes outside generated release mirrors	  - '!shared/release.json'
+Classify Build Inputs	Detect changes outside generated release mirrors	
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6316049Z   token: ***
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6316293Z   list-files: none
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6316554Z   initial-fetch-depth: 100
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6316837Z ##[endgroup]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6848563Z ##[group]Fetching list of changed files for PR#450 from Github API
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:45.6851790Z Invoking listFiles(pull_number: 450, per_page: 100)
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0406405Z Received 38 items
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0408017Z [modified] README.md
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0409008Z [modified] e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0410236Z [modified] mobile/README.md
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0411131Z [modified] mobile/app.config.test.cjs
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0412060Z [modified] mobile/app.json
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0413085Z [modified] mobile/app/(auth)/login.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0414080Z [modified] mobile/app/(auth)/register.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0415206Z [modified] mobile/app/(tabs)/(settings)/advanced.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0416326Z [modified] mobile/app/_layout.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0417338Z [modified] mobile/src/auth/AuthContext.test.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0418182Z [modified] mobile/src/auth/AuthContext.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0419030Z [modified] mobile/src/auth/AuthContext.web.test.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0419904Z [modified] mobile/src/auth/AuthContext.web.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0420872Z [modified] mobile/src/auth/authScreenNavigation.test.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0421938Z [removed] mobile/src/auth/authServerDraft.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0423136Z [removed] mobile/src/auth/authServerDraft.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0424038Z [modified] mobile/src/auth/offlineWorkspace.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0425317Z [modified] mobile/src/auth/offlineWorkspace.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0426404Z [modified] mobile/src/auth/serverSwitch.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0427446Z [modified] mobile/src/auth/serverSwitch.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0428481Z [modified] mobile/src/auth/storage.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0429557Z [modified] mobile/src/auth/storage.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0430626Z [added] mobile/src/auth/targetTransition.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0431770Z [added] mobile/src/auth/targetTransition.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0433019Z [added] mobile/src/auth/targetTransitionState.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0434366Z [added] mobile/src/auth/targetTransitionState.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0435922Z [modified] mobile/src/components/ClientServerIncompatibleScreen.test.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0437709Z [modified] mobile/src/components/ClientServerIncompatibleScreen.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0439499Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.test.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0441275Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0442936Z [removed] mobile/src/components/ServerUrlControl.test.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0444407Z [removed] mobile/src/components/ServerUrlControl.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0445558Z [modified] mobile/src/config/server.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0446748Z [modified] mobile/src/config/server.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0447857Z [modified] mobile/src/legal/publicLegalContent.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0510445Z [added] mobile/src/offline/database.test.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0512084Z [modified] mobile/src/offline/database.ts
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0514313Z [modified] mobile/src/screens/AdvancedSettingsScreen.test.tsx
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0516214Z ##[endgroup]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0516869Z Detected 38 changed files
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0517593Z Results:
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0518692Z ##[group]Filter non_release_mirror = true
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0519577Z Matching files:
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0520443Z README.md [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0521376Z e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0522445Z mobile/README.md [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0523345Z mobile/app.config.test.cjs [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0524182Z mobile/app.json [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0524941Z mobile/app/(auth)/login.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0525814Z mobile/app/(auth)/register.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0526774Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0527747Z mobile/app/_layout.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0528614Z mobile/src/auth/AuthContext.test.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0529576Z mobile/src/auth/AuthContext.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0530538Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0531560Z mobile/src/auth/AuthContext.web.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0532758Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0533854Z mobile/src/auth/authServerDraft.test.ts [deleted]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0534862Z mobile/src/auth/authServerDraft.ts [deleted]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0535847Z mobile/src/auth/offlineWorkspace.test.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0536856Z mobile/src/auth/offlineWorkspace.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0537830Z mobile/src/auth/serverSwitch.test.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0538784Z mobile/src/auth/serverSwitch.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0539692Z mobile/src/auth/storage.test.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0540565Z mobile/src/auth/storage.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0541468Z mobile/src/auth/targetTransition.test.ts [added]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0542420Z mobile/src/auth/targetTransition.ts [added]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0543710Z mobile/src/auth/targetTransitionState.test.ts [added]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0544754Z mobile/src/auth/targetTransitionState.ts [added]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0545998Z mobile/src/components/ClientServerIncompatibleScreen.test.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0547463Z mobile/src/components/ClientServerIncompatibleScreen.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0548883Z mobile/src/components/ClientUpgradeRequiredScreen.test.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0550408Z mobile/src/components/ClientUpgradeRequiredScreen.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0551653Z mobile/src/components/ServerUrlControl.test.tsx [deleted]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0552865Z mobile/src/components/ServerUrlControl.tsx [deleted]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0553846Z mobile/src/config/server.test.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0554735Z mobile/src/config/server.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0555648Z mobile/src/legal/publicLegalContent.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0556605Z mobile/src/offline/database.test.ts [added]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0557485Z mobile/src/offline/database.ts [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0558491Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0559829Z ##[endgroup]
+Classify Build Inputs	Detect changes outside generated release mirrors	2026-10-08T19:41:46.0560454Z Changes output set to ["non_release_mirror"]
+Classify Build Inputs	Select build surfaces	﻿2026-10-08T19:41:46.0716833Z ##[group]Run release_config=false
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0718005Z ^[[36;1mrelease_config=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0718830Z ^[[36;1mbackend=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0719429Z ^[[36;1mweb=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0720179Z ^[[36;1mwear=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0720774Z ^[[36;1mnative_runtime=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0721590Z ^[[36;1mnative_package=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0722429Z ^[[36;1mweb_release=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0723461Z ^[[36;1mnative_release=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0724136Z ^[[36;1mnative_upgrade=false^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0724773Z ^[[36;1m^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0725453Z ^[[36;1mif [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0726344Z ^[[36;1m  release_config=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0727081Z ^[[36;1m  case "${MANUAL_VALIDATION_SCOPE}" in^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0727844Z ^[[36;1m    web)^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0728403Z ^[[36;1m      web=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0729016Z ^[[36;1m      web_release=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0729662Z ^[[36;1m      ;;^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0730240Z ^[[36;1m    native)^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0730815Z ^[[36;1m      wear=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0731448Z ^[[36;1m      native_runtime=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0732146Z ^[[36;1m      native_package=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0732985Z ^[[36;1m      native_release=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0733648Z ^[[36;1m      ;;^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0734206Z ^[[36;1m    web-and-native)^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0734834Z ^[[36;1m      web=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0735430Z ^[[36;1m      wear=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0736082Z ^[[36;1m      native_runtime=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0736781Z ^[[36;1m      native_package=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0737475Z ^[[36;1m      web_release=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0738150Z ^[[36;1m      native_release=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0738820Z ^[[36;1m      ;;^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0739396Z ^[[36;1m    configuration-only)^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0740046Z ^[[36;1m      ;;^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0740574Z ^[[36;1m    *)^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0741435Z ^[[36;1m      echo "Unknown manual validation scope: ${MANUAL_VALIDATION_SCOPE}" >&2^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0742617Z ^[[36;1m      exit 1^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0743181Z ^[[36;1m      ;;^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0743713Z ^[[36;1m  esac^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0744390Z ^[[36;1m  if [[ "${MANUAL_NATIVE_UPGRADE}" == "true" ]]; then^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0745908Z ^[[36;1m    native_upgrade=true^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0746559Z ^[[36;1m  fi^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0747094Z ^[[36;1melse^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0747721Z ^[[36;1m  release_config=${RELEASE_CONFIG_CHANGED}^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0748841Z ^[[36;1m  if [[ "${HEAD_REF}" == release/v* && "${NON_RELEASE_MIRROR_CHANGED}" != "true" ]]; then^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0750441Z ^[[36;1m    echo "Generated version-only release PR: platform build fan-out is intentionally suppressed."^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0751701Z ^[[36;1m  else^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0752282Z ^[[36;1m    backend=${BACKEND_CHANGED}^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0753139Z ^[[36;1m    web=${WEB_CHANGED}^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0753819Z ^[[36;1m    wear=${WEAR_CHANGED}^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0754755Z ^[[36;1m    native_runtime=${NATIVE_RUNTIME_CHANGED}^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0755657Z ^[[36;1m    native_package=${NATIVE_PACKAGE_CHANGED}^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0756446Z ^[[36;1m  fi^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0756966Z ^[[36;1mfi^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0757472Z ^[[36;1m^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0758208Z ^[[36;1mecho "release_config=${release_config}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0759267Z ^[[36;1mecho "backend=${backend}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0760163Z ^[[36;1mecho "web=${web}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0761010Z ^[[36;1mecho "wear=${wear}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0762022Z ^[[36;1mecho "native_runtime=${native_runtime}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0763359Z ^[[36;1mecho "native_package=${native_package}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0764465Z ^[[36;1mecho "web_release=${web_release}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0765697Z ^[[36;1mecho "native_release=${native_release}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0766862Z ^[[36;1mecho "native_upgrade=${native_upgrade}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0971215Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0972084Z env:
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0972785Z   EVENT_NAME: pull_request
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0973450Z   HEAD_REF: mchartier/managed-438-01a11c7b
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0974192Z   RELEASE_CONFIG_CHANGED: true
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0974842Z   BACKEND_CHANGED: false
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0975432Z   WEB_CHANGED: true
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0975983Z   WEAR_CHANGED: false
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0976572Z   NATIVE_RUNTIME_CHANGED: true
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0977230Z   NATIVE_PACKAGE_CHANGED: true
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0977889Z   NON_RELEASE_MIRROR_CHANGED: true
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0978628Z   MANUAL_VALIDATION_SCOPE: configuration-only
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0979405Z   MANUAL_NATIVE_UPGRADE: false
+Classify Build Inputs	Select build surfaces	2026-10-08T19:41:46.0980033Z ##[endgroup]
+Classify Build Inputs	Complete job	﻿2026-10-08T19:41:46.1212708Z Evaluate and set job outputs
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1219098Z Set output 'release_config'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1220745Z Set output 'backend'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1221828Z Set output 'web'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1222756Z Set output 'wear'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1223509Z Set output 'native_runtime'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1224319Z Set output 'native_package'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1225143Z Set output 'web_release'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1225944Z Set output 'native_release'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1226761Z Set output 'native_upgrade'
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1227810Z Cleaning up orphan processes
+Classify Build Inputs	Complete job	2026-10-08T19:41:46.1513399Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
