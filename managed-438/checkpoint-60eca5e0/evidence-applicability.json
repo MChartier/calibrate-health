@@ -1,0 +1,33 @@
+{
+  "head": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+  "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "capturedAfter": "8e109f51598ce12a2fd0d69503d3432713696f4c",
+  "capturedBefore": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "evidenceCommit": "0ad646c474e5b95a4d6230419cb73528d0debcae",
+  "provenance": {
+    "path": "managed-438/review-final/provenance.json",
+    "sha256": "85d2a43d5136b0a12fbd9fefb6545d7b6430eebde582f0c2d0abe4ae817f3825"
+  },
+  "interveningDiff": "diff --git a/mobile/src/auth/AuthContext.test.tsx b/mobile/src/auth/AuthContext.test.tsx\nindex 44eacf24..b9a4db04 100644\n--- a/mobile/src/auth/AuthContext.test.tsx\n+++ b/mobile/src/auth/AuthContext.test.tsx\n@@ -104,7 +104,7 @@ describe('AuthProvider client/server compatibility recovery', () => {\n         expect(clearStoredTokens).not.toHaveBeenCalled();\n         fireEvent.press(view.getByRole('button', { name: 'Retry' }));\n         await waitFor(() => expect(mockRefreshMobile).toHaveBeenCalled());\n-    });\n+    }, 15000); // First themed-screen render includes cold native UI transforms on CI.\n     beforeEach(() => {\n         jest.clearAllMocks();\n         mockGetClientConfig.mockReset();",
+  "assessment": "Only one maintained test timeout changed. Product source, runtime builds, fixture/harness and captured behavior are byte-identical; the independently built/captured 8e109f5 evidence applies without relabeling its source. All 1332 mobile tests passed at captured head; final cold focused run passed 22 tests with unchanged assertions.",
+  "failedCI": {
+    "runId": 37824631737,
+    "attempts": [
+      {
+        "jobId": 113474210052,
+        "result": "5s timeout in first themed startup-gate render"
+      },
+      {
+        "jobId": 113475903014,
+        "result": "same 5s timeout; no further rerun"
+      }
+    ],
+    "coldLocalBefore": "startup test 4919ms, 22 tests passed",
+    "fix": "single-test 15000ms cold-render allowance",
+    "review": {
+      "commentId": 6066535514,
+      "head": "8e109f51598ce12a2fd0d69503d3432713696f4c",
+      "result": "No major issues; final test-only commit requires configured review reconciliation"
+    }
+  }
+}

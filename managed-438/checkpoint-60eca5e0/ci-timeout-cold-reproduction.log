@@ -1,0 +1,34 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand --no-cache src/auth/AuthContext.test.tsx
+PASS src/auth/AuthContext.test.tsx (8.349 s)
+  ΓêÜ persists a verified user access update without waiting for another tracking query (55 ms)
+  ΓêÜ keeps the established identity and enters reconnection after a completed timeout (58 ms)
+  ΓêÜ does not restore native tokens from a refresh that finishes after logout (109 ms)
+  ΓêÜ keeps native logout intent across offline restart and drains the old token before another account signs in (131 ms)
+  ΓêÜ revokes the native session even when local draft cleanup fails (65 ms)
+  ΓêÜ clears UI and revokes the native token when writing logout intent fails (54 ms)
+  AuthProvider client/server compatibility recovery
+    ΓêÜ holds authentication and recovery behind a failed target gate and offers retry without clearing data (4919 ms)
+    ΓêÜ retains tokens during a startup mismatch and resumes the saved session after recheck (57 ms)
+    ΓêÜ fails closed without refreshing when the server omits its release version (61 ms)
+  native onboarding draft cleanup
+    ΓêÜ revokes the retained native refresh token through an ungated client after a tracking timeout (62 ms)
+    ΓêÜ clears the captured account draft on logout (55 ms)
+    ΓêÜ clears the captured account draft on clearLocalSession (64 ms)
+    ΓêÜ preserves a same-account session and clears the former account on replacement (56 ms)
+    ΓêÜ does not expose a runtime target setter (61 ms)
+    ΓêÜ does not clear saved progress for a transient startup network failure (53 ms)
+    ΓêÜ revokes a login response that arrives after logout without restoring its session (114 ms)
+    ΓêÜ old API callbacks cannot read or refresh another account or sign it out (54 ms)
+    ΓêÜ an already running refresh cannot restore its account after logout and sign-in (72 ms)
+    ΓêÜ normal same-session token refresh remains available (58 ms)
+  native offline workspace restoration
+    ΓêÜ restores local tracking after restart during network outage and reconnects (63 ms)
+    ΓêÜ restores local tracking after restart during provider outage and reconnects (66 ms)
+    ΓêÜ does not resurrect a confirmed rejected session on a later offline restart (66 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       22 passed, 22 total
+Snapshots:   0 total
+Time:        8.753 s
+Ran all test suites matching /src\\auth\\AuthContext.test.tsx/i.
