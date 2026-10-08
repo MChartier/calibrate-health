@@ -363,6 +363,9 @@ export async function executeWatchMutation(options: {
         const user = await tx.user.findUnique({ where: { id: options.userId }, select: { timezone: true } });
         if (!user) return { status: 404, body: { message: 'User not found' } };
         const today = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+        if (mutation.metricDate > today) {
+          return { status: 400, body: { message: 'Weight date cannot be in the future' } };
+        }
         const existing = await tx.bodyMetric.findUnique({
           where: { user_id_date: { user_id: options.userId, date: mutation.metricDate } }
         });

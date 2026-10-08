@@ -462,6 +462,21 @@ test('watch undo is invalidated by a later phone edit and never walks to an olde
   assert.equal(receiptReads, 1);
 });
 
+test('watch metric revalidates the date against the locked timezone before reading a metric', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
+  const service = loadWatchMutationService({
+    user: { findUnique: async () => ({ timezone: 'America/Los_Angeles' }) },
+    bodyMetric: { findUnique: async () => { throw new Error('Future metric must not be read or written'); } }
+  });
+  const mutation = service.parseWatchMutation({ type: 'metric.upsert', payload: {
+    local_date: '2026-10-09', weight_grams: 85000, expected_revision: null
+  } }, { timezone: 'UTC' });
+  assert.equal(mutation.ok, true);
+  const result = await service.executeWatchMutation({ userId: 9, mobileAuthSessionId: 73, operationId: 'watch-future-date', mutation });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.message, 'Weight date cannot be in the future');
+});
+
 test('watch metric and completion mutations use canonical date-only upserts', async () => {
   let metricArgs;
   let dayArgs;

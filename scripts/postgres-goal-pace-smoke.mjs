@@ -387,6 +387,29 @@ try {
             }
         }
         console.log('[goal-pace-smoke] PASS: import timezone overlap repartitions rows, counts and future warnings using the locked account day in both directions; only that day corrects the baseline.');
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+        user.timezone = 'UTC';
+        const futureDate = new Date('2026-10-09T00:00:00Z');
+        await db.bodyMetric.deleteMany({ where: { user_id: user.id, date: futureDate } });
+        const beforeFutureGoal = await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } });
+        const futureOperation = crypto.randomUUID();
+        const futureMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
+        } }, { timezone: 'UTC' });
+        assert.equal(futureMutation.ok, true);
+        const saveFuture = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
+            operationId: futureOperation, mutation: futureMutation });
+        const [profile, rejected] = await orderedWriters(
+            () => call('patch', '/profile', { timezone: 'America/Los_Angeles' }, crypto.randomUUID(), userRouter), saveFuture);
+        assert.equal(profile.statusCode, 200);
+        assert.equal(rejected.status, 400);
+        assert.equal(rejected.body.message, 'Weight date cannot be in the future');
+        assert.equal(await db.bodyMetric.findUnique({ where: { user_id_date: { user_id: user.id, date: futureDate } } }), null);
+        assert.deepEqual(await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } }), beforeFutureGoal);
+        assert.equal(await db.syncChange.count({ where: { user_id: user.id, operation_id: futureOperation } }), 0);
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+        assert.deepEqual((await saveFuture()).body, rejected.body);
+        console.log('[goal-pace-smoke] PASS: Wear parsed before a timezone change rejects a now-future date after the lock, leaves metric/goal/sync untouched and replays its original rejection.');
     } finally {
         globalThis.Date = NativeDate;
         user.timezone = 'UTC';
