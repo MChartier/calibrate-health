@@ -1,0 +1,62 @@
+[
+  {
+    "repo": "MChartier/calibrate-health",
+    "commit": "908110ed77babf4bf50831f746202fbc00acfe1c",
+    "path": "trusted-handoff.json",
+    "destination": "auth-correction/original-handoff.json",
+    "gitBlobSha": "4bbcb7ef91488f898fec642cfac38f2d8e44d580",
+    "bytes": 12964,
+    "sha256": "a0a790fe398f16e072cd6882e41c748f4518012323a0600e578e768548cdf423",
+    "previouslyClaimedSha256": "0cce609dcd6008ef31718067eb3078a77997d7562a3bc8c933fb946274459d30",
+    "claimMatchesActual": false,
+    "crlfCount": 243,
+    "lfCount": 244,
+    "lastBytesHex": "0a20207d0d0a7d0a",
+    "hashIfFinalLfChangedToCrlf": "0cce609dcd6008ef31718067eb3078a77997d7562a3bc8c933fb946274459d30"
+  },
+  {
+    "repo": "MChartier/calibrate-health",
+    "commit": "aa14aedce5b5f1224907c5672aca9fe38e709b32",
+    "path": "verdict.json",
+    "destination": "auth-correction/original-verdict431.json",
+    "gitBlobSha": "e1f39d5bd45ae12715a0a3a39b94b3a373c6c29b",
+    "bytes": 12909,
+    "sha256": "563d02f5aef943bc4e13da7f6ead466a9059910fce34158a33ccf8719647b8cc",
+    "previouslyClaimedSha256": "4273c6901182abe60ca1007d86f646d90b42a9cfa78c15a02e92c433348a8b26",
+    "claimMatchesActual": false,
+    "crlfCount": 286,
+    "lfCount": 287,
+    "lastBytesHex": "63652e220d0a7d0a",
+    "hashIfFinalLfChangedToCrlf": "4273c6901182abe60ca1007d86f646d90b42a9cfa78c15a02e92c433348a8b26"
+  },
+  {
+    "repo": "MChartier/calibrate-health",
+    "commit": "082133e19dfe9f78b5b72d7167865341f2272c96",
+    "path": "verdict.json",
+    "destination": "auth-correction/original-verdict437.json",
+    "gitBlobSha": "e1bd43548f85e07c09a4f241ebf3a0b5120cfa70",
+    "bytes": 12496,
+    "sha256": "a4faec5b335be58ea8f5a8459b53ea7e30373e8e400e35f3a4600f7a38541822",
+    "previouslyClaimedSha256": "a60c29c5d91763dbae36029a22e9edca6e05ef22a106bc63991dd70ac021d789",
+    "claimMatchesActual": false,
+    "crlfCount": 295,
+    "lfCount": 296,
+    "lastBytesHex": "6c732e220d0a7d0a",
+    "hashIfFinalLfChangedToCrlf": "a60c29c5d91763dbae36029a22e9edca6e05ef22a106bc63991dd70ac021d789"
+  },
+  {
+    "repo": "MChartier/calibrate-health",
+    "commit": "44ded4ceaefb85890df28fe7a78adb46488e6866",
+    "path": "verdict.json",
+    "destination": "auth-correction/original-verdict442.json",
+    "gitBlobSha": "08937eb1cd93c1320e6184eca50cf26863365f87",
+    "bytes": 14878,
+    "sha256": "5d8f153c34e12350f45dc1f05a208231a90a51180835fbb35c632ea9812aceb7",
+    "previouslyClaimedSha256": "c31363b1f538cbc3d73cd181d0b2e97d6f5efce3afa445b82f7ab318b27d760a",
+    "claimMatchesActual": false,
+    "crlfCount": 323,
+    "lfCount": 324,
+    "lastBytesHex": "63652e220d0a7d0a",
+    "hashIfFinalLfChangedToCrlf": "c31363b1f538cbc3d73cd181d0b2e97d6f5efce3afa445b82f7ab318b27d760a"
+  }
+]
