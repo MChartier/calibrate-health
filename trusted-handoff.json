@@ -1,0 +1,185 @@
+{
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "checkpointAtUtc": "2026-10-08T20:02:29.741284+00:00",
+  "standardsRead": "All supplied full pinned texts and amendments acknowledged; f0919b184b6344d6279178b2388190936ca432a9 plus97e5583c8355f3673aad0835c0ce3ca1486aeb8b unchanged. No original conversation migration claimed.",
+  "order": [
+    431,
+    437,
+    442,
+    441
+  ],
+  "receipts": [
+    {
+      "verdict": "ready",
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+      "mergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+      "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "headParents": [
+        "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+      ],
+      "targetParents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+      ],
+      "ultimateTargetParents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+      ],
+      "parentRevisions": [],
+      "prBodySha256": "e5889325de9e0cf4aa91dd6e529f90edbfc0120306c78d090447446a95eef1e7",
+      "checkedAtUtc": "2026-10-08T19:53:02.195640+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": 6066220912,
+      "verdictCommentId": 6067890252,
+      "verdictBodySha256": "acd5f6c960287ec0e443e756d6675e3acc554cf19f874b733f1b6b956c1e91e7",
+      "verdictUpdatedAt": "2026-10-08T19:54:08Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/431#issuecomment-6067890252",
+      "evidenceCommit": "e20c0037271f25f92512eacdf5539366dd44337d",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "4e2b49c91e596974e8b9de29aed088684a4c46a0dcabaa6d44442578f411bc5d",
+      "postPublicationRecheckedAtUtc": "2026-10-08T19:54:22.258850+00:00",
+      "checkpoint": "Outcome complete. No source/body/Project/readiness/draft/merge mutation. Single lane proceeding only to next admitted review."
+    },
+    {
+      "verdict": "ready",
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "baseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "apiBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "mergeBaseSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "headParents": [
+        "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+      ],
+      "targetParents": [
+        "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+      ],
+      "ultimateTargetParents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+      ],
+      "parentRevisions": [
+        {
+          "pullRequest": 431,
+          "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+          "state": "open; unchanged pinned source"
+        }
+      ],
+      "prBodySha256": "c137a6aa31691d6537cdf8f078d0a6bca6a34457c33de585a7cfc8f86ec96e6c",
+      "checkedAtUtc": "2026-10-08T19:55:01.256988+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": 6066327650,
+      "verdictCommentId": 6067920154,
+      "verdictBodySha256": "6c063bd9eb875baf71109bdd8d9b6abf8fd21f7a6c1a556cdf725a4a692363a0",
+      "verdictUpdatedAt": "2026-10-08T19:55:57Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/437#issuecomment-6067920154",
+      "evidenceCommit": "3a84e95df82f66f2c228b1766eb2f8bf2d2f8286",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "1aafbbd3dd8369f3a83c059b44496b035d4d8b99a0e54bbc7132f5b5734a0b0c",
+      "postPublicationRecheckedAtUtc": "2026-10-08T19:56:17.474865+00:00",
+      "checkpoint": "Outcome complete. No source/body/Project/readiness/draft/merge mutation. Single lane proceeding only to next admitted review."
+    },
+    {
+      "verdict": "ready",
+      "headSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+      "baseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "apiBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "mergeBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "headParents": [
+        "a0fdefe8bca51c25306f36cccc8181bd35672341"
+      ],
+      "targetParents": [
+        "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+      ],
+      "ultimateTargetParents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+      ],
+      "parentRevisions": [
+        {
+          "pullRequest": 437,
+          "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+          "state": "open; unchanged pinned source"
+        },
+        {
+          "pullRequest": 431,
+          "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+          "state": "open; unchanged ancestor"
+        }
+      ],
+      "prBodySha256": "5f9ed85faf20a8c7418893e6d5d0e3fb678fac340bb8c573a417f5646ff17667",
+      "checkedAtUtc": "2026-10-08T19:56:54.670148+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": 6066357362,
+      "verdictCommentId": 6067947717,
+      "verdictBodySha256": "8b673889735c5675d93de17a67e183d42355a19b998a2f57358634a18b6dc487",
+      "verdictUpdatedAt": "2026-10-08T19:57:37Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/442#issuecomment-6067947717",
+      "evidenceCommit": "476d8daab681488caf9cdf0ddd6a6cd57d97723c",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "1d94c678a7d0ab29cb24f4da7edd982e794dd78976132df15e960608a7934968",
+      "postPublicationRecheckedAtUtc": "2026-10-08T19:57:51.738870+00:00",
+      "checkpoint": "Outcome complete. No source/body/Project/readiness/draft/merge mutation. Single lane proceeding only to next admitted review."
+    },
+    {
+      "verdict": "changes-required",
+      "headSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "headParents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "targetParents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+      ],
+      "ultimateTargetParents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+      ],
+      "parentRevisions": [],
+      "prBodySha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30",
+      "checkedAtUtc": "2026-10-08T20:01:00.430245+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": 6032519419,
+      "verdictCommentId": 6068012907,
+      "verdictBodySha256": "9fa5c95ff7c4c03cb729ec8476e05ef4ee8b4d696b0495eb4892cc948e8fb45b",
+      "verdictUpdatedAt": "2026-10-08T20:01:39Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6068012907",
+      "evidenceCommit": "c218350e629c3a7c3bf1440e606ae9f9e2c51d94",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "3096164f3531110d70c1b4b72ef3d09ee12ff7585019d0c91ed7bd2385d01259",
+      "postPublicationRecheckedAtUtc": "2026-10-08T20:01:56.520043+00:00",
+      "checkpoint": "Outcome complete. No source/body/Project/readiness/draft/merge mutation. Single lane proceeding only to next admitted review."
+    }
+  ],
+  "findings441": [
+    {
+      "id": "C1",
+      "priority": "P2",
+      "location": "PR body final Base/Head paragraph",
+      "observed": "Base4cbcbc740fbe5fa5646b4de31951c79a653176d5 is presented without qualification, but actual master9dc0739e36168aa273530fe00ae5f85fb9c8a3fe advanced through436.",
+      "expected": "Identify4cbcbc as source merge-base/captured baseline, actual master separately, and link concise incoming impact assessment without relabeling old observations.",
+      "ownerAction": "Original PR441 owner correct final description, preserve historical body/evidence, return exact final body digest for same-lane communication reassessment. No unrelated tests required."
+    },
+    {
+      "id": "R2",
+      "priority": "P2",
+      "location": "README.md changed Releases and deployment section and docs/deployment.md operation chooser",
+      "observed": "Changed README still advertises Advanced self-hosting and new guide offers Compose self-hosting to install/upgrade on your host, without framing retained infrastructure as maintainer/internal operations.",
+      "expected": "Apply direct managed-hosted amendment6049386828: managed hosted product positioning; self-hosting is not an end-user feature. Preserve useful existing infrastructure/development tooling.",
+      "ownerAction": "Reword scoped README/guide content to managed hosted product and explicitly maintainer/internal deployment/recovery guidance. Coordinate shared docs with active managed438 owner; do not delete Docker/backend/deploy capabilities, invent a production domain, modify447, or alter runtime endpoint/build bindings for this documentation correction."
+    }
+  ],
+  "retention": "Dedicated nonmerged evidence refs in authorized repository; existing owner/coordinator retention, no automatic expiry. Originals retained within each immutable assessment. This trusted-task handoff does not replace coordinator separate durable receipt.",
+  "checkpoint": "Idle: all four admitted assessments complete, no suite/service running, no product branch/source/body, readiness/draft/Project/merge mutation. No other QA started. No new user decision or approval blocker."
+}
