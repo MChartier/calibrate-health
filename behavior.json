@@ -1,0 +1,438 @@
+{
+  "schema": 1,
+  "sourceHead": "a8539c3b90bd8c69a761c234869e5a0553f8ed08",
+  "parent": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "synthetic": true,
+  "externalOperations": 0,
+  "before": {
+    "source": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+    "unifiedPlannerExists": false,
+    "behavior": "Separate manual server chooser and native/OTA operations; no selective cross-artifact planner or durable per-artifact journal."
+  },
+  "scenarios": [
+    {
+      "scenario": "no-change",
+      "expected": [],
+      "observed": {
+        "schema": 1,
+        "mode": "plan-only",
+        "source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "planDigest": "ebe3c74659165accd0fece2a29d10571bc1955d000122354b75dcb1992949755",
+        "profile": "production",
+        "configurationDigest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+        "serverConfigurationDigest": "2887005ad6763a2b97c6e3c8c7e35583fcfda83324f1e4006dec2a8d1259fa91",
+        "noChange": true,
+        "versions": {
+          "server": "1.2.3",
+          "android": {
+            "mobile": {
+              "version_name": "0.2.7",
+              "version_code": 11
+            },
+            "wear": {
+              "version_name": "0.2.7",
+              "version_code": 12
+            }
+          },
+          "ios": {
+            "schemaVersion": 1,
+            "version": "0.2.7",
+            "buildNumber": "11",
+            "minimumSupportedVersion": "0.2.7"
+          }
+        },
+        "stages": []
+      },
+      "workerArguments": []
+    },
+    {
+      "scenario": "server",
+      "expected": [
+        "server"
+      ],
+      "observed": {
+        "schema": 1,
+        "mode": "plan-only",
+        "source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "planDigest": "1609331d507293404ec745e12666a84e9076847e064ca655279949398f0d7600",
+        "profile": "production",
+        "configurationDigest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+        "serverConfigurationDigest": "2887005ad6763a2b97c6e3c8c7e35583fcfda83324f1e4006dec2a8d1259fa91",
+        "noChange": false,
+        "versions": {
+          "server": "1.2.4",
+          "android": {
+            "mobile": {
+              "version_name": "0.2.7",
+              "version_code": 11
+            },
+            "wear": {
+              "version_name": "0.2.7",
+              "version_code": 12
+            }
+          },
+          "ios": {
+            "schemaVersion": 1,
+            "version": "0.2.7",
+            "buildNumber": "11",
+            "minimumSupportedVersion": "0.2.7"
+          }
+        },
+        "stages": [
+          {
+            "key": "server",
+            "kind": "server",
+            "reason": "changed image inputs"
+          }
+        ]
+      },
+      "workerArguments": []
+    },
+    {
+      "scenario": "android-native",
+      "expected": [
+        "native-android"
+      ],
+      "observed": {
+        "schema": 1,
+        "mode": "plan-only",
+        "source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "planDigest": "f93fa14b82df37694bdc26372078df724ed8b9f33fa92c0b804065584b839e47",
+        "profile": "production",
+        "configurationDigest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+        "serverConfigurationDigest": "2887005ad6763a2b97c6e3c8c7e35583fcfda83324f1e4006dec2a8d1259fa91",
+        "noChange": false,
+        "versions": {
+          "server": "1.2.3",
+          "android": {
+            "mobile": {
+              "version_name": "0.2.8",
+              "version_code": 13,
+              "native_release_tag": "native-v0.2.8"
+            },
+            "wear": {
+              "version_name": "0.2.8",
+              "version_code": 14
+            }
+          },
+          "ios": {
+            "schemaVersion": 1,
+            "version": "0.2.7",
+            "buildNumber": "11",
+            "minimumSupportedVersion": "0.2.7"
+          }
+        },
+        "stages": [
+          {
+            "key": "native-android",
+            "kind": "native",
+            "platform": "android",
+            "reason": "changed native inputs or build configuration"
+          }
+        ]
+      },
+      "workerArguments": [
+        {
+          "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "operation": "upload-internal",
+          "confirm_play_console_clean": true,
+          "unified_plan_digest": "f93fa14b82df37694bdc26372078df724ed8b9f33fa92c0b804065584b839e47",
+          "configuration_digest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+          "build_profile": "production"
+        }
+      ]
+    },
+    {
+      "scenario": "ios-native",
+      "expected": [
+        "native-ios"
+      ],
+      "observed": {
+        "schema": 1,
+        "mode": "plan-only",
+        "source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "planDigest": "d728830865efddabc8828ef83991c8fd642a52077025d1737818c9af34fec028",
+        "profile": "production",
+        "configurationDigest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+        "serverConfigurationDigest": "2887005ad6763a2b97c6e3c8c7e35583fcfda83324f1e4006dec2a8d1259fa91",
+        "noChange": false,
+        "versions": {
+          "server": "1.2.3",
+          "android": {
+            "mobile": {
+              "version_name": "0.2.7",
+              "version_code": 11
+            },
+            "wear": {
+              "version_name": "0.2.7",
+              "version_code": 12
+            }
+          },
+          "ios": {
+            "schemaVersion": 1,
+            "version": "0.2.8",
+            "buildNumber": "12",
+            "minimumSupportedVersion": "0.2.7"
+          }
+        },
+        "stages": [
+          {
+            "key": "native-ios",
+            "kind": "native",
+            "platform": "ios",
+            "reason": "changed native inputs or build configuration"
+          }
+        ]
+      },
+      "workerArguments": [
+        {
+          "parent_run_id": "100",
+          "plan_digest": "d728830865efddabc8828ef83991c8fd642a52077025d1737818c9af34fec028",
+          "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "profile": "production"
+        }
+      ]
+    },
+    {
+      "scenario": "android-ota",
+      "expected": [
+        "ota-android-0.2.7"
+      ],
+      "observed": {
+        "schema": 1,
+        "mode": "plan-only",
+        "source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "planDigest": "7ad029cc61475227aefb7a5b9a154114222b82f8deda0a48bacee83b3c7d3120",
+        "profile": "production",
+        "configurationDigest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+        "serverConfigurationDigest": "2887005ad6763a2b97c6e3c8c7e35583fcfda83324f1e4006dec2a8d1259fa91",
+        "noChange": false,
+        "versions": {
+          "server": "1.2.3",
+          "android": {
+            "mobile": {
+              "version_name": "0.2.7",
+              "version_code": 11
+            },
+            "wear": {
+              "version_name": "0.2.7",
+              "version_code": 12
+            }
+          },
+          "ios": {
+            "schemaVersion": 1,
+            "version": "0.2.7",
+            "buildNumber": "11",
+            "minimumSupportedVersion": "0.2.7"
+          }
+        },
+        "stages": [
+          {
+            "key": "ota-android-0.2.7",
+            "kind": "ota",
+            "platform": "android",
+            "runtime": "0.2.7",
+            "reason": "verified compatible runtime"
+          }
+        ]
+      },
+      "workerArguments": [
+        {
+          "parent_run_id": "100",
+          "plan_digest": "7ad029cc61475227aefb7a5b9a154114222b82f8deda0a48bacee83b3c7d3120",
+          "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "profile": "production",
+          "stage": "ota-android-0.2.7"
+        }
+      ]
+    },
+    {
+      "scenario": "ios-ota",
+      "expected": [
+        "ota-ios-ios-0.2.7-11"
+      ],
+      "observed": {
+        "schema": 1,
+        "mode": "plan-only",
+        "source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "planDigest": "d0a7f550b3318bac3d5a379b512d650dadd14834ceafe58b55afdc040ca7e58c",
+        "profile": "production",
+        "configurationDigest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+        "serverConfigurationDigest": "2887005ad6763a2b97c6e3c8c7e35583fcfda83324f1e4006dec2a8d1259fa91",
+        "noChange": false,
+        "versions": {
+          "server": "1.2.3",
+          "android": {
+            "mobile": {
+              "version_name": "0.2.7",
+              "version_code": 11
+            },
+            "wear": {
+              "version_name": "0.2.7",
+              "version_code": 12
+            }
+          },
+          "ios": {
+            "schemaVersion": 1,
+            "version": "0.2.7",
+            "buildNumber": "11",
+            "minimumSupportedVersion": "0.2.7"
+          }
+        },
+        "stages": [
+          {
+            "key": "ota-ios-ios-0.2.7-11",
+            "kind": "ota",
+            "platform": "ios",
+            "runtime": "ios-0.2.7-11",
+            "reason": "verified compatible runtime"
+          }
+        ]
+      },
+      "workerArguments": [
+        {
+          "parent_run_id": "100",
+          "plan_digest": "d0a7f550b3318bac3d5a379b512d650dadd14834ceafe58b55afdc040ca7e58c",
+          "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "profile": "production",
+          "stage": "ota-ios-ios-0.2.7-11"
+        }
+      ]
+    },
+    {
+      "scenario": "combined",
+      "expected": [
+        "native-android",
+        "native-ios",
+        "server"
+      ],
+      "observed": {
+        "schema": 1,
+        "mode": "plan-only",
+        "source": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "planDigest": "d6a5379ef0852206810aa2d384abad491f4233746dc99bb4028c947b982243be",
+        "profile": "production",
+        "configurationDigest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+        "serverConfigurationDigest": "2887005ad6763a2b97c6e3c8c7e35583fcfda83324f1e4006dec2a8d1259fa91",
+        "noChange": false,
+        "versions": {
+          "server": "1.2.4",
+          "android": {
+            "mobile": {
+              "version_name": "0.2.8",
+              "version_code": 13,
+              "native_release_tag": "native-v0.2.8"
+            },
+            "wear": {
+              "version_name": "0.2.8",
+              "version_code": 14
+            }
+          },
+          "ios": {
+            "schemaVersion": 1,
+            "version": "0.2.8",
+            "buildNumber": "12",
+            "minimumSupportedVersion": "0.2.7"
+          }
+        },
+        "stages": [
+          {
+            "key": "native-android",
+            "kind": "native",
+            "platform": "android",
+            "reason": "changed native inputs or build configuration"
+          },
+          {
+            "key": "native-ios",
+            "kind": "native",
+            "platform": "ios",
+            "reason": "changed native inputs or build configuration"
+          },
+          {
+            "key": "server",
+            "kind": "server",
+            "reason": "changed image inputs"
+          }
+        ]
+      },
+      "workerArguments": [
+        {
+          "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "operation": "upload-internal",
+          "confirm_play_console_clean": true,
+          "unified_plan_digest": "d6a5379ef0852206810aa2d384abad491f4233746dc99bb4028c947b982243be",
+          "configuration_digest": "b308028984f4d1644aea736ed5d41b26578a64d46ae5ac352f46d1eed13e113a",
+          "build_profile": "production"
+        },
+        {
+          "parent_run_id": "100",
+          "plan_digest": "d6a5379ef0852206810aa2d384abad491f4233746dc99bb4028c947b982243be",
+          "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "profile": "production"
+        }
+      ]
+    }
+  ],
+  "noChange": {
+    "status": "no-change",
+    "writes": 0
+  },
+  "interruption": {
+    "firstResponse": "synthetic lost response",
+    "retained": {
+      "binding": "09e19ba267b06cac1960f4d9ebae969574be75d7802bf5eab6137bf0d7c7972f",
+      "ids": [],
+      "key": "native-ios",
+      "previous": null,
+      "schema": 1,
+      "sequence": 1,
+      "status": "intent"
+    },
+    "final": {
+      "binding": "09e19ba267b06cac1960f4d9ebae969574be75d7802bf5eab6137bf0d7c7972f",
+      "ids": [
+        "fixture-run-1"
+      ],
+      "key": "native-ios",
+      "previous": "53c11aed677ec00a81f2321fd8e833bf2fc263d8e7f4c9753fc60c260f386543",
+      "result": {
+        "artifactSha256": "b2d205f8051271e3aff18997e3110a56c6975a82cb67abaa8858e41db3f3441b",
+        "id": "fixture-run-1"
+      },
+      "schema": 1,
+      "sequence": 3,
+      "status": "complete"
+    },
+    "providerStartsAfterThreeCalls": 1,
+    "emptyOtaRetry": "Unknown OTA publication outcome; an empty retry inventory cannot authorize another update."
+  },
+  "ios": {
+    "buildArguments": [
+      "build",
+      "--platform",
+      "ios",
+      "--profile",
+      "production",
+      "--non-interactive",
+      "--freeze-credentials",
+      "--no-wait",
+      "--json",
+      "--message",
+      "calibrate:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:4354994c96acaaf7aae4ce88763bf1f192449b2d6d8867674a03262490df9a53"
+    ],
+    "uploadArguments": [
+      "submit",
+      "--platform",
+      "ios",
+      "--id",
+      "11111111-1111-4111-8111-111111111111",
+      "--profile",
+      "testflight",
+      "--non-interactive",
+      "--no-auto-testflight-setup",
+      "--no-wait"
+    ],
+    "uploadStage": "upload",
+    "performed": false
+  }
+}

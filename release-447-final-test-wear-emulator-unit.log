@@ -1,0 +1,29 @@
+npm notice run cal-io@0.38.0 test:wear:emulator:unit
+npm notice run node --test scripts/wear-emulator-smoke.test.mjs
+Γ£ö Wear connection actions expose one explicitly named semantic click target (7.7374ms)
+Γ£ö Wear UI preparation provisions, verifies, wakes, and unlocks the emulator before launch (0.8336ms)
+Γ£ö Wear adb resolution trims an explicit executable override (0.1118ms)
+Γ£ö Wear adb resolution uses Linux SDK roots and a PATH fallback (0.1151ms)
+Γ£ö Wear adb resolution uses Windows SDK and local-app-data paths (0.1235ms)
+Γ£ö Wear smoke parser derives tap coordinates from the UI tree (0.3662ms)
+Γ£ö Wear smoke parser finds exact accessibility descriptions (0.1501ms)
+Γ£ö Wear readiness waits for one complete exact UI tree (0.183ms)
+Γ£ö Wear readiness reasserts the app after first-boot System UI takes foreground (0.2645ms)
+Γ£ö Wear readiness fails closed after its bounded exact-selector attempts (0.2571ms)
+Γ£ö Wear scrollable readiness verifies exact rows across one bounded surface (0.2193ms)
+Γ£ö Wear display parsers prefer active overrides and reject malformed values (0.4032ms)
+Γ£ö Wear action audit accepts named 48 dp targets and ignores disabled nodes (0.3632ms)
+Γ£ö Wear action audit excludes unrelated System UI actions (0.1517ms)
+Γ£ö Wear action audit rejects 47 dp, clipping, and unnamed actions (0.1723ms)
+Γ£ö Wear scale summary combines surfaces without retaining UI XML (0.1609ms)
+Γ£ö Wear package and font-scale restoration helpers fail closed (0.3494ms)
+Γ£ö Wear font-scale exercise rejects ignored and clamped settings writes (0.1416ms)
+Γ£ö Wear package evidence requires the exact permission set and detects native crashes (0.4639ms)
+Γä╣ tests 19
+Γä╣ suites 0
+Γä╣ pass 19
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 95.5293

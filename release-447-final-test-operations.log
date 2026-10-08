@@ -1,0 +1,37 @@
+npm notice run cal-io@0.38.0 test:operations
+npm notice run node --test scripts/operational-alerts.test.mjs scripts/operational-alert-collector.test.mjs scripts/performance-budgets.test.mjs && node scripts/synthetic-alert-smoke.mjs
+Γ£ö collector failure output never includes generated paths or malformed response contents (1.3109ms)
+Γ£ö atomic rename failure preserves the last committed collector cursor (11.0512ms)
+Γ£ö stale lock takeover is owner-safe and JSON body reads time out below the lease (21.4794ms)
+Γ£ö remote JSON responses reject declared and streamed bodies above the byte cap (1.8979ms)
+Γ£ö collector rejects metrics tokens shorter than the backend contract (5.2015ms)
+Γ£ö collector persists only fixed aggregate fields (0.3593ms)
+Γ£ö collector persists a 10-minute same-process sample and dispatches the next delta once (20.7928ms)
+Γ£ö collector dispatches a release mismatch from its first observation (8.9089ms)
+Γ£ö collector rebaselines off-cadence, supplies release and scheduler inputs, and rejects concurrent runs (27.8377ms)
+Γ£ö partial sink failure retries the exact persisted window and advances state once (24.0025ms)
+Γ£ö synthetic staging smoke uses idempotent HTTPS transport and requires a staging receipt (1.0265ms)
+Γ£ö uses volume-qualified threshold precedence and fixed owner roles (1.5656ms)
+Γ£ö evaluates bounded joint client tuples without accepting raw context (0.5126ms)
+Γ£ö does not derive rate alerts across a process counter reset (0.0916ms)
+Γ£ö detects stale scheduler and incompatible release independently of counter deltas (0.1724ms)
+Γ£ö replaces caller aliases and drops non-allowlisted dimension values (0.4705ms)
+Γ£ö gives a fresh process two scheduler intervals before declaring a missing run stale (0.0934ms)
+Γ£ö reports auth request and refresh triggers independently without combined rates (0.1914ms)
+Γ£ö measures exact reachable gzip graphs for every representative route (31.3351ms)
+Γ£ö allows five-percent route growth and rejects any larger increase (0.8537ms)
+Γ£ö rejects missing, non-finite, negative, weakened, or extra limits (0.1838ms)
+Γ£ö requires exact positive integer route and benchmark baselines (0.2104ms)
+Γ£ö requires the reviewed benchmark runtime and rejects a mismatched executor (0.1699ms)
+Γ£ö requires the reviewed bundle runtime including zlib and rejects a mismatched executor (0.1634ms)
+Γ£ö rejects unreviewed baseline metadata (0.0874ms)
+Γä╣ tests 25
+Γä╣ suites 0
+Γä╣ pass 25
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 202.8616
+[synthetic-alert] PASS: production threshold evaluator delivered one privacy-safe alert to the in-memory fake sink.
+[synthetic-alert] No staging or external alert provider was contacted.

@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "checkedAtUtc": "2026-10-08T22:26:10.472Z",
+  "head": "a8539c3b90bd8c69a761c234869e5a0553f8ed08",
+  "parent": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "owner": "issue447 implementation owner",
+  "purpose": "Retained nonmerged synthetic behavior, full published scope and validation evidence. Never merge this evidence ref into product branches.",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "7a4cb3f976a7129c028b07e44bd055bfbd89de957b7e304443ccc0f3a5c42bfd"
+    },
+    {
+      "path": "actionlint-compatibility.json",
+      "sha256": "2b70ed9a74cda8278901ab8efbc5d9ddf6461381d77d2676d3ad2f6737d3c256"
+    },
+    {
+      "path": "actionlint-head.json",
+      "sha256": "5bfd26d244441017df71368e9bdbd4e21070365b9f7ff81c77cdf40684f7569a"
+    },
+    {
+      "path": "actionlint-parent.json",
+      "sha256": "7cd781eb4dfd70f840d7e172d898e082526df093f770a7441c2a9535b810b39b"
+    },
+    {
+      "path": "behavior.json",
+      "sha256": "6b1e961e3b653d939679f2a5a06331667f57128314f0757a4f2cdcd967dacdf5"
+    },
+    {
+      "path": "published-scope.json",
+      "sha256": "8e9e3166369e66896838812bf20e8ad9d33615b79c6e0b6c76eca5a019535006"
+    },
+    {
+      "path": "release-447-final-evidence-release-check.log",
+      "sha256": "d44d5f4b3cf0b56b2b6c14bd2421a54b6c0100b66570dedd21fb63a84a655278"
+    },
+    {
+      "path": "release-447-final-receipt-policy.log",
+      "sha256": "636bdfc1b10c83968072dd9fd06ab0eac12d115594779de589fca2e922134772"
+    },
+    {
+      "path": "release-447-final-test-deploy.log",
+      "sha256": "ab1518c1ef8df576cdf5589d3ae3722ec5db287d3f23f2c08f96054ce8788418"
+    },
+    {
+      "path": "release-447-final-test-native.log",
+      "sha256": "4fb82fb63a465b16fbf4d8c6873ae1baffc342cd4e7470694c29b6528a14f3ba"
+    },
+    {
+      "path": "release-447-final-test-operations.log",
+      "sha256": "19affdab146c513caa998b3a71af6c179c90ee716fcfd160126abe40c1ab6720"
+    },
+    {
+      "path": "release-447-final-test-release.log",
+      "sha256": "c2d0232b718c065c6407633d1973e66d467015ce7589be3373015aecfd783f16"
+    },
+    {
+      "path": "release-447-final-test-wear-emulator-unit.log",
+      "sha256": "c5056fb370537e45a58e471bd5f61c48d4a2b0879c4374c2531fabb21d593887"
+    },
+    {
+      "path": "release-447-final-worker-authority.log",
+      "sha256": "78b2095d9a7f88f1a7bcf8fd0353af2b90f1458bb88325838b9cc9d7c44a915d"
+    },
+    {
+      "path": "release-447-final-workflow-contract.log",
+      "sha256": "b934978520d3c7d6555d8c029e0a2ca24b49fa4c8fd303ebdabe35f18e64e7b9"
+    },
+    {
+      "path": "reproduce.mjs",
+      "sha256": "337b739d95b0bbf7d6a8468711362e91fe3ff34949fc55f4b96611a6913678f4"
+    }
+  ]
+}

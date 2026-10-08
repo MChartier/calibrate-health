@@ -1,0 +1,36 @@
+npm notice run cal-io@0.38.0 test:deploy
+npm notice run node --test deploy/test/*.test.mjs
+Γ£ö Caddy and Traefik share DB-backed app readiness semantics (1.7267ms)
+Γ£ö production image and Compose serve the Expo web artifact (0.577ms)
+Γ£ö in-stack Postgres remains private and gates app startup on DB health (0.2704ms)
+Γ£ö backup pipeline encrypts before promotion and limits retention to completed dumps (0.3317ms)
+Γ£ö restore refuses accidental destructive use and never writes a plaintext dump to the backup volume (0.3044ms)
+Γ£ö production startup retries migrations before opening the app process (0.2917ms)
+Γ£ö deployment remains portable and does not restore removed cloud infrastructure (1.2143ms)
+Γ£ö only the configured image repository, exact digest, and canonical release tag are accepted (1.4133ms)
+Γ£ö first deployment adopts the running digest, preserves secrets, and updates only app (24.2153ms)
+Γ£ö repeating a healthy release checks it without pulling or restarting (17.2669ms)
+Γ£ö numeric release ordering and digest identity prevent stale jobs and tag rewrites (22.0556ms)
+Γ£ö invalid host configuration and multiple replicas stop before mutation (17.8561ms)
+Γ£ö missing, stale, future, and invalid backup markers prevent deployment (43.5098ms)
+Γ£ö pull failure preserves deployment state and desired image (12.6872ms)
+Γ£ö a Compose file ignoring APP_IMAGE cannot restart with the wrong image (21.6435ms)
+Γ£ö failed deployment retains pending identity without rollback: {"upFailure":true} (16.904ms)
+Γ£ö failed deployment retains pending identity without rollback: {"wrongImage":true} (17.2042ms)
+Γ£ö failed deployment retains pending identity without rollback: {"wrongVersion":"99.0.0"} (19.0775ms)
+Γ£ö failed deployment retains pending identity without rollback: {"unhealthy":true} (25.59ms)
+Γ£ö an interrupted deployment can retry only its exact release and digest (29.1657ms)
+Γ£ö manual stack drift is detected before overwriting a deployment (10.1021ms)
+Γ£ö pending retries recreate a container removed by an interrupted Compose operation (21.7325ms)
+Γ£ö runner rejects malformed network configuration before creating any tunnel (0.7853ms)
+Γ£ö runner pins SSH host key, limits routing, and cleans secrets/tunnel: success (5.8931ms)
+Γ£ö runner pins SSH host key, limits routing, and cleans secrets/tunnel: wg (6.489ms)
+Γ£ö runner pins SSH host key, limits routing, and cleans secrets/tunnel: ssh (5.5124ms)
+Γä╣ tests 26
+Γä╣ suites 0
+Γä╣ pass 26
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 394.2705

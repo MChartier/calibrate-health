@@ -1,0 +1,71 @@
+{
+  "tool": "actionlint 1.7.12",
+  "parent": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "head": "a8539c3b90bd8c69a761c234869e5a0553f8ed08",
+  "parentExit": 1,
+  "headExit": 1,
+  "parentDiagnostics": 61,
+  "headDiagnostics": 68,
+  "added": [
+    {
+      "diagnostic": [
+        ".github/workflows/native-ios-release.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-ota-release.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-release-handler.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-server-handler.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-server-handler.yml",
+        "expression",
+        "property \"workflow_sha\" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string}",
+        "WORKFLOW_SHA: ${{ job.workflow_sha }}"
+      ],
+      "count": 2
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-server-handler.yml",
+        "expression",
+        "property \"workflow_sha\" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string}",
+        "ref: ${{ job.workflow_sha }}"
+      ],
+      "count": 1
+    }
+  ],
+  "result": "Raw lint fails. Every added diagnostic is an exact documented GitHub Cloud feature unsupported by the latest released schema; no broad suppression or clean-lint claim.",
+  "sources": [
+    "https://github.com/rhysd/actionlint/releases/tag/v1.7.12",
+    "https://docs.github.com/en/actions/reference/workflows-and-actions/contexts",
+    "https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency"
+  ]
+}

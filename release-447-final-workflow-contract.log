@@ -1,0 +1,47 @@
+Γ£ö local reusable workflow callers cover every called job token permission (11.8364ms)
+Γ£ö credentialed release workflows pin external actions and the EAS CLI immutably (7.6307ms)
+Γ£ö server publication accepts read-only master requests through protected default-branch handlers (2.0185ms)
+Γ£ö server operations share one manual entrypoint without redundant request handlers (0.9153ms)
+Γ£ö server publication grants only the operation-specific built-in token permissions (2.7102ms)
+Γ£ö Cut release uses a read-only request, protected handler, and scoped token writes (2.3286ms)
+Γ£ö prepared release publishing is reusable, recoverable, and idempotent (1.1479ms)
+Γ£ö optional self-host deployment consumes the published digest without gating OTA (1.0369ms)
+Γ£ö pull requests build and smoke only Web-impacting changes while exhaustive suites stay manual (1.4781ms)
+Γ£ö pull requests run backend builds only for backend-impacting paths (0.4373ms)
+Γ£ö Android SDK setup explicitly excludes the retired tools package (2.7915ms)
+Γ£ö pull requests run targeted native compilation while emulator and upgrade rehearsals stay manual (1.9018ms)
+Γ£ö native jobs bind immutable candidate and baseline SHAs for PR and manual events (0.3498ms)
+Γ£ö build input classification covers representative paths without cross-surface noise (2.983ms)
+Γ£ö manual Wear emulator runs persistence instrumentation after its release-package smoke (0.3752ms)
+Γ£ö release images publish immutable identity and guard the moving latest tag (5.1816ms)
+Γ£ö no active workflow deploys to AWS or builds an image for every merged PR (2.8967ms)
+Γ£ö active workflows and package scripts do not retain the hosted-result or external-launch ledger (3.288ms)
+Γ£ö hidden workflow evidence paths are explicitly included in artifact uploads (2.3832ms)
+Γ£ö Expo OTA separates source export from clean environment-scoped publication (2.4832ms)
+Γ£ö native Android store releases build one paired candidate and promote it without rebuilding (4.2338ms)
+Γ£ö pull request test suites run only for their affected surfaces (0.8112ms)
+Γ£ö database upgrade and rollback select only their affected database surfaces (1.0845ms)
+Γ£ö database rollback binds a full candidate SHA for pull requests and manual dispatches (0.2743ms)
+Γ£ö dependency audit runs all workspaces only during scheduled or manual maintenance (0.4324ms)
+Γ£ö release configuration and PR workflows do not gate merges on package advisories (2.2085ms)
+Γ£ö container scan targets production-image inputs while preserving scheduled coverage (0.4248ms)
+Γ£ö version-only release PRs validate mirrors without platform build fan-out (0.9835ms)
+Γ£ö all pull-request workflow checkouts freeze exact candidate C (0.5593ms)
+Γ£ö the lean acceptance plan separates automatic critical smoke from exhaustive Web suites (0.3755ms)
+Γ£ö manual native rehearsals retain only short-lived diagnostic artifacts (0.5796ms)
+Γ£ö PR rollback owns migration safety without a redundant Cut release replay (0.4815ms)
+Γ£ö Optional Release Confidence is a manual owner-discretion exact-candidate check (0.4342ms)
+Γ£ö selective image publication preserves legacy defaults and cannot implicitly publish OTA or deploy (0.5036ms)
+Γ£ö unified operator and automatic server requests are read-only and cannot run on merges (0.5264ms)
+Γ£ö fresh server handler verifies read-only before granting only the existing worker publication authority (0.3174ms)
+Γ£ö Android configuration validation runs from its actual exact-source checkout before signing (0.2902ms)
+Γ£ö iOS build and source-free IPA attestation have separate authority and never submit automatically (0.3194ms)
+Γ£ö selected OTA separates source export, durable GitHub intent and source-free Expo publication (0.4032ms)
+Γä╣ tests 39
+Γä╣ suites 0
+Γä╣ pass 39
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 145.4611

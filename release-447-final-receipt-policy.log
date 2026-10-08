@@ -1,0 +1,17 @@
+Γ£ö historical iOS receipts need identical critical tooling or explicit current retention; revocation wins (2.2227ms)
+Γ£ö iOS baseline verification binds the exact canonical receipt and full GitHub signer authority (10.0786ms)
+Γ£ö historical receipt policy covers every local transitive verifier dependency (5.1115ms)
+Γ£ö android OTA binds selected source/profile/runtime and independently verified native inputs (2.862ms)
+Γ£ö ios OTA binds selected source/profile/runtime and independently verified native inputs (0.6088ms)
+Γ£ö lost OTA response is adopted exactly once; repeated or empty retry results cannot republish (0.9343ms)
+Γ£ö changed export, channel or source cannot use retained publication intent (0.3887ms)
+Γ£ö OTA receipt requires the specific protected OTA signer and canonical source/configuration fields (8.2612ms)
+Γ£ö Android runtime override is limited to an explicit OTA export and cannot affect a native build (2.4436ms)
+Γä╣ tests 9
+Γä╣ suites 0
+Γä╣ pass 9
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 101.0478
