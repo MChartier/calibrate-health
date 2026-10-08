@@ -1,0 +1,24 @@
+{
+  "checkedAtUtc": "2026-10-08T18:42:16.730Z",
+  "head": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+  "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "8e109f51598ce12a2fd0d69503d3432713696f4c"
+  ],
+  "parentRevisions": [],
+  "prBodySha256": "d9510e687d6d9efae9c2f605657d03fac64f3b83bae4e2ddeabc2d0dd8aae858",
+  "evidenceCommit": "0ad646c474e5b95a4d6230419cb73528d0debcae",
+  "provenanceSha256": "85d2a43d5136b0a12fbd9fefb6545d7b6430eebde582f0c2d0abe4ae817f3825",
+  "scopeSha256": "abf77e12df5d5873e0415be21ecf36e26e6a983288555c7c7da62877d7930e55",
+  "scopeCommit": "296ef4f724d2c0e8c808ea6192a06a10c7a24b73",
+  "artifactsVerified": 42,
+  "publishedScope": {
+    "commits": 3,
+    "files": 36,
+    "additions": 971,
+    "deletions": 852
+  },
+  "sourceClean": true,
+  "draft": true
+}

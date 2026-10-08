@@ -1,0 +1,12 @@
+[
+  {
+    "sha256": "abf77e12df5d5873e0415be21ecf36e26e6a983288555c7c7da62877d7930e55",
+    "status": 200,
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/296ef4f724d2c0e8c808ea6192a06a10c7a24b73/managed-438/checkpoint-60eca5e0/scope.json"
+  },
+  {
+    "sha256": "270026143e57a5cfcd03c0ad70a35f066fe501392f2666b46d8a2e6545f33015",
+    "status": 200,
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/296ef4f724d2c0e8c808ea6192a06a10c7a24b73/managed-438/checkpoint-60eca5e0/evidence-applicability.json"
+  }
+]

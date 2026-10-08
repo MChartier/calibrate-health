@@ -1,0 +1,715 @@
+{
+  "checkedAtUtc": "2026-10-08 18:42:52 UTC",
+  "ownerTask": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+  "host": "MCHARTIER_ZBOOK",
+  "repository": "git@github.com:MChartier/calibrate-health.git",
+  "pr": "https://github.com/MChartier/calibrate-health/pull/450",
+  "head": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+  "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "8e109f51598ce12a2fd0d69503d3432713696f4c"
+  ],
+  "parentRevisions": [],
+  "prBodySha256": "d9510e687d6d9efae9c2f605657d03fac64f3b83bae4e2ddeabc2d0dd8aae858",
+  "scope": {
+    "commit": "296ef4f724d2c0e8c808ea6192a06a10c7a24b73",
+    "path": "managed-438/checkpoint-60eca5e0/scope.json",
+    "sha256": "abf77e12df5d5873e0415be21ecf36e26e6a983288555c7c7da62877d7930e55",
+    "commits": 3,
+    "files": 36,
+    "additions": 971,
+    "deletions": 852
+  },
+  "evidence": {
+    "baselineCommit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "finalCaptureCommit": "0ad646c474e5b95a4d6230419cb73528d0debcae",
+    "provenancePath": "managed-438/review-final/provenance.json",
+    "provenanceSha256": "85d2a43d5136b0a12fbd9fefb6545d7b6430eebde582f0c2d0abe4ae817f3825",
+    "applicabilityCommit": "296ef4f724d2c0e8c808ea6192a06a10c7a24b73",
+    "applicabilitySha256": "270026143e57a5cfcd03c0ad70a35f066fe501392f2666b46d8a2e6545f33015",
+    "allBoundArtifactBytesVerified": 42,
+    "publicAccess": "HTTP200 plus exact SHA256 verified for final provenance/scope/applicability/embedded images; baseline verified earlier and retained."
+  },
+  "review": {
+    "head": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+    "commentId": 6066642825,
+    "result": "Completed, no major issues",
+    "previousFindings": [
+      4222612212,
+      4222612223,
+      4222612234
+    ],
+    "dispositionReplies": [
+      4222712579,
+      4222713224,
+      4222713947
+    ],
+    "quotaRefusal": false
+  },
+  "workflowRuns": {
+    "workflow_runs": [
+      {
+        "id": 37825668441,
+        "name": "Database Upgrade",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 900,
+        "jobs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825668441/jobs",
+        "logs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825668441/logs",
+        "workflow_id": 311994105
+      },
+      {
+        "id": 37825667997,
+        "name": "Builds",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 1115,
+        "jobs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825667997/jobs",
+        "logs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825667997/logs",
+        "workflow_id": 225150648
+      },
+      {
+        "id": 37825667918,
+        "name": "Tests",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1263,
+        "jobs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825667918/jobs",
+        "logs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825667918/logs",
+        "workflow_id": 218558883
+      },
+      {
+        "id": 37825668323,
+        "name": "Lint",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1262,
+        "jobs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825668323/jobs",
+        "logs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825668323/logs",
+        "workflow_id": 218558884
+      },
+      {
+        "id": 37825668248,
+        "name": "Production Container Scan",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 912,
+        "jobs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825668248/jobs",
+        "logs_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37825668248/logs",
+        "workflow_id": 311994106
+      }
+    ]
+  },
+  "buildJobs": {
+    "jobs": [
+      {
+        "id": 113478026890,
+        "name": "Classify Build Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Detect affected build surfaces",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Detect changes outside generated release mirrors",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Validate manual native upgrade baseline",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 4
+          },
+          {
+            "name": "Select build surfaces",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          }
+        ]
+      },
+      {
+        "id": 113478079309,
+        "name": "Release Configuration",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Validate versions and quality-gate tests",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          }
+        ]
+      },
+      {
+        "id": 113478079322,
+        "name": "Web Critical Smoke",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install pinned Playwright Chromium",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Exercise critical production Web journeys on desktop and phone",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          }
+        ]
+      },
+      {
+        "id": 113478079428,
+        "name": "iOS Build",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Type-check mobile",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Prebuild iOS",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Install CocoaPods dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Build iOS Simulator app",
+            "status": "in_progress",
+            "conclusion": null,
+            "number": 8
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "pending",
+            "conclusion": null,
+            "number": 15
+          },
+          {
+            "name": "Post Checkout",
+            "status": "pending",
+            "conclusion": null,
+            "number": 16
+          }
+        ]
+      },
+      {
+        "id": 113478079447,
+        "name": "Expo Web Build",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup reviewed bundle Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install deps",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Build and validate Expo web",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Post Setup reviewed bundle Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          }
+        ]
+      },
+      {
+        "id": 113478079480,
+        "name": "ios Runtime Bundle",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Test installed mobile build tools",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Export the ios Metro bundle",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          }
+        ]
+      },
+      {
+        "id": 113478079531,
+        "name": "Mobile Build",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Setup Java",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Setup Android SDK",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Activate reviewed Android command-line tools",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Install deps",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Type-check mobile",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Prebuild Android",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Build Android debug",
+            "status": "in_progress",
+            "conclusion": null,
+            "number": 10
+          },
+          {
+            "name": "Share Android debug APK with emulator E2E",
+            "status": "pending",
+            "conclusion": null,
+            "number": 11
+          },
+          {
+            "name": "Post Setup Java",
+            "status": "pending",
+            "conclusion": null,
+            "number": 20
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "pending",
+            "conclusion": null,
+            "number": 21
+          },
+          {
+            "name": "Post Checkout",
+            "status": "pending",
+            "conclusion": null,
+            "number": 22
+          }
+        ]
+      },
+      {
+        "id": 113478079617,
+        "name": "android Runtime Bundle",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Test installed mobile build tools",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Export the android Metro bundle",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Post Setup Node",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          }
+        ]
+      },
+      {
+        "id": 113478081308,
+        "name": "Wear Release Emulator Smoke",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 113478081505,
+        "name": "Full Exported Web and PWA End-to-End",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 113478081803,
+        "name": "Native Two-Emulator Package Upgrade",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 113478082151,
+        "name": "Six-State Data-Backed Route Acceptance",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 113478082520,
+        "name": "Backend Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 113478082605,
+        "name": "Wear Build and JVM Tests",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": null
+      },
+      {
+        "id": 113478083514,
+        "name": "UX Accessibility and Visual Regression",
+        "status": "completed",
+        "conclusion": "skipped",
+        "run_id": 37825667997,
+        "logs_url": null,
+        "steps": null
+      }
+    ]
+  },
+  "passed": [
+    "235 mobile suites / 1332 tests on unchanged product source",
+    "22 final cold-cache startup/auth tests",
+    "69 API client tests",
+    "251 native release configuration tests",
+    "mobile TypeScript",
+    "4 maintained desktop/compact browser regressions",
+    "independent baseline/final web builds",
+    "four matched genuine capture pairs with exact build-response hash verification",
+    "local Android JavaScript export",
+    "current-head CI Tests, Lint, Database Upgrade, Production Container Scan, Release Configuration, Web Critical Smoke, Expo Web Build, android/ios Runtime Bundle"
+  ],
+  "failedHistorical": [
+    "Initial release-config wording expectation fixed in 8e109f5",
+    "Two 5s CI startup-test timeouts fixed by bounded test-only allowance; final-head Tests passes"
+  ],
+  "pending": [
+    "CI iOS Build and Mobile Build still in progress at this checkpoint; coordinator must reconcile completion and resume this owner for actionable failures before QA",
+    "Independent readiness QA including independent pixel inspection and full published-scope assessment"
+  ],
+  "unexecuted": [
+    "Native device/emulator manual checks explicitly deferred",
+    "GitHub rendered PR inspection waived, not claimed passed"
+  ],
+  "preservation": {
+    "pr439": "Open, unready, unchanged ce8543483db55800034e6ed2622eeb4b9ac7f3b6; deferred backend administrator/bootstrap remains retained. Coordinator decides closure.",
+    "pr402": "Closed unmerged, unchanged a341dcf2e736c8207c7e9296c1c7a8f67cf012f5",
+    "priorOwner": "01a1145f-aae2-70e0-af56-3952f0eab012 completed/idle; replacement ownership, no migration claim",
+    "evidenceRef": "refs/heads/evidence/managed-438-01a11c7b, indefinite retention; no rewrite/deletion; never product merge target"
+  },
+  "association": "Native closing issue438 association and Project Current PR=450 verified; task ID recorded because shareable link unavailable",
+  "userActions": [],
+  "checkpoint": "Owned source/baseline/evidence worktrees preserved; product clean. Local builds/tests/browser servers completed; read-only CI watcher stopped. Sole implementation owner idle; draft preserved, no readiness awarded."
+}
