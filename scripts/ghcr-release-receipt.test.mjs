@@ -173,7 +173,7 @@ test('real Cut release certificate distinguishes the reusable signer from the re
   assert.notEqual(certificate.buildConfigURI, certificate.buildSignerURI);
   assert.deepEqual(parseGhcrAttestationWorkflowCandidates(contents, values.repository), [revision]);
 
-  for (const caller of ['cut-release-handler.yml', 'publish-release-handler.yml', 'container-handler.yml']) {
+  for (const caller of ['cut-release-handler.yml', 'publish-release-handler.yml', 'container-handler.yml', 'unified-server-handler.yml']) {
     const result = attestationResult(revision, {
       buildConfigURI: `https://github.com/${values.repository}/.github/workflows/${caller}@refs/heads/master`
     });

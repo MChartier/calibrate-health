@@ -73,10 +73,12 @@ export function iosBuildRequest({ source, configuration, version, planDigest, pr
 
 export function iosSubmitRequest({ buildId, buildReceipt, appStoreConnectId }) {
   assert(/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(buildId) && buildReceipt?.buildId === buildId && buildReceipt.platform === 'ios' &&
-    buildReceipt.distribution === 'store' && DIGEST.test(buildReceipt.artifactSha256) && SHA.test(buildReceipt.source),
+    (buildReceipt.distribution === 'store' || buildReceipt.distribution === undefined && buildReceipt.schema === 1 &&
+      buildReceipt.kind === 'native' && buildReceipt.profile === 'production' && DIGEST.test(buildReceipt.planDigest)) &&
+    DIGEST.test(buildReceipt.artifactSha256) && SHA.test(buildReceipt.source),
   'Submission requires the exact verified store build; simulator/ad-hoc/latest selection is forbidden.');
   assert(/^[1-9]\d+$/.test(appStoreConnectId), 'External App Store Connect application ID is required.');
-  return { args: ['submit', '--platform', 'ios', '--id', buildId, '--profile', 'testflight', '--non-interactive', '--wait'],
+  return { args: ['submit', '--platform', 'ios', '--id', buildId, '--profile', 'testflight', '--non-interactive', '--no-auto-testflight-setup', '--no-wait'],
     eas: { submit: { testflight: { ios: { ascAppId: appStoreConnectId } } } },
     binding: { source: buildReceipt.source, buildId, artifactSha256: buildReceipt.artifactSha256,
       application: hash(appStoreConnectId), stage: 'upload' } };

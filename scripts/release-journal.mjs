@@ -4,6 +4,7 @@ import { bytes, byteHash, hash, SHA, DIGEST } from './release-plan.mjs';
 const keyPattern = /^[a-z0-9][a-z0-9.-]*$/;
 const candidateTag = runId => `candidate/unified/${runId}`;
 const abandonedTag = runId => `abandoned/unified/${runId}`;
+const completedTag = runId => `completed/unified/${runId}`;
 
 function operationTransition(previous, current) {
   assert(DIGEST.test(current.binding) && ['intent', 'running', 'failed', 'complete'].includes(current.status) &&
@@ -28,8 +29,9 @@ export class ReleaseJournal {
     this.runId = runId;
   }
   async release() {
-    const matches = (await this.transport.releases()).filter(r => [candidateTag(this.runId), abandonedTag(this.runId)].includes(r.tag_name));
+    const matches = (await this.transport.releases()).filter(r => [candidateTag(this.runId), abandonedTag(this.runId), completedTag(this.runId)].includes(r.tag_name));
     assert(matches.length <= 1, 'Duplicate journal identity; reconcile before proceeding.');
+    if (matches.length) assert(matches[0].author?.login === 'github-actions[bot]', 'Journal ownership differs.');
     return matches[0];
   }
   async assertActive() {
@@ -84,6 +86,23 @@ export class ReleaseJournal {
     await this.put(`op.${value.key}.${String(next.sequence).padStart(6, '0')}.json`, next);
     return next;
   }
+  async finish(planDigest, results) {
+    let release = await this.release();
+    assert(release?.draft && DIGEST.test(planDigest), 'Completion requires an exact retained plan.');
+    const completion = { schema: 1, runId: this.runId, planDigest, results };
+    if (release.tag_name === completedTag(this.runId)) {
+      assert.deepEqual(await readAsset(this.transport, release, 'completion.json'), completion, 'Completed journal differs from verified results.');
+      return completion;
+    }
+    await this.assertActive();
+    await this.put('completion.json', completion);
+    release = await this.release();
+    await this.transport.rename(release.id, completedTag(this.runId));
+    release = await this.release();
+    assert(release.tag_name === completedTag(this.runId), 'Completion rename readback failed.');
+    assert.deepEqual(await readAsset(this.transport, release, 'completion.json'), completion, 'Completion bytes changed.');
+    return completion;
+  }
 }
 
 export async function readAsset(transport, release, name) {
@@ -101,7 +120,8 @@ export async function putAsset(transport, release, name, value) {
   assert(/^[a-z0-9][a-z0-9.-]*\.json$/.test(name), 'Invalid journal asset name.');
   const content = bytes(value);
   const fresh = await transport.release(release.id);
-  assert(fresh.id === release.id && fresh.tag_name === release.tag_name && fresh.draft === true, 'Journal changed before upload.');
+  assert(fresh.id === release.id && fresh.tag_name === release.tag_name && fresh.draft === true &&
+    fresh.author?.login === 'github-actions[bot]', 'Journal changed before upload.');
   if (!['retirement.json', 'retirement-complete.json'].includes(name)) {
     assert(fresh.tag_name.startsWith('candidate/unified/') && !fresh.assets.some(a => a.name === 'retirement.json'), 'Journal is retiring before upload.');
   }
@@ -117,7 +137,7 @@ export async function putAsset(transport, release, name, value) {
 
 export async function verifyRetirement(transport, release, complete = true) {
   const record = await readAsset(transport, release, 'retirement.json');
-  assert(record?.schema === 1 && record.releaseId === release.id && release.draft &&
+  assert(record?.schema === 1 && record.releaseId === release.id && release.draft && release.author?.login === 'github-actions[bot]' &&
     release.tag_name === abandonedTag(record.runId), 'Retired journal identity is uncertain.');
   assert(Array.isArray(record.assets), 'Retired asset inventory is missing.');
   for (const original of record.assets) {

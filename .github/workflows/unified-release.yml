@@ -1,0 +1,92 @@
+name: Release changed artifacts
+
+run-name: Plan or release changed artifacts from ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan_only:
+        description: Show the verified plan without allocating versions, building or publishing
+        type: boolean
+        required: true
+        default: true
+      profile:
+        description: Native build configuration to compare with its own successful receipts
+        type: choice
+        required: true
+        default: production
+        options:
+          - production
+          - internal
+      server_bump:
+        description: Server version increment, used only if the server image changed
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      confirm_play_console_clean:
+        description: For Android store submission, I checked Play for unrelated pending changes and will pause other Console/API writers
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  request:
+    name: Record the read-only manual release request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require protected master
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/master
+          [[ "${GITHUB_SHA}" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Bind operator inputs to this exact request run
+        shell: bash
+        env:
+          PLAN_ONLY: ${{ inputs.plan_only }}
+          PROFILE: ${{ inputs.profile }}
+          SERVER_BUMP: ${{ inputs.server_bump }}
+          CONFIRM_PLAY_CONSOLE_CLEAN: ${{ inputs.confirm_play_console_clean }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+        run: |
+          set -euo pipefail
+          [[ "${PLAN_ONLY}" =~ ^(true|false)$ ]]
+          [[ "${CONFIRM_PLAY_CONSOLE_CLEAN}" =~ ^(true|false)$ ]]
+          [[ "${PROFILE}" =~ ^(internal|production)$ ]]
+          [[ "${SERVER_BUMP}" =~ ^(patch|minor|major)$ ]]
+          mkdir -p "${RUNNER_TEMP}/calibrate-unified-request"
+          jq -n --arg operation unified-release \
+            --arg repository "${GITHUB_REPOSITORY}" --arg repository_id "${REPOSITORY_ID}" \
+            --arg request_run_id "${GITHUB_RUN_ID}" --arg request_run_attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg head_branch "${GITHUB_REF_NAME}" --arg head_sha "${GITHUB_SHA}" \
+            --arg profile "${PROFILE}" --arg server_bump "${SERVER_BUMP}" \
+            --argjson plan_only "${PLAN_ONLY}" --argjson confirm_play_console_clean "${CONFIRM_PLAY_CONSOLE_CLEAN}" \
+            '{schema_version:1, operation:$operation, repository:$repository, repository_id:$repository_id, request_run_id:$request_run_id, request_run_attempt:$request_run_attempt, head_branch:$head_branch, head_sha:$head_sha, inputs:{profile:$profile, server_bump:$server_bump, plan_only:$plan_only, confirm_play_console_clean:$confirm_play_console_clean}}' \
+            > "${RUNNER_TEMP}/calibrate-unified-request/request.json"
+
+      - name: Upload the bound request
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unified-release-request
+          path: ${{ runner.temp }}/calibrate-unified-request/request.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+
+      - name: Link the protected planner and workers
+        shell: bash
+        run: |
+          {
+            echo '## Release request recorded'
+            echo 'This request has not built or published anything.'
+            echo "Follow [Handle unified release request](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/unified-release-handler.yml) for the verified plan and selected stages."
+          } >> "${GITHUB_STEP_SUMMARY}"

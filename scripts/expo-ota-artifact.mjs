@@ -13,7 +13,6 @@ const EAS_CLI_VERSION = '22.4.0';
 const PROJECT = Object.freeze({
   name: 'Calibrate',
   slug: 'calibrate-health-app',
-  owner: 'calibrate-health',
   androidPackage: 'net.darkmachines.healthtracker'
 });
 const FULL_COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
@@ -132,8 +131,7 @@ export function selectPublicEasEnvironment(values, expected) {
   const projectId = values.EXPO_PUBLIC_EAS_PROJECT_ID?.trim();
   if (projectId !== expected.projectId) {
     throw new Error(
-      `EAS environment ${expected.environment} targets project ${projectId || '<missing>'}, ` +
-      `but this workflow targets ${expected.projectId}.`
+      `EAS environment ${expected.environment} targets a different or missing project.`
     );
   }
   const channel = values.EXPO_UPDATES_CHANNEL?.trim();
@@ -203,7 +201,7 @@ function assertExactTarget(artifact, expected, { requireNativeTag = false } = {}
   validateTarget(expected, { requireNativeTag });
   for (const name of ['sourceCommit', 'channel', 'environment', 'projectId']) {
     if (artifact[name] !== expected[name]) {
-      throw new Error(`OTA artifact ${name} ${artifact[name] ?? '<missing>'} does not match ${expected[name]}.`);
+      throw new Error(`OTA artifact ${name} does not match the expected target.`);
     }
   }
   if (requireNativeTag && artifact.nativeBuildRef !== expected.nativeBuildRef) {
@@ -252,7 +250,7 @@ function normalizedExpoMetadataPath(value, label) {
   return safeRelativePath(platformPath, label);
 }
 
-function listFiles(root, relative = '') {
+export function listFiles(root, relative = '') {
   const directory = path.join(root, ...relative.split('/').filter(Boolean));
   const entries = fs.readdirSync(directory, { withFileTypes: true })
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -274,16 +272,17 @@ function listFiles(root, relative = '') {
   return files;
 }
 
-function validateExpoExport(inputDir) {
+export function validateExpoExport(inputDir, platform = 'android') {
+  if (!['android', 'ios'].includes(platform)) throw new Error('Unsupported native export platform.');
   const metadata = readJson(path.join(inputDir, 'metadata.json'), 'Expo export metadata');
   if (metadata.version !== 0 || metadata.bundler !== 'metro') {
     throw new Error('Expo export metadata must be Metro schema version 0.');
   }
   const platforms = Object.keys(metadata.fileMetadata ?? {});
-  if (platforms.length !== 1 || platforms[0] !== 'android') {
-    throw new Error('Expo OTA export must contain exactly the Android platform.');
+  if (platforms.length !== 1 || platforms[0] !== platform) {
+    throw new Error(`Expo OTA export must contain exactly the ${platform === 'android' ? 'Android' : 'iOS'} platform.`);
   }
-  const android = metadata.fileMetadata.android;
+  const android = metadata.fileMetadata[platform];
   const referenced = [android?.bundle, ...(android?.assets ?? []).map((asset) => asset?.path)];
   for (const [index, relative] of referenced.entries()) {
     const normalizedRelative = normalizedExpoMetadataPath(relative, `Expo export metadata path ${index}`);
@@ -315,7 +314,6 @@ function readReviewedPublicConfig(file, target) {
   const failures = [
     ['name', config.name, PROJECT.name],
     ['slug', config.slug, PROJECT.slug],
-    ['owner', config.owner, PROJECT.owner],
     ['android.package', config.android?.package, PROJECT.androidPackage],
     ['extra.eas.projectId', config.extra?.eas?.projectId, target.projectId],
     ['updates.url', config.updates?.url, `https://u.expo.dev/${target.projectId}`],
@@ -462,7 +460,6 @@ export function createEnvironmentPublisherProject({ outputDir, projectId }) {
   writePublisherFiles(destination, {
     name: PROJECT.name,
     slug: PROJECT.slug,
-    owner: PROJECT.owner,
     extra: { eas: { projectId } }
   });
   return destination;
@@ -474,7 +471,6 @@ export function createUpdatePublisherProject({ outputDir, artifactRoot, ...expec
   writePublisherFiles(destination, {
     name: PROJECT.name,
     slug: PROJECT.slug,
-    owner: PROJECT.owner,
     version: provenance.appVersion,
     sdkVersion: provenance.sdkVersion,
     runtimeVersion: { policy: 'appVersion' },

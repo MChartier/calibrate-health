@@ -16,6 +16,11 @@ on:
         description: Exact protected master commit authorized by the verified request
         required: true
         type: string
+      selective:
+        description: Unified planner owns downstream OTA selection; never deploy from this worker
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   actions: read
@@ -840,7 +845,7 @@ jobs:
   inspect_cleanup:
     name: Inspect unmerged candidate cleanup
     # Retain validated candidates for approval/CI retry, including runner cancellation.
-    if: ${{ always() && needs.prepare.result == 'success' && needs.release-validation.result != 'success' && needs.finalize.result != 'success' }}
+    if: ${{ always() && !inputs.selective && needs.prepare.result == 'success' && needs.release-validation.result != 'success' && needs.finalize.result != 'success' }}
     needs: [prepare, publish_candidate, release-validation, finalize]
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1071,6 +1076,7 @@ jobs:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       release_commit: ${{ needs.prepare.outputs.release_sha }}
+      selective: ${{ inputs.selective }}
       release_branch: ${{ needs.prepare.outputs.release_branch }}
 
   release_status:

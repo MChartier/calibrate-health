@@ -1,0 +1,180 @@
+name: Handle unified release request
+
+run-name: Unified release request ${{ github.event.workflow_run.id }}
+
+on:
+  workflow_run:
+    workflows: [Release changed artifacts]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calibrate-unified-release
+  cancel-in-progress: false
+  queue: max
+
+env:
+  WORKFLOW_SHA: ${{ github.workflow_sha }}
+  GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+
+jobs:
+  plan:
+    name: Inspect immutable inputs and verified successful receipts
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      actions: read
+      attestations: read
+      contents: read
+      packages: read
+    outputs:
+      execute: ${{ steps.plan.outputs.execute }}
+      profile: ${{ steps.plan.outputs.profile }}
+      plan_digest: ${{ steps.plan.outputs.plan_digest }}
+    steps:
+      - name: Initialize runner-local artifact paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "REQUEST_DIRECTORY=${RUNNER_TEMP}/unified-request" >> "${GITHUB_ENV}"
+          echo "GH_CLI=${RUNNER_TEMP}/gh-cli/gh" >> "${GITHUB_ENV}"
+      - name: Require protected tooling before checking out privileged code
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/master
+          [[ "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          master="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/master" --jq .object.sha)"
+          [[ "${master}" =~ ^[0-9a-f]{40}$ ]]
+          if [[ "${master}" != "${WORKFLOW_SHA}" ]]; then
+            for tree in scripts .github; do
+              original="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${WORKFLOW_SHA}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              current="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${master}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              [[ "${original}" =~ ^[0-9a-f]{40}$ ]]
+              test "${original}" = "${current}"
+            done
+          fi
+      - name: Checkout exact protected handler source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+      - name: Download the exact manual request
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: unified-release-request
+          path: ${{ runner.temp }}/unified-request
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Verify the original human request and selected profile
+        id: request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/unified-release.mjs request
+      - name: Install the reviewed read-only attestation client
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/gh_2.97.0_linux_amd64.tar.gz"
+          curl --fail --location --proto '=https' --tlsv1.2 --output "${archive}" \
+            https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_linux_amd64.tar.gz
+          echo "a2c9b8497e1f85b1ad0dfcb78b5a622e098801b8e461e459e88e1ee12f018112  ${archive}" | sha256sum --check --strict
+          mkdir -p "${RUNNER_TEMP}/gh-cli"
+          tar --extract --gzip --file "${archive}" --directory "${RUNNER_TEMP}/gh-cli" --strip-components=2 gh_2.97.0_linux_amd64/bin/gh
+          chmod 0755 "${GH_CLI}"
+      - name: Show the plan without allocating or publishing
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.CALIBRATE_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_CALIBRATE_SERVER_URL: ${{ vars[steps.request.outputs.profile == 'internal' && 'CALIBRATE_INTERNAL_SERVER_URL' || 'CALIBRATE_NATIVE_SERVER_URL'] }}
+          EXPO_UPDATES_CHANNEL: ${{ steps.request.outputs.profile }}
+          EAS_ENVIRONMENT: ${{ steps.request.outputs.profile == 'production' && 'production' || 'preview' }}
+        run: node scripts/unified-release.mjs plan
+
+  execute:
+    name: Run only the verified selected stages
+    needs: plan
+    if: needs.plan.outputs.execute == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      actions: write
+      attestations: read
+      contents: write
+      packages: read
+      pull-requests: write
+    steps:
+      - name: Initialize runner-local artifact paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "REQUEST_DIRECTORY=${RUNNER_TEMP}/unified-request" >> "${GITHUB_ENV}"
+          echo "GH_CLI=${RUNNER_TEMP}/gh-cli/gh" >> "${GITHUB_ENV}"
+      - name: Require protected tooling before checking out privileged code
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/master
+          [[ "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          master="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/master" --jq .object.sha)"
+          [[ "${master}" =~ ^[0-9a-f]{40}$ ]]
+          if [[ "${master}" != "${WORKFLOW_SHA}" ]]; then
+            for tree in scripts .github; do
+              original="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${WORKFLOW_SHA}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              current="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${master}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              [[ "${original}" =~ ^[0-9a-f]{40}$ ]]
+              test "${original}" = "${current}"
+            done
+          fi
+      - name: Checkout exact protected handler source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+      - name: Download the exact manual request again
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: unified-release-request
+          path: ${{ runner.temp }}/unified-request
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Install the reviewed read-only attestation client
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/gh_2.97.0_linux_amd64.tar.gz"
+          curl --fail --location --proto '=https' --tlsv1.2 --output "${archive}" \
+            https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_linux_amd64.tar.gz
+          echo "a2c9b8497e1f85b1ad0dfcb78b5a622e098801b8e461e459e88e1ee12f018112  ${archive}" | sha256sum --check --strict
+          mkdir -p "${RUNNER_TEMP}/gh-cli"
+          tar --extract --gzip --file "${archive}" --directory "${RUNNER_TEMP}/gh-cli" --strip-components=2 gh_2.97.0_linux_amd64/bin/gh
+          chmod 0755 "${GH_CLI}"
+      - name: Revalidate and execute the selected immutable plan
+        env:
+          EXPECTED_PLAN_DIGEST: ${{ needs.plan.outputs.plan_digest }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.CALIBRATE_EAS_PROJECT_ID }}
+          EXPO_PUBLIC_CALIBRATE_SERVER_URL: ${{ vars[needs.plan.outputs.profile == 'internal' && 'CALIBRATE_INTERNAL_SERVER_URL' || 'CALIBRATE_NATIVE_SERVER_URL'] }}
+          EXPO_UPDATES_CHANNEL: ${{ needs.plan.outputs.profile }}
+          EAS_ENVIRONMENT: ${{ needs.plan.outputs.profile == 'production' && 'production' || 'preview' }}
+        run: node scripts/unified-release.mjs execute

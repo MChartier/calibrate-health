@@ -29,6 +29,15 @@ function fixture() {
   };
   return { transport, releases, assets, controls, store: new ReleaseJournal(transport, '10') };
 }
+test('foreign journal ownership blocks reads, uploads and completion before mutation', async () => {
+  const f = fixture(); await f.store.create('a'.repeat(40));
+  f.releases[0].author.login = 'unrelated-user';
+  await assert.rejects(f.store.create('a'.repeat(40)), /ownership/);
+  await assert.rejects(f.store.put('plan.json', {}), /ownership/);
+  await assert.rejects(f.store.finish(hash('plan'), []), /ownership/);
+  assert.equal(f.assets.size, 0);
+  assert.equal(f.releases[0].tag_name, 'candidate/unified/10');
+});
 test('append-only journal rejects another writer and survives lost upload response', async () => {
   const f = fixture(); await f.store.create('a'.repeat(40));
   f.controls.loseUpload = true;
@@ -70,13 +79,22 @@ test('unobserved intent and ambiguous provider results never duplicate a request
   await assert.rejects(runReleaseOperation(f.store, 'ios', {}, provider), /Ambiguous/);
   assert.equal(starts, 1);
 });
+
+test('a singleton exact provider discovery is journaled before adoption without another request', async () => {
+  const f = fixture(); await f.store.create('a'.repeat(40));
+  const provider = { find: async () => ['build-existing'], start: async () => { throw Error('must not start'); },
+    status: async () => 'complete', verify: async id => ({ id, digest: hash('existing artifact') }) };
+  await runReleaseOperation(f.store, 'ios', { source: 'a' }, provider);
+  assert.equal((await f.store.operation('ios')).status, 'complete');
+  assert.equal(f.releases[0].assets.length, 3);
+});
 async function retiredFixture() {
   const f = fixture(); const source = 'a'.repeat(40);
   await f.store.create(source);
   const plan = { schema: 1, runId: '10', repository: 'example/app', source };
   await f.store.put('plan.json', plan);
-  const observation = { plan, run: { id: 10, head_sha: source, head_branch: 'master', event: 'workflow_dispatch',
-    path: '.github/workflows/unified-release.yml', status: 'completed', conclusion: 'cancelled' },
+  const observation = { plan, run: { id: 10, head_sha: source, head_branch: 'master', event: 'workflow_run',
+    path: '.github/workflows/unified-release-handler.yml', status: 'completed', conclusion: 'cancelled' },
     jobs: [{ name: 'prepare', conclusion: 'cancelled' }, { name: 'build', conclusion: 'skipped' }], jobsTotal: 2,
     currentSource: 'b'.repeat(40), completionExists: false, candidateRefAbsent: true };
   return { ...f, observation, inspect: async () => structuredClone(observation), close: async () => { throw Error('No PR should be closed'); } };

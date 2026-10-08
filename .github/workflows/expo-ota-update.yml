@@ -155,7 +155,7 @@ jobs:
     environment: preview
     env:
       EAS_ENVIRONMENT: preview
-      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.CALIBRATE_EAS_PROJECT_ID }}
       EXPO_UPDATES_CHANNEL: internal
       OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
 
@@ -287,7 +287,7 @@ jobs:
     env:
       EAS_ENVIRONMENT: preview
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
-      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.CALIBRATE_EAS_PROJECT_ID }}
       EXPO_UPDATES_CHANNEL: internal
       NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
       NODE_ENV: production
@@ -449,7 +449,7 @@ jobs:
     environment: preview
     env:
       EAS_ENVIRONMENT: preview
-      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.CALIBRATE_EAS_PROJECT_ID }}
       EXPO_UPDATES_CHANNEL: internal
       NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
       OTA_MESSAGE: ${{ inputs.message }}
@@ -591,7 +591,7 @@ jobs:
     # Production stages start only after the existing production approval.
     env:
       EAS_ENVIRONMENT: production
-      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.CALIBRATE_EAS_PROJECT_ID }}
       EXPO_UPDATES_CHANNEL: production
       OTA_SOURCE_REF: ${{ needs.preflight-release-target.outputs.source_commit }}
 
@@ -723,7 +723,7 @@ jobs:
     env:
       EAS_ENVIRONMENT: production
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
-      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.CALIBRATE_EAS_PROJECT_ID }}
       EXPO_UPDATES_CHANNEL: production
       NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
       NODE_ENV: production
@@ -885,7 +885,7 @@ jobs:
     # Source export finishes before this clean publisher receives the Expo token.
     env:
       EAS_ENVIRONMENT: production
-      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.CALIBRATE_EAS_PROJECT_ID }}
       EXPO_UPDATES_CHANNEL: production
       NATIVE_BUILD_REF: ${{ needs.preflight-release-target.outputs.native_build_ref }}
       OTA_MESSAGE: ${{ inputs.message }}

@@ -18,7 +18,12 @@ export async function runReleaseOperation(store, key, identity, provider, { poll
     assert(Array.isArray(found) && new Set(found).size === found.length, 'Incomplete provider operation inventory.');
     const candidates = found.filter(value => !state?.ids.includes(value));
     assert(candidates.length <= 1, 'Ambiguous provider operations require reconciliation.');
-    if (candidates.length) id = candidates[0];
+    if (candidates.length) {
+      // A provider's exact correlated operation can outlive an interrupted first journal write.
+      // Adopt it through the same durable intent transition; never manufacture a running first record.
+      if (!state) state = await store.save({ key, binding, status: 'intent', ids: [] });
+      id = candidates[0];
+    }
     else {
       assert(!state || state.status === 'failed', 'Unknown provider outcome; no duplicate request sent.');
       state = await store.save({ key, binding, status: 'intent', ids: state?.ids ?? [] });

@@ -1,6 +1,6 @@
 name: Native Android Store Release
 
-run-name: Native ${{ inputs.operation }} from ${{ inputs.source_commit }}
+run-name: ${{ inputs.unified_plan_digest && format('Unified Android {0} {1}', inputs.source_commit, inputs.unified_plan_digest) || format('Native {0} from {1}', inputs.operation, inputs.source_commit) }}
 
 on:
   workflow_dispatch:
@@ -24,6 +24,20 @@ on:
         required: true
         default: false
         type: boolean
+      unified_plan_digest:
+        description: Optional originating unified plan identity; ordinary manual operations leave this empty
+        required: false
+        type: string
+      configuration_digest:
+        description: Optional exact external configuration digest from the originating unified plan
+        required: false
+        type: string
+      build_profile:
+        description: Build-time endpoint, environment and channel profile for a new paired build
+        required: true
+        default: production
+        type: choice
+        options: [production, internal]
 
 permissions:
   contents: read
@@ -215,9 +229,9 @@ jobs:
       watch_aab_sha256: ${{ steps.artifact-hashes.outputs.watch_aab_sha256 }}
     env:
       EXPO_NO_METRO_WORKSPACE_ROOT: '1'
-      EXPO_PUBLIC_CALIBRATE_SERVER_URL: https://calibratehealth.app
-      EXPO_PUBLIC_EAS_PROJECT_ID: fda8f8c5-e646-47ac-82fb-35003c9cbec7
-      EXPO_UPDATES_CHANNEL: production
+      EXPO_PUBLIC_CALIBRATE_SERVER_URL: ${{ vars[inputs.build_profile == 'internal' && 'CALIBRATE_INTERNAL_SERVER_URL' || 'CALIBRATE_NATIVE_SERVER_URL'] }}
+      EXPO_UPDATES_CHANNEL: ${{ inputs.build_profile }}
+      EAS_ENVIRONMENT: ${{ inputs.build_profile == 'production' && 'production' || 'preview' }}
       NODE_ENV: production
       SOURCE_COMMIT: ${{ inputs.source_commit }}
 
@@ -300,6 +314,24 @@ jobs:
 
       - name: Install native release dependencies
         run: npm ci --no-audit --fund=false
+
+      - name: Validate explicit build configuration
+        shell: bash
+        env:
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.CALIBRATE_EAS_PROJECT_ID }}
+          UNIFIED_PLAN_DIGEST: ${{ inputs.unified_plan_digest }}
+          CONFIGURATION_DIGEST: ${{ inputs.configuration_digest }}
+          BUILD_PROFILE: ${{ inputs.build_profile }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ -n "${UNIFIED_PLAN_DIGEST}" || -n "${CONFIGURATION_DIGEST}" ]]; then
+            [[ "${UNIFIED_PLAN_DIGEST}" =~ ^[0-9a-f]{64}$ ]]
+            [[ "${CONFIGURATION_DIGEST}" =~ ^[0-9a-f]{64}$ ]]
+            args=(--expected-digest "${CONFIGURATION_DIGEST}")
+          fi
+          node scripts/release-build-config.mjs --profile "${BUILD_PROFILE}" "${args[@]}"
+            echo "EXPO_PUBLIC_EAS_PROJECT_ID=${EXPO_PUBLIC_EAS_PROJECT_ID}" >> "${GITHUB_ENV}"
 
       - name: Generate and verify credential-free native Gradle state
         shell: bash
@@ -524,6 +556,31 @@ jobs:
             --watch-aab "${WATCH_AAB}"
           echo "receipt_sha256=${RECEIPT_SHA256}" >> "${GITHUB_OUTPUT}"
 
+      - name: Bind the selected plan to the independently reconstructed paired receipt
+        if: inputs.unified_plan_digest != ''
+        shell: bash
+        env:
+          UNIFIED_PLAN_DIGEST: ${{ inputs.unified_plan_digest }}
+          CONFIGURATION_DIGEST: ${{ inputs.configuration_digest }}
+          BUILD_PROFILE: ${{ inputs.build_profile }}
+        run: |
+          set -euo pipefail
+          node "${NATIVE_PLAY_RECEIPT_TOOL}" bind-unified \
+            --receipt-file "${RUNNER_TEMP}/native-play-receipt.json" \
+            --plan-digest "${UNIFIED_PLAN_DIGEST}" \
+            --configuration-digest "${CONFIGURATION_DIGEST}" \
+            --profile "${BUILD_PROFILE}" > "${RUNNER_TEMP}/unified-android-receipt.json"
+
+      - name: Return the selected paired receipt for subsequent attestation verification
+        if: inputs.unified_plan_digest != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unified-android-receipt
+          path: ${{ runner.temp }}/unified-android-receipt.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+
       - name: Recheck current protected workflow authority immediately before attestation
         shell: bash
         env:
@@ -549,7 +606,9 @@ jobs:
       - name: Attest exact native Play receipt
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
-          subject-path: ${{ runner.temp }}/native-play-receipt.json
+          subject-path: |
+            ${{ runner.temp }}/native-play-receipt.json
+            ${{ inputs.unified_plan_digest != '' && format('{0}/unified-android-receipt.json', runner.temp) || '' }}
           push-to-registry: false
           create-storage-record: false
 

@@ -44,7 +44,7 @@ for (const kind of ['server', 'native', 'bundle']) for (const platform of kind =
 test('combined first release builds once per platform and does not duplicate embedded bundles as OTA', () => {
   const a = fixture(); a.receipts = [];
   const plan = planRelease(a);
-  assert.deepEqual(plan.stages.map(s => s.key), ['server', 'native-android', 'native-ios']);
+  assert.deepEqual(plan.stages.map(s => s.key), ['native-android', 'native-ios', 'server']);
 });
 test('incompatible OTA remains explicit, with native rebuild selected', () => {
   const a = fixture(); a.inputs.native.android = hash('native'); a.inputs.bundle.android = hash('bundle');

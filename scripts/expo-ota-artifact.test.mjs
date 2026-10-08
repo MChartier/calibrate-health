@@ -16,7 +16,7 @@ import {
 } from './expo-ota-artifact.mjs';
 
 const sourceCommit = 'a'.repeat(40);
-const projectId = 'fda8f8c5-e646-47ac-82fb-35003c9cbec7';
+const projectId = '11111111-1111-4111-8111-111111111111';
 const target = Object.freeze({
   sourceCommit,
   nativeBuildRef: 'native-v0.2.6',
@@ -168,7 +168,7 @@ test('environment handoff rejects target drift and unsafe server URLs', (t) => {
   const artifactFile = createEnvironmentFixture(root);
   assert.throws(
     () => verifyEnvironmentArtifact({ artifactFile, ...target, channel: 'production' }),
-    /does not match production/
+    /channel does not match the expected target/
   );
   assert.throws(
     () => selectPublicEasEnvironment({
@@ -195,7 +195,7 @@ test('pre-exported Android update is bound to exact provenance and every file ha
   ]);
   assert.throws(
     () => verifyUpdateArtifact({ artifactRoot, ...target, sourceCommit: 'b'.repeat(40) }),
-    /sourceCommit .* does not match/
+    /sourceCommit does not match the expected target/
   );
 });
 
@@ -280,7 +280,6 @@ test('clean publisher projects contain only fixed inert configuration', (t) => {
     expo: {
       name: 'Calibrate',
       slug: 'calibrate-health-app',
-      owner: 'calibrate-health',
       extra: { eas: { projectId } }
     }
   });
@@ -294,6 +293,7 @@ test('clean publisher projects contain only fixed inert configuration', (t) => {
   assert.equal(app.sdkVersion, '57.0.0');
   assert.equal(app.updates.requestHeaders['expo-channel-name'], 'internal');
   assert.equal(app.extra.eas.projectId, projectId);
+  assert.equal(Object.hasOwn(app, 'owner'), false);
   assert.deepEqual(packageJson.dependencies, { 'expo-updates': '57.0.8' });
   assert.equal(Object.hasOwn(app, 'plugins'), false);
   assert.equal(Object.hasOwn(packageJson, 'scripts'), false);

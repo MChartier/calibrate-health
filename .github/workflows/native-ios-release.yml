@@ -1,0 +1,163 @@
+name: Build selected unified iOS artifact
+
+run-name: Unified iOS ${{ inputs.parent_run_id }} ${{ inputs.plan_digest }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      parent_run_id:
+        description: Originating protected unified release handler
+        required: true
+        type: string
+      plan_digest:
+        description: Exact retained plan digest
+        required: true
+        type: string
+      source_commit:
+        description: Exact verified native metadata source
+        required: true
+        type: string
+      profile:
+        description: Exact planned build profile
+        required: true
+        type: choice
+        options: [production, internal]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calibrate-unified-ios-build
+  cancel-in-progress: false
+  queue: max
+
+env:
+  WORKFLOW_SHA: ${{ github.workflow_sha }}
+  EXPO_PUBLIC_EAS_PROJECT_ID: ${{ secrets.CALIBRATE_EAS_PROJECT_ID }}
+  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+  EXPO_PUBLIC_CALIBRATE_SERVER_URL: ${{ vars[inputs.profile == 'internal' && 'CALIBRATE_INTERNAL_SERVER_URL' || 'CALIBRATE_NATIVE_SERVER_URL'] }}
+  EXPO_UPDATES_CHANNEL: ${{ inputs.profile }}
+  EAS_ENVIRONMENT: ${{ inputs.profile == 'production' && 'production' || 'preview' }}
+
+jobs:
+  build:
+    name: Build the selected IPA with existing frozen credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      build_id: ${{ steps.build.outputs.build_id }}
+    steps:
+      - name: Require protected tooling before checking out privileged code
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/master
+          [[ "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          master="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/master" --jq .object.sha)"
+          [[ "${master}" =~ ^[0-9a-f]{40}$ ]]
+          if [[ "${master}" != "${WORKFLOW_SHA}" ]]; then
+            for tree in scripts .github; do
+              original="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${WORKFLOW_SHA}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              current="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${master}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              [[ "${original}" =~ ^[0-9a-f]{40}$ ]]
+              test "${original}" = "${current}"
+            done
+          fi
+      - name: Checkout this exact protected workflow source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+      - name: Verify exact manual authority and durable selected-stage intent
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/release-ios-worker.mjs verify
+      - name: Install locked source and EAS dependencies without lifecycle hooks
+        run: |
+          npm ci --ignore-scripts --include=dev --include=optional --no-audit --fund=false
+          npm ci --prefix tools/eas-cli --ignore-scripts --no-audit --fund=false
+      - name: Reconcile or build the exact selected IPA without submission
+        id: build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: node scripts/release-ios-worker.mjs build
+
+  attest:
+    name: Independently verify and attest the exact IPA
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Require protected tooling before checking out privileged code
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/master
+          [[ "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          master="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/master" --jq .object.sha)"
+          [[ "${master}" =~ ^[0-9a-f]{40}$ ]]
+          if [[ "${master}" != "${WORKFLOW_SHA}" ]]; then
+            for tree in scripts .github; do
+              original="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${WORKFLOW_SHA}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              current="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${master}" --jq ".tree[] | select(.path == \"${tree}\" and .type == \"tree\") | .sha")"
+              [[ "${original}" =~ ^[0-9a-f]{40}$ ]]
+              test "${original}" = "${current}"
+            done
+          fi
+      - name: Checkout only protected verifier tooling and Git history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: |
+            /scripts/
+            /tools/eas-cli/
+            /mobile/eas.json
+          sparse-checkout-cone-mode: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+      - name: Install only the locked provider inspector without lifecycle hooks
+        run: npm ci --prefix tools/eas-cli --ignore-scripts --no-audit --fund=false
+      - name: Download and inspect the exact IPA without evaluating app source
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_BUILD_ID: ${{ needs.build.outputs.build_id }}
+          IOS_RECEIPT_FILE: ${{ runner.temp }}/ios-receipt.json
+        run: node scripts/release-ios-worker.mjs receipt
+      - name: Attest canonical source-bound receipt bytes
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: ${{ runner.temp }}/ios-receipt.json
+          push-to-registry: false
+          create-storage-record: false
+      - name: Return only the attested receipt to the originating planner
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unified-ios-receipt
+          path: ${{ runner.temp }}/ios-receipt.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7

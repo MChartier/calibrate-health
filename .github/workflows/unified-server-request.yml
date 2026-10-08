@@ -1,0 +1,69 @@
+name: Request selected unified server stage
+
+run-name: Unified server ${{ inputs.parent_run_id }} ${{ inputs.plan_digest }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      parent_run_id:
+        description: Originating protected unified handler run
+        type: string
+        required: true
+      plan_digest:
+        description: Exact retained plan digest
+        type: string
+        required: true
+      source_commit:
+        description: Exact verified execution source on current master
+        type: string
+        required: true
+      bump:
+        description: Planned server increment
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  request:
+    name: Record automatic server handoff
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the originating Actions request
+        shell: bash
+        env:
+          PARENT_RUN_ID: ${{ inputs.parent_run_id }}
+          PLAN_DIGEST: ${{ inputs.plan_digest }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          BUMP: ${{ inputs.bump }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = refs/heads/master
+          test "${GITHUB_ACTOR}" = 'github-actions[bot]'
+          test "${GITHUB_TRIGGERING_ACTOR}" = 'github-actions[bot]'
+          [[ "${PARENT_RUN_ID}" =~ ^[1-9][0-9]*$ ]]
+          [[ "${PLAN_DIGEST}" =~ ^[0-9a-f]{64}$ ]]
+          [[ "${SOURCE_COMMIT}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${BUMP}" =~ ^(patch|minor|major)$ ]]
+          test "${SOURCE_COMMIT}" = "${GITHUB_SHA}"
+          mkdir -p "${RUNNER_TEMP}/unified-server-request"
+          jq -n --arg repository "${GITHUB_REPOSITORY}" --arg repository_id "${REPOSITORY_ID}" \
+            --arg request_run_id "${GITHUB_RUN_ID}" --arg request_run_attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg head_sha "${GITHUB_SHA}" --arg parent_run_id "${PARENT_RUN_ID}" \
+            --arg plan_digest "${PLAN_DIGEST}" --arg bump "${BUMP}" \
+            '{schema_version:1, operation:"unified-server-release", repository:$repository, repository_id:$repository_id,
+              request_run_id:$request_run_id, request_run_attempt:$request_run_attempt, head_branch:"master", head_sha:$head_sha,
+              inputs:{server:true, source_commit:$head_sha, parent_run_id:$parent_run_id, plan_digest:$plan_digest, bump:$bump}}' \
+            > "${RUNNER_TEMP}/unified-server-request/request.json"
+
+      - name: Retain exact server handoff
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unified-server-request
+          path: ${{ runner.temp }}/unified-server-request/request.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7

@@ -77,6 +77,8 @@ export async function verifyUnifiedCandidate({ root, commit, parent, request, gi
   });
   assert.deepEqual(paths.sort(), Object.keys(expected).sort(), 'Candidate changed paths differ from reconstructed metadata.');
   for (const [name, content] of Object.entries(expected)) {
+    assert.equal(git(['ls-tree', '-z', commit, '--', name]).split('\t')[0].split(' ').slice(0, 2).join(' '),
+      '100644 blob', `Candidate metadata must remain a regular non-executable file: ${name}.`);
     assert.equal(git(['show', `${commit}:${name}`]), content, `Candidate has noncanonical bytes in ${name}.`);
   }
   return { source: parent, commit, request: observed, paths };

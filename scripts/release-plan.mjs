@@ -27,7 +27,8 @@ export function buildConfiguration(value, eas) {
   const profile = eas.build?.[value.profile];
   assert(profile && profile.channel === value.channel && profile.environment === value.environment,
     'External configuration must match the selected EAS profile, channel and environment.');
-  assert(eas.cli?.appVersionSource === 'local' && !profile.autoIncrement, 'Release plans require local immutable version allocation.');
+  assert(eas.cli?.appVersionSource === 'local' && !profile.autoIncrement && !profile.android?.autoIncrement && !profile.ios?.autoIncrement,
+    'Release plans require local immutable version allocation.');
   assert(profile.distribution === (value.profile === 'production' ? 'store' : 'internal'), 'Unexpected build distribution.');
   return Object.freeze({ ...value });
 }
@@ -60,7 +61,7 @@ function last(receipts, kind, profile, platform) {
 }
 
 /** Pure planner. The caller supplies only receipts verified against the original worker authority. */
-export function planRelease({ runId, repository, source, currentSource, configuration, inputs, manifest, ios, receipts = [], bump = 'patch' }) {
+export function planRelease({ runId, requestRunId, requestRunAttempt, repository, source, currentSource, configuration, inputs, manifest, ios, receipts = [], bump = 'patch' }) {
   assert(/^[1-9]\d*$/.test(runId) && SHA.test(source) && source === currentSource, 'Release source must be exact current protected master.');
   assert(/^[\w.-]+\/[\w.-]+$/.test(repository), 'Release repository identity is required.');
   assert(DIGEST.test(configuration.digest), 'Missing immutable configuration identity.');
@@ -74,7 +75,6 @@ export function planRelease({ runId, repository, source, currentSource, configur
   const serverChanged = !server || server.input !== inputs.server || server.configuration !== configuration.serverDigest;
   if (serverChanged) {
     versions.server = nextReleaseVersion(manifest.server.version, bump);
-    stages.push({ key: 'server', kind: 'server', reason: server ? 'changed image inputs' : 'missing verified image' });
   }
   for (const platform of PLATFORMS) {
     const baseline = last(receipts, 'native', configuration.profile, platform);
@@ -114,7 +114,10 @@ export function planRelease({ runId, repository, source, currentSource, configur
     assert(number <= 999999999, 'iOS build allocation exhausted.');
     versions.ios = { ...ios, version: nextReleaseVersion(ios.version, 'patch'), buildNumber: String(number) };
   }
-  const plan = { schema: 1, runId, repository, source, profile: configuration.profile, configuration: configuration.digest,
+  // Native signing and compatible OTA use the exact merged native metadata source first.
+  // The maintained server worker then creates its independent server-only candidate.
+  if (serverChanged) stages.push({ key: 'server', kind: 'server', reason: server ? 'changed image inputs' : 'missing verified image' });
+  const plan = { schema: 1, runId, ...(requestRunId ? { requestRunId, requestRunAttempt } : {}), repository, source, serverBump: bump, profile: configuration.profile, configuration: configuration.digest, serverConfiguration: configuration.serverDigest,
     inputs, previous, versions, stages, ota, noChange: stages.length === 0 };
   return { ...plan, digest: hash(plan) };
 }

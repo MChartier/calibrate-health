@@ -61,6 +61,10 @@ test('IPA verification precedes exact build upload; upload does not claim proces
   const submit = iosSubmitRequest({ buildId, buildReceipt: receipt, appStoreConnectId: '123456' });
   assert(submit.args.includes(buildId)); assert(!submit.args.includes('--latest'));
   assert.equal(submit.binding.stage, 'upload');
+  const attested = { ...receipt, schema: 1, kind: 'native', profile: 'production', planDigest: hash('plan') };
+  delete attested.distribution;
+  assert.deepEqual(iosSubmitRequest({ buildId, buildReceipt: attested, appStoreConnectId: '123456' }), submit);
+  assert.throws(() => iosSubmitRequest({ buildId, buildReceipt: { ...attested, profile: 'internal' }, appStoreConnectId: '123456' }), /verified store/);
   for (const changed of [{ simulator: true }, { signed: false }, { distribution: 'internal' }, { runtime: 'other' },
     { projectId: 'other' }, { serverUrl: 'https://other.invalid' }, { buildNumber: '999' }]) {
     assert.throws(() => verifyIosArtifact({ ...observed, ...changed }, expected));

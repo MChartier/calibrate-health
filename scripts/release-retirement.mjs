@@ -5,18 +5,18 @@ import { readAsset, putAsset, verifyRetirement } from './release-journal.mjs';
 /** All-attempt job evidence proves absence of provider work; a missing receipt cannot prove it. */
 export function retirementReason({ release, run, jobs, jobsTotal, plan, candidate, pull, currentSource, candidateValidated, completionExists, candidateRefAbsent }) {
   assert(release.draft && release.author?.login === 'github-actions[bot]', 'Unverified journal ownership.');
-  assert(release.assets.every(a => ['plan.json', 'candidate.json', 'retirement.json', 'retirement-complete.json'].includes(a.name)),
+  assert(release.assets.every(a => ['plan.json', 'configuration.json', 'candidate.json', 'retirement.json', 'retirement-complete.json'].includes(a.name)),
     'Provider intent, partial publication or unknown assets must remain recoverable.');
   const source = plan?.source ?? release.target_commitish;
   assert(SHA.test(source) && String(run.id) === release.tag_name.split('/').at(-1) && run.head_sha === source &&
-    run.head_branch === 'master' && run.event === 'workflow_dispatch' && run.path === '.github/workflows/unified-release.yml', 'Workflow/source ownership differs.');
+    run.head_branch === 'master' && run.event === 'workflow_run' && run.path === '.github/workflows/unified-release-handler.yml', 'Workflow/source ownership differs.');
   assert(run.status === 'completed' && ['failure', 'cancelled', 'timed_out'].includes(run.conclusion), 'Active or nonterminal run cannot retire.');
   assert(Array.isArray(jobs) && jobs.length === jobsTotal && jobs.some(j => j.name === 'prepare') &&
     jobs.every(j => j.name === 'prepare' || j.conclusion === 'skipped'), 'All-attempt job evidence cannot rule out provider activity.');
   assert(!completionExists, 'Completed publication exists.');
   assert(!pull?.auto_merge, 'Queued merge must be reconciled.');
   if (!plan) {
-    assert(candidateRefAbsent === true && !candidate && !pull && release.assets.every(a => ['retirement.json', 'retirement-complete.json'].includes(a.name)), 'Missing plan with candidate work or unverified branch absence.');
+    assert(candidateRefAbsent === true && !candidate && !pull && release.assets.every(a => ['configuration.json', 'retirement.json', 'retirement-complete.json'].includes(a.name)), 'Missing plan with candidate work or unverified branch absence.');
     return 'Interrupted before immutable plan persistence.';
   }
   assert(plan.runId === String(run.id), 'Plan/run identity differs.');
