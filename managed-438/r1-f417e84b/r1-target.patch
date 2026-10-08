@@ -1,0 +1,309 @@
+diff --git a/backend/src/routes/foodDays.ts b/backend/src/routes/foodDays.ts
+index b5d7be01..26447a4b 100644
+--- a/backend/src/routes/foodDays.ts
++++ b/backend/src/routes/foodDays.ts
+@@ -21,7 +21,7 @@ import {
+ } from '../services/foodTracking';
+ import { resolveInactiveReminderNotificationsForUser } from '../services/inAppNotifications';
+ import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
+-import { captureFoodDayComparison } from '../services/foodDayComparison';
++import { captureFoodDayComparison, readFoodDayComparison } from '../services/foodDayComparison';
+ 
+ const router = express.Router();
+ router.use(requireAuthenticatedUser);
+@@ -228,13 +228,13 @@ router.patch('/', async (req, res) => {
+           }
+         });
+         if (completedAt) updated = await captureFoodDayComparison(tx, updated, completedAt);
+-        const body = serializeFoodDayStatus({
++        const body = { ...serializeFoodDayStatus({
+           date: updated.local_date,
+           status: updated.status as FoodDayStatus,
+           origin: updated.origin,
+           completedAt: updated.completed_at,
+           updatedAt: updated.updated_at
+-        });
++        }), calorie_comparison: await readFoodDayComparison(tx, updated) };
+         await recordSyncChange({
+           tx,
+           userId: user.id,
+diff --git a/backend/src/services/foodDayComparison.ts b/backend/src/services/foodDayComparison.ts
+index 8e7a8322..e47b1c26 100644
+--- a/backend/src/services/foodDayComparison.ts
++++ b/backend/src/services/foodDayComparison.ts
+@@ -10,6 +10,18 @@ export type FoodDayCalorieComparison = {
+   captured_at: string;
+ };
+ 
++/** Read saved history only; never reconstruct a completed day's plan from current settings. */
++export async function readFoodDayComparison(db: MutationDatabase, day: FoodLogDay): Promise<FoodDayCalorieComparison | null> {
++  if (day.status !== 'COMPLETE' || !foodDayCalorieComparison(day, 0)) return null;
++  const entries = await db.foodLog.findMany({
++    where: { user_id: day.user_id, local_date: day.local_date },
++    select: { calories: true }
++  });
++  const consumed = entries.reduce((total, entry) =>
++    total + (Number.isSafeInteger(entry.calories) && entry.calories >= 0 ? entry.calories : NaN), 0);
++  return foodDayCalorieComparison(day, consumed);
++}
++
+ /** The caller has upserted (and locked) this day in the completion transaction. */
+ export async function captureFoodDayComparison(db: MutationDatabase, day: FoodLogDay, now: Date): Promise<FoodLogDay> {
+   if (day.status !== 'COMPLETE' || day.comparison_captured_at) return day;
+diff --git a/backend/src/services/foodTracking.ts b/backend/src/services/foodTracking.ts
+index 683e27a4..f9eb7d41 100644
+--- a/backend/src/services/foodTracking.ts
++++ b/backend/src/services/foodTracking.ts
+@@ -1,5 +1,5 @@
+ import prisma from '../config/database';
+-import { foodDayCalorieComparison, type FoodDayCalorieComparison } from './foodDayComparison';
++import { foodDayCalorieComparison, readFoodDayComparison, type FoodDayCalorieComparison } from './foodDayComparison';
+ import {
+   addUtcDays,
+   formatDateToLocalDateString,
+@@ -158,7 +158,7 @@ export async function getEffectiveFoodDay(
+   const stored = await db.foodLogDay.findUnique({
+     where: { user_id_local_date: { user_id: userId, local_date: localDate } }
+   });
+-  if (stored) return serializeStoredDay(stored);
++  if (stored) return { ...serializeStoredDay(stored), calorie_comparison: await readFoodDayComparison(db, stored) };
+   const trackingStart = await getTrackingStartDate(userId, db);
+   if (!trackingStart) return null;
+ 
+diff --git a/backend/src/services/watch.ts b/backend/src/services/watch.ts
+index 6f3a3cf2..d19def37 100644
+--- a/backend/src/services/watch.ts
++++ b/backend/src/services/watch.ts
+@@ -1,7 +1,7 @@
+ import crypto from 'node:crypto';
+ import { Prisma, type FoodLog } from '@prisma/client';
+ import prisma from '../config/database';
+-import { captureFoodDayComparison } from './foodDayComparison';
++import { captureFoodDayComparison, readFoodDayComparison } from './foodDayComparison';
+ import { getRecentFoodSuggestions, type RecentFoodSuggestion } from './recentFoods';
+ 
+ import {
+@@ -437,7 +437,8 @@ export async function executeWatchMutation(options: {
+           is_representative: (day.status ?? status) === 'COMPLETE',
+           is_complete: (day.status ?? status) === 'COMPLETE',
+           completed_at: day.completed_at,
+-          revision: foodDayRevision(day)
++          revision: foodDayRevision(day),
++          calorie_comparison: await readFoodDayComparison(tx, day)
+         }
+       };
+       await recordSyncChange({ tx, userId: options.userId, entityType: 'food_log_day', entityId: mutation.payload.local_date, action: 'upsert', operationId: claimedOperationId, payload: body.food_day });
+diff --git a/backend/test/food-day-comparison.test.js b/backend/test/food-day-comparison.test.js
+index d2fbdaea..133a4f22 100644
+--- a/backend/test/food-day-comparison.test.js
++++ b/backend/test/food-day-comparison.test.js
+@@ -2,7 +2,7 @@ const test = require('node:test');
+ const assert = require('node:assert/strict');
+ process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5432/test';
+ const { captureFoodDayComparison, foodDayCalorieComparison } = require('../src/services/foodDayComparison');
+-const { getEffectiveFoodDayRange } = require('../src/services/foodTracking');
++const { getEffectiveFoodDay, getEffectiveFoodDayRange } = require('../src/services/foodTracking');
+ const now = new Date('2026-01-01T07:30:00Z'); // Still Dec 31 in Los Angeles.
+ function fixture() {
+   const day = { id: 1, user_id: 7, local_date: new Date('2025-12-31T00:00:00Z'), status: 'COMPLETE', origin: 'USER', completed_at: now, updated_at: now };
+@@ -14,7 +14,7 @@ function fixture() {
+     goal: { findFirst: async () => goal },
+     bodyMetric: { findFirst: async () => ({ weight_grams: 90000 }) },
+     caloriePlanRevision: { findFirst: async () => null, findMany: async () => [] },
+-    foodLogDay: { findFirst: async () => day, findMany: async () => [day], update: async ({data}) => Object.assign(day, data) },
++    foodLogDay: { findUnique: async () => day, findFirst: async () => day, findMany: async () => [day], update: async ({data}) => Object.assign(day, data) },
+     foodLog: { findFirst: async () => null, findMany: async () => logs },
+     foodTrackingPause: { findFirst: async () => null, findMany: async () => [] }
+   };
+@@ -67,6 +67,39 @@ test('an invalid timezone leaves completion intact and comparison unavailable',
+   assert.equal(day.status,'COMPLETE'); assert.equal(foodDayCalorieComparison(day,0),null);
+ });
+ 
++test('single-day reads match calendar history without rebuilding the current plan', async () => {
++  const {db, day, goal, setLogs} = fixture();
++  await captureFoodDayComparison(db, day, now);
++  const savedTarget = day.comparison_target_kcal;
++  goal.daily_deficit = -500;
++  db.goal.findFirst = async () => { throw new Error('Historical reads must not evaluate current goals'); };
++  for (const calories of [[], [1000, 800], [2600], [-1], [Number.MAX_SAFE_INTEGER, 1]]) {
++    setLogs(calories.map(value => ({local_date: day.local_date, calories: value})));
++    const single = await getEffectiveFoodDay(7, day.local_date, now, db);
++    const range = (await getEffectiveFoodDayRange(7, day.local_date, day.local_date, now, db))[0];
++    assert.deepEqual(single.calorie_comparison, range.calorie_comparison);
++    if (single.calorie_comparison) assert.equal(single.calorie_comparison.target_kcal, savedTarget);
++  }
++  day.status = 'OPEN';
++  assert.equal((await getEffectiveFoodDay(7, day.local_date, now, db)).calorie_comparison, null);
++});
++
++test('single-day reads leave legacy, partial and invalid snapshots unavailable', async () => {
++  const {db, day} = fixture();
++  const saved = {comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: now};
++  db.foodLog.findMany = async () => { throw new Error('No intake read needed without a valid snapshot'); };
++  for (const invalid of [
++    {comparison_target_kcal: null, comparison_maintenance_kcal: null, comparison_captured_at: null},
++    {...saved, comparison_target_kcal: undefined}, {...saved, comparison_maintenance_kcal: null},
++    {...saved, comparison_captured_at: null}, {...saved, comparison_target_kcal: -1}
++  ]) {
++    Object.assign(day, invalid);
++    const result = await getEffectiveFoodDay(7, day.local_date, now, db);
++    assert.equal(result.status, 'COMPLETE');
++    assert.equal(result.calorie_comparison, null);
++  }
++});
++
+ test('retains adjusted target ordering when a positive-deficit plan crosses maintenance', async () => {
+   const {db,day,goal} = fixture();
+   goal.daily_deficit = 250;
+diff --git a/backend/test/routes-food-days.test.js b/backend/test/routes-food-days.test.js
+index eb1a70c2..317db505 100644
+--- a/backend/test/routes-food-days.test.js
++++ b/backend/test/routes-food-days.test.js
+@@ -248,13 +248,17 @@ test('PATCH completion captures its local-day plan once and reopening/recompleti
+   const now = new Date();
+   const dateKey = now.toISOString().slice(0, 10);
+   let stored = null;
++  let syncPayload;
+   const goal = { id: 1, user_id: 7, start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500, calorie_plan_review_status: 'CLEAR', created_at: now };
+   const prismaStub = {
++    foodLog: { findMany: async () => [{ calories: 1800 }] },
++    syncChange: { create: async ({data}) => { syncPayload = data.payload; return { id: 1n }; } },
+     user: { findUnique: async () => ({ id: 7, timezone: 'UTC', date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' }) },
+     goal: { findFirst: async () => goal },
+     bodyMetric: { findFirst: async () => ({ weight_grams: 90000 }) },
+     caloriePlanRevision: { findFirst: async () => null, findMany: async () => [] },
+     foodLogDay: {
++      findUnique: async () => stored,
+       upsert: async ({create, update}) => { stored = { id: 1, updated_at: now, ...(stored ?? create), ...(stored ? update : {}) }; return stored; },
+       update: async ({data}) => { stored = { ...stored, ...data, updated_at: new Date(now.getTime() + 1) }; return stored; }
+     }
+@@ -271,9 +275,17 @@ test('PATCH completion captures its local-day plan once and reopening/recompleti
+   assert.equal(complete.is_complete, true);
+   assert.equal(complete.updated_at, stored.updated_at);
+   assert.equal(stored.comparison_maintenance_kcal - stored.comparison_target_kcal, 500);
++  assert.equal(complete.calorie_comparison.target_kcal, stored.comparison_target_kcal);
++  assert.equal(complete.calorie_comparison.consumed_kcal, 1800);
++  assert.deepEqual(syncPayload.calorie_comparison, complete.calorie_comparison);
++  const fetched = createRes();
++  await getRouteHandler(router, 'get', '/')({ user: {id: 7}, query: {date: dateKey} }, fetched);
++  assert.deepEqual(fetched.body.calorie_comparison, complete.calorie_comparison);
+   const snapshot = stored.comparison_target_kcal;
+-  assert.equal((await change('OPEN')).is_complete, false);
++  const reopened = await change('OPEN');
++  assert.equal(reopened.is_complete, false);
++  assert.equal(reopened.calorie_comparison, null);
+   goal.daily_deficit = -500;
+-  assert.equal((await change('COMPLETE')).is_complete, true);
++  assert.deepEqual((await change('COMPLETE')).calorie_comparison, complete.calorie_comparison);
+   assert.equal(stored.comparison_target_kcal, snapshot);
+ });
+diff --git a/backend/test/watch-service.test.js b/backend/test/watch-service.test.js
+index cf7471d0..8b30d498 100644
+--- a/backend/test/watch-service.test.js
++++ b/backend/test/watch-service.test.js
+@@ -509,6 +509,31 @@ test('watch metric and completion mutations use canonical date-only upserts', as
+   assert.equal(dayArgs.where.user_id_local_date.local_date.toISOString(), '2026-07-11T00:00:00.000Z');
+ });
+ 
++test('watch completion publishes saved comparison in its acknowledgement and sync change', async () => {
++  const capturedAt = new Date('2026-07-11T19:00:00Z');
++  const service = loadWatchMutationService({
++    foodLogDay: {
++      findUnique: async () => null,
++      upsert: async ({create}) => ({ id: 6, ...create, updated_at: capturedAt,
++        comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: capturedAt })
++    },
++    foodLog: { findMany: async ({where}) => {
++      assert.equal(where.user_id, 9);
++      assert.equal(where.local_date.toISOString(), '2026-07-11T00:00:00.000Z');
++      return [{calories: 1800}];
++    } }
++  });
++  const mutation = service.parseWatchMutation({ type: 'food_day.set_complete',
++    payload: { local_date: '2026-07-11', is_complete: true, expected_revision: null }
++  }, { timezone: 'UTC' });
++  const result = await service.executeWatchMutation({ userId: 9, mobileAuthSessionId: 73, operationId: 'watch-saved-plan', mutation });
++  assert.equal(result.status, 200);
++  assert.deepEqual(result.body.food_day.calorie_comparison, {
++    consumed_kcal: 1800, target_kcal: 2000, maintenance_kcal: 2500, captured_at: capturedAt.toISOString()
++  });
++  assert.deepEqual(service.captured.syncChanges[0].payload.calorie_comparison, result.body.food_day.calorie_comparison);
++});
++
+ test('watch metric and completion mutations reject stale snapshot revisions', async () => {
+   const metricRow = {
+     id: 5,
+diff --git a/docs/openapi/v1.yaml b/docs/openapi/v1.yaml
+index 8bb2f735..53393a43 100644
+--- a/docs/openapi/v1.yaml
++++ b/docs/openapi/v1.yaml
+@@ -2230,7 +2230,7 @@ components:
+       required: [date, status, origin, source, is_representative, is_complete, completed_at, updated_at]
+       properties:
+         calorie_comparison:
+-          description: Range-only comparison against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs.
++          description: Comparison on day reads and completion responses against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs.
+           oneOf:
+             - $ref: '#/components/schemas/FoodDayCalorieComparison'
+             - { type: 'null' }
+diff --git a/e2e/expo-web/saved-target.spec.ts b/e2e/expo-web/saved-target.spec.ts
+new file mode 100644
+index 00000000..bd515d1d
+--- /dev/null
++++ b/e2e/expo-web/saved-target.spec.ts
+@@ -0,0 +1,42 @@
++import { expect, test, hideTransientPwaNotices, type AuthenticatedApiOptions } from './fixtures';
++
++test('Daily Balance retains a saved target through completion, refetch and reload', async ({ page, ux }) => {
++  const date = '2026-07-21';
++  const options: AuthenticatedApiOptions = { foodDayStatus: 'OPEN', foodEntriesByDate: {
++    [date]: [{ id: 31, meal_period: 'BREAKFAST', name: 'Synthetic daily intake', calories: 1800 }]
++  } };
++  await ux.install('populated', options);
++  await page.route('**/api/v1/food-days**', async route => {
++    const url = new URL(route.request().url());
++    if (url.pathname !== '/api/v1/food-days') return route.fallback();
++    if (route.request().method() === 'PATCH') options.foodDayStatus = route.request().postDataJSON().status;
++    const complete = options.foodDayStatus === 'COMPLETE';
++    await route.fulfill({ json: {
++      date: url.searchParams.get('date') ?? date, status: options.foodDayStatus, source: 'STORED', origin: 'USER',
++      is_complete: complete, is_representative: complete, completed_at: null, updated_at: null,
++      calorie_comparison: complete ? { consumed_kcal: 1800, target_kcal: 2000, maintenance_kcal: 2500, captured_at: date + 'T19:00:00Z' } : null
++    } });
++  });
++  await page.goto('/today');
++  await hideTransientPwaNotices(page);
++  // Today's current plan is 2100; completing the day must use its saved 2000 target instead.
++  await expect(page.getByLabel(/Daily balance\. 300 kcal remaining/)).toBeVisible();
++  await page.getByRole('button', { name: 'Complete day', exact: true }).click();
++  await expect(page.getByLabel(/Daily balance\. 200 kcal remaining/)).toBeVisible();
++  await page.reload();
++  await expect(page.getByLabel(/Daily balance\. 200 kcal remaining/)).toBeVisible();
++});
++
++for (const comparison of [undefined, null]) {
++  test(`legacy completed day stays unavailable with ${comparison === null ? 'null' : 'omitted'} comparison`, async ({ page, ux }) => {
++    await ux.install('populated', { foodDayStatus: 'COMPLETE' });
++    await page.route('**/api/v1/food-days?*', async route => route.fulfill({ json: {
++      date: new URL(route.request().url()).searchParams.get('date'), status: 'COMPLETE', source: 'STORED', origin: 'USER',
++      is_complete: true, is_representative: true, completed_at: null, updated_at: null, calorie_comparison: comparison
++    } }));
++    await page.goto('/today?date=2026-07-20');
++    await expect(page.getByLabel(/Daily balance\. Saved target unavailable/)).toBeVisible();
++    await page.reload();
++    await expect(page.getByLabel(/Daily balance\. Saved target unavailable/)).toBeVisible();
++  });
++}
+diff --git a/packages/api-client/src/generated/v1.ts b/packages/api-client/src/generated/v1.ts
+index cacfde30..c8167488 100644
+--- a/packages/api-client/src/generated/v1.ts
++++ b/packages/api-client/src/generated/v1.ts
+@@ -1422,7 +1422,7 @@ export interface components {
+             captured_at: string;
+         };
+         FoodLogDay: {
+-            /** @description Range-only comparison against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs. */
++            /** @description Comparison on day reads and completion responses against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs. */
+             calorie_comparison?: components["schemas"]["FoodDayCalorieComparison"] | null;
+             /** Format: date */
+             date: string;

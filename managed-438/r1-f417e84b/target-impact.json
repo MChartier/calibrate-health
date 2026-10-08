@@ -1,0 +1,32 @@
+{
+  "head": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+  "target": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [],
+  "incomingCommits": [
+    "3ac32ffa92f1e429dd689e2f52683bd8ea045d15 4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87 3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+    "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe 4cbcbc740fbe5fa5646b4de31951c79a653176d5 d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "incomingPaths": [
+    "M\tbackend/src/routes/foodDays.ts",
+    "M\tbackend/src/services/foodDayComparison.ts",
+    "M\tbackend/src/services/foodTracking.ts",
+    "M\tbackend/src/services/watch.ts",
+    "M\tbackend/test/food-day-comparison.test.js",
+    "M\tbackend/test/routes-food-days.test.js",
+    "M\tbackend/test/watch-service.test.js",
+    "M\tdocs/openapi/v1.yaml",
+    "A\te2e/expo-web/saved-target.spec.ts",
+    "M\tpackages/api-client/src/generated/v1.ts"
+  ],
+  "patch": "r1-target.patch",
+  "patchSha256": "86eba53d6e889940329f48a694a1bf6dfca17d2844314bff579e6f18d3c4575e",
+  "assessment": "Read complete PR436 incoming history and ten-file patch. Saved calorie comparisons/day/watch responses/sync, tests, API descriptions/generated comment and saved-target browser spec do not overlap any of this PR’s 38 paths, auth behavior, captured routes or fixture/harness. Original baseline remains representative for these states. No merge/rebase performed; no integrated-target build claimed.",
+  "conflictProbe": {
+    "command": "git merge-tree --write-tree HEAD origin/master",
+    "result": "clean",
+    "tree": "0f413d8f56bdfcce0ed5ff7df9e5c3f7f7a31d1b"
+  }
+}

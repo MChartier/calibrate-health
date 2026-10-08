@@ -1,0 +1,104 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth/AuthContext.test.tsx --testNamePattern=native provider lifetime
+FAIL src/auth/AuthContext.test.tsx
+  Γùï skipped persists a verified user access update without waiting for another tracking query
+  Γùï skipped keeps the established identity and enters reconnection after a completed timeout
+  Γùï skipped does not restore native tokens from a refresh that finishes after logout
+  Γùï skipped keeps native logout intent across offline restart and drains the old token before another account signs in
+  Γùï skipped revokes the native session even when local draft cleanup fails
+  Γùï skipped clears UI and revokes the native token when writing logout intent fails
+  AuthProvider client/server compatibility recovery
+    Γùï skipped holds authentication and recovery behind a failed target gate and offers retry without clearing data
+    Γùï skipped retains tokens during a startup mismatch and resumes the saved session after recheck
+    Γùï skipped fails closed without refreshing when the server omits its release version
+  native onboarding draft cleanup
+    Γùï skipped revokes the retained native refresh token through an ungated client after a tracking timeout
+    Γùï skipped clears the captured account draft on logout
+    Γùï skipped clears the captured account draft on clearLocalSession
+    Γùï skipped preserves a same-account session and clears the former account on replacement
+    Γùï skipped does not expose a runtime target setter
+    Γùï skipped does not clear saved progress for a transient startup network failure
+    Γùï skipped revokes a login response that arrives after logout without restoring its session
+    Γùï skipped old API callbacks cannot read or refresh another account or sign it out
+    Γùï skipped an already running refresh cannot restore its account after logout and sign-in
+    Γùï skipped normal same-session token refresh remains available
+  native offline workspace restoration
+    Γùï skipped restores local tracking after restart during network outage and reconnects
+    Γùï skipped restores local tracking after restart during provider outage and reconnects
+    Γùï skipped does not resurrect a confirmed rejected session on a later offline restart
+  native provider lifetime
+    ├ù revokes late login after remount without replacing the new account (528 ms)
+    ├ù revokes late register after remount without replacing the new account (170 ms)
+    ├ù revokes late refresh after remount without replacing the new account (120 ms)
+
+  ΓùÅ native provider lifetime ΓÇ║ revokes late login after remount without replacing the new account
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      469 |             finish({ ...AUTH_PAYLOAD, access_token: 'late-old-access', refresh_token: 'late-old-refresh' });
+      470 |             if (method === 'refresh') await expect(pending).rejects.toThrow('Authentication scope changed');
+    > 471 |             else expect(await pending).toBe(false);
+          |                                        ^
+      472 |         });
+      473 |         expect(mockWriteStoredTokens).toHaveBeenCalledTimes(writes);
+      474 |         expect(second.result.current.user?.id).toBe(8);
+
+      at toBe (src/auth/AuthContext.test.tsx:471:40)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ native provider lifetime ΓÇ║ revokes late register after remount without replacing the new account
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      469 |             finish({ ...AUTH_PAYLOAD, access_token: 'late-old-access', refresh_token: 'late-old-refresh' });
+      470 |             if (method === 'refresh') await expect(pending).rejects.toThrow('Authentication scope changed');
+    > 471 |             else expect(await pending).toBe(false);
+          |                                        ^
+      472 |         });
+      473 |         expect(mockWriteStoredTokens).toHaveBeenCalledTimes(writes);
+      474 |         expect(second.result.current.user?.id).toBe(8);
+
+      at toBe (src/auth/AuthContext.test.tsx:471:40)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ native provider lifetime ΓÇ║ revokes late refresh after remount without replacing the new account
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: true
+
+      468 |         await act(async () => {
+      469 |             finish({ ...AUTH_PAYLOAD, access_token: 'late-old-access', refresh_token: 'late-old-refresh' });
+    > 470 |             if (method === 'refresh') await expect(pending).rejects.toThrow('Authentication scope changed');
+          |                                             ^
+      471 |             else expect(await pending).toBe(false);
+      472 |         });
+      473 |         expect(mockWriteStoredTokens).toHaveBeenCalledTimes(writes);
+
+      at expect (../node_modules/expect/build/index.js:113:15)
+      at expect (src/auth/AuthContext.test.tsx:470:45)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at callback (../node_modules/@testing-library/react-native/src/act.ts:31:24)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../node_modules/react/cjs/react.development.js:814:22)
+      at actImplementation (../node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at src/auth/AuthContext.test.tsx:468:18
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 22 skipped, 25 total
+Snapshots:   0 total
+Time:        2.085 s, estimated 9 s
+Ran all test suites matching /src\\auth\\AuthContext.test.tsx/i with tests matching "native provider lifetime".

@@ -1,0 +1,16 @@
+[WebServer] (node:13772) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Expo web static preview listening at http://127.0.0.1:4174
+
+Running 4 tests using 1 worker
+
+(node:37184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-19-hosted-pwa-trust.spec.ts:215:5 ΓÇ║ failed update remains dismissible and leaves app navigation reachable (785ms)
+  ok 2 [desktop-chrome] ΓÇ║ e2e\expo-web\launch-19-hosted-pwa-trust.spec.ts:307:5 ΓÇ║ hosted and installed web keep public trust, route truth, and server-account caches isolated (982ms)
+(node:36840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [compact-phone-chrome] ΓÇ║ e2e\expo-web\launch-19-hosted-pwa-trust.spec.ts:215:5 ΓÇ║ failed update remains dismissible and leaves app navigation reachable (785ms)
+  ok 4 [compact-phone-chrome] ΓÇ║ e2e\expo-web\launch-19-hosted-pwa-trust.spec.ts:307:5 ΓÇ║ hosted and installed web keep public trust, route truth, and server-account caches isolated (6.2s)
+
+  4 passed (10.1s)

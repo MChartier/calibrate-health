@@ -1,0 +1,59 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth/AuthContext.test.tsx src/auth/storage.test.ts
+FAIL src/auth/AuthContext.test.tsx
+  ΓùÅ AuthProvider client/server compatibility recovery ΓÇ║ retains tokens during a startup mismatch and resumes the saved session after recheck
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      {"accessToken": "next-access", "refreshToken": "next-refresh"},
+    + [Function isCurrent],
+
+    Number of calls: 1
+
+      152 |         expect(result.current.clientServerIncompatibility).toBeNull();
+      153 |         expect(result.current.user).toEqual(expect.objectContaining({ id: 7 }));
+    > 154 |         expect(mockWriteStoredTokens).toHaveBeenCalledWith({
+          |                                       ^
+      155 |             accessToken: 'next-access',
+      156 |             refreshToken: 'next-refresh'
+      157 |         });
+
+      at Object.toHaveBeenCalledWith (src/auth/AuthContext.test.tsx:154:39)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ΓùÅ native onboarding draft cleanup ΓÇ║ an already running refresh cannot restore its account after logout and sign-in
+
+    expect(jest.fn()).toHaveBeenLastCalledWith(...expected)
+
+    Expected: {"accessToken": "new-access", "refreshToken": "new-refresh"}
+    Received
+           1: {"accessToken": "access", "refreshToken": "refresh"}, [Function isCurrent]
+    ->     2
+              {"accessToken": "new-access", "refreshToken": "new-refresh"},
+            + [Function isCurrent],
+
+    Number of calls: 2
+
+      299 |         expect(result.current.user?.id).toBe(8);
+      300 |         expect(result.current.accessToken).toBe('new-access');
+    > 301 |         expect(mockWriteStoredTokens).toHaveBeenLastCalledWith({ accessToken: 'new-access', refreshToken: 'new-refresh' });
+          |                                       ^
+      302 |         expect(mockLogoutMobile).toHaveBeenCalledWith('old-rotated-refresh');
+      303 |     });
+      304 |
+
+      at Object.toHaveBeenLastCalledWith (src/auth/AuthContext.test.tsx:301:39)
+      at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS src/auth/storage.test.ts
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       2 failed, 25 passed, 27 total
+Snapshots:   0 total
+Time:        3.9 s
+Ran all test suites matching /src\\auth\\AuthContext.test.tsx|src\\auth\\storage.test.ts/i.

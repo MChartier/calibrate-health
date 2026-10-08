@@ -1,0 +1,15 @@
+npm notice run mobile@0.2.7 test
+npm notice run jest --runInBand src/auth/offlineWorkspace.test.ts
+PASS src/auth/offlineWorkspace.test.ts
+  ΓêÜ restores allowlisted tracking data across restart without persisting credentials or other-account state (4 ms)
+  ΓêÜ orders logout after queued snapshots so a delayed write cannot revive identity
+  ΓêÜ retains pending writes through auth-service outage, restart and same-account recovery (93 ms)
+  ΓêÜ preserves cached tracking through successful cold authentication before any tracking endpoint reloads (1 ms)
+  ΓêÜ restores the original snapshot when its provider unmounts during a save (1 ms)
+  ΓêÜ blocks snapshot reads until a failed cancelled-save restoration can recover (7 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        1.025 s
+Ran all test suites matching /src\\auth\\offlineWorkspace.test.ts/i.

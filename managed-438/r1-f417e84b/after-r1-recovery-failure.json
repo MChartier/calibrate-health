@@ -1,0 +1,30 @@
+{
+  "source": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+  "state": "recovery-failure",
+  "route": "/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+  "actualUrl": "http://127.0.0.1:4174/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+  "capturedAt": "2026-10-08T19:43:00.797Z",
+  "browser": "149.0.7827.55",
+  "fixedClock": "2026-07-21T19:00:00.000Z",
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+  "bundles": [
+    {
+      "pathname": "/_expo/static/js/web/index-9ceef38cec8baed224a8c9cb11286bae.js",
+      "sha256": "9d2c8200b63c1a12c8b26dc565b739b00c2fceea38d3393a216bf83c7cd31055"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/auth/me"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:4174/auth/password-reset/request"
+    }
+  ],
+  "file": "after-r1-recovery-failure.png",
+  "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad",
+  "text": "Skip to main content\nCalibrate Health\nReset password\nEnter your account email. For privacy, the response is the same whether or not an account exists.\nEmail\nUnable to request a password reset. Try again.\nSend reset instructions\nBack to sign in"
+}

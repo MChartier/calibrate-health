@@ -1,0 +1,33 @@
+{
+  "host": "MCHARTIER_ZBOOK",
+  "task": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+  "pr": 450,
+  "head": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+  "headParent": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+  "actualMaster": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBaseAndMergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentPRs": [],
+  "bodySha256": "b5304f56ba642355bba48985cc79b93de12d5468191edcdf47d09e13ea5de6aa",
+  "scope": {
+    "commits": 4,
+    "files": 38,
+    "additions": 1255,
+    "deletions": 881
+  },
+  "review": {
+    "commentId": 6067763994,
+    "result": "No major issues at f417e84"
+  },
+  "dispositionCommentId": 6067805185,
+  "sourceClean": true,
+  "evidenceWorktree": "Untracked managed-438/r1-f417e84b/ contains preserved partial record output; no files deleted",
+  "retainedEvidenceTip": "abe48a92efdf313af8f8c9bc720abe900fa561e1",
+  "blocker": "record-r1.cjs Node spawnSync git rev-parse HEAD returned EPERM; exact action stopped, no retry or alternate route",
+  "remaining": [
+    "Authorize narrow rerun of record-r1.cjs with required per-command sandbox permission; then publish/verify retained evidence",
+    "Read final Android/iOS CI",
+    "Same QA owner reassess R1, final body and evidence"
+  ],
+  "nativeDevice": "deferred and unexecuted",
+  "idle": true
+}
