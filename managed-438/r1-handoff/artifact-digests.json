@@ -1,0 +1,38 @@
+[
+  {
+    "path": "handoff.json",
+    "sha256": "fad5bfb24ee4be51e401f5f04089f29ffe84a577abf4f222df538d2c309e0382"
+  },
+  {
+    "path": "pr-body.md",
+    "sha256": "2f99aa6cd7078a5e5afa690df2aaf0f90ed90661f821629ddfc76da5bd602a04"
+  },
+  {
+    "path": "r1-baseline-access.json",
+    "sha256": "e8c7289ff54a5024131e9f96ca51f71d3016eed05a2a372393c523ea85151e78"
+  },
+  {
+    "path": "r1-final-readback.json",
+    "sha256": "71a104377a6737f5d440d02d21be794a10b9b2f940a284ffb6743f416200afa4"
+  },
+  {
+    "path": "r1-public-access.json",
+    "sha256": "f1b8269f3683d0c98128e73c6f21a4cd5e5c090f6332c05817a660afdf5a85ff"
+  },
+  {
+    "path": "read-r1-final.ps1",
+    "sha256": "1c3a20bc03f4f94fff578f28b40824da461c6d6d225ac3116997805f5a6cfab3"
+  },
+  {
+    "path": "record-r1-handoff.cjs",
+    "sha256": "d48e78042b8848e7a75b19c8750089919ac137d5444f9892a9b92c29c2afe65c"
+  },
+  {
+    "path": "release-coordination.json",
+    "sha256": "d56afed009964cd9a995afb4f5fb104f2a2419453dd094bbc5b0d074d73dfc55"
+  },
+  {
+    "path": "verify-r1-public.ps1",
+    "sha256": "f8f548cdd61d90e368029092598d089465a3324749ba6a4caa935d67fb70628f"
+  }
+]

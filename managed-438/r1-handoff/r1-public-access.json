@@ -1,0 +1,200 @@
+[
+  {
+    "status": 200,
+    "path": "after-r1-advanced.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-advanced.json",
+    "sha256": "c0fd8000f47178bce70d8f7636a6745c6d59313e0c0009e82c45502643116ab6"
+  },
+  {
+    "status": 200,
+    "path": "after-r1-advanced.png",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-advanced.png",
+    "sha256": "8cd74869f72400196f11b04b0dd1e8e4ef23ca0040b980a02f4bf4fcecf3453a"
+  },
+  {
+    "status": 200,
+    "path": "after-r1-login.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-login.json",
+    "sha256": "7c43593e1407d14a34e7ddfd19d66dfa1dac903445ab1175b01fca7d729ee272"
+  },
+  {
+    "status": 200,
+    "path": "after-r1-login.png",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-login.png",
+    "sha256": "69854df50d5c02a43fc76306cc6ae44858e6a6138d815b1c3ad195fdf672869a"
+  },
+  {
+    "status": 200,
+    "path": "after-r1-recovery-failure.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-recovery-failure.json",
+    "sha256": "4941063fb5ac7cd3a5304e1c3ab4982da14dbcd7807bcdc95f08711830df01a4"
+  },
+  {
+    "status": 200,
+    "path": "after-r1-recovery-failure.png",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-recovery-failure.png",
+    "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad"
+  },
+  {
+    "status": 200,
+    "path": "after-r1-recovery.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-recovery.json",
+    "sha256": "10b63b47d80a04a33e0da3f029ffc8849a5c7ba2557c59f0554ab7e1d6cf638d"
+  },
+  {
+    "status": 200,
+    "path": "after-r1-recovery.png",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/after-r1-recovery.png",
+    "sha256": "b305a2046b22faa4218e45e36a216b6b0c6c1201eb95bdc1471f75bce7c8c137"
+  },
+  {
+    "status": 200,
+    "path": "build-inventories.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/build-inventories.json",
+    "sha256": "1ccef04985576d1be4bc4f9bb259c2a011a3f74d9f933a86d89f7bf784bf5d5e"
+  },
+  {
+    "status": 200,
+    "path": "provenance.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/provenance.json",
+    "sha256": "9a02eeb7f19b56020094bbf7c46ac7ac3f02f46bd7873ce52f125750c6b22e31"
+  },
+  {
+    "status": 200,
+    "path": "r1-before.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-before.log",
+    "sha256": "14df5e466f0081e0a993f1c599ade846a5aa258cc74a52beb725c3f42c123c5d"
+  },
+  {
+    "status": 200,
+    "path": "r1-browser.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-browser.log",
+    "sha256": "508453d615f857d02d4da17bd8dad42b58d74b0efdcecde47635fd9ce3888db9"
+  },
+  {
+    "status": 200,
+    "path": "r1-captures.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-captures.log",
+    "sha256": "ea312bd5ee952c06c23934db85f969916cf6868bf14dc8963171b926ab2dea13"
+  },
+  {
+    "status": 200,
+    "path": "r1-checkpoint-pr.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-checkpoint-pr.json",
+    "sha256": "53f7d2c11193bd4d7e0e4ddd51fc861d0460fdf8f72e579ac192bafcf8bfb419"
+  },
+  {
+    "status": 200,
+    "path": "r1-ci-mobile.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-ci-mobile.log",
+    "sha256": "fd41765e1fb6742441ee1c32732da939aed819239cd9108d48fe1d9afa163231"
+  },
+  {
+    "status": 200,
+    "path": "r1-final-focused.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-final-focused.log",
+    "sha256": "ef995a0b87526be326eabbf0e3931065836770298b4ce4dabf0d864cc7f21ff0"
+  },
+  {
+    "status": 200,
+    "path": "r1-final-typecheck.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-final-typecheck.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "status": 200,
+    "path": "r1-full-mobile.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-full-mobile.log",
+    "sha256": "774f4839c6b8cec12e9edf79fc478cd5db476a49d0bdb9b213c1b3dc5e72ed63"
+  },
+  {
+    "status": 200,
+    "path": "r1-guards-tests.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-guards-tests.log",
+    "sha256": "f89384c5c77393e8c1a3b43514688b5156b0fe1df47d8a55e0a130084546a3d3"
+  },
+  {
+    "status": 200,
+    "path": "r1-initial-tests.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-initial-tests.log",
+    "sha256": "c284c36fc7df3cba8cf29edff494996f65da038b2aa499b46f2a3e0511acf5a9"
+  },
+  {
+    "status": 200,
+    "path": "r1-native-bundle.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-native-bundle.log",
+    "sha256": "79038f18e4969124e8e00182eca979082d391cae95e2e6473265da001b8a837e"
+  },
+  {
+    "status": 200,
+    "path": "r1-paused-checkpoint.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-paused-checkpoint.json",
+    "sha256": "98d264c3c144c7b3ede00bb361b5871266123a9bdd1f60dc199a082f2c2dbcf2"
+  },
+  {
+    "status": 200,
+    "path": "r1-pr-before.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-pr-before.json",
+    "sha256": "8a86510d5920dd52da3a9ef3af50be5fc0e2e986d89880922a5e7c2045f21455"
+  },
+  {
+    "status": 200,
+    "path": "r1-published-typecheck.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-published-typecheck.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "status": 200,
+    "path": "r1-target.patch",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-target.patch",
+    "sha256": "86eba53d6e889940329f48a694a1bf6dfca17d2844314bff579e6f18d3c4575e"
+  },
+  {
+    "status": 200,
+    "path": "r1-typecheck-2.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-typecheck-2.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "status": 200,
+    "path": "r1-typecheck-complete.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-typecheck-complete.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "status": 200,
+    "path": "r1-typecheck.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-typecheck.log",
+    "sha256": "b67e960d090a54441867dc46b00388b43f1134e463c119aa41d3cb6afa6b2074"
+  },
+  {
+    "status": 200,
+    "path": "r1-web-build.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-web-build.log",
+    "sha256": "58707dd2cbf2254ac32f75ba5d2bfde056a0f4e3a5a3f7f74ca37a0349bb81f3"
+  },
+  {
+    "status": 200,
+    "path": "r1-workspace-failure.log",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/r1-workspace-failure.log",
+    "sha256": "fc9149311a337fb357a70d5d0b27500e5d65926df50f313874f7ccb4ab72c39b"
+  },
+  {
+    "status": 200,
+    "path": "record-r1.cjs",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/record-r1.cjs",
+    "sha256": "8010de59b785396927716d408bb48ac8ccb0e566cd0cb9f28746fcf0beab031b"
+  },
+  {
+    "status": 200,
+    "path": "scope.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/scope.json",
+    "sha256": "041f4afb3e0cbcc7adab053695984ac50d45e26fd32199b634dfc1edad2b7340"
+  },
+  {
+    "status": 200,
+    "path": "target-impact.json",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/target-impact.json",
+    "sha256": "e88fb8ae724b9b2a89133a52110edbece49eda3e6d4ad4107bf7abc0bc2a33ed"
+  }
+]

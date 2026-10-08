@@ -1,0 +1,250 @@
+{
+  "checkedAtUtc": "2026-10-08T20:09:25.5995438Z",
+  "repository": "MChartier/calibrate-health",
+  "remote": "git@github.com:MChartier/calibrate-health.git",
+  "host": "MCHARTIER_ZBOOK",
+  "ownerTask": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+  "sameQaTask": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "workflow": "workflow-v3 f0919b184b6344d6279178b2388190936ca432a9 + pr-review-v3 97e5583c8355f3673aad0835c0ce3ca1486aeb8b and supplied direct amendments",
+  "head": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+  "actualTarget": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "60eca5e0add3cf612041f8a5ad5400fbd33b7abe"
+  ],
+  "parentRevisions": [],
+  "prBodySha256": "2f99aa6cd7078a5e5afa690df2aaf0f90ed90661f821629ddfc76da5bd602a04",
+  "orderedCommits": [
+    "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36 4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "8e109f51598ce12a2fd0d69503d3432713696f4c 8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36",
+    "60eca5e0add3cf612041f8a5ad5400fbd33b7abe 8e109f51598ce12a2fd0d69503d3432713696f4c",
+    "f417e84b430cc46275171462cc9d2373b8ee8f3e 60eca5e0add3cf612041f8a5ad5400fbd33b7abe"
+  ],
+  "scope": {
+    "files": 38,
+    "additions": 1255,
+    "deletions": 881
+  },
+  "completePublishedScope": "All pages read; commit parents, changed paths and totals exactly match local inspected scope. Product changes, maintained regression tests and required maintained docs only; no evidence churn in product history.",
+  "evidence": {
+    "commit": "d108dee53ff3bfb2be8bb0110166ac6f06b09048",
+    "path": "managed-438/r1-f417e84b/provenance.json",
+    "sha256": "9a02eeb7f19b56020094bbf7c46ac7ac3f02f46bd7873ce52f125750c6b22e31",
+    "publicAccess": "r1-public-access.json",
+    "baselineCommit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad",
+    "retentionRef": "refs/heads/evidence/managed-438-01a11c7b",
+    "retention": "Indefinite; original evidence and predecessor branches unchanged; never a merge target"
+  },
+  "feedback": [
+    {
+      "id": 6067468474,
+      "disposition": "R1 fixed by f417e84; three maintained remount tests fail before and pass after. Includes guarded pending storage, restoration failures and independent valid provider tests. Same QA must reassess."
+    },
+    {
+      "id": 6067421414,
+      "disposition": "C1 Test plan, QA status and actual target context reconciled in final body."
+    },
+    {
+      "id": 4222612212,
+      "disposition": "Addressed in 8e109f5; maintained browser sequence/revocation regressions pass current CI."
+    },
+    {
+      "id": 4222612223,
+      "disposition": "Addressed in 8e109f5; proven-empty installs retain device ID."
+    },
+    {
+      "id": 4222612234,
+      "disposition": "Addressed in 8e109f5; known Health Connect record checkpoints preserved, unknown blocked."
+    }
+  ],
+  "review": {
+    "commentId": 6067763994,
+    "head": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+    "result": "Completed: no major issues"
+  },
+  "checks": [
+    {
+      "id": 113509003557,
+      "name": "Android Emulator End-to-End",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113509003557"
+    },
+    {
+      "id": 113505843732,
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855662/job/113505843732"
+    },
+    {
+      "id": 113505843367,
+      "name": "Wear Release Emulator Smoke",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505843367"
+    },
+    {
+      "id": 113505843206,
+      "name": "Backend Tests",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855579/job/113505843206"
+    },
+    {
+      "id": 113505843007,
+      "name": "Native Two-Emulator Package Upgrade",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505843007"
+    },
+    {
+      "id": 113505842937,
+      "name": "Six-State Data-Backed Route Acceptance",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505842937"
+    },
+    {
+      "id": 113505842849,
+      "name": "Wear Build and JVM Tests",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505842849"
+    },
+    {
+      "id": 113505842807,
+      "name": "Backend Build",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505842807"
+    },
+    {
+      "id": 113505842735,
+      "name": "Full Exported Web and PWA End-to-End",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505842735"
+    },
+    {
+      "id": 113505842579,
+      "name": "Populated Postgres Upgrade",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855662/job/113505842579"
+    },
+    {
+      "id": 113505842551,
+      "name": "UX Accessibility and Visual Regression",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505842551"
+    },
+    {
+      "id": 113505841421,
+      "name": "Mobile Tests",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855579/job/113505841421"
+    },
+    {
+      "id": 113505840850,
+      "name": "Mobile Build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505840850"
+    },
+    {
+      "id": 113505840736,
+      "name": "Release Configuration",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505840736"
+    },
+    {
+      "id": 113505840712,
+      "name": "ios Runtime Bundle",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505840712"
+    },
+    {
+      "id": 113505840704,
+      "name": "iOS Build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505840704"
+    },
+    {
+      "id": 113505840659,
+      "name": "Expo Web Build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505840659"
+    },
+    {
+      "id": 113505840607,
+      "name": "android Runtime Bundle",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505840607"
+    },
+    {
+      "id": 113505840605,
+      "name": "Web Critical Smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505840605"
+    },
+    {
+      "id": 113505829608,
+      "name": "High and Critical Vulnerabilities",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855593/job/113505829608"
+    },
+    {
+      "id": 113505791491,
+      "name": "Classify Database Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855662/job/113505791491"
+    },
+    {
+      "id": 113505791355,
+      "name": "Classify Build Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855627/job/113505791355"
+    },
+    {
+      "id": 113505791276,
+      "name": "Classify Test Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855579/job/113505791276"
+    },
+    {
+      "id": 113505791053,
+      "name": "Classify Production Image Inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855593/job/113505791053"
+    },
+    {
+      "id": 113505790879,
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/MChartier/calibrate-health/actions/runs/37833855586/job/113505790879"
+    }
+  ],
+  "executed": "Current CI 235 mobile suites / 1342 tests, 69 API client tests; current local typecheck, four browser tests, four genuine captures/web build, Android JS export. Before regression experiment failed as intended.",
+  "unexecuted": "Native device/emulator execution deferred; skipped CI jobs are not claimed executed; no merged-target build",
+  "renderedPr": "Waived by direct amendment; not claimed passed",
+  "priorDenial": "No approval rejection occurred; Node spawnSync EPERM resolved with already authorized command-specific elevated permission. No global setting changes.",
+  "sourceClean": true,
+  "qa": "Same-owner independent reassessment pending; no readiness awarded",
+  "idle": true
+}

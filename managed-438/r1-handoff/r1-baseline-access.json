@@ -1,0 +1,17 @@
+[
+  {
+    "sha256": "703048dc3031d1a943eec4ade838b61123701c426daed148e2eda429d0d6f5b4",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/d108dee53ff3bfb2be8bb0110166ac6f06b09048/managed-438/r1-f417e84b/artifact-digests.json",
+    "status": 200
+  },
+  {
+    "sha256": "f06b869520b56a0cf26c889860967ebbad8f1c89764bf88c549189b9de72eae1",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a7d2ad1648d2b743cdfda5ef66950f6feee741ad/managed-438/before-advanced.png",
+    "status": 200
+  },
+  {
+    "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad",
+    "url": "https://raw.githubusercontent.com/MChartier/calibrate-health/a7d2ad1648d2b743cdfda5ef66950f6feee741ad/managed-438/before-recovery-failure.png",
+    "status": 200
+  }
+]
