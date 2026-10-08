@@ -1,0 +1,385 @@
+{
+  "checkedAtUtc": "2026-10-08T22:51:01.801Z",
+  "pr": "https://github.com/MChartier/calibrate-health/pull/453",
+  "head": "d4b6d9f8f96226cbe9fdc4530ab0e0c329d7b661",
+  "base": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "baseRef": "mchartier/atomic-browser-login-421",
+  "draft": true,
+  "prBodySha256": "cdbb5778033e6cf06f19f83d340e548797a0d4de4aee0dba290b6bad8b9e76a6",
+  "evidenceCommit": "3d24710f48c1aac1d1caaa5f50554c00a8c44efc",
+  "identities": [
+    {
+      "path": "manifest.json",
+      "sha256": "065f880c9cc81657d088fa9410af2d8cf74ebf7904aa2adda66bd77bb8646026"
+    },
+    {
+      "path": "backend-final.log",
+      "sha256": "f74c59949b81511c8677a355b07a12a27d5de076f47a1b1f7f5dd5499d240470",
+      "bytes": 81243
+    },
+    {
+      "path": "deletion-final.log",
+      "sha256": "1d1d19c0f0ef366f008b4784904b305c33c2fb57fe1be9492e99563a72a8c6a7",
+      "bytes": 2820
+    },
+    {
+      "path": "lint.log",
+      "sha256": "d976b557a70121800e302c6b4727461be5c86eb5433a94bf0c77b26a3b0b91bc",
+      "bytes": 1454
+    },
+    {
+      "path": "dead-code.log",
+      "sha256": "87ea93cdcd1355d75412b279117908355aaf4160efd369f814b5030466a3c6b9",
+      "bytes": 866
+    },
+    {
+      "path": "populated-upgrade.log",
+      "sha256": "755272cc106f710ef6c81e466015f8d319b636cdc394660f4bd7bd2227c5d7b1",
+      "bytes": 7315
+    },
+    {
+      "path": "rollback-unit.log",
+      "sha256": "23164f54789c8c0aafd15c6ce134de0823367069097f64f9aa76218ead7b2266",
+      "bytes": 1366
+    },
+    {
+      "path": "README.md",
+      "sha256": "464d25a7a96e71f2054694a641f3b406d7276568f0ab8bdeeab691a4233cfdb6"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "d4b6d9f8f96226cbe9fdc4530ab0e0c329d7b661",
+      "parents": [
+        "4751d8d89301c18fb0fed7244c3354477e804c2b"
+      ],
+      "message": "Prepare durable dormant account deletion with fenced recovery"
+    }
+  ],
+  "files": [
+    {
+      "path": "backend/prisma/migrations/0046_dormant_account_deletion/migration.sql",
+      "status": "added",
+      "additions": 122,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/prisma/rollback/0046_dormant_account_deletion.sql",
+      "status": "added",
+      "additions": 24,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/prisma/rollback/account-deletion-contract.md",
+      "status": "added",
+      "additions": 70,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/prisma/schema.prisma",
+      "status": "modified",
+      "additions": 21,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/index.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 4,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/services/accountAccess.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/services/accountDeletion.ts",
+      "status": "added",
+      "additions": 156,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/services/accountTokens.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/services/mcpOAuth.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/services/mobileAuth.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/utils/accountAccessSerialization.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/src/utils/postgresSessionStore.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "backend/test/account-access.test.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/test/account-deletion-postgres.test.js",
+      "status": "added",
+      "additions": 423,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/test/account-deletion.test.js",
+      "status": "added",
+      "additions": 42,
+      "deletions": 0,
+      "previousPath": null
+    },
+    {
+      "path": "backend/test/food-tracking.test.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "backend/test/mcp-oauth.test.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "backend/test/mobile-auth.test.js",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "backend/test/routes-auth-mobile.test.js",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "previousPath": null
+    },
+    {
+      "path": "knip.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "previousPath": null
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.mjs",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3,
+      "previousPath": null
+    },
+    {
+      "path": "scripts/postgres-rollback-smoke.test.mjs",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "previousPath": null
+    }
+  ],
+  "checks": [
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863238/job/113579799806",
+      "name": "Backend Tests",
+      "state": "IN_PROGRESS",
+      "workflow": "Tests"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579801162",
+      "name": "Backend Build",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579801210",
+      "name": "Release Configuration",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579803256",
+      "name": "Expo Web Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579802822",
+      "name": "iOS Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579803819",
+      "name": "Android Emulator End-to-End",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579803036",
+      "name": "Native Two-Emulator Package Upgrade",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579802354",
+      "name": "Wear Release Emulator Smoke",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579803144",
+      "name": "Wear Build and JVM Tests",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579803508",
+      "name": "Mobile Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579802894",
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579802631",
+      "name": "UX Accessibility and Visual Regression",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579802739",
+      "name": "Six-State Data-Backed Route Acceptance",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579803084",
+      "name": "Web Critical Smoke",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579802520",
+      "name": "Full Exported Web and PWA End-to-End",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863123/job/113579783430",
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "state": "SUCCESS",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863238/job/113579801392",
+      "name": "Mobile Tests",
+      "state": "SKIPPED",
+      "workflow": "Tests"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863123/job/113579783198",
+      "name": "Populated Postgres Upgrade",
+      "state": "SUCCESS",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863146/job/113579783330",
+      "name": "High and Critical Vulnerabilities",
+      "state": "IN_PROGRESS",
+      "workflow": "Production Container Scan"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863238/job/113579765130",
+      "name": "Classify Test Inputs",
+      "state": "SUCCESS",
+      "workflow": "Tests"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863170/job/113579752722",
+      "name": "Classify Build Inputs",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863142/job/113579752062",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "state": "SUCCESS",
+      "workflow": "Lint"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863123/job/113579753284",
+      "name": "Classify Database Inputs",
+      "state": "SUCCESS",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37855863146/job/113579752300",
+      "name": "Classify Production Image Inputs",
+      "state": "SUCCESS",
+      "workflow": "Production Container Scan"
+    }
+  ],
+  "feedback": [
+    {
+      "id": 6070603587,
+      "url": "https://github.com/MChartier/calibrate-health/pull/453#issuecomment-6070603587",
+      "body": "@codex review\n\nPlease review the complete child scope at `d4b6d9f8f96226cbe9fdc4530ab0e0c329d7b661` against pinned PR442 `4751d8d89301c18fb0fed7244c3354477e804c2b`, especially identity-bound durable intent, SQL/provider ordering, stale claims, pending-access fences and rollback preservation. This is dormant preparation only; Firebase remains disabled. [Retained synthetic PostgreSQL evidence and exact scope inventory](https://github.com/MChartier/calibrate-health/blob/3d24710f48c1aac1d1caaa5f50554c00a8c44efc/README.md).",
+      "updatedAt": "2026-10-08T22:49:40Z",
+      "commitId": null
+    },
+    {
+      "id": 6070605496,
+      "url": "https://github.com/MChartier/calibrate-health/pull/453#issuecomment-6070605496",
+      "body": "You have reached your Codex usage limits for code reviews. You can see your limits in the [Codex usage dashboard](https://chatgpt.com/codex/cloud/settings/usage).\nTo continue using code reviews, add credits to your account and enable them for code reviews in your [settings](https://chatgpt.com/codex/cloud/settings/code-review).",
+      "updatedAt": "2026-10-08T22:49:49Z",
+      "commitId": null
+    }
+  ],
+  "readiness": false
+}
