@@ -181,6 +181,52 @@ try {
         releasePace();
         planningLock.lockCaloriePlanningInputs = originalLock;
     }
+    // A weight saved before goal creation and one saved behind an in-flight goal
+    // creation must both establish the new goal's first-day baseline.
+    const metricDate = today.toISOString().slice(0, 10);
+    assert.equal((await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter)).statusCode, 200);
+    const weightFirst = await call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
+    assert.equal(weightFirst.statusCode, 200);
+    assert.equal(weightFirst.body.start_weight, 85);
+    let releaseCreation, creationLocked, metricWaiting;
+    const creationRelease = new Promise(resolve => { releaseCreation = resolve; });
+    const creationGuard = new Promise(resolve => { creationLocked = resolve; });
+    const metricGuard = new Promise(resolve => { metricWaiting = resolve; });
+    let creationGuardCalls = 0;
+    planningLock.lockCaloriePlanningInputs = async (...args) => {
+        const ordinal = ++creationGuardCalls;
+        if (ordinal === 2) metricWaiting();
+        await originalLock(...args);
+        if (ordinal === 1) { creationLocked(); await creationRelease; }
+    };
+    const creation = call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
+    try {
+        await Promise.race([creationGuard, creation.then(result => { throw new Error('creation ended before guard: ' + JSON.stringify(result)); })]);
+        const correctionId = crypto.randomUUID();
+        const correctionBody = { date: metricDate, weight: 86 };
+        const correction = call('post', '/', correctionBody, correctionId, metricsRouter);
+        await Promise.race([metricGuard, correction.then(result => { throw new Error('correction ended before guard: ' + JSON.stringify(result)); })]);
+        releaseCreation();
+        const created = await creation;
+        assert.equal(created.statusCode, 200);
+        const saved = await correction;
+        assert.equal(saved.statusCode, 200);
+        const corrected = await db.goal.findUniqueOrThrow({ where: { id: created.body.id } });
+        assert.equal(corrected.start_weight_grams, 86000);
+        assert.equal(corrected.target_weight_grams, 75000);
+        assert.equal(corrected.daily_deficit, 250);
+        assert.equal(corrected.created_at.toISOString(), created.body.created_at);
+        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: weightFirst.body.id } })).start_weight_grams, 85000);
+        assert.deepEqual((await call('post', '/', correctionBody, correctionId, metricsRouter)).body, saved.body);
+        const goalEvents = await db.syncChange.findMany({ where: { user_id: user.id, operation_id: correctionId, entity_type: 'goal' } });
+        assert.equal(goalEvents.length, 1);
+        assert.equal(goalEvents[0].payload.start_weight_grams, 86000);
+        assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
+        console.log('[goal-pace-smoke] PASS: weight-first baseline; concurrent goal-first correction, identity/history preservation and atomic sync/receipt replay.');
+    } finally {
+        releaseCreation();
+        planningLock.lockCaloriePlanningInputs = originalLock;
+    }
     console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
 }
 finally {

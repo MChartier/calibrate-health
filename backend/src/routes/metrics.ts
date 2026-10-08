@@ -3,6 +3,7 @@ import { type BodyMetric, type BodyMetricTrend, type Prisma } from '@prisma/clie
 import prisma from '../config/database';
 import { isPolicyWeight } from '../../../shared/caloriePolicy';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
 import {
     gramsToWeight,
     isWeightUnit,
@@ -863,7 +864,6 @@ router.post('/', async (req, res) => {
         }
 
         const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
-        const currentLocalDate = currentLocalDateValue.toISOString().slice(0, 10);
         const savedLocalDate = metricDate.toISOString().slice(0, 10);
 
         const result = await executeIdempotentMutation<unknown>({
@@ -872,11 +872,16 @@ router.post('/', async (req, res) => {
             operationKind: 'body_metric.upsert',
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                // Acquire the goal/pace guard before any weight or goal read/write.
+                if (updateData.weight_grams !== undefined) await lockCaloriePlanningInputs(tx, user.id);
+                const acceptedToday = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
+                const acceptedLocalDate = acceptedToday.toISOString().slice(0, 10);
                 const existing = await tx.bodyMetric.findUnique({ where: whereUnique });
                 let progressGoal: MetricProgressGoal | null = null;
                 let previousMetrics: MetricProgressHistoryEntry[] = [];
                 let hadAnyMetricBeforeSave = false;
                 let saveKind: MetricSaveKind | null = null;
+                let correctedGoalId: number | null = null;
 
                 if (updateData.weight_grams !== undefined) {
                     saveKind =
@@ -890,12 +895,22 @@ router.post('/', async (req, res) => {
                         select: { id: true }
                     })) !== null;
 
-                    const activeGoal = await tx.goal.findFirst({
+                    let activeGoal = await tx.goal.findFirst({
                         where: { user_id: user.id },
                         orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
                     });
                     if (activeGoal) {
                         const createdLocalDate = formatLocalDateForTimeZone(activeGoal.created_at, timeZone);
+                        // created_at is the existing goal start date. A late first offline
+                        // replay saves its metric but must not rewrite a historical baseline.
+                        if (createdLocalDate === acceptedLocalDate && savedLocalDate === acceptedLocalDate
+                            && activeGoal.start_weight_grams !== updateData.weight_grams) {
+                            activeGoal = await tx.goal.update({
+                                where: { id: activeGoal.id },
+                                data: { start_weight_grams: updateData.weight_grams }
+                            });
+                            correctedGoalId = activeGoal.id;
+                        }
                         progressGoal = {
                             id: activeGoal.id,
                             startWeightGrams: activeGoal.start_weight_grams,
@@ -908,7 +923,7 @@ router.post('/', async (req, res) => {
                                 user_id: user.id,
                                 date: {
                                     gte: parseLocalDateOnly(createdLocalDate),
-                                    lte: currentLocalDateValue
+                                    lte: acceptedToday
                                 }
                             },
                             orderBy: [{ date: 'asc' }, { id: 'asc' }],
@@ -955,6 +970,14 @@ router.post('/', async (req, res) => {
                 const planningAfterWeight = updateData.weight_grams === undefined
                     ? null
                     : await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
+                if (correctedGoalId !== null) {
+                    // Include any safety-review state set by the corrected weight in the sync event.
+                    const correctedGoal = await tx.goal.findUniqueOrThrow({ where: { id: correctedGoalId } });
+                    await recordSyncChange({
+                        tx, userId: user.id, entityType: 'goal', entityId: correctedGoalId,
+                        action: 'upsert', operationId: claimedOperationId, payload: correctedGoal
+                    });
+                }
 
                 const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
                 const progressUpdate =
@@ -963,7 +986,7 @@ router.post('/', async (req, res) => {
                         : evaluateMetricProgressUpdate({
                               saveKind,
                               savedLocalDate,
-                              currentLocalDate,
+                              currentLocalDate: acceptedLocalDate,
                               currentWeightGrams: savedWeightGrams,
                               weightUnit,
                               goal: progressGoal,
@@ -1019,6 +1042,8 @@ router.delete('/:id', async (req, res) => {
             operationKind: 'body_metric.delete',
             requestPayload: { id },
             mutate: async (tx, claimedOperationId) => {
+                // Match the upsert lock order so concurrent corrections/deletes cannot invert it.
+                await lockCaloriePlanningInputs(tx, user.id);
                 const deleteResult = await tx.bodyMetric.deleteMany({ where: { id, user_id: user.id } });
                 if (deleteResult.count === 0) {
                     return { status: 404, body: { message: 'Metric not found' } };

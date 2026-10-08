@@ -153,6 +153,186 @@ function assertNearlyEqual(actual, expected) {
   assert.ok(Math.abs(actual - expected) <= FLOAT_TOLERANCE, `Expected ${actual} to be within ${FLOAT_TOLERANCE} of ${expected}`);
 }
 
+function baselineFixture({ goalDate, timeZone = 'UTC', initialWeight = 90000, onLock } = {}) {
+  let goal = {
+    id: 46, user_id: 7, created_at: goalDate ?? new Date(), start_weight_grams: initialWeight,
+    target_weight_grams: 75000, target_date: null, daily_deficit: 500,
+    calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
+  };
+  let metric = null;
+  const changes = [];
+  const events = [];
+  const receipts = new Map();
+  let failSync = false;
+  const user = { id: 7, timezone: timeZone, weight_unit: 'KG', date_of_birth: new Date('1990-01-01'),
+    sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', height_unit: 'CM' };
+  const stub = {
+    $executeRaw: async () => { events.push('lock'); await onLock?.(); return 1; },
+    user: { findUnique: async () => user },
+    goal: {
+      findFirst: async ({ where }) => { assert.equal(where.user_id, 7); events.push('read-goal'); return goal; },
+      findUniqueOrThrow: async ({ where }) => { assert.equal(where.id, goal.id); return goal; },
+      update: async ({ where, data }) => {
+        assert.equal(where.id, goal.id);
+        goal = { ...goal, ...data };
+        return goal;
+      }
+    },
+    bodyMetric: {
+      findUnique: async () => { events.push('read-metric'); return metric; },
+      findFirst: async () => metric,
+      findMany: async () => metric ? [metric] : [],
+      upsert: async ({ create, update }) => {
+        metric = metric ? { ...metric, ...update } : { id: 12, ...create };
+        return metric;
+      },
+      update: async ({ data }) => { metric = { ...metric, ...data }; return metric; }
+    },
+    syncChange: { create: async ({ data }) => {
+      if (failSync) throw new Error('Synthetic sync write failure');
+      changes.push(data); return { id: BigInt(changes.length) };
+    } },
+    clientOperation: {
+      create: async ({ data }) => {
+        if (receipts.has(data.operation_id)) {
+          const { Prisma } = require('@prisma/client');
+          throw new Prisma.PrismaClientKnownRequestError('duplicate', { code: 'P2002', clientVersion: 'test' });
+        }
+        receipts.set(data.operation_id, { ...data, response_status: null, completed_at: null });
+      },
+      update: async ({ where, data }) => {
+        const id = where.user_id_operation_id.operation_id;
+        receipts.set(id, { ...receipts.get(id), ...data });
+      },
+      findUnique: async ({ where }) => receipts.get(where.user_id_operation_id.operation_id)
+    }
+  };
+  // Model transaction rollback while using the real route and idempotency implementation.
+  stub.$transaction = async callback => {
+    const before = { goal: structuredClone(goal), metric: structuredClone(metric), changes: changes.length, receipts: new Map(receipts) };
+    try {
+      return await callback({
+        ...stub, $queryRaw: async () => [],
+        caloriePlanRevision: { findFirst: async () => null, findMany: async () => [], updateMany: async () => ({ count: 0 }) },
+        calibrationRecommendation: { updateMany: async () => ({ count: 0 }) }
+      });
+    } catch (error) {
+      goal = before.goal; metric = before.metric; changes.length = before.changes;
+      receipts.clear(); before.receipts.forEach((value, key) => receipts.set(key, value));
+      throw error;
+    }
+  };
+  const handler = getRouteHandler(loadMetricsRouter(stub), 'post', '/');
+  return { get goal() { return goal; }, get metric() { return metric; }, user, changes, events,
+    startNewGoal() { goal = { ...goal, id: goal.id + 1, created_at: new Date() }; },
+    failNextSync() { failSync = true; },
+    async save(body, overrides = {}, operationId) {
+      const res = createRes();
+      await handler({ user: { ...user, ...overrides }, body, headers: operationId ? { 'x-client-operation-id': operationId } : {} }, res);
+      return res;
+    }
+  };
+}
+
+test('metrics baseline: same-day first weight and correction preserve the goal and synchronize its baseline', async () => {
+  const fixture = baselineFixture();
+  const original = { ...fixture.goal };
+  const first = await fixture.save({ weight: 85.123 });
+  assert.equal(first.statusCode, 200);
+  assert.equal(fixture.goal.start_weight_grams, 85100);
+  assert.deepEqual(fixture.goal, { ...original, start_weight_grams: 85100 });
+  assert.equal(first.body.progress_update.goal.current_progress_percent, 0);
+  assert.ok(fixture.events.indexOf('lock') < fixture.events.indexOf('read-metric'));
+  const correction = await fixture.save({ weight: 86.125 });
+  assert.equal(correction.statusCode, 200);
+  assert.equal(fixture.goal.start_weight_grams, 86100);
+  assert.deepEqual(fixture.changes.filter(change => change.entity_type === 'goal').map(change => change.payload.start_weight_grams), [85100, 86100]);
+  await fixture.save({ body_fat_percent: 18 });
+  assert.equal(fixture.goal.start_weight_grams, 86100);
+  assert.equal(fixture.changes.filter(change => change.entity_type === 'goal').length, 2);
+});
+
+test('metrics baseline: an older goal or historical metric never changes the baseline', async () => {
+  const yesterday = addUtcDays(getUtcTodayDateOnly(), -1);
+  const older = baselineFixture({ goalDate: yesterday });
+  assert.equal((await older.save({ weight: 85 })).statusCode, 200);
+  assert.equal(older.goal.start_weight_grams, 90000);
+  const historical = baselineFixture();
+  assert.equal((await historical.save({ weight: 85, date: formatDateOnly(yesterday) })).statusCode, 200);
+  assert.equal(historical.goal.start_weight_grams, 90000);
+});
+
+test('metrics baseline: uses the account day rather than UTC and preserves canonical pounds precision', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
+  const fixture = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles' });
+  const res = await fixture.save({ weight: 180.125, date: '2026-10-08' }, { weight_unit: 'LB' });
+  assert.equal(res.statusCode, 200);
+  assert.equal(fixture.goal.start_weight_grams, fixture.metric.weight_grams);
+  assert.equal(fixture.goal.start_weight_grams, 81692);
+  assert.equal(res.body.progress_update.is_current_day, true);
+});
+
+test('metrics baseline: late first replay preserves history; committed retry cannot overwrite a newer correction', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
+  const fixture = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles' });
+  const body = { weight: 85, date: '2026-10-08' };
+  const first = await fixture.save(body, {}, 'baseline-operation-1');
+  assert.equal(first.statusCode, 200);
+  await fixture.save({ ...body, weight: 86 }, {}, 'baseline-operation-2');
+  t.mock.timers.setTime(new Date('2026-10-09T07:01:00Z').getTime());
+  const retry = await fixture.save(body, {}, 'baseline-operation-1');
+  assert.deepEqual(retry.body, first.body);
+  assert.equal(fixture.goal.start_weight_grams, 86000);
+  assert.equal(fixture.metric.weight_grams, 86000);
+  const late = await fixture.save({ ...body, weight: 87 }, {}, 'baseline-operation-3');
+  assert.equal(late.statusCode, 200);
+  assert.equal(fixture.metric.weight_grams, 87000);
+  assert.equal(fixture.goal.start_weight_grams, 86000);
+  assert.equal(fixture.changes.filter(change => change.entity_type === 'goal').length, 2);
+});
+
+test('metrics baseline: evaluates eligibility after waiting for the planning lock', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-08T23:59:00Z') });
+  const fixture = baselineFixture({ onLock: () => t.mock.timers.setTime(new Date('2026-10-09T00:01:00Z').getTime()) });
+  assert.equal((await fixture.save({ weight: 85, date: '2026-10-08' })).statusCode, 200);
+  assert.equal(fixture.goal.start_weight_grams, 90000);
+});
+
+test('metrics baseline: a sync failure rolls back metric, goal and operation receipt together', async () => {
+  const fixture = baselineFixture();
+  fixture.failNextSync();
+  const res = await fixture.save({ weight: 85 }, {}, 'baseline-rollback-1');
+  assert.equal(res.statusCode, 500);
+  assert.equal(fixture.goal.start_weight_grams, 90000);
+  assert.equal(fixture.metric, null);
+  assert.deepEqual(fixture.changes, []);
+});
+
+test('metrics baseline: reads the goal created by a writer that held the planning guard first', async () => {
+  let firstLock = true;
+  const fixture = baselineFixture({ goalDate: addUtcDays(getUtcTodayDateOnly(), -3), onLock: () => {
+    if (firstLock) { firstLock = false; fixture.startNewGoal(); }
+  } });
+  assert.equal((await fixture.save({ weight: 85 })).statusCode, 200);
+  assert.equal(fixture.goal.id, 47);
+  assert.equal(fixture.goal.start_weight_grams, 85000);
+  assert.equal(fixture.changes.find(change => change.entity_type === 'goal').entity_id, '47');
+});
+
+test('metrics baseline: weight-first baseline is unchanged and unsafe correction synchronizes final safety state', async () => {
+  const fixture = baselineFixture({ initialWeight: 85000 });
+  assert.equal((await fixture.save({ weight: 85 })).statusCode, 200);
+  assert.equal(fixture.changes.filter(change => change.entity_type === 'goal').length, 0);
+  const correction = await fixture.save({ weight: 70 });
+  assert.equal(correction.statusCode, 200);
+  assert.equal(fixture.goal.start_weight_grams, 70000);
+  assert.equal(fixture.goal.target_weight_grams, 75000);
+  assert.equal(fixture.goal.daily_deficit, 500);
+  assert.equal(fixture.goal.calorie_plan_review_status, 'REQUIRES_REVIEW');
+  assert.equal(fixture.changes.find(change => change.entity_type === 'goal').payload.calorie_plan_review_status, 'REQUIRES_REVIEW');
+  assert.equal('progress_update' in correction.body, false);
+});
+
 test('metrics route: rejects unauthenticated requests via router.use middleware', async () => {
   const prismaStub = { bodyMetric: {} };
   const router = loadMetricsRouter(prismaStub);
