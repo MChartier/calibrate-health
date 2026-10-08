@@ -1,0 +1,24 @@
+{
+  "checkedAtUtc": "2026-10-08T19:05:19.8369041Z",
+  "prUpdatedAt": "2026-10-08T19:05:16Z",
+  "head": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+  "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "actualMaster": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "prBodySha256": "81ae48dc74f845e134d1178470e963aaf5c3a78d545a6674d24c329d5a527630",
+  "oldBodySha256": "d9510e687d6d9efae9c2f605657d03fac64f3b83bae4e2ddeabc2d0dd8aae858",
+  "oldBodyCommit": "d1032e7d703b0a152ab1d84168f54c0d0f5fdb2f",
+  "oldBodyPath": "managed-438/metadata-terminal-ci/body-before.md",
+  "checks": {
+    "success": 14,
+    "skipped": 11,
+    "failure": 0,
+    "pending": 0
+  },
+  "reviewCommentId": 6066642825,
+  "draft": true,
+  "humanReady": false,
+  "change": "Only stale terminal-CI/database execution wording replaced. All original source/build/capture/fixture/provenance URLs and identities remain unchanged.",
+  "validation": "Exact entire-body equality against one prescribed replacement; no builds/tests rerun; current checks and full review read.",
+  "independentQA": "Pending coordinator admission",
+  "checkpoint": "Product and baseline unchanged; owned worktrees preserved. Metadata-only owner idle after retained receipt publication."
+}
