@@ -1,0 +1,34 @@
+✔ IPA metadata binds signed app, provisioning, endpoint, runtime and exact artifact bytes (1.2911ms)
+✔ IPA rejects expired, mismatched, development, enterprise and simulator metadata (1.3141ms)
+✔ IPA inspection fails before network or commands on a non-macOS runner (0.4456ms)
+✔ iOS metadata advances once without rewriting Android or Wear counters and rejects extra allocation (2.8243ms)
+✔ independent iOS and Android preparation retain consistent complete release mirrors (157.9447ms)
+✔ iOS build request freezes credentials and binds source/configuration without auto-submit (0.7047ms)
+✔ IPA verification precedes exact build upload; upload does not claim processing or rollout (0.8797ms)
+✔ OTA publication uses one inert platform export and verifies every delivered asset byte (3.5537ms)
+✔ lost OTA response reconciles the exact existing group and never republishes (1.0192ms)
+✔ channel changes, runtime substitution and altered downloaded bytes cannot produce successful receipts (1.4453ms)
+✔ no change compares per-artifact verified receipts and preserves every allocation (2.2062ms)
+✔ selects only server/server (0.3907ms)
+✔ selects only native/android (0.2781ms)
+✔ selects only native/ios (0.2248ms)
+✔ selects only bundle/android (0.1992ms)
+✔ selects only bundle/ios (0.1121ms)
+✔ combined first release builds once per platform and does not duplicate embedded bundles as OTA (0.1806ms)
+✔ incompatible OTA remains explicit, with native rebuild selected (0.1966ms)
+✔ partial success advances only that artifact/profile/platform (0.2597ms)
+✔ OTA success for one installed runtime does not hide another compatible runtime (0.2292ms)
+✔ source drift, conflicting receipt ordering and exhausted allocations reject (0.2956ms)
+✔ receipt admission requires real verifier success and rejects contradictory identities (0.7967ms)
+✔ external configuration binds environment and channel without guessing the endpoint (0.8651ms)
+✔ retirement reads every attempt and rechecks the run before returning evidence (1.4534ms)
+✔ missing earlier jobs, changed ownership and active attempts cannot prove retirement safe (0.7703ms)
+✔ closure binds the original bot-owned unmerged candidate and verifies readback (0.3384ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 243.4927

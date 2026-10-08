@@ -1,0 +1,23 @@
+{
+  "head": "53de4b701554e2debb6ad62472559a2702f7e485",
+  "checkedAtUtc": "2026-10-08T22:35:11.330Z",
+  "purpose": "Append-only final-head evidence supplement; preserve original evidence commit and manifest.",
+  "files": [
+    {
+      "path": "final-api-scope.json",
+      "sha256": "aef193c0b92c2f1b8b9d9a8fc9bc86d742e418160f9f8386abbc8b94a33bf29b"
+    },
+    {
+      "path": "final-scope.json",
+      "sha256": "a3bf26a146e1a73c88dd11b1c4b789baa815fc2f8471c3aedebcd4c54c7f339c"
+    },
+    {
+      "path": "final-focused-tests.log",
+      "sha256": "6573ce83d128e4175b19f96a3b2b5af13ef728ff6e6e1d2c9f89a50b444bdb93"
+    },
+    {
+      "path": "final-applicability.json",
+      "sha256": "93895d6481bbc8593fff17b29edfc48679c546f736cf8d92b657f793c3bac850"
+    }
+  ]
+}
