@@ -1,0 +1,34 @@
+Γû╢ durable deletion survives failures and process crashes and fences real PostgreSQL access
+  Γ£ö populated rollback and re-upgrade preserve ordinary accounts and data before any intent (640.9386ms)
+  Γ£ö stale or conflicting proofs and failed intent commit have no side effects (61.4651ms)
+  Γ£ö intent atomically revokes access and fences older session, recovery, grant and pairing writers (396.296ms)
+  Γ£ö provider timeout, lost response and wrong identity retain SQL until authoritative reconciliation (228.9578ms)
+  Γ£ö SQL failure after provider confirmation rolls back cleanup and preserves a resumable receipt (75.4591ms)
+  Γ£ö a timed-out delete may finish remotely but cannot prematurely remove SQL data (132.0019ms)
+  Γ£ö expired claim and delayed old result cannot finalize a replacement worker claim (27.4923ms)
+  Γ£ö intent-first: mapped account lock orders native issuance and deletion (42.4111ms)
+  Γ£ö issuance-first: mapped account lock orders native issuance and deletion (21.0666ms)
+  Γ£ö intent-first: older MCP grant writer serializes with deletion (59.2604ms)
+  Γ£ö writer-first: older MCP grant writer serializes with deletion (21.6948ms)
+  Γ£ö intent-first: older Wear pairing writer serializes with deletion (19.2694ms)
+  Γ£ö writer-first: older Wear pairing writer serializes with deletion (20.9906ms)
+  Γ£ö an older session-first writer can deadlock safely; retry cannot resurrect access (1048.2439ms)
+  Γ£ö intent-first: password reset cannot clear pending intent or reuse an old deletion proof (102.0557ms)
+  Γ£ö reset-first: password reset cannot clear pending intent or reuse an old deletion proof (73.22ms)
+  Γ£ö intent-first: a verified browser save cannot outlive accepted deletion (32.4025ms)
+  Γ£ö browser-first: a verified browser save cannot outlive accepted deletion (15.504ms)
+  Γ£ö actual process termination after intent resumes the same durable operation (1580.8333ms)
+  Γ£ö actual process termination after provider resumes the same durable operation (1622.9522ms)
+  Γ£ö actual process termination after complete resumes the same durable operation (1630.5705ms)
+  Γ£ö rollback refuses accepted receipts, and unrelated local accounts remain usable (80.872ms)
+Γ£ö durable deletion survives failures and process crashes and fences real PostgreSQL access (12370.181ms)
+Γ£ö dormant deletion has no runtime imports or provider construction and local configuration still rejects activation (59.5378ms)
+Γ£ö proofs require a mapped identity, recent matching provider authentication, and the same coordinator (14.2122ms)
+Γä╣ tests 25
+Γä╣ suites 0
+Γä╣ pass 25
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 12647.1645
