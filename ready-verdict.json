@@ -1,0 +1,558 @@
+{
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewOverlay": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "standardsAcknowledgment": "Read full supplied pinned role/standards and operative direct amendments, with full repository AGENTS.md. No runtime migration. Single independent QA lane, actual MCHARTIER_ZBOOK.",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/449",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/446",
+  "supersedesVerdictCommentId": 6067634380,
+  "checkedAtUtc": "2026-10-08T19:46:33.015010+00:00",
+  "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+  "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "f805e6872c94000156219ddba0e8e01b0c8d490c"
+  ],
+  "parentRevisions": [],
+  "targetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "ultimateTarget": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "master",
+    "sha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe"
+  },
+  "prBodySha256": "907e4c7274cd3e0206995bed1a107f7b114612bae625c940ccc8e9dd531df512",
+  "findings": [],
+  "gates": {
+    "value": "pass: direct requested same-day baseline correction, concrete stale-progress defect",
+    "outcome": "pass for accepted first-acceptance/current-local-day semantics",
+    "code": "pass: no new actionable implementation defect found in complete source/scope review",
+    "engineeringReview": "pass: current-head completed review6067011549; all seven prior findings independently verified with source/tests and resolved native threads",
+    "ci": "pass for applicable current-head checks:10success14configuredskips; skipped not passed",
+    "behavior": "pass based on inspected source-bound current-head771backend tests and real PostgreSQL overlap/replay evidence, plus unchanged-client evidence",
+    "evidence": "pass: original matched pixels, exact retained bytes/builds/fixtures and recovered native capture execution receipts inspected",
+    "communication": "pass: C1 corrected; actual target and original captures clearly distinguished, completed QA gates and scope disclosed. Specific pending description check is closed by this verdict.",
+    "stack": "pass: unchanged actual9dc target and six-commit/nine-file scope; prior full incoming impact/conflict assessment applicable and now linked in body."
+  },
+  "scope": {
+    "commits": [
+      {
+        "sha": "eb142dd0bcc527398e83b91d29d4514fd9b4e516",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+        ],
+        "message": "Fix same-day goal baseline after weight corrections",
+        "numstat": "29\t4\tbackend/src/routes/metrics.ts\n181\t1\tbackend/test/routes-metrics.test.js\n21\t0\tdocs/goal-starting-weight.md\n46\t0\tscripts/postgres-goal-pace-smoke.mjs"
+      },
+      {
+        "sha": "70e982f77752400d4b4f688280a0609a99713262",
+        "parents": [
+          "eb142dd0bcc527398e83b91d29d4514fd9b4e516"
+        ],
+        "message": "Use current timezone and consistent metric writer lock order",
+        "numstat": "2\t0\tbackend/src/routes/imports.ts\n13\t9\tbackend/src/routes/metrics.ts\n2\t0\tbackend/src/services/watch.ts\n4\t1\tbackend/test/import-calorie-safety.test.js\n13\t0\tbackend/test/routes-metrics.test.js\n4\t0\tdocs/goal-starting-weight.md\n87\t0\tscripts/postgres-goal-pace-smoke.mjs"
+      },
+      {
+        "sha": "61b8dfc433d09532169e03b91a1482495c3b5a83",
+        "parents": [
+          "70e982f77752400d4b4f688280a0609a99713262"
+        ],
+        "message": "Apply same-day baseline correction to Wear and imported weights",
+        "numstat": "18\t4\tbackend/src/routes/imports.ts\n8\t11\tbackend/src/routes/metrics.ts\n25\t0\tbackend/src/services/goalStartingWeight.ts\n9\t0\tbackend/src/services/watch.ts\n1\t0\tbackend/test/import-calorie-safety.test.js\n3\t0\tdocs/goal-starting-weight.md\n49\t1\tscripts/postgres-goal-pace-smoke.mjs"
+      },
+      {
+        "sha": "521fc625824259ec1236b664301c02bea1b516f6",
+        "parents": [
+          "61b8dfc433d09532169e03b91a1482495c3b5a83"
+        ],
+        "message": "Classify imported weight dates after acquiring the planning lock",
+        "numstat": "6\t7\tbackend/src/routes/imports.ts\n30\t0\tscripts/postgres-goal-pace-smoke.mjs"
+      },
+      {
+        "sha": "f805e6872c94000156219ddba0e8e01b0c8d490c",
+        "parents": [
+          "521fc625824259ec1236b664301c02bea1b516f6"
+        ],
+        "message": "Revalidate Wear metric dates after the planning lock",
+        "numstat": "3\t0\tbackend/src/services/watch.ts\n15\t0\tbackend/test/watch-service.test.js\n23\t0\tscripts/postgres-goal-pace-smoke.mjs"
+      },
+      {
+        "sha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "parents": [
+          "f805e6872c94000156219ddba0e8e01b0c8d490c"
+        ],
+        "message": "Defer Wear calendar eligibility to the locked transaction",
+        "numstat": "1\t4\tbackend/src/services/watch.ts\n2\t6\tbackend/test/watch-service.test.js\n18\t0\tscripts/postgres-goal-pace-smoke.mjs"
+      }
+    ],
+    "fileCount": 9,
+    "additions": 600,
+    "deletions": 35,
+    "completeRecord": "verification.json",
+    "assessment": "All six ordered commits/parents and nine paths reconciled API/localGit. Every commit incrementally corrects the same issue and its competing writer/timezone boundaries. Retained changes comprise four runtime files, three maintained backend test files, one maintained semantics document and existing PostgreSQL smoke extension. No copied evidence/log/capture churn or unrelated branch merge in published history.",
+    "paths": {
+      "backend/src/routes/imports.ts": "Same-day baseline or competing weight writer transaction",
+      "backend/src/routes/metrics.ts": "Same-day baseline or competing weight writer transaction",
+      "backend/src/services/goalStartingWeight.ts": "Same-day baseline or competing weight writer transaction",
+      "backend/src/services/watch.ts": "Same-day baseline or competing weight writer transaction",
+      "backend/test/import-calorie-safety.test.js": "Maintained writer/boundary regression",
+      "backend/test/routes-metrics.test.js": "Maintained writer/boundary regression",
+      "backend/test/watch-service.test.js": "Maintained writer/boundary regression",
+      "docs/goal-starting-weight.md": "Maintained accepted semantics documentation",
+      "scripts/postgres-goal-pace-smoke.mjs": "Maintained real PostgreSQL overlap/history regression"
+    }
+  },
+  "targetImpact": {
+    "incomingHistory": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15 4cbcbc740fbe5fa5646b4de31951c79a653176d5 Return saved calorie comparisons for completed-day reads and acknowledgements\nd94a34d019bd9d993c27d33dbc1accc2cce61a87 3ac32ffa92f1e429dd689e2f52683bd8ea045d15 Describe saved comparison on day reads and completion responses\n9dc0739e36168aa273530fe00ae5f85fb9c8a3fe 4cbcbc740fbe5fa5646b4de31951c79a653176d5 d94a34d019bd9d993c27d33dbc1accc2cce61a87 Restore saved targets in completed-day Daily Balance (#436)",
+    "fullPatch": "verification.json",
+    "sharedPaths": [
+      "backend/src/services/watch.ts",
+      "backend/test/watch-service.test.js"
+    ],
+    "assessment": "Read all incoming PR436 commits/parents and all ten files. Incoming changes read existing saved FoodLogDay comparisons for day reads and phone/watch completion/sync; they never derive historical snapshots from the newly corrected goal baseline. PR449 edits only the Wear metric branch and separate tests; PR436 edits food completion and adds its own test. Imports coexist. Shared foodDayComparison capture/validation behavior is unchanged. GoalStartingWeight updates only current goal start_weight_grams, not saved food snapshots or plan revisions; existing history-preservation PostgreSQL assertion remains applicable. No client/runtime UI, capture fixture or generated runtime schema change in incoming target (generated change is comment only).",
+    "conflictProbe": {
+      "tree": "64859cdd5a50520a06597d14743021693e396ebb",
+      "exitCode": 0,
+      "limitation": "Conflict-only git merge-tree, not a published merge or executed integrated build. Actual ordered PR range remains six commits/nine files, inspected independently."
+    },
+    "validationReuse": "Fresh exact-head CI already covers changed writer behavior; actual-target delta affects independent read/completion branches and preserved comparison data. No additional affected suite identified requiring duplicate execution. Existing CI is head execution, not a claim of integrated-master execution."
+  },
+  "behaviorAssessment": {
+    "startDate": "Goal schema has created_at and no independent start_date. Existing mobile utils/goals.ts, GoalPaceSheet and backend calibration.ts use created_at in user timezone as start day. Accepted issue446 explicitly adopts it; no invented start-date model.",
+    "transaction": "Metrics weight writer, Wear writer, import writer and metric deletion acquire the shared user planning guard before metric rows. Onboarding already locks user first. Metrics/Wear/import reread transaction-current timezone after waiting; metric default date and future bounds use that day. Body-fat-only does not correct baseline.",
+    "writes": "Shared helper selects latest goal scoped by user and updates only start_weight_grams when goal local start, metric date and accepted today all agree and value differs. All API units use existing gram conversion/policy. Sync goal emission occurs after safety review and within the same domain/receipt transaction.",
+    "orders": "Source-bound PostgreSQL smoke verifies weight-first creation and goal-first overlapping correction, preserves ID/date/target/pace/oldergoal/foodhistory, asserts exactly one goal sync and original receipt replay.",
+    "replay": "Operation claim/domain/sync/response commit atomically. Duplicate IDs return saved response without invoking new write; first late replay has no trusted original-day timestamp, saves metric without changing older baseline. This matches accepted issue wording.",
+    "boundaries": "Inspected tests cover KG rounding, LB81692g, local midnight/lock wait, older goal/historical metric, body-fat-only, sync failure rollback, final unsafe review state, both timezone directions with explicit/default dates, Wear stale409 and stable accepted/rejected receipts, import create/overwrite/KEEP/history/repeat and accepted/skipped counts.",
+    "client": "WeightEntrySheet invalidates mobile-goal; replayInvalidation does likewise. projectMetrics overlays queued metric only, leaving server-owned goal. GoalProgressCard suppresses target/projection while weight pending.35clienttests retained and reused; no client source changed."
+  },
+  "feedback": {
+    "fullFinalSnapshot": "correction.json",
+    "nativeThreads": "correction-native.json",
+    "unchangedAtFinalRead": true,
+    "dispositions": [
+      {
+        "finding": 4222581328,
+        "reply": 4222709025,
+        "isResolved": true,
+        "assessment": "Verified final source implementation and corresponding maintained unit or current-head real PostgreSQL regression; not merely accepted resolved flag."
+      },
+      {
+        "finding": 4222581338,
+        "reply": 4222709264,
+        "isResolved": true,
+        "assessment": "Verified final source implementation and corresponding maintained unit or current-head real PostgreSQL regression; not merely accepted resolved flag."
+      },
+      {
+        "finding": 4222728419,
+        "reply": 4222801889,
+        "isResolved": true,
+        "assessment": "Verified final source implementation and corresponding maintained unit or current-head real PostgreSQL regression; not merely accepted resolved flag."
+      },
+      {
+        "finding": 4222728430,
+        "reply": 4222802108,
+        "isResolved": true,
+        "assessment": "Verified final source implementation and corresponding maintained unit or current-head real PostgreSQL regression; not merely accepted resolved flag."
+      },
+      {
+        "finding": 4222813175,
+        "reply": 4222856865,
+        "isResolved": true,
+        "assessment": "Verified final source implementation and corresponding maintained unit or current-head real PostgreSQL regression; not merely accepted resolved flag."
+      },
+      {
+        "finding": 4222892570,
+        "reply": 4222942200,
+        "isResolved": true,
+        "assessment": "Verified final source implementation and corresponding maintained unit or current-head real PostgreSQL regression; not merely accepted resolved flag."
+      },
+      {
+        "finding": 4222957799,
+        "reply": 4222998376,
+        "isResolved": true,
+        "assessment": "Verified final source implementation and corresponding maintained unit or current-head real PostgreSQL regression; not merely accepted resolved flag."
+      }
+    ],
+    "nativeClosingIssue": 446,
+    "project": "No Project write or whole-board completion assertion; native association verified."
+  },
+  "ci": {
+    "checks": [
+      {
+        "id": 113487225343,
+        "name": "v0.14.0 Upgrade and Encrypted Rollback",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422760/job/113487225343"
+      },
+      {
+        "id": 113487222959,
+        "name": "Populated Postgres Upgrade",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422760/job/113487222959"
+      },
+      {
+        "id": 113487218979,
+        "name": "Mobile Build",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218979"
+      },
+      {
+        "id": 113487218866,
+        "name": "Android Emulator End-to-End",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218866"
+      },
+      {
+        "id": 113487218812,
+        "name": "Wear Release Emulator Smoke",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218812"
+      },
+      {
+        "id": 113487218788,
+        "name": "iOS Build",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218788"
+      },
+      {
+        "id": 113487218718,
+        "name": "UX Accessibility and Visual Regression",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218718"
+      },
+      {
+        "id": 113487218521,
+        "name": "Six-State Data-Backed Route Acceptance",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218521"
+      },
+      {
+        "id": 113487218502,
+        "name": "Full Exported Web and PWA End-to-End",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218502"
+      },
+      {
+        "id": 113487218467,
+        "name": "Expo Web Build",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218467"
+      },
+      {
+        "id": 113487218364,
+        "name": "Wear Build and JVM Tests",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218364"
+      },
+      {
+        "id": 113487218227,
+        "name": "Mobile Tests",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422486/job/113487218227"
+      },
+      {
+        "id": 113487218220,
+        "name": "${{ matrix.platform }} Runtime Bundle",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218220"
+      },
+      {
+        "id": 113487218191,
+        "name": "Native Two-Emulator Package Upgrade",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487218191"
+      },
+      {
+        "id": 113487217693,
+        "name": "Web Critical Smoke",
+        "conclusion": "skipped",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487217693"
+      },
+      {
+        "id": 113487217381,
+        "name": "High and Critical Vulnerabilities",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422792/job/113487217381"
+      },
+      {
+        "id": 113487216436,
+        "name": "Backend Tests",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422486/job/113487216436"
+      },
+      {
+        "id": 113487216135,
+        "name": "Release Configuration",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487216135"
+      },
+      {
+        "id": 113487216036,
+        "name": "Backend Build",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487216036"
+      },
+      {
+        "id": 113487177126,
+        "name": "Classify Database Inputs",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422760/job/113487177126"
+      },
+      {
+        "id": 113487176754,
+        "name": "Classify Production Image Inputs",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422792/job/113487176754"
+      },
+      {
+        "id": 113487176652,
+        "name": "Backend, Shared, API Client, and Mobile Typecheck",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422894/job/113487176652"
+      },
+      {
+        "id": 113487175537,
+        "name": "Classify Test Inputs",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422486/job/113487175537"
+      },
+      {
+        "id": 113487175230,
+        "name": "Classify Build Inputs",
+        "conclusion": "success",
+        "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37828422488/job/113487175230"
+      }
+    ],
+    "retainedLogs": "ci-logs.json",
+    "observations": "Exact650862e1 checkout in inspected backend test/build/typecheck and PostgreSQL logs. Backend771pass0fail. PostgreSQL37828422760 executes real isolated schema, forced planning-lock overlaps, all accumulated timezone/Wear/import/replay/history cases. Expected serialization/duplicate errors exercise race handling and do not indicate failed run.",
+    "skips": "Client/web/native surfaces path-filtered unchanged; release/device suites dispatch-only; rollback skipped because no migration. No skipped job represented as execution. Local real database not rerun; no provider/live data accessed."
+  },
+  "uiEvidence": {
+    "applicable": true,
+    "pairs": [
+      {
+        "state": "Progress after same-day API correction and reload",
+        "beforeSource": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+        "afterSource": "eb142dd0bcc527398e83b91d29d4514fd9b4e516",
+        "beforeSha256": "7aeaa3cbe18fe3c6f27a9bf2d191fb840c5d7d9551258308a3b817d9801190bd",
+        "afterSha256": "d7d0859ef5bf8f5c369556ebb20216ab05946061d8ba965eb430f3745b2e66a4",
+        "pixelObservations": "Both images opened independently: current85kg, target75kg and fixture trend/projection same. BeforeStart90kg33%; AfterStart85kg0%. Layout/theme match; no relevant UI concealment seen."
+      }
+    ],
+    "provenanceRecords": [
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/README.md",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "358dffc9b6e4a9662ce6e001d8bb8171bce3b1ba0c5edb05efb2b454bfb86865",
+        "path": "README.md"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/artifact-hashes.json",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "e4fd0c6a27a5a4c2e524de2a9b80108ce382039a382849a6021302d1e1caf82a",
+        "path": "artifact-hashes.json"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/build-manifests.json",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "916f8a563bddb92dbaed93a96697d4c43097d3f736bcd850db68f28dff550da4",
+        "path": "build-manifests.json"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/capture.spec.ts",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "f0f62ab850f25b94ddae669639ac6b0a9fd09f398f01d2e80a0b0c71106cc096",
+        "path": "capture.spec.ts"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/expo-fixtures.ts",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "path": "expo-fixtures.ts"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/playwright.config.ts",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "95db3bf82b2a532679a380e8432277a5136e822f3e7700cf6f26917fd59e904f",
+        "path": "playwright.config.ts"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/route-server.cjs",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "7bc502bc5ad65b7ebc784b42507ae842feeae9e37094e9b7f26ea3c278f6b13e",
+        "path": "route-server.cjs"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/ce02f46f2d6b3794d3911a74a7c29a63ac6960c4/routes-metrics.fixture-source.js",
+        "commitSha": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+        "sha256": "84f96ebbd84615c83a5407e530b3eae4c567ae8a59746a8999cf1017ce729914",
+        "path": "routes-metrics.fixture-source.js"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/README.md",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "358dffc9b6e4a9662ce6e001d8bb8171bce3b1ba0c5edb05efb2b454bfb86865",
+        "path": "README.md"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/artifact-hashes.json",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "e4fd0c6a27a5a4c2e524de2a9b80108ce382039a382849a6021302d1e1caf82a",
+        "path": "artifact-hashes.json"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/build-manifests.json",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "916f8a563bddb92dbaed93a96697d4c43097d3f736bcd850db68f28dff550da4",
+        "path": "build-manifests.json"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/capture.spec.ts",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "f0f62ab850f25b94ddae669639ac6b0a9fd09f398f01d2e80a0b0c71106cc096",
+        "path": "capture.spec.ts"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/expo-fixtures.ts",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "path": "expo-fixtures.ts"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/final-source-binding.md",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "433ee18c72f0a5f7af08f9b4d549deabf069876c9a31f1c2ab88c91c56167b27",
+        "path": "final-source-binding.md"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/playwright.config.ts",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "95db3bf82b2a532679a380e8432277a5136e822f3e7700cf6f26917fd59e904f",
+        "path": "playwright.config.ts"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/route-server.cjs",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "7bc502bc5ad65b7ebc784b42507ae842feeae9e37094e9b7f26ea3c278f6b13e",
+        "path": "route-server.cjs"
+      },
+      {
+        "url": "https://github.com/MChartier/calibrate-health/blob/458ff9fa117ca51b2c07c565069d809ecb8518d5/routes-metrics.fixture-source.js",
+        "commitSha": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+        "sha256": "84f96ebbd84615c83a5407e530b3eae4c567ae8a59746a8999cf1017ce729914",
+        "path": "routes-metrics.fixture-source.js"
+      }
+    ],
+    "provenanceAssessment": "41exactGitblobs verified size/GitSHA1/SHA256; all14 original artifact manifest entries match exact published bytes. All340 original build inventory files still match retained independent dist bytes. Recovered native command receipts bind actual separate server scripts/cwds/ports18444/18445, route fixture18446/18447, both build outputs and final2passingcaptures. Static server code resolves dist relative to its own source script; harness navigates the corresponding origins and actual selected source metric route. Recovered receipts retained as additive provenance, not replacement of original manifests.",
+    "additionalExecutionProvenance": "recovered-capture-receipts.json",
+    "matchedSetup": "1100x900scale1light,en-US,America/Los_Angeles,reducedmotion,Chrome154.0.8037.98/Playwright1.61.1,synthetic fixture fixed2026-07-21T19Z. Shared transient PWA suppression disclosed.",
+    "applicability": "Later commits move normal route correction into equivalent shared helper and fix other writers/timezone boundaries. Stable explicit-date same-day scenario remains covered. Actual new target affects saved Daily Balance comparisons, not this Progress capture. Preserve capturedsource identities; no finalhead recapture claimed.",
+    "limitations": "API correction plus real Progress reload with synthetic persistence; serializer/projection/trend/target fixtures not proof of those calculations. response date:{} reflects fixture realm serialization and is not relied on for date correctness; maintained tests and realPostgreSQL cover dates. No browser editor interaction, realDB screenshot, or device run claimed.",
+    "renderedPrInspection": {
+      "status": "waived",
+      "authority": "6022754087",
+      "passed": false
+    }
+  },
+  "evidenceIdentities": "identities.json",
+  "retainedOriginals": {
+    "originalCaptureCommit": "ce02f46f2d6b3794d3911a74a7c29a63ac6960c4",
+    "finalApplicabilityCommit": "458ff9fa117ca51b2c07c565069d809ecb8518d5",
+    "earlierFixRecords": [
+      "51bbbca76600fc007f7af18a58d3b54a9d081955",
+      "f531785638f8367e36d7b64d74e6e83ec6473ee3",
+      "6c0f1d4ea203edabe0fc6bfdc8234504bb4a6a1c",
+      "f02859672e502c0ca6753ee82ac87588b960da76"
+    ],
+    "policy": "All preserved unchanged, no silent receipt rebinding."
+  },
+  "limitations": [
+    "Native-device testing remains deferred and unexecuted.",
+    "No new expensive suite run merely to duplicate fresh trustworthy CI.",
+    "No product/body/source branch/Project/readiness/draft/merge/release mutations.",
+    "No new user decision required; communication correction belongs to existing owner/coordinator."
+  ],
+  "nextAction": "Coordinator separately save and verify exact trusted receipt, then perform fresh pre/post readiness checks and configured draft lifecycle. QA takes no readiness/draft/Project/merge action.",
+  "retention": {
+    "ref": "refs/heads/evidence/pr449-independent-qa-final-description-20261008",
+    "ownerTask": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+    "purpose": "Nonmerged independent QA record and exact supporting evidence",
+    "policy": "Retain indefinitely with PR history; do not rewrite historical identities."
+  },
+  "previousReceipt": {
+    "verdict": "changes-required",
+    "headSha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+    "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+    "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "headParents": [
+      "f805e6872c94000156219ddba0e8e01b0c8d490c"
+    ],
+    "parentRevisions": [],
+    "targetParents": [
+      "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+    ],
+    "prBodySha256": "47fbf0d9a50b3b7626836f42b160eec5da7ee213bf37c73788c833a3bb226f27",
+    "checkedAtUtc": "2026-10-08T19:36:07.334495+00:00",
+    "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+    "host": "mchartier_zbook",
+    "verdictCommentId": 6067634380,
+    "verdictBodySha256": "5377a16446f8c4680c10274d11c16e9be4c4df289e79951493e89d45a3afae2a",
+    "verdictUpdatedAt": "2026-10-08T19:38:33Z",
+    "url": "https://github.com/MChartier/calibrate-health/pull/449#issuecomment-6067634380",
+    "postPublicationRecheckedAtUtc": "2026-10-08T19:38:57.206702+00:00",
+    "evidenceCommit": "124f0906831b6d97ea09463ca3b4a1f0f6a95ab3",
+    "evidencePath": "verdict.json",
+    "evidenceSha256": "fb34bb948fb7dad3328bcdfabbe01ca37c80861bf5ae8644da756388ab522c93",
+    "checkpoint": "idle; no other QA started; source/body/readiness/Project/draft unchanged"
+  },
+  "previousEvidence": {
+    "commit": "124f0906831b6d97ea09463ca3b4a1f0f6a95ab3",
+    "path": "verdict.json",
+    "sha256": "fb34bb948fb7dad3328bcdfabbe01ca37c80861bf5ae8644da756388ab522c93"
+  },
+  "reassessment": {
+    "scope": "Description-only; full fresh feedback/body/head/actualtarget/APIbase/CI/reviewthreads and original evidence bytes rechecked.",
+    "resolvedFinding": "C1: actual target9dc is distinct from historical mergebase/captureBefore4cb; capturedAftereb142dd0 remains explicit, finalhead650862 unchanged; target-impact record linked. Completed code/evidence/pixel assessment accurately acknowledged.",
+    "humanReadability": "Opening explains stale goal baseline and same-day solution; scenario table connects actions to expected/observed results and appropriate browser/unit/realPostgreSQL evidence. Limitations distinguish synthetic fixtures, native deferral and original capture sources. Narrative remains reviewer-focused.",
+    "statusWording": "final description reassessment remains pending accurately describes the specific gate entering this turn; this superseding verdict closes that gate in the append-only record. No further body edit required merely to create a status/digest loop.",
+    "reuse": "Only narrative changed. All source/actual-target/ordered commits/files, engineering findings, currentCI and original evidence identities unchanged. Prior complete code/behavior/target-impact/pixel assessments reused explicitly; no unaffected expensive suite rerun.",
+    "oldBodyPreservationComment": 6067666764,
+    "exactEvidenceBlobsReverified": 41,
+    "nativeThreads": "correction-native.json"
+  }
+}
