@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "reviewerStatus": "New trusted independent replacement task; original QA conversations did not migrate. Full supplied pinned texts and all direct amendments read and acknowledged.",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/431",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/443",
+  "parentIssue": "https://github.com/MChartier/calibrate-health/issues/421",
+  "supersedesVerdictCommentId": 6025819111,
+  "checkedAtUtc": "2026-10-08T17:54:21.997211+00:00",
+  "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "mergeBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "parentRevisions": [],
+  "commitParents": [
+    "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+  ],
+  "prBodySha256": "e5889325de9e0cf4aa91dd6e529f90edbfc0120306c78d090447446a95eef1e7",
+  "issueBodySha256": "49cc54e5f4721ce8ea0546e72e2ec57edaa0a7cc0e117fa4fa486f8e8b21cdf8",
+  "parentIssueBodySha256": "8d5baf81312c238b79b5f4df10a1262277d03e784c325c5149f68cb6af2c2d36",
+  "gates": {
+    "value": "pass: explicitly authorized bounded preparation preserves existing local account access",
+    "outcome": "pass for child443 only; parent421 remains incomplete",
+    "code": "pass: independently inspected all 12 changed files and shared verifier/caller contracts; no product edits",
+    "engineeringReview": "quota-only exception6021318904; no completed bot review claimed; complete independent code review performed; zero submitted/inline reviews and zero native threads",
+    "ci": "24 current-head checks: eight success and sixteen configured skips; exact-head backend log independently read:765 pass, zero fail; skips correspond unchanged mobile/web/database/release paths",
+    "behavior": "Existing59-test independent evidence reused explicitly; retained exact bytes verified. New task did not rerun suites. Unchanged source/actual target versus priorv5 and communication/linkage-only updates do not affect tested contracts.",
+    "evidence": "Two exact manifests and all15 referenced artifacts verified; independent59-test log verified; retained evidence accessible in clone and GitHub",
+    "communication": "pass: concise base-to-final credential problem/solution and behavior table; Firebase disabled; explicit bounded child and nonclosing parent; verified implementing task ID accepted",
+    "stack": "pass: master actual4cbcbc74; mergebase/APIbase2d7a4f65 explicitly separate. Full ordered published one-commit12-file range inspected, all paths serve checkpoint. No evidence churn. Both release merge parents and actual target advancement inspected."
+  },
+  "scope": {
+    "commits": [
+      {
+        "sha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+        "parents": [
+          "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+        ]
+      }
+    ],
+    "files": [
+      {
+        "path": "backend/scripts/lib/credentialProvider.ts",
+        "status": "modified",
+        "sha": "1446ee461dd409fb48c341a1d656bb82ff598ddb",
+        "additions": 3,
+        "deletions": 81
+      },
+      {
+        "path": "backend/src/index.ts",
+        "status": "modified",
+        "sha": "da4504772fcb3517a0eeb5f1d697006fb3706815",
+        "additions": 3,
+        "deletions": 3
+      },
+      {
+        "path": "backend/src/routes/auth.ts",
+        "status": "modified",
+        "sha": "2374a3145fdb52ffe7bd854f90b5a96eb786fe40",
+        "additions": 3,
+        "deletions": 2
+      },
+      {
+        "path": "backend/src/routes/user.ts",
+        "status": "modified",
+        "sha": "10810ad6087436f8e564e4fb16c7e4efaa8c7f95",
+        "additions": 3,
+        "deletions": 2
+      },
+      {
+        "path": "backend/src/services/credentialVerification.ts",
+        "status": "added",
+        "sha": "b441397ef14c01836044ce0dc85759ab110fc259",
+        "additions": 89,
+        "deletions": 0
+      },
+      {
+        "path": "backend/src/services/mcpOAuth.ts",
+        "status": "modified",
+        "sha": "6bb8246e6cbb94ef1e0792808c1c26d575730f7a",
+        "additions": 3,
+        "deletions": 10
+      },
+      {
+        "path": "backend/test/credential-provider.test.js",
+        "status": "modified",
+        "sha": "39e35f03317cd6629f289d996a1d4f171010b242",
+        "additions": 39,
+        "deletions": 1
+      },
+      {
+        "path": "backend/test/routes-account-recovery.test.js",
+        "status": "modified",
+        "sha": "3259e143f4103fae7c261ed0721127bff2d15ac7",
+        "additions": 1,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth-mobile.test.js",
+        "status": "modified",
+        "sha": "d8e4013536eb9b1f1cec39236bcd8df2206ace20",
+        "additions": 6,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth.test.js",
+        "status": "modified",
+        "sha": "b9528c490947ec8fc60f6de47ed7b12dbdca977c",
+        "additions": 6,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-user.test.js",
+        "status": "modified",
+        "sha": "d546ee371fbd0eb357553f2bf6c148582e1e4985",
+        "additions": 6,
+        "deletions": 0
+      },
+      {
+        "path": "docs/firebase-migration-preparation.md",
+        "status": "modified",
+        "sha": "d68b50fcadd3c281bec4b3f478b158a8c590750f",
+        "additions": 6,
+        "deletions": 1
+      }
+    ],
+    "pages": {
+      "commits": [
+        1,
+        0
+      ],
+      "files": [
+        12,
+        0
+      ]
+    },
+    "additions": 168,
+    "deletions": 100
+  },
+  "baseImpact": "Target advancement consists of release0.38 generated version/diagnostic mirrors and release-finalizer CI gating/tooling/tests/docs. No credential runtime, dependencies, auth/session schema, or PR CI definition changes. Actual full published scope inspected independently. Ancillary merge-tree is conflict-free06a810c956e2bb0a4dd2880e1fefcc05ffe4994d; not used as a substitute for published-scope inspection or runtime integration execution.",
+  "feedback": {
+    "issue421Comments": 33,
+    "prComments": 9,
+    "child443Comments": 0,
+    "submittedReviews": 0,
+    "inlineComments": 0,
+    "nativeThreads": 0,
+    "fullFinalRereadUnchanged": true,
+    "disposition": "Historical task-link/stale-base presentation findings resolved under task-ID amendment and final master wording. Parent offline/cache/outbox/identity requirements retained; no runtime switch. Old self-hosting requirement in preserved parent history is superseded by managed-hosted amendment6049386828, which governs remaining421 work; this checkpoint adds no customer selfhosting feature or runtime endpoint selector."
+  },
+  "linkage": {
+    "nativeClosingIssues": [
+      443
+    ],
+    "parent421ClosingAssociation": false,
+    "child443State": "OPEN",
+    "projectNumber": 1,
+    "projectItemId": "PVTI_lAHOABMy1c4Bl3Eqzg_RXM4",
+    "currentPrs": "https://github.com/MChartier/calibrate-health/pull/431",
+    "paginationComplete": true,
+    "assessment": "Read-only live GraphQL verifies native closure of bounded child443 only, Project Current PRs matches; no writes and no Project completion certification."
+  },
+  "evidence": [
+    {
+      "commitSha": "9b22a1c9714e5ca6a3dfed7769d57c0f81c6b3d1",
+      "path": "preparation-evidence/credential-runtime-b3d6559a/manifest.json",
+      "sha256": "a980be64fc651f1008eda02002c7fd3dac0f66011f68bba3bfa7864bdb560603",
+      "artifacts": [
+        {
+          "path": ".gitattributes",
+          "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+          "matches": true
+        },
+        {
+          "path": "backend-tests.log",
+          "sha256": "bfdd41d05a9b262ebf9148ba92829a7127bab7ae5b9082e9208a82704bfb514f",
+          "matches": true
+        },
+        {
+          "path": "issue-body-before.md",
+          "sha256": "8d18f5704a8e2bcf5ab9b1a7795c82ba5b3c5f095b35b33ca35127bdb42057d9",
+          "matches": true
+        },
+        {
+          "path": "knip.log",
+          "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681",
+          "matches": true
+        },
+        {
+          "path": "product.diff",
+          "sha256": "9f61cbfc77d8466a1db85ba6c807072fb54c9e418a8f570e76933786fe355522",
+          "matches": true
+        },
+        {
+          "path": "README.md",
+          "sha256": "4d55ba16a043cd11a0950a42fe89b896ebedcb30be1a530d7cadc3c385e94334",
+          "matches": true
+        },
+        {
+          "path": "typecheck.log",
+          "sha256": "de7aae177bfa7235fe1ec7849e9f10965aec60cc61f2bd299053a2bd4630c934",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "commitSha": "497ec9f3152fa38d73de0b125a012bf6b712673f",
+      "path": "preparation-evidence/credential-runtime-b3d6559a-final/manifest.json",
+      "sha256": "a55e50abebe3aed7ed3301705721800d365e9839e65711e54021262c7781254c",
+      "artifacts": [
+        {
+          "path": ".gitattributes",
+          "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+          "matches": true
+        },
+        {
+          "path": "ci-runs.json",
+          "sha256": "1b99d5e15d3a1e97aabdf162476cebb0a4ebceb2e44dba9335014c32de52c6f0",
+          "matches": true
+        },
+        {
+          "path": "pr-body.md",
+          "sha256": "3957f5da210f1018b5dfa95825cd09d795f28a40df146e3b3d4a3f246fe949b1",
+          "matches": true
+        },
+        {
+          "path": "pr-readback.json",
+          "sha256": "8bc1adc2b0c2ea803e1abb793c3e2238f5981473f29b17415dc8b014f4f75d58",
+          "matches": true
+        },
+        {
+          "path": "project-readback.json",
+          "sha256": "25f9cfdebdd330bfbf72aa0b00ecb147b7a72545f4750e62d41771e02689a7e0",
+          "matches": true
+        },
+        {
+          "path": "README.md",
+          "sha256": "49b7f093e10914580523242e1755ae67149cc2c0590e6f5bb199a74d65d7bb58",
+          "matches": true
+        },
+        {
+          "path": "rendered-pr.png",
+          "sha256": "de8feca99a572558c1696aa2add3a4c9bc74c6d2391adb08cf06d81675378e09",
+          "matches": true
+        },
+        {
+          "path": "rendered-pr.txt",
+          "sha256": "c02650ab15ce4628093c0047fface6810bd9efd6e28d55550976dea951f7fba3",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "commitSha": "a528dafd3e18c1027ca79ce916b8efb93d2f582b",
+      "path": "qa/issue421/pr431/v1/focused-tests.log",
+      "sha256": "3149d0ff4d4d91fe81c6d9f36eb9f788095dea91560b1a7d0369a686fb69e609"
+    }
+  ],
+  "historicalReceipt": {
+    "commentId": 6025819111,
+    "fullBodySha256": "839fb85789396f998613d95a424649c97c4fa71f4aef660f22f878124612df11",
+    "updated_at": "2026-10-06T21:30:30Z",
+    "originalReviewerChat": "01a10f9e-b990-7742-b94e-da6d8b4e0026",
+    "record": "https://github.com/MChartier/calibrate-health/blob/3f621d76bbaedd475bd260409606ad76d05d942f/qa/issue421/pr431/v5/verdict.json",
+    "scope": "Historical exact current API bytes retained in snapshot; not silently rebound to new child/body. This new independent assessment supplies its own trusted receipt."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "nonUiObservableContract": "Existing password inputs preserve boolean credential results, dummy unknown-account comparison, caller validation/authorization/session guards. Synthetic Firebase adapter fails closed; production Firebase remains disabled.",
+    "renderedPrInspection": {
+      "observations": "No new rendered GitHub page check claimed; general human rendering waiver6022754087. No changed visual UI requires screenshot pairs."
+    }
+  },
+  "limitations": [
+    "No live Firebase, account migration, credentials, deployment, device execution or full421 completion certified.",
+    "Prior independent59-test execution and765-test CI are reused evidence, not new local executions.",
+    "Browser/native visual and physical-device checks not performed; no changed UI.",
+    "Coordinator must separately save exact receipt and freshly reread feedback/head/actualtarget/body/evidence before and after any readiness/draft mutation."
+  ],
+  "nextAction": "Coordinator may assess readiness for431 child443 only using new exact receipt; review dependent437 then442 serially. Preserve all historical receipts and evidence."
+}
