@@ -410,6 +410,24 @@ try {
         await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
         assert.deepEqual((await saveFuture()).body, rejected.body);
         console.log('[goal-pace-smoke] PASS: Wear parsed before a timezone change rejects a now-future date after the lock, leaves metric/goal/sync untouched and replays its original rejection.');
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'America/Los_Angeles' } });
+        user.timezone = 'America/Los_Angeles';
+        const newlyValidOperation = crypto.randomUUID();
+        const newlyValidMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
+        } }, { timezone: 'America/Los_Angeles' });
+        assert.equal(newlyValidMutation.ok, true, 'syntax parsing must defer the account-day decision');
+        const saveNewlyValid = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
+            operationId: newlyValidOperation, mutation: newlyValidMutation });
+        const [forwardProfile, accepted] = await orderedWriters(
+            () => call('patch', '/profile', { timezone: 'UTC' }, crypto.randomUUID(), userRouter), saveNewlyValid);
+        assert.equal(forwardProfile.statusCode, 200);
+        assert.equal(accepted.status, 200);
+        assert.equal((await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: futureDate } } })).weight_grams, 81000);
+        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 81000);
+        assert.equal(await db.syncChange.count({ where: { user_id: user.id, operation_id: newlyValidOperation, entity_type: 'goal' } }), 1);
+        assert.deepEqual((await saveNewlyValid()).body, accepted.body);
+        console.log('[goal-pace-smoke] PASS: Wear parsed with an older account day accepts a newly valid date after the timezone lock, corrects its baseline once and replays the receipt.');
     } finally {
         globalThis.Date = NativeDate;
         user.timezone = 'UTC';

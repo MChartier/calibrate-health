@@ -151,10 +151,7 @@ export function parseWatchMutation(body: unknown, options: {
     try {
       if (typeof payload.local_date !== 'string') throw new Error('Invalid local date');
       const metricDate = parseLocalDateOnly(payload.local_date);
-      const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(options.timezone, now);
-      if (metricDate > currentLocalDate) {
-        return { ok: false, status: 400, message: 'Weight date cannot be in the future' };
-      }
+      // Calendar eligibility is checked after the planning lock with the current timezone.
       return {
         ok: true,
         type,
