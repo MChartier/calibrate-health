@@ -1,0 +1,27 @@
+{
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/431",
+  "verdict": "ready",
+  "verdictCommentId": 6066220912,
+  "verdictBodySha256": "c2f12299839205dfaddca239124b0efc2ccda21271d277c6f3d7062c80a1ed00",
+  "verdictUpdatedAt": "2026-10-08T18:15:32Z",
+  "evidenceUrl": "https://github.com/MChartier/calibrate-health/blob/a92993b2803c3c9d881bcc28b6db6ff1864dad9a/verdict.json",
+  "evidenceCommit": "a92993b2803c3c9d881bcc28b6db6ff1864dad9a",
+  "evidenceBytes": 25951,
+  "evidenceSha256": "f84fbbc197ecd7ed49acfa7d616164d517da19b22e21b0506c14c38fbfb278f0",
+  "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+  "baseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "apiBaseSha": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "mergeBase": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+  "targetRef": null,
+  "targetRepository": "MChartier/calibrate-health",
+  "parentRevisions": [],
+  "commitParents": [
+    "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+  ],
+  "prBodySha256": "e5889325de9e0cf4aa91dd6e529f90edbfc0120306c78d090447446a95eef1e7",
+  "checkedAtUtc": "2026-10-08T18:14:20.630529+00:00",
+  "supersedesVerdictCommentId": 6065881535,
+  "findings": [],
+  "exactCommentBody": "Independent QA correction: **ready for review for child #443 only**, superseding comment 6065881535. Its original comment and artifacts remain preserved, including the incorrect claimed hashes.\n\nThe coordinator correctly withheld readiness: my prior artifact hashes represented a different final-newline byte sequence. I independently fetched GitHub base64 blobs, verified byte lengths and Git blob identities, and hashed the actual bytes without normalization. [Exact audit of old claims versus published bytes](https://github.com/MChartier/calibrate-health/blob/a92993b2803c3c9d881bcc28b6db6ff1864dad9a/identity-audit.json) also identifies affected historical PR437/442 artifact hashes; those verdicts remain blocked pending their separate reassessments.\n\nCurrent PR431 head, actual master, body, full feedback, CI and native child443 association remain unchanged. No unaffected tests were rerun; parent #421 remains unfinished.\n\n[New detailed verdict](https://github.com/MChartier/calibrate-health/blob/a92993b2803c3c9d881bcc28b6db6ff1864dad9a/verdict.json), exact published SHA-256 `f84fbbc197ecd7ed49acfa7d616164d517da19b22e21b0506c14c38fbfb278f0` (25,951 bytes), verified before this comment. Coordinator must save a new separate receipt and recheck readiness bindings. No label/draft/Project mutation performed.",
+  "observedArtifactSha256": "f84fbbc197ecd7ed49acfa7d616164d517da19b22e21b0506c14c38fbfb278f0"
+}

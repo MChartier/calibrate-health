@@ -1,0 +1,32 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "headRefOid": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+        "baseRefOid": "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b",
+        "closingIssuesReferences": {
+          "nodes": [
+            {
+              "number": 443,
+              "url": "https://github.com/MChartier/calibrate-health/issues/443"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        },
+        "reviewThreads": {
+          "totalCount": 0,
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      "issue": {
+        "state": "OPEN",
+        "body": "## Problem\n\nBrowser/native login, account reauthentication and MCP approval lack a shared credential-verification boundary for safe authentication preparation. This is a bounded child of #421, not the complete Firebase migration.\n\n## Requirements and acceptance\n\n- Centralize local password verification while preserving caller-owned lookup, validation, access checks and session issuance across browser/native login, account changes and MCP approval.\n- Preserve bcrypt and unknown-account dummy comparison behavior, existing byte handling, account identity, ownership, session/Wear/offline contracts and database schema.\n- Keep Firebase disabled; validate synthetic provider mapping, invalid credentials, forged claims, transport failures and timeouts without live provider access.\n- Maintain the affected route/provider regression tests and concise migration-preparation documentation; cover the full 12-file published PR431 scope.\n- No live account reads/imports, Firebase activation/provisioning, credential changes, deployment or release. Full #421 remains open and unfinished.\n\n## Implementation plan\n\nUse the existing shared helper and provider boundary, integrate existing callers, and preserve maintained contract tests. This checkpoint targets master; PR423 preparation is already merged. Existing implementation evidence stays in PR431; independent QA must reassess final issue/body/linkage before readiness.\n\n## Implementing Codex task\n\nVerified existing task ID: `01a10cfe-a79f-7198-9e8f-2b4dc6703031`. Shareable link unavailable through current tools.\n\n## Implementing PR\n\n[PR431](https://github.com/MChartier/calibrate-health/pull/431). This PR implements only this checkpoint; #421 remains the nonclosing parent outcome.\n"
+      }
+    }
+  }
+}
