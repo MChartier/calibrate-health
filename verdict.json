@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "verdict": "evidence-incomplete",
+  "technicalVerdict": "pass",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "reviewerStatus": "New independent trusted reassessment, not original conversation migration. Full pinned standards and all direct amendments acknowledged.",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/442",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/445",
+  "parentIssue": "https://github.com/MChartier/calibrate-health/issues/421",
+  "supersedesVerdictCommentId": 6032082081,
+  "checkedAtUtc": "2026-10-08T18:00:50.541591+00:00",
+  "headSha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+  "baseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "apiBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "mergeBaseSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+  "actualTargetRef": "mchartier/atomic-native-login-421",
+  "ultimateTargetSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "parentRevisions": [
+    {
+      "pullRequest": 437,
+      "headSha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "pullRequest": 431,
+      "headSha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+      "state": "open",
+      "draft": false
+    }
+  ],
+  "commitParents": [
+    "a0fdefe8bca51c25306f36cccc8181bd35672341"
+  ],
+  "prBodySha256": "5f9ed85faf20a8c7418893e6d5d0e3fb678fac340bb8c573a417f5646ff17667",
+  "issueBodySha256": "f7a0586a0117694341077a1f72360a5faa58440160706a20416a78138b43a9aa",
+  "findings": [
+    {
+      "gate": "native issue association",
+      "observed": "Live GraphQL closingIssuesReferences totalCount0 with no next page despite Closes #445. Project Current PRs correctly names442 and explicitly acknowledges absence.",
+      "expected": "Verified native GitHub association to bounded child445, separate from nonclosing421; body and Project references are not equivalents.",
+      "action": "Coordinator establish or explicitly resolve unsupported native association under existing authority; preserve421 unfinished and431->437->442 dependency order. Request linkage-only reassessment. Do not silently retarget or autoclose421. No product fix identified."
+    }
+  ],
+  "gates": {
+    "value": "pass: explicitly admitted stale browser login persistence race",
+    "outcome": "technical pass for child445 only, full421 unfinished",
+    "code": "pass: independently read all7 published files, first-save transaction, serializer server-only WeakMap, serialized save queue, terminal rejection and update-only accepted resaves. Route cleans request state/cookie even after cleanup failure. Integer identity and nonpassword-login behavior preserved.",
+    "engineeringReview": "completed exact-head bot review6031790637 and completion6031761800; full feedback read, no unresolved actionable code finding",
+    "ci": "8 success16 configured skips; exact-head job112649671287 live log786pass0fail0skip including all7 real Passport/Express PostgreSQL browser scenarios",
+    "behavior": "Retained52-test independent log plus concurrent-save experiment and11 owner artifacts verified exactly. No new local test execution. Source,parent,ancestor,ultimate master unchanged versus original technical QA; new child/body/linkage only, so reuse is justified.",
+    "evidence": "technical contracts pass; native issue association incomplete",
+    "communication": "pass: concise parent-relative problem/solution and expected/observed behavior table; honest database/local/device distinctions and unfinished migration",
+    "stack": "complete1-commit7-file +381/-19 published child range inspected; parent437 and ancestor431 live bindings retained; ultimate master4cbcbc74 separately assessed in431. No unrelated imported439 scope or evidence churn"
+  },
+  "scope": {
+    "commits": [
+      {
+        "sha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+        "parents": [
+          "a0fdefe8bca51c25306f36cccc8181bd35672341"
+        ]
+      }
+    ],
+    "files": [
+      {
+        "path": "backend/src/index.ts",
+        "sha": "161df554cf9582aaa95491e3360fb5d34a2d5146",
+        "status": "modified",
+        "additions": 5,
+        "deletions": 9
+      },
+      {
+        "path": "backend/src/routes/auth.ts",
+        "sha": "e1ad18c7382a2a262c1cd3d5465acb9da208681c",
+        "status": "modified",
+        "additions": 14,
+        "deletions": 2
+      },
+      {
+        "path": "backend/src/utils/browserLoginCredentials.ts",
+        "sha": "77c82804eb41113613778fd5607e39163b4931f2",
+        "status": "added",
+        "additions": 38,
+        "deletions": 0
+      },
+      {
+        "path": "backend/src/utils/postgresSessionStore.ts",
+        "sha": "c1f11266431090d13551a7a340785a5942f7687e",
+        "status": "modified",
+        "additions": 58,
+        "deletions": 8
+      },
+      {
+        "path": "backend/test/browser-login-postgres.test.js",
+        "sha": "a559b1b1ab6382e1c083f42bbe4636eb3ce39169",
+        "status": "added",
+        "additions": 200,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/postgres-session-store.test.js",
+        "sha": "fe2c14985fbad0d7eb0bc7a2df2d1c0e12d40ef3",
+        "status": "modified",
+        "additions": 40,
+        "deletions": 0
+      },
+      {
+        "path": "backend/test/routes-auth.test.js",
+        "sha": "7f20e115d479019cd51a51210a9406a80e85a231",
+        "status": "modified",
+        "additions": 26,
+        "deletions": 0
+      }
+    ],
+    "pages": {
+      "commits": [
+        1,
+        0
+      ],
+      "files": [
+        7,
+        0
+      ]
+    }
+  },
+  "feedback": {
+    "prComments": 6,
+    "issue445Comments": 0,
+    "issue421Comments": 33,
+    "reviews": 0,
+    "inline": 0,
+    "nativeThreads": 0,
+    "finalFullRereadUnchanged": true,
+    "disposition": "No actionable code request unresolved. Only unrelated repository push timestamp/open-issue count changed during reads; PR source/body/feedback unchanged. Historical partial-linkage decision now has child445 but native association remains absent."
+  },
+  "linkage": {
+    "data": {
+      "repository": {
+        "pullRequest": {
+          "number": 442,
+          "headRefOid": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+          "baseRefName": "mchartier/atomic-native-login-421",
+          "baseRefOid": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+          "closingIssuesReferences": {
+            "totalCount": 0,
+            "nodes": [],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          },
+          "reviewThreads": {
+            "totalCount": 0,
+            "nodes": [],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          }
+        },
+        "issue": {
+          "number": 445,
+          "state": "OPEN",
+          "projectItems": {
+            "totalCount": 1,
+            "nodes": [
+              {
+                "id": "PVTI_lAHOABMy1c4Bl3Eqzg_RXSs",
+                "project": {
+                  "number": 1,
+                  "title": "Agentic development pipeline"
+                },
+                "fieldValues": {
+                  "nodes": [
+                    {},
+                    {
+                      "text": "Prevent stale browser password-login session saves",
+                      "field": {
+                        "name": "Title"
+                      }
+                    },
+                    {},
+                    {},
+                    {
+                      "text": "01a10cfe-a79f-7198-9e8f-2b4dc6703031; checkpoint implemented, idle",
+                      "field": {
+                        "name": "Owner"
+                      }
+                    },
+                    {
+                      "text": "https://github.com/MChartier/calibrate-health/pull/442",
+                      "field": {
+                        "name": "Current PRs"
+                      }
+                    },
+                    {
+                      "text": "Same-QA issue/body/linkage reassessment pending. Explicit Closes reference exists, but live GitHub closingIssuesReferences is empty for this stacked PR; native association remains unverified. Preserve review order431 ->437 ->442; full421 remains unfinished.",
+                      "field": {
+                        "name": "Blocked by"
+                      }
+                    },
+                    {
+                      "text": "2026-10-08T00:19:37.227423+00:00",
+                      "field": {
+                        "name": "Verified at"
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "evidence": [
+    {
+      "commitSha": "5cc62e29a120058362e7254fa99ade0b491ae93e",
+      "path": "preparation-evidence/browser-login-4751d8d8-description/receipt.json",
+      "sha256": "fb4cc288f5f632d53af32e1565f77e679c3bbda17047e7ca383fd14eb182b48c"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/.gitattributes",
+      "sha256": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/backend.log",
+      "sha256": "d87894ac5659d5e10d9895e8aadaf6f82484abe96dc17e4a2442337c125c8e2f"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/ci-backend.log",
+      "sha256": "40ba98f85aa4785e3a7f3e2073b7a51037abbadcb2a83896bd5056e4e49bab59"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/ci-runs.json",
+      "sha256": "50e055cef00c5a3f647f071f4954ea614ffb0cb0ea70464f6caafb9ff7061c0d"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/focused.log",
+      "sha256": "41b31f816ee8de230f1e533205de6cb3bbba2fd3d70c8c9c83592793f5b9cb39"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/knip.log",
+      "sha256": "7cb1af7065faab41648f4b11c4953bdb4a5ed9d8c38d47f0f057f6ba3312b681"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/product.diff",
+      "sha256": "26f2ac84c6a4f40d3a859a23fb6ba2652c3e422267a963795bd16f7ecd62eade"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/README.md",
+      "sha256": "a19731db3f7c7a12441e082caffc63d7022db05b67493d9320ae0ab32376e76e"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/review.json",
+      "sha256": "f93e5f1db4bada6344f0d08dcfa73dbe6673f73e37967941c000c210266be8f3"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/scope.json",
+      "sha256": "9d9a36207dc8e919268e8b4660989bda215a069a7c9e1ef7c654380053d5c05b"
+    },
+    {
+      "commitSha": "0b80eb0888aee62ed264a3e4d94843520ac191a9",
+      "path": "preparation-evidence/browser-login-4751d8d8/typecheck.log",
+      "sha256": "d203b7901d4e592f545b8a1028ada15a2f6734cb69eae3a3bc002bec00c5e594"
+    },
+    {
+      "commitSha": "a4fe47b8f57402c7c79a5198947e3a63c36237d5",
+      "path": "qa/issue421/pr442/v1/focused-tests.log",
+      "sha256": "579f3e0db8b800ac32d67a4a8d0feea9632247a1b1d527d325e92db82d01cd48"
+    },
+    {
+      "commitSha": "a4fe47b8f57402c7c79a5198947e3a63c36237d5",
+      "path": "qa/issue421/pr442/v1/concurrent-save-check.cjs",
+      "sha256": "aa3dc1b892cb38607adbe01ab31eb4f136eaf99d05327ebe048d10d6d1c569ff"
+    },
+    {
+      "commitSha": "a4fe47b8f57402c7c79a5198947e3a63c36237d5",
+      "path": "qa/issue421/pr442/v1/concurrent-save-check.log",
+      "sha256": "d5d6c4aef2ee26889f35d6daaf0105aa7678c78b7054f8ce25e1ef18adcf835f"
+    }
+  ],
+  "historicalReceipt": {
+    "commentId": 6032082081,
+    "fullBodySha256": "7c08f190883cb979e7e7179624d2ab236fb1b8701c4cf3597c2c4cd9b58ca079",
+    "updated_at": "2026-10-07T06:07:43Z",
+    "retainedRecord": "https://github.com/MChartier/calibrate-health/blob/a4fe47b8f57402c7c79a5198947e3a63c36237d5/qa/issue421/pr442/v1/verdict.json",
+    "scope": "Exact observed API bytes retained; not rebound as current trusted receipt."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "nonUiObservableContract": "Real HTTP status/cookie authentication and durable session state under reset/deletion races, rollback and rejected saves",
+    "renderedPrInspection": "No new page rendering claim; general waiver6022754087"
+  },
+  "limitations": [
+    "No new local suites or PostgreSQL execution. Existing independent52-test/concurrency and exact-headCI reused after identity/content verification.",
+    "CI contains Cannot set headers after they are sent from test-only browser-login-postgres.test.js:76 unconditional error handler during issuance-first deletion. All7 scenarios and durable-session/cookie assertions pass. This is disclosed test-harness noise, not evidence of session resurrection; no silent claim of clean logs.",
+    "Real fixture mirrors LocalStrategy assembly while importing production serializer/store/routes/reset service. SQL deletion is controlled; rollback occurs before COMMIT, not ambiguous postcommit failure. Current-session case is direct mutation, not full password-change HTTP flow.",
+    "Guard covers fresh password-authenticated session objects, not blanket existing-session enforcement.",
+    "No live accounts/Firebase/migration/credentials/device/deployment/release certification; source,body,labels,draft,Project unchanged."
+  ],
+  "nextAction": "Resolve native child445 linkage only and reassess affected gate;431 precedes437 precedes442. Full421 unfinished. Preserve original receipts and dedicated nonmerged retained evidence."
+}
