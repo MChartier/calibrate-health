@@ -1,0 +1,9 @@
+{
+  "originalProvenanceCommit": "8b6e2a2a1bf584a8b9d8cd9e8e2ce43981b68388",
+  "originalProvenanceSha256": "08e3f6ec0867f9b28cc3141b1a8995c36eb4dddb7cd1631cad651bbe9c7c8dbd",
+  "fixtureUsed": "managed-438/fixture-used.ts",
+  "fixtureUsedSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "fixtureByteNote": "Exact bytes from the independent Windows checkouts are retained here. Checkout line endings can differ from the source Git blob; both Before/After fixture hashes match this retained copy.",
+  "captureHashNote": "In provenance.json captures, sha256 identifies the PNG named by file. Exact capture-record JSON hashes are separately bound in artifact-digests.json. Do not interpret that field as the JSON record digest.",
+  "retention": "Append-only clarification; original provenance and evidence commits remain retained. Evidence branch must never be merged into product history."
+}
