@@ -2,15 +2,17 @@ const mockValues = new Map<string, string>();
 let mockHold: Promise<void> | undefined;
 jest.mock('expo-secure-store', () => ({
     getItemAsync: jest.fn(async (key: string) => mockValues.get(key) ?? null),
-    setItemAsync: jest.fn(async (key: string, value: string) => { if (value.startsWith('old')) await mockHold; mockValues.set(key, value); }),
+    setItemAsync: jest.fn(async (key: string, value: string) => { if (value.includes('old-access')) await mockHold; mockValues.set(key, value); }),
     deleteItemAsync: jest.fn(async (key: string) => { mockValues.delete(key); })
 }));
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn() }));
-jest.mock('../config/server', () => ({ getConfiguredServerUrl: jest.fn(), getDefaultServerUrl: jest.fn(), resolveInitialServerUrl: jest.fn() }));
-import { clearStoredTokens, readStoredTokens, writeStoredTokens } from './storage';
+jest.mock('../config/server', () => ({ getDefaultServerUrl: () => 'https://configured.example' }));
+jest.mock('./targetTransitionState', () => ({ inspectTargetTransitionState: async () => ({ hasState: false }) }));
+import { clearStoredTokens, readStoredTokens, writeStoredTokens, readServerUrl } from './storage';
 
 it('orders an in-flight old token write before logout clearing and replacement-account persistence', async () => {
+    await readServerUrl();
     let release!: () => void;
     mockHold = new Promise(resolve => { release = resolve; });
     const oldWrite = writeStoredTokens({ accessToken: 'old-access', refreshToken: 'old-refresh' });

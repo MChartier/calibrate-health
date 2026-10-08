@@ -23,7 +23,7 @@ import {
     type ServerConnectionResult,
     type ServerConnectionState
 } from '../config/server';
-import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
+import { authenticateAgainstConfirmedServer } from './serverSwitch';
 import { getSessionRestoreErrorMessage, isExpectedDevAutoLoginMiss } from './authErrors';
 import { MOBILE_CLIENT_IDENTITY, MOBILE_SERVER_RELEASE_VERSION } from '../config/nativeClient';
 import { getNativeDeviceName } from '../platform/nativePlatform';
@@ -32,7 +32,6 @@ import {
     getOrCreateDeviceId,
     readServerUrl,
     readStoredTokens,
-    writeServerUrl,
     writeStoredTokens
 } from './storage';
 import {
@@ -47,6 +46,10 @@ import { requireRegistrationLegalAcceptance, requiresHostedLegalAcceptance, type
 import { clearOnboardingDraft } from '../onboarding/draftStorage';
 import { clearOfflineWorkspace, hydrateVerifiedOfflineWorkspace, restoreOfflineWorkspace, saveOfflineWorkspace } from './offlineWorkspace';
 import { isRetryableMutationError } from '../offline/retryability';
+import { TARGET_RECOVERY_GUIDANCE } from './targetTransition';
+import { Screen } from '../components/Screen';
+import { AppText } from '../components/AppText';
+import { AppButton } from '../components/AppButton';
 
 type AuthContextValue = {
     api: CalibrateApiClient;
@@ -63,10 +66,8 @@ type AuthContextValue = {
     accountDeletionCleanupNotice: AccountDeletionCleanupNotice | null;
     serverConnection: ServerConnectionState;
     updateCurrentUser: (user: UserClientPayload) => void;
-    setServerUrl: (value: string) => Promise<boolean>;
-    testServerUrl: (value: string) => Promise<boolean>;
-    login: (email: string, password: string, serverCandidate: string) => Promise<boolean>;
-    register: (email: string, password: string, serverCandidate: string, acceptance: RegistrationLegalAcceptance) => Promise<boolean>;
+    login: (email: string, password: string) => Promise<boolean>;
+    register: (email: string, password: string, acceptance: RegistrationLegalAcceptance) => Promise<boolean>;
     logout: () => Promise<void>;
     clearLocalSession: () => Promise<void>;
     recheckClientCompatibility: () => Promise<boolean>;
@@ -79,6 +80,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const queryClient = useQueryClient();
     const [serverUrl, setServerUrlState] = useState('');
+    const targetReady = useRef(false);
+    const [targetError, setTargetError] = useState<string | null>(null);
+    const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
     const [user, setUser] = useState<UserClientPayload | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [refreshToken, setRefreshToken] = useState<string | null>(null);
@@ -99,8 +103,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [pendingReconnection, setPendingReconnection] = useState(false);
     const localOnlyRef = useRef(false);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
+    const sessionEpochRef = useRef(0);
+    const [sessionEpoch, setSessionEpoch] = useState(0);
+    const advanceSessionEpoch = useCallback(() => {
+        sessionEpochRef.current += 1;
+        setSessionEpoch(sessionEpochRef.current);
+    }, []);
 
     const clearSession = useCallback(async () => {
+        // Invalidate old API callbacks synchronously, before React unmounts their callers.
+        advanceSessionEpoch();
         const scope = accountScopeRef.current;
         accountScopeRef.current = null;
         localOnlyRef.current = false;
@@ -116,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setClientServerIncompatibility(null);
         queryClient.clear();
         await Promise.all([clearStoredTokens(), draftCleanup, workspaceCleanup]);
-    }, [queryClient]);
+    }, [advanceSessionEpoch, queryClient]);
 
     const handleClientUpgradeRequired = useCallback((requirement: ClientUpgradeRequirement) => {
         // Keep credentials and offline state intact so an in-place app update can resume the same session.
@@ -127,9 +139,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: UserClientPayload;
         access_token: string;
         refresh_token: string;
-    }) => {
+    }, newSession = false) => {
         const previousScope = accountScopeRef.current;
         const nextScope = { serverUrl: serverUrlRef.current, userId: payload.user.id };
+        if (newSession || !previousScope || previousScope.serverUrl !== nextScope.serverUrl || previousScope.userId !== nextScope.userId) {
+            advanceSessionEpoch();
+        }
         accountScopeRef.current = nextScope;
         if (previousScope && (previousScope.userId !== payload.user.id || previousScope.serverUrl !== serverUrlRef.current)) {
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
@@ -154,18 +169,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (accountScopeRef.current === nextScope) await saveOfflineWorkspace(nextScope.serverUrl, payload.user, queryClient).catch(() => undefined);
         return accountScopeRef.current === nextScope;
-    }, [queryClient]);
+    }, [advanceSessionEpoch, queryClient]);
 
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+        const refreshEpoch = sessionEpochRef.current;
+        const refreshServer = serverUrl || HOSTED_SERVER_URL;
+        if (serverUrlRef.current !== refreshServer) return false;
         const currentRefreshToken = refreshTokenRef.current;
         const scope = accountScopeRef.current;
-        const isCurrent = () => accountScopeRef.current === scope && refreshTokenRef.current === currentRefreshToken;
+        const isCurrent = () => sessionEpochRef.current === refreshEpoch
+            && serverUrlRef.current === refreshServer
+            && accountScopeRef.current === scope && refreshTokenRef.current === currentRefreshToken;
         if (!currentRefreshToken) return false;
 
         const refreshClient = new CalibrateApiClient({
             baseUrl: serverUrl || HOSTED_SERVER_URL,
             clientIdentity: MOBILE_CLIENT_IDENTITY,
-            onClientUpgradeRequired: handleClientUpgradeRequired
+            onClientUpgradeRequired: (requirement) => {
+                if (isCurrent()) handleClientUpgradeRequired(requirement);
+            }
         });
         try {
             const refreshed = await refreshClient.refreshMobile<MobileAuthResponse>(currentRefreshToken);
@@ -192,28 +214,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [handleClientUpgradeRequired, persistAuthPayload, serverUrl]);
 
-    const api = useMemo(
-        () =>
-            new CalibrateApiClient({
-                baseUrl: serverUrl || HOSTED_SERVER_URL,
-                clientIdentity: MOBILE_CLIENT_IDENTITY,
-                onClientUpgradeRequired: handleClientUpgradeRequired,
-                getAccessToken: () => accessTokenRef.current,
-                fetchImpl: (input, init) => {
-                    if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
-                    return globalThis.fetch(input, init);
-                },
-                refreshAccessToken,
-                onRequestError: (error) => {
-                    if (isRetryableMutationError(error)) {
-                        if (accountScopeRef.current) localOnlyRef.current = true;
-                        setPendingReconnection(true);
-                    }
-                },
-                onUnauthorized: clearSession
-            }),
-        [clearSession, handleClientUpgradeRequired, refreshAccessToken, serverUrl]
-    );
+    const api = useMemo(() => {
+        const requestServer = serverUrl || HOSTED_SERVER_URL;
+        const isCurrentSession = () => targetReady.current && sessionEpochRef.current === sessionEpoch
+            && serverUrlRef.current === requestServer;
+        return new CalibrateApiClient({
+            baseUrl: requestServer,
+            clientIdentity: MOBILE_CLIENT_IDENTITY,
+            onClientUpgradeRequired: (requirement) => {
+                if (isCurrentSession()) handleClientUpgradeRequired(requirement);
+            },
+            getAccessToken: () => isCurrentSession() ? accessTokenRef.current : null,
+            fetchImpl: (input, init) => {
+                if (!isCurrentSession()) return Promise.reject(new Error('Authentication scope changed.'));
+                if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
+                return globalThis.fetch(input, init);
+            },
+            onRequestError: (error) => {
+                if (isCurrentSession() && isRetryableMutationError(error)) {
+                    if (accountScopeRef.current) localOnlyRef.current = true;
+                    setPendingReconnection(true);
+                }
+            },
+            refreshAccessToken: () => isCurrentSession() ? refreshAccessToken() : false,
+            onUnauthorized: () => {
+                if (isCurrentSession()) return clearSession();
+            }
+        });
+    }, [clearSession, handleClientUpgradeRequired, refreshAccessToken, serverUrl, sessionEpoch]);
 
     const getDevTestUserAuthPayload = useCallback(async (
         baseUrl: string,
@@ -250,17 +278,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         let isMounted = true;
+        const restoreEpoch = sessionEpochRef.current;
 
         async function hydrate() {
             try {
-                const [storedServerUrl, tokens, nextDeviceId, storedCleanupNotice] = await Promise.all([
-                    readServerUrl(),
+                targetReady.current = false;
+                setTargetError(null);
+                const storedServerUrl = await readServerUrl();
+                const [tokens, nextDeviceId, storedCleanupNotice] = await Promise.all([
                     readStoredTokens(),
                     getOrCreateDeviceId(),
                     readAccountDeletionCleanupNotice().catch(() => null)
                 ]);
                 if (!isMounted) return;
 
+                targetReady.current = true;
                 serverUrlRef.current = storedServerUrl;
                 setServerUrlState(storedServerUrl);
                 setDeviceId(nextDeviceId);
@@ -304,8 +336,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (tokens.refreshToken) {
                     try {
                         const refreshed = await compatibilityClient.refreshMobile<MobileAuthResponse>(tokens.refreshToken);
-                        if (isMounted) {
+                        if (isMounted && sessionEpochRef.current === restoreEpoch) {
                             await persistAuthPayload(refreshed);
+                        } else {
+                            await queueNativeRevocation(storedServerUrl, refreshed.refresh_token);
                         }
                         return;
                     } catch (refreshError) {
@@ -318,15 +352,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (shouldDevAutoLogin(storedServerUrl)) {
                     const devAuthPayload = await getDevTestUserAuthPayload(storedServerUrl, nextDeviceId);
-                    if (isMounted && devAuthPayload) {
+                    if (isMounted && sessionEpochRef.current === restoreEpoch && devAuthPayload) {
                         await persistAuthPayload(devAuthPayload);
+                    } else if (devAuthPayload) {
+                        await queueNativeRevocation(storedServerUrl, devAuthPayload.refresh_token);
                     }
                 }
             } catch (error) {
                 if (isMounted) {
+                    if (!targetReady.current) { setTargetError(TARGET_RECOVERY_GUIDANCE); return; }
+                    if (sessionEpochRef.current !== restoreEpoch) return;
                     if (isRetryableMutationError(error) && refreshTokenRef.current) {
                         const cached = await restoreOfflineWorkspace(serverUrlRef.current, queryClient).catch(() => null);
-                        if (!isMounted) return;
+                        if (!isMounted || sessionEpochRef.current !== restoreEpoch) return;
                         if (cached) {
                             accountScopeRef.current = { serverUrl: serverUrlRef.current, userId: cached.id };
                             localOnlyRef.current = true;
@@ -352,7 +390,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => {
             isMounted = false;
         };
-    }, [clearSession, getDevTestUserAuthPayload, handleClientUpgradeRequired, persistAuthPayload]);
+    }, [bootstrapAttempt, clearSession, getDevTestUserAuthPayload, handleClientUpgradeRequired, persistAuthPayload]);
 
     const recheckClientCompatibility = useCallback(async (): Promise<boolean> => {
         try {
@@ -409,35 +447,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return result;
     }, []);
 
-    const testServerUrl = useCallback(async (value: string): Promise<boolean> => {
-        const result = await probeServerUrl(value);
-        if (result.ok) setAuthError(null);
-        return result.ok;
-    }, [probeServerUrl]);
-
-    const confirmSelectedServerUrl = useCallback(async (value: string): Promise<ServerConnectionResult> => {
-        const result = await confirmServerSwitch({
-            candidate: value,
-            currentServerUrl: serverUrl,
-            testConnection: probeServerUrl,
-            clearCurrentSession: clearSession,
-            persistServerUrl: writeServerUrl
-        });
-        if (!result.ok) {
-            setAuthError(result.message);
-            return result;
-        }
-
-        serverUrlRef.current = result.url;
-        setServerUrlState(result.url);
-        setAuthError(null);
+    const confirmCurrentServer = useCallback(async (): Promise<ServerConnectionResult> => {
+        if (!targetReady.current || !serverUrlRef.current) throw new Error(TARGET_RECOVERY_GUIDANCE);
+        const result = await probeServerUrl(serverUrlRef.current);
+        if (!result.ok) setAuthError(result.message);
         return result;
-    }, [clearSession, probeServerUrl, serverUrl]);
-
-    const updateServerUrl = useCallback(async (value: string): Promise<boolean> => {
-        const result = await confirmSelectedServerUrl(value);
-        return result.ok;
-    }, [confirmSelectedServerUrl]);
+    }, [probeServerUrl]);
 
     const updateCurrentUser = useCallback((nextUser: UserClientPayload) => {
         const scope = accountScopeRef.current;
@@ -447,15 +462,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [queryClient]);
 
     const login = useCallback(
-        async (email: string, password: string, serverCandidate: string): Promise<boolean> => {
+        async (email: string, password: string): Promise<boolean> => {
+            advanceSessionEpoch();
+            const authEpoch = sessionEpochRef.current;
             assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
             const payload = await authenticateAgainstConfirmedServer({
-                candidate: serverCandidate,
-                confirmServer: confirmSelectedServerUrl,
+                candidate: serverUrlRef.current,
+                confirmServer: confirmCurrentServer,
                 authenticate: async (confirmedServerUrl) => {
+                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     await flushExplicitLogout(confirmedServerUrl);
+                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     const authClient = new CalibrateApiClient({
                         baseUrl: confirmedServerUrl,
                         clientIdentity: MOBILE_CLIENT_IDENTITY,
@@ -471,29 +490,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             });
             if (!payload) return false;
+            if (sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
+                void flushExplicitLogout(serverUrlRef.current).catch(() => undefined);
+                return false;
+            }
             await finishExplicitLogin(serverUrlRef.current);
-
-            await persistAuthPayload(payload);
-            return true;
+            if (sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
+                return false;
+            }
+            return persistAuthPayload(payload, true);
         },
-        [accountDeletionCleanupNotice, confirmSelectedServerUrl, deviceId, handleClientUpgradeRequired, persistAuthPayload]
+        [accountDeletionCleanupNotice, confirmCurrentServer, deviceId, handleClientUpgradeRequired, persistAuthPayload]
     );
 
     const register = useCallback(
         async (
             email: string,
             password: string,
-            serverCandidate: string,
             acceptance: RegistrationLegalAcceptance
         ): Promise<boolean> => {
+            advanceSessionEpoch();
+            const authEpoch = sessionEpochRef.current;
             assertAccountDeletionCleanupAcknowledged(accountDeletionCleanupNotice);
             const nextDeviceId = deviceId ?? (await getOrCreateDeviceId());
             setDeviceId(nextDeviceId);
             const payload = await authenticateAgainstConfirmedServer({
-                candidate: serverCandidate,
-                confirmServer: confirmSelectedServerUrl,
+                candidate: serverUrlRef.current,
+                confirmServer: confirmCurrentServer,
                 authenticate: async (confirmedServerUrl) => {
+                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     await flushExplicitLogout(confirmedServerUrl);
+                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
                     const legalAcceptance = requiresHostedLegalAcceptance(confirmedServerUrl)
                         ? requireRegistrationLegalAcceptance(acceptance)
                         : null;
@@ -518,20 +547,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             });
             if (!payload) return false;
+            if (sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
+                void flushExplicitLogout(serverUrlRef.current).catch(() => undefined);
+                return false;
+            }
             await finishExplicitLogin(serverUrlRef.current);
-
-            await persistAuthPayload(payload);
-            return true;
+            if (sessionEpochRef.current !== authEpoch) {
+                await queueNativeRevocation(serverUrlRef.current, payload.refresh_token);
+                return false;
+            }
+            return persistAuthPayload(payload, true);
         },
-        [accountDeletionCleanupNotice, confirmSelectedServerUrl, deviceId, handleClientUpgradeRequired, persistAuthPayload]
+        [accountDeletionCleanupNotice, confirmCurrentServer, deviceId, handleClientUpgradeRequired, persistAuthPayload]
     );
 
     const logout = useCallback(async () => {
+        advanceSessionEpoch();
+        const logoutEpoch = sessionEpochRef.current;
         const target = serverUrl || HOSTED_SERVER_URL;
         let intentPersisted = true;
         await beginExplicitLogout(target, refreshTokenRef.current ?? undefined).catch(() => { intentPersisted = false; });
         try {
-            await clearSession();
+            if (sessionEpochRef.current === logoutEpoch) await clearSession();
         } finally {
             // Local cleanup failure must not suppress server session revocation.
             await flushExplicitLogout(target).catch(() => setAuthError(intentPersisted
@@ -578,8 +616,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             accountDeletionCleanupNotice,
             serverConnection,
             updateCurrentUser,
-            setServerUrl: updateServerUrl,
-            testServerUrl,
             login,
             register,
             logout,
@@ -588,9 +624,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             persistAccountDeletionCleanupNotice,
             acknowledgeAccountDeletionCleanupNotice
         }),
-        [pendingReconnection, accessToken, accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice, api, authError, clearSession, clientServerIncompatibility, clientUpgradeRequired, deviceId, isLoading, login, logout, persistAccountDeletionCleanupNotice, recheckClientCompatibility, refreshToken, register, serverConnection, serverUrl, testServerUrl, updateCurrentUser, updateServerUrl, user]
+        [pendingReconnection, accessToken, accountDeletionCleanupNotice, acknowledgeAccountDeletionCleanupNotice, api, authError, clearSession, clientServerIncompatibility, clientUpgradeRequired, deviceId, isLoading, login, logout, persistAccountDeletionCleanupNotice, recheckClientCompatibility, refreshToken, register, serverConnection, serverUrl, updateCurrentUser, user]
     );
 
+    if (targetError) return <Screen contentWidth="form" safeTop>
+        <AppText variant="title">Saved data needs attention</AppText>
+        <AppText accessibilityRole="alert">{targetError}</AppText>
+        <AppButton title="Retry" onPress={() => { setIsLoading(true); setBootstrapAttempt(value => value + 1); }} />
+    </Screen>;
+    if (!targetReady.current) return <Screen contentWidth="form" safeTop><AppText>Preparing Calibrate...</AppText></Screen>;
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

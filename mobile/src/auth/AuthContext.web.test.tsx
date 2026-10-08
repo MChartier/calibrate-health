@@ -6,7 +6,7 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const mockClientOptions: Array<{ onRequestError?: (error: unknown) => void }> = [];
+const mockClientOptions: Array<{ onRequestError?: (error: unknown) => void; onUnauthorized?: () => Promise<void> | void }> = [];
 const mockLoginBrowser = jest.fn();
 const mockLogoutBrowser = jest.fn(async () => undefined);
 const mockRestoreSession = jest.fn();
@@ -14,7 +14,7 @@ const mockGetMe = jest.fn();
 jest.mock('@calibrate/api-client', () => ({
     ApiError: class extends Error { status: number; constructor(status: number, message: string) { super(message); this.status = status; } },
     CalibrateApiClient: class {
-            constructor(options: { onRequestError?: (error: unknown) => void }) { mockClientOptions.push(options); }
+        constructor(options: typeof mockClientOptions[number]) { mockClientOptions.push(options); }
         getMe = (...args: unknown[]) => mockGetMe(...args);
         loginBrowser = (...args: unknown[]) => mockLoginBrowser(...args);
         logoutBrowser = () => mockLogoutBrowser();
@@ -63,10 +63,10 @@ describe('browser onboarding draft cleanup', () => {
         const { result } = renderAuth();
         await waitFor(() => expect(result.current.isLoading).toBe(false));
         expect(clearOnboardingDraft).not.toHaveBeenCalled();
-        await act(async () => { await result.current.login('person@example.com', 'password', 'https://health.example'); });
+        await act(async () => { await result.current.login('person@example.com', 'password'); });
         expect(clearOnboardingDraft).not.toHaveBeenCalled();
         mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
-        await act(async () => { await result.current.login('another@example.com', 'password', 'https://health.example'); });
+        await act(async () => { await result.current.login('another@example.com', 'password'); });
         expect(clearOnboardingDraft).toHaveBeenCalledWith('https://health.example', 7);
         expect(result.current.user?.id).toBe(8);
     });
@@ -87,6 +87,20 @@ describe('browser onboarding draft cleanup', () => {
         expect(clearBrowserUserScopedCaches).toHaveBeenCalled();
         expect(mockLogoutBrowser).toHaveBeenCalledTimes(1);
     });
+    it('a stale browser unauthorized response cannot clear a newer session', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        const oldClient = mockClientOptions.filter((options) => options.onUnauthorized).at(-1)!;
+        await act(async () => result.current.clearLocalSession());
+        mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
+        await act(async () => { await result.current.login('new@example.com', 'secret'); });
+        await act(async () => oldClient.onUnauthorized!());
+        act(() => oldClient.onRequestError!(new TypeError('Late network error')));
+        expect(result.current.pendingReconnection).toBe(false);
+        expect(result.current.user?.id).toBe(8);
+        expect(mockRestoreSession).toHaveBeenCalledTimes(1);
+    });
+
 });
 
 describe('browser offline workspace restoration', () => {
@@ -130,7 +144,7 @@ it('keeps the established identity and enters reconnection after a completed tim
     mockRestoreSession.mockResolvedValue({ user: USER });
     const { result } = renderAuth();
     await waitFor(() => expect(result.current.user?.id).toBe(7));
-    const observer = mockClientOptions.find((options) => options.onRequestError)?.onRequestError;
+    const observer = mockClientOptions.filter((options) => options.onRequestError).at(-1)?.onRequestError;
     expect(observer).toBeDefined();
     act(() => observer!(new Error('Request timed out while connecting to https://health.example')));
     expect(result.current.pendingReconnection).toBe(true);
@@ -167,7 +181,7 @@ it('stays explicitly signed out across failed invalidation, restart, recovery an
     expect(mockRestoreSession).not.toHaveBeenCalled();
     mockLogoutBrowser.mockResolvedValue(undefined);
     mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
-    await act(async () => { expect(await second.result.current.login('other@example.com', 'password', 'https://health.example')).toBe(true); });
+    await act(async () => { expect(await second.result.current.login('other@example.com', 'password')).toBe(true); });
     expect(second.result.current.user?.id).toBe(8);
     expect(mockLogoutBrowser).toHaveBeenCalled();
     second.unmount();

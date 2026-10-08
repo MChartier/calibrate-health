@@ -11,6 +11,10 @@ export type OutboxDatabase = Pick<
 let databasePromise: Promise<SQLiteDatabase> | null = null;
 
 async function initializeDatabase(database: SQLiteDatabase): Promise<SQLiteDatabase> {
+    const version = await database.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+    if (!version || ![0, OUTBOX_SCHEMA_VERSION].includes(version.user_version)) {
+        throw new Error('Unknown offline database version; retain this installation and use a compatible build.');
+    }
     await database.execAsync(`
         PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS queued_mutations (
