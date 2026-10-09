@@ -1,0 +1,21 @@
+{
+  "head": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "actualDirectTarget": "547206a1b372b73fc95fc412ad453b8099440000",
+  "ultimateMaster": "547206a1b372b73fc95fc412ad453b8099440000",
+  "apiBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "targetParents": [
+    "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+    "650862e1c13be66fe5ec05495320cc66ac32f8bb"
+  ],
+  "bodySha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+  "updated_at": "2026-10-09T04:09:37Z",
+  "evidenceCommit": "73c205a142ec34d8afc76413aa720d63a6a09ce9",
+  "evidenceUrl": "https://github.com/MChartier/calibrate-health/blob/73c205a142ec34d8afc76413aa720d63a6a09ce9/impact.json",
+  "evidenceSha256": "6f42f3d1434217f2325032e91948b1f8e8c4b3f216d622c19b452d2e2b4f9859",
+  "originalBodySha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553",
+  "clean": true
+}
