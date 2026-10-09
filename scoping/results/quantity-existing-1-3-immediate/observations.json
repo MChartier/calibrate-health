@@ -1,0 +1,151 @@
+{
+  "rows": [
+    {
+      "id": 701,
+      "name": "Synthetic existing oats",
+      "meal_period": "BREAKFAST",
+      "calories": 520,
+      "servings_consumed": 5.2,
+      "serving_size_quantity_snapshot": 0.25,
+      "serving_unit_label_snapshot": "cup",
+      "calories_per_serving_snapshot": 100,
+      "grams_per_measure_snapshot": 20,
+      "grams_total_snapshot": 104
+    }
+  ],
+  "traffic": [
+    {
+      "method": "PATCH",
+      "payload": {
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "servings_consumed": 5.2
+      },
+      "status": 200,
+      "response": {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 520,
+        "servings_consumed": 5.2,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 104
+      }
+    }
+  ],
+  "eventsBeforeReload": [
+    {
+      "type": "pointerdown",
+      "label": null,
+      "text": ""
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Edit Synthetic existing oats",
+      "text": ""
+    },
+    {
+      "type": "click",
+      "label": null,
+      "text": ""
+    },
+    {
+      "type": "focusout",
+      "value": "",
+      "label": "Edit Synthetic existing oats",
+      "text": ""
+    },
+    {
+      "type": "focusin",
+      "value": "Synthetic existing oats",
+      "label": "Food name"
+    },
+    {
+      "type": "focusout",
+      "value": "Synthetic existing oats",
+      "label": "Food name"
+    },
+    {
+      "type": "focusin",
+      "value": "0.25",
+      "label": "Amount"
+    },
+    {
+      "type": "input",
+      "value": "1,3",
+      "label": "Amount"
+    },
+    {
+      "type": "pointerdown",
+      "label": null,
+      "text": "Save"
+    },
+    {
+      "type": "change",
+      "value": "1.3",
+      "label": "Amount"
+    },
+    {
+      "type": "focusout",
+      "value": "1.3",
+      "label": "Amount"
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Save",
+      "text": "Save"
+    },
+    {
+      "type": "click",
+      "label": null,
+      "text": "Save"
+    },
+    {
+      "type": "focusout",
+      "value": "",
+      "label": "Saving...",
+      "text": "Saving..."
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Edit Synthetic existing oats",
+      "text": ""
+    }
+  ],
+  "events": [
+    {
+      "type": "pointerdown",
+      "label": null,
+      "text": ""
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Edit Synthetic existing oats",
+      "text": ""
+    },
+    {
+      "type": "click",
+      "label": null,
+      "text": ""
+    },
+    {
+      "type": "focusout",
+      "value": "",
+      "label": "Edit Synthetic existing oats",
+      "text": ""
+    },
+    {
+      "type": "focusin",
+      "value": "Synthetic existing oats",
+      "label": "Food name"
+    }
+  ],
+  "browser": "155.0.8059.39"
+}

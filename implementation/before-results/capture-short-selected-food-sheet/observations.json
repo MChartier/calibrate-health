@@ -1,0 +1,240 @@
+{
+  "geometry": {
+    "parents": [
+      {
+        "testid": null,
+        "y": 395.609375,
+        "height": 48,
+        "overflow": "clip",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 395.609375,
+        "height": 48,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 395.609375,
+        "height": 48,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 367.609375,
+        "height": 100,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 307.609375,
+        "height": 335,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 295.609375,
+        "height": 359,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 419.609375,
+        "height": 0,
+        "overflow": "hidden auto",
+        "scrollTop": 124
+      },
+      {
+        "testid": null,
+        "y": 315.609375,
+        "height": 97.390625,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 315.609375,
+        "height": 97.390625,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": "bottom-sheet-content",
+        "y": 83.609375,
+        "height": 329.390625,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": "adaptive-dialog-panel",
+        "y": 33.609375,
+        "height": 386.390625,
+        "overflow": "hidden",
+        "scrollTop": 7
+      },
+      {
+        "testid": "bottom-sheet-root",
+        "y": 0,
+        "height": 420,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 0,
+        "height": 420,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 0,
+        "height": 420,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 0,
+        "height": 0,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 0,
+        "height": 420,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 420,
+        "height": 0,
+        "overflow": "visible",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 0,
+        "height": 420,
+        "overflow": "hidden",
+        "scrollTop": 0
+      },
+      {
+        "testid": null,
+        "y": 0,
+        "height": 420,
+        "overflow": "visible",
+        "scrollTop": 0
+      }
+    ],
+    "active": false,
+    "visualHeight": 420
+  },
+  "browser": "155.0.8059.39",
+  "events": [
+    {
+      "type": "pointerdown",
+      "label": null,
+      "text": "Add food"
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Add food",
+      "text": "Add food"
+    },
+    {
+      "type": "click",
+      "label": null,
+      "text": "Add food"
+    },
+    {
+      "type": "focusout",
+      "value": "",
+      "label": "Add food",
+      "text": "Add food"
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Close add food",
+      "text": ""
+    },
+    {
+      "type": "focusout",
+      "value": "",
+      "label": "Close add food",
+      "text": ""
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Search foods"
+    },
+    {
+      "type": "input",
+      "value": "Synthetic quarter-cup oats",
+      "label": "Search foods"
+    },
+    {
+      "type": "pointerdown",
+      "label": null,
+      "text": "Synthetic quarter-cup oatsSaved food | 100 kcal per serving"
+    },
+    {
+      "type": "change",
+      "value": "Synthetic quarter-cup oats",
+      "label": "Search foods"
+    },
+    {
+      "type": "focusout",
+      "value": "Synthetic quarter-cup oats",
+      "label": "Search foods"
+    },
+    {
+      "type": "focusin",
+      "value": "",
+      "label": "Choose amount for Synthetic quarter-cup oats",
+      "text": "Synthetic quarter-cup oatsSaved food | 100 kcal per serving"
+    },
+    {
+      "type": "click",
+      "label": null,
+      "text": "Synthetic quarter-cup oatsSaved food | 100 kcal per serving"
+    },
+    {
+      "type": "focusout",
+      "value": "",
+      "label": "Choose amount for Synthetic quarter-cup oats",
+      "text": "Synthetic quarter-cup oatsSaved food | 100 kcal per serving"
+    },
+    {
+      "type": "focusin",
+      "value": "1",
+      "label": "Amount"
+    },
+    {
+      "type": "input",
+      "value": "0.125",
+      "label": "Amount"
+    },
+    {
+      "type": "change",
+      "value": "0.125",
+      "label": "Amount"
+    },
+    {
+      "type": "focusout",
+      "value": "0.125",
+      "label": "Amount"
+    }
+  ]
+}

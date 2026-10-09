@@ -1,0 +1,27 @@
+[WebServer] (node:36380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 18 tests using 1 worker
+
+(node:32996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 controls.spec.ts:31:6 ΓÇ║ existing 0.125 immediate (2.2s)
+  ok  2 controls.spec.ts:32:6 ΓÇ║ add 0.125 immediate (2.8s)
+  ok  3 controls.spec.ts:31:6 ΓÇ║ existing 0.125 blur (2.1s)
+  ok  4 controls.spec.ts:32:6 ΓÇ║ add 0.125 blur (2.7s)
+  ok  5 controls.spec.ts:31:6 ΓÇ║ existing 1.3 immediate (1.9s)
+  ok  6 controls.spec.ts:32:6 ΓÇ║ add 1.3 immediate (2.7s)
+  ok  7 controls.spec.ts:31:6 ΓÇ║ existing 1.3 blur (2.1s)
+  ok  8 controls.spec.ts:32:6 ΓÇ║ add 1.3 blur (2.7s)
+  ok  9 controls.spec.ts:31:6 ΓÇ║ existing 1comma3 immediate (2.1s)
+  ok 10 controls.spec.ts:32:6 ΓÇ║ add 1comma3 immediate (2.7s)
+  ok 11 controls.spec.ts:31:6 ΓÇ║ existing 1comma3 blur (2.2s)
+  ok 12 controls.spec.ts:32:6 ΓÇ║ add 1comma3 blur (2.6s)
+  ok 13 controls.spec.ts:35:5 ΓÇ║ validation, button increment, six-place edit boundary (1.8s)
+  ok 14 controls.spec.ts:37:5 ΓÇ║ offline add and edit replay retain decimals and identities (3.3s)
+  ok 15 controls.spec.ts:43:38 ΓÇ║ simulated visual viewport shrink edit (1.4s)
+  ok 16 controls.spec.ts:43:38 ΓÇ║ simulated visual viewport shrink add (2.1s)
+  ok 17 controls.spec.ts:54:5 ΓÇ║ committed add with lost acknowledgement replays same identity once (2.7s)
+  ok 18 controls.spec.ts:58:5 ΓÇ║ add invalid quantities stay unsaved and step buttons preserve typed precision (2.3s)
+
+  18 passed (45.9s)

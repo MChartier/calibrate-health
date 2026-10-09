@@ -1,0 +1,2 @@
+import config from '../quantity-fix-448/playwright.expo-web.config';
+export default {...config,testDir:'../quantity-fix-448/e2e/expo-web',testMatch:'food-quantity-entry.spec.ts',outputDir:`./${process.env.CAPTURE_PHASE ?? 'green'}-regressions`,use:{...config.use,baseURL:'http://127.0.0.1:18448'},webServer:{command:'node ../quantity-fix-448/scripts/expo-web-static-server.mjs --port 18448',url:'http://127.0.0.1:18448',reuseExistingServer:false}};

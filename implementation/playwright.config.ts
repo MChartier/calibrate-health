@@ -1,0 +1,3 @@
+import { defineConfig } from '../quantity-fix-448/node_modules/@playwright/test';
+export default defineConfig({testDir:'.',testMatch: process.env.CONTROLS ? 'controls.spec.ts' : 'capture.spec.ts',workers:1,retries:0,timeout:45000,reporter:'list',outputDir:`./${process.env.CAPTURE_PHASE ?? 'after'}-results`,use:{baseURL:'http://127.0.0.1:18448',channel:'chrome',viewport:{width:390,height:844},hasTouch:true,isMobile:true,locale:'en-US',timezoneId:'America/Los_Angeles',reducedMotion:'reduce',trace:'on',screenshot:'only-on-failure'},webServer:{command:'node serve.mjs',url:'http://127.0.0.1:18448',reuseExistingServer:false}});
+

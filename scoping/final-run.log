@@ -1,0 +1,27 @@
+[WebServer] (node:23460) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 18 tests using 1 worker
+
+(node:33596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 quantity.spec.ts:31:6 ΓÇ║ existing 0.125 immediate (2.3s)
+  ok  2 quantity.spec.ts:32:6 ΓÇ║ add 0.125 immediate (2.8s)
+  ok  3 quantity.spec.ts:31:6 ΓÇ║ existing 0.125 blur (2.1s)
+  ok  4 quantity.spec.ts:32:6 ΓÇ║ add 0.125 blur (2.7s)
+  ok  5 quantity.spec.ts:31:6 ΓÇ║ existing 1.3 immediate (1.9s)
+  ok  6 quantity.spec.ts:32:6 ΓÇ║ add 1.3 immediate (2.6s)
+  ok  7 quantity.spec.ts:31:6 ΓÇ║ existing 1.3 blur (1.9s)
+  ok  8 quantity.spec.ts:32:6 ΓÇ║ add 1.3 blur (2.8s)
+  ok  9 quantity.spec.ts:31:6 ΓÇ║ existing 1comma3 immediate (1.8s)
+  ok 10 quantity.spec.ts:32:6 ΓÇ║ add 1comma3 immediate (2.6s)
+  ok 11 quantity.spec.ts:31:6 ΓÇ║ existing 1comma3 blur (2.0s)
+  ok 12 quantity.spec.ts:32:6 ΓÇ║ add 1comma3 blur (2.7s)
+  ok 13 quantity.spec.ts:35:5 ΓÇ║ validation, button increment, six-place edit boundary (1.5s)
+  ok 14 quantity.spec.ts:37:5 ΓÇ║ offline add and edit replay retain decimals and identities (3.0s)
+  ok 15 quantity.spec.ts:39:5 ΓÇ║ observed one-millionth edit is omitted from request (2.1s)
+  ok 16 quantity.spec.ts:43:38 ΓÇ║ simulated visual viewport shrink edit (1.4s)
+  ok 17 quantity.spec.ts:48:5 ΓÇ║ short browser window clips add editor independently of viewport mocking (1.9s)
+  ok 18 quantity.spec.ts:54:5 ΓÇ║ committed add with lost acknowledgement replays same identity once (2.6s)
+
+  18 passed (44.5s)

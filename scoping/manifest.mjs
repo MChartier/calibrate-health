@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+const root=path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1'));
+const source=path.resolve(root,'../quantity-448');
+const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+const list=(dir)=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?list(path.join(dir,e.name)):[path.join(dir,e.name)]);
+const files=['findings.txt','quantity.spec.ts','playwright.config.ts','final-run.log','validation-run.log','manifest.mjs'].map(p=>path.join(root,p));
+for(const dir of ['final-results','supplemental-results','validation-results'])files.push(...list(path.join(root,dir)));
+const sourceFiles=['package-lock.json','mobile/package.json','e2e/expo-web/fixtures.ts','mobile/src/components/NumberStepperField.tsx','mobile/src/components/KeyboardAwareScrollView.tsx','mobile/src/components/BottomSheetModal.tsx','mobile/src/components/AddFoodSheet.tsx','mobile/src/components/FoodSelectionEditor.tsx','mobile/src/food/FoodLogContent.tsx','mobile/src/food/foodLogAmount.ts','mobile/src/food/foodLogSelection.ts','mobile/src/utils/numericInput.ts','mobile/src/hooks/useVisualViewportHeight.web.ts'];
+const record={createdAt:new Date().toISOString(),sourceCommit:'8eb6014adc6ed0ea327fa09fbd2af76afef284d5',browser:'155.0.8059.39',host:'mchartier_zbook',scope:'Read-only product scoping; scratch harness/build only. No fixed-after state.',harnessNote:'Current reproducible harness adds independent diagnostic/validation cases across runs. Traces retain the corresponding executed source. Supplemental run used earlier traffic instrumentation; no app-source change.',artifacts:files.map(p=>({path:path.relative(root,p).replaceAll('\\','/'),sha256:hash(p),bytes:fs.statSync(p).size})),sourceFiles:sourceFiles.map(p=>({path:p,sha256:hash(path.join(source,p))})),buildFiles:list(path.join(source,'mobile/dist')).map(p=>({path:path.relative(source,p).replaceAll('\\','/'),sha256:hash(p),bytes:fs.statSync(p).size}))};
+fs.writeFileSync(path.join(root,'manifest.json'),JSON.stringify(record,null,2)+'\n');
+console.log(JSON.stringify({manifestSha256:hash(path.join(root,'manifest.json')),artifactCount:record.artifacts.length,buildFileCount:record.buildFiles.length}));
