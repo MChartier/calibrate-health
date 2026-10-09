@@ -1,0 +1,34 @@
+## Summary
+
+Maintainers currently decide and run server, native and OTA releases separately, which makes unnecessary builds and uncertain retries difficult to avoid. This prepares one manual **Release changed artifacts** entrypoint that compares immutable inputs with each artifact's last verified success, proposes versions and runs only the required existing workers.
+
+The plan preserves Android phone/Wear allocation, exact-candidate CI, signed tags and image receipts. It adds independent iOS build allocation and IPA verification, compatible per-runtime OTA, and durable recovery without blindly repeating uncertain provider requests. Production approval precedes OTA environment resolution, export and publication. Backend/project/profile settings are supplied externally at build time. iOS upload inputs are prepared separately; TestFlight processing and production rollout are not claimed.
+
+Refs #447. **Review order: PR441, then this child.** Actual target: `mchartier/release-entrypoints-recovery` at `cd8932b2`; source parent: `0c26cea`; ultimate target: `master` at `9dc0739`. PR441 is preserved. Managed-hosted PR450 remains a separate integration dependency; its UI is not imported here.
+
+## Test plan and behavior evidence
+
+This is non-UI release tooling. The evidence is [actual synthetic CLI/JSON plans, worker arguments and state transitions](https://github.com/MChartier/calibrate-health/blob/80703680c484c534bcfa0f7ee18760870d2acc6f/behavior.json), with [reproduction and full evidence](https://github.com/MChartier/calibrate-health/blob/80703680c484c534bcfa0f7ee18760870d2acc6f/README.md).
+
+| Starting state and action | Expected and observed |
+| --- | --- |
+| All verified artifact inputs match; execute the plan | No stages and zero journal/candidate/provider writes. |
+| Change only server, either native platform, or either compatible bundle | Select only the corresponding stage; OTA retains the installed native runtime. |
+| Change server and both native inputs | Allocate paired Android and independent iOS versions, then run server last through its original candidate/image gates. |
+| Lose a provider response, then retry twice | Retain intent, reconcile one operation and reuse its verified result; one provider start total. |
+| Retry OTA with an empty provider inventory | Reject another publication. Changed native/configuration/export/channel identities also reject in maintained regressions. |
+| Cancel the handler before plan persistence, then start the next run | Actual workflow jobs pass through the GitHub adapter; retirement retains a tombstone and permits the next allocation. Lost provider responses retain their intent and remain blocked. |
+| Inspect the production OTA job graph without dispatching | The existing environment approval gates resolution; export, intent and publication each require the preceding job to succeed. Source export has no provider credentials. |
+| Prepare iOS delivery | Build arguments freeze existing credentials; upload arguments select an exact verified store build. Neither command was executed against a provider. |
+
+[Actual-path recovery and approval-order evidence](https://github.com/MChartier/calibrate-health/blob/517fd4b8f69a67e6e7e50f251b656849efe05556/qa-corrections.json) includes rejected unknown/missing phases, successful earlier execution and interrupted cleanup. Maintained fixtures additionally cover stale source, missing/failed CI, incompatible OTA, partial completion, conflicting receipts, concurrency and interrupted cleanup with retained tombstones/readback.
+
+## Supporting checks and limitations
+
+Current-head release tests: **278 passed, 2 existing skips**; **71 focused recovery/workflow tests passed**, and release consistency checks passed. The prior native-release, operations, Wear unit and deployment results remain applicable to unchanged code. All five current-head hosted workflows pass, including Android debug and iOS simulator compilation. Their recorded base remains `0c26cea`; the actual-target documentation impact is verified separately below. Migration and opt-in emulator/UI jobs remain skipped.
+
+Raw actionlint 1.7.12 remains **not clean**: the affected OTA workflow has only its existing `queue: max` schema diagnostic. The [full original comparison](https://github.com/MChartier/calibrate-health/blob/80703680c484c534bcfa0f7ee18760870d2acc6f/actionlint-compatibility.json) retains 61 inherited and seven added diagnostics for documented GitHub Cloud features; no broad suppression was added.
+
+Source: `50f4a845`. The [complete published scope](https://github.com/MChartier/calibrate-health/blob/517fd4b8f69a67e6e7e50f251b656849efe05556/qa-corrections-scope.json) binds four focused commits and 86 files. Actual PR merge-base/source parent is `0c26cea`; `4cbcbc7` is the ultimate-master merge-base. The two-file documentation delta to actual target `cd8932b2` remains conflict-free, with a byte-identical integrated child patch. Detailed evidence and original descriptions remain on a separate nonmerged ref.
+
+The configured Codex review [refused solely for review quota](https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6070337167); no bot review is claimed or retried. Corrections to independent QA's R1/R2 await the same reviewer's reassessment; parent PR441's separate metadata gate remains pending. Independent QA and human readiness remain with the coordinator. No actual release, paid build, credential setup, provider upload/publication, deployment or device installation occurred. Real IPA/provider validation and native-device checks remain unrun.
