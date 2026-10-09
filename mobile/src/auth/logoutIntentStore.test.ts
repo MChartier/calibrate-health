@@ -6,6 +6,47 @@ function setup(browser = false, values = new Map<string, string>(), revoke = jes
 }
 const SERVER = 'https://health.example';
 
+it('shares one non-reentrant browser lock for issuance, stale revocation and replacement', async () => {
+    const events: string[] = [];
+    const values = new Map<string, string>();
+    let locked = false;
+    const store = createLogoutIntentStore({ get: async k => values.get(k) ?? null, set: async (k,v) => { values.set(k,v); }, remove: async k => { values.delete(k); } }, async () => { events.push('revoke'); }, true, async (_key, work) => {
+        expect(locked).toBe(false); locked = true;
+        try { return await work(); } finally { locked = false; }
+    });
+    let release!: () => void;
+    const held = new Promise<void>(resolve => { release = resolve; });
+    const old = store.withBrowserSession(SERVER, async intent => {
+        await held; events.push('old-cookie');
+        await intent.beginExplicitLogout(SERVER);
+        await intent.flushExplicitLogout(SERVER);
+    });
+    const replacement = store.withBrowserSession(SERVER, async intent => {
+        await intent.flushExplicitLogout(SERVER); events.push('replacement');
+        await intent.finishExplicitLogin(SERVER);
+    });
+    expect(store.isSessionBusy(SERVER)).toBe(true);
+    release(); await Promise.all([old, replacement]);
+    expect(events).toEqual(['old-cookie','revoke','replacement']);
+    expect(store.isSessionBusy(SERVER)).toBe(false);
+    expect(await store.hasExplicitLogout(SERVER)).toBe(false);
+});
+
+it('keeps failed browser revocation ahead of replacement and resumes using the same durable intent', async () => {
+    const {store,revoke,values} = setup(true);
+    revoke.mockRejectedValueOnce(new Error('offline')).mockRejectedValueOnce(new Error('offline'));
+    await expect(store.withBrowserSession(SERVER, async intent => {
+        await intent.beginExplicitLogout(SERVER); await intent.flushExplicitLogout(SERVER);
+    })).rejects.toThrow('offline');
+    const authenticate = jest.fn();
+    await expect(store.withBrowserSession(SERVER, async intent => { await intent.flushExplicitLogout(SERVER); authenticate(); })).rejects.toThrow('offline');
+    expect(authenticate).not.toHaveBeenCalled();
+    expect([...values.values()].some(value => JSON.parse(value).pending)).toBe(true);
+    await store.withBrowserSession(SERVER, async intent => { await intent.flushExplicitLogout(SERVER); authenticate(); await intent.finishExplicitLogin(SERVER); });
+    expect(authenticate).toHaveBeenCalledTimes(1);
+    expect(store.isSessionBusy(SERVER)).toBe(false);
+});
+
 it('retains native revocation through outage/restart, then erases token material while keeping explicit sign-out', async () => {
     const first = setup();
     await first.store.beginExplicitLogout(SERVER, 'old-refresh');

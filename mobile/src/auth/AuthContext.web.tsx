@@ -1,4 +1,4 @@
-import { hasExplicitLogout, beginExplicitLogout, flushExplicitLogout, finishExplicitLogin } from './logoutIntent.web';
+import { hasExplicitLogout, flushExplicitLogout, withBrowserSession, isSessionBusy } from './logoutIntent.web';
 import { usePendingLogoutRetry } from './usePendingLogoutRetry';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, CalibrateApiClient, type UserClientPayload } from '@calibrate/api-client';
@@ -39,10 +39,8 @@ type AuthContextValue = {
     accountDeletionCleanupNotice: AccountDeletionCleanupNotice | null;
     serverConnection: ServerConnectionState;
     updateCurrentUser: (user: UserClientPayload) => void;
-    setServerUrl: (value: string) => Promise<boolean>;
-    testServerUrl: (value: string) => Promise<boolean>;
-    login: (email: string, password: string, serverCandidate: string) => Promise<boolean>;
-    register: (email: string, password: string, serverCandidate: string, acceptance: RegistrationLegalAcceptance) => Promise<boolean>;
+    login: (email: string, password: string) => Promise<boolean>;
+    register: (email: string, password: string, acceptance: RegistrationLegalAcceptance) => Promise<boolean>;
     logout: () => Promise<void>;
     clearLocalSession: () => Promise<void>;
     recheckClientCompatibility: () => Promise<boolean>;
@@ -56,7 +54,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const queryClient = useQueryClient();
     const [serverUrl] = useState(getDefaultServerUrl);
-    usePendingLogoutRetry(serverUrl, flushExplicitLogout, () => { if (!accountScopeRef.current) setAuthError(null); });
     const [user, setUser] = useState<UserClientPayload | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
@@ -65,26 +62,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [pendingReconnection, setPendingReconnection] = useState(false);
     const localOnlyRef = useRef(false);
     const accountScopeRef = useRef<{ serverUrl: string; userId: number } | null>(null);
+    const sessionEpochRef = useRef(0);
+    usePendingLogoutRetry(serverUrl, flushExplicitLogout, () => { if (!accountScopeRef.current) setAuthError(null); });
+    const [sessionEpoch, setSessionEpoch] = useState(0);
+    const advanceSessionEpoch = useCallback(() => {
+        sessionEpochRef.current += 1;
+        setSessionEpoch(sessionEpochRef.current);
+    }, []);
 
-    const acceptUser = useCallback(async (nextUser: UserClientPayload) => {
+    const acceptUser = useCallback(async (nextUser: UserClientPayload, newSession = false) => {
         const previousScope = accountScopeRef.current;
         const nextScope = { serverUrl, userId: nextUser.id };
+        if (newSession || !previousScope || previousScope.userId !== nextUser.id) advanceSessionEpoch();
         accountScopeRef.current = nextScope;
+        const acceptanceEpoch = sessionEpochRef.current;
+        const isCurrent = () => sessionEpochRef.current === acceptanceEpoch && accountScopeRef.current === nextScope;
         if (previousScope && previousScope.userId !== nextUser.id) {
             await clearOnboardingDraft(previousScope.serverUrl, previousScope.userId).catch(() => undefined);
         }
-        if (accountScopeRef.current !== nextScope) return;
+        if (!isCurrent()) return;
         if (previousScope && previousScope.userId !== nextUser.id) queryClient.clear();
-        await hydrateVerifiedOfflineWorkspace(serverUrl, nextUser.id, queryClient, () => accountScopeRef.current === nextScope);
-        if (accountScopeRef.current !== nextScope) return;
+        await hydrateVerifiedOfflineWorkspace(serverUrl, nextUser.id, queryClient, isCurrent);
+        if (!isCurrent()) return;
         localOnlyRef.current = false;
         setPendingReconnection(false);
         setAuthError(null);
         setUser(nextUser);
-        await saveOfflineWorkspace(serverUrl, nextUser, queryClient).catch(() => undefined);
-    }, [queryClient, serverUrl]);
+        await saveOfflineWorkspace(serverUrl, nextUser, queryClient, isCurrent).catch(() => undefined);
+    }, [advanceSessionEpoch, queryClient, serverUrl]);
 
     const clearSession = useCallback(async () => {
+        advanceSessionEpoch();
         const scope = accountScopeRef.current;
         accountScopeRef.current = null;
         localOnlyRef.current = false;
@@ -95,48 +103,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAuthError(null);
         queryClient.clear();
         await Promise.all([clearBrowserUserScopedCaches(), draftCleanup, workspaceCleanup]);
-    }, [queryClient, serverUrl]);
+    }, [advanceSessionEpoch, queryClient, serverUrl]);
 
     const clearSessionWithBrowserCleanup = useCallback(async () => {
+        advanceSessionEpoch();
+        const cleanupEpoch = sessionEpochRef.current;
         await cleanupBrowserPushBeforeSessionChange();
-        await clearSession();
-    }, [clearSession]);
+        if (sessionEpochRef.current === cleanupEpoch) await clearSession();
+    }, [advanceSessionEpoch, clearSession]);
 
     const api = useMemo(() => new CalibrateApiClient({
         baseUrl: serverUrl,
         requestCredentials: 'include',
         fetchImpl: (input, init) => {
+            if (isSessionBusy(serverUrl) || sessionEpochRef.current !== sessionEpoch) return Promise.reject(new Error('Authentication scope changed.'));
             if (localOnlyRef.current) return Promise.reject(new TypeError('Pending reconnection; changes remain on this device.'));
             return globalThis.fetch(input, init);
         },
         onRequestError: (error) => {
-            if (isRetryableMutationError(error)) {
+            if (sessionEpochRef.current === sessionEpoch && isRetryableMutationError(error)) {
                 if (accountScopeRef.current) localOnlyRef.current = true;
                 setPendingReconnection(true);
             }
         },
-        onUnauthorized: clearSession
-    }), [clearSession, serverUrl]);
+        onUnauthorized: () => {
+            if (sessionEpochRef.current === sessionEpoch) return clearSession();
+        }
+    }), [clearSession, serverUrl, sessionEpoch]);
 
     useEffect(() => {
         let active = true;
+        const restoreEpoch = sessionEpochRef.current;
         let mayRestoreWorkspace = false;
         setIsLoading(true);
-        void (async () => {
+        // Restoration has its own client so changing session epochs does not restart hydration.
+        const restoreApi = new CalibrateApiClient({ baseUrl: serverUrl, requestCredentials: 'include' });
+        void withBrowserSession(serverUrl, async ({ hasExplicitLogout, beginExplicitLogout, flushExplicitLogout }) => {
+            if (!active || sessionEpochRef.current !== restoreEpoch) return null;
             if (await hasExplicitLogout(serverUrl)) {
                 await clearSession();
                 await flushExplicitLogout(serverUrl).catch(() => { if (active) setAuthError('Signed out on this device. Server sign-out is pending connection.'); });
                 return null;
             }
             mayRestoreWorkspace = true;
-            return restoreBrowserDevelopmentSession(api, serverUrl);
-        })().then(async (payload) => {
-            if (active && payload) await acceptUser(payload.user);
+            const payload = await restoreBrowserDevelopmentSession(restoreApi, serverUrl);
+            if (!active || sessionEpochRef.current !== restoreEpoch) {
+                await beginExplicitLogout(serverUrl); await flushExplicitLogout(serverUrl);
+                return null;
+            }
+            if (payload) await acceptUser(payload.user);
         }).catch(async (error: unknown) => {
-            if (!active || (error instanceof ApiError && error.status === 401)) return;
+            if (!active || sessionEpochRef.current !== restoreEpoch || (error instanceof ApiError && error.status === 401)) return;
             if (mayRestoreWorkspace && isRetryableMutationError(error)) {
                 const cached = await restoreOfflineWorkspace(serverUrl, queryClient).catch(() => null);
-                if (!active) return;
+                if (!active || sessionEpochRef.current !== restoreEpoch) return;
                 if (cached) {
                     accountScopeRef.current = { serverUrl, userId: cached.id };
                     localOnlyRef.current = true;
@@ -148,8 +168,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }).finally(() => {
             if (active) setIsLoading(false);
         });
-        return () => { active = false; };
-    }, [acceptUser, api, clearSession, serverUrl]);
+        return () => { active = false; sessionEpochRef.current += 1; };
+    }, [acceptUser, clearSession, queryClient, serverUrl]);
 
     const probeCurrentServer = useCallback(async (): Promise<ServerConnectionResult> => {
         const currentRequest = requestId.current + 1;
@@ -182,92 +202,116 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const scope = accountScopeRef.current;
         if (scope?.userId !== nextUser.id) return;
         setUser(nextUser);
-        void saveOfflineWorkspace(scope.serverUrl, nextUser, queryClient).catch(() => undefined);
+        void saveOfflineWorkspace(scope.serverUrl, nextUser, queryClient, () => accountScopeRef.current === scope).catch(() => undefined);
     }, [queryClient]);
 
-    const login = useCallback(async (email: string, password: string, _serverCandidate: string) => {
-        await flushExplicitLogout(serverUrl);
-        const payload = await authenticateAgainstConfirmedServer({
-            candidate: serverUrl,
-            confirmServer: confirmCurrentServer,
-            authenticate: (baseUrl) => new CalibrateApiClient({
-                baseUrl,
-                requestCredentials: 'include'
-            }).loginBrowser({ email, password })
+    const login = useCallback(async (email: string, password: string) => {
+        advanceSessionEpoch();
+        const authEpoch = sessionEpochRef.current;
+        setUser(null);
+        return withBrowserSession(serverUrl, async ({ beginExplicitLogout, flushExplicitLogout, finishExplicitLogin }) => {
+            if (sessionEpochRef.current !== authEpoch) return false;
+            await flushExplicitLogout(serverUrl);
+            const payload = await authenticateAgainstConfirmedServer({
+                candidate: serverUrl,
+                confirmServer: confirmCurrentServer,
+                authenticate: (baseUrl) => {
+                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
+                    return new CalibrateApiClient({ baseUrl, requestCredentials: 'include' }).loginBrowser({ email, password });
+                }
+            });
+            if (!payload) return false;
+            if (sessionEpochRef.current !== authEpoch) { await beginExplicitLogout(serverUrl); await flushExplicitLogout(serverUrl); return false; }
+            await finishExplicitLogin(serverUrl);
+            if (sessionEpochRef.current !== authEpoch) { await beginExplicitLogout(serverUrl); await flushExplicitLogout(serverUrl); return false; }
+            queryClient.clear();
+            await clearBrowserUserScopedCaches();
+            if (sessionEpochRef.current !== authEpoch) { await beginExplicitLogout(serverUrl); await flushExplicitLogout(serverUrl); return false; }
+            await acceptUser(payload.user, true);
+            return true;
         });
-        if (!payload) return false;
-        await finishExplicitLogin(serverUrl);
-        queryClient.clear();
-        await clearBrowserUserScopedCaches();
-        await acceptUser(payload.user);
-        return true;
-    }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
+    }, [acceptUser, advanceSessionEpoch, confirmCurrentServer, queryClient, serverUrl]);
 
     const register = useCallback(async (
         email: string,
         password: string,
-        _serverCandidate: string,
         acceptance: RegistrationLegalAcceptance
     ) => {
-        await flushExplicitLogout(serverUrl);
-        const payload = await authenticateAgainstConfirmedServer({
-            candidate: serverUrl,
-            confirmServer: confirmCurrentServer,
-            authenticate: (baseUrl) => {
-                const legalAcceptance = requiresHostedLegalAcceptance(baseUrl)
-                    ? requireRegistrationLegalAcceptance(acceptance)
-                    : null;
-                return new CalibrateApiClient({
-                    baseUrl,
-                    requestCredentials: 'include'
-                }).registerBrowser({
-                    email,
-                    password,
-                    ...(legalAcceptance ? {
-                        terms_version: CURRENT_TERMS_VERSION,
-                        privacy_version: CURRENT_PRIVACY_VERSION,
-                        accept_terms: legalAcceptance.acceptTerms,
-                        accept_privacy: legalAcceptance.acceptPrivacy
-                    } : {})
-                });
-            }
+        advanceSessionEpoch();
+        const authEpoch = sessionEpochRef.current;
+        setUser(null);
+        return withBrowserSession(serverUrl, async ({ beginExplicitLogout, flushExplicitLogout, finishExplicitLogin }) => {
+            if (sessionEpochRef.current !== authEpoch) return false;
+            await flushExplicitLogout(serverUrl);
+            const payload = await authenticateAgainstConfirmedServer({
+                candidate: serverUrl,
+                confirmServer: confirmCurrentServer,
+                authenticate: (baseUrl) => {
+                    if (sessionEpochRef.current !== authEpoch) throw new Error('Authentication was cancelled.');
+                    const legalAcceptance = requiresHostedLegalAcceptance(baseUrl)
+                        ? requireRegistrationLegalAcceptance(acceptance)
+                        : null;
+                    return new CalibrateApiClient({
+                        baseUrl,
+                        requestCredentials: 'include'
+                    }).registerBrowser({
+                        email,
+                        password,
+                        ...(legalAcceptance ? {
+                            terms_version: CURRENT_TERMS_VERSION,
+                            privacy_version: CURRENT_PRIVACY_VERSION,
+                            accept_terms: legalAcceptance.acceptTerms,
+                            accept_privacy: legalAcceptance.acceptPrivacy
+                        } : {})
+                    });
+                }
+            });
+            if (!payload) return false;
+            if (sessionEpochRef.current !== authEpoch) { await beginExplicitLogout(serverUrl); await flushExplicitLogout(serverUrl); return false; }
+            await finishExplicitLogin(serverUrl);
+            if (sessionEpochRef.current !== authEpoch) { await beginExplicitLogout(serverUrl); await flushExplicitLogout(serverUrl); return false; }
+            queryClient.clear();
+            await clearBrowserUserScopedCaches();
+            if (sessionEpochRef.current !== authEpoch) { await beginExplicitLogout(serverUrl); await flushExplicitLogout(serverUrl); return false; }
+            await acceptUser(payload.user, true);
+            return true;
         });
-        if (!payload) return false;
-        await finishExplicitLogin(serverUrl);
-        queryClient.clear();
-        await clearBrowserUserScopedCaches();
-        await acceptUser(payload.user);
-        return true;
-    }, [acceptUser, confirmCurrentServer, queryClient, serverUrl]);
+    }, [acceptUser, advanceSessionEpoch, confirmCurrentServer, queryClient, serverUrl]);
 
     const logout = useCallback(async () => {
+        advanceSessionEpoch();
+        const logoutEpoch = sessionEpochRef.current;
         let intentPersisted = true;
-        await beginExplicitLogout(serverUrl).catch(() => { intentPersisted = false; });
-        await cleanupBrowserPushBeforeSessionChange().catch(() => undefined);
-        try {
-            await clearSession();
-        } finally {
-            // Local cleanup failure must not suppress server session revocation.
-            await flushExplicitLogout(serverUrl).catch(() => setAuthError(intentPersisted
-                ? 'Signed out on this device. Server sign-out is pending connection.'
-                : 'Signed out in this app. Device storage is unavailable and server sign-out is pending. Reconnect before closing this app.'));
-        }
-    }, [clearSession, serverUrl]);
+        return withBrowserSession(serverUrl, async ({ beginExplicitLogout, flushExplicitLogout }) => {
+            await beginExplicitLogout(serverUrl).catch(() => { intentPersisted = false; });
+            await cleanupBrowserPushBeforeSessionChange().catch(() => undefined);
+            try {
+                if (sessionEpochRef.current === logoutEpoch) await clearSession();
+            } finally {
+                // Local cleanup failure must not suppress server session revocation.
+                await flushExplicitLogout(serverUrl).catch(() => setAuthError(intentPersisted
+                    ? 'Signed out on this device. Server sign-out is pending connection.'
+                    : 'Signed out in this app. Device storage is unavailable and server sign-out is pending. Reconnect before closing this app.'));
+            }
+        });
+    }, [advanceSessionEpoch, clearSession, serverUrl]);
 
     const recheckClientCompatibility = useCallback(async () => {
         const scope = accountScopeRef.current;
+        const recoveryEpoch = sessionEpochRef.current;
+        if (isSessionBusy(serverUrl)) return false;
         if (await hasExplicitLogout(serverUrl)) { await flushExplicitLogout(serverUrl); return false; }
         const recovery = new CalibrateApiClient({ baseUrl: serverUrl, requestCredentials: 'include' });
         try {
             const payload = await recovery.getMe();
-            if (accountScopeRef.current !== scope) return false;
+            if (isSessionBusy(serverUrl) || sessionEpochRef.current !== recoveryEpoch || accountScopeRef.current !== scope) return false;
             if (accountScopeRef.current && payload.user.id !== accountScopeRef.current.userId) {
                 await clearSession();
                 return false;
             }
             await acceptUser(payload.user);
         } catch (error) {
-            if (accountScopeRef.current !== scope) return false;
+            if (isSessionBusy(serverUrl) || sessionEpochRef.current !== recoveryEpoch || accountScopeRef.current !== scope) return false;
             if (error instanceof ApiError && error.status === 401) await clearSession();
             throw error;
         }
@@ -280,7 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (event.type !== 'updated' || event.action.type !== 'success') return;
             const scope = accountScopeRef.current;
             if (scope?.userId === user.id && scope.serverUrl === serverUrl) {
-                void saveOfflineWorkspace(serverUrl, user, queryClient).catch(() => undefined);
+                void saveOfflineWorkspace(serverUrl, user, queryClient, () => accountScopeRef.current === scope).catch(() => undefined);
             }
         });
     }, [queryClient, serverUrl, user]);
@@ -300,8 +344,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accountDeletionCleanupNotice: null,
         serverConnection,
         updateCurrentUser,
-        setServerUrl: async () => (await confirmCurrentServer()).ok,
-        testServerUrl: async () => (await probeCurrentServer()).ok,
         login,
         register,
         logout,
