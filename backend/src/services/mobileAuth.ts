@@ -77,7 +77,7 @@ export async function issueVerifiedMobileAuthPayload(opts: {
   return prisma.$transaction(async (tx) => {
     // This row lock orders issuance against password writers and account deletion.
     const current = await tx.user.updateMany({
-      where: { id: opts.userId, credential_security_version: opts.credentialSecurityVersion },
+      where: { id: opts.userId, credential_security_version: opts.credentialSecurityVersion, deletion_pending: false },
       data: { credential_security_version: opts.credentialSecurityVersion }
     });
     if (current.count !== 1) return null;

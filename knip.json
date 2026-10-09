@@ -24,7 +24,7 @@
     },
     "backend": {
       "entry": ["src/index.ts!", "prisma.config.ts", "prisma/seed.ts", "scripts/*.js", "test/**/*.test.js"],
-      "project": ["src/**/*.ts!", "prisma/**/*.prisma", "prisma/**/*.ts", "scripts/**/*.js", "test/**/*.js"],
+      "project": ["src/**/*.ts!", "!src/services/accountDeletion.ts!", "prisma/**/*.prisma", "prisma/**/*.ts", "scripts/**/*.js", "test/**/*.js"],
       "ignoreDependencies": ["@redocly/openapi-core", "openapi-typescript"],
       "prisma": { "config": [] }
     },

@@ -105,7 +105,7 @@ test('background pause materialization excludes accounts without current access'
 
   assert.deepEqual(capturedWhere, {
     resumed_on: null,
-    user: { is: { email_verified_at: { not: null } } }
+    user: { is: { email_verified_at: { not: null }, deletion_pending: false } }
   });
 });
 

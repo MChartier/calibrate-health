@@ -741,7 +741,7 @@ const loginDevice = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHON
 test('verified mobile issuance rejects stale credentials before reading account or creating tokens', async () => {
   let created = false;
   const tx = { user: { updateMany: async ({ where, data }) => {
-    assert.deepEqual(where, { id: 4, credential_security_version: 8 });
+    assert.deepEqual(where, { id: 4, credential_security_version: 8, deletion_pending: false });
     assert.deepEqual(data, { credential_security_version: 8 });
     return { count: 0 };
   }, findUnique: async () => { throw Error('must not read stale account'); } },

@@ -236,7 +236,7 @@ const bootstrap = async (): Promise<void> => {
         }
 
         const user = await prisma.user.findFirst({
-          where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+          where: { email: { equals: normalizedEmail, mode: 'insensitive' }, deletion_pending: false },
           orderBy: { id: 'asc' },
           select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true },
         });
@@ -261,7 +261,7 @@ const bootstrap = async (): Promise<void> => {
     try {
       // Keep req.user small and non-sensitive; routes can fetch extra columns as needed.
       const user = await prisma.user.findUnique({
-        where: { id },
+        where: { id, deletion_pending: false },
         select: {
           id: true,
           email: true,

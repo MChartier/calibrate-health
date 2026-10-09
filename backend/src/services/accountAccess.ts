@@ -48,7 +48,7 @@ export function serializeLegalStatus(source: AccountAccessSource): LegalStatusPa
 
 export async function getAccountAccess(userId: number): Promise<AccountAccess | null> {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userId, deletion_pending: false },
     select: ACCOUNT_ACCESS_SELECT
   });
   return user ? serializeAccountAccess(user) : null;
