@@ -1,0 +1,82 @@
+{
+  "data": {
+    "repository": {
+      "issue": {
+        "projectItems": {
+          "nodes": [
+            {
+              "id": "PVTI_lAHOABMy1c4Bl3Eqzg_kB5Q",
+              "project": {
+                "number": 1,
+                "title": "Agentic development pipeline"
+              },
+              "fieldValues": {
+                "nodes": [
+                  {},
+                  {},
+                  {},
+                  {
+                    "text": "Validate release candidates without manual CI approval and stabilize goal-pace smoke",
+                    "field": {
+                      "name": "Title"
+                    }
+                  },
+                  {
+                    "name": "In Progress",
+                    "field": {
+                      "name": "Status"
+                    }
+                  },
+                  {
+                    "name": "Review / QA",
+                    "field": {
+                      "name": "Pipeline state"
+                    }
+                  },
+                  {
+                    "text": "01a11db5-8540-740a-a673-1026c0b90007; admitted turn01a11eea-2e8d-7122-b237-7df707b9d9ab",
+                    "field": {
+                      "name": "Owner"
+                    }
+                  },
+                  {
+                    "text": "https://github.com/MChartier/calibrate-health/pull/458",
+                    "field": {
+                      "name": "Current PRs"
+                    }
+                  },
+                  {
+                    "text": "2026-10-09T05:02:52.714Z",
+                    "field": {
+                      "name": "Verified at"
+                    }
+                  },
+                  {
+                    "text": "Implementation and hosted CI are complete; the owner is clean and idle. Independent QA is queued after PR452, and coordinated assessment of PR441/452 overlap remains pending. No readiness or live release retry is authorized.",
+                    "field": {
+                      "name": "Blocked by"
+                    }
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      "pullRequest": {
+        "projectItems": {
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    }
+  }
+}
