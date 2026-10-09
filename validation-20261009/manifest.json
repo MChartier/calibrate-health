@@ -1,0 +1,93 @@
+{
+  "checkedAtUtc": "2026-10-09T05:22:18.2989081Z",
+  "host": "MCHARTIER_ZBOOK",
+  "workflow": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewOverlay": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "master": "547206a1b372b73fc95fc412ad453b8099440000",
+  "masterTree": "0512b6da0c86f102c3691757033a7a4c889afa11",
+  "head": "c62450c77c7b6a127e04cc698cdcb7d11cb7d762",
+  "headTree": "2c51305681eb4027246784cd9333945a62edee3c",
+  "headParent": "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+  "syntheticTree": "5a68e939a27dfc890e239058eb298be7f4564db5",
+  "patchSha256": "7e05772d6d38ec1858265904cfd0435455ba0b436520467fcc839172ca5dee53",
+  "sourceMode": "detached master plus indexed own-parent deletion patch; no commit or remote write",
+  "database": "127.0.0.1:55453/calibrate_test_453_order",
+  "databaseVersion": "PostgreSQL 16.14",
+  "postgresPid": 30072,
+  "databaseDropped": true,
+  "testSchemasDropped": true,
+  "postgresStopped": true,
+  "node": "24.19.0",
+  "dependencies": "Existing deletion-451/backend/node_modules and root node_modules via NODE_PATH; read only; same unchanged Prisma schema; transpile-only, no new typecheck",
+  "maintainedTestExitCode": 0,
+  "maintainedTestCount": 23,
+  "orderingExitCode": 0,
+  "orderingScenarioGroups": 12,
+  "refsUnchangedAfter": true,
+  "historicalExecutor": "unresolved",
+  "limitations": [
+    "Synthetic combined tree only; not current published-head execution or readiness.",
+    "Actual metrics/import route handlers and Wear service; no HTTP auth middleware or native device.",
+    "Import fixture contains weights only; food writes are outside weight transaction.",
+    "Import has no operation receipt; retry is same-value overwrite, not operation-ID idempotency.",
+    "Pending writer behavior is metric HTTP-handler 500 or import/Wear P2010 rejection; no runtime UI contract assessed.",
+    "Full historical suites not rerun."
+  ],
+  "artifacts": [
+    {
+      "file": "cleanup.log",
+      "sha256": "d67bf1b29503fa4743ba5ab1fb7344860fc690d8a35b0c5c171cde84e85b1731",
+      "bytes": 121
+    },
+    {
+      "file": "commands.ps1",
+      "sha256": "d9018e490b1f1f2e20bb6096d5a794414c2aa0aee86a64aebdb1bd5dd5889b6d",
+      "bytes": 2676
+    },
+    {
+      "file": "initdb.log",
+      "sha256": "2a95f15cf83571d13cf365aef85482555fa055cd75f8e17612e9125acc888279",
+      "bytes": 992
+    },
+    {
+      "file": "maintained-deletion-postgres.log",
+      "sha256": "ca96f8f4e76241593c4341cc22ed47fb3caac150a343d622e9c956567d747110",
+      "bytes": 2561
+    },
+    {
+      "file": "ordering-migrations.log",
+      "sha256": "09c363244e87fbfc03933849b4bb0a04a09e86a132033564ba21a8d3b9a4ac7f",
+      "bytes": 5726
+    },
+    {
+      "file": "ordering-results.json",
+      "sha256": "d54d856b7724bce53f309e8661c9505cef98ae9f2537f4a8e2924c436deecaac",
+      "bytes": 3642
+    },
+    {
+      "file": "ordering.cjs",
+      "sha256": "a26865063c5eaade0497d8571b39d72b7c9c4a526271166a1952fb6c3ce40ae0",
+      "bytes": 8974
+    },
+    {
+      "file": "ordering.log",
+      "sha256": "4461f653bdf5f8b8f8e8db74de7482255d0955475b18e8b0d157a28ab26bd1b8",
+      "bytes": 4045
+    },
+    {
+      "file": "postgres.pid",
+      "sha256": "6a3411e5df67131d9b085e623cf82475cdba9838ce59b56dc6a938be65002332",
+      "bytes": 7
+    },
+    {
+      "file": "postgres.stderr.log",
+      "sha256": "0c5d476af040799a353cca581b403e9dcc98a6bfbd129be4500e9a805df2f5a3",
+      "bytes": 29811
+    },
+    {
+      "file": "postgres.stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

@@ -1,0 +1,1185 @@
+diff --git a/backend/prisma/migrations/0046_dormant_account_deletion/migration.sql b/backend/prisma/migrations/0046_dormant_account_deletion/migration.sql
+new file mode 100644
+index 00000000..92ec8fac
+--- /dev/null
++++ b/backend/prisma/migrations/0046_dormant_account_deletion/migration.sql
+@@ -0,0 +1,122 @@
++-- No runtime producer is installed. Existing accounts remain active and local.
++ALTER TABLE "User" ADD COLUMN "deletion_pending" BOOLEAN NOT NULL DEFAULT FALSE;
++CREATE TABLE "AccountDeletion" (
++  "operation_id" TEXT PRIMARY KEY,
++  "user_id" INTEGER NOT NULL UNIQUE,
++  "installation_id" TEXT NOT NULL,
++  "source_id" TEXT NOT NULL,
++  "project_id" TEXT NOT NULL,
++  "uid" TEXT NOT NULL,
++  "credential_version" INTEGER NOT NULL CHECK ("credential_version" >= 0),
++  "state" TEXT NOT NULL DEFAULT 'pending_provider' CHECK ("state" IN ('pending_provider', 'provider_confirmed', 'complete')),
++  "claim_generation" INTEGER NOT NULL DEFAULT 0 CHECK ("claim_generation" >= 0),
++  "claim_until" TIMESTAMP(3),
++  "last_outcome" TEXT,
++  "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
++  "completed_at" TIMESTAMP(3),
++  UNIQUE ("project_id", "uid"),
++  CHECK (length("operation_id") BETWEEN 16 AND 100),
++  CHECK (length("installation_id") BETWEEN 3 AND 100 AND length("source_id") BETWEEN 3 AND 100
++    AND length("project_id") BETWEEN 3 AND 100 AND length("uid") BETWEEN 1 AND 128),
++  CHECK (("state" = 'complete') = ("completed_at" IS NOT NULL))
++);
++CREATE INDEX "AccountDeletion_state_claim_until_idx" ON "AccountDeletion"("state", "claim_until");
++
++CREATE FUNCTION "calibrate_deletion_receipt_guard"() RETURNS trigger AS $$
++BEGIN
++  IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'Deletion receipts cannot be removed'; END IF;
++  IF ROW(NEW."operation_id", NEW."user_id", NEW."installation_id", NEW."source_id", NEW."project_id", NEW."uid", NEW."credential_version", NEW."created_at")
++    IS DISTINCT FROM ROW(OLD."operation_id", OLD."user_id", OLD."installation_id", OLD."source_id", OLD."project_id", OLD."uid", OLD."credential_version", OLD."created_at")
++    OR NEW."claim_generation" < OLD."claim_generation"
++    OR (OLD."state" = 'provider_confirmed' AND NEW."state" = 'pending_provider')
++    OR (OLD."state" = 'complete' AND NEW IS DISTINCT FROM OLD)
++    OR (OLD."state" = 'pending_provider' AND NEW."state" = 'complete') THEN
++    RAISE EXCEPTION 'Deletion receipt cannot change identity or rewind';
++  END IF;
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql;
++CREATE TRIGGER "AccountDeletion_guard" BEFORE UPDATE OR DELETE ON "AccountDeletion"
++  FOR EACH ROW EXECUTE FUNCTION "calibrate_deletion_receipt_guard"();
++
++CREATE FUNCTION "calibrate_pending_deletion_guard"() RETURNS trigger AS $$
++DECLARE allowed BOOLEAN;
++BEGIN
++  IF TG_OP = 'INSERT' THEN
++    EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I."AccountDeletion" WHERE user_id = $1)', TG_TABLE_SCHEMA)
++      INTO allowed USING NEW.id;
++    IF allowed OR NEW.deletion_pending THEN RAISE EXCEPTION 'Deleted account identity cannot be recreated'; END IF;
++    RETURN NEW;
++  END IF;
++  IF TG_OP = 'DELETE' THEN
++    IF OLD.deletion_pending THEN
++      EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I."AccountDeletion" WHERE user_id = $1 AND state = ''complete'')', TG_TABLE_SCHEMA)
++        INTO allowed USING OLD.id;
++      IF NOT allowed THEN RAISE EXCEPTION 'Account deletion is pending'; END IF;
++    END IF;
++    RETURN OLD;
++  END IF;
++  IF OLD.deletion_pending THEN RAISE EXCEPTION 'Account deletion is pending'; END IF;
++  IF NEW.deletion_pending THEN
++    EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I."AccountDeletion" d JOIN %I."FirebaseIdentity" f ON f.user_id = d.user_id WHERE d.user_id = $1 AND d.credential_version = $2 AND d.state = ''pending_provider'' AND (d.installation_id,d.source_id,d.project_id,d.uid) = (f.installation_id,f.source_id,f.project_id,f.uid))', TG_TABLE_SCHEMA, TG_TABLE_SCHEMA)
++      INTO allowed USING OLD.id, OLD.credential_security_version;
++    IF NOT allowed OR NEW.credential_security_version <> OLD.credential_security_version + 1 THEN
++      RAISE EXCEPTION 'Deletion requires a bound durable intent';
++    END IF;
++  END IF;
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql;
++CREATE TRIGGER "User_deletion_guard" BEFORE INSERT OR UPDATE OR DELETE ON "User"
++  FOR EACH ROW EXECUTE FUNCTION "calibrate_pending_deletion_guard"();
++
++-- Lock only mapped accounts. Ordinary unmapped local-account writers keep their existing ordering.
++-- For mapped accounts, PostgreSQL may abort a conflicting older writer; it must retry, never bypass the fence.
++CREATE FUNCTION "calibrate_deletion_access_guard"() RETURNS trigger AS $$
++DECLARE owner_id INTEGER; pending BOOLEAN;
++BEGIN
++  IF TG_TABLE_NAME IN ('McpOAuthAccessToken', 'McpOAuthRefreshToken') THEN
++    EXECUTE format('SELECT user_id FROM %I."McpOAuthGrant" WHERE id = $1', TG_TABLE_SCHEMA)
++      INTO owner_id USING NEW.grant_id;
++  ELSE owner_id := NEW.user_id;
++  END IF;
++  IF owner_id IS NULL THEN RETURN NEW; END IF;
++  EXECUTE format('SELECT u.deletion_pending FROM %I."User" u WHERE u.id = $1 AND (u.deletion_pending OR EXISTS (SELECT 1 FROM %I."FirebaseIdentity" f WHERE f.user_id = u.id)) FOR UPDATE OF u', TG_TABLE_SCHEMA, TG_TABLE_SCHEMA)
++    INTO pending USING owner_id;
++  IF pending THEN RAISE EXCEPTION 'Account deletion is pending'; END IF;
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql;
++DO $$
++DECLARE target TEXT;
++BEGIN
++  FOREACH target IN ARRAY ARRAY['session_store','MobileAuthSession','AccountActionToken','McpOAuthGrant','McpOAuthAuthorizationCode','McpOAuthAccessToken','McpOAuthRefreshToken','WearPairingCredential','PushSubscription','NativePushSubscription'] LOOP
++    EXECUTE format('CREATE TRIGGER %I BEFORE INSERT OR UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION "calibrate_deletion_access_guard"()', target || '_deletion_guard', target);
++  END LOOP;
++END;
++$$;
++
++CREATE FUNCTION "calibrate_deleted_identity_guard"() RETURNS trigger AS $$
++DECLARE retired BOOLEAN;
++BEGIN
++  EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I."AccountDeletion" WHERE user_id = $1 OR (project_id = $2 AND uid = $3))', TG_TABLE_SCHEMA)
++    INTO retired USING NEW.user_id, NEW.project_id, NEW.uid;
++  IF retired THEN RAISE EXCEPTION 'Deletion identity is reserved'; END IF;
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql;
++CREATE TRIGGER "FirebaseIdentity_deletion_guard" BEFORE INSERT ON "FirebaseIdentity"
++  FOR EACH ROW EXECUTE FUNCTION "calibrate_deleted_identity_guard"();
++
++-- The receipt and account transition must commit together, including when finalization fails.
++CREATE FUNCTION "calibrate_deletion_consistency"() RETURNS trigger AS $$
++DECLARE valid BOOLEAN;
++BEGIN
++  EXECUTE format('SELECT CASE WHEN d.state = ''complete'' THEN NOT EXISTS (SELECT 1 FROM %I."User" u WHERE u.id = d.user_id) ELSE EXISTS (SELECT 1 FROM %I."User" u JOIN %I."FirebaseIdentity" f ON f.user_id = u.id WHERE u.id = d.user_id AND u.deletion_pending AND u.credential_security_version = d.credential_version + 1 AND (f.installation_id,f.source_id,f.project_id,f.uid) = (d.installation_id,d.source_id,d.project_id,d.uid)) END FROM %I."AccountDeletion" d WHERE d.operation_id = $1', TG_TABLE_SCHEMA, TG_TABLE_SCHEMA, TG_TABLE_SCHEMA, TG_TABLE_SCHEMA)
++    INTO valid USING NEW.operation_id;
++  IF valid IS DISTINCT FROM TRUE THEN RAISE EXCEPTION 'Deletion receipt and account must commit together'; END IF;
++  RETURN NULL;
++END;
++$$ LANGUAGE plpgsql;
++CREATE CONSTRAINT TRIGGER "AccountDeletion_consistent" AFTER INSERT OR UPDATE ON "AccountDeletion"
++  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "calibrate_deletion_consistency"();
+diff --git a/backend/prisma/rollback/0046_dormant_account_deletion.sql b/backend/prisma/rollback/0046_dormant_account_deletion.sql
+new file mode 100644
+index 00000000..ba8b62b3
+--- /dev/null
++++ b/backend/prisma/rollback/0046_dormant_account_deletion.sql
+@@ -0,0 +1,24 @@
++-- Explicit preparation rollback only. Never discard an accepted operation, even a completed receipt.
++-- Run against the same database/schema; restoring an older backup is not a lifecycle rollback.
++BEGIN;
++LOCK TABLE "User", "AccountDeletion" IN ACCESS EXCLUSIVE MODE;
++DO $$ BEGIN
++  IF EXISTS (SELECT 1 FROM "AccountDeletion") OR EXISTS (SELECT 1 FROM "User" WHERE deletion_pending) THEN
++    RAISE EXCEPTION 'Refusing rollback: retain deletion operations and use a compatible application';
++  END IF;
++END $$;
++DROP TRIGGER "User_deletion_guard" ON "User";
++DROP TRIGGER "FirebaseIdentity_deletion_guard" ON "FirebaseIdentity";
++DO $$ DECLARE target TEXT; BEGIN
++  FOREACH target IN ARRAY ARRAY['session_store','MobileAuthSession','AccountActionToken','McpOAuthGrant','McpOAuthAuthorizationCode','McpOAuthAccessToken','McpOAuthRefreshToken','WearPairingCredential','PushSubscription','NativePushSubscription'] LOOP
++    EXECUTE format('DROP TRIGGER %I ON %I', target || '_deletion_guard', target);
++  END LOOP;
++END $$;
++DROP TABLE "AccountDeletion";
++ALTER TABLE "User" DROP COLUMN "deletion_pending";
++DROP FUNCTION "calibrate_deletion_consistency"();
++DROP FUNCTION "calibrate_deleted_identity_guard"();
++DROP FUNCTION "calibrate_deletion_access_guard"();
++DROP FUNCTION "calibrate_pending_deletion_guard"();
++DROP FUNCTION "calibrate_deletion_receipt_guard"();
++COMMIT;
+diff --git a/backend/prisma/rollback/account-deletion-contract.md b/backend/prisma/rollback/account-deletion-contract.md
+new file mode 100644
+index 00000000..dd5ca670
+--- /dev/null
++++ b/backend/prisma/rollback/account-deletion-contract.md
+@@ -0,0 +1,70 @@
++# Dormant account deletion contract
++
++Migration `0046_dormant_account_deletion` prepares cross-store deletion. It does
++not select Firebase, install a provider adapter, or expose an endpoint or worker.
++`AUTH_PROVIDER` must still be `local`. Only maintained tests construct
++`AccountDeletionCoordinator` with an injected synthetic provider.
++Knip excludes this one file only from its production graph; the ordinary graph
++checks its test consumers, and a maintained test rejects production imports.
++
++## State and transaction boundaries
++
++1. `authenticate(userId, password)` requires an existing immutable mapping and
++   matching provider authentication no older than 60 seconds. Its opaque proof
++   belongs to that coordinator instance and carries the observed credential
++   security version. Neither password nor provider credentials are persisted.
++2. `begin(operationId, proof)` accepts a UUIDv4 operation identity. Under the User
++   lock it rechecks the proof, mapping and version, then atomically records intent,
++   revokes browser/native/MCP/Wear/recovery credentials, increments the security
++   version and sets `deletion_pending`. A repeated identical request is idempotent;
++   another operation or stale proof cannot replace the intent. Accepted intent
++   cannot be cancelled automatically. Unmapped local accounts never enter it.
++3. `resume(operationId)` claims a pending receipt with a monotonically increasing
++   generation and a 60-second lease. Provider inspection/deletion happens outside
++   SQL transactions, with a bounded timeout (default five seconds). Observations
++   must match the entire user/installation/source/project/UID tuple. A timeout or
++   lost response remains pending; identity mismatch returns `held`. Neither result
++   changes the authority or removes SQL data. Reinspection handles a deletion that
++   succeeded despite a lost response. An outage alone cannot create an intent.
++4. Confirmed absence persists `provider_confirmed`. A fenced transaction then
++   removes the SQL account and completes its independent receipt together. Crashes
++   can replay the same operation; older claim generations cannot finalize it.
++   Receipts reserve both the old user ID and provider project/UID after cascades.
++   There is intentionally no receipt purge policy or production resumer here.
++
++The adapter contract requires idempotent deletion of the exact immutable tuple;
++it must never resolve an account by email or translate unavailability into
++`absent`. Cancellation is advisory: a timed-out call may still finish, so a later
++attempt must inspect before repeating deletion. A real adapter, authoritative
++absence semantics and provider-side identity reuse controls require separate
++review before activation.
++
++Database guards cover older browser/native session, recovery, MCP, Wear and push
++writers. Mapped-account writes serialize on User; a writer with an older lock
++order can receive a PostgreSQL deadlock/transaction error and must retry from a
++fresh transaction. Errors never authorize a fallback or restore pending access.
++Unmapped local writers retain their previous lock ordering. Existing local
++registration, reset, deletion and password-change current-session behavior remain
++unchanged. No client cache, offline outbox, account/server identity or UI changes
++are included. Runtime activation still needs its own client/recovery contract.
++
++## Rollback and validation
++
++`0046_dormant_account_deletion.sql` is a guarded schema rollback, not an operational
++deployment command. It locks the affected tables and refuses **any** accepted
++receipt or pending account, including completed receipts. With no accepted
++operations it removes only this additive schema. It never erases intent to make
++rollback succeed. Prisma migration metadata is not rewritten by this SQL; any
++operational rollback/redeployment needs a separately reviewed migration plan.
++Restoring an old backup after provider work is not established safe by these tests.
++
++From `backend`, set `CALIBRATE_AUTH_TEST_DATABASE_URL` to a disposable loopback
++PostgreSQL database named `calibrate_ci` or `calibrate_test...`, then run
++`node -r ts-node/register --test test/account-deletion-postgres.test.js`.
++The suite creates and removes only its uniquely named schema and synthetic
++provider state. It tests real process termination, ambiguous provider outcomes,
++transaction failure, lease takeover, both race orders, legacy lock conflicts,
++populated schema rollback/re-upgrade and refusal to discard accepted receipts.
++`npm test` also runs the ordinary browser/native/MCP/Wear/recovery regressions.
++These checks establish a dormant synthetic contract, not a Firebase rehearsal or
++permission to migrate, activate, import, deploy or change retention policy.
+diff --git a/backend/prisma/schema.prisma b/backend/prisma/schema.prisma
+index 65728454..74c2694a 100755
+--- a/backend/prisma/schema.prisma
++++ b/backend/prisma/schema.prisma
+@@ -112,6 +112,7 @@ model User {
+   password_hash     String
+   /// Monotonic credential/security generation; database trigger advances it on password changes.
+   credential_security_version Int @default(0)
++  deletion_pending Boolean @default(false)
+   /// Prepared immutable provider mapping; existence does not switch credential authority.
+   firebase_identity FirebaseIdentity?
+   created_at        DateTime  @default(now())
+@@ -192,6 +193,26 @@ model User {
+   mcp_oauth_grants McpOAuthGrant[]
+ }
+ 
++/// Internal durable deletion receipt. Deliberately independent of the account cascade.
++model AccountDeletion {
++  operation_id String @id
++  user_id Int @unique
++  installation_id String
++  source_id String
++  project_id String
++  uid String
++  credential_version Int
++  state String @default("pending_provider")
++  claim_generation Int @default(0)
++  claim_until DateTime?
++  last_outcome String?
++  created_at DateTime @default(now())
++  completed_at DateTime?
++
++  @@unique([project_id, uid])
++  @@index([state, claim_until])
++}
++
+ model FirebaseIdentity {
+   user_id Int @id
+   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+diff --git a/backend/src/index.ts b/backend/src/index.ts
+index 161df554..eafd89fd 100644
+--- a/backend/src/index.ts
++++ b/backend/src/index.ts
+@@ -236,7 +236,7 @@ const bootstrap = async (): Promise<void> => {
+         }
+ 
+         const user = await prisma.user.findFirst({
+-          where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
++          where: { email: { equals: normalizedEmail, mode: 'insensitive' }, deletion_pending: false },
+           orderBy: { id: 'asc' },
+           select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true },
+         });
+@@ -261,7 +261,7 @@ const bootstrap = async (): Promise<void> => {
+     try {
+       // Keep req.user small and non-sensitive; routes can fetch extra columns as needed.
+       const user = await prisma.user.findUnique({
+-        where: { id },
++        where: { id, deletion_pending: false },
+         select: {
+           id: true,
+           email: true,
+diff --git a/backend/src/routes/auth.ts b/backend/src/routes/auth.ts
+index e1ad18c7..6c1642ba 100755
+--- a/backend/src/routes/auth.ts
++++ b/backend/src/routes/auth.ts
+@@ -285,7 +285,7 @@ router.post('/email-verification/resend', async (req, res) => {
+             const email = normalizeEmailCredential(req.body?.email);
+             if (email) {
+                 const user = await prisma.user.findFirst({
+-                    where: { email: { equals: email, mode: 'insensitive' } },
++                    where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
+                     select: { id: true }
+                 });
+                 userId = user?.id ?? null;
+@@ -333,7 +333,7 @@ router.post('/password-reset/request', async (req, res) => {
+         const email = normalizeEmailCredential(req.body?.email);
+         if (email) {
+             const user = await prisma.user.findFirst({
+-                where: { email: { equals: email, mode: 'insensitive' } },
++                where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
+                 select: { id: true, email: true }
+             });
+             if (user) {
+@@ -430,7 +430,7 @@ router.post('/mobile/login', async (req, res) => {
+ 
+     try {
+         const user = await prisma.user.findFirst({
+-            where: { email: { equals: email, mode: 'insensitive' } },
++            where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
+             select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true }
+         });
+         const isMatch = await verifyLocalPassword(password, user?.password_hash);
+@@ -682,7 +682,7 @@ router.get('/me', async (req, res) => {
+         const user = getAuthenticatedUser(req);
+         try {
+             // Refresh from the database to avoid stale session snapshots.
+-            const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: USER_CLIENT_SELECT });
++            const dbUser = await prisma.user.findUnique({ where: { id: user.id, deletion_pending: false }, select: USER_CLIENT_SELECT });
+             if (!dbUser) {
+                 return res.status(401).json({ message: 'Not authenticated' });
+             }
+diff --git a/backend/src/services/accountAccess.ts b/backend/src/services/accountAccess.ts
+index 7bbd7506..b8ba669c 100644
+--- a/backend/src/services/accountAccess.ts
++++ b/backend/src/services/accountAccess.ts
+@@ -48,7 +48,7 @@ export function serializeLegalStatus(source: AccountAccessSource): LegalStatusPa
+ 
+ export async function getAccountAccess(userId: number): Promise<AccountAccess | null> {
+   const user = await prisma.user.findUnique({
+-    where: { id: userId },
++    where: { id: userId, deletion_pending: false },
+     select: ACCOUNT_ACCESS_SELECT
+   });
+   return user ? serializeAccountAccess(user) : null;
+diff --git a/backend/src/services/accountDeletion.ts b/backend/src/services/accountDeletion.ts
+new file mode 100644
+index 00000000..c4d3074c
+--- /dev/null
++++ b/backend/src/services/accountDeletion.ts
+@@ -0,0 +1,156 @@
++import type { AccountDeletion, PrismaClient } from '@prisma/client';
++import { MS_PER_MINUTE } from '../utils/time';
++
++type Identity = { userId: number; installationId: string; sourceId: string; projectId: string; uid: string };
++type Observation = { identity: Identity; status: 'present' | 'absent' };
++type Authentication = { identity: Identity; authenticatedAt: Date };
++
++/** No implementation or runtime construction is shipped. Tests supply the entire provider. */
++interface DeletionProvider {
++  authenticate(identity: Identity, password: string, signal: AbortSignal): Promise<Authentication | null>;
++  inspect(identity: Identity, signal: AbortSignal): Promise<Observation>;
++  delete(identity: Identity, signal: AbortSignal): Promise<void>;
++}
++
++const identityOf = (row: Pick<AccountDeletion, 'user_id' | 'installation_id' | 'source_id' | 'project_id' | 'uid'>): Identity => ({
++  userId: row.user_id, installationId: row.installation_id, sourceId: row.source_id, projectId: row.project_id, uid: row.uid
++});
++const sameIdentity = (a: Identity, b: Identity): boolean => Boolean(b) &&
++  a.userId === b.userId && a.installationId === b.installationId && a.sourceId === b.sourceId && a.projectId === b.projectId && a.uid === b.uid;
++const operationPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
++const PROOF_TTL_MS = MS_PER_MINUTE;
++const CLAIM_TTL_MS = MS_PER_MINUTE;
++type Proof = { identity: Identity; version: number; expiresAt: number };
++class IdentityMismatch extends Error {}
++
++/** Dormant internal coordinator: explicit dependencies, no HTTP, queue, timer or production caller. */
++export class AccountDeletionCoordinator {
++  private readonly proofs = new WeakMap<object, Proof>();
++
++  constructor(private readonly database: PrismaClient, private readonly provider: DeletionProvider,
++    private readonly timeoutMs = 5000) {
++    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 10_000) throw Error('Invalid provider timeout');
++  }
++
++  private async bounded<T>(work: (signal: AbortSignal) => Promise<T>): Promise<T> {
++    const controller = new AbortController();
++    let timer: ReturnType<typeof setTimeout> | undefined;
++    try {
++      return await Promise.race([Promise.resolve().then(() => work(controller.signal)), new Promise<never>((_, reject) => {
++        timer = setTimeout(() => { controller.abort(); reject(Error('Provider unavailable')); }, this.timeoutMs);
++      })]);
++    } finally { if (timer) clearTimeout(timer); }
++  }
++
++  /** Produces an unforgeable, process-local proof; password/provider credentials are never retained. */
++  async authenticate(userId: number, password: string): Promise<object | null> {
++    const user = await this.database.user.findUnique({
++      where: { id: userId, deletion_pending: false },
++      select: { credential_security_version: true, firebase_identity: true }
++    });
++    if (!user?.firebase_identity) return null;
++    const identity = identityOf(user.firebase_identity);
++    let authenticated: Authentication | null;
++    try { authenticated = await this.bounded(signal => this.provider.authenticate({ ...identity }, password, signal)); }
++    catch { return null; }
++    const time = authenticated?.authenticatedAt instanceof Date ? authenticated.authenticatedAt.getTime() : NaN;
++    const now = Date.now();
++    if (!authenticated || !sameIdentity(identity, authenticated.identity) || !Number.isFinite(time) ||
++      time! > now || time! < now - PROOF_TTL_MS) return null;
++    const proof = Object.freeze({});
++    this.proofs.set(proof, { identity, version: user.credential_security_version, expiresAt: time! + PROOF_TTL_MS });
++    return proof;
++  }
++
++  async begin(operationId: string, proof: object): Promise<string> {
++    const verified = this.proofs.get(proof);
++    if (!operationPattern.test(operationId) || !verified || verified.expiresAt <= Date.now()) throw Error('Invalid deletion proof');
++    return this.database.$transaction(async tx => {
++      // All successful intent writers first serialize on the immutable application account.
++      const locked = await tx.user.updateMany({
++        where: { id: verified.identity.userId, deletion_pending: false, credential_security_version: verified.version },
++        data: { credential_security_version: verified.version }
++      });
++      if (locked.count !== 1) {
++        const previous = await tx.accountDeletion.findUnique({ where: { operation_id: operationId } });
++        if (previous && previous.credential_version === verified.version && sameIdentity(verified.identity, identityOf(previous))) return previous.state;
++        throw Error('Deletion proof is no longer current');
++      }
++      if (verified.expiresAt <= Date.now()) throw Error('Deletion proof expired');
++      const identity = await tx.firebaseIdentity.findUnique({ where: { user_id: verified.identity.userId } });
++      if (!identity || !sameIdentity(verified.identity, identityOf(identity))) throw Error('Deletion identity changed');
++      const userId = identity.user_id;
++      await tx.accountDeletion.create({ data: {
++        operation_id: operationId, user_id: userId, installation_id: identity.installation_id,
++        source_id: identity.source_id, project_id: identity.project_id, uid: identity.uid,
++        credential_version: verified.version
++      } });
++      const now = new Date();
++      await tx.pushSubscription.deleteMany({ where: { user_id: userId } });
++      await tx.sessionStore.deleteMany({ where: { user_id: userId } });
++      await tx.mobileAuthSession.updateMany({ where: { user_id: userId, revoked_at: null }, data: { revoked_at: now } });
++      await tx.mcpOAuthGrant.updateMany({ where: { user_id: userId, revoked_at: null }, data: { revoked_at: now } });
++      await tx.mcpOAuthAuthorizationCode.deleteMany({ where: { user_id: userId } });
++      await tx.wearPairingCredential.updateMany({ where: { user_id: userId, consumed_at: null }, data: { consumed_at: now } });
++      await tx.nativePushSubscription.updateMany({ where: { user_id: userId, revoked_at: null }, data: { revoked_at: now } });
++      await tx.accountActionToken.updateMany({ where: { user_id: userId, consumed_at: null }, data: { consumed_at: now } });
++      await tx.user.update({ where: { id: userId }, data: { deletion_pending: true, credential_security_version: { increment: 1 } } });
++      return 'pending_provider';
++    });
++  }
++
++  /** One bounded attempt. A future authorized dispatcher may rediscover noncomplete rows after restart. */
++  async resume(operationId: string): Promise<'complete' | 'pending' | 'busy' | 'held' | 'missing'> {
++    const now = new Date();
++    const operation = await this.database.$transaction(async tx => {
++      const claimed = await tx.accountDeletion.updateMany({
++        where: { operation_id: operationId, state: { not: 'complete' }, OR: [{ claim_until: null }, { claim_until: { lte: now } }] },
++        data: { claim_generation: { increment: 1 }, claim_until: new Date(now.getTime() + CLAIM_TTL_MS), last_outcome: null }
++      });
++      return claimed.count === 1 ? tx.accountDeletion.findUniqueOrThrow({ where: { operation_id: operationId } }) : null;
++    });
++    if (!operation) {
++      const row = await this.database.accountDeletion.findUnique({ where: { operation_id: operationId } });
++      return !row ? 'missing' : row.state === 'complete' ? 'complete' : 'busy';
++    }
++    if (!operation.claim_until || operation.claim_until <= new Date()) return 'busy';
++    const identity = identityOf(operation);
++    const fence = { operation_id: operationId, claim_generation: operation.claim_generation, claim_until: { gt: new Date() }, state: { not: 'complete' } };
++    try {
++      if (operation.state !== 'provider_confirmed') {
++        const inspect = async () => {
++          const observation = await this.bounded(signal => this.provider.inspect({ ...identity }, signal));
++          if (!sameIdentity(identity, observation?.identity) || !['present', 'absent'].includes(observation?.status)) throw new IdentityMismatch();
++          return observation.status;
++        };
++        if (await inspect() === 'present') {
++          await this.bounded(signal => this.provider.delete({ ...identity }, signal));
++          if (await inspect() !== 'absent') throw Error('Provider outcome unresolved');
++        }
++        const confirmed = await this.database.accountDeletion.updateMany({
++          where: { ...fence, claim_until: { gt: new Date() }, state: 'pending_provider' }, data: { state: 'provider_confirmed' }
++        });
++        if (confirmed.count !== 1) return 'busy';
++      }
++      return await this.database.$transaction(async tx => {
++        const finished = await tx.accountDeletion.updateMany({
++          where: { ...fence, claim_until: { gt: new Date() }, state: 'provider_confirmed' },
++          data: { state: 'complete', completed_at: new Date(), claim_until: null, last_outcome: null }
++        });
++        if (finished.count !== 1) return 'busy' as const;
++        const current = await tx.firebaseIdentity.findUnique({ where: { user_id: operation.user_id } });
++        if (!current || !sameIdentity(identity, identityOf(current))) throw new IdentityMismatch();
++        const deleted = await tx.user.deleteMany({ where: { id: operation.user_id, deletion_pending: true } });
++        if (deleted.count !== 1) throw new IdentityMismatch();
++        return 'complete' as const;
++      });
++    } catch (error) {
++      const held = error instanceof IdentityMismatch;
++      await this.database.accountDeletion.updateMany({
++        where: { operation_id: operationId, claim_generation: operation.claim_generation, state: { not: 'complete' } },
++        data: { claim_until: null, last_outcome: held ? 'identity_mismatch' : 'retryable_or_unknown' }
++      });
++      return held ? 'held' : 'pending';
++    }
++  }
++}
+diff --git a/backend/src/services/accountTokens.ts b/backend/src/services/accountTokens.ts
+index cee2f030..dff84f57 100644
+--- a/backend/src/services/accountTokens.ts
++++ b/backend/src/services/accountTokens.ts
+@@ -57,7 +57,7 @@ async function invalidateIssuedToken(
+ /** Create and deliver a verification link, invalidating the credential if delivery fails. */
+ export async function sendEmailVerification(userId: number): Promise<boolean> {
+   const user = await prisma.user.findUnique({
+-    where: { id: userId },
++    where: { id: userId, deletion_pending: false },
+     select: { email: true, email_verified_at: true }
+   });
+   if (!user || user.email_verified_at) return true;
+diff --git a/backend/src/services/mcpOAuth.ts b/backend/src/services/mcpOAuth.ts
+index 6bb8246e..9956e138 100644
+--- a/backend/src/services/mcpOAuth.ts
++++ b/backend/src/services/mcpOAuth.ts
+@@ -213,7 +213,7 @@ export class McpOAuthService {
+ 
+     const email = normalizeEmailCredential(input.email);
+     const user = email ? await this.database.user.findFirst({
+-      where: { email: { equals: email, mode: 'insensitive' } },
++      where: { email: { equals: email, mode: 'insensitive' }, deletion_pending: false },
+       select: APPROVAL_USER_SELECT
+     }) : null;
+     const passwordWithinLimit = validateBcryptPasswordByteLength(input.password) === null;
+@@ -232,7 +232,7 @@ export class McpOAuthService {
+       // Serialize approval against password change/reset. Whichever transaction commits second
+       // observes or deletes the other's authorization code, so an old password cannot mint access.
+       const credentialStillCurrent = await tx.user.updateMany({
+-        where: { id: user.id, credential_security_version: user.credential_security_version },
++        where: { id: user.id, credential_security_version: user.credential_security_version, deletion_pending: false },
+         data: { credential_security_version: user.credential_security_version }
+       });
+       if (credentialStillCurrent.count !== 1) {
+diff --git a/backend/src/services/mobileAuth.ts b/backend/src/services/mobileAuth.ts
+index 79db50af..bdd9e088 100644
+--- a/backend/src/services/mobileAuth.ts
++++ b/backend/src/services/mobileAuth.ts
+@@ -77,7 +77,7 @@ export async function issueVerifiedMobileAuthPayload(opts: {
+   return prisma.$transaction(async (tx) => {
+     // This row lock orders issuance against password writers and account deletion.
+     const current = await tx.user.updateMany({
+-      where: { id: opts.userId, credential_security_version: opts.credentialSecurityVersion },
++      where: { id: opts.userId, credential_security_version: opts.credentialSecurityVersion, deletion_pending: false },
+       data: { credential_security_version: opts.credentialSecurityVersion }
+     });
+     if (current.count !== 1) return null;
+diff --git a/backend/src/utils/accountAccessSerialization.ts b/backend/src/utils/accountAccessSerialization.ts
+index 7ade975f..fda504f7 100644
+--- a/backend/src/utils/accountAccessSerialization.ts
++++ b/backend/src/utils/accountAccessSerialization.ts
+@@ -32,6 +32,7 @@ export type AccountAccessSource = Prisma.UserGetPayload<{ select: typeof ACCOUNT
+ 
+ /** Reuse the same durable trust boundary for background jobs that bypass request middleware. */
+ export const CURRENT_ACCOUNT_ACCESS_WHERE = {
++  deletion_pending: false,
+   email_verified_at: { not: null },
+   ...(isHostedServiceDeployment() ? {
+     legal_acceptances: {
+diff --git a/backend/src/utils/postgresSessionStore.ts b/backend/src/utils/postgresSessionStore.ts
+index c1f11266..c193f716 100644
+--- a/backend/src/utils/postgresSessionStore.ts
++++ b/backend/src/utils/postgresSessionStore.ts
+@@ -102,7 +102,7 @@ export class PostgresSessionStore extends session.Store {
+       try {
+         await client.query('BEGIN');
+         const current = await client.query(
+-          'UPDATE "User" SET credential_security_version = credential_security_version WHERE id = $1 AND credential_security_version = $2 RETURNING id',
++          'UPDATE "User" SET credential_security_version = credential_security_version WHERE id = $1 AND credential_security_version = $2 AND NOT deletion_pending RETURNING id',
+           [userId, guard.version]
+         );
+         if (current.rowCount !== 1) throw new BrowserLoginRejected();
+diff --git a/backend/test/account-access.test.js b/backend/test/account-access.test.js
+index 1f897ed3..d838b424 100644
+--- a/backend/test/account-access.test.js
++++ b/backend/test/account-access.test.js
+@@ -56,6 +56,7 @@ test('account access is full only when verification and current consent are pres
+ });
+ test('self-hosted background jobs require verification without hosted legal consent', () => {
+   assert.deepEqual(CURRENT_ACCOUNT_ACCESS_WHERE, {
++    deletion_pending: false,
+     email_verified_at: { not: null }
+   });
+ });
+diff --git a/backend/test/account-deletion-postgres.test.js b/backend/test/account-deletion-postgres.test.js
+new file mode 100644
+index 00000000..cd2ed2c9
+--- /dev/null
++++ b/backend/test/account-deletion-postgres.test.js
+@@ -0,0 +1,423 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { randomUUID } = require('node:crypto');
++const { execFileSync, spawn } = require('node:child_process');
++const fs = require('node:fs');
++const os = require('node:os');
++const path = require('node:path');
++const { Pool } = require('pg');
++const databaseUrl = process.env.CALIBRATE_AUTH_TEST_DATABASE_URL;
++const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
++
++// A persisted synthetic provider, intentionally independent of the SQL transaction under test.
++function syntheticProvider(file) {
++  const fs = require('node:fs');
++  return {
++    authenticate: async (identity, password) => password === 'synthetic-password' ? { identity, authenticatedAt: new Date() } : null,
++    inspect: async identity => ({ identity, status: fs.existsSync(file) ? 'absent' : 'present' }),
++    delete: async () => { fs.writeFileSync(file, 'deleted'); }
++  };
++}
++
++test('durable deletion survives failures and process crashes and fences real PostgreSQL access', { skip: !databaseUrl, timeout: 180000 }, async t => {
++  const url = new URL(databaseUrl);
++  assert.ok(['localhost', '127.0.0.1'].includes(url.hostname), 'disposable local PostgreSQL only');
++  assert.match(url.pathname, /^\/(calibrate_ci|calibrate_test[^/]*)$/);
++  const schema = `deletion_${randomUUID().replaceAll('-', '')}`;
++  const admin = new Pool({ connectionString: databaseUrl });
++  await admin.query(`CREATE SCHEMA "${schema}"`);
++  url.searchParams.set('schema', schema);
++  process.env.DATABASE_URL = url.toString();
++  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-deletion-'));
++  let database, scoped;
++  try {
++    execFileSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'], { env: process.env, stdio: 'pipe', timeout: 45000 });
++    database = require('../src/config/database');
++    const db = database.default;
++    const { AccountDeletionCoordinator } = require('../src/services/accountDeletion');
++    const { issueVerifiedMobileAuthPayload, refreshMobileSession, authenticateMobileAccessToken } = require('../src/services/mobileAuth');
++    const { issueAccountActionToken, resetPasswordWithToken } = require('../src/services/accountTokens');
++    const { PostgresSessionStore } = require('../src/utils/postgresSessionStore');
++    const { markVerifiedBrowserLogin, serializeBrowserLoginUser } = require('../src/utils/browserLoginCredentials');
++    scoped = new Pool({ connectionString: databaseUrl, options: `-c search_path=${schema}` });
++    const originalTransaction = db.$transaction.bind(db);
++    const device = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHONE', deviceName: null };
++    const create = async (mapped = true) => {
++      const user = await db.user.create({ data: { email: `${randomUUID()}@example.invalid`, password_hash: 'synthetic-hash', email_verified_at: new Date() } });
++      if (mapped) await db.firebaseIdentity.create({ data: { user_id: user.id, installation_id: 'synthetic-install', source_id: 'synthetic-source', project_id: 'synthetic-project', uid: randomUUID() } });
++      const file = path.join(temp, randomUUID());
++      const provider = syntheticProvider(file);
++      const coordinator = new AccountDeletionCoordinator(db, provider, 100);
++      const operation = randomUUID();
++      const proof = await coordinator.authenticate(user.id, 'synthetic-password');
++      return { user, provider, coordinator, operation, proof, file };
++    };
++    const begin = fixture => fixture.coordinator.begin(fixture.operation, fixture.proof);
++    const receipt = fixture => db.accountDeletion.findUnique({ where: { operation_id: fixture.operation } });
++    const issue = user => issueVerifiedMobileAuthPayload({ userId: user.id, credentialSecurityVersion: user.credential_security_version, device });
++    const migration = fs.readFileSync(path.join(__dirname, '../prisma/migrations/0046_dormant_account_deletion/migration.sql'), 'utf8');
++    const rollback = fs.readFileSync(path.join(__dirname, '../prisma/rollback/0046_dormant_account_deletion.sql'), 'utf8');
++
++    await t.test('populated rollback and re-upgrade preserve ordinary accounts and data before any intent', async () => {
++      const local = await create(false);
++      await db.bodyMetric.create({ data: { user_id: local.user.id, date: new Date('2026-01-01'), weight_grams: 75000 } });
++      const client = await scoped.connect();
++      try {
++        await client.query(rollback);
++        const { rows } = await client.query('SELECT id,password_hash FROM "User" WHERE id=$1', [local.user.id]);
++        assert.deepEqual(rows, [{ id: local.user.id, password_hash: 'synthetic-hash' }]);
++        await client.query(migration);
++      } finally { client.release(); }
++      const user = await db.user.findUnique({ where: { id: local.user.id } });
++      assert.equal(user.deletion_pending, false);
++      assert.equal(user.credential_security_version, 0);
++      assert.equal(await db.bodyMetric.count({ where: { user_id: user.id } }), 1);
++      assert.ok(await issue(user));
++    });
++
++    await t.test('stale or conflicting proofs and failed intent commit have no side effects', async () => {
++      const f = await create();
++      await db.user.update({ where: { id: f.user.id }, data: { password_hash: 'changed' } });
++      await assert.rejects(begin(f), /no longer current/);
++      assert.equal(await receipt(f), null);
++      const fresh = await create();
++      db.$transaction = action => originalTransaction(async tx => { await action(tx); throw Error('synthetic commit failure'); });
++      await assert.rejects(begin(fresh), /synthetic commit failure/);
++      db.$transaction = originalTransaction;
++      assert.equal(await receipt(fresh), null);
++      assert.equal((await db.user.findUnique({ where: { id: fresh.user.id } })).deletion_pending, false);
++      assert.equal(fs.existsSync(fresh.file), false);
++      await begin(fresh);
++      assert.equal(await begin(fresh), 'pending_provider');
++      await assert.rejects(fresh.coordinator.begin(randomUUID(), fresh.proof), /no longer current/);
++    });
++
++    await t.test('intent atomically revokes access and fences older session, recovery, grant and pairing writers', async () => {
++      const f = await create();
++      const session = await issue(f.user);
++      const reset = await issueAccountActionToken(f.user.id, 'PASSWORD_RESET');
++      const store = new PostgresSessionStore(scoped);
++      const save = (sid, value) => new Promise((resolve, reject) => store.set(sid, value, error => error ? reject(error) : resolve()));
++      await save('synthetic-browser', { cookie: { maxAge: 60000 }, passport: { user: f.user.id } });
++      const client = await db.mcpOAuthClient.create({ data: { client_id: randomUUID(), metadata_json: {} } });
++      const grant = await db.mcpOAuthGrant.create({ data: { client_id: client.client_id, user_id: f.user.id, scopes: ['read'], resource: 'https://synthetic.invalid/mcp' } });
++      await begin(f);
++      assert.equal((await db.user.findUnique({ where: { id: f.user.id } })).deletion_pending, true);
++      assert.equal(await issue(f.user), null);
++      assert.equal(await refreshMobileSession(session.refreshToken), null);
++      assert.equal((await authenticateMobileAccessToken(`Bearer ${session.accessToken}`)).ok, false);
++      assert.equal(await db.sessionStore.count({ where: { user_id: f.user.id } }), 0);
++      assert.ok((await db.mcpOAuthGrant.findUnique({ where: { id: grant.id } })).revoked_at);
++      await assert.rejects(save('late-browser', { cookie: { maxAge: 60000 }, passport: { user: f.user.id } }), /pending/);
++      assert.equal(await resetPasswordWithToken(reset, 'new-password'), false);
++      await assert.rejects(issueAccountActionToken(f.user.id, 'EMAIL_VERIFICATION'));
++      await assert.rejects(db.user.update({ where: { id: f.user.id }, data: { password_hash: 'older-writer' } }));
++      await assert.rejects(db.user.update({ where: { id: f.user.id }, data: { deletion_pending: false } }));
++      await assert.rejects(db.user.delete({ where: { id: f.user.id } }));
++      await assert.rejects(db.mcpOAuthGrant.create({ data: { client_id: client.client_id, user_id: f.user.id, scopes: [], resource: 'synthetic' } }));
++      await assert.rejects(db.mcpOAuthAccessToken.create({ data: { grant_id: grant.id, token_hash: 'a'.repeat(64), scopes: [], expires_at: new Date(Date.now() + 60000) } }));
++      await assert.rejects(db.mcpOAuthRefreshToken.create({ data: { grant_id: grant.id, token_hash: 'b'.repeat(64), scopes: [], expires_at: new Date(Date.now() + 60000) } }));
++      const phone = await db.mobileAuthSession.findFirst({ where: { user_id: f.user.id } });
++      await assert.rejects(db.mobileAuthSession.update({ where: { id: phone.id }, data: { revoked_at: null } }));
++      await assert.rejects(db.wearPairingCredential.create({ data: {
++        user_id: f.user.id, issuing_mobile_session_id: phone.id, token_hash: randomUUID(), server_origin: 'https://synthetic.invalid',
++        watch_device_id: 'watch', protocol_version: 1, challenge: 'challenge', watch_public_key_spki: 'synthetic', expires_at: new Date(Date.now() + 60000)
++      } }));
++    });
++
++    await t.test('provider timeout, lost response and wrong identity retain SQL until authoritative reconciliation', async () => {
++      const f = await create();
++      await begin(f);
++      f.provider.inspect = async () => new Promise(() => {});
++      assert.equal(await f.coordinator.resume(f.operation), 'pending');
++      assert.ok(await db.user.findUnique({ where: { id: f.user.id } }));
++      f.provider.inspect = async identity => ({ identity: { ...identity, projectId: 'wrong-project' }, status: 'absent' });
++      assert.equal(await f.coordinator.resume(f.operation), 'held');
++      Object.assign(f.provider, syntheticProvider(f.file));
++      f.provider.delete = async () => { fs.writeFileSync(f.file, 'deleted'); throw Error('response lost'); };
++      assert.equal(await f.coordinator.resume(f.operation), 'pending');
++      assert.equal((await receipt(f)).state, 'pending_provider');
++      assert.equal(await f.coordinator.resume(f.operation), 'complete');
++      assert.equal(await db.user.findUnique({ where: { id: f.user.id } }), null);
++      assert.equal((await receipt(f)).state, 'complete');
++      assert.equal(await f.coordinator.resume(f.operation), 'complete');
++      await assert.rejects(db.accountDeletion.delete({ where: { operation_id: f.operation } }));
++      await assert.rejects(db.user.create({ data: { id: f.user.id, email: `${randomUUID()}@example.invalid`, password_hash: 'stale' } }));
++    });
++
++    await t.test('SQL failure after provider confirmation rolls back cleanup and preserves a resumable receipt', async () => {
++      const f = await create();
++      await begin(f);
++      db.$transaction = action => originalTransaction(async tx => {
++        const value = await action(tx);
++        if (value === 'complete') throw Error('finalization commit failed');
++        return value;
++      });
++      assert.equal(await f.coordinator.resume(f.operation), 'pending');
++      db.$transaction = originalTransaction;
++      assert.equal((await receipt(f)).state, 'provider_confirmed');
++      assert.ok(await db.user.findUnique({ where: { id: f.user.id } }));
++      f.provider.inspect = async () => { throw Error('must not repeat confirmed provider work'); };
++      assert.equal(await f.coordinator.resume(f.operation), 'complete');
++    });
++
++    await t.test('a timed-out delete may finish remotely but cannot prematurely remove SQL data', async () => {
++      const f = await create();
++      await begin(f);
++      f.provider.delete = async () => { fs.writeFileSync(f.file, 'deleted'); await new Promise(() => {}); };
++      assert.equal(await f.coordinator.resume(f.operation), 'pending');
++      assert.equal((await receipt(f)).state, 'pending_provider');
++      assert.ok(await db.user.findUnique({ where: { id: f.user.id } }));
++      assert.equal(await f.coordinator.resume(f.operation), 'complete');
++      assert.equal(await db.user.findUnique({ where: { id: f.user.id } }), null);
++    });
++
++    await t.test('expired claim and delayed old result cannot finalize a replacement worker claim', async () => {
++      const f = await create();
++      f.coordinator = new AccountDeletionCoordinator(db, f.provider);
++      f.proof = await f.coordinator.authenticate(f.user.id, 'synthetic-password');
++      await begin(f);
++      const entered = deferred(), release = deferred();
++      f.provider.inspect = async identity => { entered.resolve(); await release.promise; return { identity, status: 'absent' }; };
++      const old = f.coordinator.resume(f.operation);
++      await entered.promise;
++      assert.equal(await f.coordinator.resume(f.operation), 'busy');
++      await db.accountDeletion.update({ where: { operation_id: f.operation }, data: { claim_until: new Date(0) } });
++      const replacement = new AccountDeletionCoordinator(db, syntheticProvider(f.file));
++      assert.equal(await replacement.resume(f.operation), 'complete');
++      release.resolve();
++      assert.equal(await old, 'busy');
++      assert.equal((await receipt(f)).claim_generation, 2);
++    });
++
++    const waitForLock = async pid => {
++      for (let i = 0; i < 150; i++) {
++        const { rows } = await admin.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid=$1', [pid]);
++        if (rows[0]?.wait_event_type === 'Lock') return;
++        await new Promise(resolve => setTimeout(resolve, 20));
++      }
++      assert.fail('competing transaction did not wait on a PostgreSQL lock');
++    };
++    for (const order of ['intent-first', 'issuance-first']) {
++      await t.test(`${order}: mapped account lock orders native issuance and deletion`, async () => {
++        const f = await create();
++        const locked = deferred(), release = deferred(), waiting = deferred();
++        let first = true;
++        db.$transaction = action => originalTransaction(async tx => {
++          const isFirst = first; first = false;
++          if (!isFirst) waiting.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          const result = await action(tx);
++          if (isFirst) { locked.resolve(); await release.promise; }
++          return result;
++        }, { timeout: 15000 });
++        const one = order === 'intent-first' ? begin(f) : issue(f.user);
++        await locked.promise;
++        const two = order === 'intent-first' ? issue(f.user) : begin(f);
++        try { await waitForLock(await waiting.promise); } finally { release.resolve(); }
++        const [a, b] = await Promise.all([one, two]);
++        db.$transaction = originalTransaction;
++        if (order === 'intent-first') assert.equal(b, null); else assert.ok(a.accessToken);
++        assert.equal(await db.mobileAuthSession.count({ where: { user_id: f.user.id, revoked_at: null } }), 0);
++      });
++    }
++
++    for (const kind of ['MCP grant', 'Wear pairing']) {
++      for (const order of ['intent-first', 'writer-first']) {
++        await t.test(`${order}: older ${kind} writer serializes with deletion`, async () => {
++          const f = await create();
++          await issue(f.user);
++          const phone = await db.mobileAuthSession.findFirst({ where: { user_id: f.user.id } });
++          const client = await db.mcpOAuthClient.create({ data: { client_id: randomUUID(), metadata_json: {} } });
++          const write = () => db.$transaction(tx => kind === 'MCP grant'
++            ? tx.mcpOAuthGrant.create({ data: { client_id: client.client_id, user_id: f.user.id, scopes: ['read'], resource: 'https://synthetic.invalid/mcp' } })
++            : tx.wearPairingCredential.create({ data: {
++              user_id: f.user.id, issuing_mobile_session_id: phone.id, token_hash: randomUUID(), server_origin: 'https://synthetic.invalid',
++              watch_device_id: 'watch', protocol_version: 1, challenge: 'challenge', watch_public_key_spki: 'synthetic', expires_at: new Date(Date.now() + 60000)
++            } }));
++          const locked = deferred(), release = deferred(), waiting = deferred();
++          let first = true;
++          db.$transaction = action => originalTransaction(async tx => {
++            const isFirst = first; first = false;
++            if (!isFirst) waiting.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++            const value = await action(tx);
++            if (isFirst) { locked.resolve(); await release.promise; }
++            return value;
++          }, { timeout: 15000 });
++          const one = order === 'intent-first' ? begin(f) : write();
++          await locked.promise;
++          const two = order === 'intent-first' ? write() : begin(f);
++          const outcomes = Promise.allSettled([one, two]);
++          try { await waitForLock(await waiting.promise); } finally { release.resolve(); }
++          const [a, b] = await outcomes;
++          db.$transaction = originalTransaction;
++          assert.equal(a.status, 'fulfilled');
++          assert.equal(b.status, order === 'intent-first' ? 'rejected' : 'fulfilled');
++          if (b.status === 'rejected') assert.match(b.reason.message, /Account deletion is pending/);
++          assert.equal(await db.mcpOAuthGrant.count({ where: { user_id: f.user.id, revoked_at: null } }), 0);
++          assert.equal(await db.wearPairingCredential.count({ where: { user_id: f.user.id, consumed_at: null } }), 0);
++        });
++      }
++    }
++
++    await t.test('an older session-first writer can deadlock safely; retry cannot resurrect access', async () => {
++      const f = await create();
++      await issue(f.user);
++      const phone = await db.mobileAuthSession.findFirst({ where: { user_id: f.user.id } });
++      const old = await scoped.connect();
++      const lockedUser = deferred();
++      db.$transaction = action => originalTransaction(tx => action(new Proxy(tx, { get(target, key) {
++        if (key !== 'user') return target[key];
++        return new Proxy(target.user, { get(model, operation) {
++          if (operation !== 'updateMany') return model[operation];
++          return async args => { const value = await model.updateMany(args); lockedUser.resolve(); return value; };
++        } });
++      } })), { timeout: 15000 });
++      try {
++        await old.query('BEGIN');
++        await old.query('SELECT id FROM "MobileAuthSession" WHERE id=$1 FOR UPDATE', [phone.id]);
++        const intent = begin(f);
++        const intentResult = intent.then(value => ({ value }), error => ({ error }));
++        await lockedUser.promise;
++        const writer = old.query('UPDATE "MobileAuthSession" SET last_used_at=CURRENT_TIMESTAMP WHERE id=$1', [phone.id])
++          .then(async () => { await old.query('COMMIT'); return {}; }, async error => { await old.query('ROLLBACK'); return { error }; });
++        const [a, b] = await Promise.all([intentResult, writer]);
++        assert.ok(a.error || b.error, 'PostgreSQL must abort a participant in the lock cycle');
++        assert.match((a.error || b.error).message, /deadlock|write conflict/i);
++        db.$transaction = originalTransaction;
++        if (a.error) await begin(f);
++        await assert.rejects(old.query('UPDATE "MobileAuthSession" SET revoked_at=NULL WHERE id=$1', [phone.id]), /Account deletion is pending/);
++        assert.equal(await db.mobileAuthSession.count({ where: { user_id: f.user.id, revoked_at: null } }), 0);
++      } finally { db.$transaction = originalTransaction; await old.query('ROLLBACK'); old.release(); }
++    });
++
++    for (const order of ['intent-first', 'reset-first']) {
++      await t.test(`${order}: password reset cannot clear pending intent or reuse an old deletion proof`, async () => {
++        const f = await create();
++        const token = await issueAccountActionToken(f.user.id, 'PASSWORD_RESET');
++        const locked = deferred(), release = deferred(), waiting = deferred();
++        let first = true;
++        db.$transaction = action => originalTransaction(async tx => {
++          const isFirst = first; first = false;
++          if (!isFirst) waiting.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          const value = await action(tx);
++          if (isFirst) { locked.resolve(); await release.promise; }
++          return value;
++        }, { timeout: 15000 });
++        const one = order === 'intent-first' ? begin(f) : resetPasswordWithToken(token, 'replacement-password');
++        await locked.promise;
++        const two = order === 'intent-first' ? resetPasswordWithToken(token, 'replacement-password') : begin(f);
++        const outcomes = Promise.allSettled([one, two]);
++        try { await waitForLock(await waiting.promise); } finally { release.resolve(); }
++        const [a, b] = await outcomes;
++        db.$transaction = originalTransaction;
++        assert.equal(a.status, 'fulfilled');
++        if (order === 'intent-first') {
++          assert.equal((await db.user.findUnique({ where: { id: f.user.id } })).deletion_pending, true);
++          assert.ok(b.status === 'rejected' || b.value === false);
++          assert.equal((await receipt(f)).state, 'pending_provider');
++        } else {
++          assert.equal(a.value, true);
++          assert.equal(b.status, 'rejected');
++          assert.match(b.reason.message, /no longer current/);
++          assert.equal(await receipt(f), null);
++        }
++        assert.equal(fs.existsSync(f.file), false);
++      });
++    }
++
++    for (const order of ['intent-first', 'browser-first']) {
++      await t.test(`${order}: a verified browser save cannot outlive accepted deletion`, async () => {
++        const f = await create();
++        const locked = deferred(), release = deferred(), waiting = deferred();
++        const browserPool = {
++          query: (...args) => scoped.query(...args),
++          connect: async () => {
++            const client = await scoped.connect();
++            return { release: () => client.release(), query: async (sql, args) => {
++              if (order === 'intent-first' && sql.startsWith('UPDATE "User"')) waiting.resolve(client.processID);
++              if (order === 'browser-first' && sql === 'COMMIT') { locked.resolve(); await release.promise; }
++              return client.query(sql, args);
++            } };
++          }
++        };
++        const store = new PostgresSessionStore(browserPool);
++        const principal = { id: f.user.id };
++        const sess = { cookie: { maxAge: 60000 }, passport: { user: f.user.id } };
++        markVerifiedBrowserLogin(principal, f.user.id, f.user.credential_security_version);
++        serializeBrowserLoginUser({ session: sess }, principal, error => { assert.ifError(error); });
++        const save = () => new Promise((resolve, reject) => store.set(f.operation, sess, error => error ? reject(error) : resolve()));
++        db.$transaction = action => originalTransaction(async tx => {
++          if (order === 'browser-first') waiting.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          const result = await action(tx);
++          if (order === 'intent-first') { locked.resolve(); await release.promise; }
++          return result;
++        }, { timeout: 15000 });
++        const one = order === 'intent-first' ? begin(f) : save();
++        await locked.promise;
++        const two = order === 'intent-first' ? save() : begin(f);
++        const outcomes = Promise.allSettled([one, two]);
++        try { await waitForLock(await waiting.promise); } finally { release.resolve(); }
++        const [a, b] = await outcomes;
++        db.$transaction = originalTransaction;
++        assert.equal(a.status, 'fulfilled');
++        assert.equal(b.status, order === 'intent-first' ? 'rejected' : 'fulfilled');
++        assert.equal(await db.sessionStore.count({ where: { user_id: f.user.id } }), 0);
++        await assert.rejects(save(), /Invalid email or password/);
++      });
++    }
++
++    for (const stage of ['intent', 'provider', 'complete']) {
++      await t.test(`actual process termination after ${stage} resumes the same durable operation`, async () => {
++        const f = await create();
++        const script = `
++          const dbModule = require('./src/config/database');
++          const { AccountDeletionCoordinator } = require('./src/services/accountDeletion');
++          const provider = (${syntheticProvider.toString()})(${JSON.stringify(f.file)});
++          const pause = async () => { process.send('checkpoint'); await new Promise(() => {}); };
++          if (${JSON.stringify(stage)} === 'provider') { const remove = provider.delete; provider.delete = async (...args) => { await remove(...args); await pause(); }; }
++          (async () => {
++            const c = new AccountDeletionCoordinator(dbModule.default, provider);
++            const proof = await c.authenticate(${f.user.id}, 'synthetic-password');
++            await c.begin(${JSON.stringify(f.operation)}, proof);
++            if (${JSON.stringify(stage)} === 'intent') await pause();
++            await c.resume(${JSON.stringify(f.operation)});
++            await pause();
++          })().catch(e => { console.error(e.message); process.exit(1); });`;
++        const child = spawn(process.execPath, ['-r', 'ts-node/register', '-e', script], { cwd: path.resolve(__dirname, '..'), env: process.env, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
++        let output = '';
++        child.stderr.on('data', chunk => { output += chunk; });
++        const ready = new Promise((resolve, reject) => {
++          child.once('message', resolve);
++          child.once('exit', code => reject(Error(`child exited ${code}: ${output}`)));
++        });
++        const closed = new Promise(resolve => child.once('close', resolve));
++        try { await ready; } finally { child.kill('SIGKILL'); }
++        await closed;
++        const recorded = await receipt(f);
++        if (recorded.state !== 'complete') await db.accountDeletion.update({ where: { operation_id: f.operation }, data: { claim_until: new Date(0) } });
++        assert.equal(await f.coordinator.resume(f.operation), 'complete');
++        assert.equal(await db.user.findUnique({ where: { id: f.user.id } }), null);
++        assert.equal((await receipt(f)).state, 'complete');
++      });
++    }
++
++    await t.test('rollback refuses accepted receipts, and unrelated local accounts remain usable', async () => {
++      const client = await scoped.connect();
++      try { await assert.rejects(client.query(rollback), /Refusing rollback/); await client.query('ROLLBACK'); }
++      finally { client.release(); }
++      const local = await create(false);
++      const session = await issue(local.user);
++      assert.ok(await refreshMobileSession(session.refreshToken));
++      const reset = await issueAccountActionToken(local.user.id, 'PASSWORD_RESET');
++      assert.equal(await resetPasswordWithToken(reset, 'replacement-password'), true);
++      await db.user.delete({ where: { id: local.user.id } });
++    });
++  } finally {
++    if (database) await database.disconnectDatabase();
++    if (scoped) await scoped.end();
++    await admin.query(`DROP SCHEMA "${schema}" CASCADE`);
++    await admin.end();
++    assert.equal(path.dirname(temp), os.tmpdir());
++    fs.rmSync(temp, { recursive: true, force: true });
++  }
++});
+diff --git a/backend/test/account-deletion.test.js b/backend/test/account-deletion.test.js
+new file mode 100644
+index 00000000..a2179813
+--- /dev/null
++++ b/backend/test/account-deletion.test.js
+@@ -0,0 +1,42 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const { randomUUID } = require('node:crypto');
++const { AccountDeletionCoordinator } = require('../src/services/accountDeletion');
++
++test('dormant deletion has no runtime imports or provider construction and local configuration still rejects activation', () => {
++  const knip = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../knip.json'), 'utf8'));
++  assert.ok(knip.workspaces.backend.project.includes('!src/services/accountDeletion.ts!'), 'only the production graph excludes the maintained dormant coordinator');
++  const root = path.resolve(__dirname, '../src');
++  for (const name of fs.readdirSync(root, { recursive: true })) {
++    if (!name.endsWith('.ts') || name === path.join('services', 'accountDeletion.ts')) continue;
++    const source = fs.readFileSync(path.join(root, name), 'utf8');
++    assert.doesNotMatch(source, /(?:from\s+|require\s*\(|import\s*\()\s*['"][^'"]*accountDeletion['"]/, name);
++    assert.doesNotMatch(source, /new\s+AccountDeletionCoordinator\b/, name);
++  }
++  const { validateCredentialProviderConfiguration } = require('../src/config/credentialProvider');
++  validateCredentialProviderConfiguration({ AUTH_PROVIDER: 'local' });
++  assert.throws(() => validateCredentialProviderConfiguration({ AUTH_PROVIDER: 'firebase' }), /must remain local/);
++});
++
++test('proofs require a mapped identity, recent matching provider authentication, and the same coordinator', async () => {
++  let transactions = 0;
++  const mapping = { user_id: 7, installation_id: 'synthetic-installation', source_id: 'synthetic-source', project_id: 'synthetic-project', uid: 'synthetic-uid' };
++  const database = { user: { findUnique: async () => ({ credential_security_version: 3, firebase_identity: mapping }) }, $transaction: () => { transactions++; throw Error('unexpected transaction'); } };
++  const provider = { authenticate: async identity => ({ identity, authenticatedAt: new Date() }) };
++  const coordinator = new AccountDeletionCoordinator(database, provider, 10);
++  await assert.rejects(coordinator.begin(randomUUID(), {}), /Invalid deletion proof/);
++  const proof = await coordinator.authenticate(7, 'synthetic');
++  assert.ok(proof);
++  await assert.rejects(new AccountDeletionCoordinator(database, provider).begin(randomUUID(), proof), /Invalid deletion proof/);
++  provider.authenticate = async identity => ({ identity: { ...identity, uid: 'another-account' }, authenticatedAt: new Date() });
++  assert.equal(await coordinator.authenticate(7, 'synthetic'), null);
++  provider.authenticate = async identity => ({ identity, authenticatedAt: new Date(Date.now() - 61_000) });
++  assert.equal(await coordinator.authenticate(7, 'synthetic'), null);
++  provider.authenticate = async identity => ({ identity, authenticatedAt: 'not-a-date' });
++  assert.equal(await coordinator.authenticate(7, 'synthetic'), null);
++  provider.authenticate = async () => new Promise(() => {});
++  assert.equal(await coordinator.authenticate(7, 'synthetic'), null);
++  assert.equal(transactions, 0, 'authentication failures never create intent or revoke access');
++});
+diff --git a/backend/test/food-tracking.test.js b/backend/test/food-tracking.test.js
+index eb9dad33..67e65dbd 100644
+--- a/backend/test/food-tracking.test.js
++++ b/backend/test/food-tracking.test.js
+@@ -105,7 +105,7 @@ test('background pause materialization excludes accounts without current access'
+ 
+   assert.deepEqual(capturedWhere, {
+     resumed_on: null,
+-    user: { is: { email_verified_at: { not: null } } }
++    user: { is: { email_verified_at: { not: null }, deletion_pending: false } }
+   });
+ });
+ 
+diff --git a/backend/test/mcp-oauth.test.js b/backend/test/mcp-oauth.test.js
+index 3603d2bb..59460894 100644
+--- a/backend/test/mcp-oauth.test.js
++++ b/backend/test/mcp-oauth.test.js
+@@ -209,7 +209,7 @@ test('MCP OAuth approval cannot create a code after the security version changes
+   };
+   const tx = {
+     user: { updateMany: async ({ where, data }) => {
+-      assert.deepEqual(where, { id: 7, credential_security_version: 3 });
++      assert.deepEqual(where, { id: 7, credential_security_version: 3, deletion_pending: false });
+       assert.deepEqual(data, { credential_security_version: 3 });
+       const currentVersion = 4;
+       return { count: where.credential_security_version === currentVersion ? 1 : 0 };
+diff --git a/backend/test/mobile-auth.test.js b/backend/test/mobile-auth.test.js
+index 674f1e5d..e60afd27 100644
+--- a/backend/test/mobile-auth.test.js
++++ b/backend/test/mobile-auth.test.js
+@@ -741,7 +741,7 @@ const loginDevice = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHON
+ test('verified mobile issuance rejects stale credentials before reading account or creating tokens', async () => {
+   let created = false;
+   const tx = { user: { updateMany: async ({ where, data }) => {
+-    assert.deepEqual(where, { id: 4, credential_security_version: 8 });
++    assert.deepEqual(where, { id: 4, credential_security_version: 8, deletion_pending: false });
+     assert.deepEqual(data, { credential_security_version: 8 });
+     return { count: 0 };
+   }, findUnique: async () => { throw Error('must not read stale account'); } },
+diff --git a/backend/test/routes-auth-mobile.test.js b/backend/test/routes-auth-mobile.test.js
+index b5656f2c..77194086 100644
+--- a/backend/test/routes-auth-mobile.test.js
++++ b/backend/test/routes-auth-mobile.test.js
+@@ -121,7 +121,7 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
+         return dbUser;
+       },
+       updateMany: async ({ where }) => {
+-        assert.deepEqual(where, { id: dbUser.id, credential_security_version: 3 });
++        assert.deepEqual(where, { id: dbUser.id, credential_security_version: 3, deletion_pending: false });
+         return { count: 1 };
+       },
+       findUnique: async () => dbUser
+@@ -159,7 +159,7 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
+   assert.ok(res.body.access_token);
+   assert.ok(res.body.refresh_token);
+   assert.deepEqual(userLookups[0].where, {
+-    email: { equals: 'native@example.com', mode: 'insensitive' }
++    email: { equals: 'native@example.com', mode: 'insensitive' }, deletion_pending: false
+   });
+   assert.equal(sessionCreates[0].data.device_id, 'device-1');
+ });
+diff --git a/knip.json b/knip.json
+index 0b55497a..3bee8e65 100644
+--- a/knip.json
++++ b/knip.json
+@@ -24,7 +24,7 @@
+     },
+     "backend": {
+       "entry": ["src/index.ts!", "prisma.config.ts", "prisma/seed.ts", "scripts/*.js", "test/**/*.test.js"],
+-      "project": ["src/**/*.ts!", "prisma/**/*.prisma", "prisma/**/*.ts", "scripts/**/*.js", "test/**/*.js"],
++      "project": ["src/**/*.ts!", "!src/services/accountDeletion.ts!", "prisma/**/*.prisma", "prisma/**/*.ts", "scripts/**/*.js", "test/**/*.js"],
+       "ignoreDependencies": ["@redocly/openapi-core", "openapi-typescript"],
+       "prisma": { "config": [] }
+     },
+diff --git a/scripts/postgres-rollback-smoke.mjs b/scripts/postgres-rollback-smoke.mjs
+index b171ddc9..0cf6debc 100644
+--- a/scripts/postgres-rollback-smoke.mjs
++++ b/scripts/postgres-rollback-smoke.mjs
+@@ -34,9 +34,9 @@ export const ROLLBACK_BASE = Object.freeze({
+ });
+ 
+ export const ROLLBACK_CANDIDATE = Object.freeze({
+-  migrationCount: 48,
+-  lastMigration: '0045_firebase_identity_foundation',
+-  ledgerSha256: '699a788ed48ce95cee69c890cd0434f60b2498c7bd311924ba368c615f1a2f28',
++  migrationCount: 49,
++  lastMigration: '0046_dormant_account_deletion',
++  ledgerSha256: 'f3115f1435b34ff8bd532d87e672c38f7abf1ad69bdb13d43bc50426842bd6ba',
+ });
+ 
+ export const ROLLBACK_RESULT_PATH = path.join(
+diff --git a/scripts/postgres-rollback-smoke.test.mjs b/scripts/postgres-rollback-smoke.test.mjs
+index f6094f25..61341744 100644
+--- a/scripts/postgres-rollback-smoke.test.mjs
++++ b/scripts/postgres-rollback-smoke.test.mjs
+@@ -118,7 +118,7 @@ test('migration contract pins exact v0.14.0 and candidate ledgers', () => {
+     baseVersion: ROLLBACK_BASE.version,
+   });
+   assert.equal(contract.baseNames.at(-1), '0031_calibration_insights');
+-  assert.equal(contract.candidateNames.at(-1), '0045_firebase_identity_foundation');
++  assert.equal(contract.candidateNames.at(-1), '0046_dormant_account_deletion');
+   assert.equal(ledgerFingerprint(baseNames), ROLLBACK_BASE.ledgerSha256);
+   assert.equal(ledgerFingerprint(candidateNames), ROLLBACK_CANDIDATE.ledgerSha256);
+ 
+@@ -206,7 +206,7 @@ test('success evidence is sanitized, exact, and contains no resource target', ()
+   assert.equal(evidence.status, 'passed');
+   assert.equal(evidence.base.tag, 'v0.14.0');
+   assert.equal(evidence.base.last_migration, '0031_calibration_insights');
+-  assert.equal(evidence.candidate.last_migration, '0045_firebase_identity_foundation');
++  assert.equal(evidence.candidate.last_migration, '0046_dormant_account_deletion');
+   assert.equal(evidence.checks.restored_candidate_reupgrade_verified, true);
+   const encoded = JSON.stringify(evidence);
+   assert.doesNotMatch(encoded, /password|127\.0\.0\.1|calibrate-rb-smoke|schema\.prisma/i);

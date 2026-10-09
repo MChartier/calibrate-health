@@ -1,0 +1,125 @@
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+PASS metric: writer-first, intent-first, abort/retry/replay, ordinary local
+PASS import: writer-first, intent-first, abort/retry/replay, ordinary local
+PASS wear: writer-first, intent-first, abort/retry/replay, ordinary local
+{
+  "schema": "ordering_ecc1d80d285c40c09275fa58145481f0",
+  "url": "postgresql://postgres@127.0.0.1:55453/calibrate_test_453_order",
+  "observations": [
+    {
+      "kind": "metric",
+      "scenario": "writer-first",
+      "outcome": "pass",
+      "waits": [
+        {
+          "pid": 13772,
+          "wait_event_type": "Lock",
+          "wait_event": "transactionid",
+          "query": "UPDATE \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\" SET \"credential_security_version\" = $1 WHERE (\"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"id\" = $2 AND \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"deletion_pending\" = $3 AND \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"credential_security_version\" = $4)",
+          "blockers": [
+            39120
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "metric",
+      "scenario": "intent-first",
+      "outcome": "pass",
+      "result": {
+        "status": 500,
+        "body": {
+          "message": "Server error"
+        }
+      }
+    },
+    {
+      "kind": "metric",
+      "scenario": "abort-retry-replay",
+      "outcome": "pass",
+      "operation": "2766a7d3-c599-4195-b8ef-f546c2db7c84",
+      "receiptSupported": true
+    },
+    {
+      "kind": "metric",
+      "scenario": "ordinary-local",
+      "outcome": "pass"
+    },
+    {
+      "kind": "import",
+      "scenario": "writer-first",
+      "outcome": "pass",
+      "waits": [
+        {
+          "pid": 39120,
+          "wait_event_type": null,
+          "wait_event": null,
+          "query": "UPDATE \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\" SET \"credential_security_version\" = $1 WHERE (\"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"id\" = $2 AND \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"deletion_pending\" = $3 AND \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"credential_security_version\" = $4)",
+          "blockers": [
+            13772
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "import",
+      "scenario": "intent-first",
+      "outcome": "pass",
+      "result": {
+        "status": "rejected",
+        "code": "P2010"
+      }
+    },
+    {
+      "kind": "import",
+      "scenario": "abort-retry-replay",
+      "outcome": "pass",
+      "operation": "1c9b5cf1-1967-46e5-bf78-3f226202cc69",
+      "receiptSupported": false
+    },
+    {
+      "kind": "import",
+      "scenario": "ordinary-local",
+      "outcome": "pass"
+    },
+    {
+      "kind": "wear",
+      "scenario": "writer-first",
+      "outcome": "pass",
+      "waits": [
+        {
+          "pid": 13772,
+          "wait_event_type": "Lock",
+          "wait_event": "transactionid",
+          "query": "UPDATE \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\" SET \"credential_security_version\" = $1 WHERE (\"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"id\" = $2 AND \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"deletion_pending\" = $3 AND \"ordering_ecc1d80d285c40c09275fa58145481f0\".\"User\".\"credential_security_version\" = $4)",
+          "blockers": [
+            39120
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "wear",
+      "scenario": "intent-first",
+      "outcome": "pass",
+      "result": {
+        "status": "rejected",
+        "code": "P2010"
+      }
+    },
+    {
+      "kind": "wear",
+      "scenario": "abort-retry-replay",
+      "outcome": "pass",
+      "operation": "d39a1bf0-dee7-49fc-9de4-2d3c0c4abf75",
+      "receiptSupported": true
+    },
+    {
+      "kind": "wear",
+      "scenario": "ordinary-local",
+      "outcome": "pass"
+    }
+  ]
+}
