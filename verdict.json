@@ -1,0 +1,752 @@
+{
+  "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "baseSha": "547206a1b372b73fc95fc412ad453b8099440000",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateTargetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+  "headParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "targetParents": [
+    "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+    "650862e1c13be66fe5ec05495320cc66ac32f8bb"
+  ],
+  "parentRevisions": [],
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "reviewOverlay": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/441",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/440",
+  "targetRepository": "MChartier/calibrate-health",
+  "targetRef": "master",
+  "checkedAtUtc": "2026-10-09T04:42:35.977761+00:00",
+  "supersedesVerdictCommentId": 6071045718,
+  "prBodySha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+  "issueBodySha256": "c39a1260f05bef4a1fbac83ac3954c0d0b352406864157d058270381021816aa",
+  "fullStandardsAcknowledgment": "Full supplied execution role/common texts, pr-review-v3 overlay/templates and direct amendments read and applied; actual host and current checkout AGENTS.md verified/read in full. Pins unchanged. This trusted replacement QA task performed this recheck; original reviewer history and receipts remain separately attributed.",
+  "scope": {
+    "orderedCommits": [
+      {
+        "sha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+        ]
+      },
+      {
+        "sha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+        "parents": [
+          "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+        ]
+      }
+    ],
+    "files": [
+      {
+        "filename": ".github/workflows/container-handler.yml",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 121
+      },
+      {
+        "filename": ".github/workflows/container-request.yml",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 81
+      },
+      {
+        "filename": ".github/workflows/cut-release-handler.yml",
+        "status": "modified",
+        "additions": 47,
+        "deletions": 8
+      },
+      {
+        "filename": ".github/workflows/cut-release-request.yml",
+        "status": "modified",
+        "additions": 62,
+        "deletions": 16
+      },
+      {
+        "filename": ".github/workflows/cut-release.yml",
+        "status": "modified",
+        "additions": 15,
+        "deletions": 15
+      },
+      {
+        "filename": ".github/workflows/publish-release-handler.yml",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 121
+      },
+      {
+        "filename": ".github/workflows/publish-release-request.yml",
+        "status": "removed",
+        "additions": 0,
+        "deletions": 73
+      },
+      {
+        "filename": "AGENTS.md",
+        "status": "modified",
+        "additions": 16,
+        "deletions": 13
+      },
+      {
+        "filename": "README.md",
+        "status": "modified",
+        "additions": 11,
+        "deletions": 46
+      },
+      {
+        "filename": "deploy/README.md",
+        "status": "modified",
+        "additions": 4,
+        "deletions": 0
+      },
+      {
+        "filename": "deploy/self-hosted/README.md",
+        "status": "modified",
+        "additions": 6,
+        "deletions": 5
+      },
+      {
+        "filename": "docs/android-internal-testing.md",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "filename": "docs/architecture/0002-canonical-release-manifest.md",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "filename": "docs/architecture/0008-explicit-server-releases.md",
+        "status": "modified",
+        "additions": 4,
+        "deletions": 2
+      },
+      {
+        "filename": "docs/database-rollback-rehearsal.md",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "filename": "docs/deployment.md",
+        "status": "added",
+        "additions": 117,
+        "deletions": 0
+      },
+      {
+        "filename": "docs/mobile-release.md",
+        "status": "modified",
+        "additions": 51,
+        "deletions": 87
+      },
+      {
+        "filename": "docs/native-store-release.md",
+        "status": "modified",
+        "additions": 4,
+        "deletions": 4
+      },
+      {
+        "filename": "docs/release-acceptance.md",
+        "status": "modified",
+        "additions": 3,
+        "deletions": 3
+      },
+      {
+        "filename": "docs/release-compatibility.md",
+        "status": "modified",
+        "additions": 28,
+        "deletions": 43
+      },
+      {
+        "filename": "docs/ux-regression-gates.md",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "filename": "mobile/README.md",
+        "status": "modified",
+        "additions": 3,
+        "deletions": 2
+      },
+      {
+        "filename": "package.json",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1
+      },
+      {
+        "filename": "scripts/native-config.test.mjs",
+        "status": "modified",
+        "additions": 2,
+        "deletions": 3
+      },
+      {
+        "filename": "scripts/native-internal-release.mjs",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 2
+      },
+      {
+        "filename": "scripts/native.mjs",
+        "status": "modified",
+        "additions": 50,
+        "deletions": 21
+      },
+      {
+        "filename": "scripts/native.test.mjs",
+        "status": "modified",
+        "additions": 64,
+        "deletions": 19
+      },
+      {
+        "filename": "scripts/release-request.mjs",
+        "status": "modified",
+        "additions": 29,
+        "deletions": 21
+      },
+      {
+        "filename": "scripts/release-request.test.mjs",
+        "status": "modified",
+        "additions": 67,
+        "deletions": 33
+      },
+      {
+        "filename": "scripts/release-workflow-contract.test.mjs",
+        "status": "modified",
+        "additions": 38,
+        "deletions": 41
+      }
+    ],
+    "additions": 627,
+    "deletions": 785,
+    "assessment": "Two scoped linear commits, 30 paths: product entrypoint/native CLI changes, four maintained regression files, maintained operator guides and package alias. Full live Git/API inventories reconcile without truncation; no evidence add/delete churn, unrelated parent merge or sibling commit in the published range. Source is identical to this lane previous full assessment."
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1",
+      "disposition": "resolved",
+      "evidence": "Final PR explicitly names actual master9dc0739 and separately labels4cbcbc74 as source merge-base/captured evidence baseline/API base. Historical source-bound observations and original117-test execution are not relabeled."
+    },
+    {
+      "id": "R2",
+      "disposition": "resolved",
+      "evidence": "Changed README addresses maintainers; deployment guide explicitly states managed end-user hosting and maintainer-operated infrastructure. Advanced self-hosting/customer install positioning removed from scoped guidance. Existing Compose/backup/restore/internal WireGuard workflows retained; no endpoint, domain, role, Docker or credential change."
+    },
+    {
+      "id": "C2",
+      "disposition": "resolved",
+      "evidence": "Current issue440 task section explicitly identifies approved replacement01a11db5-8540-740a-a673-1026c0b90007 and original01a114af-c6d1-705c-ade9-39553731d038 as history. Exact old body is suffix of archive6073919842; other issue sections unchanged. Native closing issue440 verified, no inline/review findings. Native owner read confirms completed441 handoff and separately active457; no competing441 writer."
+    }
+  ],
+  "findings": [],
+  "gates": {
+    "value": "pass: approved bounded simplification of release choices and native build/submit commands; issue457 is separately scoped hands-off release repair.",
+    "outcome": "pass for issue440 entrypoint, recovery routing and preservation contract; does not certify end-to-end release operation or completion of issue457.",
+    "code": "pass: unchanged full two-commit range and original independently assessed code. Nine critical safeguards match actual master. Both CI gate consumers are unchanged across head/master/452/455; no weakened publication boundary.",
+    "engineeringReview": "pass under scoped quota-only exception6070781981 following6070780526 at current head. Historical completed review6032060810 remains bound to0c26cea. Full current issue/PR conversations, submitted reviews and inline threads reread; no actionable unresolved441 feedback.",
+    "ci": "pass for published head: five successful workflows,24 terminal checks (10success/14configured skips). Runs remain at their actual source/tested-base identities. This is not passing current-master release-candidate CI:455 approval failure and database failure are explicitly retained below.",
+    "behavior": "pass for bounded source contract:20 freshly executed focused CI-gate tests pass, including action_required, failure, missing/wholly skipped coverage, exact identity and final premerge checks. Historical routing/native source-import/mock evidence and117 original-reviewer tests remain applicable to unchanged441 code. New incoming goal-smoke failure is not relabeled as passed.",
+    "evidence": "pass: current impact/receipt8 exact blobs verified by GitSHA1/size/SHA256, given digests match; prior three exact comment receipts verified. Source-bound historical provenance retained; current raw failure logs inspected, with source relationship and test limits recorded.",
+    "communication": "pass: concise problem/solution and scenario-based expected/observed table accurately describe consolidation and fail-closed safeguards. Source/captured baseline, actual current target and historical tests are separated. The closing same-lane reassessment sentence is an accurate procedural requirement, not a claim that no QA ever occurred; no wording loop requested. Known457 operational failures are explicitly disclosed in this superseding verdict and linked evidence; the PR does not claim hands-off operation or a new integrated runtime pass.",
+    "stack": "pass for441 only: direct/ultimate master547206a1, API/source merge-base4cbcbc74, no stackedPR parent. Incoming14commits/37paths since merge-base (29paths since previous9dc0739 target) disjoint with441. Conflict probe preserves both sets exactly but is not runtime evidence. Child452 remains separate/unassessed."
+  },
+  "targetImpact": {
+    "incomingCommits": [
+      {
+        "sha": "b3d6559ad8abd1c2725c509357302b1f0e12cdd2",
+        "parents": [
+          "2d7a4f659d8d1a8d27cfb4210db1bbe22b3e536b"
+        ],
+        "subject": "refactor(auth): share local credential verification boundary",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/scripts/lib/credentialProvider.ts",
+          "M\tbackend/src/index.ts",
+          "M\tbackend/src/routes/auth.ts",
+          "M\tbackend/src/routes/user.ts",
+          "A\tbackend/src/services/credentialVerification.ts",
+          "M\tbackend/src/services/mcpOAuth.ts",
+          "M\tbackend/test/credential-provider.test.js",
+          "M\tbackend/test/routes-account-recovery.test.js",
+          "M\tbackend/test/routes-auth-mobile.test.js",
+          "M\tbackend/test/routes-auth.test.js",
+          "M\tbackend/test/routes-user.test.js",
+          "M\tdocs/firebase-migration-preparation.md"
+        ]
+      },
+      {
+        "sha": "3ac32ffa92f1e429dd689e2f52683bd8ea045d15",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+        ],
+        "subject": "Return saved calorie comparisons for completed-day reads and acknowledgements",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/routes/foodDays.ts",
+          "M\tbackend/src/services/foodDayComparison.ts",
+          "M\tbackend/src/services/foodTracking.ts",
+          "M\tbackend/src/services/watch.ts",
+          "M\tbackend/test/food-day-comparison.test.js",
+          "M\tbackend/test/routes-food-days.test.js",
+          "M\tbackend/test/watch-service.test.js",
+          "A\te2e/expo-web/saved-target.spec.ts"
+        ]
+      },
+      {
+        "sha": "d94a34d019bd9d993c27d33dbc1accc2cce61a87",
+        "parents": [
+          "3ac32ffa92f1e429dd689e2f52683bd8ea045d15"
+        ],
+        "subject": "Describe saved comparison on day reads and completion responses",
+        "pathsAgainstFirstParent": [
+          "M\tdocs/openapi/v1.yaml",
+          "M\tpackages/api-client/src/generated/v1.ts"
+        ]
+      },
+      {
+        "sha": "a0fdefe8bca51c25306f36cccc8181bd35672341",
+        "parents": [
+          "b3d6559ad8abd1c2725c509357302b1f0e12cdd2"
+        ],
+        "subject": "fix(auth): serialize native login session issuance",
+        "pathsAgainstFirstParent": [
+          "M\t.github/workflows/tests.yml",
+          "M\tbackend/src/routes/auth.ts",
+          "M\tbackend/src/services/mobileAuth.ts",
+          "M\tbackend/test/mobile-auth.test.js",
+          "A\tbackend/test/mobile-session-issuance-postgres.test.js",
+          "M\tbackend/test/routes-auth-mobile.test.js"
+        ]
+      },
+      {
+        "sha": "4751d8d89301c18fb0fed7244c3354477e804c2b",
+        "parents": [
+          "a0fdefe8bca51c25306f36cccc8181bd35672341"
+        ],
+        "subject": "fix(auth): persist browser password logins atomically",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/index.ts",
+          "M\tbackend/src/routes/auth.ts",
+          "A\tbackend/src/utils/browserLoginCredentials.ts",
+          "M\tbackend/src/utils/postgresSessionStore.ts",
+          "A\tbackend/test/browser-login-postgres.test.js",
+          "M\tbackend/test/postgres-session-store.test.js",
+          "M\tbackend/test/routes-auth.test.js"
+        ]
+      },
+      {
+        "sha": "eb142dd0bcc527398e83b91d29d4514fd9b4e516",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+        ],
+        "subject": "Fix same-day goal baseline after weight corrections",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/routes/metrics.ts",
+          "M\tbackend/test/routes-metrics.test.js",
+          "A\tdocs/goal-starting-weight.md",
+          "M\tscripts/postgres-goal-pace-smoke.mjs"
+        ]
+      },
+      {
+        "sha": "70e982f77752400d4b4f688280a0609a99713262",
+        "parents": [
+          "eb142dd0bcc527398e83b91d29d4514fd9b4e516"
+        ],
+        "subject": "Use current timezone and consistent metric writer lock order",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/routes/imports.ts",
+          "M\tbackend/src/routes/metrics.ts",
+          "M\tbackend/src/services/watch.ts",
+          "M\tbackend/test/import-calorie-safety.test.js",
+          "M\tbackend/test/routes-metrics.test.js",
+          "M\tdocs/goal-starting-weight.md",
+          "M\tscripts/postgres-goal-pace-smoke.mjs"
+        ]
+      },
+      {
+        "sha": "61b8dfc433d09532169e03b91a1482495c3b5a83",
+        "parents": [
+          "70e982f77752400d4b4f688280a0609a99713262"
+        ],
+        "subject": "Apply same-day baseline correction to Wear and imported weights",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/routes/imports.ts",
+          "M\tbackend/src/routes/metrics.ts",
+          "A\tbackend/src/services/goalStartingWeight.ts",
+          "M\tbackend/src/services/watch.ts",
+          "M\tbackend/test/import-calorie-safety.test.js",
+          "M\tdocs/goal-starting-weight.md",
+          "M\tscripts/postgres-goal-pace-smoke.mjs"
+        ]
+      },
+      {
+        "sha": "521fc625824259ec1236b664301c02bea1b516f6",
+        "parents": [
+          "61b8dfc433d09532169e03b91a1482495c3b5a83"
+        ],
+        "subject": "Classify imported weight dates after acquiring the planning lock",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/routes/imports.ts",
+          "M\tscripts/postgres-goal-pace-smoke.mjs"
+        ]
+      },
+      {
+        "sha": "f805e6872c94000156219ddba0e8e01b0c8d490c",
+        "parents": [
+          "521fc625824259ec1236b664301c02bea1b516f6"
+        ],
+        "subject": "Revalidate Wear metric dates after the planning lock",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/services/watch.ts",
+          "M\tbackend/test/watch-service.test.js",
+          "M\tscripts/postgres-goal-pace-smoke.mjs"
+        ]
+      },
+      {
+        "sha": "650862e1c13be66fe5ec05495320cc66ac32f8bb",
+        "parents": [
+          "f805e6872c94000156219ddba0e8e01b0c8d490c"
+        ],
+        "subject": "Defer Wear calendar eligibility to the locked transaction",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/services/watch.ts",
+          "M\tbackend/test/watch-service.test.js",
+          "M\tscripts/postgres-goal-pace-smoke.mjs"
+        ]
+      },
+      {
+        "sha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+        "parents": [
+          "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+        ],
+        "subject": "Restore saved targets in completed-day Daily Balance (#436)",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/routes/foodDays.ts",
+          "M\tbackend/src/services/foodDayComparison.ts",
+          "M\tbackend/src/services/foodTracking.ts",
+          "M\tbackend/src/services/watch.ts",
+          "M\tbackend/test/food-day-comparison.test.js",
+          "M\tbackend/test/routes-food-days.test.js",
+          "M\tbackend/test/watch-service.test.js",
+          "M\tdocs/openapi/v1.yaml",
+          "A\te2e/expo-web/saved-target.spec.ts",
+          "M\tpackages/api-client/src/generated/v1.ts"
+        ]
+      },
+      {
+        "sha": "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+        "parents": [
+          "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+          "4751d8d89301c18fb0fed7244c3354477e804c2b"
+        ],
+        "subject": "Prevent stale browser password-login session saves (#442)",
+        "pathsAgainstFirstParent": [
+          "M\t.github/workflows/tests.yml",
+          "M\tbackend/scripts/lib/credentialProvider.ts",
+          "M\tbackend/src/index.ts",
+          "M\tbackend/src/routes/auth.ts",
+          "M\tbackend/src/routes/user.ts",
+          "A\tbackend/src/services/credentialVerification.ts",
+          "M\tbackend/src/services/mcpOAuth.ts",
+          "M\tbackend/src/services/mobileAuth.ts",
+          "A\tbackend/src/utils/browserLoginCredentials.ts",
+          "M\tbackend/src/utils/postgresSessionStore.ts",
+          "A\tbackend/test/browser-login-postgres.test.js",
+          "M\tbackend/test/credential-provider.test.js",
+          "M\tbackend/test/mobile-auth.test.js",
+          "A\tbackend/test/mobile-session-issuance-postgres.test.js",
+          "M\tbackend/test/postgres-session-store.test.js",
+          "M\tbackend/test/routes-account-recovery.test.js",
+          "M\tbackend/test/routes-auth-mobile.test.js",
+          "M\tbackend/test/routes-auth.test.js",
+          "M\tbackend/test/routes-user.test.js",
+          "M\tdocs/firebase-migration-preparation.md"
+        ]
+      },
+      {
+        "sha": "547206a1b372b73fc95fc412ad453b8099440000",
+        "parents": [
+          "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+          "650862e1c13be66fe5ec05495320cc66ac32f8bb"
+        ],
+        "subject": "Keep new goal baseline aligned with same-day weight corrections (#449)",
+        "pathsAgainstFirstParent": [
+          "M\tbackend/src/routes/imports.ts",
+          "M\tbackend/src/routes/metrics.ts",
+          "A\tbackend/src/services/goalStartingWeight.ts",
+          "M\tbackend/src/services/watch.ts",
+          "M\tbackend/test/import-calorie-safety.test.js",
+          "M\tbackend/test/routes-metrics.test.js",
+          "M\tbackend/test/watch-service.test.js",
+          "A\tdocs/goal-starting-weight.md",
+          "M\tscripts/postgres-goal-pace-smoke.mjs"
+        ]
+      }
+    ],
+    "incomingPaths": [
+      ".github/workflows/tests.yml",
+      "backend/scripts/lib/credentialProvider.ts",
+      "backend/src/index.ts",
+      "backend/src/routes/auth.ts",
+      "backend/src/routes/foodDays.ts",
+      "backend/src/routes/imports.ts",
+      "backend/src/routes/metrics.ts",
+      "backend/src/routes/user.ts",
+      "backend/src/services/credentialVerification.ts",
+      "backend/src/services/foodDayComparison.ts",
+      "backend/src/services/foodTracking.ts",
+      "backend/src/services/goalStartingWeight.ts",
+      "backend/src/services/mcpOAuth.ts",
+      "backend/src/services/mobileAuth.ts",
+      "backend/src/services/watch.ts",
+      "backend/src/utils/browserLoginCredentials.ts",
+      "backend/src/utils/postgresSessionStore.ts",
+      "backend/test/browser-login-postgres.test.js",
+      "backend/test/credential-provider.test.js",
+      "backend/test/food-day-comparison.test.js",
+      "backend/test/import-calorie-safety.test.js",
+      "backend/test/mobile-auth.test.js",
+      "backend/test/mobile-session-issuance-postgres.test.js",
+      "backend/test/postgres-session-store.test.js",
+      "backend/test/routes-account-recovery.test.js",
+      "backend/test/routes-auth-mobile.test.js",
+      "backend/test/routes-auth.test.js",
+      "backend/test/routes-food-days.test.js",
+      "backend/test/routes-metrics.test.js",
+      "backend/test/routes-user.test.js",
+      "backend/test/watch-service.test.js",
+      "docs/firebase-migration-preparation.md",
+      "docs/goal-starting-weight.md",
+      "docs/openapi/v1.yaml",
+      "e2e/expo-web/saved-target.spec.ts",
+      "packages/api-client/src/generated/v1.ts",
+      "scripts/postgres-goal-pace-smoke.mjs"
+    ],
+    "conflictProbe": {
+      "tree": "f9163907130127e103cae572472c537ff2a37277",
+      "allPrAndIncomingBlobsPreserved": true,
+      "runtimeExecution": false
+    },
+    "assessment": "Auth and completed-day/goal changes do not alter release request routing or native orchestration. tests.yml adds database-test environment only. However the incoming goal-pace smoke is required by database-upgrade.yml and has a real failed current-target candidate run; source disjointness alone is not a claim that the complete release pipeline passes."
+  },
+  "knownOperationalLimitation": {
+    "issue": 457,
+    "candidatePr": 455,
+    "candidateHead": "2b2c58e089465679b3cf9a8738fde8f453e4c658",
+    "child452HeadReadOnly": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+    "sourceRelationship": [
+      {
+        "path": "scripts/release-ci-gate.mjs",
+        "headBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e",
+        "masterBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e",
+        "childBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e",
+        "candidateBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
+      },
+      {
+        "path": ".github/workflows/cut-release.yml",
+        "headBlob": "8c4e40df3dc43c2d6fa2e1f71d5c3b2896edc650",
+        "masterBlob": "54a9f8df0d54b4e8452c121387c9f61b402a17cb",
+        "childBlob": "1b54fd83855007a436179513b78ef58baa548528",
+        "candidateBlob": "54a9f8df0d54b4e8452c121387c9f61b402a17cb"
+      },
+      {
+        "path": "scripts/postgres-goal-pace-smoke.mjs",
+        "headBlob": "961d595fff3996e551e5b930ece546f4294a4ef7",
+        "masterBlob": "a1890cbbcd3096be4af19907b817c5e343e4060d",
+        "childBlob": "961d595fff3996e551e5b930ece546f4294a4ef7",
+        "candidateBlob": "a1890cbbcd3096be4af19907b817c5e343e4060d"
+      }
+    ],
+    "exactConsumerComparisons": [
+      {
+        "ref": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+        "waitStepSha256": "f480b9bc61a5e891f9bb9f25ac78b67e021ef92097d2457c6212cd36c84c480f",
+        "finalPremergeCallSha256": "87024fe39806329cc5b0cf5cd49729dfde08321dba449e111ea615f90725f7fd",
+        "twoCalls": 2
+      },
+      {
+        "ref": "547206a1b372b73fc95fc412ad453b8099440000",
+        "waitStepSha256": "f480b9bc61a5e891f9bb9f25ac78b67e021ef92097d2457c6212cd36c84c480f",
+        "finalPremergeCallSha256": "87024fe39806329cc5b0cf5cd49729dfde08321dba449e111ea615f90725f7fd",
+        "twoCalls": 2
+      },
+      {
+        "ref": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+        "waitStepSha256": "f480b9bc61a5e891f9bb9f25ac78b67e021ef92097d2457c6212cd36c84c480f",
+        "finalPremergeCallSha256": "87024fe39806329cc5b0cf5cd49729dfde08321dba449e111ea615f90725f7fd",
+        "twoCalls": 2
+      },
+      {
+        "ref": "2b2c58e089465679b3cf9a8738fde8f453e4c658",
+        "waitStepSha256": "f480b9bc61a5e891f9bb9f25ac78b67e021ef92097d2457c6212cd36c84c480f",
+        "finalPremergeCallSha256": "87024fe39806329cc5b0cf5cd49729dfde08321dba449e111ea615f90725f7fd",
+        "twoCalls": 2
+      }
+    ],
+    "observed": "Release run37880190066 job113658571223 failed at lint.yml action_required, identifying run37880437994. Database run37880437998 job113665062675 passed all48 migrations then failed scripts/postgres-goal-pace-smoke.mjs:279:24 with90000!=84000. Current master and455 smoke blobs match a1890cbb;441 and452 have historical961d595f. Gate helper blob e045505e is identical at all four sources; both premerge consumer snippets are identical.",
+    "relevance": "The merged441 chooser still calls the inherited PR-only gate. It therefore cannot deliver the newly requested hands-off release progression; current-master goal-smoke failure would also block release finalization. Gate safety works by refusing these states. This is an inherited operational defect, not introduced by441.",
+    "readinessDecision": "Does not block human review readiness of441 bounded consolidation: issue440 specifically preserves existing gate, bounded approval wait, retained candidates and failure rejection; changed routing/native behavior remains demonstrated. It DOES block treating441/452 as a hands-off release fix or authorizing an operational release retry. Issue457 must repair and validate these failures separately. No provider/settings workaround or455 mutation is authorized. If457 lands or changes shared workers, coordinator must invalidate affected base/behavior gates and request new impact QA.",
+    "fixtureDiagnosis": "Date-sensitive fixture suspected from source ordering and observed line279; no disposablePostgreSQL reproduction by this lane, no claim that all later timezone/Wear/import cases ran. Owner457 owns reproduction and correction."
+  },
+  "criticalUnchanged": [
+    {
+      "path": "scripts/release-ci-gate.mjs",
+      "headAndActualTargetBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e"
+    },
+    {
+      "path": "scripts/release-ci-gate.test.mjs",
+      "headAndActualTargetBlob": "5a739a178adf706349b22a742a82ba347923fe5a"
+    },
+    {
+      "path": ".github/workflows/container.yml",
+      "headAndActualTargetBlob": "c1be01c98b5751317625d27453d75de2d30c5ee4"
+    },
+    {
+      "path": ".github/workflows/publish-release.yml",
+      "headAndActualTargetBlob": "5158528d406e74e626ec17e25bc1e154ff898bc1"
+    },
+    {
+      "path": "scripts/ghcr-release-policy.mjs",
+      "headAndActualTargetBlob": "9fde08856d706bfd2bde9b13a3aed7594500f984"
+    },
+    {
+      "path": "scripts/ghcr-release-receipt.mjs",
+      "headAndActualTargetBlob": "afdc549612071d6c3e496b8720ab27257eaee767"
+    },
+    {
+      "path": "scripts/native-tag-attestation.mjs",
+      "headAndActualTargetBlob": "067afe2423615428cecf99b78fb4edbe8dc7beec"
+    },
+    {
+      "path": "scripts/release-config.mjs",
+      "headAndActualTargetBlob": "2eb1ad7c26a4e8f891cb7ac37f546290173a3341"
+    },
+    {
+      "path": ".github/release-image-attestation-trusted-workflow-shas",
+      "headAndActualTargetBlob": "760e82a4dd87bc383213d07193d585041d1231dd"
+    }
+  ],
+  "historicalReceipts": [
+    {
+      "verdictCommentId": 6068012907,
+      "verdictBodySha256": "9fa5c95ff7c4c03cb729ec8476e05ef4ee8b4d696b0495eb4892cc948e8fb45b",
+      "verdictUpdatedAt": "2026-10-08T20:01:39Z"
+    },
+    {
+      "verdictCommentId": 6032519419,
+      "verdictBodySha256": "3948d752a0429256c80acc91097299bed09c5afb5fa200eb599f48212695a5c1",
+      "verdictUpdatedAt": "2026-10-07T06:42:56Z"
+    },
+    {
+      "verdictCommentId": 6071045718,
+      "verdictBodySha256": "a58f024cf9768440f3dcc6df83145e47b22162d8ccec5635009c5850ba53b259",
+      "verdictUpdatedAt": "2026-10-08T23:26:04Z"
+    }
+  ],
+  "retainedOriginals": {
+    "priorVerdictCommit": "c218350e629c3a7c3bf1440e606ae9f9e2c51d94",
+    "priorVerdictSha256": "3096164f3531110d70c1b4b72ef3d09ee12ff7585019d0c91ed7bd2385d01259",
+    "originalQaVerdictCommit": "0308a6c950e1420f2d824761f1dc1b768f5b5c86",
+    "sourceBehaviorEvidenceCommit": "aead6ffa9e6a6002c4195f9ef440511238cba6d9",
+    "historicalCiCommit": "fa378d82eb524b33ada2de4291eb34bc8d312be5",
+    "original401RetentionCommit": "f44643d0bdfd2ec4a26e14b5571e5ba94dd8cb07",
+    "priorBodySha256": "171fa1321cea45531d8305d9eb182a3a24c16100fcdafb3f67a99e3a141c7a30",
+    "policy": "Preserved unchanged; no old receipt or source observation rebound to current head.",
+    "previousSameLaneVerdictCommit": "a73abd3d855fa653a50b02376699ff85ca48634a",
+    "previousSameLaneVerdictSha256": "4beff9e0dbcc9524f8ea95a5c20619c1e306a5f7b613a37261f12175a6e5f442",
+    "currentOwnerImpactCommit": "73c205a142ec34d8afc76413aa720d63a6a09ce9",
+    "currentOwnerReceiptCommit": "9e31053a081b66fe43be5091342c1167e5a1b063",
+    "previousPrBodySha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553",
+    "previousIssueBodySha256": "a1afb81d9a1d2e144ddeff7426531cd16c92dc9464098bc75c6b220023ca10fa"
+  },
+  "evidence": [
+    {
+      "commit": "73c205a142ec34d8afc76413aa720d63a6a09ce9",
+      "path": "impact.json",
+      "gitBlobSha": "513025111e741e109adf7b22f0c4d51b30f3d7ee",
+      "sha256": "6f42f3d1434217f2325032e91948b1f8e8c4b3f216d622c19b452d2e2b4f9859",
+      "bytes": 252808
+    },
+    {
+      "commit": "73c205a142ec34d8afc76413aa720d63a6a09ce9",
+      "path": "incoming.patch",
+      "gitBlobSha": "f88f28a90206da601960c6fc5d3ad2e58c189d88",
+      "sha256": "458a45542c320fc43f658c9ec009c1b032075fb43beb7f9be772f040b5a128f7",
+      "bytes": 118888
+    },
+    {
+      "commit": "73c205a142ec34d8afc76413aa720d63a6a09ce9",
+      "path": "pr-body-before.md",
+      "gitBlobSha": "f00eebd185c10760278a89b1a46b8026dd86b07e",
+      "sha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553",
+      "bytes": 4742
+    },
+    {
+      "commit": "9e31053a081b66fe43be5091342c1167e5a1b063",
+      "path": "impact.json",
+      "gitBlobSha": "513025111e741e109adf7b22f0c4d51b30f3d7ee",
+      "sha256": "6f42f3d1434217f2325032e91948b1f8e8c4b3f216d622c19b452d2e2b4f9859",
+      "bytes": 252808
+    },
+    {
+      "commit": "9e31053a081b66fe43be5091342c1167e5a1b063",
+      "path": "incoming.patch",
+      "gitBlobSha": "f88f28a90206da601960c6fc5d3ad2e58c189d88",
+      "sha256": "458a45542c320fc43f658c9ec009c1b032075fb43beb7f9be772f040b5a128f7",
+      "bytes": 118888
+    },
+    {
+      "commit": "9e31053a081b66fe43be5091342c1167e5a1b063",
+      "path": "pr-body-before.md",
+      "gitBlobSha": "f00eebd185c10760278a89b1a46b8026dd86b07e",
+      "sha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553",
+      "bytes": 4742
+    },
+    {
+      "commit": "9e31053a081b66fe43be5091342c1167e5a1b063",
+      "path": "pr-body-final.md",
+      "gitBlobSha": "35d35be0d6356adba4415977ce61582f0732f683",
+      "sha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+      "bytes": 5258
+    },
+    {
+      "commit": "9e31053a081b66fe43be5091342c1167e5a1b063",
+      "path": "receipt.json",
+      "gitBlobSha": "c963a5e13d454b02a99e47dbb178e447648bfb7d",
+      "sha256": "8ea9c9a5cd9b06b284994f9d41350bba54e0290a640a30a68cd3b2928d618b33",
+      "bytes": 1006
+    }
+  ],
+  "uiEvidence": {
+    "applicable": false,
+    "pairs": [],
+    "nonUiObservableContract": "CLI/workflow request routing and mocked native worker ordering; no changed application UI. Exact-source original observations retained. Current focused CI gate fixture tests and real hosted failure logs establish fail-closed boundaries. No native device or screenshot/render result invented."
+  },
+  "tests": {
+    "current": "node --test --test-isolation=none calibrate-auth-qa/scripts/release-ci-gate.test.mjs;20passed/0failed/0skipped",
+    "firstAttempt": "Default Node test runner failed before tests with spawn EPERM (-4048) in sandbox. Same maintained pure/mock suite ran in-process with --test-isolation=none; no ACL/sandbox change, no privileged retry, no external release call.",
+    "historical": "Original117 QA tests belong to reviewer01a1128e-30ca-76da-bdf8-6e588e957030. Owner154release/254native/26deployment tests and Linux CI results retain their original source identities; no broad repeat here."
+  },
+  "linkage": {
+    "nativeClosingIssue": 440,
+    "currentTaskCorrect": true,
+    "issueOriginalArchive": 6073919842,
+    "project": "No Project write or whole-board coverage certification; coordinator owns current Project reconciliation."
+  },
+  "limitations": [
+    "Readiness is limited to441 consolidation, not hands-off release readiness; issue457 remains active and unvalidated here.",
+    "No integrated runtime, disposable database, Docker, provider/release workflow, signing/upload/image/OTA/deployment or native device execution.",
+    "Child452 source identity inspected only for inheritance of gate; no child verdict or readiness.",
+    "No new user action required from this assessment; normal coordinator verification and human PR review remain."
+  ],
+  "nextAction": "Coordinator separately persist exact comment receipt, reread full feedback/head/actual target/body/evidence and CI applicability before and after any readiness transition. Preserve issue457 operational blocker and separately queued child452. Any source/base/evidence drift requires affected reassessment.",
+  "checkpoint": "Complete and idle after receipt. One QA lane; no child task or suite started. Independent checkout clean; no source/body/Project/readiness/draft/merge changes."
+}

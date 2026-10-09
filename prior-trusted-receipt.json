@@ -1,0 +1,30 @@
+{
+  "verdict": "changes-required",
+  "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "baseSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "headParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "targetParents": [
+    "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+    "d94a34d019bd9d993c27d33dbc1accc2cce61a87"
+  ],
+  "parentRevisions": [],
+  "prBodySha256": "dc2b94b5543608e1316e6e5799f773f4fe62b440f363ab3aba23a382e7354553",
+  "checkedAtUtc": "2026-10-08T23:24:22.826335+00:00",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "supersedesVerdictCommentId": 6068012907,
+  "verdictCommentId": 6071045718,
+  "verdictBodySha256": "a58f024cf9768440f3dcc6df83145e47b22162d8ccec5635009c5850ba53b259",
+  "verdictUpdatedAt": "2026-10-08T23:26:04Z",
+  "url": "https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6071045718",
+  "evidenceCommit": "a73abd3d855fa653a50b02376699ff85ca48634a",
+  "evidencePath": "verdict.json",
+  "evidenceSha256": "4beff9e0dbcc9524f8ea95a5c20619c1e306a5f7b613a37261f12175a6e5f442",
+  "postPublicationRecheckedAtUtc": "2026-10-08T23:26:18.646335+00:00",
+  "checkpoint": "Complete and idle. All QA tests stopped; no next QA task or overlapping suite. Product/body/Project/readiness/draft/merge unchanged."
+}

@@ -1,0 +1,754 @@
+﻿2026-10-09T03:41:21.8260113Z Current runner version: '2.337.0'
+2026-10-09T03:41:21.8281632Z ##[group]Runner Image Provisioner
+2026-10-09T03:41:21.8282397Z Hosted Compute Agent
+2026-10-09T03:41:21.8282905Z Version: 20261002.596
+2026-10-09T03:41:21.8283401Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-09T03:41:21.8284045Z Build Date: 2026-10-02T22:28:27Z
+2026-10-09T03:41:21.8284609Z Worker ID: {87e57a1f-2ab6-474f-ac23-1cdfda21b6dc}
+2026-10-09T03:41:21.8285219Z Region: westus3
+2026-10-09T03:41:21.8285682Z Cloud: Azure
+2026-10-09T03:41:21.8286154Z ##[endgroup]
+2026-10-09T03:41:21.8287452Z ##[group]Operating System
+2026-10-09T03:41:21.8287960Z Ubuntu
+2026-10-09T03:41:21.8288432Z 24.04.5
+2026-10-09T03:41:21.8288894Z LTS
+2026-10-09T03:41:21.8289316Z ##[endgroup]
+2026-10-09T03:41:21.8289806Z ##[group]Runner Image
+2026-10-09T03:41:21.8290309Z Image: ubuntu-24.04
+2026-10-09T03:41:21.8290763Z Version: 20261004.327.1
+2026-10-09T03:41:21.8291876Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-09T03:41:21.8293147Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-09T03:41:21.8293906Z ##[endgroup]
+2026-10-09T03:41:21.8295005Z ##[group]GITHUB_TOKEN Permissions
+2026-10-09T03:41:21.8296795Z Actions: read
+2026-10-09T03:41:21.8297430Z Contents: write
+2026-10-09T03:41:21.8297929Z Metadata: read
+2026-10-09T03:41:21.8298392Z PullRequests: write
+2026-10-09T03:41:21.8298908Z ##[endgroup]
+2026-10-09T03:41:21.8300640Z Secret source: Actions
+2026-10-09T03:41:21.8301467Z Cache mode: write
+2026-10-09T03:41:21.8302035Z Prepare workflow directory
+2026-10-09T03:41:21.8652508Z Prepare all required actions
+2026-10-09T03:41:21.8691595Z Getting action download info
+2026-10-09T03:41:22.1609399Z Download action repository 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-09T03:41:22.2590430Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-09T03:41:22.3889562Z Download action repository 'actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3' (SHA:3a2844b7e9c422d3c10d287c895573f7108da1b3)
+2026-10-09T03:41:23.0730215Z Uses: MChartier/calibrate-health/.github/workflows/cut-release.yml@refs/heads/master (547206a1b372b73fc95fc412ad453b8099440000)
+2026-10-09T03:41:23.0734107Z ##[group] Inputs
+2026-10-09T03:41:23.0734579Z   bump: patch
+2026-10-09T03:41:23.0735032Z   source_sha: 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:23.0735563Z ##[endgroup]
+2026-10-09T03:41:23.0736083Z Complete job name: Run protected cut release / Merge validated release PR
+2026-10-09T03:41:23.1362670Z ##[group]Run set -euo pipefail
+2026-10-09T03:41:23.1363277Z [36;1mset -euo pipefail[0m
+2026-10-09T03:41:23.1363901Z [36;1mCURRENT_MASTER_SHA="$(curl --fail --silent --show-error --location \[0m
+2026-10-09T03:41:23.1364796Z [36;1m  --header "Authorization: ***" \[0m
+2026-10-09T03:41:23.1365406Z [36;1m  --header "Accept: application/vnd.github+json" \[0m
+2026-10-09T03:41:23.1366026Z [36;1m  --header "X-GitHub-Api-Version: 2022-11-28" \[0m
+2026-10-09T03:41:23.1366867Z [36;1m  "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |[0m
+2026-10-09T03:41:23.1367601Z [36;1m  jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"[0m
+2026-10-09T03:41:23.1368399Z [36;1mif [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then[0m
+2026-10-09T03:41:23.1369633Z [36;1m  echo "Cut finalization requires the current protected master workflow; found workflow ${WORKFLOW_SHA} and master ${CURRENT_MASTER_SHA}." >&2[0m
+2026-10-09T03:41:23.1370620Z [36;1m  exit 1[0m
+2026-10-09T03:41:23.1370987Z [36;1mfi[0m
+2026-10-09T03:41:23.1581357Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-09T03:41:23.1582182Z env:
+2026-10-09T03:41:23.1582558Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:23.1585924Z   GITHUB_TOKEN: ***
+2026-10-09T03:41:23.1586793Z   WORKFLOW_SHA: 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:23.1587316Z ##[endgroup]
+2026-10-09T03:41:23.6075723Z ##[group]Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+2026-10-09T03:41:23.6077151Z with:
+2026-10-09T03:41:23.6077907Z   ref: 2b2c58e089465679b3cf9a8738fde8f453e4c658
+2026-10-09T03:41:23.6078897Z   fetch-depth: 0
+2026-10-09T03:41:23.6079668Z   persist-credentials: false
+2026-10-09T03:41:23.6080578Z   repository: MChartier/calibrate-health
+2026-10-09T03:41:23.6088154Z   token: ***
+2026-10-09T03:41:23.6088895Z   ssh-strict: true
+2026-10-09T03:41:23.6089624Z   ssh-user: git
+2026-10-09T03:41:23.6090318Z   clean: true
+2026-10-09T03:41:23.6091056Z   sparse-checkout-cone-mode: true
+2026-10-09T03:41:23.6091928Z   fetch-tags: false
+2026-10-09T03:41:23.6092659Z   show-progress: true
+2026-10-09T03:41:23.6093393Z   lfs: false
+2026-10-09T03:41:23.6094069Z   submodules: false
+2026-10-09T03:41:23.6094811Z   set-safe-directory: true
+2026-10-09T03:41:23.6095652Z   allow-unsafe-pr-checkout: false
+2026-10-09T03:41:23.6096641Z env:
+2026-10-09T03:41:23.6097346Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:23.6098148Z ##[endgroup]
+2026-10-09T03:41:23.6903294Z Syncing repository: MChartier/calibrate-health
+2026-10-09T03:41:23.6905728Z ##[group]Getting Git version info
+2026-10-09T03:41:23.6907224Z Working directory is '/home/runner/work/calibrate-health/calibrate-health'
+2026-10-09T03:41:23.6909107Z [command]/usr/bin/git version
+2026-10-09T03:41:23.7364598Z git version 2.55.0
+2026-10-09T03:41:23.7383075Z ##[endgroup]
+2026-10-09T03:41:23.7395002Z Temporarily overriding HOME='/home/runner/work/_temp/ba4c2024-02a1-4d68-8dbc-67f1494d4a15' before making global git config changes
+2026-10-09T03:41:23.7398900Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-09T03:41:23.7402218Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+2026-10-09T03:41:23.7445961Z Deleting the contents of '/home/runner/work/calibrate-health/calibrate-health'
+2026-10-09T03:41:23.7449653Z ##[group]Initializing the repository
+2026-10-09T03:41:23.7452624Z [command]/usr/bin/git init /home/runner/work/calibrate-health/calibrate-health
+2026-10-09T03:41:23.8410894Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-09T03:41:23.8412754Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-09T03:41:23.8414450Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-09T03:41:23.8415766Z hint: call:
+2026-10-09T03:41:23.8416559Z hint:
+2026-10-09T03:41:23.8417446Z hint: 	git config --global init.defaultBranch <name>
+2026-10-09T03:41:23.8418498Z hint:
+2026-10-09T03:41:23.8419614Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-09T03:41:23.8421431Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-09T03:41:23.8422718Z hint:
+2026-10-09T03:41:23.8423415Z hint: 	git branch -m <name>
+2026-10-09T03:41:23.8424295Z hint:
+2026-10-09T03:41:23.8425398Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-09T03:41:23.8427962Z Initialized empty Git repository in /home/runner/work/calibrate-health/calibrate-health/.git/
+2026-10-09T03:41:23.8431770Z [command]/usr/bin/git remote add origin https://github.com/MChartier/calibrate-health
+2026-10-09T03:41:23.8465841Z ##[endgroup]
+2026-10-09T03:41:23.8467242Z ##[group]Disabling automatic garbage collection
+2026-10-09T03:41:23.8468753Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-09T03:41:23.8502584Z ##[endgroup]
+2026-10-09T03:41:23.8503817Z ##[group]Setting up auth
+2026-10-09T03:41:23.8508148Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T03:41:23.8537787Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-09T03:41:23.9212978Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T03:41:23.9244683Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-09T03:41:23.9435264Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T03:41:23.9465978Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-09T03:41:23.9659740Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-09T03:41:23.9694877Z ##[endgroup]
+2026-10-09T03:41:23.9696160Z ##[group]Fetching the repository
+2026-10-09T03:41:23.9703591Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+2026-10-09T03:41:27.8617099Z From https://github.com/MChartier/calibrate-health
+2026-10-09T03:41:27.8618568Z  * [new branch]        MChartier-patch-1       -> origin/MChartier-patch-1
+2026-10-09T03:41:27.8619021Z  * [new branch]        add-test-coverage       -> origin/add-test-coverage
+2026-10-09T03:41:27.8619431Z  * [new branch]        agents-md-update        -> origin/agents-md-update
+2026-10-09T03:41:27.8619821Z  * [new branch]        alpha                   -> origin/alpha
+2026-10-09T03:41:27.8620317Z  * [new branch]        archive/pr415-pre-scope-cleanup-ed4a2a7 -> origin/archive/pr415-pre-scope-cleanup-ed4a2a7
+2026-10-09T03:41:27.8620854Z  * [new branch]        athletic-data-theme     -> origin/athletic-data-theme
+2026-10-09T03:41:27.8621323Z  * [new branch]        auto-start-dev-server   -> origin/auto-start-dev-server
+2026-10-09T03:41:27.8621752Z  * [new branch]        aws-deploy-ec2-rds      -> origin/aws-deploy-ec2-rds
+2026-10-09T03:41:27.8622280Z  * [new branch]        barcode-scanner         -> origin/barcode-scanner
+2026-10-09T03:41:27.8622938Z  * [new branch]        barcode-scanner-fix     -> origin/barcode-scanner-fix
+2026-10-09T03:41:27.8623507Z  * [new branch]        beta                    -> origin/beta
+2026-10-09T03:41:27.8624111Z  * [new branch]        build-image-fix         -> origin/build-image-fix
+2026-10-09T03:41:27.8624925Z  * [new branch]        calorie-target-card-profile-autosave -> origin/calorie-target-card-profile-autosave
+2026-10-09T03:41:27.8625748Z  * [new branch]        ci-actions              -> origin/ci-actions
+2026-10-09T03:41:27.8626625Z  * [new branch]        ci-fix-prod-deploy-on-master -> origin/ci-fix-prod-deploy-on-master
+2026-10-09T03:41:27.8627407Z  * [new branch]        ci/build-deploy-release-trigger -> origin/ci/build-deploy-release-trigger
+2026-10-09T03:41:27.8628241Z  * [new branch]        ci/cut-release-tag-workflow -> origin/ci/cut-release-tag-workflow
+2026-10-09T03:41:27.8628999Z  * [new branch]        ci/ecs-wait-stable-longer -> origin/ci/ecs-wait-stable-longer
+2026-10-09T03:41:27.8629725Z  * [new branch]        ci/pr-only-lint-tests   -> origin/ci/pr-only-lint-tests
+2026-10-09T03:41:27.8630413Z  * [new branch]        ci/prod-smoke-tests     -> origin/ci/prod-smoke-tests
+2026-10-09T03:41:27.8631163Z  * [new branch]        ci/staging-oidc-branch-deploy -> origin/ci/staging-oidc-branch-deploy
+2026-10-09T03:41:27.8631944Z  * [new branch]        ci/staging-smoke-tests  -> origin/ci/staging-smoke-tests
+2026-10-09T03:41:27.8632661Z  * [new branch]        codex-devcontainer-auth -> origin/codex-devcontainer-auth
+2026-10-09T03:41:27.8633306Z  * [new branch]        codex-init              -> origin/codex-init
+2026-10-09T03:41:27.8634254Z  * [new branch]        codex/add-persisted-unit-preference-functionality -> origin/codex/add-persisted-unit-preference-functionality
+2026-10-09T03:41:27.8635509Z  * [new branch]        codex/dismiss-keyboard-after-food-input -> origin/codex/dismiss-keyboard-after-food-input
+2026-10-09T03:41:27.8638617Z  * [new branch]        codex/enforce-server-side-goal-deficit-validation -> origin/codex/enforce-server-side-goal-deficit-validation
+2026-10-09T03:41:27.8639988Z  * [new branch]        codex/enhance-log-page-with-daily-summary -> origin/codex/enhance-log-page-with-daily-summary
+2026-10-09T03:41:27.8641040Z  * [new branch]        codex/fix-frontend-audit-187 -> origin/codex/fix-frontend-audit-187
+2026-10-09T03:41:27.8642013Z  * [new branch]        codex/fix-open-github-issues -> origin/codex/fix-open-github-issues
+2026-10-09T03:41:27.8642840Z  * [new branch]        codex/fix-vite-build-warnings -> origin/codex/fix-vite-build-warnings
+2026-10-09T03:41:27.8643841Z  * [new branch]        codex/harden-authentication-and-session-storage -> origin/codex/harden-authentication-and-session-storage
+2026-10-09T03:41:27.8645065Z  * [new branch]        codex/notification-sse-stream -> origin/codex/notification-sse-stream
+2026-10-09T03:41:27.8645810Z  * [new branch]        codex/pr-assets-weight-trend-preview-axes -> origin/codex/pr-assets-weight-trend-preview-axes
+2026-10-09T03:41:27.8646598Z  * [new branch]        codex/ui-ux-improvements -> origin/codex/ui-ux-improvements
+2026-10-09T03:41:27.8647283Z  * [new branch]        coverage/add-c8-tooling -> origin/coverage/add-c8-tooling
+2026-10-09T03:41:27.8647752Z  * [new branch]        dark-mode               -> origin/dark-mode
+2026-10-09T03:41:27.8648185Z  * [new branch]        date-picker-padding-fixes -> origin/date-picker-padding-fixes
+2026-10-09T03:41:27.8648629Z  * [new branch]        db-push-reset           -> origin/db-push-reset
+2026-10-09T03:41:27.8649033Z  * [new branch]        default-meal-period     -> origin/default-meal-period
+2026-10-09T03:41:27.8649433Z  * [new branch]        delta                   -> origin/delta
+2026-10-09T03:41:27.8649801Z  * [new branch]        deploy-logging          -> origin/deploy-logging
+2026-10-09T03:41:27.8650234Z  * [new branch]        deploy-script-loading-fix -> origin/deploy-script-loading-fix
+2026-10-09T03:41:27.8650719Z  * [new branch]        dev-seed-varied-food-logs -> origin/dev-seed-varied-food-logs
+2026-10-09T03:41:27.8651189Z  * [new branch]        devcontainer-cli-scripts -> origin/devcontainer-cli-scripts
+2026-10-09T03:41:27.8651657Z  * [new branch]        devcontainer-import-skills -> origin/devcontainer-import-skills
+2026-10-09T03:41:27.8652235Z  * [new branch]        devcontainer-test-users-avatar-onboarding -> origin/devcontainer-test-users-avatar-onboarding
+2026-10-09T03:41:27.8653016Z  * [new branch]        ec2-deploy-fix          -> origin/ec2-deploy-fix
+2026-10-09T03:41:27.8653655Z  * [new branch]        edit-logged-entries     -> origin/edit-logged-entries
+2026-10-09T03:41:27.8654424Z  * [new branch]        evidence/451-deletion-d4b6d9f -> origin/evidence/451-deletion-d4b6d9f
+2026-10-09T03:41:27.8655146Z  * [new branch]        evidence/auth431-exact-byte-correction-20261008 -> origin/evidence/auth431-exact-byte-correction-20261008
+2026-10-09T03:41:27.8655905Z  * [new branch]        evidence/issue412-communication-archive-20261006 -> origin/evidence/issue412-communication-archive-20261006
+2026-10-09T03:41:27.8656748Z  * [new branch]        evidence/issue412-master-c5f149a -> origin/evidence/issue412-master-c5f149a
+2026-10-09T03:41:27.8657302Z  * [new branch]        evidence/issue413-clean-1af6ca9 -> origin/evidence/issue413-clean-1af6ca9
+2026-10-09T03:41:27.8657872Z  * [new branch]        evidence/issue414-master-25e90e19 -> origin/evidence/issue414-master-25e90e19
+2026-10-09T03:41:27.8658495Z  * [new branch]        evidence/issue421-preparation-d8a2ac14 -> origin/evidence/issue421-preparation-d8a2ac14
+2026-10-09T03:41:27.8659084Z  * [new branch]        evidence/issue422-sql-3b2ccd7 -> origin/evidence/issue422-sql-3b2ccd7
+2026-10-09T03:41:27.8659632Z  * [new branch]        evidence/issue433-ci-gate-9f8359c -> origin/evidence/issue433-ci-gate-9f8359c
+2026-10-09T03:41:27.8660154Z  * [new branch]        evidence/issue435-3ac32ffa -> origin/evidence/issue435-3ac32ffa
+2026-10-09T03:41:27.8660639Z  * [new branch]        evidence/issue446-baseline -> origin/evidence/issue446-baseline
+2026-10-09T03:41:27.8661552Z  * [new branch]        evidence/issue447-preparation-a8539c3b -> origin/evidence/issue447-preparation-a8539c3b
+2026-10-09T03:41:27.8662140Z  * [new branch]        evidence/managed-438-01a11c7b -> origin/evidence/managed-438-01a11c7b
+2026-10-09T03:41:27.8662689Z  * [new branch]        evidence/pr401-original-0f53ed82 -> origin/evidence/pr401-original-0f53ed82
+2026-10-09T03:41:27.8663440Z  * [new branch]        evidence/pr401-recovery-records -> origin/evidence/pr401-recovery-records
+2026-10-09T03:41:27.8664252Z  * [new branch]        evidence/pr401-source-001fcaa -> origin/evidence/pr401-source-001fcaa
+2026-10-09T03:41:27.8665062Z  * [new branch]        evidence/pr402-capture-build-7da08240 -> origin/evidence/pr402-capture-build-7da08240
+2026-10-09T03:41:27.8666068Z  * [new branch]        evidence/pr402-original-a341dcf2 -> origin/evidence/pr402-original-a341dcf2
+2026-10-09T03:41:27.8667488Z  * [new branch]        evidence/pr402-recovery-record-20261007 -> origin/evidence/pr402-recovery-record-20261007
+2026-10-09T03:41:27.8668647Z  * [new branch]        evidence/pr410-base-to-final-4728d4f -> origin/evidence/pr410-base-to-final-4728d4f
+2026-10-09T03:41:27.8669628Z  * [new branch]        evidence/pr410-integrated-4728d4f -> origin/evidence/pr410-integrated-4728d4f
+2026-10-09T03:41:27.8670594Z  * [new branch]        evidence/pr410-reviewed-d8e55c -> origin/evidence/pr410-reviewed-d8e55c
+2026-10-09T03:41:27.8671667Z  * [new branch]        evidence/pr415-rail-integration-oct05 -> origin/evidence/pr415-rail-integration-oct05
+2026-10-09T03:41:27.8672670Z  * [new branch]        evidence/pr415-reviewed-a1df146 -> origin/evidence/pr415-reviewed-a1df146
+2026-10-09T03:41:27.8673616Z  * [new branch]        evidence/pr416-reviewed-0406e96 -> origin/evidence/pr416-reviewed-0406e96
+2026-10-09T03:41:27.8674687Z  * [new branch]        evidence/pr417-guard-recovery-4dcad2c -> origin/evidence/pr417-guard-recovery-4dcad2c
+2026-10-09T03:41:27.8675723Z  * [new branch]        evidence/pr417-offline-recovery-3c743b4 -> origin/evidence/pr417-offline-recovery-3c743b4
+2026-10-09T03:41:27.8676954Z  * [new branch]        evidence/pr417-refresh-recovery-123bab9 -> origin/evidence/pr417-refresh-recovery-123bab9
+2026-10-09T03:41:27.8677900Z  * [new branch]        evidence/pr417-reviewed-736a86c -> origin/evidence/pr417-reviewed-736a86c
+2026-10-09T03:41:27.8678788Z  * [new branch]        evidence/pr418-reviewed-fbb74a9 -> origin/evidence/pr418-reviewed-fbb74a9
+2026-10-09T03:41:27.8679640Z  * [new branch]        evidence/pr419-reviewed-fba1baf -> origin/evidence/pr419-reviewed-fba1baf
+2026-10-09T03:41:27.8680510Z  * [new branch]        evidence/pr424-scope-cleanup-oct05 -> origin/evidence/pr424-scope-cleanup-oct05
+2026-10-09T03:41:27.8681566Z  * [new branch]        evidence/pr427-general-route-95c4ce82 -> origin/evidence/pr427-general-route-95c4ce82
+2026-10-09T03:41:27.8682717Z  * [new branch]        evidence/pr431-independent-reassessment-20261008 -> origin/evidence/pr431-independent-reassessment-20261008
+2026-10-09T03:41:27.8683981Z  * [new branch]        evidence/pr431-qa-target9dc-20261008 -> origin/evidence/pr431-qa-target9dc-20261008
+2026-10-09T03:41:27.8684951Z  * [new branch]        evidence/pr434-independent-qa-9f8359c -> origin/evidence/pr434-independent-qa-9f8359c
+2026-10-09T03:41:27.8686112Z  * [new branch]        evidence/pr436-independent-qa-d94a34d0-20261007 -> origin/evidence/pr436-independent-qa-d94a34d0-20261007
+2026-10-09T03:41:27.8687607Z  * [new branch]        evidence/pr437-independent-reassessment-20261008 -> origin/evidence/pr437-independent-reassessment-20261008
+2026-10-09T03:41:27.8688843Z  * [new branch]        evidence/pr437-native-linkage-final-20261008 -> origin/evidence/pr437-native-linkage-final-20261008
+2026-10-09T03:41:27.8690019Z  * [new branch]        evidence/pr437-native-linkage-ready-20261008 -> origin/evidence/pr437-native-linkage-ready-20261008
+2026-10-09T03:41:27.8691103Z  * [new branch]        evidence/pr437-qa-target9dc-20261008 -> origin/evidence/pr437-qa-target9dc-20261008
+2026-10-09T03:41:27.8692513Z  * [new branch]        evidence/pr439-browser-20261007 -> origin/evidence/pr439-browser-20261007
+2026-10-09T03:41:27.8693295Z  * [new branch]        evidence/pr439-qa-20261007-01a114c0 -> origin/evidence/pr439-qa-20261007-01a114c0
+2026-10-09T03:41:27.8693918Z  * [new branch]        evidence/pr441-doc-correction-cd8932b2 -> origin/evidence/pr441-doc-correction-cd8932b2
+2026-10-09T03:41:27.8694554Z  * [new branch]        evidence/pr441-independent-qa-0c26cea -> origin/evidence/pr441-independent-qa-0c26cea
+2026-10-09T03:41:27.8695170Z  * [new branch]        evidence/pr441-qa-doc-recheck-20261008 -> origin/evidence/pr441-qa-doc-recheck-20261008
+2026-10-09T03:41:27.8695764Z  * [new branch]        evidence/pr441-qa-target9dc-20261008 -> origin/evidence/pr441-qa-target9dc-20261008
+2026-10-09T03:41:27.8696782Z  * [new branch]        evidence/pr442-independent-reassessment-20261008 -> origin/evidence/pr442-independent-reassessment-20261008
+2026-10-09T03:41:27.8697862Z  * [new branch]        evidence/pr442-native-linkage-final-20261008 -> origin/evidence/pr442-native-linkage-final-20261008
+2026-10-09T03:41:27.8698516Z  * [new branch]        evidence/pr442-qa-target9dc-20261008 -> origin/evidence/pr442-qa-target9dc-20261008
+2026-10-09T03:41:27.8699131Z  * [new branch]        evidence/pr449-independent-qa-20261008 -> origin/evidence/pr449-independent-qa-20261008
+2026-10-09T03:41:27.8700178Z  * [new branch]        evidence/pr449-independent-qa-final-description-20261008 -> origin/evidence/pr449-independent-qa-final-description-20261008
+2026-10-09T03:41:27.8701401Z  * [new branch]        evidence/pr450-independent-qa-20261008 -> origin/evidence/pr450-independent-qa-20261008
+2026-10-09T03:41:27.8702188Z  * [new branch]        evidence/pr450-independent-qa-current-target-20261008 -> origin/evidence/pr450-independent-qa-current-target-20261008
+2026-10-09T03:41:27.8702943Z  * [new branch]        evidence/pr450-independent-qa-drift-20261008 -> origin/evidence/pr450-independent-qa-drift-20261008
+2026-10-09T03:41:27.8703607Z  * [new branch]        evidence/pr450-qa-r1-recheck-20261008 -> origin/evidence/pr450-qa-r1-recheck-20261008
+2026-10-09T03:41:27.8704207Z  * [new branch]        evidence/pr452-independent-qa-20261008 -> origin/evidence/pr452-independent-qa-20261008
+2026-10-09T03:41:27.8704849Z  * [new branch]        evidence/pr452-independent-recheck-20261009 -> origin/evidence/pr452-independent-recheck-20261009
+2026-10-09T03:41:27.8705489Z  * [new branch]        evidence/pr453-independent-qa-20261008 -> origin/evidence/pr453-independent-qa-20261008
+2026-10-09T03:41:27.8706046Z  * [new branch]        evidence/qa-issue421-pr431-v1 -> origin/evidence/qa-issue421-pr431-v1
+2026-10-09T03:41:27.8706753Z  * [new branch]        evidence/qa-issue421-pr431-v2 -> origin/evidence/qa-issue421-pr431-v2
+2026-10-09T03:41:27.8707260Z  * [new branch]        evidence/qa-issue421-pr431-v3 -> origin/evidence/qa-issue421-pr431-v3
+2026-10-09T03:41:27.8707755Z  * [new branch]        evidence/qa-issue421-pr431-v4 -> origin/evidence/qa-issue421-pr431-v4
+2026-10-09T03:41:27.8708256Z  * [new branch]        evidence/qa-issue421-pr431-v5 -> origin/evidence/qa-issue421-pr431-v5
+2026-10-09T03:41:27.8708744Z  * [new branch]        evidence/qa-issue421-pr437-v1 -> origin/evidence/qa-issue421-pr437-v1
+2026-10-09T03:41:27.8709248Z  * [new branch]        evidence/qa-issue421-pr442-v1 -> origin/evidence/qa-issue421-pr442-v1
+2026-10-09T03:41:27.8709855Z  * [new branch]        evidence/serial-qa-target9dc-handoff-20261008 -> origin/evidence/serial-qa-target9dc-handoff-20261008
+2026-10-09T03:41:27.8710555Z  * [new branch]        evidence/serial-qa-trusted-handoff-20261008 -> origin/evidence/serial-qa-trusted-handoff-20261008
+2026-10-09T03:41:27.8711239Z  * [new branch]        evidence/trusted-qa-final-receipts-20261008 -> origin/evidence/trusted-qa-final-receipts-20261008
+2026-10-09T03:41:27.8711783Z  * [new branch]        fab-space-on-log        -> origin/fab-space-on-log
+2026-10-09T03:41:27.8712220Z  * [new branch]        fatsecret-barcode-oauth -> origin/fatsecret-barcode-oauth
+2026-10-09T03:41:27.8712942Z  * [new branch]        fatsecret-provider      -> origin/fatsecret-provider
+2026-10-09T03:41:27.8713467Z  * [new branch]        feat/barcode-scanner-zxing-fallback -> origin/feat/barcode-scanner-zxing-fallback
+2026-10-09T03:41:27.8714036Z  * [new branch]        feat/birthday-emoji-log-summary -> origin/feat/birthday-emoji-log-summary
+2026-10-09T03:41:27.8714588Z  * [new branch]        feat/i18n-language-preference -> origin/feat/i18n-language-preference
+2026-10-09T03:41:27.8715063Z  * [new branch]        feat/my-foods-recipes   -> origin/feat/my-foods-recipes
+2026-10-09T03:41:27.8715517Z  * [new branch]        feat/profile-photo-avatar -> origin/feat/profile-photo-avatar
+2026-10-09T03:41:27.8716000Z  * [new branch]        feat/public-landing-page -> origin/feat/public-landing-page
+2026-10-09T03:41:27.8716598Z  * [new branch]        fix-broken-frontend-build -> origin/fix-broken-frontend-build
+2026-10-09T03:41:27.8717154Z  * [new branch]        fix/issue-84-pwa-backstack-login -> origin/fix/issue-84-pwa-backstack-login
+2026-10-09T03:41:27.8717695Z  * [new branch]        fix/mifflin-st-jeor-age-clamp -> origin/fix/mifflin-st-jeor-age-clamp
+2026-10-09T03:41:27.8718214Z  * [new branch]        fix/prisma-db-url-from-db-env -> origin/fix/prisma-db-url-from-db-env
+2026-10-09T03:41:27.8718728Z  * [new branch]        fix/pwa-session-persistence -> origin/fix/pwa-session-persistence
+2026-10-09T03:41:27.8719198Z  * [new branch]        fix/rds-sslmode-require -> origin/fix/rds-sslmode-require
+2026-10-09T03:41:27.8719649Z  * [new branch]        fix/rds-sslmode-require-2 -> origin/fix/rds-sslmode-require-2
+2026-10-09T03:41:27.8720097Z  * [new branch]        fixed-meal-categories   -> origin/fixed-meal-categories
+2026-10-09T03:41:27.8720530Z  * [new branch]        friendly-log-date       -> origin/friendly-log-date
+2026-10-09T03:41:27.8720924Z  * [new branch]        gh-auth                 -> origin/gh-auth
+2026-10-09T03:41:27.8721346Z  * [new branch]        goal-and-log-improvements -> origin/goal-and-log-improvements
+2026-10-09T03:41:27.8721786Z  * [new branch]        goal-tracker            -> origin/goal-tracker
+2026-10-09T03:41:27.8722227Z  * [new branch]        goals-compact-goal-tracker -> origin/goals-compact-goal-tracker
+2026-10-09T03:41:27.8722727Z  * [new branch]        goals-weight-history-legend -> origin/goals-weight-history-legend
+2026-10-09T03:41:27.8723194Z  * [new branch]        infra-ecs-fargate-alb   -> origin/infra-ecs-fargate-alb
+2026-10-09T03:41:27.8723591Z  * [new branch]        issue/162               -> origin/issue/162
+2026-10-09T03:41:27.8723985Z  * [new branch]        local-service-worker    -> origin/local-service-worker
+2026-10-09T03:41:27.8724424Z  * [new branch]        log-date-navigation-ux  -> origin/log-date-navigation-ux
+2026-10-09T03:41:27.8724915Z  * [new branch]        log-date-picker-overlay-button -> origin/log-date-picker-overlay-button
+2026-10-09T03:41:27.8725396Z  * [new branch]        log-summary-header      -> origin/log-summary-header
+2026-10-09T03:41:27.8725885Z  * [new branch]        log-weight-entry-ux     -> origin/log-weight-entry-ux
+2026-10-09T03:41:27.8726677Z  * [new branch]        lose-it-import          -> origin/lose-it-import
+2026-10-09T03:41:27.8727375Z  * [new branch]        lowercase-ghcr-image    -> origin/lowercase-ghcr-image
+2026-10-09T03:41:27.8728004Z  * [new branch]        master                  -> origin/master
+2026-10-09T03:41:27.8728595Z  * [new branch]        mchartier/dev           -> origin/mchartier/dev
+2026-10-09T03:41:27.8729213Z  * [new branch]        mchartier/dev2          -> origin/mchartier/dev2
+2026-10-09T03:41:27.8730001Z  * [new branch]        mchartier/devcontainer-key-setup -> origin/mchartier/devcontainer-key-setup
+2026-10-09T03:41:27.8731006Z  * [new branch]        mchartier/dormant-account-deletion-421 -> origin/mchartier/dormant-account-deletion-421
+2026-10-09T03:41:27.8731991Z  * [new branch]        mchartier/goal-pace-continuity -> origin/mchartier/goal-pace-continuity
+2026-10-09T03:41:27.8733369Z  * [new branch]        mchartier/local-release-scripts -> origin/mchartier/local-release-scripts
+2026-10-09T03:41:27.8734316Z  * [new branch]        mchartier/managed-438-01a11c7b -> origin/mchartier/managed-438-01a11c7b
+2026-10-09T03:41:27.8735148Z  * [new branch]        mchartier/managed-self-hosting -> origin/mchartier/managed-self-hosting
+2026-10-09T03:41:27.8736064Z  * [new branch]        mchartier/paused-weigh-in-divider -> origin/mchartier/paused-weigh-in-divider
+2026-10-09T03:41:27.8737172Z  * [new branch]        mchartier/pilot-query-diagnostics -> origin/mchartier/pilot-query-diagnostics
+2026-10-09T03:41:27.8738166Z  * [new branch]        mchartier/planned-pause-visibility -> origin/mchartier/planned-pause-visibility
+2026-10-09T03:41:27.8739228Z  * [new branch]        mchartier/planned-pause-visibility-clean -> origin/mchartier/planned-pause-visibility-clean
+2026-10-09T03:41:27.8740344Z  * [new branch]        mchartier/preserve-android-wip-20260711 -> origin/mchartier/preserve-android-wip-20260711
+2026-10-09T03:41:27.8741408Z  * [new branch]        mchartier/release-entrypoints-recovery -> origin/mchartier/release-entrypoints-recovery
+2026-10-09T03:41:27.8742076Z  * [new branch]        mchartier/remove-instance-release-actions -> origin/mchartier/remove-instance-release-actions
+2026-10-09T03:41:27.8742717Z  * [new branch]        mchartier/remove-notification-history -> origin/mchartier/remove-notification-history
+2026-10-09T03:41:27.8743302Z  * [new branch]        mchartier/self-hosting-438 -> origin/mchartier/self-hosting-438
+2026-10-09T03:41:27.8743813Z  * [new branch]        mchartier/simplify-repository -> origin/mchartier/simplify-repository
+2026-10-09T03:41:27.8744353Z  * [new branch]        mchartier/streamline-deployment -> origin/mchartier/streamline-deployment
+2026-10-09T03:41:27.8744882Z  * [new branch]        mchartier/unified-release-447 -> origin/mchartier/unified-release-447
+2026-10-09T03:41:27.8745333Z  * [new branch]        mobile-logout           -> origin/mobile-logout
+2026-10-09T03:41:27.8745751Z  * [new branch]        mobile-ui-compact       -> origin/mobile-ui-compact
+2026-10-09T03:41:27.8746141Z  * [new branch]        new-logo                -> origin/new-logo
+2026-10-09T03:41:27.8746686Z  * [new branch]        notif/126               -> origin/notif/126
+2026-10-09T03:41:27.8747057Z  * [new branch]        notif/127               -> origin/notif/127
+2026-10-09T03:41:27.8747408Z  * [new branch]        notif/128               -> origin/notif/128
+2026-10-09T03:41:27.8748021Z  * [new branch]        notif/131-dedupe-fixes  -> origin/notif/131-dedupe-fixes
+2026-10-09T03:41:27.8748842Z  * [new branch]        notif/132-endpoint-ownership-guard -> origin/notif/132-endpoint-ownership-guard
+2026-10-09T03:41:27.8749537Z  * [new branch]        notifications           -> origin/notifications
+2026-10-09T03:41:27.8749970Z  * [new branch]        onboarding-guided-wizard -> origin/onboarding-guided-wizard
+2026-10-09T03:41:27.8750406Z  * [new branch]        peacock-rainbow         -> origin/peacock-rainbow
+2026-10-09T03:41:27.8750873Z  * [new branch]        perf/landing-mobile-scroll -> origin/perf/landing-mobile-scroll
+2026-10-09T03:41:27.8751312Z  * [new branch]        persistent-fab          -> origin/persistent-fab
+2026-10-09T03:41:27.8751708Z  * [new branch]        privacy-policy          -> origin/privacy-policy
+2026-10-09T03:41:27.8752148Z  * [new branch]        profile-account-management -> origin/profile-account-management
+2026-10-09T03:41:27.8752579Z  * [new branch]        profile-icon            -> origin/profile-icon
+2026-10-09T03:41:27.8753016Z  * [new branch]        profile-settings-separation -> origin/profile-settings-separation
+2026-10-09T03:41:27.8753462Z  * [new branch]        public-readme           -> origin/public-readme
+2026-10-09T03:41:27.8753915Z  * [new branch]        pwa-action-navigate-existing -> origin/pwa-action-navigate-existing
+2026-10-09T03:41:27.8754368Z  * [new branch]        pwa-icon-fix            -> origin/pwa-icon-fix
+2026-10-09T03:41:27.8755037Z  * [new branch]        pwa-launch-actions      -> origin/pwa-launch-actions
+2026-10-09T03:41:27.8755468Z  * [new branch]        pwa-manifest-polish     -> origin/pwa-manifest-polish
+2026-10-09T03:41:27.8755869Z  * [new branch]        pwa-setup               -> origin/pwa-setup
+2026-10-09T03:41:27.8756251Z  * [new branch]        rebrand-calibrate       -> origin/rebrand-calibrate
+2026-10-09T03:41:27.8756872Z  * [new branch]        release/v0.34.0         -> origin/release/v0.34.0
+2026-10-09T03:41:27.8757260Z  * [new branch]        release/v0.34.1         -> origin/release/v0.34.1
+2026-10-09T03:41:27.8757633Z  * [new branch]        release/v0.35.0         -> origin/release/v0.35.0
+2026-10-09T03:41:27.8758012Z  * [new branch]        release/v0.36.0         -> origin/release/v0.36.0
+2026-10-09T03:41:27.8758657Z  * [new branch]        release/v0.37.0         -> origin/release/v0.37.0
+2026-10-09T03:41:27.8759263Z  * [new branch]        release/v0.38.0         -> origin/release/v0.38.0
+2026-10-09T03:41:27.8759900Z  * [new branch]        release/v0.38.1         -> origin/release/v0.38.1
+2026-10-09T03:41:27.8760605Z  * [new branch]        rolling-average-weight-log -> origin/rolling-average-weight-log
+2026-10-09T03:41:27.8761307Z  * [new branch]        safe-areas              -> origin/safe-areas
+2026-10-09T03:41:27.8761952Z  * [new branch]        search-results          -> origin/search-results
+2026-10-09T03:41:27.8762621Z  * [new branch]        session-store-model     -> origin/session-store-model
+2026-10-09T03:41:27.8763309Z  * [new branch]        sidebar-item-style      -> origin/sidebar-item-style
+2026-10-09T03:41:27.8763972Z  * [new branch]        store-timezone          -> origin/store-timezone
+2026-10-09T03:41:27.8764610Z  * [new branch]        terraform-fix           -> origin/terraform-fix
+2026-10-09T03:41:27.8765267Z  * [new branch]        terraform-fixes         -> origin/terraform-fixes
+2026-10-09T03:41:27.8765949Z  * [new branch]        test-user               -> origin/test-user
+2026-10-09T03:41:27.8766837Z  * [new branch]        test/backend-unit-coverage -> origin/test/backend-unit-coverage
+2026-10-09T03:41:27.8767552Z  * [new branch]        tf-rds-rotation         -> origin/tf-rds-rotation
+2026-10-09T03:41:27.8768210Z  * [new branch]        tf-repo-rename-fix      -> origin/tf-repo-rename-fix
+2026-10-09T03:41:27.8769015Z  * [new branch]        timezone-picker-mui-autocomplete -> origin/timezone-picker-mui-autocomplete
+2026-10-09T03:41:27.8770027Z  * [new branch]        units-separate-controls-inline-status -> origin/units-separate-controls-inline-status
+2026-10-09T03:41:27.8770915Z  * [new branch]        update-comments         -> origin/update-comments
+2026-10-09T03:41:27.8771551Z  * [new branch]        update-docs             -> origin/update-docs
+2026-10-09T03:41:27.8772212Z  * [new branch]        vertical-spacing-fixes  -> origin/vertical-spacing-fixes
+2026-10-09T03:41:27.8773118Z  * [new branch]        weight-history-scale    -> origin/weight-history-scale
+2026-10-09T03:41:27.8773648Z  * [new branch]        worktree-colors         -> origin/worktree-colors
+2026-10-09T03:41:27.8774045Z  * [new branch]        worktree-reset          -> origin/worktree-reset
+2026-10-09T03:41:27.8774433Z  * [new branch]        worktree-script         -> origin/worktree-script
+2026-10-09T03:41:27.8774784Z  * [new tag]           v0.1.0                  -> v0.1.0
+2026-10-09T03:41:27.8775137Z  * [new tag]           v0.10.0                 -> v0.10.0
+2026-10-09T03:41:27.8775439Z  * [new tag]           v0.11.0                 -> v0.11.0
+2026-10-09T03:41:27.8775737Z  * [new tag]           v0.12.0                 -> v0.12.0
+2026-10-09T03:41:27.8776033Z  * [new tag]           v0.12.1                 -> v0.12.1
+2026-10-09T03:41:27.8776509Z  * [new tag]           v0.12.10                -> v0.12.10
+2026-10-09T03:41:27.8776820Z  * [new tag]           v0.12.11                -> v0.12.11
+2026-10-09T03:41:27.8777122Z  * [new tag]           v0.12.12                -> v0.12.12
+2026-10-09T03:41:27.8777592Z  * [new tag]           v0.12.13                -> v0.12.13
+2026-10-09T03:41:27.8778016Z  * [new tag]           v0.12.14                -> v0.12.14
+2026-10-09T03:41:27.8778313Z  * [new tag]           v0.12.15                -> v0.12.15
+2026-10-09T03:41:27.8778608Z  * [new tag]           v0.12.16                -> v0.12.16
+2026-10-09T03:41:27.8778897Z  * [new tag]           v0.12.17                -> v0.12.17
+2026-10-09T03:41:27.8779183Z  * [new tag]           v0.12.18                -> v0.12.18
+2026-10-09T03:41:27.8779475Z  * [new tag]           v0.12.19                -> v0.12.19
+2026-10-09T03:41:27.8779875Z  * [new tag]           v0.12.2                 -> v0.12.2
+2026-10-09T03:41:27.8780334Z  * [new tag]           v0.12.3                 -> v0.12.3
+2026-10-09T03:41:27.8780800Z  * [new tag]           v0.12.4                 -> v0.12.4
+2026-10-09T03:41:27.8781249Z  * [new tag]           v0.12.5                 -> v0.12.5
+2026-10-09T03:41:27.8781720Z  * [new tag]           v0.12.6                 -> v0.12.6
+2026-10-09T03:41:27.8782148Z  * [new tag]           v0.12.7                 -> v0.12.7
+2026-10-09T03:41:27.8782450Z  * [new tag]           v0.12.8                 -> v0.12.8
+2026-10-09T03:41:27.8782735Z  * [new tag]           v0.12.9                 -> v0.12.9
+2026-10-09T03:41:27.8783024Z  * [new tag]           v0.13.0                 -> v0.13.0
+2026-10-09T03:41:27.8783313Z  * [new tag]           v0.13.1                 -> v0.13.1
+2026-10-09T03:41:27.8783598Z  * [new tag]           v0.13.2                 -> v0.13.2
+2026-10-09T03:41:27.8783894Z  * [new tag]           v0.13.3                 -> v0.13.3
+2026-10-09T03:41:27.8784185Z  * [new tag]           v0.14.0                 -> v0.14.0
+2026-10-09T03:41:27.8784477Z  * [new tag]           v0.2.0                  -> v0.2.0
+2026-10-09T03:41:27.8784768Z  * [new tag]           v0.2.1                  -> v0.2.1
+2026-10-09T03:41:27.8785060Z  * [new tag]           v0.2.2                  -> v0.2.2
+2026-10-09T03:41:27.8785348Z  * [new tag]           v0.2.3                  -> v0.2.3
+2026-10-09T03:41:27.8785639Z  * [new tag]           v0.2.4                  -> v0.2.4
+2026-10-09T03:41:27.8785935Z  * [new tag]           v0.3.0                  -> v0.3.0
+2026-10-09T03:41:27.8786222Z  * [new tag]           v0.3.1                  -> v0.3.1
+2026-10-09T03:41:27.8786723Z  * [new tag]           v0.33.10                -> v0.33.10
+2026-10-09T03:41:27.8787031Z  * [new tag]           v0.33.11                -> v0.33.11
+2026-10-09T03:41:27.8787323Z  * [new tag]           v0.33.5                 -> v0.33.5
+2026-10-09T03:41:27.8787615Z  * [new tag]           v0.33.6                 -> v0.33.6
+2026-10-09T03:41:27.8787901Z  * [new tag]           v0.33.9                 -> v0.33.9
+2026-10-09T03:41:27.8788189Z  * [new tag]           v0.34.0                 -> v0.34.0
+2026-10-09T03:41:27.8788474Z  * [new tag]           v0.34.1                 -> v0.34.1
+2026-10-09T03:41:27.8788771Z  * [new tag]           v0.35.0                 -> v0.35.0
+2026-10-09T03:41:27.8789063Z  * [new tag]           v0.36.0                 -> v0.36.0
+2026-10-09T03:41:27.8789363Z  * [new tag]           v0.37.0                 -> v0.37.0
+2026-10-09T03:41:27.8789650Z  * [new tag]           v0.38.0                 -> v0.38.0
+2026-10-09T03:41:27.8789942Z  * [new tag]           v0.4.0                  -> v0.4.0
+2026-10-09T03:41:27.8790236Z  * [new tag]           v0.4.1                  -> v0.4.1
+2026-10-09T03:41:27.8790523Z  * [new tag]           v0.4.2                  -> v0.4.2
+2026-10-09T03:41:27.8790806Z  * [new tag]           v0.5.0                  -> v0.5.0
+2026-10-09T03:41:27.8791090Z  * [new tag]           v0.6.0                  -> v0.6.0
+2026-10-09T03:41:27.8791376Z  * [new tag]           v0.7.0                  -> v0.7.0
+2026-10-09T03:41:27.8791672Z  * [new tag]           v0.7.1                  -> v0.7.1
+2026-10-09T03:41:27.8791960Z  * [new tag]           v0.7.2                  -> v0.7.2
+2026-10-09T03:41:27.8792243Z  * [new tag]           v0.7.3                  -> v0.7.3
+2026-10-09T03:41:27.8792528Z  * [new tag]           v0.8.0                  -> v0.8.0
+2026-10-09T03:41:27.8793076Z  * [new tag]           v0.9.0                  -> v0.9.0
+2026-10-09T03:41:27.8793366Z  * [new tag]           v0.9.1                  -> v0.9.1
+2026-10-09T03:41:27.8794610Z [command]/usr/bin/git rev-parse --verify --quiet 2b2c58e089465679b3cf9a8738fde8f453e4c658^{object}
+2026-10-09T03:41:27.8795033Z 2b2c58e089465679b3cf9a8738fde8f453e4c658
+2026-10-09T03:41:27.8795727Z ##[endgroup]
+2026-10-09T03:41:27.8796105Z ##[group]Determining the checkout info
+2026-10-09T03:41:27.8796644Z ##[endgroup]
+2026-10-09T03:41:27.8796890Z [command]/usr/bin/git sparse-checkout disable
+2026-10-09T03:41:27.8797540Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-09T03:41:27.8798394Z ##[group]Checking out the ref
+2026-10-09T03:41:27.8798779Z [command]/usr/bin/git checkout --progress --force 2b2c58e089465679b3cf9a8738fde8f453e4c658
+2026-10-09T03:41:28.0485737Z Note: switching to '2b2c58e089465679b3cf9a8738fde8f453e4c658'.
+2026-10-09T03:41:28.0486156Z 
+2026-10-09T03:41:28.0486663Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-09T03:41:28.0487493Z changes and commit them, and you can discard any commits you make in this
+2026-10-09T03:41:28.0488028Z state without impacting any branches by switching back to a branch.
+2026-10-09T03:41:28.0488277Z 
+2026-10-09T03:41:28.0488456Z If you want to create a new branch to retain commits you create, you may
+2026-10-09T03:41:28.0488878Z do so (now or later) by using -c with the switch command. Example:
+2026-10-09T03:41:28.0489103Z 
+2026-10-09T03:41:28.0489226Z   git switch -c <new-branch-name>
+2026-10-09T03:41:28.0489386Z 
+2026-10-09T03:41:28.0489504Z Or undo this operation with:
+2026-10-09T03:41:28.0489652Z 
+2026-10-09T03:41:28.0489754Z   git switch -
+2026-10-09T03:41:28.0489882Z 
+2026-10-09T03:41:28.0490087Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-09T03:41:28.0490356Z 
+2026-10-09T03:41:28.0490493Z HEAD is now at 2b2c58e0 Prepare release v0.38.1
+2026-10-09T03:41:28.0504407Z ##[endgroup]
+2026-10-09T03:41:28.0545342Z [command]/usr/bin/git log -1 --format=%H
+2026-10-09T03:41:28.0572291Z 2b2c58e089465679b3cf9a8738fde8f453e4c658
+2026-10-09T03:41:28.0580013Z ##[group]Removing auth
+2026-10-09T03:41:28.0583048Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T03:41:28.0611984Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-09T03:41:28.0824772Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T03:41:28.0852563Z http.https://github.com/.extraheader
+2026-10-09T03:41:28.0858863Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-09T03:41:28.0890824Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-09T03:41:28.1082261Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T03:41:28.1113356Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-09T03:41:28.1304136Z ##[endgroup]
+2026-10-09T03:41:28.1512013Z ##[group]Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+2026-10-09T03:41:28.1512477Z with:
+2026-10-09T03:41:28.1512747Z   ref: 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:28.1513077Z   fetch-depth: 1
+2026-10-09T03:41:28.1513325Z   persist-credentials: false
+2026-10-09T03:41:28.1513658Z   path: .release-tooling
+2026-10-09T03:41:28.1513958Z   repository: MChartier/calibrate-health
+2026-10-09T03:41:28.1517670Z   token: ***
+2026-10-09T03:41:28.1517957Z   ssh-strict: true
+2026-10-09T03:41:28.1518226Z   ssh-user: git
+2026-10-09T03:41:28.1518731Z   clean: true
+2026-10-09T03:41:28.1519005Z   sparse-checkout-cone-mode: true
+2026-10-09T03:41:28.1519339Z   fetch-tags: false
+2026-10-09T03:41:28.1519616Z   show-progress: true
+2026-10-09T03:41:28.1519903Z   lfs: false
+2026-10-09T03:41:28.1520143Z   submodules: false
+2026-10-09T03:41:28.1520410Z   set-safe-directory: true
+2026-10-09T03:41:28.1520737Z   allow-unsafe-pr-checkout: false
+2026-10-09T03:41:28.1521111Z env:
+2026-10-09T03:41:28.1521365Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:28.1521657Z ##[endgroup]
+2026-10-09T03:41:28.2217404Z Syncing repository: MChartier/calibrate-health
+2026-10-09T03:41:28.2218575Z ##[group]Getting Git version info
+2026-10-09T03:41:28.2220276Z Working directory is '/home/runner/work/calibrate-health/calibrate-health/.release-tooling'
+2026-10-09T03:41:28.2245738Z [command]/usr/bin/git version
+2026-10-09T03:41:28.2281885Z git version 2.55.0
+2026-10-09T03:41:28.2298050Z ##[endgroup]
+2026-10-09T03:41:28.2309380Z Temporarily overriding HOME='/home/runner/work/_temp/19d556e0-81bc-4be9-b2a4-e15839eb2617' before making global git config changes
+2026-10-09T03:41:28.2310389Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-09T03:41:28.2312929Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health/.release-tooling
+2026-10-09T03:41:28.2344772Z ##[group]Initializing the repository
+2026-10-09T03:41:28.2348915Z [command]/usr/bin/git init /home/runner/work/calibrate-health/calibrate-health/.release-tooling
+2026-10-09T03:41:28.2387323Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-09T03:41:28.2388264Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-09T03:41:28.2388876Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-09T03:41:28.2389500Z hint: call:
+2026-10-09T03:41:28.2389889Z hint:
+2026-10-09T03:41:28.2390351Z hint: 	git config --global init.defaultBranch <name>
+2026-10-09T03:41:28.2390884Z hint:
+2026-10-09T03:41:28.2391254Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-09T03:41:28.2391764Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-09T03:41:28.2392181Z hint:
+2026-10-09T03:41:28.2392458Z hint: 	git branch -m <name>
+2026-10-09T03:41:28.2392754Z hint:
+2026-10-09T03:41:28.2393135Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-09T03:41:28.2393826Z Initialized empty Git repository in /home/runner/work/calibrate-health/calibrate-health/.release-tooling/.git/
+2026-10-09T03:41:28.2396620Z [command]/usr/bin/git remote add origin https://github.com/MChartier/calibrate-health
+2026-10-09T03:41:28.2428889Z ##[endgroup]
+2026-10-09T03:41:28.2429234Z ##[group]Disabling automatic garbage collection
+2026-10-09T03:41:28.2433219Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-09T03:41:28.2459986Z ##[endgroup]
+2026-10-09T03:41:28.2460390Z ##[group]Setting up auth
+2026-10-09T03:41:28.2466096Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T03:41:28.2494232Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-09T03:41:28.2709164Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T03:41:28.2738660Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-09T03:41:28.2948092Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T03:41:28.2992034Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-09T03:41:28.3198949Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-09T03:41:28.3389901Z ##[endgroup]
+2026-10-09T03:41:28.3390398Z ##[group]Fetching the repository
+2026-10-09T03:41:28.3398204Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:30.6729062Z From https://github.com/MChartier/calibrate-health
+2026-10-09T03:41:30.6729612Z  * branch            547206a1b372b73fc95fc412ad453b8099440000 -> FETCH_HEAD
+2026-10-09T03:41:30.6733211Z ##[endgroup]
+2026-10-09T03:41:30.6733640Z ##[group]Determining the checkout info
+2026-10-09T03:41:30.6735738Z ##[endgroup]
+2026-10-09T03:41:30.6742273Z [command]/usr/bin/git sparse-checkout disable
+2026-10-09T03:41:30.6781317Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-09T03:41:30.6835844Z ##[group]Checking out the ref
+2026-10-09T03:41:30.6839358Z [command]/usr/bin/git checkout --progress --force 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:30.8450267Z Note: switching to '547206a1b372b73fc95fc412ad453b8099440000'.
+2026-10-09T03:41:30.8450638Z 
+2026-10-09T03:41:30.8450883Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-09T03:41:30.8451467Z changes and commit them, and you can discard any commits you make in this
+2026-10-09T03:41:30.8452088Z state without impacting any branches by switching back to a branch.
+2026-10-09T03:41:30.8452425Z 
+2026-10-09T03:41:30.8452651Z If you want to create a new branch to retain commits you create, you may
+2026-10-09T03:41:30.8453213Z do so (now or later) by using -c with the switch command. Example:
+2026-10-09T03:41:30.8453519Z 
+2026-10-09T03:41:30.8453655Z   git switch -c <new-branch-name>
+2026-10-09T03:41:30.8453857Z 
+2026-10-09T03:41:30.8453979Z Or undo this operation with:
+2026-10-09T03:41:30.8454169Z 
+2026-10-09T03:41:30.8454276Z   git switch -
+2026-10-09T03:41:30.8454461Z 
+2026-10-09T03:41:30.8454719Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-09T03:41:30.8455115Z 
+2026-10-09T03:41:30.8455417Z HEAD is now at 547206a Keep new goal baseline aligned with same-day weight corrections (#449)
+2026-10-09T03:41:30.8462325Z ##[endgroup]
+2026-10-09T03:41:30.8500831Z [command]/usr/bin/git log -1 --format=%H
+2026-10-09T03:41:30.8524643Z 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:30.8531725Z ##[group]Removing auth
+2026-10-09T03:41:30.8534530Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T03:41:30.8562594Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-09T03:41:30.8756064Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T03:41:30.8778397Z http.https://github.com/.extraheader
+2026-10-09T03:41:30.8784085Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-09T03:41:30.8814615Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-09T03:41:30.9020133Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T03:41:30.9057844Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-09T03:41:30.9242501Z ##[endgroup]
+2026-10-09T03:41:30.9389775Z ##[group]Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+2026-10-09T03:41:30.9390087Z with:
+2026-10-09T03:41:30.9390254Z   node-version: 20
+2026-10-09T03:41:30.9390431Z   always-auth: false
+2026-10-09T03:41:30.9390610Z   check-latest: false
+2026-10-09T03:41:30.9392486Z   token: ***
+2026-10-09T03:41:30.9392653Z env:
+2026-10-09T03:41:30.9392820Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:30.9393169Z ##[endgroup]
+2026-10-09T03:41:31.0532532Z Attempting to download 20...
+2026-10-09T03:41:31.0615628Z (node:2362) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-09T03:41:31.0616320Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-09T03:41:32.0481365Z Acquiring 20.20.2 - x64 from https://github.com/actions/node-versions/releases/download/20.20.2-23521894959/node-20.20.2-linux-x64.tar.gz
+2026-10-09T03:41:32.5162898Z Extracting ...
+2026-10-09T03:41:32.5262431Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/c7baadc8-db66-40d5-9343-b6c74b026665 -f /home/runner/work/_temp/987ddae4-029d-4962-8137-0fae0f183506
+2026-10-09T03:41:33.3790934Z Adding to the cache ...
+2026-10-09T03:41:35.0261325Z ##[group]Environment details
+2026-10-09T03:41:35.2070546Z node: v20.20.2
+2026-10-09T03:41:35.2070857Z npm: 10.8.2
+2026-10-09T03:41:35.2071123Z yarn: 1.22.22
+2026-10-09T03:41:35.2071670Z ##[endgroup]
+2026-10-09T03:41:35.2205739Z ##[group]Run set -euo pipefail
+2026-10-09T03:41:35.2206015Z [36;1mset -euo pipefail[0m
+2026-10-09T03:41:35.2206320Z [36;1mif [[ ! "${SOURCE_SHA}" =~ ^[0-9a-f]{40}$ || ! "${RELEASE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then[0m
+2026-10-09T03:41:35.2206993Z [36;1m  echo "Finalization requires exact full source and release commit SHAs." >&2[0m
+2026-10-09T03:41:35.2207335Z [36;1m  exit 1[0m
+2026-10-09T03:41:35.2207519Z [36;1mfi[0m
+2026-10-09T03:41:35.2207843Z [36;1mif [[ ! "${RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ || "${RELEASE_BRANCH}" != "release/${RELEASE_TAG}" ]]; then[0m
+2026-10-09T03:41:35.2208263Z [36;1m  echo "Finalization received an invalid release identity." >&2[0m
+2026-10-09T03:41:35.2208543Z [36;1m  exit 1[0m
+2026-10-09T03:41:35.2208703Z [36;1mfi[0m
+2026-10-09T03:41:35.2208937Z [36;1mgit --no-replace-objects fetch --force --no-tags origin \[0m
+2026-10-09T03:41:35.2209270Z [36;1m  '+refs/heads/master:refs/remotes/origin/master' \[0m
+2026-10-09T03:41:35.2209651Z [36;1m  "+refs/heads/${RELEASE_BRANCH}:refs/remotes/origin/${RELEASE_BRANCH}"[0m
+2026-10-09T03:41:35.2210161Z [36;1mif [[ "$(git --no-replace-objects rev-parse --verify 'refs/remotes/origin/master^{commit}')" != "${SOURCE_SHA}" ]]; then[0m
+2026-10-09T03:41:35.2210698Z [36;1m  echo "Protected master advanced after release validation. Rerun Cut release." >&2[0m
+2026-10-09T03:41:35.2211032Z [36;1m  exit 1[0m
+2026-10-09T03:41:35.2211195Z [36;1mfi[0m
+2026-10-09T03:41:35.2211609Z [36;1mif [[ "$(git --no-replace-objects rev-parse --verify "refs/remotes/origin/${RELEASE_BRANCH}^{commit}")" != "${RELEASE_SHA}" ]]; then[0m
+2026-10-09T03:41:35.2212170Z [36;1m  echo "Release branch no longer points to the validated candidate." >&2[0m
+2026-10-09T03:41:35.2212485Z [36;1m  exit 1[0m
+2026-10-09T03:41:35.2212645Z [36;1mfi[0m
+2026-10-09T03:41:35.2212935Z [36;1mnode .release-tooling/scripts/release-config.mjs verify-prepared-candidate \[0m
+2026-10-09T03:41:35.2213310Z [36;1m  --repository-root "${GITHUB_WORKSPACE}" \[0m
+2026-10-09T03:41:35.2213562Z [36;1m  --release-tag "${RELEASE_TAG}" \[0m
+2026-10-09T03:41:35.2213805Z [36;1m  --expected-commit "${RELEASE_SHA}" \[0m
+2026-10-09T03:41:35.2214041Z [36;1m  --publish-latest true \[0m
+2026-10-09T03:41:35.2214286Z [36;1m  --candidate-parent-current-master true[0m
+2026-10-09T03:41:35.2214589Z [36;1mnode .release-tooling/scripts/release-config.mjs check \[0m
+2026-10-09T03:41:35.2214891Z [36;1m  --repository-root "${GITHUB_WORKSPACE}"[0m
+2026-10-09T03:41:35.2275427Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-09T03:41:35.2275709Z env:
+2026-10-09T03:41:35.2275882Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:35.2276113Z   SOURCE_SHA: 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:35.2276570Z   RELEASE_SHA: 2b2c58e089465679b3cf9a8738fde8f453e4c658
+2026-10-09T03:41:35.2276847Z   RELEASE_TAG: v0.38.1
+2026-10-09T03:41:35.2277037Z   RELEASE_BRANCH: release/v0.38.1
+2026-10-09T03:41:35.2277382Z ##[endgroup]
+2026-10-09T03:41:35.9153940Z {
+2026-10-09T03:41:35.9154269Z   "releaseTag": "v0.38.1",
+2026-10-09T03:41:35.9154641Z   "sourceCommit": "2b2c58e089465679b3cf9a8738fde8f453e4c658",
+2026-10-09T03:41:35.9155049Z   "parentCommit": "547206a1b372b73fc95fc412ad453b8099440000",
+2026-10-09T03:41:35.9155411Z   "masterCommit": "547206a1b372b73fc95fc412ad453b8099440000",
+2026-10-09T03:41:35.9155752Z   "currentStableTag": "v0.38.0"
+2026-10-09T03:41:35.9155977Z }
+2026-10-09T03:41:35.9156061Z 
+2026-10-09T03:41:35.9579481Z Release configuration is consistent.
+2026-10-09T03:41:35.9635377Z ##[group]Run set -euo pipefail
+2026-10-09T03:41:35.9635651Z [36;1mset -euo pipefail[0m
+2026-10-09T03:41:35.9635947Z [36;1mCURRENT_MASTER_SHA="$(curl --fail --silent --show-error --location \[0m
+2026-10-09T03:41:35.9636828Z [36;1m  --header "Authorization: ***" \[0m
+2026-10-09T03:41:35.9637134Z [36;1m  --header "Accept: application/vnd.github+json" \[0m
+2026-10-09T03:41:35.9637436Z [36;1m  --header "X-GitHub-Api-Version: 2022-11-28" \[0m
+2026-10-09T03:41:35.9637781Z [36;1m  "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/ref/heads/master" |[0m
+2026-10-09T03:41:35.9638129Z [36;1m  jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))')"[0m
+2026-10-09T03:41:35.9638506Z [36;1mif [[ ! "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ || "${CURRENT_MASTER_SHA}" != "${WORKFLOW_SHA}" ]]; then[0m
+2026-10-09T03:41:35.9638994Z [36;1m  echo "Protected master advanced before repository writes; start a new Cut release run." >&2[0m
+2026-10-09T03:41:35.9639356Z [36;1m  exit 1[0m
+2026-10-09T03:41:35.9639563Z [36;1mfi[0m
+2026-10-09T03:41:35.9696186Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-10-09T03:41:35.9696621Z env:
+2026-10-09T03:41:35.9696783Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:35.9698688Z   GITHUB_TOKEN: ***
+2026-10-09T03:41:35.9698918Z   WORKFLOW_SHA: 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:35.9699172Z ##[endgroup]
+2026-10-09T03:41:36.3333710Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-10-09T03:41:36.3334052Z with:
+2026-10-09T03:41:36.3335995Z   github-token: ***
+2026-10-09T03:41:36.3340693Z   script: const { VERSION: version, TAG: tag, BRANCH: branch } = process.env;
+const owner = context.repo.owner;
+const repo = context.repo.repo;
+const releaseSha = process.env.RELEASE_SHA;
+const { data: candidates } = await github.rest.pulls.list({
+  owner,
+  repo,
+  head: owner + ':' + branch,
+  base: 'master',
+  state: 'all',
+  per_page: 100,
+});
+const moved = candidates.find((pull) => pull.head.sha !== releaseSha && pull.state === 'open');
+if (moved) {
+  throw new Error('Release branch has open PR #' + moved.number + ' at unexpected ' + moved.head.sha + '.');
+}
+const existing = candidates.find((pull) => pull.head.sha === releaseSha && pull.state === 'open');
+if (existing) {
+  core.setOutput('pull_request_number', existing.number);
+  core.setOutput('pull_request_url', existing.html_url);
+  return;
+}
+const body = [
+  '## Summary',
+  '',
+  `- synchronize the server and web release mirrors at ${version}`,
+  `- prepare immutable source tag ${tag}`,
+  '- leave Android phone and Wear release identities unchanged',
+  '',
+  '## Validation',
+  '',
+  '- exact candidate identity and synchronized release mirrors',
+  '- production image build, readiness, and served-Web smoke',
+  '- required CI must succeed on this exact candidate before merge; approval or missing checks block finalization',
+  '',
+  'Candidate metadata and production smoke passed. Cut release now waits for this PR’s CI; approve pending workflow runs if GitHub requests it. After CI and merge, image publication runs explicitly; OTA and deployment have separate readiness gates.',
+].join('\n');
+const { data: pull } = await github.rest.pulls.create({
+  owner: context.repo.owner,
+  repo: context.repo.repo,
+  head: branch,
+  base: 'master',
+  title: `Release ${tag}`,
+  body,
+});
+core.setOutput('pull_request_number', pull.number);
+core.setOutput('pull_request_url', pull.html_url);
+
+2026-10-09T03:41:36.3345334Z   debug: false
+2026-10-09T03:41:36.3345521Z   user-agent: actions/github-script
+2026-10-09T03:41:36.3345736Z   result-encoding: json
+2026-10-09T03:41:36.3345913Z   retries: 0
+2026-10-09T03:41:36.3346103Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-10-09T03:41:36.3346458Z env:
+2026-10-09T03:41:36.3346689Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:36.3346878Z   VERSION: 0.38.1
+2026-10-09T03:41:36.3347040Z   TAG: v0.38.1
+2026-10-09T03:41:36.3347206Z   BRANCH: release/v0.38.1
+2026-10-09T03:41:36.3347424Z   RELEASE_SHA: 2b2c58e089465679b3cf9a8738fde8f453e4c658
+2026-10-09T03:41:36.3347658Z ##[endgroup]
+2026-10-09T03:41:38.1814902Z ##[group]Run node .release-tooling/scripts/release-ci-gate.mjs
+2026-10-09T03:41:38.1815270Z [36;1mnode .release-tooling/scripts/release-ci-gate.mjs[0m
+2026-10-09T03:41:38.1871098Z shell: /usr/bin/bash -e {0}
+2026-10-09T03:41:38.1871314Z env:
+2026-10-09T03:41:38.1871476Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:38.1873458Z   GITHUB_TOKEN: ***
+2026-10-09T03:41:38.1873694Z   SOURCE_SHA: 547206a1b372b73fc95fc412ad453b8099440000
+2026-10-09T03:41:38.1873991Z   RELEASE_SHA: 2b2c58e089465679b3cf9a8738fde8f453e4c658
+2026-10-09T03:41:38.1874254Z   RELEASE_BRANCH: release/v0.38.1
+2026-10-09T03:41:38.1874471Z   PULL_REQUEST_NUMBER: 455
+2026-10-09T03:41:38.1874658Z ##[endgroup]
+2026-10-09T03:41:39.5497042Z Waiting for release CI: lint.yml: missing; tests.yml: missing; builds.yml: missing; container-scan.yml: missing; database-upgrade.yml: missing
+2026-10-09T03:41:56.0085193Z lint.yml: action_required; inspect https://github.com/MChartier/calibrate-health/actions/runs/37880437994, including approval/no-job annotations.
+2026-10-09T03:41:56.0132537Z ##[error]Process completed with exit code 1.
+2026-10-09T03:41:56.0218724Z ##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+2026-10-09T03:41:56.0219040Z with:
+2026-10-09T03:41:56.0220656Z   script: await github.rest.issues.createComment({
+  ...context.repo, issue_number: Number(process.env.PR_NUMBER),
+  body: 'Release finalization did not complete. Verify the PR merge state and inspect the [release run](' +
+    context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId +
+    ') and this PR’s checks, including approval/no-job annotations. The candidate is retained. Approve or repair CI, then rerun failed release jobs only while source/head remain unchanged; do not cut another version or use the post-merge publisher for an unmerged candidate.'
+});
+
+2026-10-09T03:41:56.0223972Z   github-token: ***
+2026-10-09T03:41:56.0224143Z   debug: false
+2026-10-09T03:41:56.0224319Z   user-agent: actions/github-script
+2026-10-09T03:41:56.0224533Z   result-encoding: json
+2026-10-09T03:41:56.0224739Z   retries: 0
+2026-10-09T03:41:56.0224929Z   retry-exempt-status-codes: 400,401,403,404,422
+2026-10-09T03:41:56.0225160Z env:
+2026-10-09T03:41:56.0225318Z   GIT_NO_REPLACE_OBJECTS: 1
+2026-10-09T03:41:56.0225503Z   PR_NUMBER: 455
+2026-10-09T03:41:56.0225662Z ##[endgroup]
+2026-10-09T03:41:56.9862263Z Post job cleanup.
+2026-10-09T03:41:57.0558168Z [command]/usr/bin/git version
+2026-10-09T03:41:57.0594611Z git version 2.55.0
+2026-10-09T03:41:57.0623991Z Temporarily overriding HOME='/home/runner/work/_temp/4a8ba3d8-09cc-45a6-92f0-634b726b567a' before making global git config changes
+2026-10-09T03:41:57.0625132Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-09T03:41:57.0629202Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health/.release-tooling
+2026-10-09T03:41:57.0664229Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T03:41:57.0695689Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-09T03:41:57.0915303Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T03:41:57.0944844Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-09T03:41:57.1169108Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T03:41:57.1199650Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-09T03:41:57.1592881Z Post job cleanup.
+2026-10-09T03:41:57.2269779Z [command]/usr/bin/git version
+2026-10-09T03:41:57.2304427Z git version 2.55.0
+2026-10-09T03:41:57.2334813Z Temporarily overriding HOME='/home/runner/work/_temp/d29ecc9d-35b2-455e-a801-9b66bfbf6f00' before making global git config changes
+2026-10-09T03:41:57.2336030Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-09T03:41:57.2338621Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+2026-10-09T03:41:57.2374663Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T03:41:57.2405148Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-09T03:41:57.2613883Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T03:41:57.2643296Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-09T03:41:57.2861473Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T03:41:57.2900698Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-09T03:41:57.3251591Z Evaluate and set job outputs
+2026-10-09T03:41:57.3255958Z Set output 'pull_request_url'
+2026-10-09T03:41:57.3257741Z Cleaning up orphan processes
+2026-10-09T03:41:57.3501422Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11d5960a326750d5838078e36cf38b85af677262, actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

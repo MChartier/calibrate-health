@@ -1,0 +1,764 @@
+{
+  "total_count": 9,
+  "jobs": [
+    {
+      "id": 113657865019,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadoljOw",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113657865019",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113657865019",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-09T03:38:20Z",
+      "started_at": "2026-10-09T03:38:22Z",
+      "completed_at": "2026-10-09T03:38:31Z",
+      "name": "Verify protected cut request",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-09T03:38:23Z",
+          "completed_at": "2026-10-09T03:38:24Z"
+        },
+        {
+          "name": "Require current protected master handler",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-09T03:38:24Z",
+          "completed_at": "2026-10-09T03:38:24Z"
+        },
+        {
+          "name": "Check out protected request verifier",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-09T03:38:24Z",
+          "completed_at": "2026-10-09T03:38:27Z"
+        },
+        {
+          "name": "Verify exact protected request run",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-09T03:38:27Z",
+          "completed_at": "2026-10-09T03:38:27Z"
+        },
+        {
+          "name": "Download exact cut request artifact",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-09T03:38:27Z",
+          "completed_at": "2026-10-09T03:38:28Z"
+        },
+        {
+          "name": "Verify bound cut request",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-09T03:38:28Z",
+          "completed_at": "2026-10-09T03:38:28Z"
+        },
+        {
+          "name": "Post Check out protected request verifier",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-09T03:38:28Z",
+          "completed_at": "2026-10-09T03:38:28Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-09T03:38:28Z",
+          "completed_at": "2026-10-09T03:38:28Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113657865019",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000014789,
+      "runner_name": "GitHub Actions 1000014789",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 113657913488,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadoogkA",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113657913488",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113657913488",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-09T03:38:32Z",
+      "started_at": "2026-10-09T03:38:34Z",
+      "completed_at": "2026-10-09T03:38:52Z",
+      "name": "Run protected cut release / Prepare exact release candidate",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-09T03:38:35Z",
+          "completed_at": "2026-10-09T03:38:36Z"
+        },
+        {
+          "name": "Require protected master caller",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-09T03:38:36Z",
+          "completed_at": "2026-10-09T03:38:36Z"
+        },
+        {
+          "name": "Checkout exact protected master source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-09T03:38:36Z",
+          "completed_at": "2026-10-09T03:38:41Z"
+        },
+        {
+          "name": "Setup Node",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-09T03:38:41Z",
+          "completed_at": "2026-10-09T03:38:46Z"
+        },
+        {
+          "name": "Prepare synchronized release commit",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-09T03:38:46Z",
+          "completed_at": "2026-10-09T03:38:48Z"
+        },
+        {
+          "name": "Upload exact release candidate bundle",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-09T03:38:48Z",
+          "completed_at": "2026-10-09T03:38:49Z"
+        },
+        {
+          "name": "Post Setup Node",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-09T03:38:49Z",
+          "completed_at": "2026-10-09T03:38:49Z"
+        },
+        {
+          "name": "Post Checkout exact protected master source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-09T03:38:49Z",
+          "completed_at": "2026-10-09T03:38:49Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-09T03:38:49Z",
+          "completed_at": "2026-10-09T03:38:49Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113657913488",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000014790,
+      "runner_name": "GitHub Actions 1000014790",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 113657990937,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadotPGQ",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113657990937",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113657990937",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-09T03:38:52Z",
+      "started_at": "2026-10-09T03:38:54Z",
+      "completed_at": "2026-10-09T03:39:12Z",
+      "name": "Run protected cut release / Publish exact candidate branch",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-09T03:38:54Z",
+          "completed_at": "2026-10-09T03:38:55Z"
+        },
+        {
+          "name": "Require current protected master workflow",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-09T03:38:55Z",
+          "completed_at": "2026-10-09T03:38:56Z"
+        },
+        {
+          "name": "Checkout exact protected source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-09T03:38:56Z",
+          "completed_at": "2026-10-09T03:39:00Z"
+        },
+        {
+          "name": "Checkout reviewed release tooling",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-09T03:39:00Z",
+          "completed_at": "2026-10-09T03:39:02Z"
+        },
+        {
+          "name": "Setup Node",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-09T03:39:02Z",
+          "completed_at": "2026-10-09T03:39:06Z"
+        },
+        {
+          "name": "Download exact release candidate bundle",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-09T03:39:06Z",
+          "completed_at": "2026-10-09T03:39:07Z"
+        },
+        {
+          "name": "Verify candidate artifact and canonical transformation before authentication",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-09T03:39:07Z",
+          "completed_at": "2026-10-09T03:39:07Z"
+        },
+        {
+          "name": "Recheck current protected master immediately before repository writes",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-09T03:39:07Z",
+          "completed_at": "2026-10-09T03:39:08Z"
+        },
+        {
+          "name": "Publish only the exact verified candidate branch",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-09T03:39:08Z",
+          "completed_at": "2026-10-09T03:39:10Z"
+        },
+        {
+          "name": "Post Setup Node",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-10-09T03:39:10Z",
+          "completed_at": "2026-10-09T03:39:10Z"
+        },
+        {
+          "name": "Post Checkout reviewed release tooling",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-10-09T03:39:10Z",
+          "completed_at": "2026-10-09T03:39:10Z"
+        },
+        {
+          "name": "Post Checkout exact protected source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-10-09T03:39:10Z",
+          "completed_at": "2026-10-09T03:39:10Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-10-09T03:39:10Z",
+          "completed_at": "2026-10-09T03:39:10Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113657990937",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000014791,
+      "runner_name": "GitHub Actions 1000014791",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 113658073739,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadoySiw",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113658073739",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113658073739",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-09T03:39:13Z",
+      "started_at": "2026-10-09T03:39:14Z",
+      "completed_at": "2026-10-09T03:41:18Z",
+      "name": "Run protected cut release / Validate release metadata and production smoke",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-09T03:39:15Z",
+          "completed_at": "2026-10-09T03:39:16Z"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-09T03:39:16Z",
+          "completed_at": "2026-10-09T03:39:32Z"
+        },
+        {
+          "name": "Checkout exact published candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-09T03:39:32Z",
+          "completed_at": "2026-10-09T03:39:36Z"
+        },
+        {
+          "name": "Checkout reviewed release tooling",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-09T03:39:36Z",
+          "completed_at": "2026-10-09T03:39:38Z"
+        },
+        {
+          "name": "Setup Node",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-09T03:39:38Z",
+          "completed_at": "2026-10-09T03:39:42Z"
+        },
+        {
+          "name": "Validate exact canonical release candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-09T03:39:42Z",
+          "completed_at": "2026-10-09T03:39:42Z"
+        },
+        {
+          "name": "Build production image",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-09T03:39:42Z",
+          "completed_at": "2026-10-09T03:41:12Z"
+        },
+        {
+          "name": "Smoke production startup and readiness",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-09T03:41:12Z",
+          "completed_at": "2026-10-09T03:41:15Z"
+        },
+        {
+          "name": "Remove runtime smoke container",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-09T03:41:15Z",
+          "completed_at": "2026-10-09T03:41:15Z"
+        },
+        {
+          "name": "Post Setup Node",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-10-09T03:41:15Z",
+          "completed_at": "2026-10-09T03:41:15Z"
+        },
+        {
+          "name": "Post Checkout reviewed release tooling",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-10-09T03:41:15Z",
+          "completed_at": "2026-10-09T03:41:15Z"
+        },
+        {
+          "name": "Post Checkout exact published candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-10-09T03:41:15Z",
+          "completed_at": "2026-10-09T03:41:15Z"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-10-09T03:41:15Z",
+          "completed_at": "2026-10-09T03:41:16Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-10-09T03:41:16Z",
+          "completed_at": "2026-10-09T03:41:16Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113658073739",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000014792,
+      "runner_name": "GitHub Actions 1000014792",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 113658571223,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadpQp1w",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113658571223",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113658571223",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-09T03:41:18Z",
+      "started_at": "2026-10-09T03:41:20Z",
+      "completed_at": "2026-10-09T03:41:59Z",
+      "name": "Run protected cut release / Merge validated release PR",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-09T03:41:21Z",
+          "completed_at": "2026-10-09T03:41:23Z"
+        },
+        {
+          "name": "Require current protected master workflow",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-09T03:41:23Z",
+          "completed_at": "2026-10-09T03:41:23Z"
+        },
+        {
+          "name": "Checkout exact release candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-09T03:41:23Z",
+          "completed_at": "2026-10-09T03:41:28Z"
+        },
+        {
+          "name": "Checkout reviewed release tooling",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-09T03:41:28Z",
+          "completed_at": "2026-10-09T03:41:30Z"
+        },
+        {
+          "name": "Setup Node",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-09T03:41:30Z",
+          "completed_at": "2026-10-09T03:41:35Z"
+        },
+        {
+          "name": "Reverify exact branch and candidate before authentication",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-09T03:41:35Z",
+          "completed_at": "2026-10-09T03:41:35Z"
+        },
+        {
+          "name": "Recheck current protected master immediately before repository writes",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-09T03:41:35Z",
+          "completed_at": "2026-10-09T03:41:36Z"
+        },
+        {
+          "name": "Open or reuse the exact release pull request",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-09T03:41:36Z",
+          "completed_at": "2026-10-09T03:41:38Z"
+        },
+        {
+          "name": "Wait for exact release PR CI",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 9,
+          "started_at": "2026-10-09T03:41:38Z",
+          "completed_at": "2026-10-09T03:41:56Z"
+        },
+        {
+          "name": "Merge the exact release pull request through GitHub",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-10-09T03:41:56Z",
+          "completed_at": "2026-10-09T03:41:56Z"
+        },
+        {
+          "name": "Verify exact release ancestry",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11,
+          "started_at": "2026-10-09T03:41:56Z",
+          "completed_at": "2026-10-09T03:41:56Z"
+        },
+        {
+          "name": "Summarize prepared release",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 12,
+          "started_at": "2026-10-09T03:41:56Z",
+          "completed_at": "2026-10-09T03:41:56Z"
+        },
+        {
+          "name": "Report blocked release PR",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-09T03:41:56Z",
+          "completed_at": "2026-10-09T03:41:56Z"
+        },
+        {
+          "name": "Post Setup Node",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 24,
+          "started_at": "2026-10-09T03:41:56Z",
+          "completed_at": "2026-10-09T03:41:56Z"
+        },
+        {
+          "name": "Post Checkout reviewed release tooling",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 25,
+          "started_at": "2026-10-09T03:41:56Z",
+          "completed_at": "2026-10-09T03:41:57Z"
+        },
+        {
+          "name": "Post Checkout exact release candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 26,
+          "started_at": "2026-10-09T03:41:57Z",
+          "completed_at": "2026-10-09T03:41:57Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 27,
+          "started_at": "2026-10-09T03:41:57Z",
+          "completed_at": "2026-10-09T03:41:57Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113658571223",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000014794,
+      "runner_name": "GitHub Actions 1000014794",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 113658732870,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadpahRg",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113658732870",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113658732870",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-09T03:42:00Z",
+      "started_at": "2026-10-09T03:42:02Z",
+      "completed_at": "2026-10-09T03:42:05Z",
+      "name": "Run protected cut release / Summarize release stages",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-09T03:42:02Z",
+          "completed_at": "2026-10-09T03:42:02Z"
+        },
+        {
+          "name": "Report stage outcomes and recovery",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-09T03:42:02Z",
+          "completed_at": "2026-10-09T03:42:03Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-09T03:42:03Z",
+          "completed_at": "2026-10-09T03:42:03Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113658732870",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000014795,
+      "runner_name": "GitHub Actions 1000014795",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 113658733411,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadpajYw",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113658733411",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113658733411",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-09T03:42:00Z",
+      "started_at": "2026-10-09T03:42:00Z",
+      "completed_at": "2026-10-09T03:42:00Z",
+      "name": "Run protected cut release / Tag and publish validated release",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113658733411",
+      "labels": [],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    },
+    {
+      "id": 113658734075,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadpal-w",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113658734075",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113658734075",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-09T03:42:00Z",
+      "started_at": "2026-10-09T03:42:00Z",
+      "completed_at": "2026-10-09T03:42:00Z",
+      "name": "Run protected cut release / Inspect unmerged candidate cleanup",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113658734075",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    },
+    {
+      "id": 113658734147,
+      "run_id": 37880190066,
+      "workflow_name": "Handle cut release request",
+      "head_branch": "master",
+      "run_url": "https://api.github.com/repos/MChartier/calibrate-health/actions/runs/37880190066",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQbBgUs8AAAAadpamQw",
+      "head_sha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/actions/jobs/113658734147",
+      "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37880190066/job/113658734147",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-09T03:42:00Z",
+      "started_at": "2026-10-09T03:42:00Z",
+      "completed_at": "2026-10-09T03:42:00Z",
+      "name": "Run protected cut release / Clean up exact unmerged candidate",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/MChartier/calibrate-health/check-runs/113658734147",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    }
+  ]
+}

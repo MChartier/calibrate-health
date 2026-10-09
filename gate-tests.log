@@ -1,0 +1,28 @@
+Γ£ö complete exact-candidate CI permits finalization, with canonical skips only (1.3641ms)
+Γ£ö failure CI cannot authorize merge/publication (0.4286ms)
+Γ£ö cancelled CI cannot authorize merge/publication (0.2114ms)
+Γ£ö timed_out CI cannot authorize merge/publication (0.6497ms)
+Γ£ö neutral CI cannot authorize merge/publication (0.2669ms)
+Γ£ö skipped CI cannot authorize merge/publication (0.1181ms)
+Γ£ö action_required CI cannot authorize merge/publication (0.132ms)
+Γ£ö null CI cannot authorize merge/publication (0.0928ms)
+Γ£ö approval-expired zero-job failure reproduces PR432 and blocks (0.1553ms)
+Γ£ö empty inventory, pending approval and missing workflows time out without a merge (0.4906ms)
+Γ£ö polling allows approval then success and is bounded when approval never arrives (0.4027ms)
+Γ£ö newer failed run or rerun cannot fall back to historical green CI (0.2643ms)
+Γ£ö wrong event, source, repository, branch or workflow never supplies required success (0.1405ms)
+Γ£ö zero jobs, missing required success, unexpected skips and failing jobs fail closed (0.1781ms)
+Γ£ö moved head/base/master, closed or draft PR cannot merge (0.1792ms)
+Γ£ö final one-shot inspection rejects refs moving during CI reads (0.69ms)
+Γ£ö successful runs must identify this single PR and its tested base/head (0.6618ms)
+Γ£ö fresh run read cannot change PR binding or hide a newer mismatched run (0.2615ms)
+Γ£ö complete pagination, API denial and truncated inventory are handled explicitly (0.7774ms)
+Γ£ö workflow gates merge twice, retains blocked candidates and preserves explicit publication dependency (0.9951ms)
+Γä╣ tests 20
+Γä╣ suites 0
+Γä╣ pass 20
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 21.9665

@@ -1,0 +1,4 @@
+Initial command: node --test scripts/release-ci-gate.test.mjs
+Working directory: owned calibrate-auth-qa clone at cd8932b24b76af564d7e50f69750dba8f44c8e68
+Result: test runner failed before suite execution: Error: spawn EPERM; errno -4048; code EPERM; syscall spawn.
+The same pure/mock maintained tests were run with --test-isolation=none inside the existing sandbox;20 passed. No ACL or security setting changed; no privileged test retry or release operation.
