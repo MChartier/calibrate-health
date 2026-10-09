@@ -181,6 +181,258 @@ try {
         releasePace();
         planningLock.lockCaloriePlanningInputs = originalLock;
     }
+    // A weight saved before goal creation and one saved behind an in-flight goal
+    // creation must both establish the new goal's first-day baseline.
+    const metricDate = today.toISOString().slice(0, 10);
+    assert.equal((await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter)).statusCode, 200);
+    const weightFirst = await call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
+    assert.equal(weightFirst.statusCode, 200);
+    assert.equal(weightFirst.body.start_weight, 85);
+    let releaseCreation, creationLocked, metricWaiting;
+    const creationRelease = new Promise(resolve => { releaseCreation = resolve; });
+    const creationGuard = new Promise(resolve => { creationLocked = resolve; });
+    const metricGuard = new Promise(resolve => { metricWaiting = resolve; });
+    let creationGuardCalls = 0;
+    planningLock.lockCaloriePlanningInputs = async (...args) => {
+        const ordinal = ++creationGuardCalls;
+        if (ordinal === 2) metricWaiting();
+        await originalLock(...args);
+        if (ordinal === 1) { creationLocked(); await creationRelease; }
+    };
+    const creation = call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
+    try {
+        await Promise.race([creationGuard, creation.then(result => { throw new Error('creation ended before guard: ' + JSON.stringify(result)); })]);
+        const correctionId = crypto.randomUUID();
+        const correctionBody = { date: metricDate, weight: 86 };
+        const correction = call('post', '/', correctionBody, correctionId, metricsRouter);
+        await Promise.race([metricGuard, correction.then(result => { throw new Error('correction ended before guard: ' + JSON.stringify(result)); })]);
+        releaseCreation();
+        const created = await creation;
+        assert.equal(created.statusCode, 200);
+        const saved = await correction;
+        assert.equal(saved.statusCode, 200);
+        const corrected = await db.goal.findUniqueOrThrow({ where: { id: created.body.id } });
+        assert.equal(corrected.start_weight_grams, 86000);
+        assert.equal(corrected.target_weight_grams, 75000);
+        assert.equal(corrected.daily_deficit, 250);
+        assert.equal(corrected.created_at.toISOString(), created.body.created_at);
+        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: weightFirst.body.id } })).start_weight_grams, 85000);
+        assert.deepEqual((await call('post', '/', correctionBody, correctionId, metricsRouter)).body, saved.body);
+        const goalEvents = await db.syncChange.findMany({ where: { user_id: user.id, operation_id: correctionId, entity_type: 'goal' } });
+        assert.equal(goalEvents.length, 1);
+        assert.equal(goalEvents[0].payload.start_weight_grams, 86000);
+        assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
+        console.log('[goal-pace-smoke] PASS: weight-first baseline; concurrent goal-first correction, identity/history preservation and atomic sync/receipt replay.');
+    } finally {
+        releaseCreation();
+        planningLock.lockCaloriePlanningInputs = originalLock;
+    }
+    // Force overlap at the shared guard, exercising real PostgreSQL row locks.
+    async function orderedWriters(first, second) {
+        let releaseFirst, firstLocked, secondEntered;
+        const release = new Promise(resolve => { releaseFirst = resolve; });
+        const locked = new Promise(resolve => { firstLocked = resolve; });
+        const entered = new Promise(resolve => { secondEntered = resolve; });
+        let calls = 0;
+        planningLock.lockCaloriePlanningInputs = async (...args) => {
+            const ordinal = ++calls;
+            if (ordinal === 2) secondEntered();
+            await originalLock(...args);
+            if (ordinal === 1) { firstLocked(); await release; }
+        };
+        const firstResult = first();
+        let secondResult;
+        try {
+            await Promise.race([locked, firstResult.then(result => { throw new Error('first writer missed guard: ' + JSON.stringify(result)); })]);
+            secondResult = second();
+            await Promise.race([entered, secondResult.then(result => { throw new Error('second writer missed guard: ' + JSON.stringify(result)); })]);
+            releaseFirst();
+            return await Promise.all([firstResult, secondResult]);
+        } finally {
+            releaseFirst();
+            await Promise.allSettled([firstResult, secondResult]);
+            planningLock.lockCaloriePlanningInputs = originalLock;
+        }
+    }
+
+    const NativeDate = Date;
+    globalThis.Date = class extends NativeDate {
+        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
+        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
+    };
+    try {
+        for (const oldZone of ['America/Los_Angeles', 'UTC']) {
+            for (const explicitDate of [true, false]) {
+                const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
+                await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
+                user.timezone = oldZone; // Authentication snapshot deliberately predates the profile commit.
+                const latest = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+                await db.goal.update({ where: { id: latest.id }, data: { created_at: new Date('2026-10-08T19:00:00Z'), start_weight_grams: 90000 } });
+                const payload = { weight: 84, ...(explicitDate ? { date: '2026-10-08' } : {}) };
+                const operationId = crypto.randomUUID();
+                const [profile, metric] = await orderedWriters(
+                    () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
+                    () => call('post', '/', payload, operationId, metricsRouter));
+                assert.equal(profile.statusCode, 200);
+                assert.equal(metric.statusCode, 200);
+                assert.equal(metric.body.date.slice(0, 10), explicitDate || nextZone === 'America/Los_Angeles' ? '2026-10-08' : '2026-10-09');
+                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: latest.id } })).start_weight_grams,
+                    nextZone === 'America/Los_Angeles' ? 84000 : 90000);
+                assert.deepEqual((await call('post', '/', payload, operationId, metricsRouter)).body, metric.body);
+            }
+        }
+        console.log('[goal-pace-smoke] PASS: timezone commit before metric acceptance uses current account day, explicit/default dates and stable receipts in both timezone directions.');
+    } finally {
+        globalThis.Date = NativeDate;
+        user.timezone = 'UTC';
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+    }
+
+    const watch = backendRequire('./src/services/watch');
+    const session = await db.mobileAuthSession.create({ data: { user_id: user.id, device_id: 'synthetic-watch', device_platform: 'WEAR_OS',
+        access_token_hash: crypto.randomUUID(), refresh_token_hash: crypto.randomUUID(),
+        access_expires_at: new Date(Date.now() + 3600000), refresh_expires_at: new Date(Date.now() + 7200000) } });
+    const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+    await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date() } });
+    for (const watchFirst of [true, false]) {
+        await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter);
+        const existing = await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: today } } });
+        const revision = crypto.createHash('sha256').update(JSON.stringify({ kind: 'body_metric', value: {
+            id: existing.id, local_date: metricDate, weight_grams: existing.weight_grams, body_fat_percent: existing.body_fat_percent ?? null
+        } })).digest('hex').slice(0, 24);
+        const watchOperation = crypto.randomUUID();
+        const mutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+            local_date: metricDate, weight_grams: 86000, expected_revision: revision
+        } }, { timezone: 'UTC' });
+        assert.equal(mutation.ok, true);
+        const wear = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id, operationId: watchOperation, mutation });
+        const web = () => call('post', '/', { date: metricDate, weight: 87 }, crypto.randomUUID(), metricsRouter);
+        const results = await orderedWriters(watchFirst ? wear : web, watchFirst ? web : wear);
+        const wearResult = results[watchFirst ? 0 : 1];
+        assert.equal(results[watchFirst ? 1 : 0].statusCode, 200);
+        assert.equal(wearResult.status, watchFirst ? 200 : 409);
+        if (!watchFirst) assert.equal(wearResult.body.code, 'ENTITY_CONFLICT');
+        assert.deepEqual((await wear()).body, wearResult.body);
+        assert.equal((await db.bodyMetric.findUniqueOrThrow({ where: { id: existing.id } })).weight_grams, 87000);
+        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 87000);
+        const wearGoalEvents = await db.syncChange.findMany({ where: { user_id: user.id, operation_id: watchOperation, entity_type: 'goal' } });
+        assert.equal(wearGoalEvents.length, watchFirst ? 1 : 0);
+        if (watchFirst) assert.equal(wearGoalEvents[0].payload.start_weight_grams, 86000);
+    }
+    const historicalDate = new Date(today.getTime() - 3 * 86400000);
+    const historicalKey = historicalDate.toISOString().slice(0, 10);
+    const historicalMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+        local_date: historicalKey, weight_grams: 89000, expected_revision: null
+    } }, { timezone: 'UTC' });
+    assert.equal((await watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
+        operationId: crypto.randomUUID(), mutation: historicalMutation })).status, 200);
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 87000);
+    console.log('[goal-pace-smoke] PASS: web/Wear metric writes in both lock orders avoid deadlock, correct same-day baseline with one goal sync event, retain historical baseline, stale-revision conflict and receipt replay.');
+
+    const importRouter = backendRequire('./src/routes/imports').default;
+    const importHandler = importRouter.stack.find(layer => layer.route?.path === '/loseit/execute').route.stack.at(-1).handle;
+    const AdmZip = backendRequire('adm-zip');
+    async function importWeight(date, weight, mode) {
+        const zip = new AdmZip();
+        const [year, month, day] = date.split('-');
+        zip.addFile('weights.csv', Buffer.from('Date,Weight,Last Updated,Deleted\n' + month + '/' + day + '/' + year + ',' + weight + ',,\n'));
+        const res = { statusCode: 200, status(value) { this.statusCode = value; return this; }, json(body) { this.body = body; return this; } };
+        await importHandler({ user, file: { buffer: zip.toBuffer() }, body: {
+            weight_unit: 'KG', food_conflict_mode: 'MERGE', weight_conflict_mode: mode, include_body_fat: false
+        } }, res);
+        assert.equal(res.statusCode, 200);
+        return res.body;
+    }
+    await db.bodyMetric.deleteMany({ where: { user_id: user.id, date: today } });
+    const goalBeforeImport = await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } });
+    const eventCount = () => db.syncChange.count({ where: { user_id: user.id, entity_type: 'goal', entity_id: String(currentGoal.id) } });
+    const beforeImportEvents = await eventCount();
+    await importWeight(metricDate, 85, 'KEEP');
+    assert.deepEqual(await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } }), { ...goalBeforeImport, start_weight_grams: 85000 });
+    assert.equal(await eventCount(), beforeImportEvents + 1);
+    await importWeight(metricDate, 86, 'KEEP');
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 85000);
+    assert.equal(await eventCount(), beforeImportEvents + 1);
+    await importWeight(metricDate, 84, 'OVERWRITE');
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 84000);
+    assert.equal(await eventCount(), beforeImportEvents + 2);
+    await importWeight(historicalKey, 83, 'OVERWRITE');
+    await importWeight(metricDate, 84, 'OVERWRITE');
+    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 84000);
+    assert.equal(await eventCount(), beforeImportEvents + 2);
+    assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
+    console.log('[goal-pace-smoke] PASS: import create/overwrite corrects only the same-day baseline and sync; KEEP, historical edits and repeated identical imports preserve baseline/history without duplicate goal events.');
+    globalThis.Date = class extends NativeDate {
+        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
+        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
+    };
+    try {
+        for (const oldZone of ['America/Los_Angeles', 'UTC']) {
+            for (const importDate of ['2026-10-08', '2026-10-09']) {
+                const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
+                const acceptedDay = nextZone === 'UTC' ? '2026-10-09' : '2026-10-08';
+                await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
+                user.timezone = oldZone;
+                await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date('2026-10-09T01:00:00Z'), start_weight_grams: 90000 } });
+                const [profile, imported] = await orderedWriters(
+                    () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
+                    () => importWeight(importDate, 82, 'OVERWRITE'));
+                assert.equal(profile.statusCode, 200);
+                const isFuture = importDate > acceptedDay;
+                assert.equal(imported.importedWeights + imported.updatedWeights, isFuture ? 0 : 1);
+                assert.equal(imported.skippedWeights, isFuture ? 1 : 0);
+                assert.equal(imported.warnings.some(warning => warning.includes('future')), isFuture);
+                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams,
+                    importDate === acceptedDay ? 82000 : 90000);
+            }
+        }
+        console.log('[goal-pace-smoke] PASS: import timezone overlap repartitions rows, counts and future warnings using the locked account day in both directions; only that day corrects the baseline.');
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+        user.timezone = 'UTC';
+        const futureDate = new Date('2026-10-09T00:00:00Z');
+        await db.bodyMetric.deleteMany({ where: { user_id: user.id, date: futureDate } });
+        const beforeFutureGoal = await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } });
+        const futureOperation = crypto.randomUUID();
+        const futureMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
+        } }, { timezone: 'UTC' });
+        assert.equal(futureMutation.ok, true);
+        const saveFuture = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
+            operationId: futureOperation, mutation: futureMutation });
+        const [profile, rejected] = await orderedWriters(
+            () => call('patch', '/profile', { timezone: 'America/Los_Angeles' }, crypto.randomUUID(), userRouter), saveFuture);
+        assert.equal(profile.statusCode, 200);
+        assert.equal(rejected.status, 400);
+        assert.equal(rejected.body.message, 'Weight date cannot be in the future');
+        assert.equal(await db.bodyMetric.findUnique({ where: { user_id_date: { user_id: user.id, date: futureDate } } }), null);
+        assert.deepEqual(await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } }), beforeFutureGoal);
+        assert.equal(await db.syncChange.count({ where: { user_id: user.id, operation_id: futureOperation } }), 0);
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+        assert.deepEqual((await saveFuture()).body, rejected.body);
+        console.log('[goal-pace-smoke] PASS: Wear parsed before a timezone change rejects a now-future date after the lock, leaves metric/goal/sync untouched and replays its original rejection.');
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'America/Los_Angeles' } });
+        user.timezone = 'America/Los_Angeles';
+        const newlyValidOperation = crypto.randomUUID();
+        const newlyValidMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
+            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
+        } }, { timezone: 'America/Los_Angeles' });
+        assert.equal(newlyValidMutation.ok, true, 'syntax parsing must defer the account-day decision');
+        const saveNewlyValid = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
+            operationId: newlyValidOperation, mutation: newlyValidMutation });
+        const [forwardProfile, accepted] = await orderedWriters(
+            () => call('patch', '/profile', { timezone: 'UTC' }, crypto.randomUUID(), userRouter), saveNewlyValid);
+        assert.equal(forwardProfile.statusCode, 200);
+        assert.equal(accepted.status, 200);
+        assert.equal((await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: futureDate } } })).weight_grams, 81000);
+        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 81000);
+        assert.equal(await db.syncChange.count({ where: { user_id: user.id, operation_id: newlyValidOperation, entity_type: 'goal' } }), 1);
+        assert.deepEqual((await saveNewlyValid()).body, accepted.body);
+        console.log('[goal-pace-smoke] PASS: Wear parsed with an older account day accepts a newly valid date after the timezone lock, corrects its baseline once and replays the receipt.');
+    } finally {
+        globalThis.Date = NativeDate;
+        user.timezone = 'UTC';
+        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
+    }
     console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
 }
 finally {

@@ -29,10 +29,14 @@ test('Lose It weight import and sticky plan review roll back together when revie
   let committedWrites = 0;
   const prismaStub = {
     $transaction: async (callback) => {
+      let planningLocked = false;
       const tx = {
+        $executeRaw: async () => { planningLocked = true; return 1; },
+        user: { findUniqueOrThrow: async () => ({ timezone: 'UTC' }) },
         bodyMetric: {
-          findMany: async () => [],
+          findMany: async () => { assert.equal(planningLocked, true); return []; },
           createMany: async ({ data }) => {
+            assert.equal(planningLocked, true);
             stagedWrites += data.length;
             return { count: data.length };
           }

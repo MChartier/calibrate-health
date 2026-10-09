@@ -105,13 +105,9 @@ test('watch mutation parser accepts canonical grams and rejects unknown fields',
   assert.equal(parseWatchMutation({
     type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 81234, expected_revision: null, user_id: 99 }
   }, { timezone: 'UTC', now: new Date('2026-07-11T12:00:00.000Z') }).ok, false);
-  assert.deepEqual(parseWatchMutation({
+  assert.equal(parseWatchMutation({
     type: 'metric.upsert', payload: { local_date: '2026-07-12', weight_grams: 81234, expected_revision: null }
-  }, { timezone: 'America/Los_Angeles', now: new Date('2026-07-12T06:59:59.000Z') }), {
-    ok: false,
-    status: 400,
-    message: 'Weight date cannot be in the future'
-  });
+  }, { timezone: 'America/Los_Angeles', now: new Date('2026-07-12T06:59:59.000Z') }).ok, true);
 });
 
 test('watch snapshot rejects an invalid stored timezone before reading any guessed local day', async () => {
@@ -460,6 +456,21 @@ test('watch undo is invalidated by a later phone edit and never walks to an olde
   assert.equal(result.status, 409);
   assert.equal(result.body.code, 'WATCH_UNDO_NOT_ALLOWED');
   assert.equal(receiptReads, 1);
+});
+
+test('watch metric revalidates the date against the locked timezone before reading a metric', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
+  const service = loadWatchMutationService({
+    user: { findUnique: async () => ({ timezone: 'America/Los_Angeles' }) },
+    bodyMetric: { findUnique: async () => { throw new Error('Future metric must not be read or written'); } }
+  });
+  const mutation = service.parseWatchMutation({ type: 'metric.upsert', payload: {
+    local_date: '2026-10-09', weight_grams: 85000, expected_revision: null
+  } }, { timezone: 'UTC' });
+  assert.equal(mutation.ok, true);
+  const result = await service.executeWatchMutation({ userId: 9, mobileAuthSessionId: 73, operationId: 'watch-future-date', mutation });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.message, 'Weight date cannot be in the future');
 });
 
 test('watch metric and completion mutations use canonical date-only upserts', async () => {

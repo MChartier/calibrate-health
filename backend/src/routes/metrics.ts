@@ -3,6 +3,8 @@ import { type BodyMetric, type BodyMetricTrend, type Prisma } from '@prisma/clie
 import prisma from '../config/database';
 import { isPolicyWeight } from '../../../shared/caloriePolicy';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
+import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from '../services/goalStartingWeight';
 import {
     gramsToWeight,
     isWeightUnit,
@@ -826,10 +828,7 @@ router.post('/', async (req, res) => {
         } catch {
             return res.status(400).json({ message: 'Invalid date' });
         }
-        const currentLocalDateValue = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
-        if (metricDate > currentLocalDateValue) {
-            return res.status(400).json({ message: 'Weight date cannot be in the future' });
-        }
+        let currentLocalDateValue = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
 
         const updateData: { weight_grams?: number; body_fat_percent?: number | null } = {};
 
@@ -862,21 +861,32 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'No fields to update' });
         }
 
-        const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
-        const currentLocalDate = currentLocalDateValue.toISOString().slice(0, 10);
-        const savedLocalDate = metricDate.toISOString().slice(0, 10);
-
         const result = await executeIdempotentMutation<unknown>({
             userId: user.id,
             operationId,
             operationKind: 'body_metric.upsert',
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                // Acquire the goal/pace guard before any weight or goal read/write.
+                if (updateData.weight_grams !== undefined) await lockCaloriePlanningInputs(tx, user.id);
+                const currentUser = await tx.user.findUnique({ where: { id: user.id }, select: { timezone: true } });
+                if (!currentUser) return { status: 404, body: { message: 'User not found' } };
+                const acceptedTimeZone = currentUser.timezone || 'UTC';
+                const acceptedToday = getSafeUtcTodayDateOnlyInTimeZone(acceptedTimeZone);
+                currentLocalDateValue = acceptedToday;
+                if (!date) metricDate = acceptedToday;
+                if (metricDate > acceptedToday) {
+                    return { status: 400, body: { message: 'Weight date cannot be in the future' } };
+                }
+                const acceptedLocalDate = acceptedToday.toISOString().slice(0, 10);
+                const savedLocalDate = metricDate.toISOString().slice(0, 10);
+                const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
                 const existing = await tx.bodyMetric.findUnique({ where: whereUnique });
                 let progressGoal: MetricProgressGoal | null = null;
                 let previousMetrics: MetricProgressHistoryEntry[] = [];
                 let hadAnyMetricBeforeSave = false;
                 let saveKind: MetricSaveKind | null = null;
+                let correctedGoalId: number | null = null;
 
                 if (updateData.weight_grams !== undefined) {
                     saveKind =
@@ -890,12 +900,22 @@ router.post('/', async (req, res) => {
                         select: { id: true }
                     })) !== null;
 
-                    const activeGoal = await tx.goal.findFirst({
+                    let activeGoal = await tx.goal.findFirst({
                         where: { user_id: user.id },
                         orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
                     });
                     if (activeGoal) {
-                        const createdLocalDate = formatLocalDateForTimeZone(activeGoal.created_at, timeZone);
+                        const createdLocalDate = formatLocalDateForTimeZone(activeGoal.created_at, acceptedTimeZone);
+                        // created_at is the existing goal start date. A late first offline
+                        // replay saves its metric but must not rewrite a historical baseline.
+                        const corrected = await correctSameDayGoalStartingWeight(tx, {
+                            userId: user.id, metricDate, weightGrams: updateData.weight_grams,
+                            timezone: acceptedTimeZone, today: acceptedToday, goal: activeGoal
+                        });
+                        if (corrected) {
+                            activeGoal = corrected;
+                            correctedGoalId = activeGoal.id;
+                        }
                         progressGoal = {
                             id: activeGoal.id,
                             startWeightGrams: activeGoal.start_weight_grams,
@@ -908,7 +928,7 @@ router.post('/', async (req, res) => {
                                 user_id: user.id,
                                 date: {
                                     gte: parseLocalDateOnly(createdLocalDate),
-                                    lte: currentLocalDateValue
+                                    lte: acceptedToday
                                 }
                             },
                             orderBy: [{ date: 'asc' }, { id: 'asc' }],
@@ -955,6 +975,10 @@ router.post('/', async (req, res) => {
                 const planningAfterWeight = updateData.weight_grams === undefined
                     ? null
                     : await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
+                if (correctedGoalId !== null) {
+                    // Include any safety-review state set by the corrected weight in the sync event.
+                    await recordCorrectedGoalStartingWeight(tx, user.id, correctedGoalId, claimedOperationId);
+                }
 
                 const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
                 const progressUpdate =
@@ -963,7 +987,7 @@ router.post('/', async (req, res) => {
                         : evaluateMetricProgressUpdate({
                               saveKind,
                               savedLocalDate,
-                              currentLocalDate,
+                              currentLocalDate: acceptedLocalDate,
                               currentWeightGrams: savedWeightGrams,
                               weightUnit,
                               goal: progressGoal,
@@ -1019,6 +1043,8 @@ router.delete('/:id', async (req, res) => {
             operationKind: 'body_metric.delete',
             requestPayload: { id },
             mutate: async (tx, claimedOperationId) => {
+                // Match the upsert lock order so concurrent corrections/deletes cannot invert it.
+                await lockCaloriePlanningInputs(tx, user.id);
                 const deleteResult = await tx.bodyMetric.deleteMany({ where: { id, user_id: user.id } });
                 if (deleteResult.count === 0) {
                     return { status: 404, body: { message: 'Metric not found' } };

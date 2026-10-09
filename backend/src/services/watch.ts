@@ -14,6 +14,8 @@ import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightT
 import { getFoodDayWriteBlock } from './foodTracking';
 import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from './caloriePlanReview';
+import { lockCaloriePlanningInputs } from './caloriePlanningLock';
+import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from './goalStartingWeight';
 import { calculateCanonicalGoalProgress } from '../../../shared/goalProgress';
 import { isPolicyWeight, localDateInTimeZone } from '../../../shared/caloriePolicy';
 
@@ -149,10 +151,7 @@ export function parseWatchMutation(body: unknown, options: {
     try {
       if (typeof payload.local_date !== 'string') throw new Error('Invalid local date');
       const metricDate = parseLocalDateOnly(payload.local_date);
-      const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(options.timezone, now);
-      if (metricDate > currentLocalDate) {
-        return { ok: false, status: 400, message: 'Weight date cannot be in the future' };
-      }
+      // Calendar eligibility is checked after the planning lock with the current timezone.
       return {
         ok: true,
         type,
@@ -357,6 +356,13 @@ export async function executeWatchMutation(options: {
         return { status: 200, body: { type: 'food.delete', food_log_id: candidate.food_log_id, deleted: true } };
       }
       if (mutation.type === 'metric.upsert') {
+        await lockCaloriePlanningInputs(tx, options.userId);
+        const user = await tx.user.findUnique({ where: { id: options.userId }, select: { timezone: true } });
+        if (!user) return { status: 404, body: { message: 'User not found' } };
+        const today = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+        if (mutation.metricDate > today) {
+          return { status: 400, body: { message: 'Weight date cannot be in the future' } };
+        }
         const existing = await tx.bodyMetric.findUnique({
           where: { user_id_date: { user_id: options.userId, date: mutation.metricDate } }
         });
@@ -382,7 +388,12 @@ export async function executeWatchMutation(options: {
           create: { user_id: options.userId, date: mutation.metricDate, weight_grams: mutation.payload.weight_grams }
         });
         await recordSyncChange({ tx, userId: options.userId, entityType: 'body_metric', entityId: metric.id, action: 'upsert', operationId: claimedOperationId, payload: metric });
+        const correctedGoal = await correctSameDayGoalStartingWeight(tx, {
+          userId: options.userId, metricDate: mutation.metricDate, weightGrams: metric.weight_grams,
+          timezone: user.timezone, today
+        });
         await markCurrentCaloriePlanForReviewIfUnsafe(tx, options.userId);
+        if (correctedGoal) await recordCorrectedGoalStartingWeight(tx, options.userId, correctedGoal.id, claimedOperationId);
         return {
           status: 200,
           body: {
