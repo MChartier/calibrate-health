@@ -1,0 +1,18 @@
+[
+  {
+    "path": "pr-body-before.md",
+    "sha256": "2f99aa6cd7078a5e5afa690df2aaf0f90ed90661f821629ddfc76da5bd602a04"
+  },
+  {
+    "path": "proposal.md",
+    "sha256": "8d6076feed6e5b9815ff60800b74a561e7b2004c32c2bc3a48a3cf887efe4a3f"
+  },
+  {
+    "path": "published-inventory.json",
+    "sha256": "e866a6ab58c355a4a1c423b6a7073933a9d9e82bdd9a869134c528118a1c3ce5"
+  },
+  {
+    "path": "scope-audit.json",
+    "sha256": "7a38d025b8fb0bb007cd2e7edee7179cb0f1fc90a1009edbd1c0ab14f89c6239"
+  }
+]

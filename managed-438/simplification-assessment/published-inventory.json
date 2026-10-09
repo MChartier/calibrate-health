@@ -1,0 +1,260 @@
+{
+  "checkedAtUtc": "2026-10-09T02:04:26.5940006Z",
+  "commits": [
+    {
+      "sha": "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ]
+    },
+    {
+      "sha": "8e109f51598ce12a2fd0d69503d3432713696f4c",
+      "parents": [
+        "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36"
+      ]
+    },
+    {
+      "sha": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+      "parents": [
+        "8e109f51598ce12a2fd0d69503d3432713696f4c"
+      ]
+    },
+    {
+      "sha": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+      "parents": [
+        "60eca5e0add3cf612041f8a5ad5400fbd33b7abe"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "filename": "README.md",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 5
+    },
+    {
+      "filename": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1
+    },
+    {
+      "filename": "mobile/README.md",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1
+    },
+    {
+      "filename": "mobile/app.config.test.cjs",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "filename": "mobile/app.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "filename": "mobile/app/(auth)/login.tsx",
+      "status": "modified",
+      "additions": 6,
+      "deletions": 26
+    },
+    {
+      "filename": "mobile/app/(auth)/register.tsx",
+      "status": "modified",
+      "additions": 7,
+      "deletions": 27
+    },
+    {
+      "filename": "mobile/app/(tabs)/(settings)/advanced.tsx",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 54
+    },
+    {
+      "filename": "mobile/app/_layout.tsx",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 4
+    },
+    {
+      "filename": "mobile/src/auth/AuthContext.test.tsx",
+      "status": "modified",
+      "additions": 190,
+      "deletions": 22
+    },
+    {
+      "filename": "mobile/src/auth/AuthContext.tsx",
+      "status": "modified",
+      "additions": 192,
+      "deletions": 107
+    },
+    {
+      "filename": "mobile/src/auth/AuthContext.web.test.tsx",
+      "status": "modified",
+      "additions": 115,
+      "deletions": 6
+    },
+    {
+      "filename": "mobile/src/auth/AuthContext.web.tsx",
+      "status": "modified",
+      "additions": 145,
+      "deletions": 83
+    },
+    {
+      "filename": "mobile/src/auth/authScreenNavigation.test.tsx",
+      "status": "modified",
+      "additions": 13,
+      "deletions": 17
+    },
+    {
+      "filename": "mobile/src/auth/authServerDraft.test.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 14
+    },
+    {
+      "filename": "mobile/src/auth/authServerDraft.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 5
+    },
+    {
+      "filename": "mobile/src/auth/offlineWorkspace.test.ts",
+      "status": "modified",
+      "additions": 40,
+      "deletions": 0
+    },
+    {
+      "filename": "mobile/src/auth/offlineWorkspace.ts",
+      "status": "modified",
+      "additions": 27,
+      "deletions": 4
+    },
+    {
+      "filename": "mobile/src/auth/serverSwitch.test.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 53
+    },
+    {
+      "filename": "mobile/src/auth/serverSwitch.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 24
+    },
+    {
+      "filename": "mobile/src/auth/storage.test.ts",
+      "status": "modified",
+      "additions": 46,
+      "deletions": 3
+    },
+    {
+      "filename": "mobile/src/auth/storage.ts",
+      "status": "modified",
+      "additions": 69,
+      "deletions": 25
+    },
+    {
+      "filename": "mobile/src/auth/targetTransition.test.ts",
+      "status": "added",
+      "additions": 86,
+      "deletions": 0
+    },
+    {
+      "filename": "mobile/src/auth/targetTransition.ts",
+      "status": "added",
+      "additions": 65,
+      "deletions": 0
+    },
+    {
+      "filename": "mobile/src/auth/targetTransitionState.test.ts",
+      "status": "added",
+      "additions": 78,
+      "deletions": 0
+    },
+    {
+      "filename": "mobile/src/auth/targetTransitionState.ts",
+      "status": "added",
+      "additions": 97,
+      "deletions": 0
+    },
+    {
+      "filename": "mobile/src/components/ClientServerIncompatibleScreen.test.tsx",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 4
+    },
+    {
+      "filename": "mobile/src/components/ClientServerIncompatibleScreen.tsx",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 9
+    },
+    {
+      "filename": "mobile/src/components/ClientUpgradeRequiredScreen.test.tsx",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 4
+    },
+    {
+      "filename": "mobile/src/components/ClientUpgradeRequiredScreen.tsx",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 9
+    },
+    {
+      "filename": "mobile/src/components/ServerUrlControl.test.tsx",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 124
+    },
+    {
+      "filename": "mobile/src/components/ServerUrlControl.tsx",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 194
+    },
+    {
+      "filename": "mobile/src/config/server.test.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 24
+    },
+    {
+      "filename": "mobile/src/config/server.ts",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 16
+    },
+    {
+      "filename": "mobile/src/legal/publicLegalContent.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "filename": "mobile/src/offline/database.test.ts",
+      "status": "added",
+      "additions": 28,
+      "deletions": 0
+    },
+    {
+      "filename": "mobile/src/offline/database.ts",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0
+    },
+    {
+      "filename": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+      "status": "modified",
+      "additions": 8,
+      "deletions": 13
+    }
+  ],
+  "issueBody": "## Problem\n\nPeople using Calibrate should get a focused hosted experience without choosing or setting up a backend. Current native sign-in and Advanced settings expose server selection, and PR439 expands that workflow. The [new human direction](https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6049386828) supersedes those customer-facing hosting requirements. Internal/development builds still need a fixed backend chosen when the app is built.\n\n## Requirements and acceptance\n\n- Remove customer-facing backend pickers, service-switching settings, URL route inputs and self-hosting promotion. No hidden developer picker. Keep useful diagnostics, compatibility/retry behavior and authorized administration.\n- Use the existing public build input, `EXPO_PUBLIC_CALIBRATE_SERVER_URL`, for native/internal targets; production browser requests stay on the serving origin. Validate explicit configuration and fail closed on invalid targets. Channel names alone must not select URLs. Do not choose a new production domain or hardcode private project/account values.\n- Bind authentication, recovery and credentials to the configured origin. Preserve account/session-generation checks, logout/revocation and late-response isolation. A changed target clears active credential/consent state before new authentication, without reusing another server's tokens.\n- Migrate legacy saved choices safely before authenticated requests or offline replay. Preserve origin/account-scoped health data, outbox, drafts and recovery state. Pending/failed/replaying or unknown local state blocks a target transition with clear recovery guidance; no automatic cross-server replay, reassignment or silent deletion.\n- Preserve useful development/build tooling and backend authorization/data safeguards. Earlier unmerged administrator/bootstrap work remains retained for later consideration rather than being deleted or silently included in this narrower change.\n- Validate fixed-target resolution, legacy and interrupted transitions, storage failures, session races and recovery destination with maintained regressions. Demonstrate representative actual-master-to-final browser changes with genuine matched captures and exact provenance. Native-device checks remain explicitly unexecuted/deferred for review readiness under the [human amendment](https://github.com/MChartier/calibrate-health/issues/405#issuecomment-6041659686).\n\nNo production data migration, backend-role removal, infrastructure cleanup, provisioning, credential changes, deployment or release is included. Unified release-pipeline work has separate ownership.\n\n## Implementation plan\n\nPropose a focused successor from reverified master: define the fixed-target/bootstrap migration contract, remove runtime selection and promotional copy, selectively retain PR439's relevant client isolation fixes and maintained tests, then validate the final published scope and behavior. Preserve PR439 and all original evidence; do not restructure or close it until the coordinator records the intended treatment of its deferred backend scope. Coordinate shared documentation/build configuration with the release owner; keep auth PR431/437/442 independent. The [source inventory and build-time findings](https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6049586161) remain the implementation plan.\n\n[Exact original requirements](https://github.com/MChartier/calibrate-health/blob/5a0e855ae28d74ce70e365006821e19588ed8499/native-deferral-result-20261007/issue438-after.md) and [original recovery plan/history](https://github.com/MChartier/calibrate-health/blob/6b265afbb92951ba55e1c22212374225049c580e/pr402-recovery/recovery-plan.md) remain retained.\n\n## Implementing Codex task\n\nImplementing owner: verified native task ID `01a11c7b-b7fa-7578-9694-80a1cae2b03d` (shareable URL unavailable). This explicitly replaces the completed prior owner; its history is retained in the [predecessor issue record](https://github.com/MChartier/calibrate-health/blob/a7d2ad1648d2b743cdfda5ef66950f6feee741ad/managed-438/issue438-before.md).\n\n## Implementing PR\n\nCurrent implementing PR: [PR450](https://github.com/MChartier/calibrate-health/pull/450), open for human review after independent QA and coordinator checks. [PR439](https://github.com/MChartier/calibrate-health/pull/439) is closed without merging; its original branch, evidence and deferred backend administrator/bootstrap work remain retained for later consideration, neither implemented nor abandoned by PR450. [Verified replacement and retention disposition](https://github.com/MChartier/calibrate-health/pull/439#issuecomment-6068485424). Historical original [PR402](https://github.com/MChartier/calibrate-health/pull/402) remains closed unmerged with source/evidence preserved. This issue stays open until the current outcome is completed.\n\n[Exact prior issue description](https://github.com/MChartier/calibrate-health/issues/438#issuecomment-6068501450).\n"
+}

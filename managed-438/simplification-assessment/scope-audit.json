@@ -1,0 +1,412 @@
+{
+  "checkedAtUtc": "2026-10-09T02:04:26.5940006Z",
+  "head": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+  "actualMaster": "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+  "apiBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "mergeBase": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "bodySha256": "2f99aa6cd7078a5e5afa690df2aaf0f90ed90661f821629ddfc76da5bd602a04",
+  "humanFeedback": {
+    "id": 6072694319,
+    "disposition": "Accepted; current scope mixes removal with general auth lifecycle changes. Proposal only, not implemented."
+  },
+  "totals": {
+    "docs": {
+      "files": 2,
+      "additions": 7,
+      "deletions": 6
+    },
+    "tests": {
+      "files": 17,
+      "additions": 614,
+      "deletions": 286
+    },
+    "product": {
+      "files": 19,
+      "additions": 634,
+      "deletions": 589
+    }
+  },
+  "commits": [
+    {
+      "sha": "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36",
+      "parents": [
+        "4cbcbc740fbe5fa5646b4de31951c79a653176d5"
+      ],
+      "message": "Make Calibrate targets build-time only with safe native session binding"
+    },
+    {
+      "sha": "8e109f51598ce12a2fd0d69503d3432713696f4c",
+      "parents": [
+        "8a6d1af405a8fbabfc9fdd9d2120eef510f5bd36"
+      ],
+      "message": "Guard browser cookie races and preserve safe native upgrades"
+    },
+    {
+      "sha": "60eca5e0add3cf612041f8a5ad5400fbd33b7abe",
+      "parents": [
+        "8e109f51598ce12a2fd0d69503d3432713696f4c"
+      ],
+      "message": "Allow cold UI transforms in native startup-gate regression"
+    },
+    {
+      "sha": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+      "parents": [
+        "60eca5e0add3cf612041f8a5ad5400fbd33b7abe"
+      ],
+      "message": "Invalidate native provider lifetimes and cancel stale persistence"
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 4,
+      "deletions": 5,
+      "kind": "docs",
+      "assessment": "Maintained outcome documentation only: fixed build target and recovery guidance; preserve release-owner hunk boundaries."
+    },
+    {
+      "path": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 2,
+      "deletions": 1,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/README.md",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 1,
+      "kind": "docs",
+      "assessment": "Maintained outcome documentation only: fixed build target and recovery guidance; preserve release-owner hunk boundaries."
+    },
+    {
+      "path": "mobile/app.config.test.cjs",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 1,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/app.json",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 1,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/app/(auth)/login.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 6,
+      "deletions": 26,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/app/(auth)/register.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 7,
+      "deletions": 27,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/app/(tabs)/(settings)/advanced.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 3,
+      "deletions": 54,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/app/_layout.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 4,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 190,
+      "deletions": 22,
+      "kind": "tests",
+      "assessment": "Mixed: keep native target-ready startup gate and picker API deletion; minimize lifecycle changes using existing scope/mount checks and retain any still-reachable R1 safety regression. General callback/session refactor needs separate disposition."
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 192,
+      "deletions": 107,
+      "kind": "product",
+      "assessment": "Mixed: keep native target-ready startup gate and picker API deletion; minimize lifecycle changes using existing scope/mount checks and retain any still-reachable R1 safety regression. General callback/session refactor needs separate disposition."
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 115,
+      "deletions": 6,
+      "kind": "tests",
+      "assessment": "Mixed: keep candidate/setter API deletion and existing serving-origin behavior; separate the added global browser authentication queue/epochs and their race tests unless proven necessary by a separately admitted safety dependency."
+    },
+    {
+      "path": "mobile/src/auth/AuthContext.web.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 145,
+      "deletions": 83,
+      "kind": "product",
+      "assessment": "Mixed: keep candidate/setter API deletion and existing serving-origin behavior; separate the added global browser authentication queue/epochs and their race tests unless proven necessary by a separately admitted safety dependency."
+    },
+    {
+      "path": "mobile/src/auth/authScreenNavigation.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 13,
+      "deletions": 17,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/src/auth/authServerDraft.test.ts",
+      "status": "removed",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 14,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/src/auth/authServerDraft.ts",
+      "status": "removed",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 5,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/auth/offlineWorkspace.test.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 40,
+      "deletions": 0,
+      "kind": "tests",
+      "assessment": "Separable session-race behavior: generic cancellation/restoration map and its tests are not backend-picker removal. Preserve evidence; isolate or replace with minimal existing queue ordering without reintroducing R1."
+    },
+    {
+      "path": "mobile/src/auth/offlineWorkspace.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 27,
+      "deletions": 4,
+      "kind": "product",
+      "assessment": "Separable session-race behavior: generic cancellation/restoration map and its tests are not backend-picker removal. Preserve evidence; isolate or replace with minimal existing queue ordering without reintroducing R1."
+    },
+    {
+      "path": "mobile/src/auth/serverSwitch.test.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 53,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/src/auth/serverSwitch.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 24,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/auth/storage.test.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 46,
+      "deletions": 3,
+      "kind": "tests",
+      "assessment": "Mixed necessary startup protection and R1 storage cancellation: atomic origin/token binding and serialized pre-auth migration required; preserve known-safe empty install. General cancelled-write restoration must be minimized or separately scoped, never silently dropped."
+    },
+    {
+      "path": "mobile/src/auth/storage.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 69,
+      "deletions": 25,
+      "kind": "product",
+      "assessment": "Mixed necessary startup protection and R1 storage cancellation: atomic origin/token binding and serialized pre-auth migration required; preserve known-safe empty install. General cancelled-write restoration must be minimized or separately scoped, never silently dropped."
+    },
+    {
+      "path": "mobile/src/auth/targetTransition.test.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 86,
+      "deletions": 0,
+      "kind": "tests",
+      "assessment": "Direct startup safety requirement: matching sessions retained, changed safe target signed out, unknown/interrupted state protected. Collapse injectable store adapter into existing storage boundary if simpler; maintain behavioral regressions."
+    },
+    {
+      "path": "mobile/src/auth/targetTransition.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 65,
+      "deletions": 0,
+      "kind": "product",
+      "assessment": "Direct startup safety requirement: matching sessions retained, changed safe target signed out, unknown/interrupted state protected. Collapse injectable store adapter into existing storage boundary if simpler; maintain behavioral regressions."
+    },
+    {
+      "path": "mobile/src/auth/targetTransitionState.test.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 78,
+      "deletions": 0,
+      "kind": "tests",
+      "assessment": "Direct safety requirement for changed build targets: inspect all-account outbox, drafts, device sync and revocation without mutating originals. Reuse existing validators; preserve known Health Connect checkpoints and fail closed for unknown state."
+    },
+    {
+      "path": "mobile/src/auth/targetTransitionState.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 97,
+      "deletions": 0,
+      "kind": "product",
+      "assessment": "Direct safety requirement for changed build targets: inspect all-account outbox, drafts, device sync and revocation without mutating originals. Reuse existing validators; preserve known Health Connect checkpoints and fail closed for unknown state."
+    },
+    {
+      "path": "mobile/src/components/ClientServerIncompatibleScreen.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 4,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/src/components/ClientServerIncompatibleScreen.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 9,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/components/ClientUpgradeRequiredScreen.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 4,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/src/components/ClientUpgradeRequiredScreen.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 9,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.test.tsx",
+      "status": "removed",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 124,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/src/components/ServerUrlControl.tsx",
+      "status": "removed",
+      "previousPath": null,
+      "additions": 0,
+      "deletions": 194,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/config/server.test.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 5,
+      "deletions": 24,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    },
+    {
+      "path": "mobile/src/config/server.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 14,
+      "deletions": 16,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/legal/publicLegalContent.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 1,
+      "deletions": 1,
+      "kind": "product",
+      "assessment": "Direct removal/configuration: delete customer-facing picker, route/setter, promotion or choose-server action; retain diagnostics/legal boundaries and validate build target. No unrelated lifecycle expansion."
+    },
+    {
+      "path": "mobile/src/offline/database.test.ts",
+      "status": "added",
+      "previousPath": null,
+      "additions": 28,
+      "deletions": 0,
+      "kind": "tests",
+      "assessment": "Bounded prerequisite for safe startup inspection: reject unknown schema before initializer can mutate it; maintained unknown/read-failure tests are proportionate."
+    },
+    {
+      "path": "mobile/src/offline/database.ts",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 4,
+      "deletions": 0,
+      "kind": "product",
+      "assessment": "Bounded prerequisite for safe startup inspection: reject unknown schema before initializer can mutate it; maintained unknown/read-failure tests are proportionate."
+    },
+    {
+      "path": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+      "status": "modified",
+      "previousPath": null,
+      "additions": 8,
+      "deletions": 13,
+      "kind": "tests",
+      "assessment": "Proportionate maintained removal/configuration regression: update assertions for absent controls/route arguments, retain compatibility/recovery behavior; delete tests only for deleted picker functionality."
+    }
+  ],
+  "historyAssessment": "Additive corrections cannot remove the mixed broad scope from published commit review; ROOT coordination required for successor/prerequisite plan.",
+  "ownership": "Same owner checkpointed; owned source and evidence branches preserved. No competing Git process/index lock observed. Other Node processes exist and were not attributed or stopped; no exclusive process-ownership claim.",
+  "checks": "Read-only source/scope/feedback assessment; no new test or readiness result",
+  "predecessor": {
+    "state": "closed",
+    "head": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+    "deferred": "administrator/bootstrap retained, not abandoned"
+  },
+  "sourceChanged": false
+}
