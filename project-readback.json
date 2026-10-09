@@ -1,0 +1,80 @@
+{
+  "data": {
+    "repository": {
+      "issue": {
+        "assignees": {
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        },
+        "projectItems": {
+          "nodes": [
+            {
+              "id": "PVTI_lAHOABMy1c4Bl3Eqzg_e1oI",
+              "project": {
+                "number": 1,
+                "title": "Agentic development pipeline"
+              },
+              "fieldValues": {
+                "nodes": [
+                  {},
+                  {},
+                  {},
+                  {
+                    "text": "Investigate obscured quantity input and unsaved fractional amounts",
+                    "field": {
+                      "name": "Title"
+                    }
+                  },
+                  {
+                    "name": "In Progress",
+                    "field": {
+                      "name": "Status"
+                    }
+                  },
+                  {
+                    "name": "Review / QA",
+                    "field": {
+                      "name": "Pipeline state"
+                    }
+                  },
+                  {
+                    "text": "https://github.com/MChartier/calibrate-health/pull/456",
+                    "field": {
+                      "name": "Current PRs"
+                    }
+                  },
+                  {
+                    "text": "01a11c77-0cff-76e7-b21f-6f5702949026; current two-fix implementation owner; draft PR456 implementation complete, clean and idle for independent QA",
+                    "field": {
+                      "name": "Owner"
+                    }
+                  },
+                  {
+                    "text": "Draft PR456 at 7555a4f3 against master 547206a is implementation-complete. Final CI has 11 successes and 14 skips; configured bot review returned a quota-only refusal. Independent QA remains pending; no readiness claim.",
+                    "field": {
+                      "name": "Blocked by"
+                    }
+                  },
+                  {
+                    "text": "2026-10-09T04:18:30.361Z",
+                    "field": {
+                      "name": "Verified at"
+                    }
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    }
+  }
+}

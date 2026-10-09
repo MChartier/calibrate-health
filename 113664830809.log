@@ -1,0 +1,408 @@
+﻿2026-10-09T04:07:35.4991058Z Current runner version: '2.337.0'
+2026-10-09T04:07:35.5025554Z ##[group]Runner Image Provisioner
+2026-10-09T04:07:35.5026674Z Hosted Compute Agent
+2026-10-09T04:07:35.5027900Z Version: 20260901.588
+2026-10-09T04:07:35.5028805Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-09T04:07:35.5030490Z Build Date: 2026-09-01T19:56:44Z
+2026-10-09T04:07:35.5031463Z Worker ID: {b6193fb4-d6d5-455b-9872-09727ea92814}
+2026-10-09T04:07:35.5032466Z Azure Region: northcentralus
+2026-10-09T04:07:35.5033302Z ##[endgroup]
+2026-10-09T04:07:35.5035541Z ##[group]Operating System
+2026-10-09T04:07:35.5036475Z Microsoft Windows Server 2025
+2026-10-09T04:07:35.5037300Z 10.0.26100
+2026-10-09T04:07:35.5038021Z Datacenter
+2026-10-09T04:07:35.5038712Z ##[endgroup]
+2026-10-09T04:07:35.5039543Z ##[group]Runner Image
+2026-10-09T04:07:35.5040359Z Image: windows-2025-vs2026
+2026-10-09T04:07:35.5041175Z Version: 20260925.250.1
+2026-10-09T04:07:35.5043409Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260925.250/images/windows/Windows2025-VS2026-Readme.md
+2026-10-09T04:07:35.5045875Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260925.250
+2026-10-09T04:07:35.5047259Z ##[endgroup]
+2026-10-09T04:07:35.5049335Z ##[group]GITHUB_TOKEN Permissions
+2026-10-09T04:07:35.5052100Z Contents: read
+2026-10-09T04:07:35.5052912Z Metadata: read
+2026-10-09T04:07:35.5053697Z ##[endgroup]
+2026-10-09T04:07:35.5056723Z Secret source: Actions
+2026-10-09T04:07:35.5058029Z Cache mode: write
+2026-10-09T04:07:35.5059014Z Prepare workflow directory
+2026-10-09T04:07:35.5549361Z Prepare all required actions
+2026-10-09T04:07:35.5616460Z Getting action download info
+2026-10-09T04:07:35.7709501Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-09T04:07:35.8980524Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-09T04:07:36.1880156Z Complete job name: Web Critical Smoke
+2026-10-09T04:07:36.3407616Z ##[group]Run actions/checkout@v4
+2026-10-09T04:07:36.3409393Z with:
+2026-10-09T04:07:36.3409952Z   ref: 7555a4f314d54f81c307cb90948549d160ca8581
+2026-10-09T04:07:36.3410630Z   repository: MChartier/calibrate-health
+2026-10-09T04:07:36.3414644Z   token: ***
+2026-10-09T04:07:36.3415140Z   ssh-strict: true
+2026-10-09T04:07:36.3415659Z   ssh-user: git
+2026-10-09T04:07:36.3416176Z   persist-credentials: true
+2026-10-09T04:07:36.3416723Z   clean: true
+2026-10-09T04:07:36.3417257Z   sparse-checkout-cone-mode: true
+2026-10-09T04:07:36.3417899Z   fetch-depth: 1
+2026-10-09T04:07:36.3418383Z   fetch-tags: false
+2026-10-09T04:07:36.3418965Z   show-progress: true
+2026-10-09T04:07:36.3419501Z   lfs: false
+2026-10-09T04:07:36.3420001Z   submodules: false
+2026-10-09T04:07:36.3420975Z   set-safe-directory: true
+2026-10-09T04:07:36.3421570Z   allow-unsafe-pr-checkout: false
+2026-10-09T04:07:36.3422481Z env:
+2026-10-09T04:07:36.3422944Z   CI: 1
+2026-10-09T04:07:36.3423571Z ##[endgroup]
+2026-10-09T04:07:36.5931076Z Syncing repository: MChartier/calibrate-health
+2026-10-09T04:07:36.5934617Z ##[group]Getting Git version info
+2026-10-09T04:07:36.5935652Z Working directory is 'D:\a\calibrate-health\calibrate-health'
+2026-10-09T04:07:36.6737249Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-09T04:07:37.0311090Z git version 2.55.0.windows.5
+2026-10-09T04:07:37.0370755Z ##[endgroup]
+2026-10-09T04:07:37.0397385Z Temporarily overriding HOME='D:\a\_temp\62eb6143-1891-4c2b-8d31-77e3fb8c8019' before making global git config changes
+2026-10-09T04:07:37.0399710Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-09T04:07:37.0410905Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\calibrate-health\calibrate-health
+2026-10-09T04:07:37.1089304Z Deleting the contents of 'D:\a\calibrate-health\calibrate-health'
+2026-10-09T04:07:37.1096059Z ##[group]Initializing the repository
+2026-10-09T04:07:37.1106354Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\calibrate-health\calibrate-health
+2026-10-09T04:07:37.1984238Z Initialized empty Git repository in D:/a/calibrate-health/calibrate-health/.git/
+2026-10-09T04:07:37.2044244Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/MChartier/calibrate-health
+2026-10-09T04:07:37.2695984Z ##[endgroup]
+2026-10-09T04:07:37.2697898Z ##[group]Disabling automatic garbage collection
+2026-10-09T04:07:37.2705673Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-10-09T04:07:37.3036456Z ##[endgroup]
+2026-10-09T04:07:37.3038201Z ##[group]Setting up auth
+2026-10-09T04:07:37.3050160Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T04:07:37.3380654Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-09T04:07:38.8255471Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T04:07:38.8610112Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-09T04:07:39.4269008Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T04:07:39.4593664Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-09T04:07:40.0460923Z [command]"C:\Program Files\Git\bin\git.exe" config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-10-09T04:07:40.0813889Z ##[endgroup]
+2026-10-09T04:07:40.0814725Z ##[group]Fetching the repository
+2026-10-09T04:07:40.0833101Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 7555a4f314d54f81c307cb90948549d160ca8581
+2026-10-09T04:07:42.7818205Z From https://github.com/MChartier/calibrate-health
+2026-10-09T04:07:42.7819768Z  * branch            7555a4f314d54f81c307cb90948549d160ca8581 -> FETCH_HEAD
+2026-10-09T04:07:42.7876929Z ##[endgroup]
+2026-10-09T04:07:42.7878437Z ##[group]Determining the checkout info
+2026-10-09T04:07:42.7880751Z ##[endgroup]
+2026-10-09T04:07:42.7895649Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-10-09T04:07:42.8584597Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-10-09T04:07:42.8945934Z ##[group]Checking out the ref
+2026-10-09T04:07:42.8961692Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force 7555a4f314d54f81c307cb90948549d160ca8581
+2026-10-09T04:07:44.0858003Z Note: switching to '7555a4f314d54f81c307cb90948549d160ca8581'.
+2026-10-09T04:07:44.0858498Z 
+2026-10-09T04:07:44.0858886Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-09T04:07:44.0860211Z changes and commit them, and you can discard any commits you make in this
+2026-10-09T04:07:44.0861553Z state without impacting any branches by switching back to a branch.
+2026-10-09T04:07:44.0861972Z 
+2026-10-09T04:07:44.0862320Z If you want to create a new branch to retain commits you create, you may
+2026-10-09T04:07:44.0862938Z do so (now or later) by using -c with the switch command. Example:
+2026-10-09T04:07:44.0863202Z 
+2026-10-09T04:07:44.0863451Z   git switch -c <new-branch-name>
+2026-10-09T04:07:44.0863665Z 
+2026-10-09T04:07:44.0863866Z Or undo this operation with:
+2026-10-09T04:07:44.0864098Z 
+2026-10-09T04:07:44.0864216Z   git switch -
+2026-10-09T04:07:44.0864391Z 
+2026-10-09T04:07:44.0864628Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-09T04:07:44.0866267Z 
+2026-10-09T04:07:44.0866544Z HEAD is now at 7555a4f Trim quantity regression test trailing whitespace
+2026-10-09T04:07:44.1033441Z ##[endgroup]
+2026-10-09T04:07:44.1513429Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-10-09T04:07:44.1804923Z 7555a4f314d54f81c307cb90948549d160ca8581
+2026-10-09T04:07:44.2342611Z ##[group]Run actions/setup-node@v4
+2026-10-09T04:07:44.2343277Z with:
+2026-10-09T04:07:44.2343612Z   node-version: 24.14.0
+2026-10-09T04:07:44.2343948Z   cache: npm
+2026-10-09T04:07:44.2344284Z   cache-dependency-path: package-lock.json
+2026-10-09T04:07:44.2344696Z   always-auth: false
+2026-10-09T04:07:44.2345040Z   check-latest: false
+2026-10-09T04:07:44.2347372Z   token: ***
+2026-10-09T04:07:44.2347700Z env:
+2026-10-09T04:07:44.2347995Z   CI: 1
+2026-10-09T04:07:44.2348288Z ##[endgroup]
+2026-10-09T04:07:44.4202081Z Attempting to download 24.14.0...
+2026-10-09T04:07:44.4403489Z (node:2628) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-09T04:07:44.4405193Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-09T04:07:45.1284292Z Acquiring 24.14.0 - x64 from https://github.com/actions/node-versions/releases/download/24.14.0-22380502845/node-24.14.0-win32-x64.7z
+2026-10-09T04:07:45.4998441Z Extracting ...
+2026-10-09T04:07:49.5399185Z Adding to the cache ...
+2026-10-09T04:07:58.8789610Z ##[group]Environment details
+2026-10-09T04:08:00.4979979Z node: v24.14.0
+2026-10-09T04:08:00.4980407Z npm: 11.9.0
+2026-10-09T04:08:00.4980745Z yarn: 1.22.22
+2026-10-09T04:08:00.4981466Z ##[endgroup]
+2026-10-09T04:08:00.5600890Z [command]C:\Windows\system32\cmd.exe /D /S /C "C:\hostedtoolcache\windows\node\24.14.0\x64\npm.cmd config get cache"
+2026-10-09T04:08:00.8861453Z C:\npm\cache
+2026-10-09T04:08:01.1686886Z npm cache is not found
+2026-10-09T04:08:01.2070772Z ##[group]Run npm.cmd ci --no-audit --fund=false
+2026-10-09T04:08:01.2071629Z [36;1mnpm.cmd ci --no-audit --fund=false[0m
+2026-10-09T04:08:01.2634296Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-09T04:08:01.2634809Z env:
+2026-10-09T04:08:01.2635151Z   CI: 1
+2026-10-09T04:08:01.2635471Z ##[endgroup]
+2026-10-09T04:08:14.0050954Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-10-09T04:08:16.3633228Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-09T04:08:16.3768472Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-09T04:08:16.3818901Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-09T04:08:16.4236347Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-09T04:08:48.8212030Z 
+2026-10-09T04:08:48.8213170Z added 886 packages in 47s
+2026-10-09T04:08:50.6591526Z ##[group]Run node node_modules/@playwright/test/cli.js install chromium
+2026-10-09T04:08:50.6592461Z [36;1mnode node_modules/@playwright/test/cli.js install chromium[0m
+2026-10-09T04:08:50.6674049Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-09T04:08:50.6674508Z env:
+2026-10-09T04:08:50.6674817Z   CI: 1
+2026-10-09T04:08:50.6675135Z ##[endgroup]
+2026-10-09T04:08:51.6261451Z Downloading Chrome for Testing 149.0.7827.55 (playwright chromium v1228)[2m from https://cdn.playwright.dev/builds/cft/149.0.7827.55/win64/chrome-win64.zip[22m
+2026-10-09T04:08:52.1607593Z |                                                                                |   0% of 183.6 MiB
+2026-10-09T04:08:52.3682854Z |■■■■■■■■                                                                        |  10% of 183.6 MiB
+2026-10-09T04:08:52.5111281Z |■■■■■■■■■■■■■■■■                                                                |  20% of 183.6 MiB
+2026-10-09T04:08:52.6238428Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 183.6 MiB
+2026-10-09T04:08:52.7680447Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 183.6 MiB
+2026-10-09T04:08:52.8983515Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 183.6 MiB
+2026-10-09T04:08:53.1518873Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 183.6 MiB
+2026-10-09T04:08:53.2959479Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 183.6 MiB
+2026-10-09T04:08:53.4703753Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 183.6 MiB
+2026-10-09T04:08:53.6425730Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 183.6 MiB
+2026-10-09T04:08:53.7990211Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 183.6 MiB
+2026-10-09T04:09:03.8012002Z Chrome for Testing 149.0.7827.55 (playwright chromium v1228) downloaded to C:\Users\runneradmin\AppData\Local\ms-playwright\chromium-1228
+2026-10-09T04:09:03.8023704Z Downloading FFmpeg (playwright ffmpeg v1011)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-win64.zip[22m
+2026-10-09T04:09:04.2566166Z |                                                                                |   0% of 1.3 MiB
+2026-10-09T04:09:04.2615988Z |■■■■■■■■                                                                        |  10% of 1.3 MiB
+2026-10-09T04:09:04.2631963Z |■■■■■■■■■■■■■■■■                                                                |  20% of 1.3 MiB
+2026-10-09T04:09:04.2647626Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  31% of 1.3 MiB
+2026-10-09T04:09:04.2658761Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 1.3 MiB
+2026-10-09T04:09:04.2677487Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 1.3 MiB
+2026-10-09T04:09:04.2692030Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 1.3 MiB
+2026-10-09T04:09:04.2712792Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 1.3 MiB
+2026-10-09T04:09:04.2729852Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 1.3 MiB
+2026-10-09T04:09:04.2741496Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 1.3 MiB
+2026-10-09T04:09:04.2754414Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 1.3 MiB
+2026-10-09T04:09:04.8648549Z FFmpeg (playwright ffmpeg v1011) downloaded to C:\Users\runneradmin\AppData\Local\ms-playwright\ffmpeg-1011
+2026-10-09T04:09:04.8659216Z Downloading Chrome Headless Shell 149.0.7827.55 (playwright chromium-headless-shell v1228)[2m from https://cdn.playwright.dev/builds/cft/149.0.7827.55/win64/chrome-headless-shell-win64.zip[22m
+2026-10-09T04:09:05.3536704Z |                                                                                |   0% of 113.6 MiB
+2026-10-09T04:09:05.5343994Z |■■■■■■■■                                                                        |  10% of 113.6 MiB
+2026-10-09T04:09:05.6128480Z |■■■■■■■■■■■■■■■■                                                                |  20% of 113.6 MiB
+2026-10-09T04:09:05.6796272Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 113.6 MiB
+2026-10-09T04:09:05.7729674Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 113.6 MiB
+2026-10-09T04:09:05.8417718Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 113.6 MiB
+2026-10-09T04:09:05.9125812Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 113.6 MiB
+2026-10-09T04:09:06.0108745Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 113.6 MiB
+2026-10-09T04:09:06.1129398Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 113.6 MiB
+2026-10-09T04:09:06.1841858Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 113.6 MiB
+2026-10-09T04:09:06.2550052Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 113.6 MiB
+2026-10-09T04:09:13.5320557Z Chrome Headless Shell 149.0.7827.55 (playwright chromium-headless-shell v1228) downloaded to C:\Users\runneradmin\AppData\Local\ms-playwright\chromium_headless_shell-1228
+2026-10-09T04:09:13.5330348Z Downloading Winldd (playwright winldd v1007)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/winldd/1007/winldd-win64.zip[22m
+2026-10-09T04:09:13.9625549Z |                                                                                |   1% of 0.1 MiB
+2026-10-09T04:09:13.9635943Z |■■■■■■■■                                                                        |  10% of 0.1 MiB
+2026-10-09T04:09:13.9660430Z |■■■■■■■■■■■■■■■■                                                                |  20% of 0.1 MiB
+2026-10-09T04:09:13.9665987Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  31% of 0.1 MiB
+2026-10-09T04:09:13.9671528Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 0.1 MiB
+2026-10-09T04:09:13.9673416Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  62% of 0.1 MiB
+2026-10-09T04:09:13.9676452Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  74% of 0.1 MiB
+2026-10-09T04:09:13.9677967Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  87% of 0.1 MiB
+2026-10-09T04:09:13.9678950Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 0.1 MiB
+2026-10-09T04:09:14.0015760Z Winldd (playwright winldd v1007) downloaded to C:\Users\runneradmin\AppData\Local\ms-playwright\winldd-1007
+2026-10-09T04:09:14.8713375Z ##[group]Run npm.cmd run test:expo-web:smoke
+2026-10-09T04:09:14.8714471Z [36;1mnpm.cmd run test:expo-web:smoke[0m
+2026-10-09T04:09:14.8794782Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-09T04:09:14.8796202Z env:
+2026-10-09T04:09:14.8796658Z   CI: 1
+2026-10-09T04:09:14.8797011Z ##[endgroup]
+2026-10-09T04:09:15.4824361Z 
+2026-10-09T04:09:15.4826024Z > cal-io@0.38.0 test:expo-web:smoke
+2026-10-09T04:09:15.4827058Z > node scripts/expo-web-playwright.mjs --project=desktop-chrome --project=android-phone-chrome e2e/expo-web/release-smoke.spec.ts
+2026-10-09T04:09:15.4827573Z 
+2026-10-09T04:09:15.7380307Z 
+2026-10-09T04:09:15.7381639Z > mobile@0.2.7 prebuild:web
+2026-10-09T04:09:15.7382376Z > npm --prefix ../shared run build
+2026-10-09T04:09:15.7382773Z 
+2026-10-09T04:09:16.1011251Z 
+2026-10-09T04:09:16.1013044Z > @calibrate/shared@0.0.0 build
+2026-10-09T04:09:16.1013799Z > tsc -p tsconfig.build.json
+2026-10-09T04:09:16.1014144Z 
+2026-10-09T04:09:17.1115103Z 
+2026-10-09T04:09:17.1116043Z > mobile@0.2.7 build:web
+2026-10-09T04:09:17.1117201Z > node ../scripts/expo-web-build.mjs
+2026-10-09T04:09:17.1117609Z 
+2026-10-09T04:09:18.1177725Z Expo Autolinking module resolution enabled
+2026-10-09T04:09:19.2004100Z Starting Metro Bundler
+2026-10-09T04:09:19.2004606Z 
+2026-10-09T04:09:19.4441327Z Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+2026-10-09T04:10:16.8852846Z λ Bundled 57258ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1896 modules)
+2026-10-09T04:10:18.2533780Z Web Bundled 58627ms mobile\index.js (1865 modules)
+2026-10-09T04:10:18.9795855Z 
+2026-10-09T04:10:18.9904193Z › web bundles (6):
+2026-10-09T04:10:18.9905057Z _expo/static/js/web/ImagePicker-2d2f736cda07d949c8c3c036e9de9f4f.js (8.6KB)
+2026-10-09T04:10:18.9905952Z _expo/static/js/web/index-087e1f824fb02dd8276c178a70c3a8f3.js (59KB)
+2026-10-09T04:10:18.9906827Z _expo/static/js/web/index-26b0da47eaa59e95e90893ba0030cb66.js (2.1KB)
+2026-10-09T04:10:18.9907681Z _expo/static/js/web/index-3c15885ba2112fb755a6537a49bef1f2.js (45KB)
+2026-10-09T04:10:18.9925519Z _expo/static/js/web/index-429816e26f7d387fa5c2c421ddb1ea04.js (3.8MB)
+2026-10-09T04:10:18.9926584Z _expo/static/js/web/ProgressExpansionContent-562ef02e7308ed37847ba2a597dde2be.js (587B)
+2026-10-09T04:10:18.9927252Z 
+2026-10-09T04:10:18.9927577Z › Static routes (119):
+2026-10-09T04:10:18.9930861Z /log (25KB)
+2026-10-09T04:10:18.9931527Z /data (25KB)
+2026-10-09T04:10:18.9932716Z /help (25KB)
+2026-10-09T04:10:18.9933391Z / (index) (24KB)
+2026-10-09T04:10:18.9934719Z /terms (33KB)
+2026-10-09T04:10:18.9935541Z /login (24KB)
+2026-10-09T04:10:18.9936317Z /goals (25KB)
+2026-10-09T04:10:18.9938708Z /about (25KB)
+2026-10-09T04:10:18.9941280Z /watch (25KB)
+2026-10-09T04:10:18.9945729Z /today (25KB)
+2026-10-09T04:10:18.9946847Z /weight (25KB)
+2026-10-09T04:10:18.9948077Z /barcode (22KB)
+2026-10-09T04:10:18.9948640Z /privacy (44KB)
+2026-10-09T04:10:18.9949798Z /support (30KB)
+2026-10-09T04:10:18.9950170Z /devices (25KB)
+2026-10-09T04:10:18.9951294Z /profile (25KB)
+2026-10-09T04:10:18.9951982Z /_sitemap (23KB)
+2026-10-09T04:10:18.9953349Z /register (24KB)
+2026-10-09T04:10:18.9953758Z /progress (25KB)
+2026-10-09T04:10:18.9954379Z /activity (25KB)
+2026-10-09T04:10:18.9955413Z /advanced (25KB)
+2026-10-09T04:10:18.9955994Z /my-foods (25KB)
+2026-10-09T04:10:18.9957137Z /security (25KB)
+2026-10-09T04:10:18.9957678Z /settings (25KB)
+2026-10-09T04:10:18.9958899Z /food-log (25KB)
+2026-10-09T04:10:18.9960533Z /+not-found (20KB)
+2026-10-09T04:10:18.9961225Z /onboarding (24KB)
+2026-10-09T04:10:18.9961690Z /plan-check (25KB)
+2026-10-09T04:10:18.9962163Z /(tabs)/log (25KB)
+2026-10-09T04:10:18.9962965Z /connections (25KB)
+2026-10-09T04:10:18.9964178Z /(tabs)/data (25KB)
+2026-10-09T04:10:18.9965288Z /(tabs)/help (25KB)
+2026-10-09T04:10:18.9965739Z /preferences (25KB)
+2026-10-09T04:10:18.9967188Z /(today)/log (25KB)
+2026-10-09T04:10:18.9972568Z /legal-update (24KB)
+2026-10-09T04:10:18.9973219Z /verify-email (27KB)
+2026-10-09T04:10:18.9973742Z /(auth)/login (24KB)
+2026-10-09T04:10:18.9974153Z /(tabs)/goals (25KB)
+2026-10-09T04:10:18.9974537Z /weight-trend (25KB)
+2026-10-09T04:10:18.9974964Z /(tabs)/about (25KB)
+2026-10-09T04:10:18.9975305Z /server-admin (25KB)
+2026-10-09T04:10:18.9975744Z /(tabs)/watch (25KB)
+2026-10-09T04:10:18.9976143Z /(tabs)/today (25KB)
+2026-10-09T04:10:18.9976593Z /(tabs)/weight (25KB)
+2026-10-09T04:10:18.9976967Z /(today)/today (25KB)
+2026-10-09T04:10:18.9977422Z /reset-password (28KB)
+2026-10-09T04:10:18.9978196Z /connected-apps (25KB)
+2026-10-09T04:10:18.9979306Z /(tabs)/devices (25KB)
+2026-10-09T04:10:18.9980395Z /health-connect (25KB)
+2026-10-09T04:10:18.9981111Z /(tabs)/profile (25KB)
+2026-10-09T04:10:18.9981629Z /forgot-password (26KB)
+2026-10-09T04:10:18.9982862Z /nutrition-label (24KB)
+2026-10-09T04:10:18.9983320Z /(auth)/register (24KB)
+2026-10-09T04:10:18.9985587Z /(tabs)/progress (25KB)
+2026-10-09T04:10:18.9986286Z /(tabs)/activity (25KB)
+2026-10-09T04:10:18.9986845Z /(tabs)/advanced (25KB)
+2026-10-09T04:10:18.9987647Z /(settings)/data (25KB)
+2026-10-09T04:10:18.9988289Z /(settings)/help (25KB)
+2026-10-09T04:10:18.9989625Z /(tabs)/my-foods (25KB)
+2026-10-09T04:10:18.9990623Z /profile-details (25KB)
+2026-10-09T04:10:18.9991159Z /(tabs)/security (25KB)
+2026-10-09T04:10:18.9992114Z /(tabs)/settings (25KB)
+2026-10-09T04:10:18.9992542Z /(tabs)/food-log (25KB)
+2026-10-09T04:10:18.9993696Z /account-deletion (30KB)
+2026-10-09T04:10:18.9994327Z /(progress)/goals (25KB)
+2026-10-09T04:10:18.9994953Z /(settings)/about (25KB)
+2026-10-09T04:10:18.9995949Z /(settings)/watch (25KB)
+2026-10-09T04:10:18.9996398Z /(today)/food-log (25KB)
+2026-10-09T04:10:18.9997102Z /(tabs)/plan-check (25KB)
+2026-10-09T04:10:18.9997831Z /(progress)/weight (25KB)
+2026-10-09T04:10:18.9999511Z /(tabs)/connections (25KB)
+2026-10-09T04:10:19.0001487Z /(settings)/devices (25KB)
+2026-10-09T04:10:19.0002154Z /(tabs)/preferences (25KB)
+2026-10-09T04:10:19.0003239Z /(settings)/profile (25KB)
+2026-10-09T04:10:19.0004134Z /(tabs)/(today)/log (25KB)
+2026-10-09T04:10:19.0004701Z /(progress)/progress (25KB)
+2026-10-09T04:10:19.0005405Z /(tabs)/weight-trend (25KB)
+2026-10-09T04:10:19.0006048Z /(settings)/activity (25KB)
+2026-10-09T04:10:19.0006791Z /(settings)/advanced (25KB)
+2026-10-09T04:10:19.0007422Z /(settings)/my-foods (25KB)
+2026-10-09T04:10:19.0008398Z /(settings)/security (25KB)
+2026-10-09T04:10:19.0008837Z /(tabs)/server-admin (25KB)
+2026-10-09T04:10:19.0009745Z /(settings)/settings (25KB)
+2026-10-09T04:10:19.0010506Z /(tabs)/(today)/today (25KB)
+2026-10-09T04:10:19.0011182Z /(progress)/plan-check (25KB)
+2026-10-09T04:10:19.0011859Z /(tabs)/connected-apps (25KB)
+2026-10-09T04:10:19.0012354Z /(tabs)/health-connect (25KB)
+2026-10-09T04:10:19.0013493Z /health-connect-privacy (28KB)
+2026-10-09T04:10:19.0014031Z /(settings)/connections (25KB)
+2026-10-09T04:10:19.0014755Z /(tabs)/(settings)/data (25KB)
+2026-10-09T04:10:19.0015357Z /(tabs)/(settings)/help (25KB)
+2026-10-09T04:10:19.0016052Z /(settings)/preferences (25KB)
+2026-10-09T04:10:19.0016720Z /(tabs)/profile-details (25KB)
+2026-10-09T04:10:19.0017845Z /(tabs)/(progress)/goals (25KB)
+2026-10-09T04:10:19.0018621Z /(progress)/weight-trend (25KB)
+2026-10-09T04:10:19.0019271Z /(tabs)/(settings)/about (25KB)
+2026-10-09T04:10:19.0020061Z /(settings)/server-admin (25KB)
+2026-10-09T04:10:19.0020703Z /(tabs)/(settings)/watch (25KB)
+2026-10-09T04:10:19.0021397Z /(tabs)/(today)/food-log (25KB)
+2026-10-09T04:10:19.0022054Z /(tabs)/(progress)/weight (25KB)
+2026-10-09T04:10:19.0022761Z /(settings)/connected-apps (25KB)
+2026-10-09T04:10:19.0023893Z /(tabs)/(settings)/devices (25KB)
+2026-10-09T04:10:19.0024426Z /(settings)/health-connect (25KB)
+2026-10-09T04:10:19.0025085Z /(tabs)/(settings)/profile (25KB)
+2026-10-09T04:10:19.0025693Z /(tabs)/(progress)/progress (25KB)
+2026-10-09T04:10:19.0026398Z /(tabs)/(settings)/activity (25KB)
+2026-10-09T04:10:19.0028534Z /(tabs)/(settings)/advanced (25KB)
+2026-10-09T04:10:19.0029080Z /(tabs)/(settings)/my-foods (25KB)
+2026-10-09T04:10:19.0029602Z /(settings)/profile-details (25KB)
+2026-10-09T04:10:19.0030080Z /(tabs)/(settings)/security (25KB)
+2026-10-09T04:10:19.0030599Z /(tabs)/(settings)/settings (25KB)
+2026-10-09T04:10:19.0031133Z /(tabs)/(progress)/plan-check (25KB)
+2026-10-09T04:10:19.0031843Z /(tabs)/(settings)/connections (25KB)
+2026-10-09T04:10:19.0032956Z /(tabs)/(settings)/preferences (25KB)
+2026-10-09T04:10:19.0033475Z /(tabs)/(progress)/weight-trend (25KB)
+2026-10-09T04:10:19.0034166Z /(tabs)/(settings)/server-admin (25KB)
+2026-10-09T04:10:19.0034885Z /(tabs)/(settings)/connected-apps (25KB)
+2026-10-09T04:10:19.0035535Z /(tabs)/(settings)/health-connect (25KB)
+2026-10-09T04:10:19.0036083Z /(tabs)/(settings)/profile-details (25KB)
+2026-10-09T04:10:19.0899001Z 
+2026-10-09T04:10:19.0905668Z Exported: dist
+2026-10-09T04:10:19.2914698Z Built Expo web static-routes release artifact: 4 reachable bundles; 161 precached paths.
+2026-10-09T04:10:19.3332574Z Expo web release test server listening at http://127.0.0.1:4174
+2026-10-09T04:10:22.1554779Z 
+2026-10-09T04:10:22.1555793Z Running 16 tests using 2 workers
+2026-10-09T04:10:22.1582746Z 
+2026-10-09T04:10:24.9262259Z   ok  2 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:384:5 › production export boots to the signed-out shell at each release viewport (1.9s)
+2026-10-09T04:10:25.8301938Z   ok  1 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:401:5 › installed shell reports connection loss and recovery (2.8s)
+2026-10-09T04:10:27.3062806Z   ok  3 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:423:5 › auth deep links and reloads resolve through the static-host fallback (2.4s)
+2026-10-09T04:10:27.9579965Z   ok  4 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:442:5 › protected deep links return to sign in without a browser crash (2.1s)
+2026-10-09T04:10:31.2933869Z   ok  6 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:548:5 › paused days show a dedicated pause view with or without logged food (3.3s)
+2026-10-09T04:10:33.8482304Z   ok  7 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:571:5 › weight logging keeps the progress result visible and hands off a reached goal (2.5s)
+2026-10-09T04:10:36.1884934Z   ok  5 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:451:5 › authenticated shell renders real dashboard data and navigates release surfaces (8.9s)
+2026-10-09T04:10:37.6336083Z   ok  8 [desktop-chrome] › e2e\expo-web\release-smoke.spec.ts:704:5 › a browser write survives reload and replays exactly once with its operation id (3.8s)
+2026-10-09T04:10:40.0372484Z   ok  9 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:384:5 › production export boots to the signed-out shell at each release viewport (1.4s)
+2026-10-09T04:10:41.7705762Z   ok 10 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:401:5 › installed shell reports connection loss and recovery (3.1s)
+2026-10-09T04:10:42.1809537Z   ok 11 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:423:5 › auth deep links and reloads resolve through the static-host fallback (2.1s)
+2026-10-09T04:10:43.0915422Z   ok 12 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:442:5 › protected deep links return to sign in without a browser crash (1.2s)
+2026-10-09T04:10:45.8202213Z   ok 14 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:548:5 › paused days show a dedicated pause view with or without logged food (2.7s)
+2026-10-09T04:10:48.3361357Z   ok 15 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:571:5 › weight logging keeps the progress result visible and hands off a reached goal (2.6s)
+2026-10-09T04:10:49.3773729Z   ok 13 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:451:5 › authenticated shell renders real dashboard data and navigates release surfaces (7.2s)
+2026-10-09T04:10:51.4572994Z   ok 16 [android-phone-chrome] › e2e\expo-web\release-smoke.spec.ts:704:5 › a browser write survives reload and replays exactly once with its operation id (3.1s)
+2026-10-09T04:10:51.5931418Z 
+2026-10-09T04:10:51.5939614Z   16 passed (31.5s)
+2026-10-09T04:10:51.8016014Z Post job cleanup.
+2026-10-09T04:10:51.9994397Z (node:5124) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-09T04:10:51.9995665Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-09T04:10:52.1005112Z [command]"C:\Program Files\Git\usr\bin\tar.exe" --posix -cf cache.tzst --exclude cache.tzst -P -C D:/a/calibrate-health/calibrate-health --files-from manifest.txt --force-local --use-compress-program "zstd -T0"
+2026-10-09T04:10:53.8056243Z Failed to save: Unable to reserve cache with key node-cache-Windows-x64-npm-e75dbac364ccd55f0ac7501e32a41675ee347145171802a5348d10d641a9749b, another job may be creating this cache.
+2026-10-09T04:10:53.8638844Z Post job cleanup.
+2026-10-09T04:10:54.0496956Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-09T04:10:54.0815424Z git version 2.55.0.windows.5
+2026-10-09T04:10:54.0898916Z Temporarily overriding HOME='D:\a\_temp\7527ddf5-cd95-4c6b-beac-6c86644d45b7' before making global git config changes
+2026-10-09T04:10:54.0900507Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-09T04:10:54.0914185Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\calibrate-health\calibrate-health
+2026-10-09T04:10:54.1329806Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-09T04:10:54.1719267Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-09T04:10:54.7618203Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-09T04:10:54.7959806Z http.https://github.com/.extraheader
+2026-10-09T04:10:54.8021929Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all http.https://github.com/.extraheader
+2026-10-09T04:10:54.8372584Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-09T04:10:55.4416240Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-09T04:10:55.4752053Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-09T04:10:56.0600657Z Cleaning up orphan processes
+2026-10-09T04:10:56.1536160Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,134 @@
+[WebServer] (node:33948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:33364) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/food-log viewport=390x420 project=android-phone-chrome last_failed_request=none
+  x  1 [android-phone-chrome] ΓÇ║ core.spec.ts:13:5 ΓÇ║ selected food stays reachable in a short sheet and keeps the typed amount (6.9s)
+(node:20168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/food-log viewport=390x844 project=android-phone-chrome last_failed_request=none
+  x  2 [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives immediate save and reload (1.4s)
+(node:37372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[expo-web failure] route=/food-log viewport=390x844 project=android-phone-chrome last_failed_request=none
+  x  3 [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives blur then save and reload (1.3s)
+
+
+  1) [android-phone-chrome] ΓÇ║ core.spec.ts:13:5 ΓÇ║ selected food stays reachable in a short sheet and keeps the typed amount 
+
+    Error: expect(locator).toBeInViewport() failed
+
+    Locator:  getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })
+    Expected: in viewport
+    Received: viewport ratio 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeInViewport" with timeout 5000ms
+      - waiting for getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })
+        14 ├ù locator resolved to <input rows="1" dir="auto" value="0.125" autocorrect="on" autocomplete="on" spellcheck="true" enterkeyhint="done" inputmode="decimal" aria-label="Amount" aria-invalid="false" aria-required="false" autocapitalize="sentences" virtualkeyboardpolicy="auto" id="form-field-_r_b_-control" class="css-11aywtz r-6taxm2 r-9j3s6g r-1r2rb8h r-1q9bdsx r-rs99b7 r-1qar9k r-187pbxx r-ubezar r-majxgm r-oxtfae r-135wba7 r-1pl7oy7 r-11f147o r-3o4zer r-q4m81j"/>
+           - unexpected value "viewport ratio 0"
+
+
+      31 |   await amount.focus();
+      32 |   await amount.scrollIntoViewIfNeeded();
+    > 33 |   await expect(amount).toBeInViewport({ ratio: 1 });
+         |                        ^
+      34 |   const submit = dialog.getByRole('button', { name: 'Add & close', exact: true });
+      35 |   await submit.scrollIntoViewIfNeeded();
+      36 |   await expect(submit).toBeInViewport({ ratio: 1 });
+        at C:\Users\MChar\Documents\Codex\2026-10-08\task-7\review456\qa\core.spec.ts:33:24
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\before-results\core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: ..\before-results\core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\before-results\core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\before-results\core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  2) [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives immediate save and reload 
+
+    Error: expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 2
+
+      Object {
+    -   "servings_consumed": 1.000004,
+    +   "meal_period": "BREAKFAST",
+    +   "name": "Quarter-cup oats",
+      }
+
+      57 |       && new URL(request.url()).pathname === '/api/v1/food/701');
+      58 |     await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+    > 59 |     expect((await request).postDataJSON()).toMatchObject({ servings_consumed: 1.000004 });
+         |                                            ^
+      60 |     await expect(dialog).toBeHidden();
+      61 |     await page.reload();
+      62 |     await hideTransientPwaNotices(page);
+        at C:\Users\MChar\Documents\Codex\2026-10-08\task-7\review456\qa\core.spec.ts:59:44
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\before-results\core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: ..\before-results\core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\before-results\core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\before-results\core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  3) [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives blur then save and reload 
+
+    Error: expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 2
+
+      Object {
+    -   "servings_consumed": 1.000004,
+    +   "meal_period": "BREAKFAST",
+    +   "name": "Quarter-cup oats",
+      }
+
+      57 |       && new URL(request.url()).pathname === '/api/v1/food/701');
+      58 |     await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+    > 59 |     expect((await request).postDataJSON()).toMatchObject({ servings_consumed: 1.000004 });
+         |                                            ^
+      60 |     await expect(dialog).toBeHidden();
+      61 |     await page.reload();
+      62 |     await hideTransientPwaNotices(page);
+        at C:\Users\MChar\Documents\Codex\2026-10-08\task-7\review456\qa\core.spec.ts:59:44
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\before-results\core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: ..\before-results\core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    ..\before-results\core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\before-results\core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  3 failed
+    [android-phone-chrome] ΓÇ║ core.spec.ts:13:5 ΓÇ║ selected food stays reachable in a short sheet and keeps the typed amount 
+    [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives immediate save and reload 
+    [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives blur then save and reload 

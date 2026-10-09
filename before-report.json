@@ -1,0 +1,340 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\calibrate-auth-qa\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.config.ts"
+    ],
+    "configFile": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\playwright.config.ts",
+    "rootDir": "C:/Users/MChar/Documents/Codex/2026-10-08/task-7/review456/qa",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/MChar/Documents/Codex/2026-10-08/task-7/review456/before-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "android-phone-chrome",
+        "name": "android-phone-chrome",
+        "testDir": "C:/Users/MChar/Documents/Codex/2026-10-08/task-7/review456/qa",
+        "testIgnore": [],
+        "testMatch": [
+          "core.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../before-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": {
+      "command": "node serve.mjs",
+      "url": "http://127.0.0.1:18456",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "core.spec.ts",
+      "file": "core.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "selected food stays reachable in a short sheet and keeps the typed amount",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6918,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeInViewport\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeInViewport\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <input rows=\"1\" dir=\"auto\" value=\"0.125\" autocorrect=\"on\" autocomplete=\"on\" spellcheck=\"true\" enterkeyhint=\"done\" inputmode=\"decimal\" aria-label=\"Amount\" aria-invalid=\"false\" aria-required=\"false\" autocapitalize=\"sentences\" virtualkeyboardpolicy=\"auto\" id=\"form-field-_r_b_-control\" class=\"css-11aywtz r-6taxm2 r-9j3s6g r-1r2rb8h r-1q9bdsx r-rs99b7 r-1qar9k r-187pbxx r-ubezar r-majxgm r-oxtfae r-135wba7 r-1pl7oy7 r-11f147o r-3o4zer r-q4m81j\"/>\u001b[22m\n\u001b[2m       - unexpected value \"viewport ratio 0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeInViewport\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeInViewport\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <input rows=\"1\" dir=\"auto\" value=\"0.125\" autocorrect=\"on\" autocomplete=\"on\" spellcheck=\"true\" enterkeyhint=\"done\" inputmode=\"decimal\" aria-label=\"Amount\" aria-invalid=\"false\" aria-required=\"false\" autocapitalize=\"sentences\" virtualkeyboardpolicy=\"auto\" id=\"form-field-_r_b_-control\" class=\"css-11aywtz r-6taxm2 r-9j3s6g r-1r2rb8h r-1q9bdsx r-rs99b7 r-1qar9k r-187pbxx r-ubezar r-majxgm r-oxtfae r-135wba7 r-1pl7oy7 r-11f147o r-3o4zer r-q4m81j\"/>\u001b[22m\n\u001b[2m       - unexpected value \"viewport ratio 0\"\u001b[22m\n\n    at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts:33:24",
+                    "location": {
+                      "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                      "column": 24,
+                      "line": 33
+                    },
+                    "snippet": "  31 |   await amount.focus();\n  32 |   await amount.scrollIntoViewIfNeeded();\n> 33 |   await expect(amount).toBeInViewport({ ratio: 1 });\n     |                        ^\n  34 |   const submit = dialog.getByRole('button', { name: 'Add & close', exact: true });\n  35 |   await submit.scrollIntoViewIfNeeded();\n  36 |   await expect(submit).toBeInViewport({ ratio: 1 });"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                        "column": 24,
+                        "line": 33
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeInViewport\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeInViewport\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Add food', exact: true }).getByRole('textbox', { name: 'Amount', exact: true })\u001b[22m\n\u001b[2m    14 × locator resolved to <input rows=\"1\" dir=\"auto\" value=\"0.125\" autocorrect=\"on\" autocomplete=\"on\" spellcheck=\"true\" enterkeyhint=\"done\" inputmode=\"decimal\" aria-label=\"Amount\" aria-invalid=\"false\" aria-required=\"false\" autocapitalize=\"sentences\" virtualkeyboardpolicy=\"auto\" id=\"form-field-_r_b_-control\" class=\"css-11aywtz r-6taxm2 r-9j3s6g r-1r2rb8h r-1q9bdsx r-rs99b7 r-1qar9k r-187pbxx r-ubezar r-majxgm r-oxtfae r-135wba7 r-1pl7oy7 r-11f147o r-3o4zer r-q4m81j\"/>\u001b[22m\n\u001b[2m       - unexpected value \"viewport ratio 0\"\u001b[22m\n\n\n  31 |   await amount.focus();\n  32 |   await amount.scrollIntoViewIfNeeded();\n> 33 |   await expect(amount).toBeInViewport({ ratio: 1 });\n     |                        ^\n  34 |   const submit = dialog.getByRole('button', { name: 'Add & close', exact: true });\n  35 |   await submit.scrollIntoViewIfNeeded();\n  36 |   await expect(submit).toBeInViewport({ ratio: 1 });\n    at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts:33:24"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "[expo-web failure] route=/food-log viewport=390x420 project=android-phone-chrome last_failed_request=none\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:29:47.293Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome\\test-failed-1.png"
+                    },
+                    {
+                      "name": "failure-context.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJjb250ZXh0IjogInJvdXRlPS9mb29kLWxvZyB2aWV3cG9ydD0zOTB4NDIwIHByb2plY3Q9YW5kcm9pZC1waG9uZS1jaHJvbWUgbGFzdF9mYWlsZWRfcmVxdWVzdD1ub25lIiwKICAiYnJvd3NlckVycm9ycyI6IFtdLAogICJ1bmV4cGVjdGVkQXBpUmVxdWVzdHMiOiBbXQp9"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                    "column": 24,
+                    "line": 33
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d064c8ac994e44e7c99b-19be905c944517f10cf0",
+          "file": "core.spec.ts",
+          "line": 13,
+          "column": 5
+        },
+        {
+          "title": "one-millionth amount edit survives immediate save and reload",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1393,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"servings_consumed\": 1.000004,\u001b[39m\n\u001b[31m+   \"meal_period\": \"BREAKFAST\",\u001b[39m\n\u001b[31m+   \"name\": \"Quarter-cup oats\",\u001b[39m\n\u001b[2m  }\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"servings_consumed\": 1.000004,\u001b[39m\n\u001b[31m+   \"meal_period\": \"BREAKFAST\",\u001b[39m\n\u001b[31m+   \"name\": \"Quarter-cup oats\",\u001b[39m\n\u001b[2m  }\u001b[22m\n    at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts:59:44",
+                    "location": {
+                      "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                      "column": 44,
+                      "line": 59
+                    },
+                    "snippet": "  57 |       && new URL(request.url()).pathname === '/api/v1/food/701');\n  58 |     await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n> 59 |     expect((await request).postDataJSON()).toMatchObject({ servings_consumed: 1.000004 });\n     |                                            ^\n  60 |     await expect(dialog).toBeHidden();\n  61 |     await page.reload();\n  62 |     await hideTransientPwaNotices(page);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                        "column": 44,
+                        "line": 59
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"servings_consumed\": 1.000004,\u001b[39m\n\u001b[31m+   \"meal_period\": \"BREAKFAST\",\u001b[39m\n\u001b[31m+   \"name\": \"Quarter-cup oats\",\u001b[39m\n\u001b[2m  }\u001b[22m\n\n  57 |       && new URL(request.url()).pathname === '/api/v1/food/701');\n  58 |     await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n> 59 |     expect((await request).postDataJSON()).toMatchObject({ servings_consumed: 1.000004 });\n     |                                            ^\n  60 |     await expect(dialog).toBeHidden();\n  61 |     await page.reload();\n  62 |     await hideTransientPwaNotices(page);\n    at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts:59:44"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "[expo-web failure] route=/food-log viewport=390x844 project=android-phone-chrome last_failed_request=none\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:29:55.521Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome\\test-failed-1.png"
+                    },
+                    {
+                      "name": "failure-context.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJjb250ZXh0IjogInJvdXRlPS9mb29kLWxvZyB2aWV3cG9ydD0zOTB4ODQ0IHByb2plY3Q9YW5kcm9pZC1waG9uZS1jaHJvbWUgbGFzdF9mYWlsZWRfcmVxdWVzdD1ub25lIiwKICAiYnJvd3NlckVycm9ycyI6IFtdLAogICJ1bmV4cGVjdGVkQXBpUmVxdWVzdHMiOiBbXQp9"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                    "column": 44,
+                    "line": 59
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d064c8ac994e44e7c99b-f676ac1f81f8ab7fbb63",
+          "file": "core.spec.ts",
+          "line": 45,
+          "column": 7
+        },
+        {
+          "title": "one-millionth amount edit survives blur then save and reload",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1313,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"servings_consumed\": 1.000004,\u001b[39m\n\u001b[31m+   \"meal_period\": \"BREAKFAST\",\u001b[39m\n\u001b[31m+   \"name\": \"Quarter-cup oats\",\u001b[39m\n\u001b[2m  }\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"servings_consumed\": 1.000004,\u001b[39m\n\u001b[31m+   \"meal_period\": \"BREAKFAST\",\u001b[39m\n\u001b[31m+   \"name\": \"Quarter-cup oats\",\u001b[39m\n\u001b[2m  }\u001b[22m\n    at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts:59:44",
+                    "location": {
+                      "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                      "column": 44,
+                      "line": 59
+                    },
+                    "snippet": "  57 |       && new URL(request.url()).pathname === '/api/v1/food/701');\n  58 |     await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n> 59 |     expect((await request).postDataJSON()).toMatchObject({ servings_consumed: 1.000004 });\n     |                                            ^\n  60 |     await expect(dialog).toBeHidden();\n  61 |     await page.reload();\n  62 |     await hideTransientPwaNotices(page);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                        "column": 44,
+                        "line": 59
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[32m-   \"servings_consumed\": 1.000004,\u001b[39m\n\u001b[31m+   \"meal_period\": \"BREAKFAST\",\u001b[39m\n\u001b[31m+   \"name\": \"Quarter-cup oats\",\u001b[39m\n\u001b[2m  }\u001b[22m\n\n  57 |       && new URL(request.url()).pathname === '/api/v1/food/701');\n  58 |     await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n> 59 |     expect((await request).postDataJSON()).toMatchObject({ servings_consumed: 1.000004 });\n     |                                            ^\n  60 |     await expect(dialog).toBeHidden();\n  61 |     await page.reload();\n  62 |     await hideTransientPwaNotices(page);\n    at C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts:59:44"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "[expo-web failure] route=/food-log viewport=390x844 project=android-phone-chrome last_failed_request=none\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:29:58.148Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome\\test-failed-1.png"
+                    },
+                    {
+                      "name": "failure-context.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJjb250ZXh0IjogInJvdXRlPS9mb29kLWxvZyB2aWV3cG9ydD0zOTB4ODQ0IHByb2plY3Q9YW5kcm9pZC1waG9uZS1jaHJvbWUgbGFzdF9mYWlsZWRfcmVxdWVzdD1ub25lIiwKICAiYnJvd3NlckVycm9ycyI6IFtdLAogICJ1bmV4cGVjdGVkQXBpUmVxdWVzdHMiOiBbXQp9"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\before-results\\core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\core.spec.ts",
+                    "column": 44,
+                    "line": 59
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d064c8ac994e44e7c99b-3460f857f9ca4b31e1b0",
+          "file": "core.spec.ts",
+          "line": 45,
+          "column": 7
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T04:29:46.708Z",
+    "duration": 13962.72,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  }
+}

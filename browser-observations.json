@@ -1,0 +1,1034 @@
+[
+  {
+    "path": "controls-results/controls-add-0-125-blur-android-phone-chrome/observations.json",
+    "sha256": "47af381dba29d9d8d39a59012358bcd5ff481325793fb603e682d87869bc4f47",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 13,
+          "servings_consumed": 0.125,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 2.5,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 13,
+        "servings_consumed": 0.125,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 2.5,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-add-0-125-immediate-android-phone-chrome/observations.json",
+    "sha256": "0d469423d008f96a0e5313d34abb28b925c79141940e0283e5cfa20ce202b6ea",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 13,
+          "servings_consumed": 0.125,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 2.5,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 13,
+        "servings_consumed": 0.125,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 2.5,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-add-1-3-blur-android-phone-chrome/observations.json",
+    "sha256": "53f971f9938339463312754ffedae87a78db5a826073d3db9eceb29cf330af75",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 1.3
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 130,
+          "servings_consumed": 1.3,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 26,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 130,
+        "servings_consumed": 1.3,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 26,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-add-1-3-immediate-android-phone-chrome/observations.json",
+    "sha256": "7fc45b7a48826b7e55f4384bc0f49d27d81b2bfe6b260b4373da4dff4051259f",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 1.3
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 130,
+          "servings_consumed": 1.3,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 26,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 130,
+        "servings_consumed": 1.3,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 26,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-add-1comma3-blur-android-phone-chrome/observations.json",
+    "sha256": "2d81242c66ad38d0f35a0e46ef37778625d2ef863657e79a2658e2ed0bc9edd9",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 1.3
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 130,
+          "servings_consumed": 1.3,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 26,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 130,
+        "servings_consumed": 1.3,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 26,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-add-1comma3-immediate-android-phone-chrome/observations.json",
+    "sha256": "1119c0a9fd36def1f17bbcc8410861fa0dad99912cb2673fd1401d3277918219",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 1.3
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 130,
+          "servings_consumed": 1.3,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 26,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 130,
+        "servings_consumed": 1.3,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 26,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-add-invalid-quant-aeafb-ns-preserve-typed-precision-android-phone-chrome/observations.json",
+    "sha256": "bf18f3ee76badecf7838aa80ce6fc47227efa58331adafde68cd46c05afade48",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 13,
+          "servings_consumed": 0.125,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 2.5,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 13,
+        "servings_consumed": 0.125,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 2.5,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-committed-add-wit-e7d34--replays-same-identity-once-android-phone-chrome/observations.json",
+    "sha256": "4bb31db813722608ce0b554e390c26e0c9cf5a2ae0b15a25a3ca62d5dab1b796",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 503,
+        "committed": true
+      },
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 13,
+          "servings_consumed": 0.125,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 2.5,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 13,
+        "servings_consumed": 0.125,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 2.5,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-existing-0-125-blur-android-phone-chrome/observations.json",
+    "sha256": "a0a3ee87a9de5ac1c128a77712862e12774c5e34bf6d93f5a785fcaee2a52e3a",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 0.5
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 50,
+          "servings_consumed": 0.5,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 10
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 50,
+        "servings_consumed": 0.5,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 10
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-existing-0-125-immediate-android-phone-chrome/observations.json",
+    "sha256": "f9178d6207b32960095ccd0b4f9f57bc7282ce879a588835a1d599e2ee6ce2d6",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 0.5
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 50,
+          "servings_consumed": 0.5,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 10
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 50,
+        "servings_consumed": 0.5,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 10
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-existing-1-3-blur-android-phone-chrome/observations.json",
+    "sha256": "b05279e7b4a4d8a991f4b8b746579ef0157328c222ff2e2f2e6f20f0198002ba",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 5.2
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 520,
+          "servings_consumed": 5.2,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 104
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 520,
+        "servings_consumed": 5.2,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 104
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-existing-1-3-immediate-android-phone-chrome/observations.json",
+    "sha256": "148746dd3cfe08ea2be021b1d27624b1676fbb667d21fb12a130c260367ede19",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 5.2
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 520,
+          "servings_consumed": 5.2,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 104
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 520,
+        "servings_consumed": 5.2,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 104
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-existing-1comma3-blur-android-phone-chrome/observations.json",
+    "sha256": "e928fd40230965e6081b5c8d4b17e25af4496874fee1168be0a6170a6d8f3caa",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 5.2
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 520,
+          "servings_consumed": 5.2,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 104
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 520,
+        "servings_consumed": 5.2,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 104
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-existing-1comma3-immediate-android-phone-chrome/observations.json",
+    "sha256": "4adb689c44bdbfbc7bbf42b8f845c9cd88eed148e1a1bdc23edbadc128be2b8a",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 5.2
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 520,
+          "servings_consumed": 5.2,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 104
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 520,
+        "servings_consumed": 5.2,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 104
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-offline-add-and-e-b471c-ain-decimals-and-identities-android-phone-chrome/observations.json",
+    "sha256": "d4656c4fb73642e692ddb8dcf1b534f017fbabf54a2e950768ea4dbea5b86149",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 503
+      },
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 13,
+          "servings_consumed": 0.125,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 2.5,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      },
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 5.2
+        },
+        "key": "00000000-0000-4000-8000-000000000002",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 520,
+          "servings_consumed": 5.2,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 104
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 520,
+        "servings_consumed": 5.2,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 104
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 13,
+        "servings_consumed": 0.125,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 2.5,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": [
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "namespace": "http://127.0.0.1:18456::user:17",
+        "operation": "food.create",
+        "payloadJson": "{\"date\":\"2026-07-21\",\"meal_period\":\"LUNCH\",\"my_food_id\":901,\"servings_consumed\":0.125,\"localSnapshot\":{\"name\":\"Synthetic quarter-cup oats\",\"calories\":13,\"calories_per_serving_snapshot\":100,\"serving_size_quantity_snapshot\":0.25,\"serving_unit_label_snapshot\":\"cup\"}}",
+        "state": "pending",
+        "attemptCount": 2,
+        "lastError": "Pending reconnection; changes remain on this device.",
+        "createdAt": 1784660408336,
+        "updatedAt": 1784660410544,
+        "sequence": 1
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "namespace": "http://127.0.0.1:18456::user:17",
+        "operation": "food.update",
+        "payloadJson": "{\"id\":701,\"date\":\"2026-07-21\",\"update\":{\"name\":\"Synthetic existing oats\",\"meal_period\":\"BREAKFAST\",\"servings_consumed\":5.2}}",
+        "state": "pending",
+        "attemptCount": 0,
+        "lastError": null,
+        "createdAt": 1784660410000,
+        "updatedAt": 1784660410000,
+        "sequence": 2
+      }
+    ],
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-simulated-visual-viewport-shrink-add-android-phone-chrome/observations.json",
+    "sha256": "cccf396c27cc6da03d09ddec092f6945515b49244b1ffd1e0cb9ff08548c19a2",
+    "traffic": [
+      {
+        "method": "POST",
+        "payload": {
+          "date": "2026-07-21",
+          "meal_period": "LUNCH",
+          "my_food_id": 901,
+          "servings_consumed": 0.125
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 201,
+        "response": {
+          "id": 702,
+          "name": "Synthetic quarter-cup oats",
+          "meal_period": "LUNCH",
+          "calories": 13,
+          "servings_consumed": 0.125,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 2.5,
+          "date": "2026-07-21",
+          "my_food_id": 901
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20
+      },
+      {
+        "id": 702,
+        "name": "Synthetic quarter-cup oats",
+        "meal_period": "LUNCH",
+        "calories": 13,
+        "servings_consumed": 0.125,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 2.5,
+        "date": "2026-07-21",
+        "my_food_id": 901
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-simulated-visual-viewport-shrink-edit-android-phone-chrome/observations.json",
+    "sha256": "6342756e3ddf4210eab194b44f8788cf37dff8396c9f9cb79f3379466c4da10b",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 0.5
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 50,
+          "servings_consumed": 0.5,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 10
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 50,
+        "servings_consumed": 0.5,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 10
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  },
+  {
+    "path": "controls-results/controls-validation-button-increment-six-place-edit-boundary-android-phone-chrome/observations.json",
+    "sha256": "73ab2b9a2291991a1fb7f1b135decef173cc9c0d920e9261078a20dd93cb083e",
+    "traffic": [
+      {
+        "method": "PATCH",
+        "payload": {
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "servings_consumed": 1.000004
+        },
+        "key": "00000000-0000-4000-8000-000000000001",
+        "status": 200,
+        "response": {
+          "id": 701,
+          "name": "Synthetic existing oats",
+          "meal_period": "BREAKFAST",
+          "calories": 100,
+          "servings_consumed": 1.000004,
+          "serving_size_quantity_snapshot": 0.25,
+          "serving_unit_label_snapshot": "cup",
+          "calories_per_serving_snapshot": 100,
+          "grams_per_measure_snapshot": 20,
+          "grams_total_snapshot": 20.000079999999997
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": 701,
+        "name": "Synthetic existing oats",
+        "meal_period": "BREAKFAST",
+        "calories": 100,
+        "servings_consumed": 1.000004,
+        "serving_size_quantity_snapshot": 0.25,
+        "serving_unit_label_snapshot": "cup",
+        "calories_per_serving_snapshot": 100,
+        "grams_per_measure_snapshot": 20,
+        "grams_total_snapshot": 20.000079999999997
+      }
+    ],
+    "queued": null,
+    "browser": "155.0.8059.39"
+  }
+]

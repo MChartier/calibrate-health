@@ -1,0 +1,813 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\calibrate-auth-qa\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.config.ts",
+      "--grep-invert",
+      "observed one-millionth|short browser window"
+    ],
+    "configFile": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\qa\\playwright.config.ts",
+    "rootDir": "C:/Users/MChar/Documents/Codex/2026-10-08/task-7/review456/qa",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/MChar/Documents/Codex/2026-10-08/task-7/review456/controls-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "android-phone-chrome",
+        "name": "android-phone-chrome",
+        "testDir": "C:/Users/MChar/Documents/Codex/2026-10-08/task-7/review456/qa",
+        "testIgnore": [],
+        "testMatch": [
+          "controls.spec.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../controls-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": {
+      "command": "node serve.mjs",
+      "url": "http://127.0.0.1:18456",
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "controls.spec.ts",
+      "file": "controls.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "existing 0.125 immediate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1956,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:13.091Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-existing-0-125-immediate-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-a8d6f35d7f3b746c9ff4",
+          "file": "controls.spec.ts",
+          "line": 31,
+          "column": 6
+        },
+        {
+          "title": "add 0.125 immediate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2600,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:15.446Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-add-0-125-immediate-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-df4b4ae4a3ccff92ba58",
+          "file": "controls.spec.ts",
+          "line": 32,
+          "column": 6
+        },
+        {
+          "title": "existing 0.125 blur",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1821,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:18.145Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-existing-0-125-blur-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-5f252781791b3bb27a6d",
+          "file": "controls.spec.ts",
+          "line": 31,
+          "column": 6
+        },
+        {
+          "title": "add 0.125 blur",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2611,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:20.045Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-add-0-125-blur-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-f31af3bd4251cef5f92e",
+          "file": "controls.spec.ts",
+          "line": 32,
+          "column": 6
+        },
+        {
+          "title": "existing 1.3 immediate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1748,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:22.740Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-existing-1-3-immediate-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-4d58641c013ef94c6e8c",
+          "file": "controls.spec.ts",
+          "line": 31,
+          "column": 6
+        },
+        {
+          "title": "add 1.3 immediate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2592,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:24.559Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-add-1-3-immediate-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-bdf60a0449d77057aac1",
+          "file": "controls.spec.ts",
+          "line": 32,
+          "column": 6
+        },
+        {
+          "title": "existing 1.3 blur",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1747,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:27.232Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-existing-1-3-blur-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-6c3487423d8a89424731",
+          "file": "controls.spec.ts",
+          "line": 31,
+          "column": 6
+        },
+        {
+          "title": "add 1.3 blur",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2594,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:29.042Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-add-1-3-blur-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-3c994cd4eaef859518bc",
+          "file": "controls.spec.ts",
+          "line": 32,
+          "column": 6
+        },
+        {
+          "title": "existing 1comma3 immediate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1802,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:31.724Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-existing-1comma3-immediate-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-7a31e062fbfd6c36134c",
+          "file": "controls.spec.ts",
+          "line": 31,
+          "column": 6
+        },
+        {
+          "title": "add 1comma3 immediate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2487,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:33.604Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-add-1comma3-immediate-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-7d4f5f8452aac53e150f",
+          "file": "controls.spec.ts",
+          "line": 32,
+          "column": 6
+        },
+        {
+          "title": "existing 1comma3 blur",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1809,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:36.159Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-existing-1comma3-blur-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-d0e5fab0c9d00d7534ba",
+          "file": "controls.spec.ts",
+          "line": 31,
+          "column": 6
+        },
+        {
+          "title": "add 1comma3 blur",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2634,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:38.051Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-add-1comma3-blur-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-6b6ceb67964a4de035ac",
+          "file": "controls.spec.ts",
+          "line": 32,
+          "column": 6
+        },
+        {
+          "title": "validation, button increment, six-place edit boundary",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1598,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:40.770Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-validation-button-increment-six-place-edit-boundary-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-334ef9b2bdc1282b5e0a",
+          "file": "controls.spec.ts",
+          "line": 35,
+          "column": 5
+        },
+        {
+          "title": "offline add and edit replay retain decimals and identities",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3361,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:42.437Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-offline-add-and-e-b471c-ain-decimals-and-identities-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-fd0ca2fd4d66ee8b8dd9",
+          "file": "controls.spec.ts",
+          "line": 37,
+          "column": 5
+        },
+        {
+          "title": "simulated visual viewport shrink edit",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1403,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:45.885Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-simulated-visual-viewport-shrink-edit-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-3bbd89d36133ee1324b3",
+          "file": "controls.spec.ts",
+          "line": 43,
+          "column": 38
+        },
+        {
+          "title": "simulated visual viewport shrink add",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2043,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:47.344Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-simulated-visual-viewport-shrink-add-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-ba3f733ccc4ae1c378f8",
+          "file": "controls.spec.ts",
+          "line": 43,
+          "column": 38
+        },
+        {
+          "title": "committed add with lost acknowledgement replays same identity once",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2514,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:49.448Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-committed-add-wit-e7d34--replays-same-identity-once-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-706e2fb3cc2df8d8da4b",
+          "file": "controls.spec.ts",
+          "line": 54,
+          "column": 5
+        },
+        {
+          "title": "add invalid quantities stay unsaved and step buttons preserve typed precision",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "android-phone-chrome",
+              "projectName": "android-phone-chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2170,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T04:31:52.030Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-7\\review456\\controls-results\\controls-add-invalid-quant-aeafb-ns-preserve-typed-precision-android-phone-chrome\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b018fb422dd9cd1fd1e5-54b4346cadc239f131dc",
+          "file": "controls.spec.ts",
+          "line": 58,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T04:31:12.514Z",
+    "duration": 42856.070999999996,
+    "expected": 18,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,233 @@
+{
+  "merge": {
+    "sha": "2d8545b3f0ad487db614f88727db9927fd4369be",
+    "node_id": "C_kwDOQbBgUtoAKDJkODU0NWIzZjBhZDQ4N2RiNjE0Zjg4NzI3ZGI5OTI3ZmQ0MzY5YmU",
+    "commit": {
+      "author": {
+        "name": "Matthew Chartier",
+        "email": "MChartier@gmail.com",
+        "date": "2026-10-09T04:07:16Z"
+      },
+      "committer": {
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2026-10-09T04:07:16Z"
+      },
+      "message": "Merge 7555a4f314d54f81c307cb90948549d160ca8581 into 547206a1b372b73fc95fc412ad453b8099440000",
+      "tree": {
+        "sha": "3275f4e60c446c02d8253767b2fc92ed3ddd72bc",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/git/trees/3275f4e60c446c02d8253767b2fc92ed3ddd72bc"
+      },
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/git/commits/2d8545b3f0ad487db614f88727db9927fd4369be",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqyGh0CRC1aQ7uu5UhlAAAgOoQAAMxYf7A+vj6idSQGtRTM+sb\nrGQMBCKSSa3nBV+rrBAtxXiVVxVnC0VbLHCtMT8YYFZxR++Wgs1sQ2FtyXH3otWw\nk9xD/vPy1herm+RNdps6zTiTTrRNZlhNNpzWn/Yv9cHhmf2lZ4Xq3BYPUxOIzot2\n2bSW0/mKVuhkfUTB+si3MmJjktOu3nXnml2XxBgIJLL2zoOcBduON7VgqSPupOzq\nGcf5KcqmjJNse+AxzACTCkZon0fu3yFhPg/ZG298H0ysjUONToXuVzf+948q9DCm\nsdqRjoiKFWlJKA4kXWQH3jIVIAkAovxaNY+h+0U3rmiUyO6uPa1+VpppF5Ws4CI3\ncwPFjQL4uzj8fq4Mf7O978CNwClrIajwwphcAUjxN+7hvh0C7tR+guhk1oYbJMFo\ndA6IUn1mDFvK6bCb8uduStj1Zk4RK6WrTLjmWlb15QoVRxcMxWXxt88j5t335DYV\nJfGEvGTt38x46UfJZumD/a7SqgEMWvT1JDnrsuXzKkuFHamoVZbsvGItYvA8xPKj\npgk/gBaqhqCYUnCoz2D+B7vRO0gZkE2feqy8Tdlx1ZwxGNEqW11Sjf/zn7w0KyQZ\nWNb3DnRc+w6DSt7IOsOxHcDI/VJsiN6WlW/rS0AKQFaZCKvTA+R3Bx6shk3aY7Wf\nWhLQspen31kJZ5T2E6wi\n=ZqYE\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree 3275f4e60c446c02d8253767b2fc92ed3ddd72bc\nparent 547206a1b372b73fc95fc412ad453b8099440000\nparent 7555a4f314d54f81c307cb90948549d160ca8581\nauthor Matthew Chartier <MChartier@gmail.com> 1791518836 +0000\ncommitter GitHub <noreply@github.com> 1791518836 +0000\n\nMerge 7555a4f314d54f81c307cb90948549d160ca8581 into 547206a1b372b73fc95fc412ad453b8099440000\n",
+        "verified_at": "2026-10-09T04:07:16Z"
+      }
+    },
+    "url": "https://api.github.com/repos/MChartier/calibrate-health/commits/2d8545b3f0ad487db614f88727db9927fd4369be",
+    "html_url": "https://github.com/MChartier/calibrate-health/commit/2d8545b3f0ad487db614f88727db9927fd4369be",
+    "comments_url": "https://api.github.com/repos/MChartier/calibrate-health/commits/2d8545b3f0ad487db614f88727db9927fd4369be/comments",
+    "author": {
+      "login": "MChartier",
+      "id": 1258197,
+      "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MChartier",
+      "html_url": "https://github.com/MChartier",
+      "followers_url": "https://api.github.com/users/MChartier/followers",
+      "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+      "organizations_url": "https://api.github.com/users/MChartier/orgs",
+      "repos_url": "https://api.github.com/users/MChartier/repos",
+      "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MChartier/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "547206a1b372b73fc95fc412ad453b8099440000",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/commits/547206a1b372b73fc95fc412ad453b8099440000",
+        "html_url": "https://github.com/MChartier/calibrate-health/commit/547206a1b372b73fc95fc412ad453b8099440000"
+      },
+      {
+        "sha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/commits/7555a4f314d54f81c307cb90948549d160ca8581",
+        "html_url": "https://github.com/MChartier/calibrate-health/commit/7555a4f314d54f81c307cb90948549d160ca8581"
+      }
+    ],
+    "stats": {
+      "total": 81,
+      "additions": 72,
+      "deletions": 9
+    },
+    "files": [
+      {
+        "sha": "54c9a97c6ad387c3c05bc898e1426cc08f0d3afb",
+        "filename": "e2e/expo-web/food-quantity-entry.spec.ts",
+        "status": "added",
+        "additions": 66,
+        "deletions": 0,
+        "changes": 66,
+        "blob_url": "https://github.com/MChartier/calibrate-health/blob/2d8545b3f0ad487db614f88727db9927fd4369be/e2e%2Fexpo-web%2Ffood-quantity-entry.spec.ts",
+        "raw_url": "https://github.com/MChartier/calibrate-health/raw/2d8545b3f0ad487db614f88727db9927fd4369be/e2e%2Fexpo-web%2Ffood-quantity-entry.spec.ts",
+        "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/e2e%2Fexpo-web%2Ffood-quantity-entry.spec.ts?ref=2d8545b3f0ad487db614f88727db9927fd4369be",
+        "patch": "@@ -0,0 +1,66 @@\n+import { expect, hideTransientPwaNotices, test } from './fixtures';\n+\n+const FOOD = {\n+  id: 901, type: 'FOOD', name: 'Quarter-cup oats', serving_size_quantity: 0.25,\n+  serving_unit_label: 'cup', calories_per_serving: 100, is_pinned: false,\n+};\n+const ENTRY = {\n+  id: 701, name: FOOD.name, meal_period: 'BREAKFAST' as const, calories: 100,\n+  servings_consumed: 1, serving_size_quantity_snapshot: 0.25,\n+  serving_unit_label_snapshot: 'cup', calories_per_serving_snapshot: 100,\n+};\n+\n+test('selected food stays reachable in a short sheet and keeps the typed amount', async ({ page, ux }, testInfo) => {\n+  test.skip(testInfo.project.name !== 'android-phone-chrome', 'One touch browser viewport exercises the constrained sheet.');\n+  await ux.install('populated', { foodEntriesByDate: { '2026-07-21': [ENTRY] } });\n+  await page.route('**/api/v1/my-foods*', route => route.fulfill({ json:\n+    new URL(route.request().url()).pathname.endsWith('/library')\n+      ? { items: [FOOD], next_cursor: null } : [FOOD],\n+  }));\n+  await page.route('**/api/v1/food/search?*', route => route.fulfill({ json: { items: [], provider: 'usda' } }));\n+  await page.goto('/food-log');\n+  await hideTransientPwaNotices(page);\n+  await page.getByRole('button', { name: 'Add food', exact: true }).click();\n+  const dialog = page.getByRole('dialog', { name: 'Add food', exact: true });\n+  await dialog.getByRole('radio', { name: 'Search', exact: true }).click();\n+  await dialog.getByLabel('Search foods').fill(FOOD.name);\n+  await dialog.getByText(FOOD.name, { exact: true }).click();\n+  const amount = dialog.getByRole('textbox', { name: 'Amount', exact: true });\n+  await amount.fill('0.125');\n+  await page.setViewportSize({ width: 390, height: 420 });\n+  await amount.focus();\n+  await amount.scrollIntoViewIfNeeded();\n+  await expect(amount).toBeInViewport({ ratio: 1 });\n+  const submit = dialog.getByRole('button', { name: 'Add & close', exact: true });\n+  await submit.scrollIntoViewIfNeeded();\n+  await expect(submit).toBeInViewport({ ratio: 1 });\n+  const request = page.waitForRequest(request => request.method() === 'POST'\n+    && new URL(request.url()).pathname === '/api/v1/food');\n+  await submit.click();\n+  expect((await request).postDataJSON()).toMatchObject({ my_food_id: FOOD.id, servings_consumed: 0.125 });\n+  await expect(dialog).toBeHidden();\n+});\n+\n+for (const blurBeforeSave of [false, true]) {\n+  test(`one-millionth amount edit survives ${blurBeforeSave ? 'blur then' : 'immediate'} save and reload`, async ({ page, ux }, testInfo) => {\n+    test.skip(testInfo.project.name !== 'android-phone-chrome', 'One touch browser covers input and mutation ordering.');\n+    await ux.install('populated', { foodEntriesByDate: { '2026-07-21': [ENTRY] } });\n+    await page.goto('/food-log');\n+    await hideTransientPwaNotices(page);\n+    await page.getByRole('button', { name: `Edit ${FOOD.name}`, exact: true }).click();\n+    const dialog = page.getByRole('dialog', { name: 'Edit food', exact: true });\n+    const amount = dialog.getByRole('textbox', { name: 'Amount', exact: true });\n+    await expect(amount).toHaveValue('0.25');\n+    await amount.fill('0.250001');\n+    if (blurBeforeSave) await amount.press('Tab');\n+    const request = page.waitForRequest(request => request.method() === 'PATCH'\n+      && new URL(request.url()).pathname === '/api/v1/food/701');\n+    await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n+    expect((await request).postDataJSON()).toMatchObject({ servings_consumed: 1.000004 });\n+    await expect(dialog).toBeHidden();\n+    await page.reload();\n+    await hideTransientPwaNotices(page);\n+    await page.getByRole('button', { name: `Edit ${FOOD.name}`, exact: true }).click();\n+    await expect(dialog.getByRole('textbox', { name: 'Amount', exact: true })).toHaveValue('0.250001');\n+  });\n+}"
+      },
+      {
+        "sha": "34c41790c488460ae7513184ffbd081c7c4b2c96",
+        "filename": "mobile/src/components/AddFoodSheet.tsx",
+        "status": "modified",
+        "additions": 5,
+        "deletions": 8,
+        "changes": 13,
+        "blob_url": "https://github.com/MChartier/calibrate-health/blob/2d8545b3f0ad487db614f88727db9927fd4369be/mobile%2Fsrc%2Fcomponents%2FAddFoodSheet.tsx",
+        "raw_url": "https://github.com/MChartier/calibrate-health/raw/2d8545b3f0ad487db614f88727db9927fd4369be/mobile%2Fsrc%2Fcomponents%2FAddFoodSheet.tsx",
+        "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/mobile%2Fsrc%2Fcomponents%2FAddFoodSheet.tsx?ref=2d8545b3f0ad487db614f88727db9927fd4369be",
+        "patch": "@@ -467,12 +467,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({\n             ? getProviderAttribution(selection.item.source ?? undefined, providerData?.attribution)\n             : null;\n         return (\n-            <KeyboardAwareScrollView\n-                style={styles.flex}\n-                contentContainerStyle={styles.editorContent}\n-                revealFocusedInputOnFocus\n-                keyboardShouldPersistTaps=\"handled\"\n-            >\n+            <View style={styles.editorContent}>\n                 {selectionAttribution && renderProviderAttribution(selectionAttribution)}\n                 <FoodSelectionEditor\n                     selection={selection}\n@@ -486,7 +481,7 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({\n                     }}\n                     onSubmit={(request) => logFood.mutate(request)}\n                 />\n-            </KeyboardAwareScrollView>\n+            </View>\n         );\n     }\n \n@@ -733,7 +728,9 @@ export const AddFoodSheet: React.FC<AddFoodSheetProps> = ({\n             maxHeight={ADD_FOOD_SHEET_HEIGHT}\n             size=\"wide\"\n             showCloseButton\n-            scrollable={false}\n+            // Scroll the selected editor together with its controls in short viewports.\n+            scrollable={Boolean(selection)}\n+            revealFocusedInputOnFocus={Boolean(selection)}\n             dismissDisabled={logFood.isPending}\n             isDirty={hasUnsavedDraft}\n             confirmDismiss={confirmDiscardChanges}"
+      },
+      {
+        "sha": "bb8a4c7c1229aa9d5d3d640f612f47c2f496da44",
+        "filename": "mobile/src/food/FoodLogContent.tsx",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1,
+        "changes": 2,
+        "blob_url": "https://github.com/MChartier/calibrate-health/blob/2d8545b3f0ad487db614f88727db9927fd4369be/mobile%2Fsrc%2Ffood%2FFoodLogContent.tsx",
+        "raw_url": "https://github.com/MChartier/calibrate-health/raw/2d8545b3f0ad487db614f88727db9927fd4369be/mobile%2Fsrc%2Ffood%2FFoodLogContent.tsx",
+        "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/mobile%2Fsrc%2Ffood%2FFoodLogContent.tsx?ref=2d8545b3f0ad487db614f88727db9927fd4369be",
+        "patch": "@@ -275,7 +275,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea\n             !nextAmount.trim()\n             || !Number.isFinite(parsedAmount)\n             || !editAmountConfig\n-            || Math.abs(parsedAmount - editAmountConfig.amount) > 0.000001\n+            || editAmountConfig.toServings(parsedAmount) !== editAmountConfig.toServings(editAmountConfig.amount)\n         );\n         if (editCaloriesOverridden || !editEntry || !editAmountConfig) return;\n "
+      }
+    ]
+  },
+  "head": {
+    "sha": "7555a4f314d54f81c307cb90948549d160ca8581",
+    "node_id": "C_kwDOQbBgUtoAKDc1NTVhNGYzMTRkNTRmODFjMzA3Y2I5MDk0ODU0OWQxNjBjYTg1ODE",
+    "commit": {
+      "author": {
+        "name": "MChartier",
+        "email": "MChartier@users.noreply.github.com",
+        "date": "2026-10-09T04:07:12Z"
+      },
+      "committer": {
+        "name": "MChartier",
+        "email": "MChartier@users.noreply.github.com",
+        "date": "2026-10-09T04:07:12Z"
+      },
+      "message": "Trim quantity regression test trailing whitespace",
+      "tree": {
+        "sha": "3275f4e60c446c02d8253767b2fc92ed3ddd72bc",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/git/trees/3275f4e60c446c02d8253767b2fc92ed3ddd72bc"
+      },
+      "url": "https://api.github.com/repos/MChartier/calibrate-health/git/commits/7555a4f314d54f81c307cb90948549d160ca8581",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/MChartier/calibrate-health/commits/7555a4f314d54f81c307cb90948549d160ca8581",
+    "html_url": "https://github.com/MChartier/calibrate-health/commit/7555a4f314d54f81c307cb90948549d160ca8581",
+    "comments_url": "https://api.github.com/repos/MChartier/calibrate-health/commits/7555a4f314d54f81c307cb90948549d160ca8581/comments",
+    "author": {
+      "login": "MChartier",
+      "id": 1258197,
+      "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MChartier",
+      "html_url": "https://github.com/MChartier",
+      "followers_url": "https://api.github.com/users/MChartier/followers",
+      "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+      "organizations_url": "https://api.github.com/users/MChartier/orgs",
+      "repos_url": "https://api.github.com/users/MChartier/repos",
+      "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MChartier/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "MChartier",
+      "id": 1258197,
+      "node_id": "MDQ6VXNlcjEyNTgxOTc=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1258197?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/MChartier",
+      "html_url": "https://github.com/MChartier",
+      "followers_url": "https://api.github.com/users/MChartier/followers",
+      "following_url": "https://api.github.com/users/MChartier/following{/other_user}",
+      "gists_url": "https://api.github.com/users/MChartier/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/MChartier/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/MChartier/subscriptions",
+      "organizations_url": "https://api.github.com/users/MChartier/orgs",
+      "repos_url": "https://api.github.com/users/MChartier/repos",
+      "events_url": "https://api.github.com/users/MChartier/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/MChartier/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "ff05e56ed338ec2c178dc05cdf77125d34395c67",
+        "url": "https://api.github.com/repos/MChartier/calibrate-health/commits/ff05e56ed338ec2c178dc05cdf77125d34395c67",
+        "html_url": "https://github.com/MChartier/calibrate-health/commit/ff05e56ed338ec2c178dc05cdf77125d34395c67"
+      }
+    ],
+    "stats": {
+      "total": 1,
+      "additions": 0,
+      "deletions": 1
+    },
+    "files": [
+      {
+        "sha": "54c9a97c6ad387c3c05bc898e1426cc08f0d3afb",
+        "filename": "e2e/expo-web/food-quantity-entry.spec.ts",
+        "status": "modified",
+        "additions": 0,
+        "deletions": 1,
+        "changes": 1,
+        "blob_url": "https://github.com/MChartier/calibrate-health/blob/7555a4f314d54f81c307cb90948549d160ca8581/e2e%2Fexpo-web%2Ffood-quantity-entry.spec.ts",
+        "raw_url": "https://github.com/MChartier/calibrate-health/raw/7555a4f314d54f81c307cb90948549d160ca8581/e2e%2Fexpo-web%2Ffood-quantity-entry.spec.ts",
+        "contents_url": "https://api.github.com/repos/MChartier/calibrate-health/contents/e2e%2Fexpo-web%2Ffood-quantity-entry.spec.ts?ref=7555a4f314d54f81c307cb90948549d160ca8581",
+        "patch": "@@ -64,4 +64,3 @@ for (const blurBeforeSave of [false, true]) {\n     await expect(dialog.getByRole('textbox', { name: 'Amount', exact: true })).toHaveValue('0.250001');\n   });\n }\n-"
+      }
+    ]
+  }
+}

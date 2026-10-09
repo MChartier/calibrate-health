@@ -1,0 +1,22 @@
+[
+  {
+    "id": 113664830809,
+    "name": "Web Critical Smoke"
+  },
+  {
+    "id": 113664802000,
+    "name": "Mobile Tests"
+  },
+  {
+    "id": 113664797786,
+    "name": "Classify Build Inputs"
+  },
+  {
+    "id": 113664775444,
+    "name": "Classify Database Inputs"
+  },
+  {
+    "id": 113664775415,
+    "name": "Classify Test Inputs"
+  }
+]

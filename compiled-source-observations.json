@@ -1,0 +1,22 @@
+{
+  "before": {
+    "bundle": "owner\\implementation\\before-dist\\_expo\\static\\js\\web\\index-2bf50cf196003593300692c4b5640577.js",
+    "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32",
+    "quantityDirtyComparison": [
+      "parseDecimalInput)(e);if(we(!e.trim()||!Number.isFinite(t)||!it||Math.abs(t-it.amount)>1e-6),je||!pe||!it)return;if(!Number.isFinite(t)||t<=0)return;const n=it.toServings(t),o=pe.calories_per_serving_snapshot;'number'==typeof o&&Number.isFinite(o)&&he(String(Math.round(n*o)))},step:at,min:Y.MINIMUM_FOOD_QUANTITY,suffix:it.unitLabel,helper",
+      "==u){const o=n(t.serving_size_quantity_snapshot)??1,_=l(t.serving_unit_label_snapshot)??l(t.measure_label_snapshot)??'serving';return{amount:s(u*o),unitLabel:_,toServings:t=>s(t/o)}}return null!==c&&null!==_?{amount:s(c),unitLabel:'g',toServings:t=>s(t/_)}:null}},1202,[]);\n__d(function(g,r,i,a,m,e,d){\"use strict\";Object.defineProperty(e,'",
+      "l_snapshot)??l(t.measure_label_snapshot)??'serving';return{amount:s(u*o),unitLabel:_,toServings:t=>s(t/o)}}return null!==c&&null!==_?{amount:s(c),unitLabel:'g',toServings:t=>s(t/_)}:null}},1202,[]);\n__d(function(g,r,i,a,m,e,d){\"use strict\";Object.defineProperty(e,'__esModule',{value:!0}),e.getCachedSavedFoods=function(o,s,n){const c=new M"
+    ]
+  },
+  "after": {
+    "bundle": "owner\\implementation\\after-dist\\_expo\\static\\js\\web\\index-429816e26f7d387fa5c2c421ddb1ea04.js",
+    "sha256": "70d82b50b8b6b169d5cf4ca81051cc974074d74314b9460b62b976c4b8068102",
+    "quantityDirtyComparison": [
+      ")(A.NumberStepperField,{label:\"Amount\",value:xe,onChangeText:function(e){Se(e);const t=(0,G.parseDecimalInput)(e);if(we(!e.trim()||!Number.isFinite(t)||!it||it.toServings(t)!==it.toServings(it.amount)),je||!pe||!it)return;if(!Number.isFinite(t)||t<=0)return;const n=it.toServings(t),o=pe.calories_per_serving_snapshot;'number'==typeof o&&Nu",
+      "eld,{label:\"Amount\",value:xe,onChangeText:function(e){Se(e);const t=(0,G.parseDecimalInput)(e);if(we(!e.trim()||!Number.isFinite(t)||!it||it.toServings(t)!==it.toServings(it.amount)),je||!pe||!it)return;if(!Number.isFinite(t)||t<=0)return;const n=it.toServings(t),o=pe.calories_per_serving_snapshot;'number'==typeof o&&Number.isFinite(o)&&h",
+      ")(e);if(we(!e.trim()||!Number.isFinite(t)||!it||it.toServings(t)!==it.toServings(it.amount)),je||!pe||!it)return;if(!Number.isFinite(t)||t<=0)return;const n=it.toServings(t),o=pe.calories_per_serving_snapshot;'number'==typeof o&&Number.isFinite(o)&&he(String(Math.round(n*o)))},step:at,min:Y.MINIMUM_FOOD_QUANTITY,suffix:it.unitLabel,helper",
+      "==u){const o=n(t.serving_size_quantity_snapshot)??1,_=l(t.serving_unit_label_snapshot)??l(t.measure_label_snapshot)??'serving';return{amount:s(u*o),unitLabel:_,toServings:t=>s(t/o)}}return null!==c&&null!==_?{amount:s(c),unitLabel:'g',toServings:t=>s(t/_)}:null}},1206,[]);\n__d(function(g,r,i,a,m,e,d){\"use strict\";Object.defineProperty(e,'",
+      "l_snapshot)??l(t.measure_label_snapshot)??'serving';return{amount:s(u*o),unitLabel:_,toServings:t=>s(t/o)}}return null!==c&&null!==_?{amount:s(c),unitLabel:'g',toServings:t=>s(t/_)}:null}},1206,[]);\n__d(function(g,r,i,a,m,e,d){\"use strict\";Object.defineProperty(e,'__esModule',{value:!0}),e.getCachedSavedFoods=function(o,s,n){const c=new M"
+    ]
+  }
+}

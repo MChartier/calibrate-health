@@ -1,0 +1,290 @@
+{
+  "zipSha256": "b25005478460fe9a4b7cc5e73ed738dcffb6072d0631e7c545eee2604ee72b93",
+  "files": [
+    {
+      "path": "qa/controls.spec.ts",
+      "sha256": "4613af797d28505feab725470543ad76f693873ab17e6981235836bdc26eafc6",
+      "bytes": 12988
+    },
+    {
+      "path": "qa/core.spec.ts",
+      "sha256": "878ed691f06169987673e6c1b964eb05ab8283bf24efef0ea9ff25181b2a690d",
+      "bytes": 3885
+    },
+    {
+      "path": "qa/playwright.config.ts",
+      "sha256": "b0e6371d0cf48c96caaee2e030dbcea7d8d1ec73945d7e8fdba14bddc8daeb3e",
+      "bytes": 744
+    },
+    {
+      "path": "qa/serve.mjs",
+      "sha256": "4294949baebad75ee1d960788ae69d93c9fd312259103122f0967774411102b2",
+      "bytes": 752
+    },
+    {
+      "path": "before-results/.last-run.json",
+      "sha256": "132016d3c495b294b54e996b9b25ea9a4fe4747bc9e7fcd207a72ca403265821",
+      "bytes": 194
+    },
+    {
+      "path": "before-results/core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome/error-context.md",
+      "sha256": "b6c3cf8cddfb5b317c6d42f8238a2881380bcd806c167fe2cfce4571ddfabcc5",
+      "bytes": 9072
+    },
+    {
+      "path": "before-results/core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome/test-failed-1.png",
+      "sha256": "1b1a9b415fe0e74d9f5a70c4d3e45cc0ec0e70fc7d612ac53f506f020e0beba7",
+      "bytes": 33249
+    },
+    {
+      "path": "before-results/core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome/trace.zip",
+      "sha256": "4ceeb89caf3ae982d6d0c772dc3e4d70c86e6a9c65f797c12eea6db048220e17",
+      "bytes": 700638
+    },
+    {
+      "path": "before-results/core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome/error-context.md",
+      "sha256": "c165fe55d954d7bbe44f64446a774fa088fb8055b85e7a434fee702f7d3951f6",
+      "bytes": 9072
+    },
+    {
+      "path": "before-results/core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome/test-failed-1.png",
+      "sha256": "1b1a9b415fe0e74d9f5a70c4d3e45cc0ec0e70fc7d612ac53f506f020e0beba7",
+      "bytes": 33249
+    },
+    {
+      "path": "before-results/core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome/trace.zip",
+      "sha256": "8d7437612b358f171f50055ec11d7c65f4356654f70393de1e60ceb08fdc67f5",
+      "bytes": 680945
+    },
+    {
+      "path": "before-results/core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome/error-context.md",
+      "sha256": "05895bfa32b9bdeaf98321d45d57a4de169d90ca12b7942ea48ce94020f66870",
+      "bytes": 5776
+    },
+    {
+      "path": "before-results/core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome/test-failed-1.png",
+      "sha256": "3fd2a15dfac2c8a8df29356309cf968be6ea1f1edcd055ec3fea7ce6313f610c",
+      "bytes": 18551
+    },
+    {
+      "path": "before-results/core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome/trace.zip",
+      "sha256": "af3fb054a41da783b704678049c2494f28e008811e3539e2fd9bfbf607f0ee32",
+      "bytes": 666429
+    },
+    {
+      "path": "after-results/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "path": "after-results/core-one-millionth-amount--19bdb-s-immediate-save-and-reload-android-phone-chrome/trace.zip",
+      "sha256": "80578ade834f708bb7355058010fb43ac36666f22c59bd9ebc98c6773d787ff7",
+      "bytes": 808782
+    },
+    {
+      "path": "after-results/core-one-millionth-amount--5eb84-s-blur-then-save-and-reload-android-phone-chrome/trace.zip",
+      "sha256": "c5486e84df5cfbc2243bcf7a08e0301ac867bb9910a8c0e1c697e0adc2a8a5ab",
+      "bytes": 854022
+    },
+    {
+      "path": "after-results/core-selected-food-stays-r-68016--and-keeps-the-typed-amount-android-phone-chrome/trace.zip",
+      "sha256": "a0bf170aa4c8ec36b3e702bd1378170edf2ee39fc5b8ed8235ce2911be1ed490",
+      "bytes": 789757
+    },
+    {
+      "path": "controls-results/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    },
+    {
+      "path": "controls-results/controls-add-0-125-blur-android-phone-chrome/observations.json",
+      "sha256": "47af381dba29d9d8d39a59012358bcd5ff481325793fb603e682d87869bc4f47",
+      "bytes": 4976
+    },
+    {
+      "path": "controls-results/controls-add-0-125-blur-android-phone-chrome/trace.zip",
+      "sha256": "c30f01c61d947842b8a3014ed524326730a78860d1101db6ab021d9dd48ba010",
+      "bytes": 1017953
+    },
+    {
+      "path": "controls-results/controls-add-0-125-immediate-android-phone-chrome/observations.json",
+      "sha256": "0d469423d008f96a0e5313d34abb28b925c79141940e0283e5cfa20ce202b6ea",
+      "bytes": 4737
+    },
+    {
+      "path": "controls-results/controls-add-0-125-immediate-android-phone-chrome/trace.zip",
+      "sha256": "b1b62ced92ce154d3b23509a9532a418d967b1977456d84105c826a21423a791",
+      "bytes": 1038934
+    },
+    {
+      "path": "controls-results/controls-add-1-3-blur-android-phone-chrome/observations.json",
+      "sha256": "53f971f9938339463312754ffedae87a78db5a826073d3db9eceb29cf330af75",
+      "bytes": 4964
+    },
+    {
+      "path": "controls-results/controls-add-1-3-blur-android-phone-chrome/trace.zip",
+      "sha256": "3906cecffce0371839447776b0430345043c1836c9741cefb2e423230bb73c54",
+      "bytes": 1044881
+    },
+    {
+      "path": "controls-results/controls-add-1-3-immediate-android-phone-chrome/observations.json",
+      "sha256": "7fc45b7a48826b7e55f4384bc0f49d27d81b2bfe6b260b4373da4dff4051259f",
+      "bytes": 4725
+    },
+    {
+      "path": "controls-results/controls-add-1-3-immediate-android-phone-chrome/trace.zip",
+      "sha256": "52948389a78223fb6d4000cad2ef80856025dff73165c0055da4291e27c5c586",
+      "bytes": 990466
+    },
+    {
+      "path": "controls-results/controls-add-1comma3-blur-android-phone-chrome/observations.json",
+      "sha256": "2d81242c66ad38d0f35a0e46ef37778625d2ef863657e79a2658e2ed0bc9edd9",
+      "bytes": 4964
+    },
+    {
+      "path": "controls-results/controls-add-1comma3-blur-android-phone-chrome/trace.zip",
+      "sha256": "2151c17e78e4388df7c55e01665f114261f16a641dda49e02a55be6f9a4857be",
+      "bytes": 1048951
+    },
+    {
+      "path": "controls-results/controls-add-1comma3-immediate-android-phone-chrome/observations.json",
+      "sha256": "1119c0a9fd36def1f17bbcc8410861fa0dad99912cb2673fd1401d3277918219",
+      "bytes": 4725
+    },
+    {
+      "path": "controls-results/controls-add-1comma3-immediate-android-phone-chrome/trace.zip",
+      "sha256": "0b02fea2e956ed81769ee0ac0bcdc968d6c403a8c0d686c28687afa7762a22c8",
+      "bytes": 960022
+    },
+    {
+      "path": "controls-results/controls-add-invalid-quant-aeafb-ns-preserve-typed-precision-android-phone-chrome/observations.json",
+      "sha256": "bf18f3ee76badecf7838aa80ce6fc47227efa58331adafde68cd46c05afade48",
+      "bytes": 5306
+    },
+    {
+      "path": "controls-results/controls-add-invalid-quant-aeafb-ns-preserve-typed-precision-android-phone-chrome/trace.zip",
+      "sha256": "e672b481ce6946d785e322796e05a109cfaefd91e7a8ed8dd53f9efadac4edea",
+      "bytes": 1104854
+    },
+    {
+      "path": "controls-results/controls-committed-add-wit-e7d34--replays-same-identity-once-android-phone-chrome/observations.json",
+      "sha256": "4bb31db813722608ce0b554e390c26e0c9cf5a2ae0b15a25a3ca62d5dab1b796",
+      "bytes": 1879
+    },
+    {
+      "path": "controls-results/controls-committed-add-wit-e7d34--replays-same-identity-once-android-phone-chrome/trace.zip",
+      "sha256": "b2dda8578f5e471f41acf10c79840a531a6c7111cfc935a3734b6b55c4a50d42",
+      "bytes": 1095876
+    },
+    {
+      "path": "controls-results/controls-existing-0-125-blur-android-phone-chrome/observations.json",
+      "sha256": "a0a3ee87a9de5ac1c128a77712862e12774c5e34bf6d93f5a785fcaee2a52e3a",
+      "bytes": 3365
+    },
+    {
+      "path": "controls-results/controls-existing-0-125-blur-android-phone-chrome/trace.zip",
+      "sha256": "99e4d06b399cc73dea2b831f1a890f5c2c463f916cab060572827278607124ac",
+      "bytes": 858997
+    },
+    {
+      "path": "controls-results/controls-existing-0-125-immediate-android-phone-chrome/observations.json",
+      "sha256": "f9178d6207b32960095ccd0b4f9f57bc7282ce879a588835a1d599e2ee6ce2d6",
+      "bytes": 3126
+    },
+    {
+      "path": "controls-results/controls-existing-0-125-immediate-android-phone-chrome/trace.zip",
+      "sha256": "fe1508df14457a70e1e16701bb21dfbfaf895af0a5c0bc3ef6b55c7a67304857",
+      "bytes": 790416
+    },
+    {
+      "path": "controls-results/controls-existing-1-3-blur-android-phone-chrome/observations.json",
+      "sha256": "b05279e7b4a4d8a991f4b8b746579ef0157328c222ff2e2f2e6f20f0198002ba",
+      "bytes": 3363
+    },
+    {
+      "path": "controls-results/controls-existing-1-3-blur-android-phone-chrome/trace.zip",
+      "sha256": "b0523efbbe4b35c0a059bf6cd02299b7ccbf6f66e973ff0ba4752a6216b4b2a2",
+      "bytes": 826488
+    },
+    {
+      "path": "controls-results/controls-existing-1-3-immediate-android-phone-chrome/observations.json",
+      "sha256": "148746dd3cfe08ea2be021b1d27624b1676fbb667d21fb12a130c260367ede19",
+      "bytes": 3124
+    },
+    {
+      "path": "controls-results/controls-existing-1-3-immediate-android-phone-chrome/trace.zip",
+      "sha256": "70f36918dc46ab1eee023ce1b44315caa677f29b859ba9889856df4d3ede08ad",
+      "bytes": 827792
+    },
+    {
+      "path": "controls-results/controls-existing-1comma3-blur-android-phone-chrome/observations.json",
+      "sha256": "e928fd40230965e6081b5c8d4b17e25af4496874fee1168be0a6170a6d8f3caa",
+      "bytes": 3363
+    },
+    {
+      "path": "controls-results/controls-existing-1comma3-blur-android-phone-chrome/trace.zip",
+      "sha256": "e4208de82371943dad8d088438809b3338d10e4aa0f88f1d3970ed8a5ab2426f",
+      "bytes": 838527
+    },
+    {
+      "path": "controls-results/controls-existing-1comma3-immediate-android-phone-chrome/observations.json",
+      "sha256": "4adb689c44bdbfbc7bbf42b8f845c9cd88eed148e1a1bdc23edbadc128be2b8a",
+      "bytes": 3124
+    },
+    {
+      "path": "controls-results/controls-existing-1comma3-immediate-android-phone-chrome/trace.zip",
+      "sha256": "fbfef3d6d82a389db12cef220a0d2d6b637f098aa769f098ae7061807ac408fc",
+      "bytes": 824713
+    },
+    {
+      "path": "controls-results/controls-offline-add-and-e-b471c-ain-decimals-and-identities-android-phone-chrome/observations.json",
+      "sha256": "d4656c4fb73642e692ddb8dcf1b534f017fbabf54a2e950768ea4dbea5b86149",
+      "bytes": 3698
+    },
+    {
+      "path": "controls-results/controls-offline-add-and-e-b471c-ain-decimals-and-identities-android-phone-chrome/trace.zip",
+      "sha256": "504c87004b27e8a8b5ef0488ebad16ba566995d9f36a8319b19e6f1aa4316b40",
+      "bytes": 1493906
+    },
+    {
+      "path": "controls-results/controls-simulated-visual-viewport-shrink-add-android-phone-chrome/observations.json",
+      "sha256": "cccf396c27cc6da03d09ddec092f6945515b49244b1ffd1e0cb9ff08548c19a2",
+      "bytes": 4457
+    },
+    {
+      "path": "controls-results/controls-simulated-visual-viewport-shrink-add-android-phone-chrome/trace.zip",
+      "sha256": "bc2de609787b985e3e4353f30d7cdde8eeaac02e4c3d7864a961c74c5424910f",
+      "bytes": 844768
+    },
+    {
+      "path": "controls-results/controls-simulated-visual-viewport-shrink-add-android-phone-chrome/viewport-simulation.png",
+      "sha256": "84a3a51597dca2d501e55d16142bda3f0da7106c5d4c075cc75973db4d20a844",
+      "bytes": 26848
+    },
+    {
+      "path": "controls-results/controls-simulated-visual-viewport-shrink-edit-android-phone-chrome/observations.json",
+      "sha256": "6342756e3ddf4210eab194b44f8788cf37dff8396c9f9cb79f3379466c4da10b",
+      "bytes": 2853
+    },
+    {
+      "path": "controls-results/controls-simulated-visual-viewport-shrink-edit-android-phone-chrome/trace.zip",
+      "sha256": "c476ca4add8573b0972609172312c22cc0503e97664d554878ca75a82a3eb5dc",
+      "bytes": 689427
+    },
+    {
+      "path": "controls-results/controls-simulated-visual-viewport-shrink-edit-android-phone-chrome/viewport-simulation.png",
+      "sha256": "66eedabeb7763aa5ba4c2c19a390d146cc00d9cbb7384e98ebdc78515a9526d6",
+      "bytes": 22406
+    },
+    {
+      "path": "controls-results/controls-validation-button-increment-six-place-edit-boundary-android-phone-chrome/observations.json",
+      "sha256": "73ab2b9a2291991a1fb7f1b135decef173cc9c0d920e9261078a20dd93cb083e",
+      "bytes": 6614
+    },
+    {
+      "path": "controls-results/controls-validation-button-increment-six-place-edit-boundary-android-phone-chrome/trace.zip",
+      "sha256": "71b9311a0c2d41d34fddeec6f1874c9b4b6e8a80981a7a541be42dbbc78b49f8",
+      "bytes": 1046168
+    }
+  ]
+}

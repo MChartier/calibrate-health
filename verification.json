@@ -1,0 +1,440 @@
+{
+  "checkedAtUtc": "2026-10-09T04:30:43.419014+00:00",
+  "head": "7555a4f314d54f81c307cb90948549d160ca8581",
+  "base": "547206a1b372b73fc95fc412ad453b8099440000",
+  "apiBase": "547206a1b372b73fc95fc412ad453b8099440000",
+  "mergeBase": "547206a1b372b73fc95fc412ad453b8099440000",
+  "headParents": [
+    "ff05e56ed338ec2c178dc05cdf77125d34395c67"
+  ],
+  "targetParents": [
+    "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+    "650862e1c13be66fe5ec05495320cc66ac32f8bb"
+  ],
+  "scope": {
+    "commitCount": 2,
+    "fileCount": 3,
+    "additions": 72,
+    "deletions": 9,
+    "commits": [
+      {
+        "sha": "ff05e56ed338ec2c178dc05cdf77125d34395c67",
+        "parents": [
+          "547206a1b372b73fc95fc412ad453b8099440000"
+        ],
+        "message": "Keep food quantity editors reachable and preserve precise edits",
+        "scope": "Two approved quantity fixes and maintained regressions"
+      },
+      {
+        "sha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "parents": [
+          "ff05e56ed338ec2c178dc05cdf77125d34395c67"
+        ],
+        "message": "Trim quantity regression test trailing whitespace",
+        "scope": "One trailing test-file blank line removed; no application change"
+      }
+    ],
+    "files": [
+      {
+        "path": "e2e/expo-web/food-quantity-entry.spec.ts",
+        "status": "added",
+        "previousPath": null,
+        "additions": 66,
+        "deletions": 0,
+        "scope": "Maintained red/green interaction and persistence regression"
+      },
+      {
+        "path": "mobile/src/components/AddFoodSheet.tsx",
+        "status": "modified",
+        "previousPath": null,
+        "additions": 5,
+        "deletions": 8,
+        "scope": "Prevent selected editor collapse in short sheet"
+      },
+      {
+        "path": "mobile/src/food/FoodLogContent.tsx",
+        "status": "modified",
+        "previousPath": null,
+        "additions": 1,
+        "deletions": 1,
+        "scope": "Preserve supported-precision edit payload"
+      }
+    ]
+  },
+  "manifestSha256": "7a8c2415bd6999567ea722b5cfc723e97eb6bb93a6635f84433a6934b1f02789",
+  "verifiedArtifacts": 722,
+  "originalScoping": {
+    "artifacts": 61,
+    "sourceFiles": 13,
+    "buildFiles": 170
+  },
+  "builds": [
+    {
+      "phase": "before",
+      "source": "547206a1b372b73fc95fc412ad453b8099440000",
+      "manifestSha256": "3f8ed020490e331de88cd5cd32ad5f66545e5f088ad3f08f5fe468cc98228c72",
+      "files": 170
+    },
+    {
+      "phase": "after",
+      "source": "ff05e56ed338ec2c178dc05cdf77125d34395c67",
+      "manifestSha256": "5e76418cb08a3e33c6993cd908aceef848702a714d851855da6132558e469ee1",
+      "files": 170
+    }
+  ],
+  "captureTraces": [
+    {
+      "phase": "before",
+      "case": "capture-short-selected-food-sheet",
+      "sha256": "2a4bb076165a2a8060db168d1afe3db7694e3d5b06e98356b40018739baed863",
+      "executedSources": [
+        {
+          "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+          "matches": [
+            "source:e2e/expo-web/fixtures.ts"
+          ]
+        },
+        {
+          "sha256": "ec9756cfb490f9cb34770da9ed3996a40283a133eb740b15f325d2b4e2c0bbbf",
+          "matches": [
+            "implementation/fixture.ts"
+          ]
+        },
+        {
+          "sha256": "3110795e4a8add8d39d1f218111a9b8889e2dd0386b5b85c095848ba06291fcf",
+          "matches": [
+            "implementation/capture.spec.ts"
+          ]
+        }
+      ],
+      "requestedCompiledScripts": [
+        {
+          "path": "_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+          "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32",
+          "status": 200
+        },
+        {
+          "path": "sw.js",
+          "sha256": "94df3e99840dfe9c4de2933c203eab5bf5580f6863df0a38dc6d8c7911021deb",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ProgressExpansionContent-1283cd61302eab83bfe0d5108dc9c7bd.js",
+          "sha256": "695135c87503534c5a9cdf52d7cb3a7c1c24708a41f64b6f0cb1b757112f07bf",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ImagePicker-c3f35d102625a59cc8aa263ddc71e5b2.js",
+          "sha256": "e347459d121694bb3c7fc6f816f87d5648a647d6a1d05082da4d23ce27382f45",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+          "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-bbd28dff3eafcfc70929f6c5b639c6ca.js",
+          "sha256": "c93ff1f7ee7d8fa6e55df4a9f914a65abce80bc8cfd98176e398569a8c78efe3",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-12460b00d667c48d0f21db5163e1cec7.js",
+          "sha256": "75f4053715d9b3cdf9aee975df8568c84a8a031d1a883df5940cfa481480963a",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-da822ff7c150ca113be791ef505eea34.js",
+          "sha256": "5feeef4a4f67c8b38206597c3320997152160a40dda229b7833fca1707f91a46",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "case": "capture-supported-precision-after-save-and-reload",
+      "sha256": "641b19bf09de893d4465af58b67b8c249a418215c329f61d62511dc7f14c91a3",
+      "executedSources": [
+        {
+          "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+          "matches": [
+            "source:e2e/expo-web/fixtures.ts"
+          ]
+        },
+        {
+          "sha256": "ec9756cfb490f9cb34770da9ed3996a40283a133eb740b15f325d2b4e2c0bbbf",
+          "matches": [
+            "implementation/fixture.ts"
+          ]
+        },
+        {
+          "sha256": "3110795e4a8add8d39d1f218111a9b8889e2dd0386b5b85c095848ba06291fcf",
+          "matches": [
+            "implementation/capture.spec.ts"
+          ]
+        }
+      ],
+      "requestedCompiledScripts": [
+        {
+          "path": "_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+          "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32",
+          "status": 200
+        },
+        {
+          "path": "sw.js",
+          "sha256": "94df3e99840dfe9c4de2933c203eab5bf5580f6863df0a38dc6d8c7911021deb",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ImagePicker-c3f35d102625a59cc8aa263ddc71e5b2.js",
+          "sha256": "e347459d121694bb3c7fc6f816f87d5648a647d6a1d05082da4d23ce27382f45",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ProgressExpansionContent-1283cd61302eab83bfe0d5108dc9c7bd.js",
+          "sha256": "695135c87503534c5a9cdf52d7cb3a7c1c24708a41f64b6f0cb1b757112f07bf",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-12460b00d667c48d0f21db5163e1cec7.js",
+          "sha256": "75f4053715d9b3cdf9aee975df8568c84a8a031d1a883df5940cfa481480963a",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+          "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-bbd28dff3eafcfc70929f6c5b639c6ca.js",
+          "sha256": "c93ff1f7ee7d8fa6e55df4a9f914a65abce80bc8cfd98176e398569a8c78efe3",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-da822ff7c150ca113be791ef505eea34.js",
+          "sha256": "5feeef4a4f67c8b38206597c3320997152160a40dda229b7833fca1707f91a46",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-2bf50cf196003593300692c4b5640577.js",
+          "sha256": "66bf9e0171c3dedce35fb2605acbbba7709e21796697e170be6d28fc4dbd3e32",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "case": "capture-short-selected-food-sheet",
+      "sha256": "e04b050e63b2b3a4c2767f590194c8306c0d84e53741fa71453b39dcb73f55b3",
+      "executedSources": [
+        {
+          "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+          "matches": [
+            "source:e2e/expo-web/fixtures.ts"
+          ]
+        },
+        {
+          "sha256": "ec9756cfb490f9cb34770da9ed3996a40283a133eb740b15f325d2b4e2c0bbbf",
+          "matches": [
+            "implementation/fixture.ts"
+          ]
+        },
+        {
+          "sha256": "3110795e4a8add8d39d1f218111a9b8889e2dd0386b5b85c095848ba06291fcf",
+          "matches": [
+            "implementation/capture.spec.ts"
+          ]
+        }
+      ],
+      "requestedCompiledScripts": [
+        {
+          "path": "_expo/static/js/web/index-429816e26f7d387fa5c2c421ddb1ea04.js",
+          "sha256": "70d82b50b8b6b169d5cf4ca81051cc974074d74314b9460b62b976c4b8068102",
+          "status": 200
+        },
+        {
+          "path": "sw.js",
+          "sha256": "d5d88e50d060300aa06ae43967f4880e5e949b35692a19262ae1dd87af2df07b",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ImagePicker-2d2f736cda07d949c8c3c036e9de9f4f.js",
+          "sha256": "af538a2cd1e20a03822ece5f4d5746874a8b4a625a24ebc3daef76fab73e8c7b",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ProgressExpansionContent-562ef02e7308ed37847ba2a597dde2be.js",
+          "sha256": "0f27cb1466798a162e149d619ad7e4fcf166988254e3da981bdf5a3b14e78b3d",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-087e1f824fb02dd8276c178a70c3a8f3.js",
+          "sha256": "9920d57b2d9483be686879f3ef4fcfc66be7ecc1047b1945373e757f25349a02",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-26b0da47eaa59e95e90893ba0030cb66.js",
+          "sha256": "cc3ad1b7dd1804d34dfb0548ca4664e7a4fc369350fad393475894f99990276e",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-3c15885ba2112fb755a6537a49bef1f2.js",
+          "sha256": "240a32d60cb3b60069c0d835842f775653f74aac6c97f58271ec1804689f4a76",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-429816e26f7d387fa5c2c421ddb1ea04.js",
+          "sha256": "70d82b50b8b6b169d5cf4ca81051cc974074d74314b9460b62b976c4b8068102",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "case": "capture-supported-precision-after-save-and-reload",
+      "sha256": "b9f8d25252ca2f658dd0b97ebcab2b4c569b5824f615a5f42424fd014ad0d93f",
+      "executedSources": [
+        {
+          "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+          "matches": [
+            "source:e2e/expo-web/fixtures.ts"
+          ]
+        },
+        {
+          "sha256": "ec9756cfb490f9cb34770da9ed3996a40283a133eb740b15f325d2b4e2c0bbbf",
+          "matches": [
+            "implementation/fixture.ts"
+          ]
+        },
+        {
+          "sha256": "3110795e4a8add8d39d1f218111a9b8889e2dd0386b5b85c095848ba06291fcf",
+          "matches": [
+            "implementation/capture.spec.ts"
+          ]
+        }
+      ],
+      "requestedCompiledScripts": [
+        {
+          "path": "_expo/static/js/web/index-429816e26f7d387fa5c2c421ddb1ea04.js",
+          "sha256": "70d82b50b8b6b169d5cf4ca81051cc974074d74314b9460b62b976c4b8068102",
+          "status": 200
+        },
+        {
+          "path": "sw.js",
+          "sha256": "d5d88e50d060300aa06ae43967f4880e5e949b35692a19262ae1dd87af2df07b",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ImagePicker-2d2f736cda07d949c8c3c036e9de9f4f.js",
+          "sha256": "af538a2cd1e20a03822ece5f4d5746874a8b4a625a24ebc3daef76fab73e8c7b",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/ProgressExpansionContent-562ef02e7308ed37847ba2a597dde2be.js",
+          "sha256": "0f27cb1466798a162e149d619ad7e4fcf166988254e3da981bdf5a3b14e78b3d",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-087e1f824fb02dd8276c178a70c3a8f3.js",
+          "sha256": "9920d57b2d9483be686879f3ef4fcfc66be7ecc1047b1945373e757f25349a02",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-26b0da47eaa59e95e90893ba0030cb66.js",
+          "sha256": "cc3ad1b7dd1804d34dfb0548ca4664e7a4fc369350fad393475894f99990276e",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-3c15885ba2112fb755a6537a49bef1f2.js",
+          "sha256": "240a32d60cb3b60069c0d835842f775653f74aac6c97f58271ec1804689f4a76",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-429816e26f7d387fa5c2c421ddb1ea04.js",
+          "sha256": "70d82b50b8b6b169d5cf4ca81051cc974074d74314b9460b62b976c4b8068102",
+          "status": 200
+        },
+        {
+          "path": "_expo/static/js/web/index-429816e26f7d387fa5c2c421ddb1ea04.js",
+          "sha256": "70d82b50b8b6b169d5cf4ca81051cc974074d74314b9460b62b976c4b8068102",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "path": "implementation/matched-before-results/capture-short-selected-food-sheet/short.png",
+      "sha256": "a7c091075e86f22a06ef5fc33cf44eca9d3e93598b47b62f941f5054a4d2ae48",
+      "capturedAt": "2026-10-09T04:02:25.235Z",
+      "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-before-results/capture-short-selected-food-sheet/short.png?raw=true"
+    },
+    {
+      "path": "implementation/matched-after-results/capture-short-selected-food-sheet/short.png",
+      "sha256": "efe524fc014f1139360f2172583eb2bfe58b6a630ef94dd8eefc3dd5433231fa",
+      "capturedAt": "2026-10-09T04:02:31.524Z",
+      "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-after-results/capture-short-selected-food-sheet/short.png?raw=true"
+    },
+    {
+      "path": "implementation/matched-before-results/capture-supported-precision-after-save-and-reload/reopened.png",
+      "sha256": "2bf02e88d161bd8b8c32d4210d31de00357d7450d284872e800c674f9b502214",
+      "capturedAt": "2026-10-09T04:02:26.673Z",
+      "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-before-results/capture-supported-precision-after-save-and-reload/reopened.png?raw=true"
+    },
+    {
+      "path": "implementation/matched-after-results/capture-supported-precision-after-save-and-reload/reopened.png",
+      "sha256": "c8719249bd9a1f68b8dd4db553e121b7bdd8a454db077b4559f8fc6f990a1eb3",
+      "capturedAt": "2026-10-09T04:02:33.001Z",
+      "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-after-results/capture-supported-precision-after-save-and-reload/reopened.png?raw=true"
+    }
+  ],
+  "finalHeadImpact": "Only one trailing blank test line removed since captured ff05. Product source, fixture, dependency lock and server unchanged. No image relabeling.",
+  "sourceDigests": {
+    "e2e/expo-web/food-quantity-entry.spec.ts": "83305e39fd1b51c3d7a8809d9d44b5b07c9938180aa91afc083bdf6893ab63ec",
+    "mobile/src/components/AddFoodSheet.tsx": "2c4af37001a76e76a51d6403131da1f448846ef5b769c13bc7b03ac35256e634",
+    "mobile/src/food/FoodLogContent.tsx": "be24a4f7d2afa45e83ae2769c6b5e83c1f3e2bdf6b5aeb9f5b0972eeb5090f70"
+  },
+  "independentBrowser": {
+    "reports": {
+      "before": {
+        "startTime": "2026-10-09T04:29:46.708Z",
+        "duration": 13962.72,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "after": {
+        "startTime": "2026-10-09T04:30:39.430Z",
+        "duration": 7540.498,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "controls": {
+        "startTime": "2026-10-09T04:31:12.514Z",
+        "duration": 42856.070999999996,
+        "expected": 18,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "setup": "Node24.19.0, Chrome155.0.8059.39 on MCHARTIER_ZBOOK. Single worker; exact retained before/after exports at127.0.0.1:18456. Same maintained fixtures and tests; only filesystem import paths changed. Full raw trace/results retained in qa-browser-evidence.zip. Synthetic API; native device and live database not executed.",
+    "offlineQueuedOperationIds": [
+      "00000000-0000-4000-8000-000000000001",
+      "00000000-0000-4000-8000-000000000002"
+    ],
+    "lostAcknowledgementOperationId": "00000000-0000-4000-8000-000000000001",
+    "lostAcknowledgementRowCount": 2,
+    "queuedPayloadsAndRetryIdentitiesVerified": true,
+    "controlObservations": "browser-observations.json"
+  },
+  "pixelObservations": {
+    "short-sheet": "Both390x420, same selected quarter-cup oats and0.125 input scenario. Baseline fixed controls fill screen with Amount hidden below; after genuine scroller exposes Amount0.125, step buttons,13kcal and0.031cups. Add button reachability independently proved by scrolling and actualPOST; not claimed visible in this single image.",
+    "precise-edit": "Both390x844 with same synthetic log, focus/selection, light theme and frozen date. Baseline reopening shows0.25; after shows0.250001 and corresponding log subtitle. Layout otherwise matches. No manipulated quantity pixels.",
+    "normalization": "Both use maintained hideTransientPwaNotices helper for unrelated lifecycle notices; screenshot originals untransformed. Same synthetic data, frozen clock, deterministic IDs, viewport, scale1, locale/timezone and reduced motion; fonts+3frames settled.",
+    "renderedGitHub": "Waived by direct amendment6022754087; not claimed executed. All four exact committed PNGs opened and inspected independently."
+  }
+}

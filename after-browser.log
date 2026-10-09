@@ -1,0 +1,12 @@
+[WebServer] (node:28100) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:39604) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [android-phone-chrome] ΓÇ║ core.spec.ts:13:5 ΓÇ║ selected food stays reachable in a short sheet and keeps the typed amount (2.3s)
+  ok 2 [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives immediate save and reload (1.7s)
+  ok 3 [android-phone-chrome] ΓÇ║ core.spec.ts:45:7 ΓÇ║ one-millionth amount edit survives blur then save and reload (1.7s)
+
+  3 passed (7.5s)
