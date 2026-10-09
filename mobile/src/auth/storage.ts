@@ -4,14 +4,14 @@ import * as SecureStore from 'expo-secure-store';
 import { getDefaultServerUrl, storedOrigin } from '../config/server';
 import { inspectTargetTransitionState } from './targetTransitionState';
 
-export type BoundSession = {
+type BoundSession = {
     version: 1;
     origin: string;
     accessToken: string | null;
     refreshToken: string | null;
 };
 
-export function parseBoundSession(raw: string): BoundSession {
+function parseBoundSession(raw: string): BoundSession {
     const value = JSON.parse(raw) as BoundSession;
     if (value?.version !== 1 || typeof value.origin !== 'string' || storedOrigin(value.origin) !== value.origin ||
         ![value.accessToken, value.refreshToken].every(token => token === null || (typeof token === 'string' && token.length > 0))) {
