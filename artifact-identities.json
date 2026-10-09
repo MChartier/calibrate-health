@@ -1,0 +1,50 @@
+{
+  "README.md": {
+    "sha256": "20702a4eabb1e7fa5e059472c8f071c0271db17a2ac8c81a4fee9670c9467962",
+    "bytes": 1448
+  },
+  "verdict.json": {
+    "sha256": "799e4b52bc06de8388174e5740c61c37d9d7c6345faa1a3e28b8a7539486f75e",
+    "bytes": 27805
+  },
+  "verification.json": {
+    "sha256": "e3fd63efb76208c266fe3180fb78176210eb0f88c328994001a40d4e83bfb667",
+    "bytes": 90348
+  },
+  "prepublish.json": {
+    "sha256": "3e512459c2fd27ad12895506db2a639ce65124353de3d31f27ef9893383db9ca",
+    "bytes": 904454
+  },
+  "native.json": {
+    "sha256": "855d47b0ebe04c8f256343f3780725afa21789420d2cbcf74e24f4d0fe9327fe",
+    "bytes": 572
+  },
+  "project-readback.json": {
+    "sha256": "f45715948f2f0669d2b4acb77fbd65edcfee704f255c6f5f68ca6b354eb10187",
+    "bytes": 2408
+  },
+  "parent-current.json": {
+    "sha256": "bc5064f7c9a775c6a17218f90596ca4bbc23792483d7c21b5044b347e165d093",
+    "bytes": 140329
+  },
+  "preservation-comment.json": {
+    "sha256": "799bbc1f5263f38acabee70c681ed656a7958128c351f1bce67129289682adce",
+    "bytes": 8774
+  },
+  "prior-verdict.json": {
+    "sha256": "92d53466a1c9b78a550933c8843c9188e478fb99663b3226e423f60408e8c05d",
+    "bytes": 24569
+  },
+  "prior-trusted-receipt.json": {
+    "sha256": "945994a43b38708dda56dbab22d5c90737922c5551d9d6f109e7d955f409b8f0",
+    "bytes": 2715
+  },
+  "verify.py": {
+    "sha256": "b35f9c99488e828727ffe23af727db3164526f75e357a0784ed2430dfb527265",
+    "bytes": 5127
+  },
+  "prepare.py": {
+    "sha256": "3328b7eb68d74e36bfa5f722cc8b61b869a23fdba3337cd32707fdbcc9cdd50d",
+    "bytes": 7000
+  }
+}

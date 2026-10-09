@@ -1,0 +1,462 @@
+{
+  "headSha": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+  "baseSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "apiBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "mergeBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "ultimateTargetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+  "ultimateMergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+  "headParents": [
+    "53de4b701554e2debb6ad62472559a2702f7e485"
+  ],
+  "targetParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "ultimateTargetParents": [
+    "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+    "650862e1c13be66fe5ec05495320cc66ac32f8bb"
+  ],
+  "schemaVersion": 1,
+  "verdict": "ready",
+  "workflowVersion": "workflow-v3",
+  "prCommunicationStandard": "pr-review-v3",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "standardsAcknowledgment": "Entire supplied pinned QA/common standards and direct amendments read and acknowledged, including current C3 addendum. Runtime pins unchanged. Actual MCHARTIER_ZBOOK verified2026-10-09T05:11:59.1057807Z; clean independent checkout remains50f4a845. Same sole trusted QA lane; no next review or subordinate task.",
+  "pullRequest": "https://github.com/MChartier/calibrate-health/pull/452",
+  "issue": "https://github.com/MChartier/calibrate-health/issues/447",
+  "targetRef": "mchartier/release-entrypoints-recovery",
+  "targetRepository": "MChartier/calibrate-health",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "checkedAtUtc": "2026-10-09T05:12:43.749608+00:00",
+  "supersedesVerdictCommentId": 6074593090,
+  "prBodySha256": "f1e85ed295255d1b534f44f66d93548267637229c69efe9bca75387e6eda8945",
+  "issueBodySha256": "6b41742aed20caa9febfa47a4b60e4a46c12060bba06e82389e3241e276913a1",
+  "parentPrBodySha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+  "parentIssueBodySha256": "c39a1260f05bef4a1fbac83ac3954c0d0b352406864157d058270381021816aa",
+  "parentRevisions": [
+    {
+      "pr": 441,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "sourceParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "actualTargetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "apiBaseAndMergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "state": "open/unmerged, human-ready, nondraft at readback",
+      "verdictCommentId": 6074437074,
+      "verdictBodySha256": "aece9f33b5b73ca06ca84980d9e0eae2aaf0c5180c12ff8be44567dd5ac6f596",
+      "verdictUpdatedAt": "2026-10-09T04:44:53Z",
+      "prBodySha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+      "gate": "Current parent receipt verified exactly; C2 resolved. Bounded consolidation readiness is not unattended-release certification."
+    }
+  ],
+  "findings": [],
+  "resolvedFindings": [
+    {
+      "id": "R1",
+      "status": "resolved; unchanged",
+      "evidence": "50f4a845 and prior89-test/probe evidence verifies actual handler phases, retirement/tombstone/next allocation and rejection of provider intent."
+    },
+    {
+      "id": "R2",
+      "status": "resolved; unchanged",
+      "evidence": "50f4a845 puts production approval upstream of environment resolution and success-dependent export/intent/publication."
+    },
+    {
+      "id": "PARENT-C2",
+      "status": "resolved",
+      "evidence": "Current441 exact receipt6074437074 verified; parent issue440 now names approved replacement; readiness and nondraft states read back."
+    },
+    {
+      "id": "C3",
+      "status": "resolved",
+      "evidence": "Exactly one sentence changes. Current issue explicitly says native closing relationship completes only the bounded source-preparation issue; deployment/release/provider/device rollout remain excluded. Native closingIssuesReferences still contains447. Full old issue body preserved verbatim in6074679404; both archive full-body and extracted old-body hashes verified."
+    }
+  ],
+  "gates": {
+    "value": "pass: accepted preparation-only selective release outcome, not permission to operate providers.",
+    "outcome": "pass for complete accepted source-preparation issue. C3 now accurately states its native closing association; no runtime/provider completion inferred.",
+    "code": "pass: complete four ordered commits/parents and86 paths +6330/-110 independently reconcile with live API and Git; all prior assessed source blobs unchanged. No new source correction or test gap identified in this metadata/base continuation.",
+    "engineeringReview": "pass via independent complete-scope assessment and preserved R1/R2 dispositions. Bot6070337167 refused solely for quota at historicala8539c; no current-head completed bot review claimed. Full issue/PR comments, submitted reviews and inline threads reread, zero submitted reviews/threads.",
+    "ci": "pass for published source: five exact-head workflows remain successful,25 terminal checks (16success/9skipped). Historical tested base0c26cea retained; not integrated-runtime validation against547206a1. Existing raw actionlint remains nonclean with documented inherited/Cloud-feature diagnostics, not silently waived.",
+    "behavior": "pass for preparation using unchanged source-bound fixture/mock evidence and89 prior same-task tests. No new tests this metadata-only turn. The20 parent gate fixtures just executed in preceding441 assessment apply to byte-identical helper/test contract; do not certify provider behavior. Incoming backend runtime affects server input selection, not native/OTA input files. Conflict probes are not runtime execution.",
+    "evidence": "pass: preservation comment6074679404 verified against exact full-body digest and original issue bytes; previous C3 verdict and parent verdict artifacts freshly verified. Four exact historical comment receipts remain unchanged. Prior source/fixture/build/CI evidence retains original identities; no new runtime evidence invented.",
+    "communication": "pass: final issue and PR remain concise and preparation-scoped. Issue association sentence agrees with native closing issue447 and explicitly excludes deployment, release, provider validation and device rollout. Remaining requirements/plan/task/PR content unchanged. No PR-body change or obsolete QA wording loop needed.",
+    "stack": "pass: unchanged actual441 targetcd8932b2 and ultimate547206a1; source/API/directMB0c26cea and ultimateMB4cbcbc74 separately bound. Parent ready receipt exactly reverified with current head/body and full feedback. C3 cleared. Any later parent/master/458 integration requires affected reassessment."
+  },
+  "publishedScope": {
+    "commits": 4,
+    "files": 86,
+    "additions": 6330,
+    "deletions": 110,
+    "inventory": "verification.json / scope",
+    "rationale": "Product workflows and selective planner/recovery/provider-verification helpers, maintained tests, external build configuration/independent iOS allocation and maintained guide. No ad-hoc evidence/history churn; all four commits map to447 orR1/R2 corrections."
+  },
+  "targetImpact": {
+    "sourceUnchangedFromPriorVerdict": true,
+    "parentDelta": [
+      "README.md",
+      "docs/deployment.md"
+    ],
+    "incomingSincePreviousUltimate": [
+      ".github/workflows/tests.yml",
+      "backend/scripts/lib/credentialProvider.ts",
+      "backend/src/index.ts",
+      "backend/src/routes/auth.ts",
+      "backend/src/routes/imports.ts",
+      "backend/src/routes/metrics.ts",
+      "backend/src/routes/user.ts",
+      "backend/src/services/credentialVerification.ts",
+      "backend/src/services/goalStartingWeight.ts",
+      "backend/src/services/mcpOAuth.ts",
+      "backend/src/services/mobileAuth.ts",
+      "backend/src/services/watch.ts",
+      "backend/src/utils/browserLoginCredentials.ts",
+      "backend/src/utils/postgresSessionStore.ts",
+      "backend/test/browser-login-postgres.test.js",
+      "backend/test/credential-provider.test.js",
+      "backend/test/import-calorie-safety.test.js",
+      "backend/test/mobile-auth.test.js",
+      "backend/test/mobile-session-issuance-postgres.test.js",
+      "backend/test/postgres-session-store.test.js",
+      "backend/test/routes-account-recovery.test.js",
+      "backend/test/routes-auth-mobile.test.js",
+      "backend/test/routes-auth.test.js",
+      "backend/test/routes-metrics.test.js",
+      "backend/test/routes-user.test.js",
+      "backend/test/watch-service.test.js",
+      "docs/firebase-migration-preparation.md",
+      "docs/goal-starting-weight.md",
+      "scripts/postgres-goal-pace-smoke.mjs"
+    ],
+    "probes": {
+      "directTree": "5ad3ec5aca4b182faea59d2e8bf99a9760f67104",
+      "ultimateTree": "a2601ba7840ff73424c52e72592f33c8beef218a",
+      "preservesAllPublishedAndIncomingBlobs": true,
+      "byteIdenticalChildPatch": true,
+      "runtimeExecution": false
+    },
+    "assessment": "Two parent documentation files and29 new ultimate-master auth/goal paths do not overlap child paths. Direct integrated child patch is byte-identical. Published head and prior89-test evidence unchanged. Earlier436 incoming source and its identities remain separately retained in prior assessment. New goal smoke failure remains a relevant inherited operational limitation below."
+  },
+  "inheritedReleaseLimitation": {
+    "issue": 457,
+    "helperBlob": "e045505e34f52516e1fb3ea6dd3432edf87f4a1e",
+    "consumers": [
+      {
+        "ref": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+        "waitStepSha256": "f480b9bc61a5e891f9bb9f25ac78b67e021ef92097d2457c6212cd36c84c480f",
+        "finalPremergeCallSha256": "87024fe39806329cc5b0cf5cd49729dfde08321dba449e111ea615f90725f7fd",
+        "twoCalls": 2
+      },
+      {
+        "ref": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+        "waitStepSha256": "f480b9bc61a5e891f9bb9f25ac78b67e021ef92097d2457c6212cd36c84c480f",
+        "finalPremergeCallSha256": "87024fe39806329cc5b0cf5cd49729dfde08321dba449e111ea615f90725f7fd",
+        "twoCalls": 2
+      },
+      {
+        "ref": "547206a1b372b73fc95fc412ad453b8099440000",
+        "waitStepSha256": "f480b9bc61a5e891f9bb9f25ac78b67e021ef92097d2457c6212cd36c84c480f",
+        "finalPremergeCallSha256": "87024fe39806329cc5b0cf5cd49729dfde08321dba449e111ea615f90725f7fd",
+        "twoCalls": 2
+      }
+    ],
+    "copiedWorkflowPath": ".github/workflows/unified-server-handler.yml:83 invokes canonical cut-release.yml with selective:true; the two PR-only CI gates at child lines722/783 remain intact. Selective changes suppress downstream implicit work/cleanup; they do not supply a trusted non-PR candidate validation path.",
+    "observedFailures": "Release run37880190066 job113658571223 failed at lint.yml action_required, identifying run37880437994. Database run37880437998 job113665062675 passed all48 migrations then failed scripts/postgres-goal-pace-smoke.mjs:279:24 with90000!=84000. Current master and455 smoke blobs match a1890cbb;441 and452 have historical961d595f. Gate helper blob e045505e is identical at all four sources; both premerge consumer snippets are identical.",
+    "relevance": "A selected server stage still encounters approval-required PR checks and current-master failing goal smoke. Those stop finalization as designed. This inherited limitation prevents claiming a working unattended release, but does not block the explicitly accepted fixture-validated preparation deliverable or require provider credentials. No blanket release waiver.",
+    "requiredFollowup": "Separate457 owner must correct and validate exact-candidate CI and deterministic smoke. Coordinate any shared worker/test/doc impact on441/452; a landed fix or target change requires new actual-range/applicability QA. Do not absorb work or mutate455/candidate/run."
+  },
+  "uiEvidence": {
+    "applicable": false,
+    "nonUiObservableContract": "Release CLI/JSON selection and durable provider/journal state, with synthetic controlled inputs and observable outputs. No changed application UI flow.",
+    "provenanceRecords": [
+      {
+        "commit": "80703680c484c534bcfa0f7ee18760870d2acc6f",
+        "path": "manifest.json",
+        "sha256": "83649ab0cea682e1233955b8d65dce8670e33cd70ded3b17dd32d067c6dcf826"
+      },
+      {
+        "commit": "ced19a3b2b32f67aa5fdf1abea2b7b9342326a03",
+        "path": "final-scope.json",
+        "sha256": "a3bf26a146e1a73c88dd11b1c4b789baa815fc2f8471c3aedebcd4c54c7f339c"
+      },
+      {
+        "commit": "55bacb9c21794edccd17628ba4b969a4dcb19016",
+        "path": "final-handoff.json",
+        "sha256": "0d6be5725e901356b05116cb5a6c6c4bed7eb267a66bf894c6bff1603ab60324"
+      },
+      {
+        "commit": "5ca053672cb7049b7f818643027c1d5be0bcb743",
+        "path": "parent-impact-receipt.json",
+        "sha256": "b18de8aa484f97947c38d05c08a497cacce4c9d0fb0e5f98989fd217d8bdf2d0"
+      },
+      {
+        "commitSha": "b46c78334ecc58c31cdd83602d172a0d2c1f05cc",
+        "path": "qa-final-receipt.json",
+        "sha256": "a3fc8e429dc29c3117e61b57bccd4cf3367e66fbcd25a8c2dfa32d57eacfef07"
+      }
+    ]
+  },
+  "historicalTests": {
+    "sameTask89": "recheck452/focused-tests.log, exact50f4a845; prior independent-probes.json establishesR1/R2. Retained23ba6e2 commit.",
+    "owner": "278pass/2existing skips;71focused, prior native/operations/Wear/deployment results retain original bindings.",
+    "thisTurn": "No fresh suite, capture, integrated runtime, provider or device execution. Appropriate for unchanged source and independently verified metadata/target impact."
+  },
+  "projectReadback": {
+    "project": 1,
+    "title": "Agentic development pipeline",
+    "issueItemId": "PVTI_lAHOABMy1c4Bl3Eqzg_e1oE",
+    "currentPr": "https://github.com/MChartier/calibrate-health/pull/452",
+    "owner": "01a11cd8-3e02-703c-831c-fdc6176d7028",
+    "issueMembershipVerified": true,
+    "directPrItemCount": 0,
+    "assessment": "Fresh issue membership, Current PR452 and owner verified through supported GraphQL. No directPR duplicate item required. Old parentC2 Blocked by/Queued values are stale coordinator bookkeeping, not source/readiness findings or a user decision. Coordinator reconciles with this ready outcome; no QA writes."
+  },
+  "ownerCheckpoint": {
+    "task": "01a11cd8-3e02-703c-831c-fdc6176d7028",
+    "turn": "01a11ef0-b9c6-7092-b53a-28e0d9bbcdfe",
+    "status": "completed/idle",
+    "branch": "mchartier/unified-release-447",
+    "sourceFrozen": true,
+    "nativeRead": "Verified task status and final metadata-only handoff; original owner checkout untouched."
+  },
+  "historicalReceipts": [
+    {
+      "verdict": "changes-required",
+      "headSha": "53de4b701554e2debb6ad62472559a2702f7e485",
+      "baseSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "apiBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "mergeBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "headParents": [
+        "a8539c3b90bd8c69a761c234869e5a0553f8ed08"
+      ],
+      "targetParents": [
+        "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+      ],
+      "parentRevisions": [
+        {
+          "pr": 441,
+          "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+          "sourceParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+          "state": "open/unmerged",
+          "gate": "C1/R2 passed in prior same-task assessment; C2 issue-owner metadata pending coordinator correction, not source failure. No positive readiness before cleared."
+        }
+      ],
+      "prBodySha256": "f051f32990fde876035884150d8efaf827f9f98ba021f8aaa95d43bc65397fee",
+      "checkedAtUtc": "2026-10-08T23:51:40.102512+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": null,
+      "verdictCommentId": 6071350064,
+      "verdictBodySha256": "9e6210f08edf66852e8c98be34add10dc57b810cbeb31fc6da13b84850f93717",
+      "verdictUpdatedAt": "2026-10-08T23:52:33Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6071350064",
+      "evidenceCommit": "b3ce696a170bd657e4e9f7715d7fc45f93b96c67",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "db170bc4c3ca143a12063801d51b5849ea9c8c879e3b902cffdd5983c4f3b69d",
+      "postPublicationRecheckedAtUtc": "2026-10-08T23:52:49.282133+00:00",
+      "checkpoint": "Complete and idle. All QA tests stopped; no next QA task or overlapping suite. Product/body/Project/readiness/draft/merge unchanged."
+    },
+    {
+      "verdict": "evidence-incomplete",
+      "headSha": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+      "baseSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "apiBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "mergeBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+      "headParents": [
+        "53de4b701554e2debb6ad62472559a2702f7e485"
+      ],
+      "targetParents": [
+        "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+      ],
+      "parentRevisions": [
+        {
+          "pr": 441,
+          "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+          "sourceParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+          "state": "open/unmerged",
+          "gate": "C1/R2 passed in prior same-task assessment; C2 issue-owner metadata pending coordinator correction, not source failure. No positive readiness before cleared."
+        }
+      ],
+      "prBodySha256": "2937c215edb38b487019f45f8f5871088e16961b6a27affa2d168b1a8cb2b554",
+      "checkedAtUtc": "2026-10-09T00:22:03.309578+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": 6071350064,
+      "verdictCommentId": 6071694756,
+      "verdictBodySha256": "6280160a7cdc08fa1f94d1716b2de87f4473ea349fc22f6be4867dc321839826",
+      "verdictUpdatedAt": "2026-10-09T00:23:15Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6071694756",
+      "evidenceCommit": "23ba6e2ae1eba0289a0e61b734ed6889b5ae2cac",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "480d94cf903d76d4a98f0441d46094585b7f23375fbebf253da9a1e9be01f489",
+      "postPublicationRecheckedAtUtc": "2026-10-09T00:23:37.992409+00:00",
+      "checkpoint": "Complete and idle. All QA tests stopped; no next QA task or overlapping suite. Product/body/Project/readiness/draft/merge unchanged."
+    },
+    {
+      "verdict": "changes-required",
+      "headSha": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+      "baseSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "apiBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "mergeBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "ultimateTargetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "headParents": [
+        "53de4b701554e2debb6ad62472559a2702f7e485"
+      ],
+      "targetParents": [
+        "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+      ],
+      "parentRevisions": [
+        {
+          "pr": 441,
+          "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+          "sourceParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+          "actualTargetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+          "apiBaseAndMergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+          "state": "open/unmerged, human-ready, nondraft at readback",
+          "verdictCommentId": 6074437074,
+          "verdictBodySha256": "aece9f33b5b73ca06ca84980d9e0eae2aaf0c5180c12ff8be44567dd5ac6f596",
+          "verdictUpdatedAt": "2026-10-09T04:44:53Z",
+          "prBodySha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+          "gate": "Current parent receipt verified exactly; C2 resolved. Bounded consolidation readiness is not unattended-release certification."
+        }
+      ],
+      "prBodySha256": "f1e85ed295255d1b534f44f66d93548267637229c69efe9bca75387e6eda8945",
+      "issueBodySha256": "914c3cbd731e3d62ffe792fce0121902974365ee9703c92dba9a6f010e8ace53",
+      "parentPrBodySha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+      "parentIssueBodySha256": "c39a1260f05bef4a1fbac83ac3954c0d0b352406864157d058270381021816aa",
+      "ultimateMergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "ultimateTargetParents": [
+        "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+        "650862e1c13be66fe5ec05495320cc66ac32f8bb"
+      ],
+      "checkedAtUtc": "2026-10-09T04:56:23.450179+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": 6071694756,
+      "verdictCommentId": 6074593090,
+      "verdictBodySha256": "b9034af4140113b6dcf61636f9abbd2dc8a6e10b36f3dd6805b4d7dc78e8ab0a",
+      "verdictUpdatedAt": "2026-10-09T04:58:49Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6074593090",
+      "evidenceCommit": "58ce652d87f2800c6c8d4418d5570d33e1b3ca42",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "92d53466a1c9b78a550933c8843c9188e478fb99663b3226e423f60408e8c05d",
+      "postPublicationRecheckedAtUtc": "2026-10-09T04:59:04.375156+00:00",
+      "checkpoint": "Complete and idle. All QA tests stopped; no next QA task or overlapping suite. Product/body/Project/readiness/draft/merge unchanged."
+    },
+    {
+      "verdict": "ready",
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "baseSha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "apiBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "mergeBaseSha": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "ultimateTargetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+      "headParents": [
+        "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+      ],
+      "targetParents": [
+        "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+        "650862e1c13be66fe5ec05495320cc66ac32f8bb"
+      ],
+      "parentRevisions": [],
+      "prBodySha256": "b6cf507a7aeb82e436026cc9bf964bbc542740d0f3029a740450f0df2b49bb06",
+      "checkedAtUtc": "2026-10-09T04:42:35.977761+00:00",
+      "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+      "host": "mchartier_zbook",
+      "supersedesVerdictCommentId": 6071045718,
+      "verdictCommentId": 6074437074,
+      "verdictBodySha256": "aece9f33b5b73ca06ca84980d9e0eae2aaf0c5180c12ff8be44567dd5ac6f596",
+      "verdictUpdatedAt": "2026-10-09T04:44:53Z",
+      "url": "https://github.com/MChartier/calibrate-health/pull/441#issuecomment-6074437074",
+      "evidenceCommit": "49c1a587729372182e6629e0b4e5ca10548bb306",
+      "evidencePath": "verdict.json",
+      "evidenceSha256": "35396992852afc5ae42145527dbacbc5113ca06ef1a5962d585b01bf3eb86f58",
+      "postPublicationRecheckedAtUtc": "2026-10-09T04:45:07.501164+00:00",
+      "checkpoint": "Complete and idle. All QA tests stopped; no next QA task or overlapping suite. Product/body/Project/readiness/draft/merge unchanged."
+    }
+  ],
+  "retainedOriginals": {
+    "negativeVerdictCommit": "b3ce696a170bd657e4e9f7715d7fc45f93b96c67",
+    "negativeVerdictSha256": "db170bc4c3ca143a12063801d51b5849ea9c8c879e3b902cffdd5983c4f3b69d",
+    "priorVerdictCommit": "23ba6e2ae1eba0289a0e61b734ed6889b5ae2cac",
+    "priorVerdictSha256": "480d94cf903d76d4a98f0441d46094585b7f23375fbebf253da9a1e9be01f489",
+    "originalBehaviorCommit": "80703680c484c534bcfa0f7ee18760870d2acc6f",
+    "correctionEvidenceCommit": "517fd4b8f69a67e6e7e50f251b656849efe05556",
+    "originalFinalReceiptCommit": "b46c78334ecc58c31cdd83602d172a0d2c1f05cc",
+    "policy": "All exact historical receipt/provenance identities preserved; no replacement or silent rebind.",
+    "C3NegativeVerdictCommit": "58ce652d87f2800c6c8d4418d5570d33e1b3ca42",
+    "C3NegativeVerdictSha256": "92d53466a1c9b78a550933c8843c9188e478fb99663b3226e423f60408e8c05d",
+    "exactOldIssueArchive": 6074679404,
+    "exactOldIssueArchiveSha256": "db8ae6402098bb3a0f439898275d6108b8d662f614da8ce9bb35f625e906e99a"
+  },
+  "evidence": [
+    {
+      "commitSha": "d7d8e07195c625bf7e0fbad046b1c9372dec5b5b",
+      "path": "ultimate-refresh-impact.json",
+      "gitBlobSha": "d60d3b12d4769a14b97538f339ac48472440f08e",
+      "bytes": 9138,
+      "sha256": "bdc7e041ab9c6df88e8b21e99c56db20d32b9cd743ce3cb46d4597b071221c09"
+    },
+    {
+      "commitSha": "d7d8e07195c625bf7e0fbad046b1c9372dec5b5b",
+      "path": "ultimate-refresh-original-body.txt",
+      "gitBlobSha": "132c7a705182b8710867e65bdec6a60bbd9fef85",
+      "bytes": 5595,
+      "sha256": "2937c215edb38b487019f45f8f5871088e16961b6a27affa2d168b1a8cb2b554"
+    },
+    {
+      "commitSha": "bd7d5b9e7a8ada1e7760c4634439065e357fb5a7",
+      "path": "ultimate-refresh-receipt.json",
+      "gitBlobSha": "49e8175fc45eb5a250aa0e567b10c2d8112c8e4c",
+      "bytes": 16917,
+      "sha256": "25ba76b8328e89147e2d705476fbadc32eb11b44bce01da9ba41ec15ce98bc4d"
+    },
+    {
+      "commitSha": "23ba6e2ae1eba0289a0e61b734ed6889b5ae2cac",
+      "path": "verdict.json",
+      "gitBlobSha": "dbf4ba3d1c0a7ef8e2b3e337411abda1da24e6f8",
+      "bytes": 12249,
+      "sha256": "480d94cf903d76d4a98f0441d46094585b7f23375fbebf253da9a1e9be01f489"
+    },
+    {
+      "commitSha": "49c1a587729372182e6629e0b4e5ca10548bb306",
+      "path": "verdict.json",
+      "gitBlobSha": "515b86564a2c5460e5cccc0f2e61276fd5bc588f",
+      "bytes": 34470,
+      "sha256": "35396992852afc5ae42145527dbacbc5113ca06ef1a5962d585b01bf3eb86f58"
+    },
+    {
+      "commitSha": "58ce652d87f2800c6c8d4418d5570d33e1b3ca42",
+      "path": "verdict.json",
+      "sha256": "92d53466a1c9b78a550933c8843c9188e478fb99663b3226e423f60408e8c05d",
+      "gitBlobSha": "50df7e3d19d33547d22e344a5ec10e42b13ac899",
+      "bytes": 24569
+    },
+    {
+      "commitSha": "49c1a587729372182e6629e0b4e5ca10548bb306",
+      "path": "verdict.json",
+      "sha256": "35396992852afc5ae42145527dbacbc5113ca06ef1a5962d585b01bf3eb86f58",
+      "gitBlobSha": "515b86564a2c5460e5cccc0f2e61276fd5bc588f",
+      "bytes": 34470
+    }
+  ],
+  "limitations": [
+    "Preparation only; real IPA/provider validation, device checks and integrated runtime remain unperformed.",
+    "No release/provider/credential/protection/deployment or paid build operation.",
+    "Inherited457 remains operational blocker; parent readiness does not waive it.",
+    "C3 resolved; no new user action required. Coordinator owns Project/readiness/lifecycle changes. PR458 remains separate unmerged issue457 repair; this verdict certifies no combined runtime or unattended release."
+  ],
+  "nextAction": "Coordinator separately save this exact new receipt, recheck complete current head/target/parent/body/evidence/feedback/CI before readiness and after any lifecycle mutation. Update stale Project bookkeeping. No new source change, provider operation or expensive suite needed. Further QA awaits ROOT admission.",
+  "checkpoint": "Complete and idle after publication/readback. Clean independent checkout50f4a845, no suite/browser/database/provider running, no source/body/association/Project/readiness/draft/merge writes, no next QA started.",
+  "metadataCorrection": {
+    "oneSentenceOnly": true,
+    "before": "This association is nonclosing and covers preparation only; no release or provider execution is implied.",
+    "after": "This PR closes the bounded source-preparation issue upon merge; it does not complete deployment, release, provider validation or device rollout.",
+    "oldIssueSha256": "914c3cbd731e3d62ffe792fce0121902974365ee9703c92dba9a6f010e8ace53",
+    "newIssueSha256": "6b41742aed20caa9febfa47a4b60e4a46c12060bba06e82389e3241e276913a1",
+    "preservationCommentId": 6074679404,
+    "preservationCommentSha256": "db8ae6402098bb3a0f439898275d6108b8d662f614da8ce9bb35f625e906e99a",
+    "nativeClosingIssue": 447
+  }
+}
