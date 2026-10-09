@@ -5,6 +5,7 @@ import { openOutboxDatabase } from '../offline/database';
 import { storedOrigin } from '../config/server';
 import { isOnboardingFormState } from '../onboarding/completionState';
 import { ACTIVITY_RECORD_TYPES } from '@calibrate/shared';
+import { HEALTH_CONNECT_FEATURES } from '../healthConnect/types';
 
 /** Inspect every account's queues, not just the last visible account. Never alter retained data. */
 export async function inspectTargetTransitionState(previousOrigin?: string): Promise<{ hasState: boolean }> {
@@ -68,7 +69,9 @@ export async function inspectTargetTransitionState(previousOrigin?: string): Pro
             throw new Error('Saved tracking receipts are unknown.');
         }
         if (key.startsWith('@calibrate/health-connect/preferences/') &&
-            (typeof record.connected !== 'boolean' || typeof record.paused !== 'boolean' || !record.selection)) {
+            (typeof record.connected !== 'boolean' || typeof record.paused !== 'boolean' || !record.selection ||
+                typeof record.selection !== 'object' || Array.isArray(record.selection) ||
+                Object.values(HEALTH_CONNECT_FEATURES).some(feature => typeof (record.selection as Record<string, unknown>)[feature] !== 'boolean'))) {
             throw new Error('Saved health consent is unknown.');
         }
         if (key.startsWith('@calibrate/health-connect/token/') &&

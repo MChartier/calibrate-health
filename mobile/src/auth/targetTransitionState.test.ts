@@ -10,10 +10,21 @@ import { Platform } from 'react-native';
 import { inspectTargetTransitionState } from './targetTransitionState';
 import { ACTIVITY_RECORD_TYPES } from '@calibrate/shared';
 import { createInitialOnboardingForm } from '../onboarding/completionState';
+import { DEFAULT_HEALTH_CONNECT_SELECTION } from '../healthConnect/types';
 
 const origin = 'https://previous.example';
 const encoded = encodeURIComponent(origin);
 beforeEach(async () => { await AsyncStorage.clear(); jest.clearAllMocks(); mockRows.mockResolvedValue([]); mockInbox.mockReturnValue([]); });
+
+it.each(['unknown', {}, { ...DEFAULT_HEALTH_CONNECT_SELECTION, weight: 'yes' }, DEFAULT_HEALTH_CONNECT_SELECTION])('preserves consent bytes and only accepts known selection fields: %j', async selection => {
+    const key = '@calibrate/health-connect/preferences/v1/' + encoded + '/7';
+    const raw = JSON.stringify({ connected: true, paused: false, selection });
+    await AsyncStorage.setItem(key, raw);
+    const inspection = inspectTargetTransitionState(origin);
+    if (selection === DEFAULT_HEALTH_CONNECT_SELECTION) await expect(inspection).resolves.toEqual({ hasState: true });
+    else await expect(inspection).rejects.toThrow('Saved health consent is unknown');
+    expect(await AsyncStorage.getItem(key)).toBe(raw);
+});
 
 it('blocks a valid unfinished draft without deleting its exact content', async () => {
     const key = '@calibrate/onboarding-draft/v1/' + encoded + '/7';
