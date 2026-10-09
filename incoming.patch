@@ -1,0 +1,2102 @@
+diff --git a/.github/workflows/tests.yml b/.github/workflows/tests.yml
+index f77e6e0d..a4b37df4 100644
+--- a/.github/workflows/tests.yml
++++ b/.github/workflows/tests.yml
+@@ -105,6 +105,8 @@ jobs:
+         run: npm run db:migrate
+ 
+       - name: Run tests
++        env:
++          CALIBRATE_AUTH_TEST_DATABASE_URL: postgresql://calibrate_ci:calibrate_ci@localhost:5432/calibrate_ci
+         run: npm test
+ 
+   mobile-tests:
+diff --git a/backend/scripts/lib/credentialProvider.ts b/backend/scripts/lib/credentialProvider.ts
+index cec77895..1446ee46 100644
+--- a/backend/scripts/lib/credentialProvider.ts
++++ b/backend/scripts/lib/credentialProvider.ts
+@@ -1,81 +1,3 @@
+-import bcrypt from 'bcryptjs';
+-import { DUMMY_AUTH_PASSWORD_HASH, validateBcryptPasswordByteLength } from '../../src/utils/authCredentials';
+-
+-export type CredentialIdentity =
+-  | { provider: 'local'; userId: number; passwordHash: string }
+-  | { provider: 'firebase'; userId: number; projectId: string; uid: string; email: string };
+-
+-export class CredentialProviderUnavailable extends Error {
+-  constructor() { super('Credential provider unavailable'); }
+-}
+-
+-export interface FirebaseCredentialVerifier {
+-  projectId: string;
+-  /** Must use Admin SDK verifyIdToken(token, true), never decode-only JWT parsing. */
+-  verifyIdToken(token: string): Promise<{ uid: string; aud: string; auth_time: number }>;
+-}
+-
+-/** Standalone preparation adapter. Existing endpoints remain local until lifecycle integration. */
+-export class CredentialProvider {
+-  constructor(private readonly firebase?: {
+-    apiKey: string;
+-    verifier: FirebaseCredentialVerifier;
+-    fetch?: typeof fetch;
+-    timeoutMs?: number;
+-  }) {}
+-
+-  async verify(identity: CredentialIdentity, password: string): Promise<boolean> {
+-    if (identity.provider === 'local') {
+-      if (validateBcryptPasswordByteLength(password)) return false;
+-      const matches = await bcrypt.compare(password, identity.passwordHash || DUMMY_AUTH_PASSWORD_HASH);
+-      return Boolean(identity.passwordHash) && matches;
+-    }
+-    if (!this.firebase || !this.firebase.apiKey || identity.projectId !== this.firebase.verifier.projectId) {
+-      throw new CredentialProviderUnavailable();
+-    }
+-    const { apiKey, verifier } = this.firebase;
+-    const timeoutMs = this.firebase.timeoutMs ?? 5000;
+-    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) throw new CredentialProviderUnavailable();
+-    const controller = new AbortController();
+-    let timer: ReturnType<typeof setTimeout> | undefined;
+-    const timedOut = new Promise<never>((_, reject) => {
+-      timer = setTimeout(() => {
+-        controller.abort();
+-        reject(new CredentialProviderUnavailable());
+-      }, timeoutMs);
+-    });
+-    try {
+-      return await Promise.race([timedOut, (async () => {
+-        const response = await (this.firebase!.fetch ?? fetch)(
+-          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`,
+-          {
+-            method: 'POST', redirect: 'error', signal: controller.signal,
+-            headers: { 'Content-Type': 'application/json' },
+-            body: JSON.stringify({ email: identity.email, password, returnSecureToken: true })
+-          }
+-        );
+-        const body = await response.json() as {
+-          idToken?: unknown; localId?: unknown; error?: { message?: unknown };
+-        };
+-        if (!response.ok) {
+-          const code = body?.error?.message;
+-          if (response.status === 400 && ['INVALID_LOGIN_CREDENTIALS', 'EMAIL_NOT_FOUND', 'INVALID_PASSWORD', 'USER_DISABLED'].includes(String(code))) {
+-            return false;
+-          }
+-          throw new CredentialProviderUnavailable();
+-        }
+-        if (typeof body?.idToken !== 'string' || body.localId !== identity.uid) return false;
+-        const verified = await verifier.verifyIdToken(body.idToken);
+-        const now = Math.floor(Date.now() / 1000);
+-        return verified.uid === identity.uid && verified.aud === identity.projectId &&
+-          Number.isSafeInteger(verified.auth_time) && verified.auth_time <= now + 30 && verified.auth_time >= now - 60;
+-        // The REST response's refreshToken and ID token are never returned, persisted, or logged.
+-      })()]);
+-    } catch {
+-      // Do not expose request URLs, passwords, tokens, or raw provider error text.
+-      throw new CredentialProviderUnavailable();
+-    } finally {
+-      if (timer) clearTimeout(timer);
+-    }
+-  }
+-}
++// Preserve preparation-tool imports while runtime callers use the shared service.
++export { CredentialProvider, CredentialProviderUnavailable } from '../../src/services/credentialVerification';
++export type { CredentialIdentity, FirebaseCredentialVerifier } from '../../src/services/credentialVerification';
+diff --git a/backend/src/index.ts b/backend/src/index.ts
+index 1b3923cc..161df554 100644
+--- a/backend/src/index.ts
++++ b/backend/src/index.ts
+@@ -1,6 +1,7 @@
+ import 'dotenv/config';
++import { markVerifiedBrowserLogin, serializeBrowserLoginUser } from './utils/browserLoginCredentials';
++import { verifyLocalPassword } from './services/credentialVerification';
+ 
+-import bcrypt from 'bcryptjs';
+ import cors from 'cors';
+ import express from 'express';
+ import helmet from 'helmet';
+@@ -14,7 +15,6 @@ import { getNativePushModeConfigurationWarning } from './config/nativePush';
+ import { resolveMcpConfiguration } from './config/mcp';
+ import { validateCredentialProviderConfiguration } from './config/credentialProvider';
+ import { configureFrontendStaticAssets } from './frontendStatic';
+-import { isAuthenticatedUser } from './middleware/authenticatedUser';
+ import authRoutes from './routes/auth';
+ import clientConfigRoutes from './routes/clientConfig';
+ import serverSettingsRoutes from './routes/serverSettings';
+@@ -54,7 +54,7 @@ import {
+ import { startReminderScheduler } from './services/reminderScheduler';
+ import { createCalibrateMcpHttpApp, isCalibrateMcpPath } from './mcp/server';
+ import { checkDatabaseReadiness } from './services/readiness';
+-import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
++import { normalizeEmailCredential } from './utils/authCredentials';
+ import { autoLoginTestUser } from './utils/devAuth';
+ import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
+ import { USER_CLIENT_SELECT } from './utils/userSerialization';
+@@ -238,15 +238,16 @@ const bootstrap = async (): Promise<void> => {
+         const user = await prisma.user.findFirst({
+           where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+           orderBy: { id: 'asc' },
+-          select: { ...USER_CLIENT_SELECT, password_hash: true },
++          select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true },
+         });
+-        const isMatch = await bcrypt.compare(password, user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH);
++        const isMatch = await verifyLocalPassword(password, user?.password_hash);
+         if (!user || !isMatch) {
+           return done(null, false, { message: 'Invalid email or password' });
+         }
+ 
+         // Avoid keeping password hashes on req.user or in the session.
+-        const { password_hash: _passwordHash, ...safeUser } = user;
++        const { password_hash: _passwordHash, credential_security_version: version, ...safeUser } = user;
++        markVerifiedBrowserLogin(safeUser, user.id, version);
+         return done(null, safeUser);
+       } catch (err) {
+         return done(err);
+@@ -254,12 +255,7 @@ const bootstrap = async (): Promise<void> => {
+     })
+   );
+ 
+-  passport.serializeUser((user, done) => {
+-    if (!isAuthenticatedUser(user)) {
+-      return done(new Error('Cannot serialize an invalid user principal'));
+-    }
+-    return done(null, user.id);
+-  });
++  passport.serializeUser(serializeBrowserLoginUser);
+ 
+   passport.deserializeUser(async (id: number, done) => {
+     try {
+diff --git a/backend/src/routes/auth.ts b/backend/src/routes/auth.ts
+index b748d3d0..e1ad18c7 100755
+--- a/backend/src/routes/auth.ts
++++ b/backend/src/routes/auth.ts
+@@ -1,8 +1,10 @@
++import { verifyLocalPassword } from '../services/credentialVerification';
+ import express from 'express';
++import { BrowserLoginRejected } from '../utils/browserLoginCredentials';
+ import passport from 'passport';
+ import bcrypt from 'bcryptjs';
+ import prisma from '../config/database';
+-import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
++import { normalizeEmailCredential, validatePasswordCredential } from '../utils/authCredentials';
+ import {
+     serializeUserForClient,
+     USER_CLIENT_SELECT,
+@@ -12,6 +14,7 @@ import {
+     exchangeWearPairingCredential,
+     formatMobileAuthResponse,
+     issueMobileAuthPayload,
++    issueVerifiedMobileAuthPayload,
+     issueWearPairingCredential,
+     listMobileSessionsForUser,
+     normalizePairingServerOrigin,
+@@ -390,8 +393,19 @@ router.post('/login', (req, res, next) => {
+             return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+         }
+ 
+-        req.login(user, (loginErr) => {
+-            if (loginErr) return next(loginErr);
++        req.login(user, async (loginErr) => {
++            if (loginErr) {
++                delete req.user;
++                try { await destroyRequestSession(req); }
++                catch (error) { logSafeOperationalError('auth.login_cleanup', error, res.locals?.requestId); }
++                // Express must not retry saving authenticated state after a rejected store write.
++                req.session = null as unknown as express.Request['session'];
++                clearSessionCookie(res);
++                if (loginErr instanceof BrowserLoginRejected) {
++                    return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
++                }
++                return next(loginErr);
++            }
+             return res.json({
+                 user: serializeUserForClient(user as UserForClient)
+             });
+@@ -417,19 +431,20 @@ router.post('/mobile/login', async (req, res) => {
+     try {
+         const user = await prisma.user.findFirst({
+             where: { email: { equals: email, mode: 'insensitive' } },
+-            select: { ...USER_CLIENT_SELECT, password_hash: true }
++            select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true }
+         });
+-        const isMatch = await bcrypt.compare(password, user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH);
++        const isMatch = await verifyLocalPassword(password, user?.password_hash);
+         if (!user || !isMatch) {
+             return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+         }
+ 
+-        const authPayload = await issueMobileAuthPayload({
++        const authPayload = await issueVerifiedMobileAuthPayload({
+             userId: user.id,
++            credentialSecurityVersion: user.credential_security_version,
+             device: device.device
+         });
+         if (!authPayload) {
+-            return res.status(500).json({ message: 'Server error' });
++            return res.status(401).json({ message: INVALID_LOGIN_MESSAGE });
+         }
+ 
+         res.json(formatMobileAuthResponse(authPayload));
+diff --git a/backend/src/routes/imports.ts b/backend/src/routes/imports.ts
+index 38da3292..7f0f5b89 100644
+--- a/backend/src/routes/imports.ts
++++ b/backend/src/routes/imports.ts
+@@ -5,6 +5,8 @@ import prisma from '../config/database';
+ import { parseWeightToGrams, isWeightUnit, type WeightUnit } from '../utils/units';
+ import { isPolicyWeight } from '../../../shared/caloriePolicy';
+ import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
++import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
++import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from '../services/goalStartingWeight';
+ import type { MutationDatabase } from '../services/clientOperations';
+ import { getSafeUtcTodayDateOnlyInTimeZone, parseLocalDateOnly } from '../utils/date';
+ import { refreshMaterializedWeightTrendsBestEffort } from '../services/materializedWeightTrend';
+@@ -136,11 +138,6 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
+   }
+ 
+   const bodyFatByDate = new Map(parsed.bodyFat.map((entry) => [entry.localDate, entry.value]));
+-  const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
+-  const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, currentLocalDate);
+-  const boundedWeights = partitionWeightsByPolicy(partitionedWeights.eligible, options.value.weightUnit);
+-  const futureWeightWarning = buildFutureWeightWarning(partitionedWeights.future.length);
+-  const invalidWeightWarning = buildInvalidWeightWarning(boundedWeights.invalid.length);
+ 
+   let importedFoodLogs = 0;
+   let skippedFoodLogs = 0;
+@@ -164,6 +161,11 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
+   skippedFoodLogs = foodLogsToInsert.skippedCount;
+ 
+   const weightResult = await prisma.$transaction(async (tx) => {
++    await lockCaloriePlanningInputs(tx, user.id);
++    const currentUser = await tx.user.findUniqueOrThrow({ where: { id: user.id }, select: { timezone: true } });
++    const today = getSafeUtcTodayDateOnlyInTimeZone(currentUser.timezone);
++    const partitionedWeights = partitionLoseItWeightImportsByAsOfDate(parsed.weights, today);
++    const boundedWeights = partitionWeightsByPolicy(partitionedWeights.eligible, options.value.weightUnit);
+     const result = await applyWeightImports({
+       database: tx,
+       userId: user.id,
+@@ -172,17 +174,24 @@ router.post('/loseit/execute', upload.single('file'), async (req, res) => {
+       weightUnit: options.value.weightUnit,
+       conflictMode: options.value.weightConflictMode,
+       includeBodyFat: options.value.includeBodyFat,
++      baselineDate: today,
++    });
++    const correctedGoal = result.baselineWeightGrams === null ? null : await correctSameDayGoalStartingWeight(tx, {
++      userId: user.id, metricDate: today, weightGrams: result.baselineWeightGrams, timezone: currentUser.timezone, today
+     });
+     if (result.imported > 0 || result.updated > 0) {
+       await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
+     }
+-    return result;
++    if (correctedGoal) await recordCorrectedGoalStartingWeight(tx, user.id, correctedGoal.id);
++    return { ...result, futureCount: partitionedWeights.future.length, invalidCount: boundedWeights.invalid.length };
+   });
+ 
+   importedWeights = weightResult.imported;
+   updatedWeights = weightResult.updated;
+-  skippedWeights = weightResult.skipped + partitionedWeights.future.length + boundedWeights.invalid.length;
++  skippedWeights = weightResult.skipped + weightResult.futureCount + weightResult.invalidCount;
+   updatedBodyFat = weightResult.bodyFatUpdated;
++  const futureWeightWarning = buildFutureWeightWarning(weightResult.futureCount);
++  const invalidWeightWarning = buildInvalidWeightWarning(weightResult.invalidCount);
+   if (importedWeights > 0 || updatedWeights > 0) {
+     await refreshMaterializedWeightTrendsBestEffort(user.id);
+   }
+@@ -442,9 +451,10 @@ async function applyWeightImports(opts: {
+   weightUnit: WeightUnit;
+   conflictMode: WeightConflictMode;
+   includeBodyFat: boolean;
+-}): Promise<{ imported: number; updated: number; skipped: number; bodyFatUpdated: number }> {
++  baselineDate: Date;
++}): Promise<{ imported: number; updated: number; skipped: number; bodyFatUpdated: number; baselineWeightGrams: number | null }> {
+   if (opts.imports.length === 0) {
+-    return { imported: 0, updated: 0, skipped: 0, bodyFatUpdated: 0 };
++    return { imported: 0, updated: 0, skipped: 0, bodyFatUpdated: 0, baselineWeightGrams: null };
+   }
+ 
+   const dateValues = opts.imports.map((entry) => entry.localDateValue);
+@@ -465,6 +475,7 @@ async function applyWeightImports(opts: {
+   let updated = 0;
+   let skipped = 0;
+   let bodyFatUpdated = 0;
++  let baselineWeightGrams: number | null = null;
+ 
+   if (opts.conflictMode === 'KEEP') {
+     const createRows = [];
+@@ -490,6 +501,7 @@ async function applyWeightImports(opts: {
+     if (createRows.length > 0) {
+       await opts.database.bodyMetric.createMany({ data: createRows });
+       imported = createRows.length;
++      baselineWeightGrams = createRows.find(row => row.date.getTime() === opts.baselineDate.getTime())?.weight_grams ?? null;
+     }
+ 
+     if (opts.includeBodyFat) {
+@@ -508,7 +520,7 @@ async function applyWeightImports(opts: {
+       }
+     }
+ 
+-    return { imported, updated, skipped, bodyFatUpdated };
++    return { imported, updated, skipped, bodyFatUpdated, baselineWeightGrams };
+   }
+ 
+   const upserts = opts.imports.map((entry) => {
+@@ -539,6 +551,9 @@ async function applyWeightImports(opts: {
+   }
+ 
+   for (const entry of opts.imports) {
++    if (entry.localDateValue.getTime() === opts.baselineDate.getTime()) {
++      baselineWeightGrams = parseWeightToGrams(entry.weightValue, opts.weightUnit);
++    }
+     if (existingByDate.has(entry.localDate)) {
+       updated += 1;
+     } else {
+@@ -554,7 +569,7 @@ async function applyWeightImports(opts: {
+     }
+   }
+ 
+-  return { imported, updated, skipped, bodyFatUpdated };
++  return { imported, updated, skipped, bodyFatUpdated, baselineWeightGrams };
+ }
+ 
+ /**
+diff --git a/backend/src/routes/metrics.ts b/backend/src/routes/metrics.ts
+index 7d0e4231..8b77550d 100755
+--- a/backend/src/routes/metrics.ts
++++ b/backend/src/routes/metrics.ts
+@@ -3,6 +3,8 @@ import { type BodyMetric, type BodyMetricTrend, type Prisma } from '@prisma/clie
+ import prisma from '../config/database';
+ import { isPolicyWeight } from '../../../shared/caloriePolicy';
+ import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
++import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
++import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from '../services/goalStartingWeight';
+ import {
+     gramsToWeight,
+     isWeightUnit,
+@@ -826,10 +828,7 @@ router.post('/', async (req, res) => {
+         } catch {
+             return res.status(400).json({ message: 'Invalid date' });
+         }
+-        const currentLocalDateValue = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
+-        if (metricDate > currentLocalDateValue) {
+-            return res.status(400).json({ message: 'Weight date cannot be in the future' });
+-        }
++        let currentLocalDateValue = getSafeUtcTodayDateOnlyInTimeZone(timeZone);
+ 
+         const updateData: { weight_grams?: number; body_fat_percent?: number | null } = {};
+ 
+@@ -862,21 +861,32 @@ router.post('/', async (req, res) => {
+             return res.status(400).json({ message: 'No fields to update' });
+         }
+ 
+-        const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
+-        const currentLocalDate = currentLocalDateValue.toISOString().slice(0, 10);
+-        const savedLocalDate = metricDate.toISOString().slice(0, 10);
+-
+         const result = await executeIdempotentMutation<unknown>({
+             userId: user.id,
+             operationId,
+             operationKind: 'body_metric.upsert',
+             requestPayload: req.body,
+             mutate: async (tx, claimedOperationId) => {
++                // Acquire the goal/pace guard before any weight or goal read/write.
++                if (updateData.weight_grams !== undefined) await lockCaloriePlanningInputs(tx, user.id);
++                const currentUser = await tx.user.findUnique({ where: { id: user.id }, select: { timezone: true } });
++                if (!currentUser) return { status: 404, body: { message: 'User not found' } };
++                const acceptedTimeZone = currentUser.timezone || 'UTC';
++                const acceptedToday = getSafeUtcTodayDateOnlyInTimeZone(acceptedTimeZone);
++                currentLocalDateValue = acceptedToday;
++                if (!date) metricDate = acceptedToday;
++                if (metricDate > acceptedToday) {
++                    return { status: 400, body: { message: 'Weight date cannot be in the future' } };
++                }
++                const acceptedLocalDate = acceptedToday.toISOString().slice(0, 10);
++                const savedLocalDate = metricDate.toISOString().slice(0, 10);
++                const whereUnique = { user_id_date: { user_id: user.id, date: metricDate } } as const;
+                 const existing = await tx.bodyMetric.findUnique({ where: whereUnique });
+                 let progressGoal: MetricProgressGoal | null = null;
+                 let previousMetrics: MetricProgressHistoryEntry[] = [];
+                 let hadAnyMetricBeforeSave = false;
+                 let saveKind: MetricSaveKind | null = null;
++                let correctedGoalId: number | null = null;
+ 
+                 if (updateData.weight_grams !== undefined) {
+                     saveKind =
+@@ -890,12 +900,22 @@ router.post('/', async (req, res) => {
+                         select: { id: true }
+                     })) !== null;
+ 
+-                    const activeGoal = await tx.goal.findFirst({
++                    let activeGoal = await tx.goal.findFirst({
+                         where: { user_id: user.id },
+                         orderBy: [{ created_at: 'desc' }, { id: 'desc' }]
+                     });
+                     if (activeGoal) {
+-                        const createdLocalDate = formatLocalDateForTimeZone(activeGoal.created_at, timeZone);
++                        const createdLocalDate = formatLocalDateForTimeZone(activeGoal.created_at, acceptedTimeZone);
++                        // created_at is the existing goal start date. A late first offline
++                        // replay saves its metric but must not rewrite a historical baseline.
++                        const corrected = await correctSameDayGoalStartingWeight(tx, {
++                            userId: user.id, metricDate, weightGrams: updateData.weight_grams,
++                            timezone: acceptedTimeZone, today: acceptedToday, goal: activeGoal
++                        });
++                        if (corrected) {
++                            activeGoal = corrected;
++                            correctedGoalId = activeGoal.id;
++                        }
+                         progressGoal = {
+                             id: activeGoal.id,
+                             startWeightGrams: activeGoal.start_weight_grams,
+@@ -908,7 +928,7 @@ router.post('/', async (req, res) => {
+                                 user_id: user.id,
+                                 date: {
+                                     gte: parseLocalDateOnly(createdLocalDate),
+-                                    lte: currentLocalDateValue
++                                    lte: acceptedToday
+                                 }
+                             },
+                             orderBy: [{ date: 'asc' }, { id: 'asc' }],
+@@ -955,6 +975,10 @@ router.post('/', async (req, res) => {
+                 const planningAfterWeight = updateData.weight_grams === undefined
+                     ? null
+                     : await markCurrentCaloriePlanForReviewIfUnsafe(tx, user.id);
++                if (correctedGoalId !== null) {
++                    // Include any safety-review state set by the corrected weight in the sync event.
++                    await recordCorrectedGoalStartingWeight(tx, user.id, correctedGoalId, claimedOperationId);
++                }
+ 
+                 const { weight_grams: savedWeightGrams, ...savedMetric } = metric;
+                 const progressUpdate =
+@@ -963,7 +987,7 @@ router.post('/', async (req, res) => {
+                         : evaluateMetricProgressUpdate({
+                               saveKind,
+                               savedLocalDate,
+-                              currentLocalDate,
++                              currentLocalDate: acceptedLocalDate,
+                               currentWeightGrams: savedWeightGrams,
+                               weightUnit,
+                               goal: progressGoal,
+@@ -1019,6 +1043,8 @@ router.delete('/:id', async (req, res) => {
+             operationKind: 'body_metric.delete',
+             requestPayload: { id },
+             mutate: async (tx, claimedOperationId) => {
++                // Match the upsert lock order so concurrent corrections/deletes cannot invert it.
++                await lockCaloriePlanningInputs(tx, user.id);
+                 const deleteResult = await tx.bodyMetric.deleteMany({ where: { id, user_id: user.id } });
+                 if (deleteResult.count === 0) {
+                     return { status: 404, body: { message: 'Metric not found' } };
+diff --git a/backend/src/routes/user.ts b/backend/src/routes/user.ts
+index 2dedb290..10810ad6 100644
+--- a/backend/src/routes/user.ts
++++ b/backend/src/routes/user.ts
+@@ -1,3 +1,4 @@
++import { verifyLocalPassword } from '../services/credentialVerification';
+ import express from 'express';
+ import prisma from '../config/database';
+ import bcrypt from 'bcryptjs';
+@@ -221,7 +222,7 @@ router.patch('/password', async (req, res) => {
+       return res.status(404).json({ message: 'User not found' });
+     }
+ 
+-    const isMatch = await bcrypt.compare(parsed.currentPassword, dbUser.password_hash);
++    const isMatch = await verifyLocalPassword(parsed.currentPassword, dbUser.password_hash);
+     if (!isMatch) {
+       return res.status(400).json({ message: 'Current password is incorrect' });
+     }
+@@ -286,7 +287,7 @@ router.delete('/account', async (req, res) => {
+       return res.status(404).json({ message: 'User not found' });
+     }
+ 
+-    const passwordMatches = await bcrypt.compare(currentPassword, dbUser.password_hash);
++    const passwordMatches = await verifyLocalPassword(currentPassword, dbUser.password_hash);
+     if (!passwordMatches) {
+       return res.status(400).json({ message: 'Current password is incorrect' });
+     }
+diff --git a/backend/src/services/credentialVerification.ts b/backend/src/services/credentialVerification.ts
+new file mode 100644
+index 00000000..b441397e
+--- /dev/null
++++ b/backend/src/services/credentialVerification.ts
+@@ -0,0 +1,89 @@
++import bcrypt from 'bcryptjs';
++import { DUMMY_AUTH_PASSWORD_HASH, validateBcryptPasswordByteLength } from '../utils/authCredentials';
++
++export type CredentialIdentity =
++  | { provider: 'local'; userId: number; passwordHash: string }
++  | { provider: 'firebase'; userId: number; projectId: string; uid: string; email: string };
++
++export class CredentialProviderUnavailable extends Error {
++  constructor() { super('Credential provider unavailable'); }
++}
++
++export interface FirebaseCredentialVerifier {
++  projectId: string;
++  /** Must use Admin SDK verifyIdToken(token, true), never decode-only JWT parsing. */
++  verifyIdToken(token: string): Promise<{ uid: string; aud: string; auth_time: number }>;
++}
++
++/** Local runtime verification; account lookup, authorization and session issuance remain caller-owned. */
++export async function verifyLocalPassword(password: string, passwordHash: string | null | undefined): Promise<boolean> {
++  // Callers retain their existing input policy, including legacy reauthentication.
++  const matches = await bcrypt.compare(password, passwordHash || DUMMY_AUTH_PASSWORD_HASH);
++  return Boolean(passwordHash) && matches;
++}
++
++/** Firebase remains an injected preparation adapter, not an enabled runtime authority. */
++export class CredentialProvider {
++  constructor(private readonly firebase?: {
++    apiKey: string;
++    verifier: FirebaseCredentialVerifier;
++    fetch?: typeof fetch;
++    timeoutMs?: number;
++  }) {}
++
++  async verify(identity: CredentialIdentity, password: string): Promise<boolean> {
++    if (identity.provider === 'local') {
++      if (validateBcryptPasswordByteLength(password)) return false;
++      return verifyLocalPassword(password, identity.passwordHash);
++    }
++    if (!Number.isSafeInteger(identity.userId) || identity.userId <= 0 ||
++        ![identity.projectId, identity.uid, identity.email].every(value => typeof value === 'string' && value.trim()) ||
++        !this.firebase || !this.firebase.apiKey || identity.projectId !== this.firebase.verifier.projectId) {
++      throw new CredentialProviderUnavailable();
++    }
++    const { apiKey, verifier } = this.firebase;
++    const timeoutMs = this.firebase.timeoutMs ?? 5000;
++    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) throw new CredentialProviderUnavailable();
++    const controller = new AbortController();
++    let timer: ReturnType<typeof setTimeout> | undefined;
++    const timedOut = new Promise<never>((_, reject) => {
++      timer = setTimeout(() => {
++        controller.abort();
++        reject(new CredentialProviderUnavailable());
++      }, timeoutMs);
++    });
++    try {
++      return await Promise.race([timedOut, (async () => {
++        const response = await (this.firebase!.fetch ?? fetch)(
++          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`,
++          {
++            method: 'POST', redirect: 'error', signal: controller.signal,
++            headers: { 'Content-Type': 'application/json' },
++            body: JSON.stringify({ email: identity.email, password, returnSecureToken: true })
++          }
++        );
++        const body = await response.json() as {
++          idToken?: unknown; localId?: unknown; error?: { message?: unknown };
++        };
++        if (!response.ok) {
++          const code = body?.error?.message;
++          if (response.status === 400 && ['INVALID_LOGIN_CREDENTIALS', 'EMAIL_NOT_FOUND', 'INVALID_PASSWORD', 'USER_DISABLED'].includes(String(code))) {
++            return false;
++          }
++          throw new CredentialProviderUnavailable();
++        }
++        if (typeof body?.idToken !== 'string' || body.localId !== identity.uid) return false;
++        const verified = await verifier.verifyIdToken(body.idToken);
++        const now = Math.floor(Date.now() / 1000);
++        return verified.uid === identity.uid && verified.aud === identity.projectId &&
++          Number.isSafeInteger(verified.auth_time) && verified.auth_time <= now + 30 && verified.auth_time >= now - 60;
++        // The REST response's refreshToken and ID token are never returned, persisted, or logged.
++      })()]);
++    } catch {
++      // Do not expose request URLs, passwords, tokens, or raw provider error text.
++      throw new CredentialProviderUnavailable();
++    } finally {
++      if (timer) clearTimeout(timer);
++    }
++  }
++}
+diff --git a/backend/src/services/goalStartingWeight.ts b/backend/src/services/goalStartingWeight.ts
+new file mode 100644
+index 00000000..5ec09432
+--- /dev/null
++++ b/backend/src/services/goalStartingWeight.ts
+@@ -0,0 +1,25 @@
++import type { Goal } from '@prisma/client';
++import { recordSyncChange, type MutationDatabase } from './clientOperations';
++import { getSafeUtcTodayDateOnlyInTimeZone } from '../utils/date';
++
++/** Caller holds the planning guard and supplies its transaction-current day/timezone. */
++export async function correctSameDayGoalStartingWeight(
++    tx: MutationDatabase,
++    input: { userId: number; metricDate: Date; weightGrams: number; timezone: string; today: Date; goal?: Goal | null }
++): Promise<Goal | null> {
++    if (input.metricDate.getTime() !== input.today.getTime()) return null;
++    const goal = input.goal === undefined
++        ? await tx.goal.findFirst({ where: { user_id: input.userId }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] })
++        : input.goal;
++    if (!goal || goal.start_weight_grams === input.weightGrams
++        || getSafeUtcTodayDateOnlyInTimeZone(input.timezone, goal.created_at).getTime() !== input.today.getTime()) return null;
++    return tx.goal.update({ where: { id: goal.id }, data: { start_weight_grams: input.weightGrams } });
++}
++
++/** Emit after plan safety evaluation so clients receive the final review state. */
++export async function recordCorrectedGoalStartingWeight(
++    tx: MutationDatabase, userId: number, goalId: number, operationId?: string
++): Promise<void> {
++    const goal = await tx.goal.findUniqueOrThrow({ where: { id: goalId } });
++    await recordSyncChange({ tx, userId, entityType: 'goal', entityId: goalId, action: 'upsert', operationId, payload: goal });
++}
+diff --git a/backend/src/services/mcpOAuth.ts b/backend/src/services/mcpOAuth.ts
+index 13131777..6bb8246e 100644
+--- a/backend/src/services/mcpOAuth.ts
++++ b/backend/src/services/mcpOAuth.ts
+@@ -1,13 +1,9 @@
++import { verifyLocalPassword } from './credentialVerification';
+ import { createHash, randomBytes } from 'node:crypto';
+-import bcrypt from 'bcryptjs';
+ import { Prisma, type PrismaClient } from '@prisma/client';
+ import prisma from '../config/database';
+ import { ACCOUNT_ACCESS_SELECT, serializeAccountAccess } from './accountAccess';
+-import {
+-  DUMMY_AUTH_PASSWORD_HASH,
+-  normalizeEmailCredential,
+-  validateBcryptPasswordByteLength
+-} from '../utils/authCredentials';
++import { normalizeEmailCredential, validateBcryptPasswordByteLength } from '../utils/authCredentials';
+ 
+ export const MCP_OAUTH_AUTHORIZATION_REQUEST_TTL_MS = 10 * 60 * 1000;
+ export const MCP_OAUTH_AUTHORIZATION_CODE_TTL_MS = 5 * 60 * 1000;
+@@ -221,10 +217,7 @@ export class McpOAuthService {
+       select: APPROVAL_USER_SELECT
+     }) : null;
+     const passwordWithinLimit = validateBcryptPasswordByteLength(input.password) === null;
+-    const passwordMatches = await bcrypt.compare(
+-      passwordWithinLimit ? input.password : '',
+-      user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH
+-    );
++    const passwordMatches = await verifyLocalPassword(passwordWithinLimit ? input.password : '', user?.password_hash);
+     if (!user || !passwordWithinLimit || !passwordMatches) {
+       await this.recordFailedApproval(requestHash, now);
+       throw new McpOAuthError('invalid_credentials');
+diff --git a/backend/src/services/mobileAuth.ts b/backend/src/services/mobileAuth.ts
+index 068ff1e5..79db50af 100644
+--- a/backend/src/services/mobileAuth.ts
++++ b/backend/src/services/mobileAuth.ts
+@@ -67,6 +67,28 @@ export async function issueMobileAuthPayload(opts: {
+   };
+ }
+ 
++/** Issue only while the credential snapshot verified by local login is still current. */
++export async function issueVerifiedMobileAuthPayload(opts: {
++  userId: number;
++  credentialSecurityVersion: number;
++  device: ParsedMobileDevice;
++}): Promise<MobileAuthSessionPayload | null> {
++  if (!Number.isSafeInteger(opts.credentialSecurityVersion) || opts.credentialSecurityVersion < 0) return null;
++  return prisma.$transaction(async (tx) => {
++    // This row lock orders issuance against password writers and account deletion.
++    const current = await tx.user.updateMany({
++      where: { id: opts.userId, credential_security_version: opts.credentialSecurityVersion },
++      data: { credential_security_version: opts.credentialSecurityVersion }
++    });
++    if (current.count !== 1) return null;
++    const user = await tx.user.findUnique({ where: { id: opts.userId }, select: USER_CLIENT_SELECT });
++    if (!user) return null;
++    // Restricted accounts keep their recovery session; serialization retains current access gates.
++    const { sessionId: _sessionId, ...tokens } = await issueMobileSession(opts, tx);
++    return { user: serializeUserForClient(user), ...tokens };
++  });
++}
++
+ /** Rotate a refresh token into a new access/refresh pair for the same native session. */
+ export async function refreshMobileSession(refreshToken: string): Promise<MobileAuthSessionPayload | null> {
+   const tokenHash = hashMobileToken(refreshToken);
+diff --git a/backend/src/services/watch.ts b/backend/src/services/watch.ts
+index d19def37..a5391ce5 100644
+--- a/backend/src/services/watch.ts
++++ b/backend/src/services/watch.ts
+@@ -14,6 +14,8 @@ import { refreshMaterializedWeightTrendsBestEffort } from './materializedWeightT
+ import { getFoodDayWriteBlock } from './foodTracking';
+ import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
+ import { markCurrentCaloriePlanForReviewIfUnsafe } from './caloriePlanReview';
++import { lockCaloriePlanningInputs } from './caloriePlanningLock';
++import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from './goalStartingWeight';
+ import { calculateCanonicalGoalProgress } from '../../../shared/goalProgress';
+ import { isPolicyWeight, localDateInTimeZone } from '../../../shared/caloriePolicy';
+ 
+@@ -149,10 +151,7 @@ export function parseWatchMutation(body: unknown, options: {
+     try {
+       if (typeof payload.local_date !== 'string') throw new Error('Invalid local date');
+       const metricDate = parseLocalDateOnly(payload.local_date);
+-      const currentLocalDate = getSafeUtcTodayDateOnlyInTimeZone(options.timezone, now);
+-      if (metricDate > currentLocalDate) {
+-        return { ok: false, status: 400, message: 'Weight date cannot be in the future' };
+-      }
++      // Calendar eligibility is checked after the planning lock with the current timezone.
+       return {
+         ok: true,
+         type,
+@@ -357,6 +356,13 @@ export async function executeWatchMutation(options: {
+         return { status: 200, body: { type: 'food.delete', food_log_id: candidate.food_log_id, deleted: true } };
+       }
+       if (mutation.type === 'metric.upsert') {
++        await lockCaloriePlanningInputs(tx, options.userId);
++        const user = await tx.user.findUnique({ where: { id: options.userId }, select: { timezone: true } });
++        if (!user) return { status: 404, body: { message: 'User not found' } };
++        const today = getSafeUtcTodayDateOnlyInTimeZone(user.timezone);
++        if (mutation.metricDate > today) {
++          return { status: 400, body: { message: 'Weight date cannot be in the future' } };
++        }
+         const existing = await tx.bodyMetric.findUnique({
+           where: { user_id_date: { user_id: options.userId, date: mutation.metricDate } }
+         });
+@@ -382,7 +388,12 @@ export async function executeWatchMutation(options: {
+           create: { user_id: options.userId, date: mutation.metricDate, weight_grams: mutation.payload.weight_grams }
+         });
+         await recordSyncChange({ tx, userId: options.userId, entityType: 'body_metric', entityId: metric.id, action: 'upsert', operationId: claimedOperationId, payload: metric });
++        const correctedGoal = await correctSameDayGoalStartingWeight(tx, {
++          userId: options.userId, metricDate: mutation.metricDate, weightGrams: metric.weight_grams,
++          timezone: user.timezone, today
++        });
+         await markCurrentCaloriePlanForReviewIfUnsafe(tx, options.userId);
++        if (correctedGoal) await recordCorrectedGoalStartingWeight(tx, options.userId, correctedGoal.id, claimedOperationId);
+         return {
+           status: 200,
+           body: {
+diff --git a/backend/src/utils/browserLoginCredentials.ts b/backend/src/utils/browserLoginCredentials.ts
+new file mode 100644
+index 00000000..77c82804
+--- /dev/null
++++ b/backend/src/utils/browserLoginCredentials.ts
+@@ -0,0 +1,38 @@
++import type { Request } from 'express';
++import { isAuthenticatedUser } from '../middleware/authenticatedUser';
++
++/** Server-only proof of a password check; never serialized into a principal or cookie. */
++type VerifiedCredential = { userId: number; version: number };
++export type BrowserLoginSave = VerifiedCredential & {
++  state: 'new' | 'saved' | 'rejected';
++  queue: Promise<void>;
++};
++const verifiedPrincipals = new WeakMap<object, VerifiedCredential>();
++const loginSessions = new WeakMap<object, BrowserLoginSave>();
++
++export class BrowserLoginRejected extends Error {
++  constructor() { super('Invalid email or password'); }
++}
++
++export function markVerifiedBrowserLogin(principal: object, userId: number, version: number): void {
++  if (!Number.isSafeInteger(userId) || userId <= 0 || !Number.isSafeInteger(version) || version < 0) {
++    throw new BrowserLoginRejected();
++  }
++  verifiedPrincipals.set(principal, { userId, version });
++}
++
++/** Passport calls this after regeneration, immediately before saving the new session. */
++function bindVerifiedBrowserSession(principal: object, session: object): void {
++  const credential = verifiedPrincipals.get(principal);
++  if (!credential) return; // Registration and dev login retain their established behavior.
++  verifiedPrincipals.delete(principal);
++  loginSessions.set(session, { ...credential, state: 'new', queue: Promise.resolve() });
++}
++
++export const browserLoginSave = (session: object): BrowserLoginSave | undefined => loginSessions.get(session);
++/** Preserve Passport's integer principal while binding only freshly verified logins. */
++export function serializeBrowserLoginUser(req: Request, user: Express.User, done: (error: Error | null, id?: number) => void): void {
++  if (!isAuthenticatedUser(user)) return done(new Error('Cannot serialize an invalid user principal'));
++  bindVerifiedBrowserSession(user, req.session);
++  done(null, user.id);
++}
+diff --git a/backend/src/utils/postgresSessionStore.ts b/backend/src/utils/postgresSessionStore.ts
+index 16d2eb8a..c1f11266 100644
+--- a/backend/src/utils/postgresSessionStore.ts
++++ b/backend/src/utils/postgresSessionStore.ts
+@@ -1,4 +1,5 @@
+ import session from 'express-session';
++import { browserLoginSave, BrowserLoginRejected, type BrowserLoginSave } from './browserLoginCredentials';
+ import type { Pool } from 'pg';
+ 
+ export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+@@ -59,21 +60,70 @@ export class PostgresSessionStore extends session.Store {
+     const expire = this.calculateExpiry(sess);
+     const sessionData = JSON.stringify(sess);
+     const userId = this.resolvePassportUserId(sess);
+-
++    const guard = browserLoginSave(sess);
+     try {
+-      await this.pool.query(
+-        `INSERT INTO session_store (sid, sess, expire, user_id, last_used_at)
+-         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+-         ON CONFLICT (sid)
+-         DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire, user_id = EXCLUDED.user_id, last_used_at = CURRENT_TIMESTAMP`,
+-        [sid, sessionData, expire, userId]
+-      );
++      if (guard) {
++        // Serialize saves of this newly logged-in object, including response-end saves.
++        const save = guard.queue.then(() => this.saveVerifiedLogin(sid, sessionData, expire, userId, guard));
++        guard.queue = save.catch(() => undefined);
++        await save;
++      } else {
++        await this.pool.query(
++          `INSERT INTO session_store (sid, sess, expire, user_id, last_used_at)
++           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
++           ON CONFLICT (sid)
++           DO UPDATE SET sess = EXCLUDED.sess, expire = EXCLUDED.expire, user_id = EXCLUDED.user_id, last_used_at = CURRENT_TIMESTAMP`,
++          [sid, sessionData, expire, userId]
++        );
++      }
+       callback?.();
+     } catch (err) {
+       callback?.(err);
+     }
+   }
+ 
++  private async saveVerifiedLogin(sid: string, data: string, expire: Date, userId: number | null, guard: BrowserLoginSave): Promise<void> {
++    if (guard.state === 'rejected' || userId !== guard.userId) {
++      guard.state = 'rejected';
++      throw new BrowserLoginRejected();
++    }
++    try {
++      if (guard.state === 'saved') {
++        // Never recreate a newly issued session removed by reset/logout while this request ran.
++        // Do not recheck the version: password change deliberately preserves its current session.
++        const result = await this.pool.query(
++          'UPDATE session_store SET sess = $2, expire = $3, last_used_at = CURRENT_TIMESTAMP WHERE sid = $1 AND user_id = $4',
++          [sid, data, expire, userId]
++        );
++        if (result.rowCount !== 1) throw new BrowserLoginRejected();
++        return;
++      }
++      const client = await this.pool.connect();
++      try {
++        await client.query('BEGIN');
++        const current = await client.query(
++          'UPDATE "User" SET credential_security_version = credential_security_version WHERE id = $1 AND credential_security_version = $2 RETURNING id',
++          [userId, guard.version]
++        );
++        if (current.rowCount !== 1) throw new BrowserLoginRejected();
++        await client.query(
++          'INSERT INTO session_store (sid, sess, expire, user_id, last_used_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)',
++          [sid, data, expire, userId]
++        );
++        await client.query('COMMIT');
++        guard.state = 'saved';
++      } catch (error) {
++        await client.query('ROLLBACK');
++        throw error;
++      } finally {
++        client.release();
++      }
++    } catch (error) {
++      guard.state = 'rejected';
++      throw error;
++    }
++  }
++
+   async destroy(sid: string, callback?: (err?: any) => void): Promise<void> {
+     try {
+       await this.pool.query('DELETE FROM session_store WHERE sid = $1', [sid]);
+diff --git a/backend/test/browser-login-postgres.test.js b/backend/test/browser-login-postgres.test.js
+new file mode 100644
+index 00000000..a559b1b1
+--- /dev/null
++++ b/backend/test/browser-login-postgres.test.js
+@@ -0,0 +1,200 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { randomUUID } = require('node:crypto');
++const { execFileSync } = require('node:child_process');
++const { Pool } = require('pg');
++const databaseUrl = process.env.CALIBRATE_AUTH_TEST_DATABASE_URL;
++const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
++
++test('real Passport browser login persists atomically and cannot resurrect a rejected session', { skip: !databaseUrl, timeout: 90000 }, async t => {
++  const url = new URL(databaseUrl);
++  assert.ok(['localhost', '127.0.0.1'].includes(url.hostname));
++  assert.match(url.pathname, /^\/(calibrate_ci|calibrate_test[^/]*)$/);
++  const schema = `browser_login_${randomUUID().replaceAll('-', '')}`;
++  const admin = new Pool({ connectionString: databaseUrl });
++  await admin.query(`CREATE SCHEMA "${schema}"`);
++  url.searchParams.set('schema', schema);
++  process.env.DATABASE_URL = url.toString();
++  let database, storePool, server;
++  try {
++    execFileSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'], { env: process.env, stdio: 'pipe', timeout: 45000 });
++    database = require('../src/config/database');
++    const prisma = database.default;
++    const originalTransaction = prisma.$transaction.bind(prisma);
++    const express = require('express');
++    const session = require('express-session');
++    const passport = require('passport');
++    const { Strategy } = require('passport-local');
++    const bcrypt = require('bcryptjs');
++    const { USER_CLIENT_SELECT } = require('../src/utils/userSerialization');
++    const { verifyLocalPassword } = require('../src/services/credentialVerification');
++    const { markVerifiedBrowserLogin, serializeBrowserLoginUser } = require('../src/utils/browserLoginCredentials');
++    const { PostgresSessionStore } = require('../src/utils/postgresSessionStore');
++    const { issueAccountActionToken, resetPasswordWithToken } = require('../src/services/accountTokens');
++    storePool = new Pool({ connectionString: databaseUrl, options: `-c search_path=${schema}` });
++    let afterVerified = async () => {}, afterLock = async () => {}, beforeGuard = () => {}, failCommit = false;
++    const wrappedPool = {
++      query: (...args) => storePool.query(...args),
++      connect: async () => {
++        const client = await storePool.connect();
++        return { release: () => client.release(), query: async (sql, args) => {
++          if (sql.startsWith('UPDATE "User"')) beforeGuard(client.processID);
++          if (sql === 'COMMIT' && failCommit) throw Error('synthetic commit failure');
++          const result = await client.query(sql, args);
++          if (sql.startsWith('UPDATE "User"') && result.rowCount === 1) await afterLock();
++          return result;
++        } };
++      }
++    };
++    const store = new PostgresSessionStore(wrappedPool);
++    let saved;
++    const originalSet = store.set.bind(store);
++    store.set = (sid, sess, callback) => { saved = { sid, sess }; return originalSet(sid, sess, callback); };
++    const resave = () => new Promise(resolve => originalSet(saved.sid, saved.sess, resolve));
++    passport.use(new Strategy({ usernameField: 'email' }, async (email, password, done) => {
++      try {
++        const user = await prisma.user.findFirst({ where: { email }, select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true } });
++        if (!await verifyLocalPassword(password, user?.password_hash) || !user) return done(null, false);
++        const { password_hash, credential_security_version, ...principal } = user;
++        markVerifiedBrowserLogin(principal, user.id, credential_security_version);
++        await afterVerified();
++        done(null, principal);
++      } catch (error) { done(error); }
++    }));
++    passport.serializeUser(serializeBrowserLoginUser);
++    passport.deserializeUser(async (id, done) => {
++      try { done(null, await prisma.user.findUnique({ where: { id }, select: USER_CLIENT_SELECT })); }
++      catch (error) { done(error); }
++    });
++    const app = express();
++    app.use(express.json());
++    app.use(session({ secret: 'synthetic-browser-login-test-secret', store, resave: false, saveUninitialized: false, name: 'cal.sid', cookie: { httpOnly: true, sameSite: 'lax', maxAge: 60000 } }));
++    app.use(passport.initialize());
++    app.use(passport.session());
++    app.use('/auth', require('../src/routes/auth').default);
++    app.get('/probe', (req, res) => res.json({ authenticated: req.isAuthenticated() }));
++    app.use((error, _req, res, _next) => res.status(500).json({ message: 'Server error' }));
++    server = app.listen(0, '127.0.0.1');
++    await new Promise(resolve => server.once('listening', resolve));
++    const origin = `http://127.0.0.1:${server.address().port}`;
++    const password = 'Synthetic-password-123';
++    const hash = await bcrypt.hash(password, 10);
++    const createUser = () => prisma.user.create({ data: { email: `${randomUUID()}@example.invalid`, password_hash: hash, email_verified_at: null } });
++    const login = user => fetch(origin + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: user.email, password }) });
++    const count = user => prisma.sessionStore.count({ where: { user_id: user.id } });
++    const waitForLock = async pid => {
++      for (let i = 0; i < 150; i++) {
++        const { rows } = await admin.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1', [pid]);
++        if (rows[0]?.wait_event_type === 'Lock') return;
++        await new Promise(resolve => setTimeout(resolve, 20));
++      }
++      assert.fail('competing database operation did not wait on a lock');
++    };
++    const resetHooks = () => {
++      afterVerified = async () => {}; afterLock = async () => {}; beforeGuard = () => {}; failCommit = false;
++      prisma.$transaction = originalTransaction;
++    };
++    for (const kind of ['reset', 'delete']) {
++      await t.test(`${kind} first rejects the already-verified browser login and later saves`, async () => {
++        resetHooks();
++        const user = await createUser();
++        const token = kind === 'reset' ? await issueAccountActionToken(user.id, 'PASSWORD_RESET') : null;
++        const verified = deferred(), releaseVerification = deferred(), changed = deferred(), releaseMutation = deferred(), browserPid = deferred();
++        afterVerified = async () => { verified.resolve(); await releaseVerification.promise; };
++        beforeGuard = pid => browserPid.resolve(pid);
++        const pending = login(user);
++        await verified.promise;
++        let mutation;
++        if (kind === 'reset') {
++          prisma.$transaction = action => originalTransaction(tx => action(new Proxy(tx, { get(target, key) {
++            if (key !== 'user') return target[key];
++            return new Proxy(target.user, { get(model, operation) {
++              if (operation !== 'update') return model[operation];
++              return async args => { const result = await model.update(args); changed.resolve(); await releaseMutation.promise; return result; };
++            } });
++          } })), { timeout: 15000 });
++          mutation = resetPasswordWithToken(token, 'Replacement-password-123');
++        } else {
++          mutation = originalTransaction(async tx => { await tx.user.delete({ where: { id: user.id } }); changed.resolve(); await releaseMutation.promise; }, { timeout: 15000 });
++        }
++        await changed.promise;
++        releaseVerification.resolve();
++        try { await waitForLock(await browserPid.promise); } finally { releaseMutation.resolve(); }
++        await mutation;
++        const response = await pending;
++        assert.equal(response.status, 401);
++        assert.deepEqual(await response.json(), { message: 'Invalid email or password' });
++        assert.ok(!response.headers.get('set-cookie') || response.headers.get('set-cookie').includes('Expires=Thu, 01 Jan 1970'));
++        assert.equal(await count(user), 0);
++        assert.ok(await resave());
++        assert.equal(await count(user), 0);
++      });
++      await t.test(`browser issuance first is removed by later ${kind} and cannot be saved again`, async () => {
++        resetHooks();
++        const user = await createUser();
++        const token = kind === 'reset' ? await issueAccountActionToken(user.id, 'PASSWORD_RESET') : null;
++        const locked = deferred(), releaseIssuance = deferred(), writerPid = deferred();
++        afterLock = async () => { locked.resolve(); await releaseIssuance.promise; };
++        const pending = login(user);
++        await locked.promise;
++        prisma.$transaction = action => originalTransaction(async tx => {
++          writerPid.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          return action(tx);
++        }, { timeout: 15000 });
++        const mutation = kind === 'reset' ? resetPasswordWithToken(token, 'Replacement-password-123') : prisma.$transaction(tx => tx.user.delete({ where: { id: user.id } }));
++        try { await waitForLock(await writerPid.promise); } finally { releaseIssuance.resolve(); }
++        const response = await pending;
++        assert.equal(response.status, 200);
++        assert.equal((await response.json()).user.id, user.id);
++        await mutation;
++        assert.equal(await count(user), 0);
++        assert.ok(await resave());
++        assert.equal(await count(user), 0);
++        const cookie = response.headers.get('set-cookie').split(';')[0];
++        assert.equal((await (await fetch(origin + '/probe', { headers: { cookie } })).json()).authenticated, false);
++      });
++    }
++    await t.test('rollback after insertion returns no usable cookie and blocks a later save', async () => {
++      resetHooks(); failCommit = true;
++      const user = await createUser();
++      const response = await login(user);
++      assert.equal(response.status, 500);
++      assert.equal(await count(user), 0);
++      failCommit = false;
++      assert.ok(await resave());
++      assert.equal(await count(user), 0);
++    });
++    await t.test('restricted login preserves integer identity and current-session password-change behavior', async () => {
++      resetHooks();
++      const user = await createUser();
++      const response = await login(user);
++      assert.equal(response.status, 200);
++      const payload = await response.json();
++      assert.equal(payload.user.account_access.state, 'email_verification_required');
++      assert.equal('credential_security_version' in payload.user, false);
++      const row = await prisma.sessionStore.findFirst({ where: { user_id: user.id } });
++      assert.equal(row.sess.passport.user, user.id);
++      assert.deepEqual(Object.keys(row.sess).sort(), ['cookie', 'passport']);
++      await prisma.user.update({ where: { id: user.id }, data: { password_hash: 'synthetic-current-session-change' } });
++      assert.equal(await resave(), undefined);
++      assert.equal(await count(user), 1);
++      const cookie = response.headers.get('set-cookie').split(';')[0];
++      assert.equal((await (await fetch(origin + '/probe', { headers: { cookie } })).json()).authenticated, true);
++    });
++    await t.test('local registration still creates an unguarded integer-principal session', async () => {
++      resetHooks();
++      const response = await fetch(origin + '/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: `${randomUUID()}@example.invalid`, password }) });
++      assert.equal(response.status, 200);
++      const { user } = await response.json();
++      const row = await prisma.sessionStore.findFirst({ where: { user_id: user.id } });
++      assert.equal(row.sess.passport.user, user.id);
++      assert.deepEqual(Object.keys(row.sess).sort(), ['cookie', 'passport']);
++    });
++  } finally {
++    if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
++    if (storePool) await storePool.end();
++    if (database) await database.disconnectDatabase();
++    await admin.query(`DROP SCHEMA "${schema}" CASCADE`);
++    await admin.end();
++  }
++});
+diff --git a/backend/test/credential-provider.test.js b/backend/test/credential-provider.test.js
+index 7bc6fdcb..39e35f03 100644
+--- a/backend/test/credential-provider.test.js
++++ b/backend/test/credential-provider.test.js
+@@ -1,7 +1,7 @@
+ const test = require('node:test');
+ const assert = require('node:assert/strict');
+ const bcrypt = require('bcryptjs');
+-const { CredentialProvider, CredentialProviderUnavailable } = require('../scripts/lib/credentialProvider');
++const { CredentialProvider, CredentialProviderUnavailable } = require('../src/services/credentialVerification');
+ 
+ const identity = { provider: 'firebase', userId: 7, projectId: 'synthetic-project', uid: 'synthetic-uid', email: 'synthetic@example.invalid' };
+ const tokenClaims = () => ({ uid: identity.uid, aud: identity.projectId, auth_time: Math.floor(Date.now() / 1000) });
+@@ -86,3 +86,41 @@ test('forged response and verifier rejection cannot create an authenticated resu
+   const wrong = setup({ fetch: async () => ({ ok: true, json: async () => ({ localId: 'wrong', idToken: 'forged' }) }) });
+   assert.equal(await wrong.provider.verify(identity, 'synthetic-password'), false);
+ });
++
++test('runtime local verification keeps unknown accounts invalid without issuing an authenticated result', async () => {
++  const { verifyLocalPassword } = require('../src/services/credentialVerification');
++  assert.equal(await verifyLocalPassword('synthetic-password', undefined), false);
++  assert.equal(await verifyLocalPassword('synthetic-password', ''), false);
++  const password = '\u00e9'.repeat(36);
++  const hash = await bcrypt.hash(password, 10);
++  assert.equal(await verifyLocalPassword(password, hash), true);
++  // Raw comparison preserves existing reauthentication; input limits remain caller-owned.
++  assert.equal(await verifyLocalPassword(password + 'x', hash), true);
++  assert.equal(await new CredentialProvider().verify({ provider: 'local', userId: 1, passwordHash: hash }, password + 'x'), false);
++});
++
++test('preparation compatibility export shares the runtime implementation and error identity', () => {
++  const preparation = require('../scripts/lib/credentialProvider');
++  assert.equal(preparation.CredentialProvider, CredentialProvider);
++  assert.equal(preparation.CredentialProviderUnavailable, CredentialProviderUnavailable);
++});
++
++test('incomplete trusted Firebase mappings are held before any provider request', async () => {
++  const h = setup();
++  for (const changed of [{ userId: 0 }, { userId: NaN }, { uid: '' }, { projectId: '' }, { email: '' }]) {
++    await assert.rejects(h.provider.verify({ ...identity, ...changed }, 'synthetic-password'), CredentialProviderUnavailable);
++  }
++  assert.equal(h.calls.length, 0);
++});
++
++test('unknown local credentials perform a dummy comparison but cannot authenticate', async () => {
++  const { verifyLocalPassword } = require('../src/services/credentialVerification');
++  const { DUMMY_AUTH_PASSWORD_HASH } = require('../src/utils/authCredentials');
++  const original = bcrypt.compare;
++  const calls = [];
++  bcrypt.compare = async (...args) => { calls.push(args); return true; };
++  try {
++    assert.equal(await verifyLocalPassword('unknown-password', undefined), false);
++    assert.deepEqual(calls, [['unknown-password', DUMMY_AUTH_PASSWORD_HASH]]);
++  } finally { bcrypt.compare = original; }
++});
+diff --git a/backend/test/import-calorie-safety.test.js b/backend/test/import-calorie-safety.test.js
+index 5eb5a06c..888e05a1 100644
+--- a/backend/test/import-calorie-safety.test.js
++++ b/backend/test/import-calorie-safety.test.js
+@@ -29,10 +29,14 @@ test('Lose It weight import and sticky plan review roll back together when revie
+   let committedWrites = 0;
+   const prismaStub = {
+     $transaction: async (callback) => {
++      let planningLocked = false;
+       const tx = {
++        $executeRaw: async () => { planningLocked = true; return 1; },
++        user: { findUniqueOrThrow: async () => ({ timezone: 'UTC' }) },
+         bodyMetric: {
+-          findMany: async () => [],
++          findMany: async () => { assert.equal(planningLocked, true); return []; },
+           createMany: async ({ data }) => {
++            assert.equal(planningLocked, true);
+             stagedWrites += data.length;
+             return { count: data.length };
+           }
+diff --git a/backend/test/mobile-auth.test.js b/backend/test/mobile-auth.test.js
+index cba4c766..674f1e5d 100644
+--- a/backend/test/mobile-auth.test.js
++++ b/backend/test/mobile-auth.test.js
+@@ -735,3 +735,45 @@ test('mobile auth cannot revoke a session owned by another user', async () => {
+   assert.equal(revoked, false);
+   assert.equal(transactionCalled, false);
+ });
++
++const loginDevice = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHONE', deviceName: null };
++
++test('verified mobile issuance rejects stale credentials before reading account or creating tokens', async () => {
++  let created = false;
++  const tx = { user: { updateMany: async ({ where, data }) => {
++    assert.deepEqual(where, { id: 4, credential_security_version: 8 });
++    assert.deepEqual(data, { credential_security_version: 8 });
++    return { count: 0 };
++  }, findUnique: async () => { throw Error('must not read stale account'); } },
++  mobileAuthSession: { create: async () => { created = true; } } };
++  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: action => action(tx) } });
++  assert.equal(await issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 8, device: loginDevice }), null);
++  assert.equal(created, false);
++});
++
++test('verified mobile issuance preserves restricted access and returns only after commit', async () => {
++  let commit;
++  const committed = new Promise(resolve => { commit = resolve; });
++  let prepared;
++  const preparedSignal = new Promise(resolve => { prepared = resolve; });
++  const tx = { user: { updateMany: async () => ({ count: 1 }), findUnique: async () => ({ ...baseUser, email_verified_at: null, legal_acceptances: [] }) },
++    mobileAuthSession: { create: async ({ data }) => { assert.equal(data.user_id, 4); return { id: 10 }; } } };
++  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: async action => {
++    const result = await action(tx); prepared(); await committed; return result;
++  } } });
++  let returned = false;
++  const pending = issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 0, device: loginDevice }).then(result => { returned = true; return result; });
++  await preparedSignal;
++  assert.equal(returned, false);
++  commit();
++  const payload = await pending;
++  assert.equal(payload.user.id, 4);
++  assert.equal(payload.user.account_access.state, 'email_verification_required');
++  assert.equal('credential_security_version' in payload.user, false);
++  assert.equal('password_hash' in payload.user, false);
++});
++
++test('verified mobile issuance propagates transaction failure without returning credentials', async () => {
++  const { issueVerifiedMobileAuthPayload } = loadMobileAuthService({ prismaStub: { $transaction: async () => { throw Error('synthetic rollback'); } } });
++  await assert.rejects(issueVerifiedMobileAuthPayload({ userId: 4, credentialSecurityVersion: 0, device: loginDevice }), /synthetic rollback/);
++});
+diff --git a/backend/test/mobile-session-issuance-postgres.test.js b/backend/test/mobile-session-issuance-postgres.test.js
+new file mode 100644
+index 00000000..e6a7baa9
+--- /dev/null
++++ b/backend/test/mobile-session-issuance-postgres.test.js
+@@ -0,0 +1,102 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { randomUUID } = require('node:crypto');
++const { execFileSync } = require('node:child_process');
++const { Pool } = require('pg');
++
++const databaseUrl = process.env.CALIBRATE_AUTH_TEST_DATABASE_URL;
++const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
++
++test('PostgreSQL orders verified native issuance against credential changes and deletion', { skip: !databaseUrl, timeout: 90000 }, async (t) => {
++  const url = new URL(databaseUrl);
++  assert.ok(['localhost', '127.0.0.1'].includes(url.hostname), 'disposable local PostgreSQL only');
++  assert.match(url.pathname, /^\/(calibrate_ci|calibrate_test[^/]*)$/);
++  const schema = `auth_issuance_${randomUUID().replaceAll('-', '')}`;
++  const admin = new Pool({ connectionString: databaseUrl });
++  await admin.query(`CREATE SCHEMA "${schema}"`);
++  url.searchParams.set('schema', schema);
++  process.env.DATABASE_URL = url.toString();
++  let database;
++  try {
++    execFileSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'], { env: process.env, stdio: 'pipe', timeout: 45000 });
++    database = require('../src/config/database');
++    const prisma = database.default;
++    const { issueVerifiedMobileAuthPayload } = require('../src/services/mobileAuth');
++    const originalTransaction = prisma.$transaction.bind(prisma);
++    const device = { deviceId: 'synthetic-phone', devicePlatform: 'ANDROID_PHONE', deviceName: null };
++    const createUser = () => prisma.user.create({ data: { email: `${randomUUID()}@example.invalid`, password_hash: 'synthetic-old', email_verified_at: null } });
++    const issue = user => issueVerifiedMobileAuthPayload({ userId: user.id, credentialSecurityVersion: user.credential_security_version, device });
++    const waitForLock = async pid => {
++      for (let i = 0; i < 100; i++) {
++        const { rows } = await admin.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1', [pid]);
++        if (rows[0]?.wait_event_type === 'Lock') return;
++        await new Promise(resolve => setTimeout(resolve, 20));
++      }
++      assert.fail('expected competing transaction to wait on a PostgreSQL lock');
++    };
++    // Exercise the same User update + session revocation ordering as local password writers.
++    const mutation = async (tx, user, kind) => {
++      if (kind === 'delete') return tx.user.delete({ where: { id: user.id } });
++      await tx.user.update({ where: { id: user.id }, data: { password_hash: 'synthetic-new' } });
++      await tx.mobileAuthSession.updateMany({ where: { user_id: user.id, revoked_at: null }, data: { revoked_at: new Date() } });
++    };
++    for (const kind of ['password', 'delete']) {
++      await t.test(`${kind} commits first: stale verified login creates no session`, async () => {
++        const user = await createUser();
++        const changed = deferred(), release = deferred(), issuerPid = deferred();
++        const writer = originalTransaction(async tx => { await mutation(tx, user, kind); changed.resolve(); await release.promise; }, { timeout: 15000 });
++        await changed.promise;
++        prisma.$transaction = action => originalTransaction(async tx => {
++          issuerPid.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          return action(tx);
++        }, { timeout: 15000 });
++        const pending = issue(user);
++        try { await waitForLock(await issuerPid.promise); } finally { release.resolve(); }
++        await writer;
++        assert.equal(await pending, null);
++        assert.equal(await prisma.mobileAuthSession.count({ where: { user_id: user.id } }), 0);
++        prisma.$transaction = originalTransaction;
++      });
++      await t.test(`issuance commits first: later ${kind} revokes or cascades its session`, async () => {
++        const user = await createUser();
++        const locked = deferred(), release = deferred(), writerPid = deferred();
++        prisma.$transaction = action => originalTransaction(async tx => {
++          const wrapped = new Proxy(tx, { get(target, key) {
++            if (key !== 'user') return target[key];
++            return new Proxy(target.user, { get(model, operation) {
++              if (operation !== 'updateMany') return model[operation];
++              return async args => { const result = await model.updateMany(args); locked.resolve(); await release.promise; return result; };
++            } });
++          } });
++          return action(wrapped);
++        }, { timeout: 15000 });
++        const pending = issue(user);
++        await locked.promise;
++        const writer = originalTransaction(async tx => {
++          writerPid.resolve((await tx.$queryRawUnsafe('SELECT pg_backend_pid() AS pid'))[0].pid);
++          await mutation(tx, user, kind);
++        }, { timeout: 15000 });
++        try { await waitForLock(await writerPid.promise); } finally { release.resolve(); }
++        const payload = await pending;
++        assert.equal(payload.user.id, user.id);
++        assert.equal(payload.user.account_access.state, 'email_verification_required');
++        await writer;
++        const sessions = await prisma.mobileAuthSession.findMany({ where: { user_id: user.id } });
++        if (kind === 'delete') assert.equal(sessions.length, 0);
++        else { assert.equal(sessions.length, 1); assert.ok(sessions[0].revoked_at); }
++        prisma.$transaction = originalTransaction;
++      });
++    }
++    await t.test('commit failure rolls back the session without returning tokens', async () => {
++      const user = await createUser();
++      prisma.$transaction = action => originalTransaction(async tx => { await action(tx); throw Error('synthetic rollback'); });
++      await assert.rejects(issue(user), /synthetic rollback/);
++      assert.equal(await prisma.mobileAuthSession.count({ where: { user_id: user.id } }), 0);
++      prisma.$transaction = originalTransaction;
++    });
++  } finally {
++    if (database) await database.disconnectDatabase();
++    await admin.query(`DROP SCHEMA "${schema}" CASCADE`);
++    await admin.end();
++  }
++});
+diff --git a/backend/test/postgres-session-store.test.js b/backend/test/postgres-session-store.test.js
+index 39a4cb0f..fe2c1498 100644
+--- a/backend/test/postgres-session-store.test.js
++++ b/backend/test/postgres-session-store.test.js
+@@ -234,3 +234,43 @@ test('PostgresSessionStore.destroy deletes stored sessions', async () => {
+   assert.match(pool.calls[0].text, /DELETE FROM session_store/);
+   assert.equal(pool.calls[0].params[0], 'sid-remove');
+ });
++const { markVerifiedBrowserLogin, serializeBrowserLoginUser, BrowserLoginRejected } = require('../src/utils/browserLoginCredentials');
++
++function verifiedSession(version = 2) {
++  const principal = { id: 42 };
++  const sess = { cookie: {}, passport: { user: 42 } };
++  markVerifiedBrowserLogin(principal, 42, version);
++  serializeBrowserLoginUser({ session: sess }, principal, (err, id) => { assert.equal(err, null); assert.equal(id, 42); });
++  assert.deepEqual(Object.keys(sess).sort(), ['cookie', 'passport']);
++  return sess;
++}
++
++test('verified browser save rejects stale identity and cannot retry as an unguarded upsert', async () => {
++  const queries = [];
++  const client = { query: async text => { queries.push(text); return { rowCount: text.startsWith('UPDATE "User"') ? 0 : 1 }; }, release() {} };
++  const pool = { connect: async () => client, query: async () => { throw Error('unguarded write'); } };
++  const store = new PostgresSessionStore(pool);
++  const sess = verifiedSession();
++  assert.ok(await callStoreSet(store, 'guarded', sess) instanceof BrowserLoginRejected);
++  const count = queries.length;
++  assert.ok(await callStoreSet(store, 'guarded', sess) instanceof BrowserLoginRejected);
++  assert.equal(queries.length, count);
++  assert.ok(queries.includes('ROLLBACK'));
++  assert.equal(queries.some(q => q.startsWith('INSERT')), false);
++});
++
++test('verified browser save commits once and later saves only update the existing session', async () => {
++  const queries = [];
++  const client = { query: async text => { queries.push(text); return { rowCount: 1 }; }, release() {} };
++  let exists = true;
++  const pool = { connect: async () => client, query: async text => { queries.push(text); return { rowCount: exists ? 1 : 0 }; } };
++  const store = new PostgresSessionStore(pool);
++  const sess = verifiedSession();
++  assert.equal(await callStoreSet(store, 'guarded', sess), undefined);
++  assert.ok(queries.includes('COMMIT'));
++  assert.equal(await callStoreSet(store, 'guarded', sess), undefined);
++  assert.match(queries.at(-1), /^UPDATE session_store/);
++  exists = false;
++  assert.ok(await callStoreSet(store, 'guarded', sess) instanceof BrowserLoginRejected);
++  assert.equal(queries.filter(q => q.startsWith('INSERT')).length, 1);
++});
+diff --git a/backend/test/routes-account-recovery.test.js b/backend/test/routes-account-recovery.test.js
+index f37261c2..3259e143 100644
+--- a/backend/test/routes-account-recovery.test.js
++++ b/backend/test/routes-account-recovery.test.js
+@@ -15,6 +15,7 @@ function loadRouter({ prismaStub, accountTokensStub }) {
+     tokens: require.resolve('../src/services/accountTokens'),
+     passport: require.resolve('passport'),
+     bcrypt: require.resolve('bcryptjs'),
++    credentials: require.resolve('../src/services/credentialVerification'),
+     auth: require.resolve('../src/routes/auth')
+   };
+   const previous = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, require.cache[path]]));
+diff --git a/backend/test/routes-auth-mobile.test.js b/backend/test/routes-auth-mobile.test.js
+index 23bcc38d..b5656f2c 100644
+--- a/backend/test/routes-auth-mobile.test.js
++++ b/backend/test/routes-auth-mobile.test.js
+@@ -19,6 +19,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
+   const dbPath = require.resolve('../src/config/database');
+   const passportPath = require.resolve('passport');
+   const bcryptPath = require.resolve('bcryptjs');
++  const credentialPath = require.resolve('../src/services/credentialVerification');
++  const previousCredential = require.cache[credentialPath];
++  delete require.cache[credentialPath];
+   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
+   const mobileAuthDependencyPaths = [
+     require.resolve('../src/services/mobileSessionCredentials'),
+@@ -43,6 +46,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
+ 
+   const loaded = require('../src/routes/auth');
+ 
++  if (previousCredential) require.cache[credentialPath] = previousCredential;
++  else delete require.cache[credentialPath];
++
+   if (previousDbModule) require.cache[dbPath] = previousDbModule;
+   else delete require.cache[dbPath];
+   if (previousPassportModule) require.cache[passportPath] = previousPassportModule;
+@@ -88,6 +94,7 @@ const dbUser = {
+   id: 7,
+   email: 'native@example.com',
+   password_hash: 'hash',
++  credential_security_version: 3,
+   created_at: new Date('2026-01-01T00:00:00.000Z'),
+   weight_unit: 'KG',
+   height_unit: 'CM',
+@@ -113,6 +120,10 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
+         userLookups.push(args);
+         return dbUser;
+       },
++      updateMany: async ({ where }) => {
++        assert.deepEqual(where, { id: dbUser.id, credential_security_version: 3 });
++        return { count: 1 };
++      },
+       findUnique: async () => dbUser
+     },
+     mobileAuthSession: {
+@@ -122,6 +133,7 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
+       }
+     }
+   };
++  prismaStub.$transaction = async (action) => action(prismaStub);
+   const router = loadAuthRouter({
+     prismaStub,
+     passportStub: { authenticate: () => () => {} },
+@@ -357,3 +369,19 @@ test('auth route: GET /mobile/sessions returns owned active devices', async () =
+   assert.equal(res.body.sessions[0].current, true);
+   assert.equal(res.body.sessions[0].device_platform, 'android_phone');
+ });
++
++test('mobile login rejects a credential change during password verification with the generic response', async () => {
++  let version = 3;
++  let creates = 0;
++  const prismaStub = {
++    user: { findFirst: async () => ({ ...dbUser }), updateMany: async ({ where }) => ({ count: where.credential_security_version === version ? 1 : 0 }) },
++    mobileAuthSession: { create: async () => { creates++; return { id: 1 }; } }
++  };
++  prismaStub.$transaction = action => action(prismaStub);
++  const router = loadAuthRouter({ prismaStub, passportStub: {}, bcryptStub: { compare: async () => { version++; return true; } } });
++  const res = createRes();
++  await getRouteHandler(router, 'post', '/mobile/login')({ body: { email: dbUser.email, password: 'synthetic', device_id: 'phone', device_platform: 'android_phone' } }, res);
++  assert.equal(res.statusCode, 401);
++  assert.deepEqual(res.body, { message: 'Invalid email or password' });
++  assert.equal(creates, 0);
++});
+diff --git a/backend/test/routes-auth.test.js b/backend/test/routes-auth.test.js
+index 59553785..7f20e115 100644
+--- a/backend/test/routes-auth.test.js
++++ b/backend/test/routes-auth.test.js
+@@ -20,6 +20,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
+   const dbPath = require.resolve('../src/config/database');
+   const passportPath = require.resolve('passport');
+   const bcryptPath = require.resolve('bcryptjs');
++  const credentialPath = require.resolve('../src/services/credentialVerification');
++  const previousCredential = require.cache[credentialPath];
++  delete require.cache[credentialPath];
+   const authPath = require.resolve('../src/routes/auth');
+ 
+   const previousDbModule = require.cache[dbPath];
+@@ -34,6 +37,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
+ 
+   const loaded = require('../src/routes/auth');
+ 
++  if (previousCredential) require.cache[credentialPath] = previousCredential;
++  else delete require.cache[credentialPath];
++
+   if (previousDbModule) require.cache[dbPath] = previousDbModule;
+   else delete require.cache[dbPath];
+ 
+@@ -475,3 +481,29 @@ test('auth route: verification resend and reset request do not reveal account ex
+     assert.deepEqual(knownRes.body, unknownRes.body);
+   }
+ });
++
++test('browser login clears rejected authenticated state even when session cleanup fails', async () => {
++  const { BrowserLoginRejected } = require('../src/utils/browserLoginCredentials');
++  const user = { id: 7 };
++  const router = loadAuthRouter({ prismaStub: {}, bcryptStub: {}, passportStub: {
++    authenticate: (_strategy, callback) => (_req, _res, _next) => callback(null, user)
++  } });
++  const [handler] = getRouteHandlers(router, 'post', '/login');
++  const res = createRes();
++  let done;
++  const completed = new Promise(resolve => { done = resolve; });
++  const originalJson = res.json;
++  res.json = function(value) { originalJson.call(this, value); done(); return this; };
++  const req = {
++    body: { email: 'synthetic@example.invalid', password: 'synthetic' }, user,
++    session: { destroy(callback) { callback(new Error('synthetic cleanup failure')); } },
++    login(_user, callback) { void callback(new BrowserLoginRejected()); }
++  };
++  handler(req, res, error => { throw error; });
++  await completed;
++  assert.equal(res.statusCode, 401);
++  assert.deepEqual(res.body, { message: 'Invalid email or password' });
++  assert.equal(req.session, null);
++  assert.equal(req.user, undefined);
++  assert.ok(res.clearedCookie);
++});
+diff --git a/backend/test/routes-metrics.test.js b/backend/test/routes-metrics.test.js
+index 7bc6036a..f8718dda 100644
+--- a/backend/test/routes-metrics.test.js
++++ b/backend/test/routes-metrics.test.js
+@@ -153,6 +153,199 @@ function assertNearlyEqual(actual, expected) {
+   assert.ok(Math.abs(actual - expected) <= FLOAT_TOLERANCE, `Expected ${actual} to be within ${FLOAT_TOLERANCE} of ${expected}`);
+ }
+ 
++function baselineFixture({ goalDate, timeZone = 'UTC', initialWeight = 90000, onLock } = {}) {
++  let goal = {
++    id: 46, user_id: 7, created_at: goalDate ?? new Date(), start_weight_grams: initialWeight,
++    target_weight_grams: 75000, target_date: null, daily_deficit: 500,
++    calorie_plan_review_status: 'CLEAR', calorie_plan_review_reason: null
++  };
++  let metric = null;
++  const changes = [];
++  const events = [];
++  const receipts = new Map();
++  let failSync = false;
++  const user = { id: 7, timezone: timeZone, weight_unit: 'KG', date_of_birth: new Date('1990-01-01'),
++    sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', height_unit: 'CM' };
++  const stub = {
++    $executeRaw: async () => { events.push('lock'); await onLock?.(); return 1; },
++    user: { findUnique: async () => user },
++    goal: {
++      findFirst: async ({ where }) => { assert.equal(where.user_id, 7); events.push('read-goal'); return goal; },
++      findUniqueOrThrow: async ({ where }) => { assert.equal(where.id, goal.id); return goal; },
++      update: async ({ where, data }) => {
++        assert.equal(where.id, goal.id);
++        goal = { ...goal, ...data };
++        return goal;
++      }
++    },
++    bodyMetric: {
++      findUnique: async () => { events.push('read-metric'); return metric; },
++      findFirst: async () => metric,
++      findMany: async () => metric ? [metric] : [],
++      upsert: async ({ create, update }) => {
++        metric = metric ? { ...metric, ...update } : { id: 12, ...create };
++        return metric;
++      },
++      update: async ({ data }) => { metric = { ...metric, ...data }; return metric; }
++    },
++    syncChange: { create: async ({ data }) => {
++      if (failSync) throw new Error('Synthetic sync write failure');
++      changes.push(data); return { id: BigInt(changes.length) };
++    } },
++    clientOperation: {
++      create: async ({ data }) => {
++        if (receipts.has(data.operation_id)) {
++          const { Prisma } = require('@prisma/client');
++          throw new Prisma.PrismaClientKnownRequestError('duplicate', { code: 'P2002', clientVersion: 'test' });
++        }
++        receipts.set(data.operation_id, { ...data, response_status: null, completed_at: null });
++      },
++      update: async ({ where, data }) => {
++        const id = where.user_id_operation_id.operation_id;
++        receipts.set(id, { ...receipts.get(id), ...data });
++      },
++      findUnique: async ({ where }) => receipts.get(where.user_id_operation_id.operation_id)
++    }
++  };
++  // Model transaction rollback while using the real route and idempotency implementation.
++  stub.$transaction = async callback => {
++    const before = { goal: structuredClone(goal), metric: structuredClone(metric), changes: changes.length, receipts: new Map(receipts) };
++    try {
++      return await callback({
++        ...stub, $queryRaw: async () => [],
++        caloriePlanRevision: { findFirst: async () => null, findMany: async () => [], updateMany: async () => ({ count: 0 }) },
++        calibrationRecommendation: { updateMany: async () => ({ count: 0 }) }
++      });
++    } catch (error) {
++      goal = before.goal; metric = before.metric; changes.length = before.changes;
++      receipts.clear(); before.receipts.forEach((value, key) => receipts.set(key, value));
++      throw error;
++    }
++  };
++  const handler = getRouteHandler(loadMetricsRouter(stub), 'post', '/');
++  return { get goal() { return goal; }, get metric() { return metric; }, user, changes, events,
++    startNewGoal() { goal = { ...goal, id: goal.id + 1, created_at: new Date() }; },
++    failNextSync() { failSync = true; },
++    async save(body, overrides = {}, operationId) {
++      const res = createRes();
++      await handler({ user: { ...user, ...overrides }, body, headers: operationId ? { 'x-client-operation-id': operationId } : {} }, res);
++      return res;
++    }
++  };
++}
++
++test('metrics baseline: same-day first weight and correction preserve the goal and synchronize its baseline', async () => {
++  const fixture = baselineFixture();
++  const original = { ...fixture.goal };
++  const first = await fixture.save({ weight: 85.123 });
++  assert.equal(first.statusCode, 200);
++  assert.equal(fixture.goal.start_weight_grams, 85100);
++  assert.deepEqual(fixture.goal, { ...original, start_weight_grams: 85100 });
++  assert.equal(first.body.progress_update.goal.current_progress_percent, 0);
++  assert.ok(fixture.events.indexOf('lock') < fixture.events.indexOf('read-metric'));
++  const correction = await fixture.save({ weight: 86.125 });
++  assert.equal(correction.statusCode, 200);
++  assert.equal(fixture.goal.start_weight_grams, 86100);
++  assert.deepEqual(fixture.changes.filter(change => change.entity_type === 'goal').map(change => change.payload.start_weight_grams), [85100, 86100]);
++  await fixture.save({ body_fat_percent: 18 });
++  assert.equal(fixture.goal.start_weight_grams, 86100);
++  assert.equal(fixture.changes.filter(change => change.entity_type === 'goal').length, 2);
++});
++
++test('metrics baseline: an older goal or historical metric never changes the baseline', async () => {
++  const yesterday = addUtcDays(getUtcTodayDateOnly(), -1);
++  const older = baselineFixture({ goalDate: yesterday });
++  assert.equal((await older.save({ weight: 85 })).statusCode, 200);
++  assert.equal(older.goal.start_weight_grams, 90000);
++  const historical = baselineFixture();
++  assert.equal((await historical.save({ weight: 85, date: formatDateOnly(yesterday) })).statusCode, 200);
++  assert.equal(historical.goal.start_weight_grams, 90000);
++});
++
++test('metrics baseline: uses the account day rather than UTC and preserves canonical pounds precision', async t => {
++  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
++  const fixture = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles' });
++  const res = await fixture.save({ weight: 180.125, date: '2026-10-08' }, { weight_unit: 'LB' });
++  assert.equal(res.statusCode, 200);
++  assert.equal(fixture.goal.start_weight_grams, fixture.metric.weight_grams);
++  assert.equal(fixture.goal.start_weight_grams, 81692);
++  assert.equal(res.body.progress_update.is_current_day, true);
++});
++
++test('metrics baseline: late first replay preserves history; committed retry cannot overwrite a newer correction', async t => {
++  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
++  const fixture = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles' });
++  const body = { weight: 85, date: '2026-10-08' };
++  const first = await fixture.save(body, {}, 'baseline-operation-1');
++  assert.equal(first.statusCode, 200);
++  await fixture.save({ ...body, weight: 86 }, {}, 'baseline-operation-2');
++  t.mock.timers.setTime(new Date('2026-10-09T07:01:00Z').getTime());
++  const retry = await fixture.save(body, {}, 'baseline-operation-1');
++  assert.deepEqual(retry.body, first.body);
++  assert.equal(fixture.goal.start_weight_grams, 86000);
++  assert.equal(fixture.metric.weight_grams, 86000);
++  const late = await fixture.save({ ...body, weight: 87 }, {}, 'baseline-operation-3');
++  assert.equal(late.statusCode, 200);
++  assert.equal(fixture.metric.weight_grams, 87000);
++  assert.equal(fixture.goal.start_weight_grams, 86000);
++  assert.equal(fixture.changes.filter(change => change.entity_type === 'goal').length, 2);
++});
++
++test('metrics baseline: evaluates eligibility after waiting for the planning lock', async t => {
++  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-08T23:59:00Z') });
++  const fixture = baselineFixture({ onLock: () => t.mock.timers.setTime(new Date('2026-10-09T00:01:00Z').getTime()) });
++  assert.equal((await fixture.save({ weight: 85, date: '2026-10-08' })).statusCode, 200);
++  assert.equal(fixture.goal.start_weight_grams, 90000);
++});
++
++test('metrics baseline: a sync failure rolls back metric, goal and operation receipt together', async () => {
++  const fixture = baselineFixture();
++  fixture.failNextSync();
++  const res = await fixture.save({ weight: 85 }, {}, 'baseline-rollback-1');
++  assert.equal(res.statusCode, 500);
++  assert.equal(fixture.goal.start_weight_grams, 90000);
++  assert.equal(fixture.metric, null);
++  assert.deepEqual(fixture.changes, []);
++});
++
++test('metrics baseline: timezone committed while waiting determines eligibility and default date', async t => {
++  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
++  const fixture = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles',
++    onLock: () => { fixture.user.timezone = 'UTC'; } });
++  assert.equal((await fixture.save({ weight: 85, date: '2026-10-08' })).statusCode, 200);
++  assert.equal(fixture.goal.start_weight_grams, 90000);
++  const implicit = baselineFixture({ goalDate: new Date('2026-10-08T19:00:00Z'), timeZone: 'America/Los_Angeles',
++    onLock: () => { implicit.user.timezone = 'UTC'; } });
++  assert.equal((await implicit.save({ weight: 85 })).statusCode, 200);
++  assert.equal(implicit.metric.date.toISOString().slice(0, 10), '2026-10-09');
++  assert.equal(implicit.goal.start_weight_grams, 90000);
++});
++
++test('metrics baseline: reads the goal created by a writer that held the planning guard first', async () => {
++  let firstLock = true;
++  const fixture = baselineFixture({ goalDate: addUtcDays(getUtcTodayDateOnly(), -3), onLock: () => {
++    if (firstLock) { firstLock = false; fixture.startNewGoal(); }
++  } });
++  assert.equal((await fixture.save({ weight: 85 })).statusCode, 200);
++  assert.equal(fixture.goal.id, 47);
++  assert.equal(fixture.goal.start_weight_grams, 85000);
++  assert.equal(fixture.changes.find(change => change.entity_type === 'goal').entity_id, '47');
++});
++
++test('metrics baseline: weight-first baseline is unchanged and unsafe correction synchronizes final safety state', async () => {
++  const fixture = baselineFixture({ initialWeight: 85000 });
++  assert.equal((await fixture.save({ weight: 85 })).statusCode, 200);
++  assert.equal(fixture.changes.filter(change => change.entity_type === 'goal').length, 0);
++  const correction = await fixture.save({ weight: 70 });
++  assert.equal(correction.statusCode, 200);
++  assert.equal(fixture.goal.start_weight_grams, 70000);
++  assert.equal(fixture.goal.target_weight_grams, 75000);
++  assert.equal(fixture.goal.daily_deficit, 500);
++  assert.equal(fixture.goal.calorie_plan_review_status, 'REQUIRES_REVIEW');
++  assert.equal(fixture.changes.find(change => change.entity_type === 'goal').payload.calorie_plan_review_status, 'REQUIRES_REVIEW');
++  assert.equal('progress_update' in correction.body, false);
++});
++
+ test('metrics route: rejects unauthenticated requests via router.use middleware', async () => {
+   const prismaStub = { bodyMetric: {} };
+   const router = loadMetricsRouter(prismaStub);
+@@ -1603,4 +1796,4 @@ test('metrics route: DELETE /:id marks the current plan when deleting the latest
+     calorie_plan_review_status: 'REQUIRES_REVIEW',
+     calorie_plan_review_reason: 'LATEST_WEIGHT_REQUIRED'
+   });
+-});
+\ No newline at end of file
++});
+diff --git a/backend/test/routes-user.test.js b/backend/test/routes-user.test.js
+index 491d234b..d546ee37 100644
+--- a/backend/test/routes-user.test.js
++++ b/backend/test/routes-user.test.js
+@@ -12,6 +12,9 @@ function stubModule(resolvedPath, exports) {
+ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuthStub }) {
+   const dbPath = require.resolve('../src/config/database');
+   const bcryptPath = require.resolve('bcryptjs');
++  const credentialPath = require.resolve('../src/services/credentialVerification');
++  const previousCredential = require.cache[credentialPath];
++  delete require.cache[credentialPath];
+   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
+   const browserSessionsPath = require.resolve('../src/services/browserSessions');
+   const accountLifecyclePath = require.resolve('../src/services/accountLifecycle');
+@@ -67,6 +70,9 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
+ 
+   const loaded = require('../src/routes/user');
+ 
++  if (previousCredential) require.cache[credentialPath] = previousCredential;
++  else delete require.cache[credentialPath];
++
+   if (previousDbModule) require.cache[dbPath] = previousDbModule;
+   else delete require.cache[dbPath];
+ 
+diff --git a/backend/test/watch-service.test.js b/backend/test/watch-service.test.js
+index 8b30d498..360aa67e 100644
+--- a/backend/test/watch-service.test.js
++++ b/backend/test/watch-service.test.js
+@@ -105,13 +105,9 @@ test('watch mutation parser accepts canonical grams and rejects unknown fields',
+   assert.equal(parseWatchMutation({
+     type: 'metric.upsert', payload: { local_date: '2026-07-11', weight_grams: 81234, expected_revision: null, user_id: 99 }
+   }, { timezone: 'UTC', now: new Date('2026-07-11T12:00:00.000Z') }).ok, false);
+-  assert.deepEqual(parseWatchMutation({
++  assert.equal(parseWatchMutation({
+     type: 'metric.upsert', payload: { local_date: '2026-07-12', weight_grams: 81234, expected_revision: null }
+-  }, { timezone: 'America/Los_Angeles', now: new Date('2026-07-12T06:59:59.000Z') }), {
+-    ok: false,
+-    status: 400,
+-    message: 'Weight date cannot be in the future'
+-  });
++  }, { timezone: 'America/Los_Angeles', now: new Date('2026-07-12T06:59:59.000Z') }).ok, true);
+ });
+ 
+ test('watch snapshot rejects an invalid stored timezone before reading any guessed local day', async () => {
+@@ -462,6 +458,21 @@ test('watch undo is invalidated by a later phone edit and never walks to an olde
+   assert.equal(receiptReads, 1);
+ });
+ 
++test('watch metric revalidates the date against the locked timezone before reading a metric', async t => {
++  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-09T06:59:00Z') });
++  const service = loadWatchMutationService({
++    user: { findUnique: async () => ({ timezone: 'America/Los_Angeles' }) },
++    bodyMetric: { findUnique: async () => { throw new Error('Future metric must not be read or written'); } }
++  });
++  const mutation = service.parseWatchMutation({ type: 'metric.upsert', payload: {
++    local_date: '2026-10-09', weight_grams: 85000, expected_revision: null
++  } }, { timezone: 'UTC' });
++  assert.equal(mutation.ok, true);
++  const result = await service.executeWatchMutation({ userId: 9, mobileAuthSessionId: 73, operationId: 'watch-future-date', mutation });
++  assert.equal(result.status, 400);
++  assert.equal(result.body.message, 'Weight date cannot be in the future');
++});
++
+ test('watch metric and completion mutations use canonical date-only upserts', async () => {
+   let metricArgs;
+   let dayArgs;
+diff --git a/docs/firebase-migration-preparation.md b/docs/firebase-migration-preparation.md
+index 50f92b65..d68b50fc 100644
+--- a/docs/firebase-migration-preparation.md
++++ b/docs/firebase-migration-preparation.md
+@@ -155,7 +155,12 @@ an operator must not silently omit difficult accounts to produce a green plan.
+ 
+ ## Provider adapter preparation
+ 
+-`backend/scripts/lib/credentialProvider.ts` is isolated from server startup. Its
++`backend/src/services/credentialVerification.ts` now supplies the shared local
++password check for browser/native login, password reauthentication and MCP approval.
++Callers retain SQL account lookup, access checks, session issuance and the MCP
++security-version transaction guard. The scripts path remains a compatibility export.
++Firebase activation is still prohibited by startup configuration; its injected
++preparation adapter is not selected by any runtime endpoint. Its
+ local branch uses bcrypt; its Firebase branch uses email/password REST sign-in,
+ then requires a verifier bound to the expected project/UID and recent `auth_time`.
+ The future verifier must call Admin SDK `verifyIdToken(token, true)` against the
+diff --git a/docs/goal-starting-weight.md b/docs/goal-starting-weight.md
+new file mode 100644
+index 00000000..6f009f37
+--- /dev/null
++++ b/docs/goal-starting-weight.md
+@@ -0,0 +1,28 @@
++# Same-day goal starting weight
++
++A weight entered or corrected on the current goal's first local day also corrects
++its starting weight. The goal ID, start day, target, pace and calorie-plan history
++stay intact. Weights retain the existing tenth-of-a-unit input precision and
++canonical gram storage. An unsafe corrected plan uses the existing review state;
++the correction does not silently change its target or pace.
++
++The existing model has no separate start-date field. The start day is the local
++date of `Goal.created_at` in the user's timezone, as used by Progress and
++calibration. Correction requires that start day, the metric's date and the current
++user-local day all match after acquiring the calorie-planning lock.
++The timezone is reread inside that transaction after the lock, so a profile
++change that commits first determines eligibility and the default metric date.
++Wear and import weight writers acquire the same guard before metric rows to
++avoid reversing the lock order against normal corrections.
++Accepted Wear writes and imported current-day weights use the same correction
++and goal-sync rule. Imports that KEEP an existing weight, body-fat-only updates
++and historical import rows do not change the baseline.
++
++Offline weight intent remains `{ weight, date }` plus its stable operation ID.
++Until accepted, the app shows the pending metric and retains the server-owned
++goal; calorie targets/projections remain marked as syncing. Replay refreshes the
++goal query. A first replay after the start day saves the metric but leaves the
++older baseline unchanged: there is no verified original-submission day in this
++protocol. Retrying an already committed operation returns its original receipt
++without overwriting later corrections. Historical edits, body-fat-only updates
++and other goals are not baseline corrections.
+diff --git a/scripts/postgres-goal-pace-smoke.mjs b/scripts/postgres-goal-pace-smoke.mjs
+index 961d595f..a1890cbb 100644
+--- a/scripts/postgres-goal-pace-smoke.mjs
++++ b/scripts/postgres-goal-pace-smoke.mjs
+@@ -181,6 +181,258 @@ try {
+         releasePace();
+         planningLock.lockCaloriePlanningInputs = originalLock;
+     }
++    // A weight saved before goal creation and one saved behind an in-flight goal
++    // creation must both establish the new goal's first-day baseline.
++    const metricDate = today.toISOString().slice(0, 10);
++    assert.equal((await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter)).statusCode, 200);
++    const weightFirst = await call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
++    assert.equal(weightFirst.statusCode, 200);
++    assert.equal(weightFirst.body.start_weight, 85);
++    let releaseCreation, creationLocked, metricWaiting;
++    const creationRelease = new Promise(resolve => { releaseCreation = resolve; });
++    const creationGuard = new Promise(resolve => { creationLocked = resolve; });
++    const metricGuard = new Promise(resolve => { metricWaiting = resolve; });
++    let creationGuardCalls = 0;
++    planningLock.lockCaloriePlanningInputs = async (...args) => {
++        const ordinal = ++creationGuardCalls;
++        if (ordinal === 2) metricWaiting();
++        await originalLock(...args);
++        if (ordinal === 1) { creationLocked(); await creationRelease; }
++    };
++    const creation = call('post', '/', { start_weight: 85, target_weight: 75, daily_deficit: 250 });
++    try {
++        await Promise.race([creationGuard, creation.then(result => { throw new Error('creation ended before guard: ' + JSON.stringify(result)); })]);
++        const correctionId = crypto.randomUUID();
++        const correctionBody = { date: metricDate, weight: 86 };
++        const correction = call('post', '/', correctionBody, correctionId, metricsRouter);
++        await Promise.race([metricGuard, correction.then(result => { throw new Error('correction ended before guard: ' + JSON.stringify(result)); })]);
++        releaseCreation();
++        const created = await creation;
++        assert.equal(created.statusCode, 200);
++        const saved = await correction;
++        assert.equal(saved.statusCode, 200);
++        const corrected = await db.goal.findUniqueOrThrow({ where: { id: created.body.id } });
++        assert.equal(corrected.start_weight_grams, 86000);
++        assert.equal(corrected.target_weight_grams, 75000);
++        assert.equal(corrected.daily_deficit, 250);
++        assert.equal(corrected.created_at.toISOString(), created.body.created_at);
++        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: weightFirst.body.id } })).start_weight_grams, 85000);
++        assert.deepEqual((await call('post', '/', correctionBody, correctionId, metricsRouter)).body, saved.body);
++        const goalEvents = await db.syncChange.findMany({ where: { user_id: user.id, operation_id: correctionId, entity_type: 'goal' } });
++        assert.equal(goalEvents.length, 1);
++        assert.equal(goalEvents[0].payload.start_weight_grams, 86000);
++        assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
++        console.log('[goal-pace-smoke] PASS: weight-first baseline; concurrent goal-first correction, identity/history preservation and atomic sync/receipt replay.');
++    } finally {
++        releaseCreation();
++        planningLock.lockCaloriePlanningInputs = originalLock;
++    }
++    // Force overlap at the shared guard, exercising real PostgreSQL row locks.
++    async function orderedWriters(first, second) {
++        let releaseFirst, firstLocked, secondEntered;
++        const release = new Promise(resolve => { releaseFirst = resolve; });
++        const locked = new Promise(resolve => { firstLocked = resolve; });
++        const entered = new Promise(resolve => { secondEntered = resolve; });
++        let calls = 0;
++        planningLock.lockCaloriePlanningInputs = async (...args) => {
++            const ordinal = ++calls;
++            if (ordinal === 2) secondEntered();
++            await originalLock(...args);
++            if (ordinal === 1) { firstLocked(); await release; }
++        };
++        const firstResult = first();
++        let secondResult;
++        try {
++            await Promise.race([locked, firstResult.then(result => { throw new Error('first writer missed guard: ' + JSON.stringify(result)); })]);
++            secondResult = second();
++            await Promise.race([entered, secondResult.then(result => { throw new Error('second writer missed guard: ' + JSON.stringify(result)); })]);
++            releaseFirst();
++            return await Promise.all([firstResult, secondResult]);
++        } finally {
++            releaseFirst();
++            await Promise.allSettled([firstResult, secondResult]);
++            planningLock.lockCaloriePlanningInputs = originalLock;
++        }
++    }
++
++    const NativeDate = Date;
++    globalThis.Date = class extends NativeDate {
++        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
++        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
++    };
++    try {
++        for (const oldZone of ['America/Los_Angeles', 'UTC']) {
++            for (const explicitDate of [true, false]) {
++                const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
++                await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
++                user.timezone = oldZone; // Authentication snapshot deliberately predates the profile commit.
++                const latest = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
++                await db.goal.update({ where: { id: latest.id }, data: { created_at: new Date('2026-10-08T19:00:00Z'), start_weight_grams: 90000 } });
++                const payload = { weight: 84, ...(explicitDate ? { date: '2026-10-08' } : {}) };
++                const operationId = crypto.randomUUID();
++                const [profile, metric] = await orderedWriters(
++                    () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
++                    () => call('post', '/', payload, operationId, metricsRouter));
++                assert.equal(profile.statusCode, 200);
++                assert.equal(metric.statusCode, 200);
++                assert.equal(metric.body.date.slice(0, 10), explicitDate || nextZone === 'America/Los_Angeles' ? '2026-10-08' : '2026-10-09');
++                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: latest.id } })).start_weight_grams,
++                    nextZone === 'America/Los_Angeles' ? 84000 : 90000);
++                assert.deepEqual((await call('post', '/', payload, operationId, metricsRouter)).body, metric.body);
++            }
++        }
++        console.log('[goal-pace-smoke] PASS: timezone commit before metric acceptance uses current account day, explicit/default dates and stable receipts in both timezone directions.');
++    } finally {
++        globalThis.Date = NativeDate;
++        user.timezone = 'UTC';
++        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
++    }
++
++    const watch = backendRequire('./src/services/watch');
++    const session = await db.mobileAuthSession.create({ data: { user_id: user.id, device_id: 'synthetic-watch', device_platform: 'WEAR_OS',
++        access_token_hash: crypto.randomUUID(), refresh_token_hash: crypto.randomUUID(),
++        access_expires_at: new Date(Date.now() + 3600000), refresh_expires_at: new Date(Date.now() + 7200000) } });
++    const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
++    await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date() } });
++    for (const watchFirst of [true, false]) {
++        await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter);
++        const existing = await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: today } } });
++        const revision = crypto.createHash('sha256').update(JSON.stringify({ kind: 'body_metric', value: {
++            id: existing.id, local_date: metricDate, weight_grams: existing.weight_grams, body_fat_percent: existing.body_fat_percent ?? null
++        } })).digest('hex').slice(0, 24);
++        const watchOperation = crypto.randomUUID();
++        const mutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
++            local_date: metricDate, weight_grams: 86000, expected_revision: revision
++        } }, { timezone: 'UTC' });
++        assert.equal(mutation.ok, true);
++        const wear = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id, operationId: watchOperation, mutation });
++        const web = () => call('post', '/', { date: metricDate, weight: 87 }, crypto.randomUUID(), metricsRouter);
++        const results = await orderedWriters(watchFirst ? wear : web, watchFirst ? web : wear);
++        const wearResult = results[watchFirst ? 0 : 1];
++        assert.equal(results[watchFirst ? 1 : 0].statusCode, 200);
++        assert.equal(wearResult.status, watchFirst ? 200 : 409);
++        if (!watchFirst) assert.equal(wearResult.body.code, 'ENTITY_CONFLICT');
++        assert.deepEqual((await wear()).body, wearResult.body);
++        assert.equal((await db.bodyMetric.findUniqueOrThrow({ where: { id: existing.id } })).weight_grams, 87000);
++        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 87000);
++        const wearGoalEvents = await db.syncChange.findMany({ where: { user_id: user.id, operation_id: watchOperation, entity_type: 'goal' } });
++        assert.equal(wearGoalEvents.length, watchFirst ? 1 : 0);
++        if (watchFirst) assert.equal(wearGoalEvents[0].payload.start_weight_grams, 86000);
++    }
++    const historicalDate = new Date(today.getTime() - 3 * 86400000);
++    const historicalKey = historicalDate.toISOString().slice(0, 10);
++    const historicalMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
++        local_date: historicalKey, weight_grams: 89000, expected_revision: null
++    } }, { timezone: 'UTC' });
++    assert.equal((await watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
++        operationId: crypto.randomUUID(), mutation: historicalMutation })).status, 200);
++    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 87000);
++    console.log('[goal-pace-smoke] PASS: web/Wear metric writes in both lock orders avoid deadlock, correct same-day baseline with one goal sync event, retain historical baseline, stale-revision conflict and receipt replay.');
++
++    const importRouter = backendRequire('./src/routes/imports').default;
++    const importHandler = importRouter.stack.find(layer => layer.route?.path === '/loseit/execute').route.stack.at(-1).handle;
++    const AdmZip = backendRequire('adm-zip');
++    async function importWeight(date, weight, mode) {
++        const zip = new AdmZip();
++        const [year, month, day] = date.split('-');
++        zip.addFile('weights.csv', Buffer.from('Date,Weight,Last Updated,Deleted\n' + month + '/' + day + '/' + year + ',' + weight + ',,\n'));
++        const res = { statusCode: 200, status(value) { this.statusCode = value; return this; }, json(body) { this.body = body; return this; } };
++        await importHandler({ user, file: { buffer: zip.toBuffer() }, body: {
++            weight_unit: 'KG', food_conflict_mode: 'MERGE', weight_conflict_mode: mode, include_body_fat: false
++        } }, res);
++        assert.equal(res.statusCode, 200);
++        return res.body;
++    }
++    await db.bodyMetric.deleteMany({ where: { user_id: user.id, date: today } });
++    const goalBeforeImport = await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } });
++    const eventCount = () => db.syncChange.count({ where: { user_id: user.id, entity_type: 'goal', entity_id: String(currentGoal.id) } });
++    const beforeImportEvents = await eventCount();
++    await importWeight(metricDate, 85, 'KEEP');
++    assert.deepEqual(await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } }), { ...goalBeforeImport, start_weight_grams: 85000 });
++    assert.equal(await eventCount(), beforeImportEvents + 1);
++    await importWeight(metricDate, 86, 'KEEP');
++    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 85000);
++    assert.equal(await eventCount(), beforeImportEvents + 1);
++    await importWeight(metricDate, 84, 'OVERWRITE');
++    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 84000);
++    assert.equal(await eventCount(), beforeImportEvents + 2);
++    await importWeight(historicalKey, 83, 'OVERWRITE');
++    await importWeight(metricDate, 84, 'OVERWRITE');
++    assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 84000);
++    assert.equal(await eventCount(), beforeImportEvents + 2);
++    assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
++    console.log('[goal-pace-smoke] PASS: import create/overwrite corrects only the same-day baseline and sync; KEEP, historical edits and repeated identical imports preserve baseline/history without duplicate goal events.');
++    globalThis.Date = class extends NativeDate {
++        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
++        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
++    };
++    try {
++        for (const oldZone of ['America/Los_Angeles', 'UTC']) {
++            for (const importDate of ['2026-10-08', '2026-10-09']) {
++                const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
++                const acceptedDay = nextZone === 'UTC' ? '2026-10-09' : '2026-10-08';
++                await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
++                user.timezone = oldZone;
++                await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date('2026-10-09T01:00:00Z'), start_weight_grams: 90000 } });
++                const [profile, imported] = await orderedWriters(
++                    () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
++                    () => importWeight(importDate, 82, 'OVERWRITE'));
++                assert.equal(profile.statusCode, 200);
++                const isFuture = importDate > acceptedDay;
++                assert.equal(imported.importedWeights + imported.updatedWeights, isFuture ? 0 : 1);
++                assert.equal(imported.skippedWeights, isFuture ? 1 : 0);
++                assert.equal(imported.warnings.some(warning => warning.includes('future')), isFuture);
++                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams,
++                    importDate === acceptedDay ? 82000 : 90000);
++            }
++        }
++        console.log('[goal-pace-smoke] PASS: import timezone overlap repartitions rows, counts and future warnings using the locked account day in both directions; only that day corrects the baseline.');
++        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
++        user.timezone = 'UTC';
++        const futureDate = new Date('2026-10-09T00:00:00Z');
++        await db.bodyMetric.deleteMany({ where: { user_id: user.id, date: futureDate } });
++        const beforeFutureGoal = await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } });
++        const futureOperation = crypto.randomUUID();
++        const futureMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
++            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
++        } }, { timezone: 'UTC' });
++        assert.equal(futureMutation.ok, true);
++        const saveFuture = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
++            operationId: futureOperation, mutation: futureMutation });
++        const [profile, rejected] = await orderedWriters(
++            () => call('patch', '/profile', { timezone: 'America/Los_Angeles' }, crypto.randomUUID(), userRouter), saveFuture);
++        assert.equal(profile.statusCode, 200);
++        assert.equal(rejected.status, 400);
++        assert.equal(rejected.body.message, 'Weight date cannot be in the future');
++        assert.equal(await db.bodyMetric.findUnique({ where: { user_id_date: { user_id: user.id, date: futureDate } } }), null);
++        assert.deepEqual(await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } }), beforeFutureGoal);
++        assert.equal(await db.syncChange.count({ where: { user_id: user.id, operation_id: futureOperation } }), 0);
++        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
++        assert.deepEqual((await saveFuture()).body, rejected.body);
++        console.log('[goal-pace-smoke] PASS: Wear parsed before a timezone change rejects a now-future date after the lock, leaves metric/goal/sync untouched and replays its original rejection.');
++        await db.user.update({ where: { id: user.id }, data: { timezone: 'America/Los_Angeles' } });
++        user.timezone = 'America/Los_Angeles';
++        const newlyValidOperation = crypto.randomUUID();
++        const newlyValidMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
++            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
++        } }, { timezone: 'America/Los_Angeles' });
++        assert.equal(newlyValidMutation.ok, true, 'syntax parsing must defer the account-day decision');
++        const saveNewlyValid = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
++            operationId: newlyValidOperation, mutation: newlyValidMutation });
++        const [forwardProfile, accepted] = await orderedWriters(
++            () => call('patch', '/profile', { timezone: 'UTC' }, crypto.randomUUID(), userRouter), saveNewlyValid);
++        assert.equal(forwardProfile.statusCode, 200);
++        assert.equal(accepted.status, 200);
++        assert.equal((await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: futureDate } } })).weight_grams, 81000);
++        assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 81000);
++        assert.equal(await db.syncChange.count({ where: { user_id: user.id, operation_id: newlyValidOperation, entity_type: 'goal' } }), 1);
++        assert.deepEqual((await saveNewlyValid()).body, accepted.body);
++        console.log('[goal-pace-smoke] PASS: Wear parsed with an older account day accepts a newly valid date after the timezone lock, corrects its baseline once and replays the receipt.');
++    } finally {
++        globalThis.Date = NativeDate;
++        user.timezone = 'UTC';
++        await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
++    }
+     console.log('[goal-pace-smoke] PASS: real Postgres continuity, receipt replay, concurrent stale-editor rejection, immutable completed comparison and intentional new identity.');
+ }
+ finally {
