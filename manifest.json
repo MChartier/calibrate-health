@@ -1,0 +1,52 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "5cbc33edfa6a372d484dc1add0d8e33ac4c8d35f6c3ebafb544b2b279ea4e2f3"
+    },
+    {
+      "path": "scope.json",
+      "sha256": "a09cd729e65565edea6ee806dce96d917fb58ff6f7026ccf16fc1ae12fd2c8c0"
+    },
+    {
+      "path": "source.patch",
+      "sha256": "1d9119e51f5cbc13de8865e2ff316fef1a2bb2098520a575b876f50079c62a96"
+    },
+    {
+      "path": "issue-before.md",
+      "sha256": "c460c7ee234e353c06ba6e4ce51309968ce567b09b3d5e422eaa282eb589eef8"
+    },
+    {
+      "path": "original-release-gate.log",
+      "sha256": "47e553f0fbee21dedd663a33a76163077d0452797d285380110152c19ac0b8f1"
+    },
+    {
+      "path": "original-database-failure.log",
+      "sha256": "387671c20e3827abfa7d2da9eda001215edbb7e690cb65c22e8dc361c9181310"
+    },
+    {
+      "path": "original-release-run.json",
+      "sha256": "1b849ea32f0be8de566a777e6164fe505552f5ed8a1093af33456287ee971e5b"
+    },
+    {
+      "path": "original-build-jobs.json",
+      "sha256": "7ba603fa2b6ebb5605a667e373111f0785271e6c72e5eda779ee776eb8c0a574"
+    },
+    {
+      "path": "goal-smoke-before.log",
+      "sha256": "a751280e577f6c4a7c3736a26c8f1dbee6b94258481c50351bab60c3c18626df"
+    },
+    {
+      "path": "goal-smoke-after.log",
+      "sha256": "55623e623c6a41f04091e5447bec8d91eacb6d92dd77db3701f192b894df634c"
+    },
+    {
+      "path": "contracts-final.log",
+      "sha256": "82d6556a7f0fbb064b6ba1c42ab721df608eea2727b2dae901989456a9a03876"
+    },
+    {
+      "path": "release-tests-final.log",
+      "sha256": "19272a65a3118265c1cd70f017743bf4b79715e5052fde1f24bfbc7c56797d0c"
+    }
+  ]
+}

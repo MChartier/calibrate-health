@@ -1,0 +1,1256 @@
+diff --git a/.github/workflows/builds.yml b/.github/workflows/builds.yml
+index 7f584d2e..bd0cd247 100644
+--- a/.github/workflows/builds.yml
++++ b/.github/workflows/builds.yml
+@@ -1,6 +1,16 @@
+ name: Builds
+ 
+ on:
++  workflow_call:
++    inputs:
++      release_sha:
++        description: Exact canonical release candidate; validated by Cut release
++        required: true
++        type: string
++      source_sha:
++        description: Exact protected source and workflow commit
++        required: true
++        type: string
+   pull_request:
+   workflow_dispatch:
+     inputs:
+@@ -28,12 +38,12 @@ permissions:
+   contents: read
+ 
+ concurrency:
+-  group: builds-${{ github.event.pull_request.number || github.ref }}
++  group: builds-${{ inputs.release_sha && format('candidate-{0}-{1}', github.run_id, github.run_attempt) || github.event.pull_request.number || github.ref }}
+   cancel-in-progress: true
+ 
+ jobs:
+   changes:
+-    name: Classify Build Inputs
++    name: Classify Build Inputs${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     runs-on: ubuntu-latest
+     timeout-minutes: 5
+     permissions:
+@@ -51,8 +61,24 @@ jobs:
+       native_upgrade: ${{ steps.decision.outputs.native_upgrade }}
+ 
+     steps:
++      - name: Checkout release candidate for identity verification
++        if: inputs.release_sha != ''
++        uses: actions/checkout@v4
++        with:
++          ref: ${{ inputs.release_sha }}
++          fetch-depth: 2
++          persist-credentials: false
++
++      - name: Verify explicit release candidate
++        if: inputs.release_sha != ''
++        env:
++          RELEASE_SHA: ${{ inputs.release_sha }}
++          SOURCE_SHA: ${{ inputs.source_sha }}
++          WORKFLOW_SHA: ${{ job.workflow_sha }}
++        run: node scripts/release-ci-gate.mjs --verify-inputs
++
+       - name: Detect affected build surfaces
+-        if: github.event_name == 'pull_request'
++        if: inputs.release_sha == '' && github.event_name == 'pull_request'
+         id: filter
+         uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
+         with:
+@@ -138,7 +164,7 @@ jobs:
+               - 'mobile/plugins/**'
+               - 'package-lock.json'
+       - name: Detect changes outside generated release mirrors
+-        if: github.event_name == 'pull_request'
++        if: inputs.release_sha == '' && github.event_name == 'pull_request'
+         id: release_mirror_filter
+         uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
+         with:
+@@ -170,6 +196,7 @@ jobs:
+         id: decision
+         shell: bash
+         env:
++          RELEASE_CANDIDATE: ${{ inputs.release_sha != '' }}
+           EVENT_NAME: ${{ github.event_name }}
+           HEAD_REF: ${{ github.head_ref }}
+           RELEASE_CONFIG_CHANGED: ${{ steps.filter.outputs.release_config == 'true' }}
+@@ -192,7 +219,9 @@ jobs:
+           native_release=false
+           native_upgrade=false
+ 
+-          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
++          if [[ "${RELEASE_CANDIDATE}" == "true" ]]; then
++            release_config=true
++          elif [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+             release_config=true
+             case "${MANUAL_VALIDATION_SCOPE}" in
+               web)
+@@ -247,7 +276,7 @@ jobs:
+           echo "native_upgrade=${native_upgrade}" >> "${GITHUB_OUTPUT}"
+ 
+   release-config:
+-    name: Release Configuration
++    name: Release Configuration${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     needs: changes
+     if: needs.changes.outputs.release_config == 'true'
+     runs-on: ubuntu-latest
+@@ -257,7 +286,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+           persist-credentials: false
+ 
+       - name: Setup Node
+@@ -289,7 +318,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -315,7 +344,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup reviewed bundle Node
+         uses: actions/setup-node@v4
+@@ -346,7 +375,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -375,7 +404,7 @@ jobs:
+       - name: Checkout candidate C
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup reviewed Web E2E Node
+         uses: actions/setup-node@v4
+@@ -403,7 +432,7 @@ jobs:
+       - name: Checkout candidate C
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup reviewed data-state Node
+         uses: actions/setup-node@v4
+@@ -433,7 +462,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup reviewed UX Node
+         uses: actions/setup-node@v4
+@@ -489,7 +518,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -519,7 +548,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -588,7 +617,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -635,7 +664,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Java
+         uses: actions/setup-java@v4
+@@ -719,7 +748,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -838,7 +867,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -953,7 +982,7 @@ jobs:
+         uses: actions/checkout@v4
+         with:
+           fetch-depth: 0
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+diff --git a/.github/workflows/container-scan.yml b/.github/workflows/container-scan.yml
+index 8a1f6e6f..ec69b16b 100644
+--- a/.github/workflows/container-scan.yml
++++ b/.github/workflows/container-scan.yml
+@@ -1,6 +1,16 @@
+ name: Production Container Scan
+ 
+ on:
++  workflow_call:
++    inputs:
++      release_sha:
++        description: Exact canonical release candidate; validated by Cut release
++        required: true
++        type: string
++      source_sha:
++        description: Exact protected source and workflow commit
++        required: true
++        type: string
+   pull_request:
+   workflow_dispatch:
+   schedule:
+@@ -10,12 +20,12 @@ permissions:
+   contents: read
+ 
+ concurrency:
+-  group: container-scan-${{ github.event.pull_request.number || github.ref }}
++  group: container-scan-${{ inputs.release_sha && format('candidate-{0}-{1}', github.run_id, github.run_attempt) || github.event.pull_request.number || github.ref }}
+   cancel-in-progress: true
+ 
+ jobs:
+   changes:
+-    name: Classify Production Image Inputs
++    name: Classify Production Image Inputs${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     runs-on: ubuntu-latest
+     timeout-minutes: 5
+     permissions:
+@@ -25,8 +35,24 @@ jobs:
+       scan: ${{ steps.decision.outputs.scan }}
+ 
+     steps:
++      - name: Checkout release candidate for identity verification
++        if: inputs.release_sha != ''
++        uses: actions/checkout@v4
++        with:
++          ref: ${{ inputs.release_sha }}
++          fetch-depth: 2
++          persist-credentials: false
++
++      - name: Verify explicit release candidate
++        if: inputs.release_sha != ''
++        env:
++          RELEASE_SHA: ${{ inputs.release_sha }}
++          SOURCE_SHA: ${{ inputs.source_sha }}
++          WORKFLOW_SHA: ${{ job.workflow_sha }}
++        run: node scripts/release-ci-gate.mjs --verify-inputs
++
+       - name: Detect affected production image surfaces
+-        if: github.event_name == 'pull_request'
++        if: inputs.release_sha == '' && github.event_name == 'pull_request'
+         id: filter
+         uses: dorny/paths-filter@v3
+         with:
+@@ -50,11 +76,11 @@ jobs:
+         id: decision
+         shell: bash
+         env:
+-          IMAGE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.image == 'true' }}
++          IMAGE_CHANGED: ${{ inputs.release_sha != '' || github.event_name != 'pull_request' || steps.filter.outputs.image == 'true' }}
+         run: echo "scan=${IMAGE_CHANGED}" >> "${GITHUB_OUTPUT}"
+ 
+   scan:
+-    name: High and Critical Vulnerabilities
++    name: High and Critical Vulnerabilities${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     needs: changes
+     if: needs.changes.outputs.scan == 'true'
+     runs-on: ubuntu-latest
+@@ -79,7 +105,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Build production image
+         run: docker build --file Dockerfile.app --tag calibrate:security-scan .
+@@ -114,7 +140,7 @@ jobs:
+           format: table
+           scanners: vuln
+           # Package advisories are maintenance findings; PRs still check the base OS.
+-          vuln-type: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'os,library' || 'os' }}
++          vuln-type: ${{ (inputs.release_sha == '' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) && 'os,library' || 'os' }}
+           severity: HIGH,CRITICAL
+           ignore-unfixed: false
+           exit-code: '1'
+diff --git a/.github/workflows/cut-release.yml b/.github/workflows/cut-release.yml
+index 54a9f8df..fd0e8201 100644
+--- a/.github/workflows/cut-release.yml
++++ b/.github/workflows/cut-release.yml
+@@ -540,9 +540,64 @@ jobs:
+         if: always()
+         run: docker rm --force calibrate-release-smoke || true
+ 
++  candidate-lint:
++    name: Release candidate lint
++    needs: [prepare, publish_candidate, release-validation]
++    permissions:
++      contents: read
++      pull-requests: read
++    uses: ./.github/workflows/lint.yml
++    with:
++      release_sha: ${{ needs.prepare.outputs.release_sha }}
++      source_sha: ${{ needs.prepare.outputs.source_sha }}
++
++  candidate-tests:
++    name: Release candidate tests
++    needs: [prepare, publish_candidate, release-validation]
++    permissions:
++      contents: read
++      pull-requests: read
++    uses: ./.github/workflows/tests.yml
++    with:
++      release_sha: ${{ needs.prepare.outputs.release_sha }}
++      source_sha: ${{ needs.prepare.outputs.source_sha }}
++
++  candidate-builds:
++    name: Release candidate builds
++    needs: [prepare, publish_candidate, release-validation]
++    permissions:
++      contents: read
++      pull-requests: read
++    uses: ./.github/workflows/builds.yml
++    with:
++      release_sha: ${{ needs.prepare.outputs.release_sha }}
++      source_sha: ${{ needs.prepare.outputs.source_sha }}
++
++  candidate-container-scan:
++    name: Release candidate container-scan
++    needs: [prepare, publish_candidate, release-validation]
++    permissions:
++      contents: read
++      pull-requests: read
++    uses: ./.github/workflows/container-scan.yml
++    with:
++      release_sha: ${{ needs.prepare.outputs.release_sha }}
++      source_sha: ${{ needs.prepare.outputs.source_sha }}
++
++  candidate-database-upgrade:
++    name: Release candidate database-upgrade
++    needs: [prepare, publish_candidate, release-validation]
++    permissions:
++      contents: read
++      pull-requests: read
++    uses: ./.github/workflows/database-upgrade.yml
++    with:
++      release_sha: ${{ needs.prepare.outputs.release_sha }}
++      source_sha: ${{ needs.prepare.outputs.source_sha }}
++
+   finalize:
+     name: Merge validated release PR
+-    needs: [prepare, publish_candidate, release-validation]
++    needs: [prepare, publish_candidate, release-validation, candidate-lint, candidate-tests, candidate-builds, candidate-container-scan, candidate-database-upgrade]
+     runs-on: ubuntu-latest
+     timeout-minutes: 50
+     permissions:
+@@ -691,9 +746,9 @@ jobs:
+               '',
+               '- exact candidate identity and synchronized release mirrors',
+               '- production image build, readiness, and served-Web smoke',
+-              '- required CI must succeed on this exact candidate before merge; approval or missing checks block finalization',
++              '- required CI must succeed on this exact candidate before merge; failed or missing checks block finalization',
+               '',
+-              'Candidate metadata and production smoke passed. Cut release now waits for this PR’s CI; approve pending workflow runs if GitHub requests it. After CI and merge, image publication runs explicitly; OTA and deployment have separate readiness gates.',
++              'Candidate metadata, production smoke and reusable CI passed on the exact release commit in the trusted run. Final identity verification and merge precede image publication; OTA and deployment retain their separate gates.',
+             ].join('\n');
+             const { data: pull } = await github.rest.pulls.create({
+               owner: context.repo.owner,
+@@ -706,7 +761,7 @@ jobs:
+             core.setOutput('pull_request_number', pull.number);
+             core.setOutput('pull_request_url', pull.html_url);
+ 
+-      - name: Wait for exact release PR CI
++      - name: Verify exact candidate CI from this release run
+         id: ci_gate
+         env:
+           GITHUB_TOKEN: ${{ github.token }}
+@@ -714,6 +769,9 @@ jobs:
+           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
+           PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
++          RELEASE_CI_RUN_ID: ${{ github.run_id }}
++          RELEASE_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
++          WORKFLOW_SHA: ${{ job.workflow_sha }}
+         run: node .release-tooling/scripts/release-ci-gate.mjs
+ 
+       - name: Merge the exact release pull request through GitHub
+@@ -725,6 +783,9 @@ jobs:
+           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
+           PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
++          RELEASE_CI_RUN_ID: ${{ github.run_id }}
++          RELEASE_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
++          WORKFLOW_SHA: ${{ job.workflow_sha }}
+           GITHUB_TOKEN: ${{ github.token }}
+         run: |
+           set -euo pipefail
+@@ -1097,7 +1158,7 @@ jobs:
+             echo "- Prepare: $PREPARE; candidate branch: $CANDIDATE; metadata/smoke: $SMOKE"
+             echo "- CI gate and merge: $FINALIZE; publication workflow: $PUBLISH"
+             echo "- Release PR: $PR_URL"
+-            echo 'Before merge: inspect PR CI and approval annotations; a validated candidate is retained for failed-job retry while refs remain unchanged.'
++            echo 'Before merge: inspect the candidate validation jobs in this release run; a validated candidate is retained for failed-job retry while refs remain unchanged.'
+             echo "After merge: use Publish prepared release with commit $RELEASE_SHA and branch $RELEASE_BRANCH for tag/image recovery. Never recut an already prepared version."
+             echo 'Image, OTA and deployment are separate stages. Read the nested publisher summary/log for the verified image digest and explicit optional rollout skips; a skipped OTA/deploy job does not mean the image failed.'
+           } >> "$GITHUB_STEP_SUMMARY"
+diff --git a/.github/workflows/database-upgrade.yml b/.github/workflows/database-upgrade.yml
+index 5b4a73ce..738d50b6 100644
+--- a/.github/workflows/database-upgrade.yml
++++ b/.github/workflows/database-upgrade.yml
+@@ -1,6 +1,16 @@
+ name: Database Upgrade
+ 
+ on:
++  workflow_call:
++    inputs:
++      release_sha:
++        description: Exact canonical release candidate; validated by Cut release
++        required: true
++        type: string
++      source_sha:
++        description: Exact protected source and workflow commit
++        required: true
++        type: string
+   pull_request:
+   workflow_dispatch:
+ 
+@@ -8,12 +18,12 @@ permissions:
+   contents: read
+ 
+ concurrency:
+-  group: database-upgrade-${{ github.event.pull_request.number || github.ref }}
++  group: database-upgrade-${{ inputs.release_sha && format('candidate-{0}-{1}', github.run_id, github.run_attempt) || github.event.pull_request.number || github.ref }}
+   cancel-in-progress: true
+ 
+ jobs:
+   changes:
+-    name: Classify Database Inputs
++    name: Classify Database Inputs${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     runs-on: ubuntu-latest
+     timeout-minutes: 5
+     permissions:
+@@ -24,8 +34,24 @@ jobs:
+       migrations: ${{ steps.decision.outputs.migrations }}
+ 
+     steps:
++      - name: Checkout release candidate for identity verification
++        if: inputs.release_sha != ''
++        uses: actions/checkout@v4
++        with:
++          ref: ${{ inputs.release_sha }}
++          fetch-depth: 2
++          persist-credentials: false
++
++      - name: Verify explicit release candidate
++        if: inputs.release_sha != ''
++        env:
++          RELEASE_SHA: ${{ inputs.release_sha }}
++          SOURCE_SHA: ${{ inputs.source_sha }}
++          WORKFLOW_SHA: ${{ job.workflow_sha }}
++        run: node scripts/release-ci-gate.mjs --verify-inputs
++
+       - name: Detect affected database surfaces
+-        if: github.event_name == 'pull_request'
++        if: inputs.release_sha == '' && github.event_name == 'pull_request'
+         id: filter
+         uses: dorny/paths-filter@v3
+         with:
+@@ -39,13 +65,29 @@ jobs:
+               - 'backend/src/config/database.ts'
+               - 'backend/src/config/databaseUtils.ts'
+               - 'backend/src/observability.ts'
++              - 'backend/src/routes/goals.ts'
++              - 'backend/src/routes/metrics.ts'
++              - 'backend/src/routes/user.ts'
++              - 'backend/src/routes/imports.ts'
++              - 'backend/src/services/calorie*.ts'
++              - 'backend/src/services/goal*.ts'
++              - 'backend/src/services/watch*.ts'
++              - 'backend/src/services/clientOperation*.ts'
++              - 'backend/src/services/sync*.ts'
++              - 'backend/src/services/import*.ts'
++              - 'backend/src/services/loseItImport.ts'
++              - 'backend/src/services/metricProgress.ts'
+               - 'backend/src/services/materializedWeightTrend.ts'
+               - 'backend/src/services/weightTrend*.ts'
+               - 'backend/src/utils/date.ts'
++              - 'backend/src/utils/goal*.ts'
++              - 'backend/src/utils/units.ts'
+               - 'backend/tsconfig.json'
+               - 'deploy/backup/**'
+               - 'scripts/postgres-*.mjs'
+               - 'shared/weightTrend*.ts'
++              - 'shared/goal*.ts'
++              - 'shared/calorie*.ts'
+             migrations:
+               - '.github/workflows/database-upgrade.yml'
+               - 'backend/prisma/migrations/**'
+@@ -56,14 +98,14 @@ jobs:
+         id: decision
+         shell: bash
+         env:
+-          DATABASE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.database == 'true' }}
+-          MIGRATIONS_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.migrations == 'true' }}
++          DATABASE_CHANGED: ${{ inputs.release_sha != '' || github.event_name != 'pull_request' || steps.filter.outputs.database == 'true' }}
++          MIGRATIONS_CHANGED: ${{ inputs.release_sha == '' && (github.event_name != 'pull_request' || steps.filter.outputs.migrations == 'true') }}
+         run: |
+           echo "database=${DATABASE_CHANGED}" >> "${GITHUB_OUTPUT}"
+           echo "migrations=${MIGRATIONS_CHANGED}" >> "${GITHUB_OUTPUT}"
+ 
+   populated-upgrade:
+-    name: Populated Postgres Upgrade
++    name: Populated Postgres Upgrade${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     needs: changes
+     if: needs.changes.outputs.database == 'true'
+     runs-on: ubuntu-latest
+@@ -90,7 +132,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -131,7 +173,7 @@ jobs:
+         uses: actions/checkout@v4
+         with:
+           fetch-depth: 0
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+diff --git a/.github/workflows/lint.yml b/.github/workflows/lint.yml
+index 4ab09a9e..d283345b 100644
+--- a/.github/workflows/lint.yml
++++ b/.github/workflows/lint.yml
+@@ -1,6 +1,16 @@
+ name: Lint
+ 
+ on:
++  workflow_call:
++    inputs:
++      release_sha:
++        description: Exact canonical release candidate; validated by Cut release
++        required: true
++        type: string
++      source_sha:
++        description: Exact protected source and workflow commit
++        required: true
++        type: string
+   pull_request:
+     paths:
+       - '.github/workflows/lint.yml'
+@@ -17,12 +27,12 @@ permissions:
+   contents: read
+ 
+ concurrency:
+-  group: lint-${{ github.event.pull_request.number || github.ref }}
++  group: lint-${{ inputs.release_sha && format('candidate-{0}-{1}', github.run_id, github.run_attempt) || github.event.pull_request.number || github.ref }}
+   cancel-in-progress: true
+ 
+ jobs:
+   typecheck:
+-    name: Backend, Shared, API Client, and Mobile Typecheck
++    name: Backend, Shared, API Client, and Mobile Typecheck${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+ 
+@@ -30,7 +40,16 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
++          fetch-depth: 2
++
++      - name: Verify explicit release candidate
++        if: inputs.release_sha != ''
++        env:
++          RELEASE_SHA: ${{ inputs.release_sha }}
++          SOURCE_SHA: ${{ inputs.source_sha }}
++          WORKFLOW_SHA: ${{ job.workflow_sha }}
++        run: node scripts/release-ci-gate.mjs --verify-inputs
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+diff --git a/.github/workflows/tests.yml b/.github/workflows/tests.yml
+index a4b37df4..75cbcd0c 100644
+--- a/.github/workflows/tests.yml
++++ b/.github/workflows/tests.yml
+@@ -1,6 +1,16 @@
+ name: Tests
+ 
+ on:
++  workflow_call:
++    inputs:
++      release_sha:
++        description: Exact canonical release candidate; validated by Cut release
++        required: true
++        type: string
++      source_sha:
++        description: Exact protected source and workflow commit
++        required: true
++        type: string
+   pull_request:
+   workflow_dispatch:
+ 
+@@ -8,12 +18,12 @@ permissions:
+   contents: read
+ 
+ concurrency:
+-  group: tests-${{ github.event.pull_request.number || github.ref }}
++  group: tests-${{ inputs.release_sha && format('candidate-{0}-{1}', github.run_id, github.run_attempt) || github.event.pull_request.number || github.ref }}
+   cancel-in-progress: true
+ 
+ jobs:
+   changes:
+-    name: Classify Test Inputs
++    name: Classify Test Inputs${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     runs-on: ubuntu-latest
+     timeout-minutes: 5
+     permissions:
+@@ -24,8 +34,24 @@ jobs:
+       mobile: ${{ steps.decision.outputs.mobile }}
+ 
+     steps:
++      - name: Checkout release candidate for identity verification
++        if: inputs.release_sha != ''
++        uses: actions/checkout@v4
++        with:
++          ref: ${{ inputs.release_sha }}
++          fetch-depth: 2
++          persist-credentials: false
++
++      - name: Verify explicit release candidate
++        if: inputs.release_sha != ''
++        env:
++          RELEASE_SHA: ${{ inputs.release_sha }}
++          SOURCE_SHA: ${{ inputs.source_sha }}
++          WORKFLOW_SHA: ${{ job.workflow_sha }}
++        run: node scripts/release-ci-gate.mjs --verify-inputs
++
+       - name: Detect affected test surfaces
+-        if: github.event_name == 'pull_request'
++        if: inputs.release_sha == '' && github.event_name == 'pull_request'
+         id: filter
+         uses: dorny/paths-filter@v3
+         with:
+@@ -51,14 +77,14 @@ jobs:
+         id: decision
+         shell: bash
+         env:
+-          BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
+-          MOBILE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.mobile == 'true' }}
++          BACKEND_CHANGED: ${{ inputs.release_sha != '' || github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
++          MOBILE_CHANGED: ${{ inputs.release_sha != '' || github.event_name != 'pull_request' || steps.filter.outputs.mobile == 'true' }}
+         run: |
+           echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
+           echo "mobile=${MOBILE_CHANGED}" >> "${GITHUB_OUTPUT}"
+ 
+   backend-tests:
+-    name: Backend Tests
++    name: Backend Tests${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     needs: changes
+     if: needs.changes.outputs.backend == 'true'
+     runs-on: ubuntu-latest
+@@ -87,7 +113,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+@@ -110,7 +136,7 @@ jobs:
+         run: npm test
+ 
+   mobile-tests:
+-    name: Mobile Tests
++    name: Mobile Tests${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+     needs: changes
+     if: needs.changes.outputs.mobile == 'true'
+     runs-on: ubuntu-latest
+@@ -120,7 +146,7 @@ jobs:
+       - name: Checkout
+         uses: actions/checkout@v4
+         with:
+-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
++          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+ 
+       - name: Setup Node
+         uses: actions/setup-node@v4
+diff --git a/AGENTS.md b/AGENTS.md
+index 8b48e8b6..6c071313 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -268,8 +268,8 @@ UI code style:
+ - The visible server release Actions are read-only request workflows. Default-branch `workflow_run` handlers verify
+   exact requests before calling reusable workers. Keep build and verification jobs read-only. Use job-scoped
+   `GITHUB_TOKEN` writes only for candidate/tag publication, PR finalization/cleanup, and GHCR publication; callers must
+-  propagate every required reusable-workflow permission. Finalization waits for the exact candidate PR CI (including
+-  any required human workflow approval), then uses the PR merge API with the validated head,
++  propagate every required reusable-workflow permission. Cut release calls existing read-only CI on the exact candidate
++  and source SHAs; finalization verifies those jobs in the same trusted run, then uses the PR merge API with the validated head,
+   honors master protection, and checks merged parents/tree before publication. It must never push directly to master.
+   Keep the repository's existing package Actions write access and PR-creation setting. A Server Release GitHub App,
+   GHCR robot, `server-release-publication` environment, and extra server tag rulesets are not prerequisites.
+@@ -288,11 +288,12 @@ UI code style:
+ - Server release jobs run automatically with the configured Actions identity. Cleanup is eligible only after
+   read-only exact-ref inspection and must not remove a merged or moved candidate. Job isolation is not an external
+   credential boundary against a user who can edit or rerun write-enabled workflows.
+-- **Cut release** revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
+-  workflows own full tests, production-image scanning, and database upgrade/rollback validation. Package dependency
++- **Cut release** revalidates exact metadata and runs a production-image smoke, then reuses lint, tests, release configuration,
++  production-image OS scanning and populated database upgrade checks on the candidate. Version-only candidates skip platform
++  build fan-out and migration rollback; normal PR/manual selection remains unchanged. Package dependency
+   audits run only during weekly/manual maintenance; do not add them or expiring advisory exceptions to PR or release gates.
+   Keep container OS-vulnerability checks on PRs; scan package libraries in the scheduled/manual full image scans.
+-- A CI-blocked validated candidate is retained. Approve pending PR workflows or repair their failure, then rerun only
++- A CI-blocked validated candidate is retained. Repair the failed candidate validation, then rerun only
+   failed release jobs while master and candidate remain unchanged. Do not cut another version or use the prepared
+   publisher before merge. If master advances, stop and explicitly reconcile the retained candidate before a fresh
+   Cut release; do not rebase, overwrite or manually merge it.
+diff --git a/docs/release-compatibility.md b/docs/release-compatibility.md
+index 768320f8..b2f16f7a 100644
+--- a/docs/release-compatibility.md
++++ b/docs/release-compatibility.md
+@@ -160,21 +160,28 @@ fresh build/attestation/publication rather than trusting the registry bytes.
+ 
+ Server candidate publication, validated PR merge, tag creation, and GHCR publication run automatically. No new server
+ publication environment approvals are required. If validation or finalization fails before merging, read-only
+-inspection first proves the candidate PR/branch still belong to the action; cleanup closes and deletes only that exact
+-unmerged candidate. **Publish prepared release** and **Build Release Image** also run without a server environment gate.
++inspection first proves the candidate PR/branch still belong to the action. Candidates that passed metadata/smoke
++validation are retained for CI repair and failed-job retry with unchanged refs; cleanup is limited to exact unmerged
++candidates that did not pass that validation. **Publish prepared release** and **Build Release Image** also run without a server environment gate.
+ 
+ The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
+ `release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It verifies the candidate parent and identity,
+ synchronized release configuration, and exact eight-file mirror set. It also builds and starts the production image,
+-then checks readiness and the served web application. Unit and integration tests, generated API and deploy contracts,
+-production-image smoke/OS scanning, and database upgrade/rollback rehearsal remain targeted pull-request or scheduled
+-checks and are not replayed for the version-only candidate. Package dependency audits run only during weekly or
++then checks readiness and the served web application. The trusted release run calls the existing lint, test, release
++configuration, production-image OS scan and populated database upgrade workflows with explicit candidate/source SHAs.
++These jobs receive read-only permissions and no publication/provider secrets. Canonical version-only candidates keep
++platform builds and migration rollback skipped; normal PR and manual workflow selection stays unchanged.
++Package dependency audits run only during weekly or
+ manual maintenance and do not gate a release cut. Full container scans include package libraries only during
+ scheduled/manual maintenance; PR scans retain OS-vulnerability checks. If `master` advances while validation runs, the
+-candidate is not merged; rerun the action so the later change is part of a newly validated candidate.
++candidate is not merged; explicitly reconcile the retained candidate before starting another cut.
+ 
+ After validation, the action creates a version-only release PR and verifies the parents and tree of GitHub's proposed
+-merge. It rechecks `master` immediately before calling the PR merge API with the exact validated head SHA. The API
++merge. Both the initial CI gate and its immediate premerge recheck require successful exact-candidate jobs from the
++same trusted run and verified workflow source. Failed-job retries may reuse earlier successes only from that run and
++candidate; newer failures cannot fall back to older green jobs. Missing, failed, cancelled or wholly skipped required
++validation blocks finalization without waiting for approval of token-created PR workflows.
++It rechecks `master` immediately before calling the PR merge API with the exact validated head SHA. The API
+ honors branch protection and locks the head, but does not offer a base-SHA compare-and-swap. The workflow therefore
+ checks the actual merged parents, tree, and current `master` again before allowing tag/image publication. A concurrent
+ base change in that small window stops publication even if GitHub already merged the PR; inspect the failed run before
+diff --git a/scripts/postgres-goal-pace-smoke.mjs b/scripts/postgres-goal-pace-smoke.mjs
+index a1890cbb..b1b830f4 100644
+--- a/scripts/postgres-goal-pace-smoke.mjs
++++ b/scripts/postgres-goal-pace-smoke.mjs
+@@ -29,7 +29,7 @@ try {
+     const metricsRouter = backendRequire('./src/routes/metrics').default;
+     const userRouter = backendRequire('./src/routes/user').default;
+     const planningLock = backendRequire('./src/services/caloriePlanningLock');
+-    const user = await db.user.create({ data: { email: 'pace-smoke@calibrate.invalid', password_hash: 'synthetic-only', timezone: 'UTC',
++    const user = await db.user.create({ data: { email: 'pace-smoke@synthetic.invalid', password_hash: 'synthetic-only', timezone: 'UTC',
+             date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' } });
+     const goal = await db.goal.create({ data: { user_id: user.id, start_weight_grams: 90000, target_weight_grams: 75000,
+             daily_deficit: 500, created_at: new Date('2025-01-01Z'), target_date: new Date('2027-02-01Z') } });
+@@ -255,6 +255,16 @@ try {
+         }
+     }
+ 
++    // Backdating a scenario must not let another goal become active. Keep the
++    // intended identity and explicitly order the synthetic history before it.
++    const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
++    async function setActiveGoalFixture(createdAt, startWeight = 90000) {
++        await db.goal.updateMany({ where: { user_id: user.id, id: { not: currentGoal.id } },
++            data: { created_at: new Date(createdAt.getTime() - 86400000) } });
++        await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: createdAt, start_weight_grams: startWeight } });
++        const active = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
++        assert.equal(active.id, currentGoal.id, 'scenario fixture must retain the intended active goal');
++    }
+     const NativeDate = Date;
+     globalThis.Date = class extends NativeDate {
+         constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
+@@ -266,8 +276,7 @@ try {
+                 const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
+                 await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
+                 user.timezone = oldZone; // Authentication snapshot deliberately predates the profile commit.
+-                const latest = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+-                await db.goal.update({ where: { id: latest.id }, data: { created_at: new Date('2026-10-08T19:00:00Z'), start_weight_grams: 90000 } });
++                await setActiveGoalFixture(new Date('2026-10-08T19:00:00Z'));
+                 const payload = { weight: 84, ...(explicitDate ? { date: '2026-10-08' } : {}) };
+                 const operationId = crypto.randomUUID();
+                 const [profile, metric] = await orderedWriters(
+@@ -276,7 +285,7 @@ try {
+                 assert.equal(profile.statusCode, 200);
+                 assert.equal(metric.statusCode, 200);
+                 assert.equal(metric.body.date.slice(0, 10), explicitDate || nextZone === 'America/Los_Angeles' ? '2026-10-08' : '2026-10-09');
+-                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: latest.id } })).start_weight_grams,
++                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams,
+                     nextZone === 'America/Los_Angeles' ? 84000 : 90000);
+                 assert.deepEqual((await call('post', '/', payload, operationId, metricsRouter)).body, metric.body);
+             }
+@@ -292,8 +301,7 @@ try {
+     const session = await db.mobileAuthSession.create({ data: { user_id: user.id, device_id: 'synthetic-watch', device_platform: 'WEAR_OS',
+         access_token_hash: crypto.randomUUID(), refresh_token_hash: crypto.randomUUID(),
+         access_expires_at: new Date(Date.now() + 3600000), refresh_expires_at: new Date(Date.now() + 7200000) } });
+-    const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+-    await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date() } });
++    await setActiveGoalFixture(new Date());
+     for (const watchFirst of [true, false]) {
+         await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter);
+         const existing = await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: today } } });
+@@ -373,7 +381,7 @@ try {
+                 const acceptedDay = nextZone === 'UTC' ? '2026-10-09' : '2026-10-08';
+                 await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
+                 user.timezone = oldZone;
+-                await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date('2026-10-09T01:00:00Z'), start_weight_grams: 90000 } });
++                await setActiveGoalFixture(new Date('2026-10-09T01:00:00Z'));
+                 const [profile, imported] = await orderedWriters(
+                     () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
+                     () => importWeight(importDate, 82, 'OVERWRITE'));
+diff --git a/scripts/release-ci-gate.mjs b/scripts/release-ci-gate.mjs
+index e045505e..28e5b946 100644
+--- a/scripts/release-ci-gate.mjs
++++ b/scripts/release-ci-gate.mjs
+@@ -1,4 +1,5 @@
+ import { appendFileSync } from 'node:fs';
++import { execFileSync } from 'node:child_process';
+ import { pathToFileURL } from 'node:url';
+ 
+ // Only canonical version-mirror candidates reach this gate. Builds intentionally
+@@ -21,6 +22,82 @@ const ALLOWED_SKIPS = {
+   'database-upgrade.yml': ['v0.14.0 Upgrade and Encrypted Rollback'],
+ };
+ 
++export function assertCandidateInputs(env, ancestry) {
++  const { RELEASE_SHA: head, SOURCE_SHA: source, WORKFLOW_SHA: workflow } = env;
++  if (!/^[0-9a-f]{40}$/.test(head ?? '') || !/^[0-9a-f]{40}$/.test(source ?? '') ||
++      head === source || workflow !== source || env.GITHUB_SHA !== source || env.GITHUB_REF !== 'refs/heads/master' ||
++      ancestry.trim() !== `${head} ${source}`) {
++    throw new Error('Reusable CI requires the exact candidate, sole source parent and protected workflow identity.');
++  }
++}
++
++function assertTrustedRun(run, identity) {
++  const expectedPath = '.github/workflows/cut-release-handler.yml';
++  if (run.id !== Number(identity.runId) || run.run_attempt !== Number(identity.runAttempt) ||
++      run.path !== expectedPath || run.event !== 'workflow_run' || run.head_branch !== 'master' ||
++      run.head_sha !== identity.base || run.head_repository?.full_name !== identity.repository ||
++      run.repository?.full_name !== identity.repository || run.status !== 'in_progress' || run.conclusion !== null) {
++    throw new Error('Trusted release run identity/attempt changed; no merge permitted.');
++  }
++  for (const file of ['cut-release.yml', ...Object.keys(REQUIRED_CI)]) {
++    const matches = (run.referenced_workflows ?? []).filter(workflow =>
++      workflow.path?.split('@')[0] === `${identity.repository}/.github/workflows/${file}`);
++    if (matches.length !== 1 || matches[0].sha !== identity.base) {
++      throw new Error(`Trusted release run lacks the exact ${file} workflow source.`);
++    }
++  }
++}
++
++export function evaluateTrustedJobs(jobs, identity) {
++  if (new Set(jobs.map(job => job.id)).size !== jobs.length) throw new Error('Duplicate job identities in CI inventory.');
++  const selected = [];
++  for (const [file, required] of Object.entries(REQUIRED_CI)) {
++    const prefix = `Release candidate ${file.slice(0, -4)} / `;
++    // Failed-job retries reuse successful jobs from earlier attempts of this
++    // same run. The explicit candidate suffix binds those jobs to their input,
++    // and the newest job identity always wins over an older passing execution.
++    const suffix = ` [${identity.head}]`;
++    const latest = new Map();
++    for (const job of [...jobs].sort((a, b) => b.id - a.id)) {
++      if (!(job.name?.startsWith(prefix) || job.name?.includes(` / ${prefix}`))) continue;
++      // Jobs for a different candidate in the same run cannot satisfy this gate.
++      if (/ \[[0-9a-f]{40}\]$/.test(job.name) && !job.name.endsWith(suffix)) continue;
++      if (!latest.has(job.name)) latest.set(job.name, job);
++    }
++    const own = [...latest.values()].map(job => ({ ...job,
++      bound: job.name.endsWith(suffix),
++      shortName: job.name.slice(job.name.indexOf(prefix) + prefix.length, job.name.endsWith(suffix) ? -suffix.length : undefined) }));
++    for (const name of required) {
++      const matches = own.filter(job => job.shortName === name);
++      if (matches.length !== 1 || !matches[0].bound || matches[0].status !== 'completed' || matches[0].conclusion !== 'success') {
++        throw new Error(`${file}: required job ${name} did not succeed in this release attempt.`);
++      }
++    }
++    for (const job of own) {
++      if (!Number.isSafeInteger(job.id) || job.id <= 0 || job.run_id !== Number(identity.runId) || job.head_sha !== identity.base || job.status !== 'completed' ||
++          (!(required.includes(job.shortName) && job.bound && job.conclusion === 'success') &&
++          !(job.conclusion === 'skipped' && ALLOWED_SKIPS[file]?.includes(job.shortName)))) {
++        throw new Error(`${file}: unacceptable candidate job ${job.name}: ${job.conclusion}.`);
++      }
++    }
++    selected.push({ path: file, run_attempt: Number(identity.runAttempt),
++      html_url: `https://github.com/${identity.repository}/actions/runs/${identity.runId}` });
++  }
++  return { selected, pending: [] };
++}
++
++export async function inspectTrustedCi(api, identity) {
++  const root = `/repos/${identity.repository}`;
++  assertIdentity({ pull: await api(`${root}/pulls/${identity.number}`), master: await api(`${root}/git/ref/heads/master`) }, identity);
++  const runPath = `${root}/actions/runs/${identity.runId}`;
++  assertTrustedRun(await api(runPath), identity);
++  const jobs = await api(`${runPath}/jobs?filter=all&per_page=100`, 'jobs');
++  const result = evaluateTrustedJobs(jobs, identity);
++  assertTrustedRun(await api(runPath), identity);
++  assertIdentity({ pull: await api(`${root}/pulls/${identity.number}`), master: await api(`${root}/git/ref/heads/master`) }, identity);
++  return result;
++}
++
+ export function assertIdentity({ pull, master }, identity) {
+   const { repository, head, base, branch } = identity;
+   if (pull.state !== 'open' || pull.merged || pull.draft ||
+@@ -118,7 +195,7 @@ export async function waitForCi(api, identity, {
+   const deadline = now() + timeoutMs;
+   let previousPending;
+   while (true) {
+-    const result = await inspectCi(api, identity);
++    const result = await (identity.runId ? inspectTrustedCi(api, identity) : inspectCi(api, identity));
+     if (!result.pending.length) {
+       report(result.selected.map(run => `${run.path}: success (${run.html_url}, attempt ${run.run_attempt})`).join('\n'));
+       return result;
+@@ -155,10 +232,21 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+   const { GITHUB_REPOSITORY: repository, SOURCE_SHA: base, RELEASE_SHA: head,
+     RELEASE_BRANCH: branch, PULL_REQUEST_NUMBER: number, GITHUB_TOKEN: token } = process.env;
+   try {
++    if (process.argv.includes('--verify-inputs')) {
++      assertCandidateInputs(process.env, execFileSync('git', ['--no-replace-objects', 'rev-list', '--parents', '-n', '1', 'HEAD'], { encoding: 'utf8' }));
++      console.log('Exact candidate/source/workflow identity verified.');
++      process.exit(0);
++    }
+     if (!/^[\w.-]+\/[\w.-]+$/.test(repository ?? '') || !/^[0-9a-f]{40}$/.test(base ?? '') ||
+         !/^[0-9a-f]{40}$/.test(head ?? '') || !/^release\/v\d+\.\d+\.\d+$/.test(branch ?? '') ||
+         !/^[1-9]\d*$/.test(number ?? '') || !token) throw new Error('Missing exact release CI identity/token.');
+-    await waitForCi(githubApi({ token, apiUrl: process.env.GITHUB_API_URL }), { repository, base, head, branch, number }, {
++    const runId = process.env.RELEASE_CI_RUN_ID;
++    const runAttempt = process.env.RELEASE_CI_RUN_ATTEMPT;
++    if ((runId || runAttempt) && (!/^[1-9]\d*$/.test(runId ?? '') || !/^[1-9]\d*$/.test(runAttempt ?? '') ||
++        runId !== process.env.GITHUB_RUN_ID || runAttempt !== process.env.GITHUB_RUN_ATTEMPT || process.env.WORKFLOW_SHA !== base)) {
++      throw new Error('Missing exact current release run/attempt/workflow identity.');
++    }
++    await waitForCi(githubApi({ token, apiUrl: process.env.GITHUB_API_URL }), { repository, base, head, branch, number, runId, runAttempt }, {
+       timeoutMs: process.argv.includes('--once') ? 0 : 40 * 60_000,
+       report: message => {
+         console.log(message);
+diff --git a/scripts/release-ci-gate.test.mjs b/scripts/release-ci-gate.test.mjs
+index 5a739a17..89e04f54 100644
+--- a/scripts/release-ci-gate.test.mjs
++++ b/scripts/release-ci-gate.test.mjs
+@@ -1,7 +1,7 @@
+ import assert from 'node:assert/strict';
+ import test from 'node:test';
+ import { readFileSync } from 'node:fs';
+-import { REQUIRED_CI, assertIdentity, evaluateRuns, githubApi, inspectCi, waitForCi } from './release-ci-gate.mjs';
++import { REQUIRED_CI, assertCandidateInputs, assertIdentity, evaluateRuns, evaluateTrustedJobs, githubApi, inspectCi, inspectTrustedCi, waitForCi } from './release-ci-gate.mjs';
+ 
+ const identity = { repository: 'owner/repo', head: 'a'.repeat(40), base: 'b'.repeat(40), branch: 'release/v1.2.3', number: '12' };
+ function fixture() {
+@@ -163,11 +163,103 @@ test('complete pagination, API denial and truncated inventory are handled explic
+ 
+ test('workflow gates merge twice, retains blocked candidates and preserves explicit publication dependency', () => {
+   const workflow = readFileSync(new URL('../.github/workflows/cut-release.yml', import.meta.url), 'utf8');
+-  assert.ok(workflow.indexOf('Open or reuse the exact release pull request') < workflow.indexOf('Wait for exact release PR CI'));
+-  assert.ok(workflow.indexOf('Wait for exact release PR CI') < workflow.indexOf('Merge the exact release pull request through GitHub'));
++  assert.ok(workflow.indexOf('Open or reuse the exact release pull request') < workflow.indexOf('Verify exact candidate CI from this release run'));
++  assert.ok(workflow.indexOf('Verify exact candidate CI from this release run') < workflow.indexOf('Merge the exact release pull request through GitHub'));
+   assert.ok(workflow.indexOf('release-ci-gate.mjs --once') < workflow.indexOf('MERGE_RESPONSE='));
+   assert.match(workflow, /needs\.release-validation\.result != 'success'/);
+   assert.match(workflow, /publish:\n[\s\S]*needs: \[prepare, finalize\]/);
+   assert.match(workflow, /release_status:\n[\s\S]*if: \$\{\{ always\(\) \}\}/);
+   assert.doesNotMatch(workflow, /pull_request_target|actions: write|checks: write/);
+ });
++
++function trustedFixture() {
++  const f = fixture();
++  const binding = { ...identity, runId: '456', runAttempt: '2' };
++  const run = { id: 456, run_attempt: 2, path: '.github/workflows/cut-release-handler.yml',
++    event: 'workflow_run', head_branch: 'master', head_sha: identity.base, status: 'in_progress', conclusion: null,
++    repository: { full_name: identity.repository }, head_repository: { full_name: identity.repository },
++    referenced_workflows: ['cut-release.yml', ...Object.keys(REQUIRED_CI)].map(file => ({
++      path: `${identity.repository}/.github/workflows/${file}@refs/heads/master`, sha: identity.base })) };
++  let id = 0;
++  const jobs = Object.entries(REQUIRED_CI).flatMap(([file, names]) => names.map(name => ({
++    id: ++id, run_id: 456, head_sha: identity.base, status: 'completed', conclusion: 'success',
++    name: `Cut release / Release candidate ${file.slice(0, -4)} / ${name} [${identity.head}]` })));
++  const api = async path => path.endsWith('/runs/456') ? run : path.includes('/jobs?filter=all') ? jobs : f.api(path);
++  return { ...f, binding, run, jobs, api };
++}
++
++test('trusted candidate CI succeeds without any pull-request-event workflow run', async () => {
++  const f = trustedFixture();
++  f.runs.length = 0;
++  assert.equal((await inspectTrustedCi(f.api, f.binding)).selected.length, 5);
++});
++
++test('trusted CI rejects wrong run, source, event, workflow and attempt', async () => {
++  for (const mutate of [run => run.id++, run => run.run_attempt++, run => run.head_sha = identity.head,
++    run => run.event = 'pull_request', run => run.head_branch = 'other', run => run.status = 'completed',
++    run => run.repository.full_name = 'other/repo', run => run.head_repository.full_name = 'other/repo',
++    run => run.referenced_workflows.pop(), run => run.referenced_workflows[0].sha = identity.head]) {
++    const f = trustedFixture(); mutate(f.run);
++    await assert.rejects(inspectTrustedCi(f.api, f.binding), /identity|workflow source/);
++  }
++});
++
++test('missing, all-skipped, cancelled and failed trusted validation cannot merge', async () => {
++  for (const conclusion of ['skipped', 'failure', 'cancelled', 'neutral', null]) {
++    const f = trustedFixture(); f.jobs.forEach(job => job.conclusion = conclusion);
++    await assert.rejects(inspectTrustedCi(f.api, f.binding), /did not succeed/);
++  }
++  const f = trustedFixture(); f.jobs.length = 0;
++  await assert.rejects(inspectTrustedCi(f.api, f.binding), /did not succeed/);
++});
++
++test('failed-job retry reuses exact-candidate successes but never an older passing job over newer failure', () => {
++  const f = trustedFixture();
++  assert.equal(evaluateTrustedJobs(f.jobs, f.binding).selected.length, 5);
++  f.jobs.push({ ...f.jobs[0], id: 100, conclusion: 'failure' });
++  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /did not succeed/);
++  f.jobs[0].name = f.jobs[0].name.replace(identity.head, 'c'.repeat(40));
++  f.jobs.pop();
++  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /did not succeed/);
++});
++
++test('trusted jobs remain bound to this run and source and permit only named platform skips', () => {
++  for (const field of ['run_id', 'head_sha']) {
++    const f = trustedFixture(); f.jobs[0][field] = 'wrong';
++    assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /unacceptable/);
++  }
++  const f = trustedFixture();
++  const skipped = { id: 100, run_id: 456, head_sha: identity.base, status: 'completed', conclusion: 'skipped',
++    name: 'Cut release / Release candidate builds / iOS Build' };
++  f.jobs.push(skipped);
++  assert.equal(evaluateTrustedJobs(f.jobs, f.binding).selected.length, 5);
++  skipped.conclusion = 'success';
++  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /unacceptable/);
++  skipped.conclusion = 'skipped';
++  skipped.name = skipped.name.replace('iOS Build', 'Unrecognized');
++  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /unacceptable/);
++});
++
++test('trusted premerge inspection rebinds the PR, master and run after inventory reads', async () => {
++  for (const changed of ['master', 'attempt']) {
++    const f = trustedFixture();
++    await assert.rejects(inspectTrustedCi(async path => {
++      const result = await f.api(path);
++      if (path.includes('/jobs?')) {
++        if (changed === 'master') f.master.object.sha = identity.head;
++        else f.run.run_attempt++;
++      }
++      return result;
++    }, f.binding), /changed/);
++  }
++});
++
++test('reusable checkout rejects missing or mixed candidate/source/workflow inputs', () => {
++  const env = { RELEASE_SHA: identity.head, SOURCE_SHA: identity.base, WORKFLOW_SHA: identity.base,
++    GITHUB_SHA: identity.base, GITHUB_REF: 'refs/heads/master' };
++  assertCandidateInputs(env, `${identity.head} ${identity.base}\n`);
++  for (const key of Object.keys(env)) assert.throws(() => assertCandidateInputs({ ...env, [key]: '' }, `${identity.head} ${identity.base}`));
++  for (const ancestry of [identity.head, `${identity.head} ${identity.base} ${identity.base}`, `${identity.head} ${'c'.repeat(40)}`]) {
++    assert.throws(() => assertCandidateInputs(env, ancestry));
++  }
++});
+diff --git a/scripts/release-workflow-contract.test.mjs b/scripts/release-workflow-contract.test.mjs
+index 3401c258..c2c3171a 100644
+--- a/scripts/release-workflow-contract.test.mjs
++++ b/scripts/release-workflow-contract.test.mjs
+@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
+ import path from 'node:path';
+ import test from 'node:test';
+ import { fileURLToPath } from 'node:url';
++import { REQUIRED_CI } from './release-ci-gate.mjs';
+ 
+ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+ const workflowsDirectory = path.join(repositoryRoot, '.github', 'workflows');
+@@ -95,6 +96,35 @@ test('local reusable workflow callers cover every called job token permission',
+   assert.deepEqual(failures, [], 'Reusable workflows cannot increase caller token permissions');
+ });
+ 
++test('Cut release reuses every required CI surface with explicit read-only candidate identity', () => {
++  const release = readWorkflow('cut-release.yml');
++  const finalize = workflowJobBlock(release, 'finalize');
++  for (const [file, requiredNames] of Object.entries(REQUIRED_CI)) {
++    const caller = workflowJobBlock(release, `candidate-${file.slice(0, -4)}`);
++    const callee = readWorkflow(file);
++    assert.deepEqual(workflowPermissions(caller, 4), { contents: 'read', 'pull-requests': 'read' });
++    assert.match(caller, /needs: \[prepare, publish_candidate, release-validation\]/);
++    assert.ok(caller.includes(`uses: ./.github/workflows/${file}`));
++    assert.match(caller, /release_sha: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
++    assert.match(caller, /source_sha: \$\{\{ needs\.prepare\.outputs\.source_sha \}\}/);
++    assert.doesNotMatch(caller, /secrets:|environment:|write/);
++    assert.ok(finalize.includes(`candidate-${file.slice(0, -4)}`));
++    assert.match(callee, /workflow_call:[\s\S]*release_sha:[\s\S]*required: true[\s\S]*source_sha:[\s\S]*required: true/);
++    assert.match(callee, /release-ci-gate\.mjs --verify-inputs/);
++    assert.match(callee, /format\('candidate-\{0\}-\{1\}', github\.run_id, github\.run_attempt\)/);
++    for (const name of requiredNames) {
++      assert.ok(callee.includes(`    name: ${name}\u0024{{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}`),
++        `${file} must bind the gate's ${name} job name to the full candidate SHA`);
++    }
++  }
++  assert.equal((finalize.match(/RELEASE_CI_RUN_ID: \$\{\{ github\.run_id \}\}/g) ?? []).length, 2);
++  assert.equal((finalize.match(/RELEASE_CI_RUN_ATTEMPT: \$\{\{ github\.run_attempt \}\}/g) ?? []).length, 2);
++  const buildDecision = workflowJobBlock(readWorkflow('builds.yml'), 'changes');
++  assert.match(buildDecision, /if \[\[ "\$\{RELEASE_CANDIDATE\}" == "true" \]\]; then\n\s+release_config=true\n\s+elif/);
++  assert.match(workflowJobBlock(readWorkflow('database-upgrade.yml'), 'changes'),
++    /MIGRATIONS_CHANGED: \$\{\{ inputs\.release_sha == '' &&/);
++});
++
+ function workflowPathFilterBlock(job, filterName) {
+   assert.match(filterName, /^[a-z_]+$/, 'workflow path filter selector must be a literal safe identifier');
+   const match = job.match(
+@@ -457,7 +487,7 @@ test('Cut release uses a read-only request, protected handler, and scoped token
+   assert.match(validation, /npm run test:container:web -- http:\/\/127\.0\.0\.1:3000/);
+   assert.doesNotMatch(validation, /create-github-app-token|SERVER_RELEASE_APP_|github\.token/);
+ 
+-  assert.match(finalize, /needs: \[prepare, publish_candidate, release-validation\]/);
++  assert.match(finalize, /needs: \[prepare, publish_candidate, release-validation, candidate-lint, candidate-tests, candidate-builds, candidate-container-scan, candidate-database-upgrade\]/);
+   assert.doesNotMatch(finalize, /environment:|secrets./);
+   assert.match(finalize, /permissions:\s*\n\s+contents: write\s*\n\s+pull-requests: write/);
+   assert.match(finalize, /Require current protected master workflow[\s\S]*git\/ref\/heads\/master/);
+@@ -771,9 +801,9 @@ test('pull requests build and smoke only Web-impacting changes while exhaustive
+   );
+   const releaseConfig = workflowJobBlock(workflow, 'release-config');
+ 
+-  assert.match(workflow, /on:\s*\n\s+pull_request:/);
++  assert.match(workflow, /on:[\s\S]*?\n  pull_request:/);
+   assert.match(workflow, /workflow_dispatch:[\s\S]*validation_scope:[\s\S]*configuration-only/);
+-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
++  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
+   assert.doesNotMatch(webPaths, /- 'backend\/\*\*'/);
+   assert.doesNotMatch(webPaths, /- 'mobile\/test\/\*\*'/);
+   assert.match(webPaths, /- 'mobile\/src\/\*\*'/);
+@@ -2298,7 +2328,7 @@ test('pull request test suites run only for their affected surfaces', () => {
+ 
+   assertPathFilterOutputs(changes, ['backend', 'mobile'], 'decision');
+   assert.match(workflow, /workflow_dispatch:/);
+-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
++  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
+   assert.match(changes, /github\.event_name != 'pull_request'/);
+   assert.match(backendPaths, /- '\.github\/workflows\/tests\.yml'/);
+   assert.match(mobilePaths, /- '\.github\/workflows\/tests\.yml'/);
+@@ -2371,7 +2401,7 @@ test('database upgrade and rollback select only their affected database surfaces
+ 
+   assertPathFilterOutputs(changes, ['database', 'migrations'], 'decision');
+   assert.match(workflow, /workflow_dispatch:/);
+-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
++  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
+   assert.match(changes, /github\.event_name != 'pull_request'/);
+   for (const expectedPath of [
+     '.github/workflows/database-upgrade.yml',
+@@ -2401,7 +2431,11 @@ test('database upgrade and rollback select only their affected database surfaces
+   assert.equal(packageConfig.scripts['test:db:rollback:unit'], 'node --test scripts/postgres-rollback-smoke.test.mjs');
+   assert.equal(packageConfig.scripts['test:db:rollback'], 'node scripts/postgres-rollback-smoke.mjs');
+ 
+-  assert.equal(pathFilterMatches(changes, 'database', 'backend/src/routes/user.ts'), false);
++  for (const source of ['routes/user.ts', 'routes/goals.ts', 'routes/metrics.ts', 'routes/imports.ts',
++    'services/caloriePlanningLock.ts', 'services/goalPace.ts', 'services/watch.ts', 'services/clientOperation.ts']) {
++    assert.equal(pathFilterMatches(changes, 'database', `backend/src/${source}`), true, source);
++    assert.equal(pathFilterMatches(changes, 'migrations', `backend/src/${source}`), false, source);
++  }
+   assert.equal(pathFilterMatches(changes, 'database', 'backend/prisma/schema.prisma'), true);
+   assert.equal(pathFilterMatches(changes, 'migrations', 'backend/prisma/schema.prisma'), false);
+   assert.equal(pathFilterMatches(changes, 'migrations', 'backend/prisma/migrations/0021/example.sql'), true);
+@@ -2499,7 +2533,7 @@ test('container scan targets production-image inputs while preserving scheduled
+   assert.match(workflow, /workflow_dispatch:/);
+   assert.match(workflow, /schedule:/);
+   assert.match(changes, /pull-requests: read/);
+-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
++  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
+   assert.match(changes, /github\.event_name != 'pull_request'/);
+   for (const expectedPath of [
+     '.github/workflows/container-scan.yml',
+@@ -2521,7 +2555,7 @@ test('container scan targets production-image inputs while preserving scheduled
+   assert.match(scan, /uses: aquasecurity\/trivy-action@[0-9a-f]{40}/);
+   assert.match(scan, /severity: HIGH,CRITICAL/);
+   assert.ok(scan.includes(
+-    "vuln-type: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'os,library' || 'os' }}"
++    "vuln-type: ${{ (inputs.release_sha == '' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) && 'os,library' || 'os' }}"
+   ), 'only scheduled/manual scans may gate on package libraries; PR/push/merge scans keep OS checks');
+   assert.match(scan, /ignore-unfixed: false/);
+   assert.match(scan, /exit-code: '1'/);
+@@ -2594,7 +2628,7 @@ test('version-only release PRs validate mirrors without platform build fan-out',
+ });
+ 
+ test('all pull-request workflow checkouts freeze exact candidate C', () => {
+-  const checkoutExpression = 'ref: ${{ github.event.pull_request.head.sha || github.sha }}';
++  const checkoutExpression = 'ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}';
+   for (const name of [
+     'builds.yml',
+     'tests.yml',
+@@ -2604,7 +2638,7 @@ test('all pull-request workflow checkouts freeze exact candidate C', () => {
+   ]) {
+     const workflow = readWorkflow(name);
+     const checkoutCount = (workflow.match(/uses: actions\/checkout@(?:v4|[0-9a-f]{40})/g) ?? []).length;
+-    const pinnedCount = workflow.split(checkoutExpression).length - 1;
++    const pinnedCount = workflow.split(checkoutExpression).length - 1 + workflow.split('ref: ${{ inputs.release_sha }}').length - 1;
+     assert.ok(checkoutCount > 0, `${name} must contain a checkout`);
+     assert.equal(pinnedCount, checkoutCount, `${name} must pin every checkout to candidate C`);
+   }
+@@ -2682,7 +2716,7 @@ test('PR rollback owns migration safety without a redundant Cut release replay',
+   assert.match(pullRequest, /npm run test:db:rollback/);
+   assert.doesNotMatch(pullRequest, /upload-artifact|hosted-result|retention-days:/);
+   assert.doesNotMatch(release, /\n  database-rollback:|database_migrations_changed|test:db:rollback/);
+-  assert.match(releaseFinalize, /needs: \[prepare, publish_candidate, release-validation\]/);
++  assert.match(releaseFinalize, /needs: \[prepare, publish_candidate, release-validation, candidate-lint, candidate-tests, candidate-builds, candidate-container-scan, candidate-database-upgrade\]/);
+   assert.doesNotMatch(releaseFinalize, /ux-regression/);
+ });
+ 

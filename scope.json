@@ -1,0 +1,136 @@
+{
+  "host": "MCHARTIER_ZBOOK",
+  "owner": "01a11db5-8540-740a-a673-1026c0b90007",
+  "checkedAtUtc": "2026-10-09T04:45:57.456Z",
+  "issue": 457,
+  "standards": "Full supplied implementation role, workflow-v3 f0919b184b6344d6279178b2388190936ca432a9, pr-review-v3 97e5583c8355f3673aad0835c0ce3ca1486aeb8b and direct amendments read and acknowledged.",
+  "head": "0c9c839ee71bc2c3e4599b5b2580ff8ffda3f7e5",
+  "actualTarget": "547206a1b372b73fc95fc412ad453b8099440000",
+  "apiBase": "547206a1b372b73fc95fc412ad453b8099440000",
+  "mergeBase": "547206a1b372b73fc95fc412ad453b8099440000",
+  "parentRevisions": [],
+  "commits": [
+    {
+      "sha": "0c9c839ee71bc2c3e4599b5b2580ff8ffda3f7e5",
+      "parents": [
+        "547206a1b372b73fc95fc412ad453b8099440000"
+      ],
+      "subject": "Validate release candidates in trusted CI and stabilize goal smoke"
+    }
+  ],
+  "files": [
+    {
+      "status": "M",
+      "path": ".github/workflows/builds.yml",
+      "sha256": "8ab08388fe0676bd0dd0115fc3df5e1e44fbcf7c5957f1eea747e383375798a1"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/container-scan.yml",
+      "sha256": "0c0248d81a04d83b255104718a78894bed077a69bc62d7f2106679cc62cdf1d8"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/cut-release.yml",
+      "sha256": "a8a1e0695acccbf543fbc31a5436ef26f6ae6a97a8a95cae2e72f4f62c6c4375"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/database-upgrade.yml",
+      "sha256": "b400967f284aceeb37a8db5596ebaeb99d3bfff8702e3647114d08e8133a548a"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/lint.yml",
+      "sha256": "8bd35dbe3bb141f9dd8d8650170b43e8f7743720d583509eda03e25374ceed0c"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/tests.yml",
+      "sha256": "0a2aae150f164b31e545743764b0564d91eb66c182ae67f8e68e1bffebf52049"
+    },
+    {
+      "status": "M",
+      "path": "AGENTS.md",
+      "sha256": "adfa3ff41a99f7e7d1347e7c1eecf9433f033721df2f1ce7dd9360f0d25bbde8"
+    },
+    {
+      "status": "M",
+      "path": "docs/release-compatibility.md",
+      "sha256": "b7b34685e2c72855e70baaac16a242602bda5a126053cda4e470d68cde0f6d86"
+    },
+    {
+      "status": "M",
+      "path": "scripts/postgres-goal-pace-smoke.mjs",
+      "sha256": "773792153e7dc1074b7a7a575491ee6e60fd71d14a45df01b7c03d11e82ebf93"
+    },
+    {
+      "status": "M",
+      "path": "scripts/release-ci-gate.mjs",
+      "sha256": "6f5dfce8cbc35262001f28089cae38bd01820ccac8360ad18b5b2fdd552aab8d"
+    },
+    {
+      "status": "M",
+      "path": "scripts/release-ci-gate.test.mjs",
+      "sha256": "902f29b65648b3c37a63027e907c10686866bb7dc848e5383df85210addbb1c9"
+    },
+    {
+      "status": "M",
+      "path": "scripts/release-workflow-contract.test.mjs",
+      "sha256": "d659a68b554333d9ef93ff4ec36d97c688ff0a2d2fb6129f2fafb0e94448eefb"
+    }
+  ],
+  "related": [
+    {
+      "number": 441,
+      "head": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "base": "4cbcbc740fbe5fa5646b4de31951c79a653176d5",
+      "target": "master",
+      "state": "open"
+    },
+    {
+      "number": 452,
+      "head": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+      "base": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "target": "mchartier/release-entrypoints-recovery",
+      "state": "open"
+    },
+    {
+      "number": 455,
+      "head": "2b2c58e089465679b3cf9a8738fde8f453e4c658",
+      "base": "547206a1b372b73fc95fc412ad453b8099440000",
+      "target": "master",
+      "state": "open"
+    }
+  ],
+  "tests": {
+    "releaseSuite": {
+      "passed": 160,
+      "skipped": 2,
+      "failed": 0
+    },
+    "focused": {
+      "passed": 60,
+      "failed": 0
+    },
+    "goalSmoke": {
+      "baseline": "547206a1b372b73fc95fc412ad453b8099440000",
+      "corrected": "0c9c839ee71bc2c3e4599b5b2580ff8ffda3f7e5",
+      "before": "90000 !== 84000 at original line279",
+      "after": "Complete real-Postgres smoke passes, including all later timezone/Wear/import races.",
+      "runtime": "Windows host; Node v24.19.0, Prisma7.9.0, disposable PostgreSQL16.14 at loopback55457. CI remains on its existing Node20/22.13 and postgres15-alpine/16-alpine settings. No production goal semantics, lockfiles or runtime dependency versions changed."
+    }
+  },
+  "impact": "Master-based follow-on. No PR441/452/455 source/body operation. Overlapping cut-release/build/workflow-test/AGENTS/release-compatibility changes need coordinator-managed integration and affected QA; no silent child propagation/rebase.",
+  "limitations": [
+    "Trusted release workflow not dispatched; no merge/tag/image/OTA/provider/deployment action performed.",
+    "Raw actionlint1.7.12 does not support existing GitHub Cloud job.workflow_sha and concurrency.queue. Only those diagnostics were filtered for the compatibility check; no repository suppression added.",
+    "Current-head hosted CI and independent QA remain separate publication gates.",
+    "Known configured review quota refusal on PR441 comment6070781981 remains historical; no completed bot review or quota reset is claimed."
+  ],
+  "retention": {
+    "purpose": "Issue457 original CI failures, actual local red/green PostgreSQL evidence and exact source/scope inventory",
+    "owner": "01a11db5-8540-740a-a673-1026c0b90007",
+    "policy": "Dedicated nonmerged evidence ref; retain with original records; never merge into product source."
+  }
+}
