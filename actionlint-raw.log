@@ -1,0 +1,80 @@
+.github/workflows/lint.yml:51:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+   |
+51 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+   |                             ^~~~~~~~~~~~~~~~
+.github/workflows/tests.yml:50:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+   |
+50 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+   |                             ^~~~~~~~~~~~~~~~
+.github/workflows/builds.yml:77:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+   |
+77 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+   |                             ^~~~~~~~~~~~~~~~
+.github/workflows/database-upgrade.yml:50:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+   |
+50 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+   |                             ^~~~~~~~~~~~~~~~
+.github/workflows/container-scan.yml:51:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+   |
+51 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+   |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:31:3: unexpected key "queue" for "concurrency" section. expected one of "cancel-in-progress", "group" [syntax-check]
+   |
+31 |   queue: max
+   |   ^~~~~~
+.github/workflows/cut-release.yml:56:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+   |
+56 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+   |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:90:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+   |
+90 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+   |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:264:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+264 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:288:20: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+288 |           ref: ${{ job.workflow_sha }}
+    |                    ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:315:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+315 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:393:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+393 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:479:20: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+479 |           ref: ${{ job.workflow_sha }}
+    |                    ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:616:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+616 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:640:20: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+640 |           ref: ${{ job.workflow_sha }}
+    |                    ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:691:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+691 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:774:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+774 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:788:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+788 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:969:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+    |
+969 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+    |                             ^~~~~~~~~~~~~~~~
+.github/workflows/cut-release.yml:1028:29: property "workflow_sha" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string} [expression]
+     |
+1028 |           WORKFLOW_SHA: ${{ job.workflow_sha }}
+     |                             ^~~~~~~~~~~~~~~~

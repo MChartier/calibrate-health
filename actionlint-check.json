@@ -1,0 +1,7 @@
+{
+  "rawExit": 1,
+  "compatibleExit": 0,
+  "version": "1.7.12",
+  "scope": "Six changed workflows",
+  "ignored": "Only unsupported job.workflow_sha and concurrency.queue diagnostics; raw is not clean; no repository suppression"
+}
