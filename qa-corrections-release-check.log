@@ -1,0 +1,5 @@
+npm notice run cal-io@0.38.0 release:check
+npm notice run node scripts/release-config.mjs check && node scripts/release-acceptance.mjs verify
+Release configuration is consistent.
+Single-user pre-release acceptance policy is valid.
+Optional manual capabilities: owner-release-confidence, exhaustive-web-regression, native-emulator-and-upgrade.

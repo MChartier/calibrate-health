@@ -1,0 +1,54 @@
+{
+  "head": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+  "purpose": "Retained nonmerged R1/R2 corrections and actual published scope; prior evidence preserved.",
+  "files": [
+    {
+      "path": "qa-corrections-README.md",
+      "sha256": "88e17d24c7a330853417bb9a90d984d22d0df4b725d9617a3f8106804ca37909"
+    },
+    {
+      "path": "qa-corrections-actionlint.json",
+      "sha256": "f0a34e237a563a6e8efa8e52ed7c979c4adb579ede662d534872a78ab48448f4"
+    },
+    {
+      "path": "qa-corrections-after.log",
+      "sha256": "d2efeb9cdac5b34873a2c01312b086b693fcc1ba498cd2845aecfb62f53e70a1"
+    },
+    {
+      "path": "qa-corrections-before.log",
+      "sha256": "4f617a414820bee2c711ab7c4741dfc6300b1ce4956a1d91754bb31ba266dbf1"
+    },
+    {
+      "path": "qa-corrections-input.json",
+      "sha256": "f3329cb3092172087809d180456b07d1429b42cd73d8491a00b9186bc6d4adfa"
+    },
+    {
+      "path": "qa-corrections-live-scope.json",
+      "sha256": "f3e98d44b07d5adefbeb2e707c8b4e431ce8c09c08987d9b654da76604b31ee4"
+    },
+    {
+      "path": "qa-corrections-original-body.txt",
+      "sha256": "f051f32990fde876035884150d8efaf827f9f98ba021f8aaa95d43bc65397fee"
+    },
+    {
+      "path": "qa-corrections-release-check.log",
+      "sha256": "d44d5f4b3cf0b56b2b6c14bd2421a54b6c0100b66570dedd21fb63a84a655278"
+    },
+    {
+      "path": "qa-corrections-release.log",
+      "sha256": "867df4b8d71536b404c686923cfe9fc5d6b504409fdde1ec97fc5561b877b43f"
+    },
+    {
+      "path": "qa-corrections-reproduce.mjs",
+      "sha256": "05d9aa0253f1574057ce635165f061384aaabe4c8bea78ef707165893c0658e5"
+    },
+    {
+      "path": "qa-corrections-scope.json",
+      "sha256": "99bd75d1835569f68afde5164a030504082756ad9fe42528815c2d88020cb5f0"
+    },
+    {
+      "path": "qa-corrections.json",
+      "sha256": "65955e909c9aa0d4b2e04fd1ab5235ef09d07f799b3b511646e96233369ba6e1"
+    }
+  ]
+}

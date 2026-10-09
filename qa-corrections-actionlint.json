@@ -1,0 +1,1 @@
+[{"message":"unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"","filepath":".github/workflows/unified-ota-release.yml","line":36,"column":3,"kind":"syntax-check","snippet":"  queue: max\n  ^~~~~~","end_column":8}]

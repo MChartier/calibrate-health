@@ -1,0 +1,90 @@
+{
+  "head": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+  "checkedAtUtc": "2026-10-09T00:01:17.101Z",
+  "qaVerdict": {
+    "commentId": 6071350064,
+    "bodySha256": "9e6210f08edf66852e8c98be34add10dc57b810cbeb31fc6da13b84850f93717",
+    "evidenceCommit": "b3ce696a170bd657e4e9f7715d7fc45f93b96c67"
+  },
+  "R1": {
+    "disposition": "Corrected actual handler job inventory; every attempt requires both known terminal phases, consistent planning and no successful execute. Durable provider intents, partial results and unknown assets still reject retirement.",
+    "observations": [
+      {
+        "providerEffect": false,
+        "actualJobs": [
+          {
+            "name": "Inspect immutable inputs and verified successful receipts",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run only the verified selected stages",
+            "conclusion": "cancelled"
+          }
+        ],
+        "retired": "abandoned/unified/42",
+        "assets": [
+          "retirement.json",
+          "retirement-complete.json"
+        ],
+        "providerStarts": 0,
+        "nextAllocationAllowed": true
+      },
+      {
+        "providerEffect": true,
+        "actualJobs": [
+          {
+            "name": "Inspect immutable inputs and verified successful receipts",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run only the verified selected stages",
+            "conclusion": "cancelled"
+          }
+        ],
+        "retired": "candidate/unified/42",
+        "assets": [
+          "op.native-ios.000001.json"
+        ],
+        "providerStarts": 1,
+        "nextAllocationAllowed": false,
+        "rejection": "Provider intent, partial publication or unknown assets must remain recoverable."
+      }
+    ],
+    "regressions": "Real workflow names -> GitHub adapter -> retirement/journal; missing/unknown phases, successful earlier execute, lost provider response and failed/lost cleanup tested."
+  },
+  "R2": {
+    "disposition": "Moved existing environment protection to the first job, before EAS environment resolution. All later stages require predecessor success. No protection configuration changed.",
+    "observedStages": [
+      {
+        "job": "environment",
+        "environment": "${{ inputs.profile == 'production' && 'production' || 'preview' }}",
+        "providerCredential": true
+      },
+      {
+        "job": "export",
+        "needs": "environment",
+        "providerCredential": false
+      },
+      {
+        "job": "intent",
+        "needs": "export",
+        "providerCredential": false
+      },
+      {
+        "job": "publish",
+        "needs": "intent",
+        "providerCredential": true
+      }
+    ],
+    "regressions": "Approval expression and every dependency edge asserted on actual workflow, with implicit success scheduling and credential separation."
+  },
+  "validation": {
+    "focused": "71 pass",
+    "release": "278 pass, 2 existing skips",
+    "configuration": "consistent; acceptance policy valid",
+    "before": "Initial new R1/R2 regressions failed against production source 53de4b70; retained before log. Two additional cleanup regressions were added afterward.",
+    "lint": "Affected OTA workflow reports only existing queue:max unsupported-schema diagnostic. No new diagnostic; raw exit remains 1."
+  },
+  "applicability": "Original non-UI artifact selection/worker argument evidence remains applicable. Old retirement and approval-order coverage is superseded by these actual-path observations. Parent documentation impact remains applicable; no source rebase or parent merge.",
+  "externalOperations": 0
+}

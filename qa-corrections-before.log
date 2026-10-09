@@ -1,0 +1,179 @@
+Γ£û actual handler cancellation before plan persistence retires through the GitHub adapter and unblocks allocation (1.8333ms)
+Γ£ö actual cancelled execute cannot retire a lost provider response with retained durable intent (2.1492ms)
+Γ£ö actual-job retirement rejects missing phases, unknown jobs and a successful earlier execute (1.1582ms)
+Γ£ö retirement reads every attempt and rechecks the run before returning evidence (0.3746ms)
+Γ£ö missing earlier jobs, changed ownership and active attempts cannot prove retirement safe (0.2947ms)
+Γ£ö closure binds the original bot-owned unmerged candidate and verifies readback (0.3145ms)
+Γ£ö local reusable workflow callers cover every called job token permission (11.1642ms)
+Γ£ö credentialed release workflows pin external actions and the EAS CLI immutably (7.4047ms)
+Γ£ö server publication accepts read-only master requests through protected default-branch handlers (2.2463ms)
+Γ£ö server operations share one manual entrypoint without redundant request handlers (0.5579ms)
+Γ£ö server publication grants only the operation-specific built-in token permissions (2.8591ms)
+Γ£ö Cut release uses a read-only request, protected handler, and scoped token writes (2.377ms)
+Γ£ö prepared release publishing is reusable, recoverable, and idempotent (1.1341ms)
+Γ£ö optional self-host deployment consumes the published digest without gating OTA (1.0933ms)
+Γ£ö pull requests build and smoke only Web-impacting changes while exhaustive suites stay manual (1.4718ms)
+Γ£ö pull requests run backend builds only for backend-impacting paths (0.4387ms)
+Γ£ö Android SDK setup explicitly excludes the retired tools package (3.4305ms)
+Γ£ö pull requests run targeted native compilation while emulator and upgrade rehearsals stay manual (1.9237ms)
+Γ£ö native jobs bind immutable candidate and baseline SHAs for PR and manual events (0.3794ms)
+Γ£ö build input classification covers representative paths without cross-surface noise (3.4856ms)
+Γ£ö manual Wear emulator runs persistence instrumentation after its release-package smoke (0.4882ms)
+Γ£ö release images publish immutable identity and guard the moving latest tag (5.3994ms)
+Γ£ö no active workflow deploys to AWS or builds an image for every merged PR (3.1417ms)
+Γ£ö active workflows and package scripts do not retain the hosted-result or external-launch ledger (3.3457ms)
+Γ£ö hidden workflow evidence paths are explicitly included in artifact uploads (2.3927ms)
+Γ£ö Expo OTA separates source export from clean environment-scoped publication (2.5314ms)
+Γ£ö native Android store releases build one paired candidate and promote it without rebuilding (4.4603ms)
+Γ£ö pull request test suites run only for their affected surfaces (0.8695ms)
+Γ£ö database upgrade and rollback select only their affected database surfaces (1.1538ms)
+Γ£ö database rollback binds a full candidate SHA for pull requests and manual dispatches (0.2961ms)
+Γ£ö dependency audit runs all workspaces only during scheduled or manual maintenance (0.4446ms)
+Γ£ö release configuration and PR workflows do not gate merges on package advisories (2.251ms)
+Γ£ö container scan targets production-image inputs while preserving scheduled coverage (0.4062ms)
+Γ£ö version-only release PRs validate mirrors without platform build fan-out (1.0146ms)
+Γ£ö all pull-request workflow checkouts freeze exact candidate C (0.5788ms)
+Γ£ö the lean acceptance plan separates automatic critical smoke from exhaustive Web suites (0.3972ms)
+Γ£ö manual native rehearsals retain only short-lived diagnostic artifacts (0.5376ms)
+Γ£ö PR rollback owns migration safety without a redundant Cut release replay (0.4877ms)
+Γ£ö Optional Release Confidence is a manual owner-discretion exact-candidate check (0.4504ms)
+Γ£ö selective image publication preserves legacy defaults and cannot implicitly publish OTA or deploy (0.5233ms)
+Γ£ö unified operator and automatic server requests are read-only and cannot run on merges (0.538ms)
+Γ£ö fresh server handler verifies read-only before granting only the existing worker publication authority (0.3248ms)
+Γ£ö Android configuration validation runs from its actual exact-source checkout before signing (0.5235ms)
+Γ£ö iOS build and source-free IPA attestation have separate authority and never submit automatically (0.3545ms)
+Γ£û selected OTA approval precedes environment resolution and every dependent production stage (0.7599ms)
+Γ£ö selected OTA separates source export, durable GitHub intent and source-free Expo publication (0.4825ms)
+Γä╣ tests 46
+Γä╣ suites 0
+Γä╣ pass 44
+Γä╣ fail 2
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 155.3794
+
+Γ£û failing tests:
+
+test at scripts\release-retirement-github.test.mjs:39:1
+Γ£û actual handler cancellation before plan persistence retires through the GitHub adapter and unblocks allocation (1.8333ms)
+  AssertionError [ERR_ASSERTION]: All-attempt job evidence cannot rule out provider activity.
+      at retirementReason (file:///C:/Users/MChar/Documents/Codex/2026-10-08/task-11/release-447/scripts/release-retirement.mjs:14:3)
+      at retireCandidate (file:///C:/Users/MChar/Documents/Codex/2026-10-08/task-11/release-447/scripts/release-retirement.mjs:52:16)
+      at async reconcileCandidates (file:///C:/Users/MChar/Documents/Codex/2026-10-08/task-11/release-447/scripts/release-retirement.mjs:88:40)
+      at async TestContext.<anonymous> (file:///C:/Users/MChar/Documents/Codex/2026-10-08/task-11/release-447/scripts/release-retirement-github.test.mjs:41:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts\release-workflow-contract.test.mjs:2789:1
+Γ£û selected OTA approval precedes environment resolution and every dependent production stage (0.7599ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\n    environment: \$\{\{ inputs\.profile == 'production' && 'production' \|\| 'preview' \}\}/. Input:
+  
+  '\n' +
+    '  environment:\n' +
+    '    name: Resolve the verified public EAS environment\n' +
+    '    runs-on: ubuntu-latest\n' +
+    '    timeout-minutes: 60\n' +
+    '    permissions:\n' +
+    '      actions: read\n' +
+    '      contents: read\n' +
+    '      attestations: read\n' +
+    '    steps:\n' +
+    '      - name: Initialize runner-local artifact paths\n' +
+    '        shell: bash\n' +
+    '        run: |\n' +
+    '          set -euo pipefail\n' +
+    '          echo "GH_CLI=${RUNNER_TEMP}/gh-cli/gh" >> "${GITHUB_ENV}"\n' +
+    '          echo "OTA_ENVIRONMENT_FILE=${RUNNER_TEMP}/ota-environment/environment.json" >> "${GITHUB_ENV}"\n' +
+    '          echo "OTA_CHANNEL_FILE=${RUNNER_TEMP}/ota-environment/channel.json" >> "${GITHUB_ENV}"\n' +
+    '          echo "OTA_ARTIFACT_DIRECTORY=${RUNNER_TEMP}/ota-export" >> "${GITHUB_ENV}"\n' +
+    '          echo "OTA_RECEIPT_FILE=${RUNNER_TEMP}/ota-receipt.json" >> "${GITHUB_ENV}"\n' +
+    '      - name: Require protected tooling before checking out privileged code\n' +
+    '        shell: bash\n' +
+    '        env:\n' +
+    '          GH_TOKEN: ${{ github.token }}\n' +
+    '        run: |\n' +
+    '          set -euo pipefail\n' +
+    '          test "${GITHUB_REF}" = refs/heads/master\n' +
+    '          [[ "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]\n' +
+    '          master="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/master" --jq .object.sha)"\n' +
+    '          [[ "${master}" =~ ^[0-9a-f]{40}$ ]]\n' +
+    '          if [[ "${master}" != "${WORKFLOW_SHA}" ]]; then\n' +
+    '            for tree in scripts .github; do\n' +
+    '              original="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${WORKFLOW_SHA}" --jq ".tree[] | select(.path == \\"${tree}\\" and .type == \\"tree\\") | .sha")"\n' +
+    '              current="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${master}" --jq ".tree[] | select(.path == \\"${tree}\\" and .type == \\"tree\\") | .sha")"\n' +
+    '              [[ "${original}" =~ ^[0-9a-f]{40}$ ]]\n' +
+    '              test "${original}" = "${current}"\n' +
+    '            done\n' +
+    '          fi\n' +
+    '      - name: Checkout exact protected source\n' +
+    '        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0\n' +
+    '        with:\n' +
+    '          ref: ${{ github.workflow_sha }}\n' +
+    '          fetch-depth: 0\n' +
+    '          persist-credentials: false\n' +
+    '          sparse-checkout: |\n' +
+    '            /scripts/\n' +
+    '            /tools/eas-cli/\n' +
+    '            /mobile/eas.json\n' +
+    '          sparse-checkout-cone-mode: false\n' +
+    '      - name: Setup Node\n' +
+    '        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n' +
+    '        with:\n' +
+    '          node-version: 22.14.0\n' +
+    '      - name: Install the reviewed read-only attestation client\n' +
+    '        shell: bash\n' +
+    '        run: |\n' +
+    '          set -euo pipefail\n' +
+    '          archive="${RUNNER_TEMP}/gh_2.97.0_linux_amd64.tar.gz"\n' +
+    '          curl --fail --location --proto \'=https\' --tlsv1.2 --output "${archive}" \\\n' +
+    '            https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_linux_amd64.tar.gz\n' +
+    '          echo "a2c9b8497e1f85b1ad0dfcb78b5a622e098801b8e461e459e88e1ee12f018112  ${archive}" | sha256sum --check --strict\n' +
+    '          mkdir -p "${RUNNER_TEMP}/gh-cli"\n' +
+    '          tar --extract --gzip --file "${archive}" --directory "${RUNNER_TEMP}/gh-cli" --strip-components=2 gh_2.97.0_linux_amd64/bin/gh\n' +
+    '          chmod 0755 "${GH_CLI}"\n' +
+    '      - name: Install only the locked EAS client without lifecycle hooks\n' +
+    '        run: npm ci --prefix tools/eas-cli --ignore-scripts --no-audit --fund=false\n' +
+    '      - name: Verify exact manual authority and signed native compatibility before credentials\n' +
+    '        env:\n' +
+    '          GITHUB_TOKEN: ${{ github.token }}\n' +
+    '          GH_TOKEN: ${{ github.token }}\n' +
+    '        run: node scripts/release-ota-worker.mjs verify\n' +
+    '      - name: Prepare public environment output directory\n' +
+    '        run: mkdir -p "${RUNNER_TEMP}/ota-environment"\n' +
+    '      - name: Resolve the verified public EAS environment\n' +
+    '        env:\n' +
+    '          GITHUB_TOKEN: ${{ github.token }}\n' +
+    '          GH_TOKEN: ${{ github.token }}\n' +
+    '          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}\n' +
+    '        run: node scripts/release-ota-worker.mjs environment\n' +
+    '      - name: Retain unified-ota-environment\n' +
+    '        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n' +
+    '        with:\n' +
+    '          name: unified-ota-environment\n' +
+    '          path: ${{ runner.temp }}/ota-environment\n' +
+    '          if-no-files-found: error\n' +
+    '          overwrite: true\n' +
+    '          retention-days: 7\n'
+  
+      at TestContext.<anonymous> (file:///C:/Users/MChar/Documents/Codex/2026-10-08/task-11/release-447/scripts/release-workflow-contract.test.mjs:2793:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n  environment:\n    name: Resolve the verified public EAS environment\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    permissions:\n      actions: read\n      contents: read\n      attestations: read\n    steps:\n      - name: Initialize runner-local artifact paths\n        shell: bash\n        run: |\n          set -euo pipefail\n          echo "GH_CLI=${RUNNER_TEMP}/gh-cli/gh" >> "${GITHUB_ENV}"\n          echo "OTA_ENVIRONMENT_FILE=${RUNNER_TEMP}/ota-environment/environment.json" >> "${GITHUB_ENV}"\n          echo "OTA_CHANNEL_FILE=${RUNNER_TEMP}/ota-environment/channel.json" >> "${GITHUB_ENV}"\n          echo "OTA_ARTIFACT_DIRECTORY=${RUNNER_TEMP}/ota-export" >> "${GITHUB_ENV}"\n          echo "OTA_RECEIPT_FILE=${RUNNER_TEMP}/ota-receipt.json" >> "${GITHUB_ENV}"\n      - name: Require protected tooling before checking out privileged code\n        shell: bash\n        env:\n          GH_TOKEN: ${{ github.token }}\n        run: |\n          set -euo pipefail\n          test "${GITHUB_REF}" = refs/heads/master\n          [[ "${WORKFLOW_SHA}" =~ ^[0-9a-f]{40}$ ]]\n          master="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/master" --jq .object.sha)"\n          [[ "${master}" =~ ^[0-9a-f]{40}$ ]]\n          if [[ "${master}" != "${WORKFLOW_SHA}" ]]; then\n            for tree in scripts .github; do\n              original="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${WORKFLOW_SHA}" --jq ".tree[] | select(.path == \\"${tree}\\" and .type == \\"tree\\") | .sha")"\n              current="$(gh api "repos/${GITHUB_REPOSITORY}/git/trees/${master}" --jq ".tree[] | select(.path == \\"${tree}\\" and .type == \\"tree\\") | .sha")"\n              [[ "${original}" =~ ^[0-9a-f]{40}$ ]]\n              test "${original}" = "${current}"\n            done\n          fi\n      - name: Checkout exact protected source\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0\n        with:\n          ref: ${{ github.workflow_sha }}\n          fetch-depth: 0\n          persist-credentials: false\n          sparse-checkout: |\n            /scripts/\n            /tools/eas-cli/\n            /mobile/eas.json\n          sparse-checkout-cone-mode: false\n      - name: Setup Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n        with:\n          node-version: 22.14.0\n      - name: Install the reviewed read-only attestation client\n        shell: bash\n        run: |\n          set -euo pipefail\n          archive="${RUNNER_TEMP}/gh_2.97.0_linux_amd64.tar.gz"\n          curl --fail --location --proto \'=https\' --tlsv1.2 --output "${archive}" \\\n            https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_linux_amd64.tar.gz\n          echo "a2c9b8497e1f85b1ad0dfcb78b5a622e098801b8e461e459e88e1ee12f018112  ${archive}" | sha256sum --check --strict\n          mkdir -p "${RUNNER_TEMP}/gh-cli"\n          tar --extract --gzip --file "${archive}" --directory "${RUNNER_TEMP}/gh-cli" --strip-components=2 gh_2.97.0_linux_amd64/bin/gh\n          chmod 0755 "${GH_CLI}"\n      - name: Install only the locked EAS client without lifecycle hooks\n        run: npm ci --prefix tools/eas-cli --ignore-scripts --no-audit --fund=false\n      - name: Verify exact manual authority and signed native compatibility before credentials\n        env:\n          GITHUB_TOKEN: ${{ github.token }}\n          GH_TOKEN: ${{ github.token }}\n        run: node scripts/release-ota-worker.mjs verify\n      - name: Prepare public environment output directory\n        run: mkdir -p "${RUNNER_TEMP}/ota-environment"\n      - name: Resolve the verified public EAS environment\n        env:\n          GITHUB_TOKEN: ${{ github.token }}\n          GH_TOKEN: ${{ github.token }}\n          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}\n        run: node scripts/release-ota-worker.mjs environment\n      - name: Retain unified-ota-environment\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2\n        with:\n          name: unified-ota-environment\n          path: ${{ runner.temp }}/ota-environment\n          if-no-files-found: error\n          overwrite: true\n          retention-days: 7\n',
+    expected: /\n    environment: \$\{\{ inputs\.profile == 'production' && 'production' \|\| 'preview' \}\}/,
+    operator: 'match',
+    diff: 'simple'
+  }
