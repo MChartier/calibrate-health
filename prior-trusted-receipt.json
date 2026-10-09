@@ -1,0 +1,37 @@
+{
+  "verdict": "evidence-incomplete",
+  "headSha": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+  "baseSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "apiBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "mergeBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "ultimateTargetSha": "9dc0739e36168aa273530fe00ae5f85fb9c8a3fe",
+  "headParents": [
+    "53de4b701554e2debb6ad62472559a2702f7e485"
+  ],
+  "targetParents": [
+    "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+  ],
+  "parentRevisions": [
+    {
+      "pr": 441,
+      "headSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+      "sourceParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+      "state": "open/unmerged",
+      "gate": "C1/R2 passed in prior same-task assessment; C2 issue-owner metadata pending coordinator correction, not source failure. No positive readiness before cleared."
+    }
+  ],
+  "prBodySha256": "2937c215edb38b487019f45f8f5871088e16961b6a27affa2d168b1a8cb2b554",
+  "checkedAtUtc": "2026-10-09T00:22:03.309578+00:00",
+  "reviewerChat": "01a11c7c-11db-70b8-ba73-efe3693b003e",
+  "host": "mchartier_zbook",
+  "supersedesVerdictCommentId": 6071350064,
+  "verdictCommentId": 6071694756,
+  "verdictBodySha256": "6280160a7cdc08fa1f94d1716b2de87f4473ea349fc22f6be4867dc321839826",
+  "verdictUpdatedAt": "2026-10-09T00:23:15Z",
+  "url": "https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6071694756",
+  "evidenceCommit": "23ba6e2ae1eba0289a0e61b734ed6889b5ae2cac",
+  "evidencePath": "verdict.json",
+  "evidenceSha256": "480d94cf903d76d4a98f0441d46094585b7f23375fbebf253da9a1e9be01f489",
+  "postPublicationRecheckedAtUtc": "2026-10-09T00:23:37.992409+00:00",
+  "checkpoint": "Complete and idle. All QA tests stopped; no next QA task or overlapping suite. Product/body/Project/readiness/draft/merge unchanged."
+}

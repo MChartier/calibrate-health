@@ -1,0 +1,82 @@
+{
+  "data": {
+    "repository": {
+      "issue": {
+        "projectItems": {
+          "nodes": [
+            {
+              "id": "PVTI_lAHOABMy1c4Bl3Eqzg_e1oE",
+              "project": {
+                "number": 1,
+                "title": "Agentic development pipeline"
+              },
+              "fieldValues": {
+                "nodes": [
+                  {},
+                  {},
+                  {},
+                  {
+                    "text": "Unify selective releases and prepare iOS/TestFlight delivery",
+                    "field": {
+                      "name": "Title"
+                    }
+                  },
+                  {
+                    "name": "In Progress",
+                    "field": {
+                      "name": "Status"
+                    }
+                  },
+                  {
+                    "name": "Queued",
+                    "field": {
+                      "name": "Pipeline state"
+                    }
+                  },
+                  {
+                    "text": "https://github.com/MChartier/calibrate-health/pull/452",
+                    "field": {
+                      "name": "Current PRs"
+                    }
+                  },
+                  {
+                    "text": "01a11cd8-3e02-703c-831c-fdc6176d7028",
+                    "field": {
+                      "name": "Owner"
+                    }
+                  },
+                  {
+                    "text": "Child R1/R2 resolved; waiting for parent441 issue-owner C2 correction and same-QA metadata/parent rebind. No child code correction pending. QA: https://github.com/MChartier/calibrate-health/pull/452#issuecomment-6071694756",
+                    "field": {
+                      "name": "Blocked by"
+                    }
+                  },
+                  {
+                    "text": "2026-10-09T00:27:18Z",
+                    "field": {
+                      "name": "Verified at"
+                    }
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      "pullRequest": {
+        "projectItems": {
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    }
+  }
+}

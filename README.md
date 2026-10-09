@@ -1,0 +1,9 @@
+# PR452 current-target independent QA
+
+Verdict: changes-required, metadata only. Code, preparation behavior, full published scope, historical evidence applicability and parent gate pass. C3: issue447 calls the native association nonclosing, but GitHub closingIssuesReferences contains447. Reconcile the claim and native relationship while retaining the accepted source-preparation-only scope; do not imply runtime/provider completion. The Project issue item and Current PR/owner links are present; old parentC2 blocker is stale coordinator bookkeeping.
+
+verdict.json holds exact source/parent/ultimate/PR-and-issue-body bindings, findings and dispositions. verification.json retains complete published commits/paths, unchanged source identities, conflict-only probes, verified historical comment receipts and successful exact-head CI. native.json and project-readback.json are supported live GraphQL reads. prepublish.json and parent-current.json preserve full conversations/reviews and original descriptions. Parent441 readiness is separately verified; issue457 remains an inherited operational release blocker, not a new452 source defect or a waiver.
+
+No suites rerun in this metadata-only continuation. Prior same-task89 tests andR1/R2 probes remain at23ba6e2ae1eba0289a0e61b734ed6889b5ae2cac. Five refreshed retained artifacts were verified by exact Git blob/size/SHA256. Prior negative/incomplete receipts and source/provenance identities are preserved unchanged.
+
+Purpose: durable independent review evidence. Owner: trusted QA task01a11c7c-11db-70b8-ba73-efe3693b003e on MCHARTIER_ZBOOK. Retain indefinitely while referenced; this dedicated nonmerged evidence ref is never a product merge target. Coordinator separately stores the exact published comment receipt and owns readiness/lifecycle changes. No source/body/Project/provider/release mutations by QA.

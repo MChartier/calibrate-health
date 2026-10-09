@@ -1,0 +1,37 @@
+[
+  {
+    "commitSha": "d7d8e07195c625bf7e0fbad046b1c9372dec5b5b",
+    "path": "ultimate-refresh-impact.json",
+    "gitBlobSha": "d60d3b12d4769a14b97538f339ac48472440f08e",
+    "bytes": 9138,
+    "sha256": "bdc7e041ab9c6df88e8b21e99c56db20d32b9cd743ce3cb46d4597b071221c09"
+  },
+  {
+    "commitSha": "d7d8e07195c625bf7e0fbad046b1c9372dec5b5b",
+    "path": "ultimate-refresh-original-body.txt",
+    "gitBlobSha": "132c7a705182b8710867e65bdec6a60bbd9fef85",
+    "bytes": 5595,
+    "sha256": "2937c215edb38b487019f45f8f5871088e16961b6a27affa2d168b1a8cb2b554"
+  },
+  {
+    "commitSha": "bd7d5b9e7a8ada1e7760c4634439065e357fb5a7",
+    "path": "ultimate-refresh-receipt.json",
+    "gitBlobSha": "49e8175fc45eb5a250aa0e567b10c2d8112c8e4c",
+    "bytes": 16917,
+    "sha256": "25ba76b8328e89147e2d705476fbadc32eb11b44bce01da9ba41ec15ce98bc4d"
+  },
+  {
+    "commitSha": "23ba6e2ae1eba0289a0e61b734ed6889b5ae2cac",
+    "path": "verdict.json",
+    "gitBlobSha": "dbf4ba3d1c0a7ef8e2b3e337411abda1da24e6f8",
+    "bytes": 12249,
+    "sha256": "480d94cf903d76d4a98f0441d46094585b7f23375fbebf253da9a1e9be01f489"
+  },
+  {
+    "commitSha": "49c1a587729372182e6629e0b4e5ca10548bb306",
+    "path": "verdict.json",
+    "gitBlobSha": "515b86564a2c5460e5cccc0f2e61276fd5bc588f",
+    "bytes": 34470,
+    "sha256": "35396992852afc5ae42145527dbacbc5113ca06ef1a5962d585b01bf3eb86f58"
+  }
+]

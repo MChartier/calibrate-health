@@ -1,0 +1,27 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "headRefOid": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+        "baseRefOid": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+        "closingIssuesReferences": {
+          "nodes": [
+            {
+              "number": 447
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        },
+        "reviewThreads": {
+          "totalCount": 0,
+          "nodes": [],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    }
+  }
+}
