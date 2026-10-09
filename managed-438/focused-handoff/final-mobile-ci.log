@@ -1,0 +1,1294 @@
+Classify Test Inputs	Set up job	﻿2026-10-09T05:46:05.6141964Z Current runner version: '2.337.0'
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6159299Z ##[group]Runner Image Provisioner
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6160097Z Hosted Compute Agent
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6160503Z Version: 20261002.596
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6160887Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6161314Z Build Date: 2026-10-02T22:28:27Z
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6161774Z Worker ID: {512ea2f2-0869-4a3f-bb8a-71923dc179a2}
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6162218Z Region: westus3
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6162537Z Cloud: Azure
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6162918Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6163694Z ##[group]Operating System
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6164095Z Ubuntu
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6164487Z 24.04.5
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6164788Z LTS
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6165146Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6165473Z ##[group]Runner Image
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6165850Z Image: ubuntu-24.04
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6166233Z Version: 20261004.327.1
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6166843Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6167898Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6168505Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6169269Z ##[group]GITHUB_TOKEN Permissions
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6170684Z Contents: read
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6171050Z Metadata: read
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6171388Z PullRequests: read
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6171802Z ##[endgroup]
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6173101Z Secret source: Actions
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6173677Z Cache mode: write
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.6174098Z Prepare workflow directory
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.7255960Z Prepare all required actions
+Classify Test Inputs	Set up job	2026-10-09T05:46:05.7292128Z Getting action download info
+Classify Test Inputs	Set up job	2026-10-09T05:46:06.0365884Z Download action repository 'dorny/paths-filter@v3' (SHA:0e4a8c6effa4802afeda77dc8d303f8176d7dfad)
+Classify Test Inputs	Set up job	2026-10-09T05:46:06.6903129Z Complete job name: Classify Test Inputs
+Classify Test Inputs	Detect affected test surfaces	﻿2026-10-09T05:46:06.7381646Z ##[group]Run dorny/paths-filter@v3
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.7382453Z with:
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.7384289Z   filters: backend:
+Classify Test Inputs	Detect affected test surfaces	  - '.github/workflows/tests.yml'
+Classify Test Inputs	Detect affected test surfaces	  - 'backend/**'
+Classify Test Inputs	Detect affected test surfaces	  - 'docs/openapi/v1.yaml'
+Classify Test Inputs	Detect affected test surfaces	  - 'docs/weight-trend-v2-tuning-report.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'shared/**'
+Classify Test Inputs	Detect affected test surfaces	mobile:
+Classify Test Inputs	Detect affected test surfaces	  - '.github/workflows/tests.yml'
+Classify Test Inputs	Detect affected test surfaces	  - 'backend/package.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'backend/package-lock.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'docs/openapi/v1.yaml'
+Classify Test Inputs	Detect affected test surfaces	  - 'mobile/**'
+Classify Test Inputs	Detect affected test surfaces	  - 'package.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'package-lock.json'
+Classify Test Inputs	Detect affected test surfaces	  - 'packages/api-client/**'
+Classify Test Inputs	Detect affected test surfaces	  - 'shared/**'
+Classify Test Inputs	Detect affected test surfaces	
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.7388043Z   token: ***
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.7388310Z   list-files: none
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.7388676Z   initial-fetch-depth: 100
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.7388992Z   predicate-quantifier: some
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.7389569Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.8002486Z ##[group]Fetching list of changed files for PR#459 from Github API
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:06.8003297Z Invoking listFiles(pull_number: 459, per_page: 100)
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3144868Z Received 40 items
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3146097Z [modified] README.md
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3147395Z [added] e2e/expo-web/browser-session-ordering.spec.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3148722Z [modified] e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3150030Z [modified] mobile/README.md
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3150860Z [modified] mobile/app.config.test.cjs
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3151744Z [modified] mobile/app.json
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3152519Z [modified] mobile/app/(auth)/login.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3153420Z [modified] mobile/app/(auth)/register.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3154400Z [modified] mobile/app/(tabs)/(settings)/advanced.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3155390Z [modified] mobile/app/_layout.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3156257Z [modified] mobile/src/auth/AuthContext.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3157669Z [modified] mobile/src/auth/AuthContext.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3158786Z [modified] mobile/src/auth/AuthContext.web.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3160142Z [modified] mobile/src/auth/AuthContext.web.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3161344Z [modified] mobile/src/auth/authScreenNavigation.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3162505Z [removed] mobile/src/auth/authServerDraft.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3164104Z [removed] mobile/src/auth/authServerDraft.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3165316Z [modified] mobile/src/auth/logoutIntent.web.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3166730Z [modified] mobile/src/auth/logoutIntentStore.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3168428Z [modified] mobile/src/auth/logoutIntentStore.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3170060Z [modified] mobile/src/auth/offlineWorkspace.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3171446Z [modified] mobile/src/auth/offlineWorkspace.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3172813Z [modified] mobile/src/auth/serverSwitch.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3174207Z [modified] mobile/src/auth/serverSwitch.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3175532Z [modified] mobile/src/auth/storage.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3176754Z [modified] mobile/src/auth/storage.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3178185Z [added] mobile/src/auth/targetTransitionState.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3179826Z [added] mobile/src/auth/targetTransitionState.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3181700Z [modified] mobile/src/components/ClientServerIncompatibleScreen.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3183961Z [modified] mobile/src/components/ClientServerIncompatibleScreen.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3186002Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3187892Z [modified] mobile/src/components/ClientUpgradeRequiredScreen.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3190143Z [removed] mobile/src/components/ServerUrlControl.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3191703Z [removed] mobile/src/components/ServerUrlControl.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3192757Z [modified] mobile/src/config/server.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3193701Z [modified] mobile/src/config/server.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3194659Z [modified] mobile/src/legal/publicLegalContent.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3195682Z [added] mobile/src/offline/database.test.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3196623Z [modified] mobile/src/offline/database.ts
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3197726Z [modified] mobile/src/screens/AdvancedSettingsScreen.test.tsx
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3199924Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3200905Z Detected 40 changed files
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3201591Z Results:
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3202651Z ##[group]Filter backend = false
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3203377Z Matching files: none
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3204394Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3205358Z ##[group]Filter mobile = true
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3206024Z Matching files:
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3206608Z mobile/README.md [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3207316Z mobile/app.config.test.cjs [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3208090Z mobile/app.json [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3208795Z mobile/app/(auth)/login.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3209742Z mobile/app/(auth)/register.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3210674Z mobile/app/(tabs)/(settings)/advanced.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3211589Z mobile/app/_layout.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3212395Z mobile/src/auth/AuthContext.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3213299Z mobile/src/auth/AuthContext.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3214204Z mobile/src/auth/AuthContext.web.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3215172Z mobile/src/auth/AuthContext.web.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3216224Z mobile/src/auth/authScreenNavigation.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3217269Z mobile/src/auth/authServerDraft.test.ts [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3218206Z mobile/src/auth/authServerDraft.ts [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3219110Z mobile/src/auth/logoutIntent.web.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3220396Z mobile/src/auth/logoutIntentStore.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3221448Z mobile/src/auth/logoutIntentStore.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3222436Z mobile/src/auth/offlineWorkspace.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3223416Z mobile/src/auth/offlineWorkspace.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3224364Z mobile/src/auth/serverSwitch.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3225278Z mobile/src/auth/serverSwitch.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3226138Z mobile/src/auth/storage.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3226963Z mobile/src/auth/storage.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3228221Z mobile/src/auth/targetTransitionState.test.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3229414Z mobile/src/auth/targetTransitionState.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3230841Z mobile/src/components/ClientServerIncompatibleScreen.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3232278Z mobile/src/components/ClientServerIncompatibleScreen.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3233689Z mobile/src/components/ClientUpgradeRequiredScreen.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3235039Z mobile/src/components/ClientUpgradeRequiredScreen.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3236230Z mobile/src/components/ServerUrlControl.test.tsx [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3237287Z mobile/src/components/ServerUrlControl.tsx [deleted]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3238231Z mobile/src/config/server.test.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3239069Z mobile/src/config/server.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3240111Z mobile/src/legal/publicLegalContent.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3241027Z mobile/src/offline/database.test.ts [added]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3241860Z mobile/src/offline/database.ts [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3242837Z mobile/src/screens/AdvancedSettingsScreen.test.tsx [modified]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3244147Z ##[endgroup]
+Classify Test Inputs	Detect affected test surfaces	2026-10-09T05:46:07.3244686Z Changes output set to ["mobile"]
+Classify Test Inputs	Select test surfaces	﻿2026-10-09T05:46:07.3395589Z ##[group]Run echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
+Classify Test Inputs	Select test surfaces	2026-10-09T05:46:07.3396738Z ^[[36;1mecho "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Test Inputs	Select test surfaces	2026-10-09T05:46:07.3397764Z ^[[36;1mecho "mobile=${MOBILE_CHANGED}" >> "${GITHUB_OUTPUT}"^[[0m
+Classify Test Inputs	Select test surfaces	2026-10-09T05:46:07.3625452Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Classify Test Inputs	Select test surfaces	2026-10-09T05:46:07.3626284Z env:
+Classify Test Inputs	Select test surfaces	2026-10-09T05:46:07.3626749Z   BACKEND_CHANGED: false
+Classify Test Inputs	Select test surfaces	2026-10-09T05:46:07.3627319Z   MOBILE_CHANGED: true
+Classify Test Inputs	Select test surfaces	2026-10-09T05:46:07.3627843Z ##[endgroup]
+Classify Test Inputs	Complete job	﻿2026-10-09T05:46:07.3785213Z Evaluate and set job outputs
+Classify Test Inputs	Complete job	2026-10-09T05:46:07.3790547Z Set output 'backend'
+Classify Test Inputs	Complete job	2026-10-09T05:46:07.3792461Z Set output 'mobile'
+Classify Test Inputs	Complete job	2026-10-09T05:46:07.3793517Z Cleaning up orphan processes
+Classify Test Inputs	Complete job	2026-10-09T05:46:07.4068913Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: dorny/paths-filter@v3. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Mobile Tests	Set up job	﻿2026-10-09T05:46:12.1541062Z Current runner version: '2.337.0'
+Mobile Tests	Set up job	2026-10-09T05:46:12.1566964Z ##[group]Runner Image Provisioner
+Mobile Tests	Set up job	2026-10-09T05:46:12.1567835Z Hosted Compute Agent
+Mobile Tests	Set up job	2026-10-09T05:46:12.1568488Z Version: 20261002.596
+Mobile Tests	Set up job	2026-10-09T05:46:12.1569145Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+Mobile Tests	Set up job	2026-10-09T05:46:12.1569870Z Build Date: 2026-10-02T22:28:27Z
+Mobile Tests	Set up job	2026-10-09T05:46:12.1570614Z Worker ID: {9e4e6a6f-8ec5-4607-a55d-b04df90e8131}
+Mobile Tests	Set up job	2026-10-09T05:46:12.1571353Z Region: eastus2
+Mobile Tests	Set up job	2026-10-09T05:46:12.1571889Z Cloud: Azure
+Mobile Tests	Set up job	2026-10-09T05:46:12.1572532Z ##[endgroup]
+Mobile Tests	Set up job	2026-10-09T05:46:12.1573960Z ##[group]Operating System
+Mobile Tests	Set up job	2026-10-09T05:46:12.1575064Z Ubuntu
+Mobile Tests	Set up job	2026-10-09T05:46:12.1575686Z 24.04.5
+Mobile Tests	Set up job	2026-10-09T05:46:12.1576418Z LTS
+Mobile Tests	Set up job	2026-10-09T05:46:12.1577061Z ##[endgroup]
+Mobile Tests	Set up job	2026-10-09T05:46:12.1577627Z ##[group]Runner Image
+Mobile Tests	Set up job	2026-10-09T05:46:12.1578269Z Image: ubuntu-24.04
+Mobile Tests	Set up job	2026-10-09T05:46:12.1578894Z Version: 20261004.327.1
+Mobile Tests	Set up job	2026-10-09T05:46:12.1580009Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+Mobile Tests	Set up job	2026-10-09T05:46:12.1581831Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+Mobile Tests	Set up job	2026-10-09T05:46:12.1582841Z ##[endgroup]
+Mobile Tests	Set up job	2026-10-09T05:46:12.1584043Z ##[group]GITHUB_TOKEN Permissions
+Mobile Tests	Set up job	2026-10-09T05:46:12.1586534Z Contents: read
+Mobile Tests	Set up job	2026-10-09T05:46:12.1587222Z Metadata: read
+Mobile Tests	Set up job	2026-10-09T05:46:12.1587761Z ##[endgroup]
+Mobile Tests	Set up job	2026-10-09T05:46:12.1589995Z Secret source: Actions
+Mobile Tests	Set up job	2026-10-09T05:46:12.1590930Z Cache mode: write
+Mobile Tests	Set up job	2026-10-09T05:46:12.1592066Z Prepare workflow directory
+Mobile Tests	Set up job	2026-10-09T05:46:12.1924942Z Prepare all required actions
+Mobile Tests	Set up job	2026-10-09T05:46:12.1972724Z Getting action download info
+Mobile Tests	Set up job	2026-10-09T05:46:12.4313459Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+Mobile Tests	Set up job	2026-10-09T05:46:12.5473373Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Mobile Tests	Set up job	2026-10-09T05:46:12.7368022Z Complete job name: Mobile Tests
+Mobile Tests	Checkout	﻿2026-10-09T05:46:12.8172972Z ##[group]Run actions/checkout@v4
+Mobile Tests	Checkout	2026-10-09T05:46:12.8173918Z with:
+Mobile Tests	Checkout	2026-10-09T05:46:12.8174428Z   ref: 18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43
+Mobile Tests	Checkout	2026-10-09T05:46:12.8175295Z   repository: MChartier/calibrate-health
+Mobile Tests	Checkout	2026-10-09T05:46:12.8179058Z   token: ***
+Mobile Tests	Checkout	2026-10-09T05:46:12.8179518Z   ssh-strict: true
+Mobile Tests	Checkout	2026-10-09T05:46:12.8179980Z   ssh-user: git
+Mobile Tests	Checkout	2026-10-09T05:46:12.8180439Z   persist-credentials: true
+Mobile Tests	Checkout	2026-10-09T05:46:12.8180941Z   clean: true
+Mobile Tests	Checkout	2026-10-09T05:46:12.8181401Z   sparse-checkout-cone-mode: true
+Mobile Tests	Checkout	2026-10-09T05:46:12.8181942Z   fetch-depth: 1
+Mobile Tests	Checkout	2026-10-09T05:46:12.8182391Z   fetch-tags: false
+Mobile Tests	Checkout	2026-10-09T05:46:12.8182851Z   show-progress: true
+Mobile Tests	Checkout	2026-10-09T05:46:12.8183318Z   lfs: false
+Mobile Tests	Checkout	2026-10-09T05:46:12.8183748Z   submodules: false
+Mobile Tests	Checkout	2026-10-09T05:46:12.8184221Z   set-safe-directory: true
+Mobile Tests	Checkout	2026-10-09T05:46:12.8184900Z   allow-unsafe-pr-checkout: false
+Mobile Tests	Checkout	2026-10-09T05:46:12.8185711Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:12.9183626Z Syncing repository: MChartier/calibrate-health
+Mobile Tests	Checkout	2026-10-09T05:46:12.9186599Z ##[group]Getting Git version info
+Mobile Tests	Checkout	2026-10-09T05:46:12.9188031Z Working directory is '/home/runner/work/calibrate-health/calibrate-health'
+Mobile Tests	Checkout	2026-10-09T05:46:12.9189939Z [command]/usr/bin/git version
+Mobile Tests	Checkout	2026-10-09T05:46:12.9264780Z git version 2.55.0
+Mobile Tests	Checkout	2026-10-09T05:46:12.9303850Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:12.9315268Z Temporarily overriding HOME='/home/runner/work/_temp/76a4cd68-8443-4e6b-be68-62b6e831ec70' before making global git config changes
+Mobile Tests	Checkout	2026-10-09T05:46:12.9317223Z Adding repository directory to the temporary git global config as a safe directory
+Mobile Tests	Checkout	2026-10-09T05:46:12.9318588Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+Mobile Tests	Checkout	2026-10-09T05:46:12.9368775Z Deleting the contents of '/home/runner/work/calibrate-health/calibrate-health'
+Mobile Tests	Checkout	2026-10-09T05:46:12.9372372Z ##[group]Initializing the repository
+Mobile Tests	Checkout	2026-10-09T05:46:12.9377194Z [command]/usr/bin/git init /home/runner/work/calibrate-health/calibrate-health
+Mobile Tests	Checkout	2026-10-09T05:46:12.9510542Z hint: Using 'master' as the name for the initial branch. This default branch name
+Mobile Tests	Checkout	2026-10-09T05:46:12.9513061Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Mobile Tests	Checkout	2026-10-09T05:46:12.9516317Z hint: to use in all of your new repositories, which will suppress this warning,
+Mobile Tests	Checkout	2026-10-09T05:46:12.9517642Z hint: call:
+Mobile Tests	Checkout	2026-10-09T05:46:12.9518113Z hint:
+Mobile Tests	Checkout	2026-10-09T05:46:12.9518692Z hint: 	git config --global init.defaultBranch <name>
+Mobile Tests	Checkout	2026-10-09T05:46:12.9519547Z hint:
+Mobile Tests	Checkout	2026-10-09T05:46:12.9520220Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Mobile Tests	Checkout	2026-10-09T05:46:12.9521288Z hint: 'development'. The just-created branch can be renamed via this command:
+Mobile Tests	Checkout	2026-10-09T05:46:12.9522129Z hint:
+Mobile Tests	Checkout	2026-10-09T05:46:12.9522599Z hint: 	git branch -m <name>
+Mobile Tests	Checkout	2026-10-09T05:46:12.9523137Z hint:
+Mobile Tests	Checkout	2026-10-09T05:46:12.9523866Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Mobile Tests	Checkout	2026-10-09T05:46:12.9525674Z Initialized empty Git repository in /home/runner/work/calibrate-health/calibrate-health/.git/
+Mobile Tests	Checkout	2026-10-09T05:46:12.9528153Z [command]/usr/bin/git remote add origin https://github.com/MChartier/calibrate-health
+Mobile Tests	Checkout	2026-10-09T05:46:12.9582583Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:12.9583407Z ##[group]Disabling automatic garbage collection
+Mobile Tests	Checkout	2026-10-09T05:46:12.9587641Z [command]/usr/bin/git config --local gc.auto 0
+Mobile Tests	Checkout	2026-10-09T05:46:12.9620329Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:12.9621270Z ##[group]Setting up auth
+Mobile Tests	Checkout	2026-10-09T05:46:12.9628326Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Mobile Tests	Checkout	2026-10-09T05:46:12.9673933Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Mobile Tests	Checkout	2026-10-09T05:46:13.0078500Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Mobile Tests	Checkout	2026-10-09T05:46:13.0114879Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Mobile Tests	Checkout	2026-10-09T05:46:13.0343385Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Mobile Tests	Checkout	2026-10-09T05:46:13.0380523Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Mobile Tests	Checkout	2026-10-09T05:46:13.0608390Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Mobile Tests	Checkout	2026-10-09T05:46:13.0649924Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:13.0650779Z ##[group]Fetching the repository
+Mobile Tests	Checkout	2026-10-09T05:46:13.0659751Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43
+Mobile Tests	Checkout	2026-10-09T05:46:14.3110333Z From https://github.com/MChartier/calibrate-health
+Mobile Tests	Checkout	2026-10-09T05:46:14.3112288Z  * branch            18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43 -> FETCH_HEAD
+Mobile Tests	Checkout	2026-10-09T05:46:14.3117941Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:14.3120321Z ##[group]Determining the checkout info
+Mobile Tests	Checkout	2026-10-09T05:46:14.3122431Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:14.3123817Z [command]/usr/bin/git sparse-checkout disable
+Mobile Tests	Checkout	2026-10-09T05:46:14.3178043Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Mobile Tests	Checkout	2026-10-09T05:46:14.3217559Z ##[group]Checking out the ref
+Mobile Tests	Checkout	2026-10-09T05:46:14.3222821Z [command]/usr/bin/git checkout --progress --force 18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43
+Mobile Tests	Checkout	2026-10-09T05:46:14.5222678Z Note: switching to '18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43'.
+Mobile Tests	Checkout	2026-10-09T05:46:14.5223814Z 
+Mobile Tests	Checkout	2026-10-09T05:46:14.5224846Z You are in 'detached HEAD' state. You can look around, make experimental
+Mobile Tests	Checkout	2026-10-09T05:46:14.5226582Z changes and commit them, and you can discard any commits you make in this
+Mobile Tests	Checkout	2026-10-09T05:46:14.5228205Z state without impacting any branches by switching back to a branch.
+Mobile Tests	Checkout	2026-10-09T05:46:14.5229130Z 
+Mobile Tests	Checkout	2026-10-09T05:46:14.5229759Z If you want to create a new branch to retain commits you create, you may
+Mobile Tests	Checkout	2026-10-09T05:46:14.5231273Z do so (now or later) by using -c with the switch command. Example:
+Mobile Tests	Checkout	2026-10-09T05:46:14.5232411Z 
+Mobile Tests	Checkout	2026-10-09T05:46:14.5232791Z   git switch -c <new-branch-name>
+Mobile Tests	Checkout	2026-10-09T05:46:14.5233518Z 
+Mobile Tests	Checkout	2026-10-09T05:46:14.5234033Z Or undo this operation with:
+Mobile Tests	Checkout	2026-10-09T05:46:14.5235019Z 
+Mobile Tests	Checkout	2026-10-09T05:46:14.5235587Z   git switch -
+Mobile Tests	Checkout	2026-10-09T05:46:14.5236525Z 
+Mobile Tests	Checkout	2026-10-09T05:46:14.5238401Z Turn off this advice by setting config variable advice.detachedHead to false
+Mobile Tests	Checkout	2026-10-09T05:46:14.5240493Z 
+Mobile Tests	Checkout	2026-10-09T05:46:14.5241876Z HEAD is now at 18cf84a Block target changes with unknown saved health consent
+Mobile Tests	Checkout	2026-10-09T05:46:14.5249085Z ##[endgroup]
+Mobile Tests	Checkout	2026-10-09T05:46:14.5295116Z [command]/usr/bin/git log -1 --format=%H
+Mobile Tests	Checkout	2026-10-09T05:46:14.5322711Z 18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43
+Mobile Tests	Setup Node	﻿2026-10-09T05:46:14.5664317Z ##[group]Run actions/setup-node@v4
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5665048Z with:
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5665358Z   node-version: 22.13.0
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5665660Z   cache: npm
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5666056Z   cache-dependency-path: package-lock.json
+Mobile Tests	Setup Node	backend/package-lock.json
+Mobile Tests	Setup Node	
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5666564Z   always-auth: false
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5666852Z   check-latest: false
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5669483Z   token: ***
+Mobile Tests	Setup Node	2026-10-09T05:46:14.5669763Z ##[endgroup]
+Mobile Tests	Setup Node	2026-10-09T05:46:14.7029723Z Attempting to download 22.13.0...
+Mobile Tests	Setup Node	2026-10-09T05:46:14.7133423Z (node:2328) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+Mobile Tests	Setup Node	2026-10-09T05:46:14.7135026Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Mobile Tests	Setup Node	2026-10-09T05:46:15.2014814Z Acquiring 22.13.0 - x64 from https://github.com/actions/node-versions/releases/download/22.13.0-12683784390/node-22.13.0-linux-x64.tar.gz
+Mobile Tests	Setup Node	2026-10-09T05:46:15.6540619Z Extracting ...
+Mobile Tests	Setup Node	2026-10-09T05:46:15.6671873Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/e4598162-f55f-4ddb-a970-68669ab1587c -f /home/runner/work/_temp/e490b625-b502-4c9a-a2f4-9465fb0bd3be
+Mobile Tests	Setup Node	2026-10-09T05:46:16.8356093Z Adding to the cache ...
+Mobile Tests	Setup Node	2026-10-09T05:46:19.1221079Z ##[group]Environment details
+Mobile Tests	Setup Node	2026-10-09T05:46:19.3495913Z node: v22.13.0
+Mobile Tests	Setup Node	2026-10-09T05:46:19.3496816Z npm: 10.9.2
+Mobile Tests	Setup Node	2026-10-09T05:46:19.3497118Z yarn: 1.22.22
+Mobile Tests	Setup Node	2026-10-09T05:46:19.3497828Z ##[endgroup]
+Mobile Tests	Setup Node	2026-10-09T05:46:19.3520807Z [command]/opt/hostedtoolcache/node/22.13.0/x64/bin/npm config get cache
+Mobile Tests	Setup Node	2026-10-09T05:46:19.4462073Z /home/runner/.npm
+Mobile Tests	Setup Node	2026-10-09T05:46:19.5289564Z Cache hit for: node-cache-Linux-x64-npm-54dd681d7cb8a0a0b08b565f2fb2ed7a87475df9f06a8d975b608543233cd4db
+Mobile Tests	Setup Node	2026-10-09T05:46:19.5399488Z (node:2328) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Mobile Tests	Setup Node	2026-10-09T05:46:20.5836854Z Received 268435456 of 335044200 (80.1%), 256.0 MBs/sec
+Mobile Tests	Setup Node	2026-10-09T05:46:20.7944794Z Received 335044200 of 335044200 (100.0%), 263.9 MBs/sec
+Mobile Tests	Setup Node	2026-10-09T05:46:20.7945900Z Cache Size: ~320 MB (335044200 B)
+Mobile Tests	Setup Node	2026-10-09T05:46:20.7988977Z [command]/usr/bin/tar -xf /home/runner/work/_temp/f03ebdcb-e81f-4a58-9008-f249b071ae3c/cache.tzst -P -C /home/runner/work/calibrate-health/calibrate-health --use-compress-program unzstd
+Mobile Tests	Setup Node	2026-10-09T05:46:21.4088595Z Cache restored successfully
+Mobile Tests	Setup Node	2026-10-09T05:46:21.4290354Z Cache restored from key: node-cache-Linux-x64-npm-54dd681d7cb8a0a0b08b565f2fb2ed7a87475df9f06a8d975b608543233cd4db
+Mobile Tests	Install mobile deps	﻿2026-10-09T05:46:21.4551205Z ##[group]Run npm ci --no-audit --fund=false
+Mobile Tests	Install mobile deps	2026-10-09T05:46:21.4551696Z ^[[36;1mnpm ci --no-audit --fund=false^[[0m
+Mobile Tests	Install mobile deps	2026-10-09T05:46:21.4848299Z shell: /usr/bin/bash -e {0}
+Mobile Tests	Install mobile deps	2026-10-09T05:46:21.4848700Z ##[endgroup]
+Mobile Tests	Install mobile deps	2026-10-09T05:46:25.8960525Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+Mobile Tests	Install mobile deps	2026-10-09T05:46:26.1927389Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Mobile Tests	Install mobile deps	2026-10-09T05:46:26.1956321Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Mobile Tests	Install mobile deps	2026-10-09T05:46:26.1961576Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Mobile Tests	Install mobile deps	2026-10-09T05:46:26.1993608Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Mobile Tests	Install mobile deps	2026-10-09T05:46:33.6401278Z 
+Mobile Tests	Install mobile deps	2026-10-09T05:46:33.6402056Z added 889 packages in 12s
+Mobile Tests	Install API generator deps	﻿2026-10-09T05:46:33.7478122Z ##[group]Run npm ci --prefix backend --no-audit --fund=false
+Mobile Tests	Install API generator deps	2026-10-09T05:46:33.7478639Z ^[[36;1mnpm ci --prefix backend --no-audit --fund=false^[[0m
+Mobile Tests	Install API generator deps	2026-10-09T05:46:33.7552070Z shell: /usr/bin/bash -e {0}
+Mobile Tests	Install API generator deps	2026-10-09T05:46:33.7552333Z ##[endgroup]
+Mobile Tests	Install API generator deps	2026-10-09T05:46:40.0369876Z 
+Mobile Tests	Install API generator deps	2026-10-09T05:46:40.0370721Z added 430 packages in 6s
+Mobile Tests	Validate API contract	﻿2026-10-09T05:46:40.0873969Z ##[group]Run npm run api:contract:check
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.0874333Z ^[[36;1mnpm run api:contract:check^[[0m
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.0943302Z shell: /usr/bin/bash -e {0}
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.0943576Z ##[endgroup]
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.1913588Z 
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.1914226Z > cal-io@0.38.0 api:contract:check
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.1915386Z > npm run api:generate && git diff --exit-code -- packages/api-client/src/generated/v1.ts
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.1915921Z 
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.2844191Z 
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.2845289Z > cal-io@0.38.0 api:generate
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.2846278Z > node backend/node_modules/openapi-typescript/bin/cli.js docs/openapi/v1.yaml -o packages/api-client/src/generated/v1.ts
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.2847227Z 
+Mobile Tests	Validate API contract	2026-10-09T05:46:40.8769996Z ✨ openapi-typescript 7.13.0
+Mobile Tests	Validate API contract	2026-10-09T05:46:41.1777142Z 🚀 docs/openapi/v1.yaml → packages/api-client/src/generated/v1.ts [302.4ms]
+Mobile Tests	Run API client tests	﻿2026-10-09T05:46:41.3737808Z ##[group]Run npm run test:api-client
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.3738161Z ^[[36;1mnpm run test:api-client^[[0m
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.3802131Z shell: /usr/bin/bash -e {0}
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.3802408Z ##[endgroup]
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.4789861Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.4790587Z > cal-io@0.38.0 test:api-client
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.4791119Z > npm --prefix packages/api-client test
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.4791369Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.5718995Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.5720247Z > @calibrate/api-client@0.0.0 pretest
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.5721275Z > npm --prefix ../../shared run build
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.5721953Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.6684723Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.6686865Z > @calibrate/shared@0.0.0 build
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.6687559Z > tsc -p tsconfig.build.json
+Mobile Tests	Run API client tests	2026-10-09T05:46:41.6687896Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.6585728Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.6586460Z > @calibrate/api-client@0.0.0 test
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.6587290Z > node --experimental-strip-types --test test/*.test.ts
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.6587733Z 
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.6945488Z (node:2524) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.6946995Z (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.7104933Z TAP version 13
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.7252524Z # (node:2530) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.7296107Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.8856164Z # Subtest: registration sends explicit legal versions and acceptance
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.8985118Z ok 1 - registration sends explicit legal versions and acceptance
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9125625Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9242216Z   duration_ms: 32.735337
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9395104Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9446088Z # Subtest: email verification endpoints remain usable before full account access
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9536058Z ok 2 - email verification endpoints remain usable before full account access
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9637921Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9665806Z   duration_ms: 2.516339
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9725766Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9755852Z # Subtest: password recovery uses generic public endpoints and the new_password wire field
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9757329Z ok 3 - password recovery uses generic public endpoints and the new_password wire field
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9758208Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9787709Z   duration_ms: 1.198357
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9815300Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9816048Z # Subtest: legal status and acceptance use authenticated v1 routes
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9817119Z ok 4 - legal status and acceptance use authenticated v1 routes
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9817795Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9818188Z   duration_ms: 1.408621
+Mobile Tests	Run API client tests	2026-10-09T05:46:42.9818658Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0156207Z # (node:2531) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0177413Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0208407Z # Subtest: exportAccount requests the versioned authenticated endpoint
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0230566Z ok 5 - exportAccount requests the versioned authenticated endpoint
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0296694Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0315159Z   duration_ms: 49.984407
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0327213Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0328697Z # Subtest: deleteAccount sends the current password and accepts an empty 204 response
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0337797Z ok 6 - deleteAccount sends the current password and accepts an empty 204 response
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0338961Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0341317Z   duration_ms: 0.482532
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0342134Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0456804Z # (node:2537) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0465673Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0495980Z # Subtest: unified account-session methods use the locked list and revocation wire
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0525492Z ok 7 - unified account-session methods use the locked list and revocation wire
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0575265Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0576009Z   duration_ms: 29.412906
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.0576474Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2407659Z # (node:2563) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2435843Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2451112Z # Subtest: activity day query uses versioned date parameters
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2455006Z ok 8 - activity day query uses versioned date parameters
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2494952Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2515182Z   duration_ms: 51.395889
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2570984Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2616194Z # Subtest: Health Connect sync carries its operation id and atomic checkpoint payload
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2646546Z ok 9 - Health Connect sync carries its operation id and atomic checkpoint payload
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2653097Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2670507Z   duration_ms: 2.204696
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.2671078Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.3834091Z # (node:2575) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.3855882Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.3867404Z # Subtest: uses the versioned calibration status, apply, and cancel routes
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.3897510Z ok 10 - uses the versioned calibration status, apply, and cancel routes
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.3917337Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.3917932Z   duration_ms: 68.032745
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.3919103Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4106547Z # (node:2576) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4175992Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4218691Z # Subtest: root-render failure remains anonymous and normal diagnostics do not request keepalive
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4307480Z ok 11 - root-render failure remains anonymous and normal diagnostics do not request keepalive
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4325585Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4374880Z   duration_ms: 51.427689
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4391256Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4415738Z # Subtest: native feature diagnostics attach bearer identity and use the normal 401 refresh path
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4445638Z ok 12 - native feature diagnostics attach bearer identity and use the normal 401 refresh path
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4469310Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4495366Z   duration_ms: 2.231778
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4525048Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4525975Z # Subtest: web-vital diagnostics use authenticated unload-safe transport
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4555579Z ok 13 - web-vital diagnostics use authenticated unload-safe transport
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4585151Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4585591Z   duration_ms: 0.967106
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.4585988Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5106320Z # (node:2597) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5107845Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5195743Z # Subtest: createFoodLog sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5223019Z ok 14 - createFoodLog sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5257605Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5258369Z   duration_ms: 39.837251
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5259108Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5260088Z # Subtest: addMetric sends the caller operation ID for metric upserts
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5261378Z ok 15 - addMetric sends the caller operation ID for metric upserts
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5262307Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5262935Z   duration_ms: 0.941438
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5263584Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5264889Z # Subtest: updateFoodDay sends the caller operation ID for completion changes
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5266181Z ok 16 - updateFoodDay sends the caller operation ID for completion changes
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5267004Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5267491Z   duration_ms: 1.121755
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5268536Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5269578Z # Subtest: day status and pause lifecycle methods preserve caller operation IDs and local dates
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5271009Z ok 17 - day status and pause lifecycle methods preserve caller operation IDs and local dates
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5271915Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5272391Z   duration_ms: 2.468199
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5272903Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5273586Z # Subtest: createGoal sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5274670Z ok 18 - createGoal sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5275394Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5275916Z   duration_ms: 0.8408
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5276498Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5277265Z # Subtest: updatePreferences sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5278276Z ok 19 - updatePreferences sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5279005Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5279534Z   duration_ms: 0.762574
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5280101Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5280821Z # Subtest: updateFoodLog sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5281748Z ok 20 - updateFoodLog sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5282477Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5282999Z   duration_ms: 7.371057
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5283560Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5284273Z # Subtest: deleteFoodLog sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5285538Z ok 21 - deleteFoodLog sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5286271Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5286803Z   duration_ms: 0.992644
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5287362Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5288080Z # Subtest: deleteMetric sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5289403Z ok 22 - deleteMetric sends the caller operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5290217Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5290706Z   duration_ms: 1.021317
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5291226Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5292031Z # Subtest: operation ID header is omitted when callers do not provide one
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5293148Z ok 23 - operation ID header is omitted when callers do not provide one
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5293922Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5294394Z   duration_ms: 1.031987
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.5295249Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.6383473Z # (node:2608) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.6411268Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.6447422Z # Subtest: copyFoodLogs sends the atomic copy payload and returns the committed receipt
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.6448881Z ok 24 - copyFoodLogs sends the atomic copy payload and returns the committed receipt
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.6476823Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.6496355Z   duration_ms: 33.315942
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.6498772Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.7223483Z # (node:2615) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.7265756Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.7291361Z # Subtest: normalizes legacy completion without inventing comparison data and preserves additive range values
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.7308611Z ok 25 - normalizes legacy completion without inventing comparison data and preserves additive range values
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.7331337Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.7375543Z   duration_ms: 46.160055
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.7435221Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.8357590Z # (node:2631) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.8375583Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.8385851Z # Subtest: pace preview bypasses cache and adjustment retries retain operation and expected version
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.8423228Z ok 26 - pace preview bypasses cache and adjustment retries retain operation and expected version
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.8454753Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.8474203Z   duration_ms: 41.910086
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.8495373Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.9903887Z # (node:2642) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.9915736Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.9971866Z # Subtest: updateMyFood patches the owned resource with a typed snapshot definition
+Mobile Tests	Run API client tests	2026-10-09T05:46:43.9995642Z ok 27 - updateMyFood patches the owned resource with a typed snapshot definition
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0015188Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0021255Z   duration_ms: 32.078942
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0047807Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0048774Z # Subtest: deleteMyFood deletes the resource and accepts an empty response
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0050106Z ok 28 - deleteMyFood deletes the resource and accepts an empty response
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0051015Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0051584Z   duration_ms: 0.601082
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0052184Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0053153Z # Subtest: createRecipeFromFoodLogs posts the ordered food log snapshot request
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0054799Z ok 29 - createRecipeFromFoodLogs posts the ordered food log snapshot request
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0055741Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0056276Z   duration_ms: 1.187507
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0056860Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0057815Z # Subtest: external recipe ingredient types preserve serving snapshots for editing
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0059148Z ok 30 - external recipe ingredient types preserve serving snapshots for editing
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0060078Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0060593Z   duration_ms: 0.305751
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0061155Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0162112Z # (node:2653) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0163879Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0165206Z # Subtest: getMyFoodsLibrary encodes filters and returns the paged envelope
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0166221Z ok 31 - getMyFoodsLibrary encodes filters and returns the paged envelope
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0192411Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0192968Z   duration_ms: 41.812497
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0193825Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0194855Z # Subtest: getMyFoodsLibrary omits absent query parameters
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0225634Z ok 32 - getMyFoodsLibrary omits absent query parameters
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0226452Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0255166Z   duration_ms: 0.747546
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.0269756Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2736148Z # (node:2664) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2771974Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2805698Z # Subtest: setMyFoodPinned sends an ownership-safe resource patch payload
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2810146Z ok 33 - setMyFoodPinned sends an ownership-safe resource patch payload
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2836510Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2895586Z   duration_ms: 89.749532
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2914162Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2986258Z # (node:2675) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.2995631Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3016330Z # Subtest: notification methods preserve legacy reads and send additive paging/read-all requests
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3018057Z ok 34 - notification methods preserve legacy reads and send additive paging/read-all requests
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3019993Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3020358Z   duration_ms: 36.135888
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3020739Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3107426Z # (node:2676) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3148635Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3150373Z # Subtest: label scans send authenticated multipart data to the versioned API and leave null fields intact
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3152005Z ok 35 - label scans send authenticated multipart data to the versioned API and leave null fields intact
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3153322Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3153782Z   duration_ms: 52.263523
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3154236Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3296388Z # (node:2697) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.3325880Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.5538984Z # Subtest: atomic completion sends one complete payload and a stable operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.5674807Z ok 36 - atomic completion sends one complete payload and a stable operation ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.5705345Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.5765721Z   duration_ms: 46.042781
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.5855769Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7140963Z # (node:2698) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7155657Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7188017Z # Subtest: getRecentFoods includes selected meal context in the query string
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7200747Z ok 37 - getRecentFoods includes selected meal context in the query string
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7215416Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7245458Z   duration_ms: 78.032461
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7275359Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7725904Z # (node:2709) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7750246Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7871826Z # Subtest: default browser transport preserves the global fetch receiver
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7894746Z ok 38 - default browser transport preserves the global fetch receiver
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7934998Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7972083Z   duration_ms: 60.41834
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7972525Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7974277Z # Subtest: client configuration forwards an explicit cache policy
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7982447Z ok 39 - client configuration forwards an explicit cache policy
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7983088Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7983482Z   duration_ms: 3.509594
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7983874Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7984902Z # Subtest: request timeout reports a connection timeout rather than a caller abort
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7986115Z ok 40 - request timeout reports a connection timeout rather than a caller abort
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7986857Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7987223Z   duration_ms: 32.930209
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.7987634Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.8948085Z # Subtest: request timeout settles even when the fetch implementation ignores abort
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.8985542Z ok 41 - request timeout settles even when the fetch implementation ignores abort
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9035394Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9095310Z   duration_ms: 6.798274
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9189442Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9204234Z # Subtest: caller abort remains an AbortError and is not rewritten as a timeout
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9243059Z ok 42 - caller abort remains an AbortError and is not rewritten as a timeout
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9274919Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9275548Z   duration_ms: 0.927271
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9276128Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9277022Z # Subtest: a signal aborted before the request reaches fetch is still honored
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9278227Z ok 43 - a signal aborted before the request reaches fetch is still honored
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9280684Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9281186Z   duration_ms: 0.549336
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9281717Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9282697Z # Subtest: non-JSON error body is retained without masking HTTP status: upstream unavailable
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9285078Z ok 44 - non-JSON error body is retained without masking HTTP status: upstream unavailable
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9315612Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9316180Z   duration_ms: 4.799162
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9316692Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9317634Z # Subtest: non-JSON error body is retained without masking HTTP status: <html><body>Bad gate
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9318965Z ok 45 - non-JSON error body is retained without masking HTTP status: <html><body>Bad gate
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9320294Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9320797Z   duration_ms: 3.027403
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9336213Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9337143Z # Subtest: non-JSON error body is retained without masking HTTP status: {"message":
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9338379Z ok 46 - non-JSON error body is retained without masking HTTP status: {"message":
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9354990Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9355488Z   duration_ms: 4.576395
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9355989Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9356983Z # Subtest: standard API errors expose typed metadata and prefer the response request ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9370305Z ok 47 - standard API errors expose typed metadata and prefer the response request ID
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9371514Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9372716Z   duration_ms: 3.497932
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9373278Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9374222Z # Subtest: legacy message-only API errors remain compatible without invented metadata
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9376143Z ok 48 - legacy message-only API errors remain compatible without invented metadata
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9386930Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9387435Z   duration_ms: 0.703544
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9387945Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9388869Z # Subtest: malformed API error metadata is ignored instead of entering typed client state
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9390177Z ok 49 - malformed API error metadata is ignored instead of entering typed client state
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9391028Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9391477Z   duration_ms: 2.703619
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9391967Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9392854Z # Subtest: API error metadata bounds field fanout and rejects display-hostile tokens
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9394789Z ok 50 - API error metadata bounds field fanout and rejects display-hostile tokens
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9395832Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9396352Z   duration_ms: 3.711019
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9396912Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9397896Z # Subtest: one successful refresh retries the original request with the replacement token
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9399308Z ok 51 - one successful refresh retries the original request with the replacement token
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9400154Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9400504Z   duration_ms: 5.303673
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9400848Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9401385Z # Subtest: a late 401 from the previous access token reuses the completed refresh
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9402400Z ok 52 - a late 401 from the previous access token reuses the completed refresh
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9403279Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9403819Z   duration_ms: 3.99494
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9404405Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9405419Z # Subtest: a retried 401 does not start another refresh loop
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9406483Z ok 53 - a retried 401 does not start another refresh loop
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9413991Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9414679Z   duration_ms: 0.934956
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9415353Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9416467Z # Subtest: native identity is attached to public and authenticated requests and cannot be overridden
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9423332Z ok 54 - native identity is attached to public and authenticated requests and cannot be overridden
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9424285Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9425010Z   duration_ms: 5.890541
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9425533Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9426260Z # Subtest: legacy food-day responses remain open and editable
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9427243Z ok 55 - legacy food-day responses remain open and editable
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9427790Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9428113Z   duration_ms: 7.88421
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9428334Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9428827Z # Subtest: browser cookie transport uses session endpoints without native or bearer credentials
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9429577Z ok 56 - browser cookie transport uses session endpoints without native or bearer credentials
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9430017Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9438749Z   duration_ms: 6.11582
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9439202Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9440044Z # Subtest: browser Lose It uploads submit a real Blob instead of a React Native URI descriptor
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9441283Z ok 57 - browser Lose It uploads submit a real Blob instead of a React Native URI descriptor
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9442262Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9442601Z   duration_ms: 11.985821
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9442986Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9443528Z # Subtest: browser Lose It object URLs are hydrated before upload
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9444254Z ok 58 - browser Lose It object URLs are hydrated before upload
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9444989Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9445316Z   duration_ms: 4.811845
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9445682Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9446512Z # Subtest: native Lose It URIs remain FormData descriptors even when React Native exposes window
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9447804Z ok 59 - native Lose It URIs remain FormData descriptors even when React Native exposes window
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9448548Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9448950Z   duration_ms: 3.165231
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9449320Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9450049Z # Subtest: a per-request credential policy overrides the browser client default
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9451115Z ok 60 - a per-request credential policy overrides the browser client default
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9451774Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9452108Z   duration_ms: 9.645902
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9452474Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9453142Z # Subtest: browser push methods use the versioned cookie-session endpoints
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9454180Z ok 61 - browser push methods use the versioned cookie-session endpoints
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9455023Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9455364Z   duration_ms: 5.154525
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9455728Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9456570Z # Subtest: upgrade-required responses notify the native shell without triggering auth logout
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9457723Z ok 62 - upgrade-required responses notify the native shell without triggering auth logout
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9458177Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9458384Z   duration_ms: 1.02838
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9458604Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9459056Z # Subtest: malformed upgrade bodies cannot inject unbounded compatibility UI content
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9459716Z ok 63 - malformed upgrade bodies cannot inject unbounded compatibility UI content
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9460111Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9460306Z   duration_ms: 0.724964
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9460531Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9736346Z # (node:2730) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9741033Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9778549Z # Subtest: watch snapshot uses the versioned restricted surface
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9808559Z ok 64 - watch snapshot uses the versioned restricted surface
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9821982Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9822884Z   duration_ms: 61.315643
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9875189Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9895848Z # Subtest: watch snapshot contract exposes unit and revisions needed for offline actions
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9905505Z ok 65 - watch snapshot contract exposes unit and revisions needed for offline actions
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9935397Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9965133Z   duration_ms: 0.282577
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9965827Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:44.9995645Z # Subtest: watch snapshot sends If-None-Match and returns 304 metadata without throwing
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0015970Z ok 66 - watch snapshot sends If-None-Match and returns 304 metadata without throwing
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0016859Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0017392Z   duration_ms: 1.53703
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0017941Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0018700Z # Subtest: watch mutation always carries its client operation id
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0019703Z ok 67 - watch mutation always carries its client operation id
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0020439Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0020925Z   duration_ms: 1.117436
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0021437Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0785978Z # (node:2741) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0787790Z # (Use `node --trace-warnings ...` to show where the warning was created)
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0792285Z # Subtest: phone pairing issuance is authenticated and carries the selected self-hosted origin
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0795140Z ok 68 - phone pairing issuance is authenticated and carries the selected self-hosted origin
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0796423Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0797132Z   duration_ms: 29.506766
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0797824Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0810222Z # Subtest: Wear exchange is unauthenticated and sends the server-bound one-time credential
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0812016Z ok 69 - Wear exchange is unauthenticated and sends the server-bound one-time credential
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0813187Z   ---
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0813914Z   duration_ms: 0.711308
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0814917Z   ...
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0947104Z 1..69
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0947914Z # tests 69
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0948607Z # suites 0
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0949282Z # pass 69
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0949898Z # fail 0
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0950492Z # cancelled 0
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0951178Z # skipped 0
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0951771Z # todo 0
+Mobile Tests	Run API client tests	2026-10-09T05:46:45.0952465Z # duration_ms 2408.057148
+Mobile Tests	Run mobile tests	﻿2026-10-09T05:46:45.1345255Z ##[group]Run npm --prefix mobile test
+Mobile Tests	Run mobile tests	2026-10-09T05:46:45.1345895Z ^[[36;1mnpm --prefix mobile test^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:45.1409743Z shell: /usr/bin/bash -e {0}
+Mobile Tests	Run mobile tests	2026-10-09T05:46:45.1410019Z ##[endgroup]
+Mobile Tests	Run mobile tests	2026-10-09T05:46:45.2515304Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:45.2515855Z > mobile@0.2.7 test
+Mobile Tests	Run mobile tests	2026-10-09T05:46:45.2516310Z > jest
+Mobile Tests	Run mobile tests	2026-10-09T05:46:45.2516526Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:49.1599355Z PASS src/offline/foodDayReceipts.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8166227Z PASS src/offline/provider.web.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8341363Z   ● Console
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8342011Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8375296Z     console.warn
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8405566Z       An error occurred in the <OfflineOutboxProvider> component.
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8442331Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8443532Z       Consider adding an error boundary to your tree to customize error handling behavior.
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8487951Z       Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8514973Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8545773Z       at defaultOnUncaughtError (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6400:15)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8547688Z       at logUncaughtError (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6460:11)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8575767Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8605738Z       at lane.callback (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6490:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8635693Z       at callCallback (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4625:16)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8637491Z       at commitCallbacks (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4645:11)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8665752Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8695925Z       at commitLayoutEffectOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10103:15)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8725790Z       at flushLayoutEffects (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13774:15)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8727598Z       at commitRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13697:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8755780Z       at commitRootWhenReady (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12444:7)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8759951Z       at performWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12391:15)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8761802Z       at performSyncWorkOnRoot (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2923:7)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8763670Z       at flushSyncWorkAcrossRoots_impl (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2764:21)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8765791Z       at flushPendingEffects (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14128:11)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8767681Z       at performWorkOnRootViaSchedulerTask (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2896:11)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8769685Z       at Immediate.performWorkUntilDeadline [as _onImmediate] (../node_modules/scheduler/cjs/scheduler.native.development.js:45:48)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:50.8770800Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:53.2249689Z PASS src/components/FoodTrackingStatus.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:55.0925884Z PASS src/components/WeightTrendCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.6293911Z PASS src/components/AddFoodSheet.test.tsx (10.077 s)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7006135Z   ● Console
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7006622Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7007032Z     console.error
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7007895Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7008736Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7009642Z       When testing, code that causes React state updates should be wrapped into act(...):
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7011571Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7012083Z       act(() => {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7012692Z         /* fire events that update state */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7013338Z       });
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7013903Z       /* assert on the output */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7014747Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7016096Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7017225Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7018365Z     ^[[0m ^[[90m 212 |^[[39m         ^[[36mconst^[[39m screen ^[[33m=^[[39m renderSheet()^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7020281Z      ^[[90m 213 |^[[39m         ^[[36mawait^[[39m screen^[[33m.^[[39mfindByText(^[[32m'Adding food reopens this day so you can complete it again.'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7022215Z     ^[[31m^[[1m>^[[22m^[[39m^[[90m 214 |^[[39m         onlineManager^[[33m.^[[39msetOnline(^[[36mfalse^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7023428Z      ^[[90m     |^[[39m                       ^[[31m^[[1m^^[[22m^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7025329Z      ^[[90m 215 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'radio'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Quick'^[[39m }))^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7027472Z      ^[[90m 216 |^[[39m         fireEvent^[[33m.^[[39mchangeText(screen^[[33m.^[[39mgetByLabelText(^[[32m'Calories'^[[39m)^[[33m,^[[39m ^[[32m'120'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7029872Z      ^[[90m 217 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'button'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Add & close'^[[39m }))^[[33m;^[[39m^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7031087Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7031856Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7033420Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7035559Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7037473Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7039210Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7040692Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7041953Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7042867Z           at Set.forEach (<anonymous>)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7043963Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7045506Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7046742Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7048084Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7048879Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7049200Z     console.error
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7050016Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7050857Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7051748Z       When testing, code that causes React state updates should be wrapped into act(...):
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7052709Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7053240Z       act(() => {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7053860Z         /* fire events that update state */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7054812Z       });
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7055423Z       /* assert on the output */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7056049Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7057295Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7058448Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7059341Z     ^[[0m ^[[90m 212 |^[[39m         ^[[36mconst^[[39m screen ^[[33m=^[[39m renderSheet()^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7061360Z      ^[[90m 213 |^[[39m         ^[[36mawait^[[39m screen^[[33m.^[[39mfindByText(^[[32m'Adding food reopens this day so you can complete it again.'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7063670Z     ^[[31m^[[1m>^[[22m^[[39m^[[90m 214 |^[[39m         onlineManager^[[33m.^[[39msetOnline(^[[36mfalse^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7065329Z      ^[[90m     |^[[39m                       ^[[31m^[[1m^^[[22m^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7067128Z      ^[[90m 215 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'radio'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Quick'^[[39m }))^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7069551Z      ^[[90m 216 |^[[39m         fireEvent^[[33m.^[[39mchangeText(screen^[[33m.^[[39mgetByLabelText(^[[32m'Calories'^[[39m)^[[33m,^[[39m ^[[32m'120'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7071760Z      ^[[90m 217 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'button'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Add & close'^[[39m }))^[[33m;^[[39m^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7072968Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7073697Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7075677Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7077755Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7079776Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7081638Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7083344Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7085010Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7086089Z           at Set.forEach (<anonymous>)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7087364Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7088789Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7090191Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7091612Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7092428Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7092808Z     console.error
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7093724Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7094953Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7096026Z       When testing, code that causes React state updates should be wrapped into act(...):
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7097085Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7097726Z       act(() => {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7098446Z         /* fire events that update state */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7099219Z       });
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7099859Z       /* assert on the output */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7100545Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7101860Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7103067Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7103967Z     ^[[0m ^[[90m 212 |^[[39m         ^[[36mconst^[[39m screen ^[[33m=^[[39m renderSheet()^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7106207Z      ^[[90m 213 |^[[39m         ^[[36mawait^[[39m screen^[[33m.^[[39mfindByText(^[[32m'Adding food reopens this day so you can complete it again.'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7108240Z     ^[[31m^[[1m>^[[22m^[[39m^[[90m 214 |^[[39m         onlineManager^[[33m.^[[39msetOnline(^[[36mfalse^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7109609Z      ^[[90m     |^[[39m                       ^[[31m^[[1m^^[[22m^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7111429Z      ^[[90m 215 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'radio'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Quick'^[[39m }))^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7113769Z      ^[[90m 216 |^[[39m         fireEvent^[[33m.^[[39mchangeText(screen^[[33m.^[[39mgetByLabelText(^[[32m'Calories'^[[39m)^[[33m,^[[39m ^[[32m'120'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7116988Z      ^[[90m 217 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'button'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Add & close'^[[39m }))^[[33m;^[[39m^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7118253Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7119060Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7120780Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7123040Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7125311Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7127215Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7128890Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7130246Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7131241Z           at Set.forEach (<anonymous>)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7132476Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7133925Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7135594Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7136985Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7137791Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7138170Z     console.error
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7139073Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7139990Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7140936Z       When testing, code that causes React state updates should be wrapped into act(...):
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7141989Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7142567Z       act(() => {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7143270Z         /* fire events that update state */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7144007Z       });
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7144915Z       /* assert on the output */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7145608Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7146924Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7148152Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7149028Z     ^[[0m ^[[90m 212 |^[[39m         ^[[36mconst^[[39m screen ^[[33m=^[[39m renderSheet()^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7151012Z      ^[[90m 213 |^[[39m         ^[[36mawait^[[39m screen^[[33m.^[[39mfindByText(^[[32m'Adding food reopens this day so you can complete it again.'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7153101Z     ^[[31m^[[1m>^[[22m^[[39m^[[90m 214 |^[[39m         onlineManager^[[33m.^[[39msetOnline(^[[36mfalse^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7154754Z      ^[[90m     |^[[39m                       ^[[31m^[[1m^^[[22m^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7156642Z      ^[[90m 215 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'radio'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Quick'^[[39m }))^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7159005Z      ^[[90m 216 |^[[39m         fireEvent^[[33m.^[[39mchangeText(screen^[[33m.^[[39mgetByLabelText(^[[32m'Calories'^[[39m)^[[33m,^[[39m ^[[32m'120'^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7161433Z      ^[[90m 217 |^[[39m         fireEvent^[[33m.^[[39mpress(screen^[[33m.^[[39mgetByRole(^[[32m'button'^[[39m^[[33m,^[[39m { name^[[33m:^[[39m ^[[32m'Add & close'^[[39m }))^[[33m;^[[39m^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7162686Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7163570Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7165549Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7167544Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7169819Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7171695Z       at forceStoreRerender (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7173355Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7175250Z       at ../node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7176285Z           at Set.forEach (<anonymous>)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7177481Z       at OnlineManager.setOnline (../node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7178903Z       at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7180246Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7181676Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7182488Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7182858Z     console.error
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7183726Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7184902Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7185849Z       When testing, code that causes React state updates should be wrapped into act(...):
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7186888Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7187432Z       act(() => {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7188446Z         /* fire events that update state */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7189442Z       });
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7190325Z       /* assert on the output */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7191354Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7192948Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7194281Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7195546Z     ^[[0m ^[[90m 283 |^[[39m         }^[[33m,^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7197142Z      ^[[90m 284 |^[[39m         onSuccess^[[33m:^[[39m ^[[36masync^[[39m (closeAfterLogging) ^[[33m=>^[[39m {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7199033Z     ^[[31m^[[1m>^[[22m^[[39m^[[90m 285 |^[[39m             setSelection(^[[36mnull^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7200554Z      ^[[90m     |^[[39m             ^[[31m^[[1m^^[[22m^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7201923Z      ^[[90m 286 |^[[39m             setQuickCalories(^[[32m''^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7218950Z      ^[[90m 287 |^[[39m             setQuickName(^[[32m''^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7220482Z      ^[[90m 288 |^[[39m             ^[[36mawait^[[39m confirmLogged(closeAfterLogging)^[[33m;^[[39m^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7221375Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7222187Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7223909Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7226200Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7228235Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7230241Z       at dispatchSetStateInternal (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7232107Z       at dispatchSetState (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7233623Z       at Object.setSelection (src/components/AddFoodSheet.tsx:285:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7235271Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7236654Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7237873Z       at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7239290Z       at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7240955Z       at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7242300Z       at Mutation.execute (../node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7243176Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7243539Z     console.error
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7244764Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7245635Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7246727Z       When testing, code that causes React state updates should be wrapped into act(...):
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7247611Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7248100Z       act(() => {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7248749Z         /* fire events that update state */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7249411Z       });
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7249989Z       /* assert on the output */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7250640Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7252018Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7253254Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7254217Z     ^[[0m ^[[90m 284 |^[[39m         onSuccess^[[33m:^[[39m ^[[36masync^[[39m (closeAfterLogging) ^[[33m=>^[[39m {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7255899Z      ^[[90m 285 |^[[39m             setSelection(^[[36mnull^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7257285Z     ^[[31m^[[1m>^[[22m^[[39m^[[90m 286 |^[[39m             setQuickCalories(^[[32m''^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7258534Z      ^[[90m     |^[[39m             ^[[31m^[[1m^^[[22m^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7259689Z      ^[[90m 287 |^[[39m             setQuickName(^[[32m''^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7261086Z      ^[[90m 288 |^[[39m             ^[[36mawait^[[39m confirmLogged(closeAfterLogging)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7262276Z      ^[[90m 289 |^[[39m         }^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7262848Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7263655Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7265605Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7267623Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7269635Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7271538Z       at dispatchSetStateInternal (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7273387Z       at dispatchSetState (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7281384Z       at Object.setQuickCalories (src/components/AddFoodSheet.tsx:286:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7282833Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7284275Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7285826Z       at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7287191Z       at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7288589Z       at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7289934Z       at Mutation.execute (../node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7290911Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7291301Z     console.error
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7292230Z       An update to AddFoodSheet inside a test was not wrapped in act(...).
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7293190Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7294168Z       When testing, code that causes React state updates should be wrapped into act(...):
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7295488Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7296020Z       act(() => {
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7296637Z         /* fire events that update state */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7297284Z       });
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7297841Z       /* assert on the output */
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7298721Z       
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7299964Z       This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7301105Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7301827Z     ^[[0m ^[[90m 285 |^[[39m             setSelection(^[[36mnull^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7303057Z      ^[[90m 286 |^[[39m             setQuickCalories(^[[32m''^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7304425Z     ^[[31m^[[1m>^[[22m^[[39m^[[90m 287 |^[[39m             setQuickName(^[[32m''^[[39m)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7306287Z      ^[[90m     |^[[39m             ^[[31m^[[1m^^[[22m^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7307394Z      ^[[90m 288 |^[[39m             ^[[36mawait^[[39m confirmLogged(closeAfterLogging)^[[33m;^[[39m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7308335Z      ^[[90m 289 |^[[39m         }
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7309031Z      ^[[90m 290 |^[[39m     })^[[33m;^[[39m^[[0m
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7309500Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7310209Z       at ../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7311701Z       at runWithFiberInDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7313495Z       at warnIfUpdatesNotWrappedWithActDEV (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7317479Z       at scheduleUpdateOnFiber (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7319449Z       at dispatchSetStateInternal (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7321340Z       at dispatchSetState (../node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7322851Z       at Object.setQuickName (src/components/AddFoodSheet.tsx:287:13)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7324224Z       at asyncGeneratorStep (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7325930Z       at _next (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7327191Z       at ../node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7328610Z       at Object.<anonymous> (../node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7329995Z       at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7331334Z       at Mutation.execute (../node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7332233Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:46:56.7332846Z PASS src/auth/AuthContext.test.tsx (10.044 s)
+Mobile Tests	Run mobile tests	2026-10-09T05:46:57.2798354Z PASS src/components/PlanCheckCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:57.5388549Z PASS src/wear/pairing.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:46:58.0699921Z PASS src/healthConnect/sync.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:46:58.1885183Z PASS src/food/foodLogSelection.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:46:58.2415807Z PASS src/food/HistoricalDatePicker.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:58.3285825Z PASS src/diagnostics/webVitals.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:46:58.6432572Z PASS src/auth/AuthContext.web.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:58.8526163Z PASS src/components/progress/WeightTrendPreviewCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:58.9517023Z PASS src/offline/provider.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:46:59.0688321Z PASS src/offline/reconciler.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:46:59.2876797Z PASS src/offline/indexedDbOutbox.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:00.4761127Z PASS src/onboarding/useOnboardingController.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:00.6045109Z PASS src/offline/operations.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:00.9922664Z PASS src/components/WeightEntrySheet.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:01.1808834Z PASS src/diagnostics/clientDiagnostics.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:01.2728254Z PASS src/progress/GoalPaceSheet.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:01.3129962Z PASS src/config/server.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:01.7371133Z PASS src/progress/ProgressScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:01.9468311Z PASS src/auth/storage.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.0005952Z PASS src/hooks/useNativePushRegistration.web.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.2497918Z PASS src/offline/foodDayIntent.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.2747130Z PASS src/auth/authScreenNavigation.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.3745869Z PASS src/weightTrend/presentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.4631257Z PASS src/account/accountData.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.5972426Z PASS src/components/GoalProgressCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.6773460Z PASS src/wear/handoff.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:02.9007678Z PASS src/auth/apiClientAuth.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:03.1245574Z PASS src/offline/outbox.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:03.3322430Z PASS src/auth/logoutIntentStore.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:03.6848879Z PASS src/components/BottomSheetModal.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:03.8645954Z PASS src/components/NotificationsDrawer.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:03.9975877Z PASS src/components/AppErrorBoundary.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.0075575Z PASS src/settings/SettingsCategoryPage.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.0195658Z PASS src/pwa/runtime.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.0887628Z PASS src/food/serving.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.2735486Z PASS src/food/useFoodDeleteRecovery.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.5247616Z PASS src/screens/ActivityScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.6997127Z PASS src/hooks/useConfirmDiscardNavigation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.8358174Z PASS src/auth/targetTransitionState.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.9464976Z PASS src/auth/offlineWorkspace.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:04.9549615Z PASS src/components/RecipeIngredientEditor.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.0409680Z PASS src/onboarding/completionState.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.2120911Z PASS src/components/AsyncStateBoundary.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.3745598Z PASS src/savedFoods/SavedFoodsLibrary.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.4967439Z PASS src/components/accessibilityPrimitives.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.5916732Z PASS src/wear/syncInvalidation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.8731852Z PASS src/components/Combobox.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.9005377Z PASS src/onboarding/useOnboardingDraft.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.9689899Z PASS src/food/FoodDeleteRecoveryController.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:05.9865825Z PASS src/barcode/workflow.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.0066350Z PASS src/nutritionLabel/NutritionLabelScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.3125895Z PASS src/components/AppChoiceGroup.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.3222309Z PASS src/components/FoodLogTimelineCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.4494099Z PASS src/navigation/routeRegistry.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.5175845Z PASS src/components/DatePickerField.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.5712888Z PASS src/settings/PreferencesSettingsScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.6406743Z PASS src/theme.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.7093706Z PASS src/barcode/state.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.7570767Z PASS src/screens/AdvancedSettingsScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.7722062Z PASS src/offline/trackingProjection.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.8534875Z PASS src/hooks/useModalFocusManagement.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.8894678Z PASS src/offline/pauseIntent.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.9698615Z PASS src/components/DateNavigation.web.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:06.9817670Z PASS src/updates/appUpdate.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.0526190Z PASS src/weightTrend/geometry.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.1528274Z PASS src/components/DateNavigationHeader.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.2965924Z PASS src/serverSettings/ServerSettingsScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.3120527Z PASS src/components/SegmentedControl.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.3839445Z PASS src/food/calendar.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.3875788Z PASS src/healthConnect/presentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.5058044Z PASS src/notifications/workflow.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.5451390Z PASS src/pwa/serviceWorkerSecurity.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.6029870Z PASS src/components/PageExpansion.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.7038618Z PASS src/navigation/WebNavigationRail.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.8118987Z PASS src/settings/AccountSessionsPanel.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.8194196Z PASS plugins/withHealthConnect.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.8952890Z PASS src/diagnostics/webVitals.takeRecords.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.9004893Z PASS src/settings/SettingsHome.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.9587059Z PASS src/navigation/useBrowserRouteFocus.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:07.9748691Z PASS src/barcode/workflowRecovery.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.0350939Z PASS src/diagnostics/webVitals.lifecycle.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.1455984Z PASS src/auth/devAutoLogin.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.1856566Z PASS src/components/progress/PlanCheckSummary.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.2282851Z PASS src/offline/failedMutationRecovery.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.2757282Z PASS src/components/SaveMealAsRecipeSheet.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.3105991Z PASS src/diagnostics/ClientWebVitalsRuntime.web.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.3533803Z PASS src/diagnostics/operationDiagnostics.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.3997135Z PASS src/utils/goals.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.4326474Z PASS src/notifications/useBrowserNotificationStream.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.5250404Z PASS src/components/KeyboardAwareScrollView.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.5862495Z PASS src/components/CalorieBalanceCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.6370516Z PASS src/healthConnect/normalize.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.6440480Z PASS src/components/HealthConnectConnectionAction.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.7008204Z PASS src/utils/myFoodEditing.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.7946723Z PASS src/components/legal/PublicLegalPage.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.8142149Z PASS src/components/WeightValueInput.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.8903444Z PASS src/food/pendingPause.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:08.9937003Z PASS src/food/useFoodTrackingPause.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.0415662Z PASS src/components/accessibilityFoundation.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.0550137Z PASS src/auth/accountTrustRoutes.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.1395583Z PASS src/onboarding/draftStorage.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.2008110Z PASS src/components/FormField.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.2307246Z PASS src/food/plannedPause.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.2749922Z PASS src/components/CopyFoodSheet.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.3712518Z PASS src/navigation/GuardedTabButton.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.4277830Z PASS src/offline/useTrackingQueries.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.4308025Z PASS src/onboarding/unitDefaults.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.4409757Z PASS src/barcode/BarcodeRecoveryComponents.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.4938370Z PASS src/food/dayPresentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.5238371Z PASS src/food/foodDeleteRecovery.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.5640069Z PASS src/pwa/serviceWorkerContract.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.6006035Z PASS src/asyncState/resolveAsyncState.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.6078793Z PASS src/components/TodayWeightCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.6481182Z PASS src/wear/pairingPoll.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.7135585Z PASS src/wear/accountCleanup.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.7462838Z PASS src/offline/replayInvalidation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.7625291Z PASS src/updates/useAppUpdateController.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.7884082Z PASS src/food/foodLogAmount.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.8651307Z PASS src/weightEntry/presentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:09.9261661Z PASS src/today/TodayFoodPreview.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.0347976Z PASS src/components/NotificationCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.1264241Z PASS src/navigation/routeMetadata.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.1398562Z PASS src/components/ClientServerIncompatibleScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.2313292Z PASS src/components/Screen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.2455293Z PASS src/components/CalendarModal.web.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.3316421Z PASS src/today/dashboardState.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.3515721Z PASS src/onboarding/OnboardingAuthHydration.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.4130060Z PASS src/notifications/query.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.4180991Z PASS src/activity/presentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.4865802Z PASS src/utils/timezones.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.5189908Z PASS src/barcode/authReturn.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.5666669Z PASS src/offline/mutationDispatch.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.6281952Z PASS src/barcode/context.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.6347329Z PASS src/today/PausedDayMessage.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.6978155Z PASS src/pwa/manifestContract.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.7133143Z PASS src/components/ClientUpgradeRequiredScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.8136383Z PASS src/screens/AboutScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.8266349Z PASS src/barcode/useBarcodeCameraLifecycle.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.8870592Z PASS src/settings/ConnectedAppsPanel.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.9663297Z PASS src/settings/ReminderSettingsPanel.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:10.9725148Z PASS src/offline/replayCalibrationEvidence.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.0156681Z PASS src/food/calendarIntent.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.0483788Z PASS src/auth/serverSwitch.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.0838043Z PASS src/components/CardHeader.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.0923354Z PASS src/account/accountDeletionNotice.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.1270998Z PASS plugins/withOptionalCameraHardware.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.1876076Z PASS src/pwa/PwaStatusBanner.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.2045211Z PASS src/barcode/useBarcodeSearchHandoff.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.2057651Z PASS src/offline/failedCreation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.3044148Z PASS src/nutritionLabel/imagePicker.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.3604039Z PASS src/auth/hostedRoot.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.4051423Z PASS src/diagnostics/ClientDiagnosticsRuntime.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.4236856Z PASS src/weightEntry/input.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.4303493Z PASS src/platform/browserBoundaries.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.5232972Z PASS src/navigation/addFoodRoute.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.5238387Z PASS src/components/ActivitySummaryCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.5333570Z PASS src/offline/trackingReceipts.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.5852301Z PASS src/settings/reminderWallClock.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.6119119Z PASS src/food/copyFoodWhenSynchronized.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.6215751Z PASS src/barcode/manualDraft.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.6545617Z PASS src/offline/queuedMutation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.7243106Z PASS src/components/AppActionRow.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.7682633Z PASS src/components/NumberStepperField.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.8036544Z PASS src/healthConnect/accountCleanup.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.8416323Z PASS src/healthConnect/provider.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.8555801Z PASS src/components/TimeZonePickerField.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.8626059Z PASS src/utils/haptics.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.9132773Z PASS src/utils/profileCompletion.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.9252671Z PASS src/auth/accountAccess.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.9295599Z PASS src/platform/deviceLocale.native.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:11.9932079Z PASS src/offline/pendingChangePresentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.0500657Z PASS src/savedFoods/cachedFoods.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.0679005Z PASS src/settings/AndroidIntegrationSettingsScreens.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.1019903Z PASS plugins/withSharedAndroidSigning.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.1651246Z PASS src/components/legal/LegalConsentFields.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.1691169Z PASS src/connectivity/queryOnlineManager.native.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.2159495Z PASS src/utils/dates.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.2519504Z PASS src/offline/mutationLock.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.2522395Z PASS src/navigation/routePresentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.3017960Z PASS src/notifications/presentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.3392881Z PASS src/components/profile/ActivityLevelSelector.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.3875014Z PASS src/barcode/BarcodeSearchHandoffPersistence.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.3876837Z PASS src/components/DatePickerField.web.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.4613487Z PASS src/offline/database.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.4663052Z PASS src/components/confirmAction.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.4831324Z PASS src/legal/publicLegalContent.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.5083890Z PASS src/healthConnect/provider.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.5377053Z PASS src/navigation/contextualFab.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.5433057Z PASS src/errors/presentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.5598752Z PASS src/healthConnect/permissions.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.5917031Z PASS src/auth/authErrors.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.6018247Z PASS src/caloriePlanning/presentation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.6195411Z PASS src/layout/adaptiveLayout.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.6411705Z PASS src/platform/nativePlatform.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.6658352Z PASS src/utils/myFoods.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.6886757Z PASS src/utils/numericInput.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.7267175Z PASS src/healthConnect/native.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.7348223Z PASS src/today/foodPreview.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.7730468Z PASS src/hooks/useReducedMotionPreference.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.7824163Z PASS src/pwa/cacheIsolation.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.8294212Z PASS src/auth/oneTimeToken.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.8366525Z PASS src/caloriePlanning/heightInput.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.8533479Z PASS src/components/TabScreen.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.8768145Z PASS src/config/androidSecurityConfig.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.9073374Z PASS src/notifications/expoProject.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.9216176Z PASS src/platform/deviceLocale.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.9302928Z PASS src/offline/pendingCalibrationEvidence.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.9768964Z PASS src/notifications/browserPush.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:12.9928676Z PASS src/nutritionLabel/draft.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.0246922Z PASS src/components/FormErrorSummary.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.0725917Z PASS src/offline/reconcilerOwnership.web.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.0944364Z PASS src/utils/myFoodFormValidation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.1302535Z PASS src/healthConnect/storageScope.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.1453885Z PASS src/components/auth/AuthBrand.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.1701957Z PASS src/caloriePlanning/queryInvalidation.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.2255973Z PASS src/components/ProgressBar.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.2562792Z PASS src/offline/pendingWeight.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.2957334Z PASS src/navigation/weightTrendRoute.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.3123515Z PASS src/onboarding/OnboardingProgress.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.3215760Z PASS src/caloriePlanning/dateBounds.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.3571515Z PASS src/config/releaseEntry.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.3809580Z PASS src/food/quantityInput.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.3884303Z PASS src/components/AppCard.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.4257844Z PASS src/onboarding/steps.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.4350338Z PASS src/utils/keyboard.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.4637191Z PASS src/config/keyboardLayoutConfig.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.4844678Z PASS src/components/PageHeader.test.tsx
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.4979512Z PASS src/barcode/cameraRuntime.test.ts
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.6146526Z 
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.6149979Z Test Suites: 234 passed, 234 total
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.6150528Z Tests:       1347 passed, 1347 total
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.6150835Z Snapshots:   0 total
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.6151079Z Time:        27.81 s
+Mobile Tests	Run mobile tests	2026-10-09T05:47:13.6151311Z Ran all test suites.
+Mobile Tests	Post Setup Node	﻿2026-10-09T05:47:13.6374051Z Post job cleanup.
+Mobile Tests	Post Setup Node	2026-10-09T05:47:13.7575831Z (node:2829) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+Mobile Tests	Post Setup Node	2026-10-09T05:47:13.7576889Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Mobile Tests	Post Setup Node	2026-10-09T05:47:13.7580328Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-54dd681d7cb8a0a0b08b565f2fb2ed7a87475df9f06a8d975b608543233cd4db, not saving cache.
+Mobile Tests	Post Checkout	﻿2026-10-09T05:47:13.7730616Z Post job cleanup.
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.8596828Z [command]/usr/bin/git version
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.8640410Z git version 2.55.0
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.8679994Z Temporarily overriding HOME='/home/runner/work/_temp/8c1b9e8c-9b14-43a6-a30a-62dd74f3c70f' before making global git config changes
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.8681841Z Adding repository directory to the temporary git global config as a safe directory
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.8686885Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.8726033Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.8761807Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.9012949Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.9046840Z http.https://github.com/.extraheader
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.9058387Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.9095251Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.9379536Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Mobile Tests	Post Checkout	2026-10-09T05:47:13.9432759Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Mobile Tests	Complete job	﻿2026-10-09T05:47:13.9918654Z Cleaning up orphan processes
+Mobile Tests	Complete job	2026-10-09T05:47:14.0270632Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

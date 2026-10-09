@@ -1,0 +1,593 @@
+{
+  "parentRevisions": [],
+  "branch": "fix/managed-first-438-focused",
+  "feedback": {
+    "quotaRefusal": {
+      "text": "You have reached your Codex usage limits for code reviews.",
+      "disposition": "No completed current-head bot review; no retry or billing change. Independent engineering review/QA required under amendment6006523068.",
+      "requestedRevision": "6f7a1d9fa4dfbf69d3468114d33f4498cf577e03",
+      "commentId": 6075059975
+    },
+    "currentFeedback": "Full current conversation, submitted reviews and inline comments read. No additional actionable current-head findings at final readback.",
+    "humanScope6072694319": "Implemented accepted smaller design in a clean successor: direct removal, bounded storage gate and existing queues; no generic transition adapter, duplicate browser scheduler, backend auth protocol or workspace/outbox schema changes. Final product delta +20 lines; maintained regression delta +468; docs +1. Not claiming the overall diff shrinks.",
+    "priorR1": "Native remount overwrite retains maintained fixes, with actual-master red reproduction and final-head regression pass. All predecessor receipts remain historical."
+  },
+  "host": "mchartier_zbook",
+  "repository": "git@github.com:MChartier/calibrate-health.git",
+  "evidence": {
+    "sourceApplicability": "Two native-only follow-ups do not change browser routes, build sources or fixture inputs; original captures are not relabeled.",
+    "pixelInspection": "Author opened all eight genuine fresh PNGs. Independent QA inspection pending.",
+    "captureCommit": "19031ef5d6e23cdb66b24c839889082b9861a6ed",
+    "publicByteChecks": "82 original successor artifacts and 19 appended follow-up artifacts verified; receipts retained.",
+    "pairs": [
+      "advanced",
+      "login",
+      "recovery",
+      "recovery-failure"
+    ],
+    "applicabilitySha256": "09284edc4d9d705c80f6aab7ae22731daf68593735fb66ee2e33a267edc47da4",
+    "after": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+    "provenancePath": "managed-438/focused-final/provenance.json",
+    "manifestSha256": "f0cbab9e0ef3bfa12caace6fa50d11bcfe2e3af552316fe0149181ab029ad9ee",
+    "rendering": "Actual GitHub-page rendering unexecuted under explicit human waiver.",
+    "followupCommit": "1f48682f47db90555f704637059fa2db0b8f4812",
+    "provenanceSha256": "68f05781efd6ee208e96389b536cd2455a9a445ecf4996ef561f8e0b16a35eb2",
+    "before": "547206a1b372b73fc95fc412ad453b8099440000"
+  },
+  "retention": {
+    "PR439": {
+      "state": "closed unmerged; original branch and deferred administrator/bootstrap scope retained",
+      "head": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6"
+    },
+    "priorEvidenceTip": "7751202f6c984f13f9c196d254cf5d2216cfc1ab",
+    "owner": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+    "PR402": {
+      "state": "closed unmerged; never reopened",
+      "head": "a341dcf2e736c8207c7e9296c1c7a8f67cf012f5"
+    },
+    "policy": "Nonmerged evidence retention, no automatic deletion. Prior source/build/capture/harness identities preserved; no force-push or history erasure.",
+    "PR450": {
+      "state": "open; coordinator decides closure after replacement verification",
+      "head": "f417e84b430cc46275171462cc9d2373b8ee8f3e"
+    },
+    "ref": "refs/heads/evidence/managed-438-01a11c7b"
+  },
+  "pullRequest": 459,
+  "baseSha": "547206a1b372b73fc95fc412ad453b8099440000",
+  "standards": {
+    "acknowledgment": "Read full pinned sources and supplied amendments, including focused published-history scope, final-state concise communication, exact immutable provenance, quota-only bot exception, current issue/PR linkage, native deferral, rendering waiver, managed-first targeting, and one-writer/retention boundaries. No silent pin migration.",
+    "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+    "workflow": "workflow-v3",
+    "communication": "pr-review-v3",
+    "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9"
+  },
+  "headSha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+  "ownerTask": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+  "issueBodySha256": "2919e89b8c77aaa6ab956f6ee1f3cae6307b16e66baef605800a639f76a5edcb",
+  "issue": 438,
+  "checkpoint": {
+    "state": "idle after handoff",
+    "next": "Same independent QA owner reviews final code/scope, behavior, genuine pixels and exact final body. Coordinator verifies before any readiness/closure action.",
+    "progressTransport": "Requested direct progress message to source thread returned thread not found; not retried. Normal trusted task-result delivery remains the handoff.",
+    "boundaries": "No readiness label, ready-for-review, merge/automerge, deployment, credential/provisioning, release publication or installation.",
+    "userActions": [],
+    "source": "clean",
+    "evidence": "committed and to be verified after push"
+  },
+  "scope": {
+    "composition": [
+      {
+        "category": "product",
+        "files": 20,
+        "added": 628.0,
+        "deleted": 608.0
+      },
+      {
+        "category": "maintained regression",
+        "files": 18,
+        "added": 754.0,
+        "deleted": 286.0
+      },
+      {
+        "category": "documentation",
+        "files": 2,
+        "added": 7.0,
+        "deleted": 6.0
+      }
+    ],
+    "files": [
+      {
+        "file": "README.md",
+        "added": 4,
+        "deleted": 5,
+        "category": "documentation",
+        "reason": "Replace customer hosting guidance with build-time targeting and non-destructive recovery."
+      },
+      {
+        "file": "e2e/expo-web/browser-session-ordering.spec.ts",
+        "added": 63,
+        "deleted": 0,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+        "added": 2,
+        "deleted": 1,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/README.md",
+        "added": 3,
+        "deleted": 1,
+        "category": "documentation",
+        "reason": "Replace customer hosting guidance with build-time targeting and non-destructive recovery."
+      },
+      {
+        "file": "mobile/app.config.test.cjs",
+        "added": 1,
+        "deleted": 1,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/app.json",
+        "added": 1,
+        "deleted": 1,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/app/(auth)/login.tsx",
+        "added": 6,
+        "deleted": 26,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/app/(auth)/register.tsx",
+        "added": 7,
+        "deleted": 27,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/app/(tabs)/(settings)/advanced.tsx",
+        "added": 3,
+        "deleted": 54,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/app/_layout.tsx",
+        "added": 1,
+        "deleted": 4,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/src/auth/AuthContext.test.tsx",
+        "added": 190,
+        "deleted": 22,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/AuthContext.tsx",
+        "added": 194,
+        "deleted": 108,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/AuthContext.web.test.tsx",
+        "added": 115,
+        "deleted": 6,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/AuthContext.web.tsx",
+        "added": 131,
+        "deleted": 89,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/authScreenNavigation.test.tsx",
+        "added": 13,
+        "deleted": 17,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/authServerDraft.test.ts",
+        "added": 0,
+        "deleted": 14,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/authServerDraft.ts",
+        "added": 0,
+        "deleted": 5,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/logoutIntent.web.ts",
+        "added": 1,
+        "deleted": 1,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/logoutIntentStore.test.ts",
+        "added": 41,
+        "deleted": 0,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/logoutIntentStore.ts",
+        "added": 33,
+        "deleted": 11,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/offlineWorkspace.test.ts",
+        "added": 40,
+        "deleted": 0,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/offlineWorkspace.ts",
+        "added": 27,
+        "deleted": 4,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/serverSwitch.test.ts",
+        "added": 1,
+        "deleted": 53,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/serverSwitch.ts",
+        "added": 0,
+        "deleted": 24,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/storage.test.ts",
+        "added": 136,
+        "deleted": 3,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/storage.ts",
+        "added": 91,
+        "deleted": 25,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/auth/targetTransitionState.test.ts",
+        "added": 110,
+        "deleted": 0,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/auth/targetTransitionState.ts",
+        "added": 103,
+        "deleted": 0,
+        "category": "product",
+        "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+      },
+      {
+        "file": "mobile/src/components/ClientServerIncompatibleScreen.test.tsx",
+        "added": 0,
+        "deleted": 4,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/components/ClientServerIncompatibleScreen.tsx",
+        "added": 1,
+        "deleted": 9,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/src/components/ClientUpgradeRequiredScreen.test.tsx",
+        "added": 1,
+        "deleted": 4,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/components/ClientUpgradeRequiredScreen.tsx",
+        "added": 1,
+        "deleted": 9,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/src/components/ServerUrlControl.test.tsx",
+        "added": 0,
+        "deleted": 124,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/components/ServerUrlControl.tsx",
+        "added": 0,
+        "deleted": 194,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/src/config/server.test.ts",
+        "added": 5,
+        "deleted": 24,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/config/server.ts",
+        "added": 23,
+        "deleted": 16,
+        "category": "product",
+        "reason": "Validate fixed build input and preserve production serving-origin routing."
+      },
+      {
+        "file": "mobile/src/legal/publicLegalContent.ts",
+        "added": 1,
+        "deleted": 1,
+        "category": "product",
+        "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+      },
+      {
+        "file": "mobile/src/offline/database.test.ts",
+        "added": 28,
+        "deleted": 0,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      },
+      {
+        "file": "mobile/src/offline/database.ts",
+        "added": 4,
+        "deleted": 0,
+        "category": "product",
+        "reason": "Fail closed before initializing an unknown outbox schema."
+      },
+      {
+        "file": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+        "added": 8,
+        "deleted": 13,
+        "category": "maintained regression",
+        "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+      }
+    ],
+    "commits": [
+      "8466b29695e6924db0ecbde0a435b04c49f56fc0 547206a1b372b73fc95fc412ad453b8099440000 Bind Calibrate to its build target and remove runtime service selection",
+      "6f7a1d9fa4dfbf69d3468114d33f4498cf577e03 8466b29695e6924db0ecbde0a435b04c49f56fc0 Keep bound-session parsing private to native storage",
+      "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43 6f7a1d9fa4dfbf69d3468114d33f4498cf577e03 Block target changes with unknown saved health consent"
+    ],
+    "immutableRecord": "https://github.com/MChartier/calibrate-health/blob/1f48682f47db90555f704637059fa2db0b8f4812/managed-438/focused-followup/scope.json",
+    "totals": {
+      "files": 40,
+      "added": 1389.0,
+      "deleted": 900.0
+    },
+    "sha256": "278a496129862c172acf42ae709d4f8dcd0351e7dc08207bc275cb330afe34cd"
+  },
+  "draft": true,
+  "checks": {
+    "ci": [
+      {
+        "name": "Android Emulator End-to-End",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113692489696"
+      },
+      {
+        "name": "Native Two-Emulator Package Upgrade",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689115004"
+      },
+      {
+        "name": "Wear Build and JVM Tests",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689114819"
+      },
+      {
+        "name": "Backend Build",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689114775"
+      },
+      {
+        "name": "Full Exported Web and PWA End-to-End",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689114732"
+      },
+      {
+        "name": "Six-State Data-Backed Route Acceptance",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689114695"
+      },
+      {
+        "name": "UX Accessibility and Visual Regression",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689114603"
+      },
+      {
+        "name": "Wear Release Emulator Smoke",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689114203"
+      },
+      {
+        "name": "Release Configuration",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689113444"
+      },
+      {
+        "name": "Web Critical Smoke",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689113424"
+      },
+      {
+        "name": "iOS Build",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689113404"
+      },
+      {
+        "name": "android Runtime Bundle",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689113397"
+      },
+      {
+        "name": "ios Runtime Bundle",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689113376"
+      },
+      {
+        "name": "Mobile Build",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689113353"
+      },
+      {
+        "name": "Expo Web Build",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689113316"
+      },
+      {
+        "name": "Classify Build Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144300/job/113689081730"
+      },
+      {
+        "name": "Backend Tests",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144398/job/113689021655"
+      },
+      {
+        "name": "Mobile Tests",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144398/job/113689020281"
+      },
+      {
+        "name": "High and Critical Vulnerabilities",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144437/job/113689018658"
+      },
+      {
+        "name": "Populated Postgres Upgrade",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144243/job/113689015529"
+      },
+      {
+        "name": "v0.14.0 Upgrade and Encrypted Rollback",
+        "status": "completed",
+        "conclusion": "skipped",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144243/job/113689015459"
+      },
+      {
+        "name": "Classify Production Image Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144437/job/113688989493"
+      },
+      {
+        "name": "Classify Test Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144398/job/113688989261"
+      },
+      {
+        "name": "Backend, Shared, API Client, and Mobile Typecheck",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144329/job/113688989186"
+      },
+      {
+        "name": "Classify Database Inputs",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+        "html_url": "https://github.com/MChartier/calibrate-health/actions/runs/37890144243/job/113688988895"
+      }
+    ],
+    "expectedFailures": "Three unchanged-master native remount regressions reproduced. Initial harness-resolution, wrong-cwd PWA tests, restricted-shell child-process failures, and rejected stale-cache export are retained as unsuccessful attempts, not passing evidence.",
+    "local": "TypeScript, app config, 50 final storage/state tests, affected auth/workspace regressions, four maintained real-browser checks and four matched capture pairs per source passed.",
+    "mobile": "234 suites / 1347 tests passed on final head",
+    "pending": 0,
+    "apiClient": "69 passed on final head",
+    "nativeDevice": "Deferred and unexecuted; CI runtime bundles and debug/simulator builds are not device execution.",
+    "skipped": 11,
+    "passed": 14,
+    "failed": 0
+  },
+  "mergeBase": "547206a1b372b73fc95fc412ad453b8099440000",
+  "linkage": {
+    "issueBody": "Current implementing PR points to PR459; previous exact issue body retained before edit.",
+    "predecessorBacklink": "PR450 comment6075063855",
+    "project": "No Project fields changed; coordinator owns reconciliation.",
+    "nativeIssueAssociation": "GitHub closingIssuesReferences confirms issue438"
+  },
+  "headParent": "6f7a1d9fa4dfbf69d3468114d33f4498cf577e03",
+  "prBodySha256": "8d4ffd7650a2e595deabb463a224babc5024ba14666a9b29a3bf2af9e6ac4e71",
+  "checkedAt": "2026-10-09T06:02:51.7798985Z",
+  "actualMasterSha": "547206a1b372b73fc95fc412ad453b8099440000"
+}

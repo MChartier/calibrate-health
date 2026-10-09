@@ -1,0 +1,78 @@
+[
+  {
+    "path": "final-ci-watch.log",
+    "sha256": "f35f85867dff8160255cfc80b5e0304f5a913701136324ee977e0d9162229c94"
+  },
+  {
+    "path": "final-mobile-ci.log",
+    "sha256": "c4551d76c4205baae99ab4a04586bea646a6798580cdcba76f63ceba94e36a82"
+  },
+  {
+    "path": "followup-public-readback.json",
+    "sha256": "86c27d89f3e715df87207eb59be5c06ca8a53f584466db8b455c69c4792b33b2"
+  },
+  {
+    "path": "handoff.json",
+    "sha256": "e782c0076170fdb06027b41c86cd313ee7c20e37bd0052da42bb991c22056503"
+  },
+  {
+    "path": "package-focused-handoff.ps1",
+    "sha256": "e1fe138c11321571be5c1d5ad60e2470c48d666d34e9bbee563c088db39c22eb"
+  },
+  {
+    "path": "pr459-status.json",
+    "sha256": "1f0392e8d2e10352beb1967e4eab0d53b71918bc5095a724c08d591792e12c29"
+  },
+  {
+    "path": "public-readback.json",
+    "sha256": "5a03fcad8c2fa40159697eac745302a139fb4b2cfda7a76ea5825a46b8ec9df2"
+  },
+  {
+    "path": "read-focused-publication.ps1",
+    "sha256": "4bdc15d0303f15a1ddbfe3c19cf760104758c24b58061b948609f5c5e1b6f42c"
+  },
+  {
+    "path": "remote-retention.txt",
+    "sha256": "5ac8b853a1d2557c8ae3906b5f98d92305ad36dd56704062d5a8879d8071e4a5"
+  },
+  {
+    "path": "publication/checks.json",
+    "sha256": "5219bdb74b03050e8616e6cd9bbbb5032db7b94a202e172367e8beda535b2388"
+  },
+  {
+    "path": "publication/comments.json",
+    "sha256": "4370e24875163f483f0985d3feb640cc517a656dd166074695b06aee91173fca"
+  },
+  {
+    "path": "publication/commits.json",
+    "sha256": "250e007de8adee41d75180ce376221ac1e56191987e58ad37716bafdf9e0bf9a"
+  },
+  {
+    "path": "publication/files.json",
+    "sha256": "606cc94fce13fa61b55fc8eba7aaca877db383e427b83b0b03ca5f54cd193382"
+  },
+  {
+    "path": "publication/inline.json",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "path": "publication/issue.json",
+    "sha256": "d7a2f9b3b3c440388ca68a29136bcfcc1ca52c02fe76afa05f272ffae342b75e"
+  },
+  {
+    "path": "publication/master.json",
+    "sha256": "4b930da6aec5b4187e6711f211d2224208196555960a72bde6e3fdf3de074085"
+  },
+  {
+    "path": "publication/pr.json",
+    "sha256": "c38095ab3082d2f5db1e2e9060645b73a914b33901a638288812b467dc794ff0"
+  },
+  {
+    "path": "publication/reviews.json",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "path": "publication/summary.json",
+    "sha256": "095635068123f45c4ac96538184472aa97a71e966994ac5670dfcfed8dabaeff"
+  }
+]
