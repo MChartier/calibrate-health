@@ -1,0 +1,29 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
+const s=read('publication/final-snapshot.json');
+const checks=read('publication/checks.json');
+const inventory=read('manifest.json');
+const imagePaths=[
+ 'implementation/matched-before-results/capture-short-selected-food-sheet/short.png',
+ 'implementation/matched-after-results/capture-short-selected-food-sheet/short.png',
+ 'implementation/matched-before-results/capture-supported-precision-after-save-and-reload/reopened.png',
+ 'implementation/matched-after-results/capture-supported-precision-after-save-and-reload/reopened.png'];
+const record={
+ checkedAt:new Date().toISOString(),ownerTask:'01a11c77-0cff-76e7-b21f-6f5702949026',host:'mchartier_zbook',pr:s.pr.html_url,
+ target:{repository:'MChartier/calibrate-health',ref:'refs/heads/master',actualTarget:s.pr.base.sha,apiBase:s.pr.base.sha,mergeBase:'547206a1b372b73fc95fc412ad453b8099440000',ultimateTarget:'master',stackedParent:null},
+ head:s.pr.head.sha,headParent:s.commits.at(-1).parents.map(p=>p.sha),draft:s.pr.draft,bodySha256:hash(s.pr.body),
+ completePublishedScope:{commitCount:s.pr.commits,fileCount:s.pr.changed_files,additions:s.pr.additions,deletions:s.pr.deletions,commits:s.commits.map(c=>({sha:c.sha,parents:c.parents.map(p=>p.sha),message:c.commit.message,scope:c.sha.startsWith('ff05')?'Two approved quantity fixes and maintained regressions':'One trailing test-file blank line removed; no application change'})),files:s.files.map(f=>({path:f.filename,status:f.status,previousPath:f.previous_filename??null,additions:f.additions,deletions:f.deletions,scope:f.filename.startsWith('e2e/')?'Maintained red/green interaction and persistence regression':f.filename.includes('AddFoodSheet')?'Prevent selected editor collapse in short sheet':'Preserve supported-precision edit payload'}))},
+ evidence:{commit:'a8bec0320107fae14f8dd53f3aa90571901b6b68',ref:'refs/heads/evidence/quantity-entry-448',manifestSha256:hash(fs.readFileSync('manifest.json')),beforeSource:inventory.beforeSource,capturedAfterSource:inventory.afterSource,finalHeadImpact:'7555a4f changes only one trailing blank line in the maintained test; mobile/packages/shared application diff versus captured ff05 source is empty. Builds and captures remain applicable; final-head CI is separately checked.',originalScopingManifestSha256:inventory.originalScopingManifestSha256,images:imagePaths.map(p=>({path:p,sha256:hash(fs.readFileSync(p)),capturedAt:fs.statSync(p).mtime.toISOString(),url:`https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/${p}?raw=true`})),sourceImageAccess:'All four published image bytes fetched via authorized GitHub connector; their Git blob IDs match the inspected local originals.',pixelInspection:'Implementation owner inspected actual PNGs; independent pixel/readiness QA remains for ROOT to dispatch.',githubPageRendering:'Waived under human amendment6022754087; not claimed executed.'},
+ checks:{total:checks.total_count,returned:checks.check_runs.length,items:checks.check_runs.map(c=>({id:c.id,name:c.name,headSha:c.head_sha,status:c.status,conclusion:c.conclusion,url:c.html_url})),local:{typecheck:'pass',focusedUnitTests:'56 passed /6 suites; existing act warnings retained',maintainedBrowser:'3 fail on current baseline for intended assertions,3 pass on proposed build',additionalBrowserControls:'18 passed',diffCheck:'pass on final published range'}},
+ review:{requestComment:6074040619,quotaRefusalComment:6074041991,requestHead:'ff05e56ed338ec2c178dc05cdf77125d34395c67',disposition:'Quota-only refusal; no completed bot review claimed. No retry; final successor changes test whitespace only. Independent review required under amendment6006523068.',submittedReviews:s.reviews,inlineComments:s.inlineComments,remainingActionableFindings:[]},
+ issue:{number:448,nativeClosingAssociationVerified:true,originalSnapshot:'implementation/issue-original.json',projectAndReadiness:'ROOT-owned; not changed by implementation owner'},
+ limits:['Native-device/system-keyboard execution deferred','Browser viewport simulation is not native evidence','API persistence and idempotency use synthetic fixtures; no live backend/database/provider data','No general unverified fractional-input symptom claimed fixed'],
+ checkpoint:{productTree:'clean',priorGoal449Tree:'clean and preserved650862e1c13be66fe5ec05495320cc66ac32f8bb',scopingTree:'clean and preserved8eb6014adc6ed0ea327fa09fbd2af76afef284d5',preview:'stopped; no listener18448',handoff:'Implementation complete; no human-ready, merge, release, deployment or native install performed'},
+ standards:{workflow:'workflow-v3',executionPin:'f0919b184b6344d6279178b2388190936ca432a9',review:'pr-review-v3',reviewPin:'97e5583c8355f3673aad0835c0ce3ca1486aeb8b',directAmendments:'Read and acknowledged, including scope, evidence retention, complete published scope, concise final state, quota refusal, native deferral and managed-client separation'}
+};
+if(record.completePublishedScope.commitCount!==s.commits.length||record.completePublishedScope.fileCount!==s.files.length||checks.total_count!==checks.check_runs.length)throw Error('Incomplete inventory');
+if(checks.check_runs.some(c=>c.head_sha!==s.pr.head.sha||c.status!=='completed'||!['success','skipped','neutral'].includes(c.conclusion)))throw Error('CI not complete/successful');
+fs.writeFileSync('publication/handoff.json',JSON.stringify(record,null,2)+'\n');
+console.log(JSON.stringify({head:record.head,bodySha256:record.bodySha256,handoffSha256:hash(fs.readFileSync('publication/handoff.json')),success:checks.check_runs.filter(c=>c.conclusion==='success').length,skipped:checks.check_runs.filter(c=>c.conclusion==='skipped').length}));

@@ -1,0 +1,357 @@
+{
+  "checkedAt": "2026-10-09T04:12:14.051Z",
+  "ownerTask": "01a11c77-0cff-76e7-b21f-6f5702949026",
+  "host": "mchartier_zbook",
+  "pr": "https://github.com/MChartier/calibrate-health/pull/456",
+  "target": {
+    "repository": "MChartier/calibrate-health",
+    "ref": "refs/heads/master",
+    "actualTarget": "547206a1b372b73fc95fc412ad453b8099440000",
+    "apiBase": "547206a1b372b73fc95fc412ad453b8099440000",
+    "mergeBase": "547206a1b372b73fc95fc412ad453b8099440000",
+    "ultimateTarget": "master",
+    "stackedParent": null
+  },
+  "head": "7555a4f314d54f81c307cb90948549d160ca8581",
+  "headParent": [
+    "ff05e56ed338ec2c178dc05cdf77125d34395c67"
+  ],
+  "draft": true,
+  "bodySha256": "d1fbb2de8ce01bea39c7af7c5b877ab6d8c1305e8d2f1d7b94022c4281cf2d3b",
+  "completePublishedScope": {
+    "commitCount": 2,
+    "fileCount": 3,
+    "additions": 72,
+    "deletions": 9,
+    "commits": [
+      {
+        "sha": "ff05e56ed338ec2c178dc05cdf77125d34395c67",
+        "parents": [
+          "547206a1b372b73fc95fc412ad453b8099440000"
+        ],
+        "message": "Keep food quantity editors reachable and preserve precise edits",
+        "scope": "Two approved quantity fixes and maintained regressions"
+      },
+      {
+        "sha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "parents": [
+          "ff05e56ed338ec2c178dc05cdf77125d34395c67"
+        ],
+        "message": "Trim quantity regression test trailing whitespace",
+        "scope": "One trailing test-file blank line removed; no application change"
+      }
+    ],
+    "files": [
+      {
+        "path": "e2e/expo-web/food-quantity-entry.spec.ts",
+        "status": "added",
+        "previousPath": null,
+        "additions": 66,
+        "deletions": 0,
+        "scope": "Maintained red/green interaction and persistence regression"
+      },
+      {
+        "path": "mobile/src/components/AddFoodSheet.tsx",
+        "status": "modified",
+        "previousPath": null,
+        "additions": 5,
+        "deletions": 8,
+        "scope": "Prevent selected editor collapse in short sheet"
+      },
+      {
+        "path": "mobile/src/food/FoodLogContent.tsx",
+        "status": "modified",
+        "previousPath": null,
+        "additions": 1,
+        "deletions": 1,
+        "scope": "Preserve supported-precision edit payload"
+      }
+    ]
+  },
+  "evidence": {
+    "commit": "a8bec0320107fae14f8dd53f3aa90571901b6b68",
+    "ref": "refs/heads/evidence/quantity-entry-448",
+    "manifestSha256": "7a8c2415bd6999567ea722b5cfc723e97eb6bb93a6635f84433a6934b1f02789",
+    "beforeSource": "547206a1b372b73fc95fc412ad453b8099440000",
+    "capturedAfterSource": "ff05e56ed338ec2c178dc05cdf77125d34395c67",
+    "finalHeadImpact": "7555a4f changes only one trailing blank line in the maintained test; mobile/packages/shared application diff versus captured ff05 source is empty. Builds and captures remain applicable; final-head CI is separately checked.",
+    "originalScopingManifestSha256": "86d752cfe7fc524a15a61eb58189566849f872d4befd44df40a557ffb484ac76",
+    "images": [
+      {
+        "path": "implementation/matched-before-results/capture-short-selected-food-sheet/short.png",
+        "sha256": "a7c091075e86f22a06ef5fc33cf44eca9d3e93598b47b62f941f5054a4d2ae48",
+        "capturedAt": "2026-10-09T04:02:25.235Z",
+        "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-before-results/capture-short-selected-food-sheet/short.png?raw=true"
+      },
+      {
+        "path": "implementation/matched-after-results/capture-short-selected-food-sheet/short.png",
+        "sha256": "efe524fc014f1139360f2172583eb2bfe58b6a630ef94dd8eefc3dd5433231fa",
+        "capturedAt": "2026-10-09T04:02:31.524Z",
+        "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-after-results/capture-short-selected-food-sheet/short.png?raw=true"
+      },
+      {
+        "path": "implementation/matched-before-results/capture-supported-precision-after-save-and-reload/reopened.png",
+        "sha256": "2bf02e88d161bd8b8c32d4210d31de00357d7450d284872e800c674f9b502214",
+        "capturedAt": "2026-10-09T04:02:26.673Z",
+        "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-before-results/capture-supported-precision-after-save-and-reload/reopened.png?raw=true"
+      },
+      {
+        "path": "implementation/matched-after-results/capture-supported-precision-after-save-and-reload/reopened.png",
+        "sha256": "c8719249bd9a1f68b8dd4db553e121b7bdd8a454db077b4559f8fc6f990a1eb3",
+        "capturedAt": "2026-10-09T04:02:33.001Z",
+        "url": "https://github.com/MChartier/calibrate-health/blob/a8bec0320107fae14f8dd53f3aa90571901b6b68/implementation/matched-after-results/capture-supported-precision-after-save-and-reload/reopened.png?raw=true"
+      }
+    ],
+    "sourceImageAccess": "All four published image bytes fetched via authorized GitHub connector; their Git blob IDs match the inspected local originals.",
+    "pixelInspection": "Implementation owner inspected actual PNGs; independent pixel/readiness QA remains for ROOT to dispatch.",
+    "githubPageRendering": "Waived under human amendment6022754087; not claimed executed."
+  },
+  "checks": {
+    "total": 25,
+    "returned": 25,
+    "items": [
+      {
+        "id": 113664872999,
+        "name": "High and Critical Vulnerabilities",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397099/job/113664872999"
+      },
+      {
+        "id": 113664843878,
+        "name": "Classify Production Image Inputs",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397099/job/113664843878"
+      },
+      {
+        "id": 113664832632,
+        "name": "Full Exported Web and PWA End-to-End",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832632"
+      },
+      {
+        "id": 113664832563,
+        "name": "Release Configuration",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832563"
+      },
+      {
+        "id": 113664832553,
+        "name": "Android Emulator End-to-End",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832553"
+      },
+      {
+        "id": 113664832507,
+        "name": "Mobile Build",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832507"
+      },
+      {
+        "id": 113664832444,
+        "name": "Wear Release Emulator Smoke",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832444"
+      },
+      {
+        "id": 113664832377,
+        "name": "Six-State Data-Backed Route Acceptance",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832377"
+      },
+      {
+        "id": 113664832367,
+        "name": "Native Two-Emulator Package Upgrade",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832367"
+      },
+      {
+        "id": 113664832151,
+        "name": "UX Accessibility and Visual Regression",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832151"
+      },
+      {
+        "id": 113664832143,
+        "name": "iOS Build",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832143"
+      },
+      {
+        "id": 113664832009,
+        "name": "Wear Build and JVM Tests",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664832009"
+      },
+      {
+        "id": 113664831920,
+        "name": "Backend Build",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664831920"
+      },
+      {
+        "id": 113664830852,
+        "name": "android Runtime Bundle",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664830852"
+      },
+      {
+        "id": 113664830832,
+        "name": "ios Runtime Bundle",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664830832"
+      },
+      {
+        "id": 113664830828,
+        "name": "Expo Web Build",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664830828"
+      },
+      {
+        "id": 113664830809,
+        "name": "Web Critical Smoke",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664830809"
+      },
+      {
+        "id": 113664803054,
+        "name": "Backend Tests",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397120/job/113664803054"
+      },
+      {
+        "id": 113664802494,
+        "name": "v0.14.0 Upgrade and Encrypted Rollback",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397132/job/113664802494"
+      },
+      {
+        "id": 113664802314,
+        "name": "Populated Postgres Upgrade",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "skipped",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397132/job/113664802314"
+      },
+      {
+        "id": 113664802000,
+        "name": "Mobile Tests",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397120/job/113664802000"
+      },
+      {
+        "id": 113664797786,
+        "name": "Classify Build Inputs",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397186/job/113664797786"
+      },
+      {
+        "id": 113664775637,
+        "name": "Backend, Shared, API Client, and Mobile Typecheck",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397082/job/113664775637"
+      },
+      {
+        "id": 113664775444,
+        "name": "Classify Database Inputs",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397132/job/113664775444"
+      },
+      {
+        "id": 113664775415,
+        "name": "Classify Test Inputs",
+        "headSha": "7555a4f314d54f81c307cb90948549d160ca8581",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/MChartier/calibrate-health/actions/runs/37882397120/job/113664775415"
+      }
+    ],
+    "local": {
+      "typecheck": "pass",
+      "focusedUnitTests": "56 passed /6 suites; existing act warnings retained",
+      "maintainedBrowser": "3 fail on current baseline for intended assertions,3 pass on proposed build",
+      "additionalBrowserControls": "18 passed",
+      "diffCheck": "pass on final published range"
+    }
+  },
+  "review": {
+    "requestComment": 6074040619,
+    "quotaRefusalComment": 6074041991,
+    "requestHead": "ff05e56ed338ec2c178dc05cdf77125d34395c67",
+    "disposition": "Quota-only refusal; no completed bot review claimed. No retry; final successor changes test whitespace only. Independent review required under amendment6006523068.",
+    "submittedReviews": [],
+    "inlineComments": [],
+    "remainingActionableFindings": []
+  },
+  "issue": {
+    "number": 448,
+    "nativeClosingAssociationVerified": true,
+    "originalSnapshot": "implementation/issue-original.json",
+    "projectAndReadiness": "ROOT-owned; not changed by implementation owner"
+  },
+  "limits": [
+    "Native-device/system-keyboard execution deferred",
+    "Browser viewport simulation is not native evidence",
+    "API persistence and idempotency use synthetic fixtures; no live backend/database/provider data",
+    "No general unverified fractional-input symptom claimed fixed"
+  ],
+  "checkpoint": {
+    "productTree": "clean",
+    "priorGoal449Tree": "clean and preserved650862e1c13be66fe5ec05495320cc66ac32f8bb",
+    "scopingTree": "clean and preserved8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+    "preview": "stopped; no listener18448",
+    "handoff": "Implementation complete; no human-ready, merge, release, deployment or native install performed"
+  },
+  "standards": {
+    "workflow": "workflow-v3",
+    "executionPin": "f0919b184b6344d6279178b2388190936ca432a9",
+    "review": "pr-review-v3",
+    "reviewPin": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+    "directAmendments": "Read and acknowledged, including scope, evidence retention, complete published scope, concise final state, quota refusal, native deferral and managed-client separation"
+  }
+}
