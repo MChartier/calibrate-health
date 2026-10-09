@@ -1,8 +1,7 @@
 # calibrate
 
 Calibrate is a hosted calorie tracker for people who want to lose or maintain weight by logging food and weight, then
-comparing daily intake with an estimated target based on their profile. The official service is the default for routine
-use; self-hosting remains available as an Advanced option for operators who want to run the application and database.
+comparing daily intake with an estimated target based on their profile. The app connects to its configured service without customer-facing backend setup.
 
 - Official service: https://calibratehealth.app
 - Launch clients: English Web/PWA, Android phone, and Wear OS
@@ -45,7 +44,7 @@ attribution requirements: https://platform.fatsecret.com/docs/guides
 - Security model and release threat review: `docs/security.md`, `docs/security-release-threat-model.md`
 - Architecture decisions: `docs/architecture/`
 
-## Advanced: self-hosting
+## Internal deployment tooling
 
 ### Docker Compose (single machine)
 
@@ -241,8 +240,8 @@ This standard path brings up the local API, Postgres, and Expo web client. Host-
 the commands in `mobile/README.md` when Android build tools are available.
 
 For Android emulator development, the app defaults to `http://10.0.2.2:3000` in dev builds so it can reach the local
-backend. Official Android builds default to `https://calibratehealth.app`. A previously selected self-hosted origin
-continues to win after restart; custom server setup is an Advanced Android sign-in option. Production Web/PWA deployments
+backend. Official Android builds default to `https://calibratehealth.app`. Internal builds set `EXPO_PUBLIC_CALIBRATE_SERVER_URL` at build time; there is no runtime server picker.
+A changed target requires a safe local-state check and fresh sign-in. See `mobile/README.md` for recovery guidance. Production Web/PWA deployments
 always use the corresponding same-origin backend and do not expose a server selector.
 
 Native auth is bearer-token based and additive to the existing browser cookie session flow. Mobile tokens are opaque to

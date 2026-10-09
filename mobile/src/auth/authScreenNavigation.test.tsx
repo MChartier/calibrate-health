@@ -50,12 +50,9 @@ function authContextStub() {
 function expectAuthLink(pathname: string) {
     const linkProps = mockLink.mock.calls
         .map(([props]) => props)
-        .find((props) => props.href?.pathname === pathname);
+        .find((props) => props.href === pathname);
     expect(linkProps).toBeDefined();
-    expect(linkProps.href).toEqual({
-        pathname,
-        params: { serverUrl: SELF_HOSTED_URL }
-    });
+    expect(linkProps.href).toBe(pathname);
     expect(linkProps.children.props.accessibilityRole).toBe('link');
 }
 
@@ -70,25 +67,25 @@ describe('auth screen server navigation', () => {
         jest.restoreAllMocks();
     });
 
-    it('carries the login server draft into the registration link', () => {
+    it('ignores the URL draft and links directly to registration', () => {
         const screen = render(<LoginScreen />);
 
         expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
-        fireEvent.press(screen.getByLabelText('Show advanced connection options'));
-        expect(screen.getByLabelText('Server URL')).toHaveProp('value', SELF_HOSTED_URL);
+        expect(screen.queryByLabelText('Show advanced connection options')).toBeNull();
+        expect(screen.queryByLabelText('Server URL')).toBeNull();
         expectAuthLink('/(auth)/register');
     });
 
-    it('carries the registration server draft back to the login link', () => {
+    it('ignores the URL draft and links directly to sign in', () => {
         const screen = render(<RegisterScreen />);
 
         expect(screen.queryByText(SELF_HOSTED_URL)).toBeNull();
-        fireEvent.press(screen.getByLabelText('Show advanced connection options'));
-        expect(screen.getByLabelText('Server URL')).toHaveProp('value', SELF_HOSTED_URL);
+        expect(screen.queryByLabelText('Show advanced connection options')).toBeNull();
+        expect(screen.queryByLabelText('Server URL')).toBeNull();
         expectAuthLink('/(auth)/login');
     });
 
-    it('submits login credentials with the routed server draft', async () => {
+    it('submits login credentials without accepting a routed server draft', async () => {
         const auth = authContextStub();
         mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
         const screen = render(<LoginScreen />);
@@ -98,11 +95,11 @@ describe('auth screen server navigation', () => {
         fireEvent.press(screen.getByLabelText('Sign in'));
 
         await waitFor(() => {
-            expect(auth.login).toHaveBeenCalledWith('user@example.com', 'secret', SELF_HOSTED_URL);
+            expect(auth.login).toHaveBeenCalledWith('user@example.com', 'secret');
         });
     });
 
-    it('submits registration credentials with the routed server draft', async () => {
+    it('submits registration credentials without accepting a routed server draft', async () => {
         const auth = authContextStub();
         mockUseAuth.mockReturnValue(auth as unknown as ReturnType<typeof useAuth>);
         const screen = render(<RegisterScreen />);
@@ -114,7 +111,7 @@ describe('auth screen server navigation', () => {
         fireEvent.press(screen.getByLabelText('Create account'));
 
         await waitFor(() => {
-            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', SELF_HOSTED_URL, {
+            expect(auth.register).toHaveBeenCalledWith('new@example.com', 'secret12', {
                 acceptTerms: false,
                 acceptPrivacy: false
             });
@@ -182,8 +179,7 @@ describe('auth screen server navigation', () => {
         await waitFor(() => {
             expect(auth.login).toHaveBeenCalledWith(
                 'user@example.com',
-                'secret',
-                auth.serverUrl
+                'secret'
             );
         });
         expect(mockLink.mock.calls.some(([props]) => props.href === '/(auth)/register')).toBe(true);
