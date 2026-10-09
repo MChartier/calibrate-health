@@ -1,0 +1,37 @@
+{
+  "base": "547206a1b372b73fc95fc412ad453b8099440000",
+  "owner": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+  "purpose": "Nonmerged red reproduction and scope checkpoint",
+  "files": [
+    {
+      "path": "checkpoint.md",
+      "bytes": 7324,
+      "sha256": "a87d91868e3bd8d092a68b5d7a71abb04cf5b113d427cfd713411933926ca651"
+    },
+    {
+      "path": "focused-cookie-orders-red.json",
+      "bytes": 10771,
+      "sha256": "5eb9a211b9305e6740855dea1755ed48f2dff27f14292844ba9dca8a2d81ae90"
+    },
+    {
+      "path": "focused-native-overwrite-red.json",
+      "bytes": 19294,
+      "sha256": "8168dc0ceb785d3ec5e6b7a70107b4b5b5c99e26a03852eaf31acec7a9f00d6c"
+    },
+    {
+      "path": "focused-race-red.json",
+      "bytes": 28812,
+      "sha256": "5955b8c0f54a596c845ebda50abe80d5921b3c7c5cbf481e2bd1c1bbc075fba0"
+    },
+    {
+      "path": "focused-repro-438.cjs",
+      "bytes": 2090,
+      "sha256": "092b67e7c49c2b029c47e19e506d04c3d65cd796b1ca839e973a86b7a72270f0"
+    },
+    {
+      "path": "probe.patch",
+      "bytes": 46653,
+      "sha256": "a14c64ea4d64b2add7b42c9b611ad297070675ae5f6e49946253d23c25f09285"
+    }
+  ]
+}

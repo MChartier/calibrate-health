@@ -1,0 +1,36 @@
+# Focused successor: session-safety scope checkpoint
+
+2026-10-09T05:13Z. Owner 01a11c7b-b7fa-7578-9694-80a1cae2b03d on verified mchartier_zbook. Repository MChartier/calibrate-health. This is a nonmerged reproduction record, not product implementation or a readiness verdict.
+
+The admitted read retry succeeded: actual remote master 547206a1b372b73fc95fc412ad453b8099440000, original PR450 ref f417e84b430cc46275171462cc9d2373b8ee8f3e, previous remote evidence tip 27f6a292704d42499d8169866729d1d1c5a8ae40. A fresh isolated local branch fix/managed-first-438-focused was created from actual master. Original worktrees and product history are unchanged.
+
+The earlier audit 7067b73a5122d7ef8bcfdc8bcb4c0d4b56ceba5d and planning files were published by ordinary fast-forward through 6d01e5b3c757b67a80f9253806b454fab5438023. Public HTTP200/exact-byte checks passed for plan.md, dispositions.json, retention.json and original manifest.json. This checkpoint also retains all files bound by that original manifest, unchanged. Manifest identity remains 484fe38c4687443ccbcae4ca25484aa243a1ff1a9df757229e0ed402d517114a. Earlier evidence, images and QA remain historical; no identity is relabeled.
+
+## What was tested
+
+Start from exact master and apply probe.patch. This is a deliberately incomplete API-removal probe: native and browser AuthContext setters/candidate arguments are removed; native authentication confirms its current configured target instead of switching. No origin-storage migration, UI removal, general session queue or restoration framework was added. The probe does not satisfy the full product outcome and must not be published as a product PR.
+
+The two provider regression files originate at PR450 f417e84b430cc46275171462cc9d2373b8ee8f3e. Only selected cases ran. Native assertions were subsequently tightened to inspect actual storage-call arguments rather than stopping at a true/false return. The browser fixture models the browser applying a cookie before resolving the authentication response; it is a component-boundary synthetic cookie simulation, not an actual HTTP browser capture. SecureStore is mocked; native-device execution did not occur. Real provider and local workspace/logout code are exercised under these mocks.
+
+1. focused-race-red.json: native late login/register/refresh after remount plus browser login/logout scenario: four failures, 42 skipped. Native operations incorrectly completed successfully; the browser scenario left a user after logout. This preliminary run uses the original copied native assertions and predates the added two-order browser test.
+2. focused-cookie-orders-red.json: two explicit response orders across provider remount: old-first passed; replacement-first failed. After account8 login completed, account7's late response applied its cookie while the mounted UI still showed account8. Exact observation: expected cookie8, received7. One passed, one failed, 19 skipped.
+3. focused-native-overwrite-red.json: tightened login/register/refresh cases all failed. Final writeStoredTokens call was late-old-access/late-old-refresh rather than replacement-access/replacement-refresh. Three failures, 24 skipped. These assertions demonstrate the overwrite boundary directly.
+
+The final patch captures the tightened native assertion and both browser-order scenarios. Reproduction commands from workspace root:
+
+    node managed-clone-438-01a11c7b/node_modules/jest/bin/jest.js --config focused-438-01a11c7b/mobile/package.json --runInBand --runTestsByPath focused-438-01a11c7b/mobile/src/auth/AuthContext.test.tsx --testNamePattern="late .* after remount"
+    node managed-clone-438-01a11c7b/node_modules/jest/bin/jest.js --config focused-438-01a11c7b/mobile/package.json --runInBand --runTestsByPath focused-438-01a11c7b/mobile/src/auth/AuthContext.web.test.tsx --testNamePattern="focused successor cookie"
+
+Node v24.19.0, Windows PowerShell host, Jest29.7.0. Isolated worktree dependencies were junctions to the existing same-owner installed root/mobile node_modules, not independent builds. Root package-lock SHA256 1ff3ae75f972e5bd96519f8b7a9265c454556c310d77ab3c58baaddcf6e023e6. API client calls are mocked as shown in the retained patch; do not infer current-backend or browser/device integration from these results. The initial construction script is retained to bind the earlier fixture sequence. The final patch is sufficient to reconstruct the exact final probe from master.
+
+## Scope judgment and stop
+
+The failures remain reachable after removing runtime target APIs. Native asynchronous login/register/refresh crosses provider lifetime; browser cookie responses cross provider lifetime and can disagree with current UI identity. A component-local epoch or response-ignore check cannot alone undo a cookie already applied by the browser. A provider-local queue cannot order operations from replacement providers. Clearing that stale cookie without ordering can instead revoke the newer login. Backend credential-version validation alone does not distinguish this valid earlier session from the intended replacement account.
+
+Minimum bounded correction would need shared ordering across provider lifetimes for cookie-mutating login/register, bootstrap and logout/retry; prevent authenticated requests during unresolved ownership; order stale-cookie revocation before newer authentication; persist/retry failed revocation without revoking the replacement; and native provider invalidation plus ordering/cancellation of credential/workspace writes and captured-token revocation. It must cover both response orders, remount, refresh/logout, already-started persistence and storage/revocation failures while preserving valid providers. No general scheduler, new backend auth protocol or release changes are proposed.
+
+This coordination reaches beyond deleting target selection and spans both providers plus credential/workspace/logout boundaries. I judge it independently substantial and am stopping under the packet's explicit scope boundary rather than reimporting PR450's broad framework. These experiments establish reachable defects; they do not prove the old framework is minimal, do not establish an impossibility of a smaller implementation, and do not establish all defects were introduced by managed-first removal.
+
+ROOT decision requested: admit a separately scoped bounded client-session safety prerequisite (solely these reproduced ownership/persistence/cookie failures), or explicitly retain that bounded coordination inside issue438 before resuming. No separate issue, PR or worker was created. The already-approved origin-safe startup contract remains necessary, not an optional new feature. Removing known reachable protections is not an acceptable way to meet a net-line reduction.
+
+No final-success run, full tests, typecheck, builds, browser captures, native-device checks, CI, review or QA were run for the successor. Existing positives on PR450 are historical. No predecessor closure, readiness, Project update, release or deployment occurred. The incomplete probe is retained only as nonmerged evidence; original branches/worktrees are preserved. After public byte verification, restore the owned probe files to their original master bytes to leave the new branch clean and idle, with the entire experiment recoverable from this patch.
