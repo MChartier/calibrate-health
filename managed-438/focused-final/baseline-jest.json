@@ -1,0 +1,20 @@
+{
+  "preset": "@react-native/jest-preset",
+  "moduleNameMapper": {
+    "^expo/virtual/env$": "<rootDir>/test/expoVirtualEnv.js",
+    "^expo-application$": "<rootDir>/test/expoApplication.js",
+    "^uuid$": "<rootDir>/../node_modules/uuid/dist/cjs/index.js"
+  },
+  "testMatch": [
+    "C:/Users/MChar/Documents/Codex/2026-10-08/task-6/focused-evidence-438/untouched-master-native.test.tsx"
+  ],
+  "rootDir": "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-6\\focused-before-438-01a11c7b\\mobile",
+  "roots": [
+    "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-6\\focused-before-438-01a11c7b\\mobile",
+    "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-6\\focused-evidence-438"
+  ],
+  "modulePaths": [
+    "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-6\\focused-before-438-01a11c7b\\node_modules",
+    "C:\\Users\\MChar\\Documents\\Codex\\2026-10-08\\task-6\\focused-before-438-01a11c7b\\mobile\\node_modules"
+  ]
+}

@@ -1,0 +1,704 @@
+PASS focused-438-01a11c7b/mobile/src/offline/foodDayReceipts.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/AddFoodSheet.test.tsx (5.213 s)
+  ΓùÅ Console
+
+    console.error
+      An update to AddFoodSheet inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      212 |         const screen = renderSheet();
+      213 |         await screen.findByText('Adding food reopens this day so you can complete it again.');
+    > 214 |         onlineManager.setOnline(false);
+          |                       ^
+      215 |         fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+      216 |         fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+      217 |         fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+      at forceStoreRerender (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+      at ../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+          at Set.forEach (<anonymous>)
+      at OnlineManager.setOnline (../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+      at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to AddFoodSheet inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      212 |         const screen = renderSheet();
+      213 |         await screen.findByText('Adding food reopens this day so you can complete it again.');
+    > 214 |         onlineManager.setOnline(false);
+          |                       ^
+      215 |         fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+      216 |         fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+      217 |         fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+      at forceStoreRerender (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+      at ../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+          at Set.forEach (<anonymous>)
+      at OnlineManager.setOnline (../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+      at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to AddFoodSheet inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      212 |         const screen = renderSheet();
+      213 |         await screen.findByText('Adding food reopens this day so you can complete it again.');
+    > 214 |         onlineManager.setOnline(false);
+          |                       ^
+      215 |         fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+      216 |         fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+      217 |         fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+      at forceStoreRerender (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+      at ../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+          at Set.forEach (<anonymous>)
+      at OnlineManager.setOnline (../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+      at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to AddFoodSheet inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      212 |         const screen = renderSheet();
+      213 |         await screen.findByText('Adding food reopens this day so you can complete it again.');
+    > 214 |         onlineManager.setOnline(false);
+          |                       ^
+      215 |         fireEvent.press(screen.getByRole('radio', { name: 'Quick' }));
+      216 |         fireEvent.changeText(screen.getByLabelText('Calories'), '120');
+      217 |         fireEvent.press(screen.getByRole('button', { name: 'Add & close' }));
+
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+      at forceStoreRerender (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5432:24)
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5417:11
+      at ../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:60:9
+          at Set.forEach (<anonymous>)
+      at OnlineManager.setOnline (../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/onlineManager.ts:59:22)
+      at Object.setOnline (src/components/AddFoodSheet.test.tsx:214:23)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to AddFoodSheet inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      283 |         },
+      284 |         onSuccess: async (closeAfterLogging) => {
+    > 285 |             setSelection(null);
+          |             ^
+      286 |             setQuickCalories('');
+      287 |             setQuickName('');
+      288 |             await confirmLogged(closeAfterLogging);
+
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+      at dispatchSetStateInternal (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+      at dispatchSetState (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+      at Object.setSelection (src/components/AddFoodSheet.tsx:285:13)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+      at Mutation.execute (../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+
+    console.error
+      An update to AddFoodSheet inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      284 |         onSuccess: async (closeAfterLogging) => {
+      285 |             setSelection(null);
+    > 286 |             setQuickCalories('');
+          |             ^
+      287 |             setQuickName('');
+      288 |             await confirmLogged(closeAfterLogging);
+      289 |         }
+
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+      at dispatchSetStateInternal (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+      at dispatchSetState (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+      at Object.setQuickCalories (src/components/AddFoodSheet.tsx:286:13)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+      at Mutation.execute (../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+
+    console.error
+      An update to AddFoodSheet inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      285 |             setSelection(null);
+      286 |             setQuickCalories('');
+    > 287 |             setQuickName('');
+          |             ^
+      288 |             await confirmLogged(closeAfterLogging);
+      289 |         }
+      290 |     });
+
+      at ../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14402:19
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at warnIfUpdatesNotWrappedWithActDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14401:9)
+      at scheduleUpdateOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12086:9)
+      at dispatchSetStateInternal (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6208:13)
+      at dispatchSetState (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6165:7)
+      at Object.setQuickName (src/components/AddFoodSheet.tsx:287:13)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at Object.apply [as onSuccess] (src/components/AddFoodSheet.tsx:284:18)
+      at Mutation.execute (../../managed-clone-438-01a11c7b/node_modules/@tanstack/query-core/src/mutation.ts:246:26)
+
+PASS focused-438-01a11c7b/mobile/src/offline/provider.web.test.tsx
+  ΓùÅ Console
+
+    console.warn
+      An error occurred in the <OfflineOutboxProvider> component.
+      
+      Consider adding an error boundary to your tree to customize error handling behavior.
+      Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+      at defaultOnUncaughtError (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6400:15)
+      at logUncaughtError (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6460:11)
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at lane.callback (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6490:9)
+      at callCallback (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4625:16)
+      at commitCallbacks (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4645:11)
+      at runWithFiberInDEV (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2315:13)
+      at commitLayoutEffectOnFiber (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10103:15)
+      at flushLayoutEffects (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13774:15)
+      at commitRoot (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13697:9)
+      at commitRootWhenReady (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12444:7)
+      at performWorkOnRoot (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12391:15)
+      at performSyncWorkOnRoot (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2923:7)
+      at flushSyncWorkAcrossRoots_impl (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2764:21)
+      at flushPendingEffects (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14128:11)
+      at performWorkOnRootViaSchedulerTask (../../managed-clone-438-01a11c7b/node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2896:11)
+      at Immediate.performWorkUntilDeadline [as _onImmediate] (../../managed-clone-438-01a11c7b/node_modules/scheduler/cjs/scheduler.native.development.js:45:48)
+
+PASS focused-438-01a11c7b/mobile/src/components/FoodTrackingStatus.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/WeightTrendCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/PlanCheckCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/HistoricalDatePicker.test.tsx
+PASS focused-438-01a11c7b/mobile/src/wear/pairing.test.ts
+PASS focused-438-01a11c7b/mobile/src/healthConnect/sync.test.ts
+PASS focused-438-01a11c7b/mobile/src/food/foodLogSelection.test.ts
+PASS focused-438-01a11c7b/mobile/src/diagnostics/webVitals.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/onboarding/useOnboardingController.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/progress/WeightTrendPreviewCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/provider.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/WeightEntrySheet.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/reconciler.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/indexedDbOutbox.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/progress/GoalPaceSheet.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/operations.test.ts
+PASS focused-438-01a11c7b/mobile/src/progress/ProgressScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/diagnostics/clientDiagnostics.test.ts
+PASS focused-438-01a11c7b/mobile/src/config/server.test.ts
+PASS focused-438-01a11c7b/mobile/src/hooks/useNativePushRegistration.web.test.tsx
+PASS focused-438-01a11c7b/mobile/src/auth/authScreenNavigation.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/BottomSheetModal.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/foodDayIntent.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/account/accountData.test.ts
+PASS focused-438-01a11c7b/mobile/src/weightTrend/presentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/GoalProgressCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/wear/handoff.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/NotificationsDrawer.test.tsx
+PASS focused-438-01a11c7b/mobile/src/auth/apiClientAuth.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/outbox.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/AppErrorBoundary.test.tsx
+PASS focused-438-01a11c7b/mobile/src/settings/SettingsCategoryPage.test.tsx
+PASS focused-438-01a11c7b/mobile/src/pwa/runtime.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/food/useFoodDeleteRecovery.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/serving.test.ts
+PASS focused-438-01a11c7b/mobile/src/screens/ActivityScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/RecipeIngredientEditor.test.tsx
+PASS focused-438-01a11c7b/mobile/src/savedFoods/SavedFoodsLibrary.test.tsx
+PASS focused-438-01a11c7b/mobile/src/hooks/useConfirmDiscardNavigation.test.ts
+PASS focused-438-01a11c7b/mobile/src/nutritionLabel/NutritionLabelScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/onboarding/completionState.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/AsyncStateBoundary.test.tsx
+PASS focused-438-01a11c7b/mobile/src/onboarding/useOnboardingDraft.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/accessibilityPrimitives.test.tsx
+PASS focused-438-01a11c7b/mobile/src/wear/syncInvalidation.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/Combobox.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/FoodDeleteRecoveryController.test.ts
+PASS focused-438-01a11c7b/mobile/src/barcode/workflow.test.ts
+PASS focused-438-01a11c7b/mobile/src/settings/PreferencesSettingsScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/FoodLogTimelineCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/AppChoiceGroup.test.tsx
+PASS focused-438-01a11c7b/mobile/src/navigation/routeRegistry.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/DatePickerField.test.tsx
+PASS focused-438-01a11c7b/mobile/src/screens/AdvancedSettingsScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/serverSettings/ServerSettingsScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/theme.test.ts
+PASS focused-438-01a11c7b/mobile/src/barcode/state.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/trackingProjection.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/pauseIntent.test.ts
+PASS focused-438-01a11c7b/mobile/src/hooks/useModalFocusManagement.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/DateNavigation.web.test.tsx
+PASS focused-438-01a11c7b/mobile/src/updates/appUpdate.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/PageExpansion.test.tsx
+PASS focused-438-01a11c7b/mobile/src/weightTrend/geometry.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/DateNavigationHeader.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/SegmentedControl.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/calendar.test.ts
+PASS focused-438-01a11c7b/mobile/src/healthConnect/presentation.test.ts
+FAIL focused-438-01a11c7b/mobile/src/pwa/serviceWorkerSecurity.test.ts
+  ΓùÅ service worker cache security ΓÇ║ responds only for navigations or explicit/fingerprinted static assets
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:44:30)
+
+  ΓùÅ service worker cache security ΓÇ║ uses exported static shells for offline navigation without runtime-caching navigation responses
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:68:28)
+
+  ΓùÅ service worker cache security ΓÇ║ restores the matching exported route offline to preserve hydration
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:79:30)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ service worker cache security ΓÇ║ purges only user-scoped caches through an identity-free message
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:88:39)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+PASS focused-438-01a11c7b/mobile/src/notifications/workflow.test.ts
+PASS focused-438-01a11c7b/mobile/src/navigation/WebNavigationRail.test.tsx
+PASS focused-438-01a11c7b/mobile/src/settings/AccountSessionsPanel.test.tsx
+PASS focused-438-01a11c7b/mobile/plugins/withHealthConnect.test.ts
+PASS focused-438-01a11c7b/mobile/src/settings/SettingsHome.test.tsx
+PASS focused-438-01a11c7b/mobile/src/diagnostics/webVitals.takeRecords.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/navigation/useBrowserRouteFocus.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/SaveMealAsRecipeSheet.test.tsx
+PASS focused-438-01a11c7b/mobile/src/barcode/workflowRecovery.test.ts
+PASS focused-438-01a11c7b/mobile/src/diagnostics/webVitals.lifecycle.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/progress/PlanCheckSummary.test.tsx
+PASS focused-438-01a11c7b/mobile/src/auth/devAutoLogin.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/failedMutationRecovery.test.ts
+PASS focused-438-01a11c7b/mobile/src/diagnostics/ClientWebVitalsRuntime.web.test.tsx
+PASS focused-438-01a11c7b/mobile/src/diagnostics/operationDiagnostics.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/CalorieBalanceCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/utils/goals.test.ts
+PASS focused-438-01a11c7b/mobile/src/notifications/useBrowserNotificationStream.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/KeyboardAwareScrollView.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/useFoodTrackingPause.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/HealthConnectConnectionAction.test.tsx
+PASS focused-438-01a11c7b/mobile/src/healthConnect/normalize.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/legal/PublicLegalPage.test.tsx
+PASS focused-438-01a11c7b/mobile/src/utils/myFoodEditing.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/WeightValueInput.test.tsx
+PASS focused-438-01a11c7b/mobile/src/auth/accountTrustRoutes.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/pendingPause.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/accessibilityFoundation.test.tsx
+PASS focused-438-01a11c7b/mobile/src/onboarding/draftStorage.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/CopyFoodSheet.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/FormField.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/plannedPause.test.ts
+PASS focused-438-01a11c7b/mobile/src/navigation/GuardedTabButton.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/useTrackingQueries.test.tsx
+PASS focused-438-01a11c7b/mobile/src/barcode/BarcodeRecoveryComponents.test.tsx
+PASS focused-438-01a11c7b/mobile/src/onboarding/unitDefaults.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/TodayWeightCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/foodDeleteRecovery.test.ts
+PASS focused-438-01a11c7b/mobile/src/food/dayPresentation.test.ts
+FAIL focused-438-01a11c7b/mobile/src/pwa/serviceWorkerContract.test.ts
+  ΓùÅ Test suite failed to run
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+      4 |
+      5 | describe('Expo web service worker contract', () => {
+    > 6 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+        |                       ^
+      7 |
+      8 |     it('bypasses backend API and authentication requests before adding a fetch handler response', () => {
+      9 |         expect(source).toMatch(/\^\\\/\(\?:api\|auth\)/);
+
+      at readFileSync (src/pwa/serviceWorkerContract.test.ts:6:23)
+      at Object.describe (src/pwa/serviceWorkerContract.test.ts:5:1)
+
+PASS focused-438-01a11c7b/mobile/src/asyncState/resolveAsyncState.test.ts
+PASS focused-438-01a11c7b/mobile/src/wear/pairingPoll.test.ts
+PASS focused-438-01a11c7b/mobile/src/wear/accountCleanup.test.ts
+PASS focused-438-01a11c7b/mobile/src/updates/useAppUpdateController.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/replayInvalidation.test.ts
+PASS focused-438-01a11c7b/mobile/src/food/foodLogAmount.test.ts
+PASS focused-438-01a11c7b/mobile/src/today/TodayFoodPreview.test.tsx
+PASS focused-438-01a11c7b/mobile/src/onboarding/OnboardingAuthHydration.test.tsx
+PASS focused-438-01a11c7b/mobile/src/weightEntry/presentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/ClientServerIncompatibleScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/NotificationCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/navigation/routeMetadata.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/Screen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/CalendarModal.web.test.tsx
+PASS focused-438-01a11c7b/mobile/src/today/PausedDayMessage.test.tsx
+PASS focused-438-01a11c7b/mobile/src/today/dashboardState.test.ts
+PASS focused-438-01a11c7b/mobile/src/notifications/query.test.ts
+PASS focused-438-01a11c7b/mobile/src/activity/presentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/barcode/authReturn.test.ts
+PASS focused-438-01a11c7b/mobile/src/utils/timezones.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/mutationDispatch.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/ClientUpgradeRequiredScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/barcode/context.test.ts
+PASS focused-438-01a11c7b/mobile/src/screens/AboutScreen.test.tsx
+FAIL focused-438-01a11c7b/mobile/src/pwa/manifestContract.test.ts
+  ΓùÅ Test suite failed to run
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\manifest.webmanifest'
+
+      14 |     const publicDir = path.join(process.cwd(), 'public');
+      15 |     const manifest = JSON.parse(
+    > 16 |         fs.readFileSync(path.join(publicDir, 'manifest.webmanifest'), 'utf8')
+         |            ^
+      17 |     ) as {
+      18 |         id: string;
+      19 |         name: string;
+
+      at readFileSync (src/pwa/manifestContract.test.ts:16:12)
+      at Object.describe (src/pwa/manifestContract.test.ts:13:1)
+
+PASS focused-438-01a11c7b/mobile/src/settings/ConnectedAppsPanel.test.tsx
+PASS focused-438-01a11c7b/mobile/src/barcode/useBarcodeCameraLifecycle.test.tsx
+PASS focused-438-01a11c7b/mobile/src/settings/ReminderSettingsPanel.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/replayCalibrationEvidence.test.ts
+PASS focused-438-01a11c7b/mobile/src/food/calendarIntent.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/CardHeader.test.tsx
+PASS focused-438-01a11c7b/mobile/src/auth/serverSwitch.test.ts
+PASS focused-438-01a11c7b/mobile/src/account/accountDeletionNotice.test.ts
+PASS focused-438-01a11c7b/mobile/plugins/withOptionalCameraHardware.test.ts
+PASS focused-438-01a11c7b/mobile/src/barcode/useBarcodeSearchHandoff.test.tsx
+PASS focused-438-01a11c7b/mobile/src/pwa/PwaStatusBanner.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/failedCreation.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/hostedRoot.test.tsx
+PASS focused-438-01a11c7b/mobile/src/nutritionLabel/imagePicker.test.ts
+PASS focused-438-01a11c7b/mobile/src/platform/browserBoundaries.test.tsx
+PASS focused-438-01a11c7b/mobile/src/diagnostics/ClientDiagnosticsRuntime.test.tsx
+PASS focused-438-01a11c7b/mobile/src/weightEntry/input.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/ActivitySummaryCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/navigation/addFoodRoute.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/trackingReceipts.test.ts
+PASS focused-438-01a11c7b/mobile/src/settings/reminderWallClock.test.ts
+PASS focused-438-01a11c7b/mobile/src/food/copyFoodWhenSynchronized.test.ts
+PASS focused-438-01a11c7b/mobile/src/barcode/manualDraft.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/queuedMutation.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/AppActionRow.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/NumberStepperField.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/TimeZonePickerField.test.tsx
+PASS focused-438-01a11c7b/mobile/src/healthConnect/accountCleanup.test.ts
+PASS focused-438-01a11c7b/mobile/src/healthConnect/provider.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/utils/haptics.test.ts
+PASS focused-438-01a11c7b/mobile/src/utils/profileCompletion.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/accountAccess.test.ts
+PASS focused-438-01a11c7b/mobile/src/platform/deviceLocale.native.test.ts
+PASS focused-438-01a11c7b/mobile/plugins/withSharedAndroidSigning.test.ts
+PASS focused-438-01a11c7b/mobile/src/settings/AndroidIntegrationSettingsScreens.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/pendingChangePresentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/savedFoods/cachedFoods.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/legal/LegalConsentFields.test.tsx
+PASS focused-438-01a11c7b/mobile/src/connectivity/queryOnlineManager.native.test.ts
+PASS focused-438-01a11c7b/mobile/src/navigation/routePresentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/utils/dates.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/mutationLock.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/profile/ActivityLevelSelector.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/DatePickerField.web.test.tsx
+PASS focused-438-01a11c7b/mobile/src/notifications/presentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/barcode/BarcodeSearchHandoffPersistence.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/confirmAction.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/database.test.ts
+PASS focused-438-01a11c7b/mobile/src/legal/publicLegalContent.test.ts
+PASS focused-438-01a11c7b/mobile/src/navigation/contextualFab.test.ts
+PASS focused-438-01a11c7b/mobile/src/healthConnect/provider.test.ts
+PASS focused-438-01a11c7b/mobile/src/errors/presentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/healthConnect/permissions.test.ts
+PASS focused-438-01a11c7b/mobile/src/caloriePlanning/presentation.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/authErrors.test.ts
+PASS focused-438-01a11c7b/mobile/src/layout/adaptiveLayout.test.ts
+PASS focused-438-01a11c7b/mobile/src/platform/nativePlatform.test.ts
+PASS focused-438-01a11c7b/mobile/src/utils/myFoods.test.ts
+PASS focused-438-01a11c7b/mobile/src/hooks/useReducedMotionPreference.test.tsx
+PASS focused-438-01a11c7b/mobile/src/utils/numericInput.test.ts
+PASS focused-438-01a11c7b/mobile/src/healthConnect/native.test.ts
+PASS focused-438-01a11c7b/mobile/src/today/foodPreview.test.ts
+PASS focused-438-01a11c7b/mobile/src/pwa/cacheIsolation.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/TabScreen.test.tsx
+PASS focused-438-01a11c7b/mobile/src/caloriePlanning/heightInput.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/oneTimeToken.test.ts
+PASS focused-438-01a11c7b/mobile/src/notifications/expoProject.test.ts
+PASS focused-438-01a11c7b/mobile/src/config/androidSecurityConfig.test.ts
+PASS focused-438-01a11c7b/mobile/src/platform/deviceLocale.test.ts
+PASS focused-438-01a11c7b/mobile/src/offline/pendingCalibrationEvidence.test.ts
+PASS focused-438-01a11c7b/mobile/src/notifications/browserPush.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/nutritionLabel/draft.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/FormErrorSummary.test.tsx
+PASS focused-438-01a11c7b/mobile/src/components/auth/AuthBrand.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/reconcilerOwnership.web.test.ts
+PASS focused-438-01a11c7b/mobile/src/utils/myFoodFormValidation.test.ts
+PASS focused-438-01a11c7b/mobile/src/healthConnect/storageScope.test.ts
+PASS focused-438-01a11c7b/mobile/src/caloriePlanning/queryInvalidation.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/ProgressBar.test.tsx
+PASS focused-438-01a11c7b/mobile/src/navigation/weightTrendRoute.test.tsx
+PASS focused-438-01a11c7b/mobile/src/offline/pendingWeight.test.ts
+PASS focused-438-01a11c7b/mobile/src/onboarding/OnboardingProgress.test.tsx
+PASS focused-438-01a11c7b/mobile/src/caloriePlanning/dateBounds.test.ts
+PASS focused-438-01a11c7b/mobile/src/config/releaseEntry.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/AppCard.test.tsx
+PASS focused-438-01a11c7b/mobile/src/food/quantityInput.test.ts
+PASS focused-438-01a11c7b/mobile/src/components/PageHeader.test.tsx
+PASS focused-438-01a11c7b/mobile/src/utils/keyboard.test.ts
+PASS focused-438-01a11c7b/mobile/src/onboarding/steps.test.ts
+PASS focused-438-01a11c7b/mobile/src/config/keyboardLayoutConfig.test.ts
+PASS focused-438-01a11c7b/mobile/src/barcode/cameraRuntime.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/AuthContext.test.tsx
+PASS focused-438-01a11c7b/mobile/src/auth/AuthContext.web.test.tsx
+PASS focused-438-01a11c7b/mobile/src/auth/storage.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/offlineWorkspace.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/targetTransitionState.test.ts
+PASS focused-438-01a11c7b/mobile/src/auth/logoutIntentStore.test.ts
+
+Summary of all failing tests
+FAIL src/pwa/serviceWorkerSecurity.test.ts
+  ΓùÅ service worker cache security ΓÇ║ responds only for navigations or explicit/fingerprinted static assets
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:44:30)
+
+  ΓùÅ service worker cache security ΓÇ║ uses exported static shells for offline navigation without runtime-caching navigation responses
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:68:28)
+
+  ΓùÅ service worker cache security ΓÇ║ restores the matching exported route offline to preserve hydration
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:79:30)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ΓùÅ service worker cache security ΓÇ║ purges only user-scoped caches through an identity-free message
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+       6 |
+       7 | function loadWorker(options: { cacheKeys?: string[]; offline?: boolean; cachedRoutes?: Record<string, string> } = {}) {
+    >  8 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+         |                       ^
+       9 |     const handlers = new Map<string, ServiceWorkerHandler>();
+      10 |     const deleted: string[] = [];
+      11 |     const self = {
+
+      at readFileSync (src/pwa/serviceWorkerSecurity.test.ts:8:23)
+      at Object.loadWorker (src/pwa/serviceWorkerSecurity.test.ts:88:39)
+      at asyncGeneratorStep (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (../../managed-clone-438-01a11c7b/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+FAIL src/pwa/serviceWorkerContract.test.ts
+  ΓùÅ Test suite failed to run
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\sw.js'
+
+      4 |
+      5 | describe('Expo web service worker contract', () => {
+    > 6 |     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+        |                       ^
+      7 |
+      8 |     it('bypasses backend API and authentication requests before adding a fetch handler response', () => {
+      9 |         expect(source).toMatch(/\^\\\/\(\?:api\|auth\)/);
+
+      at readFileSync (src/pwa/serviceWorkerContract.test.ts:6:23)
+      at Object.describe (src/pwa/serviceWorkerContract.test.ts:5:1)
+
+FAIL src/pwa/manifestContract.test.ts
+  ΓùÅ Test suite failed to run
+
+    ENOENT: no such file or directory, open 'C:\Users\MChar\Documents\Codex\2026-10-08\task-6\public\manifest.webmanifest'
+
+      14 |     const publicDir = path.join(process.cwd(), 'public');
+      15 |     const manifest = JSON.parse(
+    > 16 |         fs.readFileSync(path.join(publicDir, 'manifest.webmanifest'), 'utf8')
+         |            ^
+      17 |     ) as {
+      18 |         id: string;
+      19 |         name: string;
+
+      at readFileSync (src/pwa/manifestContract.test.ts:16:12)
+      at Object.describe (src/pwa/manifestContract.test.ts:13:1)
+
+
+Test Suites: 3 failed, 231 passed, 234 total
+Tests:       4 failed, 1331 passed, 1335 total
+Snapshots:   0 total
+Time:        70.721 s
+Ran all test suites.
+Test results written to: focused-full-mobile.json

@@ -1,0 +1,9 @@
+PASS src/auth/targetTransitionState.test.ts
+PASS src/auth/logoutIntentStore.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       33 passed, 33 total
+Snapshots:   0 total
+Time:        0.858 s, estimated 1 s
+Ran all test suites matching /src\\auth\\targetTransitionState.test.ts|src\\auth\\logoutIntentStore.test.ts/i.
+Test results written to: ..\..\focused-boundary-final.json

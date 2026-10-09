@@ -1,0 +1,13 @@
+Γ£ö static Expo config supports iPhone, iPad, and iOS Simulator builds (0.9882ms)
+Γ£ö Expo config leaves updates disabled when no EAS project is configured (0.6628ms)
+Γ£ö Expo config embeds a project-scoped update URL, runtime, and local-build channel (0.3572ms)
+Γ£ö Expo config accepts the public project link written by eas init (0.166ms)
+Γ£ö Expo config rejects malformed project IDs and channel names (0.4901ms)
+Γä╣ tests 5
+Γä╣ suites 0
+Γä╣ pass 5
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 67.2875

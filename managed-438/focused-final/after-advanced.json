@@ -1,0 +1,54 @@
+{
+  "source": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+  "state": "advanced",
+  "route": "/advanced",
+  "actualUrl": "http://127.0.0.1:4174/advanced",
+  "capturedAt": "2026-10-09T05:36:20.884Z",
+  "browser": "149.0.7827.55",
+  "fixedClock": "2026-07-21T19:00:00.000Z",
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+  "bundles": [
+    {
+      "pathname": "/_expo/static/js/web/index-b130ba8d9073eef9167389c9b3236693.js",
+      "sha256": "cee3238cb8a5a7a368056035b93b37753892fb0c79c7dc02731e2dca79ba6fd6"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/auth/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/user/tracking-history"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/notifications/in-app?view=active&limit=5"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/client-config"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/notifications/stream"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/food-days?date=2026-07-21"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/food-days/pause"
+    }
+  ],
+  "file": "after-advanced.png",
+  "sha256": "8cd74869f72400196f11b04b0dd1e8e4ef23ca0040b980a02f4bf4fcecf3453a",
+  "text": "Skip to main content\n\nToday\n\nProgress\n\nAdvanced settings\n\n\nDiagnostics\nTechnical details for support and release verification.\nService address\nhttp://127.0.0.1:4174\nPlatform\nWeb/PWA\nNative build tag\nNot applicable\nNative release\nNot applicable\nOTA runtime\n0.2.7\nUpdate channel\nBrowser\nCurrent OTA\nManaged by browser\nPublished\nUnknown\nSoftware updates\nCheck for and apply compatible Calibrate updates.\n\nBrowser updates are installed through the Calibrate PWA lifecycle.\nWeb and PWA updates are delivered through the browser and installed-site lifecycle."
+}

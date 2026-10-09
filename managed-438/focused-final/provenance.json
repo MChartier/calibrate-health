@@ -1,0 +1,392 @@
+{
+  "version": 1,
+  "ownerTask": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+  "workflow": "workflow-v3 / pr-review-v3 with supplied direct amendments",
+  "workflowCommit": "f0919b184b6344d6279178b2388190936ca432a9",
+  "communicationCommit": "97e5583c8355f3673aad0835c0ce3ca1486aeb8b",
+  "repository": "MChartier/calibrate-health",
+  "actualHost": "mchartier_zbook",
+  "createdAt": "2026-10-09T05:39:33.368Z",
+  "base": "547206a1b372b73fc95fc412ad453b8099440000",
+  "head": "6f7a1d9fa4dfbf69d3468114d33f4498cf577e03",
+  "capturedAfter": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+  "interveningImpact": "6f7a1d9f only removes two unused exports from native storage; no implementation or browser bundle/fixture change. Captures are not relabeled as final-head captures.",
+  "node": "v24.19.0",
+  "builds": {
+    "checkouts": "Independent detached actual-master checkout and focused branch checkout; each exported separately with --clear after cache reuse was detected.",
+    "commands": [
+      "From each mobile directory: NODE_PATH=<checkout>/mobile/node_modules node ../node_modules/expo/bin/cli export --platform web --clear",
+      "From each root: enhanceExpoWebServiceWorker(mobile/dist); inspectExpoWebExport(mobile/dist) using unchanged scripts/expo-web-release.mjs",
+      "CAPTURE_ROOT=<checkout> CAPTURE_LABEL=before|after node <installed-dependencies>/@playwright/test/cli.js test --config focused-evidence-438/capture.config.cjs"
+    ],
+    "dependencies": "Ignored node_modules junctions reuse the installed dependency tree from preserved PR450 checkout f417e84b. package-lock and runtime workspace sources are unchanged versus actual master; the sole packages/shared difference is an erased generated TypeScript description comment in packages/api-client/src/generated/v1.ts. No product source symlinks are used. Clear-cache exports produce distinct verified bundles.",
+    "packageLockSha256": "1ff3ae75f972e5bd96519f8b7a9265c454556c310d77ab3c58baaddcf6e023e6",
+    "sourceScripts": [
+      {
+        "file": "scripts/expo-web-build.mjs",
+        "commit": "547206a1b372b73fc95fc412ad453b8099440000",
+        "sha256": "918ec1bbb4dd99fcc470febcb041d91270870105f9686b7f8e038cfe00371cad"
+      },
+      {
+        "file": "scripts/expo-cli-environment.mjs",
+        "commit": "547206a1b372b73fc95fc412ad453b8099440000",
+        "sha256": "7834e26f866b75f56ef898d295f361d1faa3c2e0cd0899a1d62b94159b517d22"
+      },
+      {
+        "file": "scripts/expo-web-release.mjs",
+        "commit": "547206a1b372b73fc95fc412ad453b8099440000",
+        "sha256": "00815d2fae644b7abc0bdc21cdceee8974e9089c89246c093b64bad140a821dc"
+      },
+      {
+        "file": "scripts/expo-web-static-server.mjs",
+        "commit": "547206a1b372b73fc95fc412ad453b8099440000",
+        "sha256": "b0b4f8642626158f126e5e6c9e5f959d7221cbbf83637d65de09482a69068607"
+      },
+      {
+        "file": "mobile/metro.config.js",
+        "commit": "547206a1b372b73fc95fc412ad453b8099440000",
+        "sha256": "c4d3731cbc91d3036f9e4a2a3d88e60e63e9ea267145bb4fc27799f4787f80bf"
+      },
+      {
+        "file": "e2e/expo-web/fixtures.ts",
+        "commit": "547206a1b372b73fc95fc412ad453b8099440000",
+        "sha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f"
+      }
+    ],
+    "runningBuild": "Capture response listener hashes every loaded JS response and requires an exact match to the independently exported dist file. Build inventories bind all exported files.",
+    "rejectedAttempt": "rejected-cached-export retains initial After output that reused the baseline Metro bundle; those captures are invalid as After evidence. Both sides were independently rebuilt with --clear and recaptured."
+  },
+  "matchedSetup": {
+    "viewport": {
+      "width": 1280,
+      "height": 1100
+    },
+    "scale": 1,
+    "theme": "light",
+    "locale": "en-US",
+    "timezone": "America/Los_Angeles",
+    "motion": "reduce",
+    "serviceWorkers": "blocked",
+    "fixtures": "Repository populated (Advanced) / signed-out (auth); fixed clock 2026-07-21T19:00:00Z and seeded randomness from unchanged fixtures.ts. Shared transient PWA notice hiding disclosed in each capture. No real accounts/data.",
+    "harnesses": [
+      "capture.config.cjs",
+      "matched.spec.ts",
+      "baseline-jest.json",
+      "untouched-master-native.test.tsx",
+      "prepare-focused-evidence.cjs"
+    ]
+  },
+  "pairs": [
+    {
+      "state": "advanced",
+      "before": {
+        "source": "547206a1b372b73fc95fc412ad453b8099440000",
+        "state": "advanced",
+        "route": "/advanced",
+        "actualUrl": "http://127.0.0.1:4174/advanced",
+        "capturedAt": "2026-10-09T05:37:19.629Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-2c3345dca4c181d6208656369ad664a8.js",
+            "sha256": "9b6acd70fa523962d67c9db8cb6dabd86efbf45cecff3b37bcde27d39e7117e9"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/user/tracking-history"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/user/profile"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/notifications/in-app?view=active&limit=5"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/client-config"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/notifications/stream"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/food-days?date=2026-07-21"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/food-days/pause"
+          }
+        ],
+        "file": "before-advanced.png",
+        "sha256": "f06b869520b56a0cf26c889860967ebbad8f1c89764bf88c549189b9de72eae1",
+        "text": "Skip to main content\n\nToday\n\nProgress\n\nAdvanced settings\n\n\nDiagnostics\nTechnical details for support and release verification.\nSelf-hosting\nA self-hosted service's operator is responsible for privacy, security, availability, backups, and support.\nService\nSelf-hosted service\nService address\nhttp://127.0.0.1:4174\nPlatform\nWeb/PWA\nNative build tag\nNot applicable\nNative release\nNot applicable\nOTA runtime\n0.2.7\nUpdate channel\nBrowser\nCurrent OTA\nManaged by browser\nPublished\nUnknown\nSoftware updates\nCheck for and apply compatible Calibrate updates.\n\nBrowser updates are installed through the Calibrate PWA lifecycle.\nWeb and PWA updates are delivered through the browser and installed-site lifecycle."
+      },
+      "after": {
+        "source": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+        "state": "advanced",
+        "route": "/advanced",
+        "actualUrl": "http://127.0.0.1:4174/advanced",
+        "capturedAt": "2026-10-09T05:36:20.884Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-b130ba8d9073eef9167389c9b3236693.js",
+            "sha256": "cee3238cb8a5a7a368056035b93b37753892fb0c79c7dc02731e2dca79ba6fd6"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/user/tracking-history"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/user/profile"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/notifications/in-app?view=active&limit=5"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/client-config"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/notifications/stream"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/food-days?date=2026-07-21"
+          },
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/api/v1/food-days/pause"
+          }
+        ],
+        "file": "after-advanced.png",
+        "sha256": "8cd74869f72400196f11b04b0dd1e8e4ef23ca0040b980a02f4bf4fcecf3453a",
+        "text": "Skip to main content\n\nToday\n\nProgress\n\nAdvanced settings\n\n\nDiagnostics\nTechnical details for support and release verification.\nService address\nhttp://127.0.0.1:4174\nPlatform\nWeb/PWA\nNative build tag\nNot applicable\nNative release\nNot applicable\nOTA runtime\n0.2.7\nUpdate channel\nBrowser\nCurrent OTA\nManaged by browser\nPublished\nUnknown\nSoftware updates\nCheck for and apply compatible Calibrate updates.\n\nBrowser updates are installed through the Calibrate PWA lifecycle.\nWeb and PWA updates are delivered through the browser and installed-site lifecycle."
+      }
+    },
+    {
+      "state": "login",
+      "before": {
+        "source": "547206a1b372b73fc95fc412ad453b8099440000",
+        "state": "login",
+        "route": "/login?serverUrl=https%3A%2F%2Fwrong.example",
+        "actualUrl": "http://127.0.0.1:4174/login?serverUrl=https%3A%2F%2Fwrong.example",
+        "capturedAt": "2026-10-09T05:37:20.039Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-2c3345dca4c181d6208656369ad664a8.js",
+            "sha256": "9b6acd70fa523962d67c9db8cb6dabd86efbf45cecff3b37bcde27d39e7117e9"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          }
+        ],
+        "file": "before-login.png",
+        "sha256": "69854df50d5c02a43fc76306cc6ae44858e6a6138d815b1c3ad195fdf672869a",
+        "text": "Skip to main content\nCalibrate Health\ncalibrate\nTrack food, weight, and progress against a personalized calorie target.\nSign in\nUse your Calibrate account.\nEmail\nPassword\nForgot password?\nSign in\nCreate an account\nPrivacy policy\nTerms of service\nSupport"
+      },
+      "after": {
+        "source": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+        "state": "login",
+        "route": "/login?serverUrl=https%3A%2F%2Fwrong.example",
+        "actualUrl": "http://127.0.0.1:4174/login?serverUrl=https%3A%2F%2Fwrong.example",
+        "capturedAt": "2026-10-09T05:36:21.282Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-b130ba8d9073eef9167389c9b3236693.js",
+            "sha256": "cee3238cb8a5a7a368056035b93b37753892fb0c79c7dc02731e2dca79ba6fd6"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          }
+        ],
+        "file": "after-login.png",
+        "sha256": "69854df50d5c02a43fc76306cc6ae44858e6a6138d815b1c3ad195fdf672869a",
+        "text": "Skip to main content\nCalibrate Health\ncalibrate\nTrack food, weight, and progress against a personalized calorie target.\nSign in\nUse your Calibrate account.\nEmail\nPassword\nForgot password?\nSign in\nCreate an account\nPrivacy policy\nTerms of service\nSupport"
+      }
+    },
+    {
+      "state": "recovery",
+      "before": {
+        "source": "547206a1b372b73fc95fc412ad453b8099440000",
+        "state": "recovery",
+        "route": "/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "actualUrl": "http://127.0.0.1:4174/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "capturedAt": "2026-10-09T05:37:20.423Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-2c3345dca4c181d6208656369ad664a8.js",
+            "sha256": "9b6acd70fa523962d67c9db8cb6dabd86efbf45cecff3b37bcde27d39e7117e9"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          }
+        ],
+        "file": "before-recovery.png",
+        "sha256": "b305a2046b22faa4218e45e36a216b6b0c6c1201eb95bdc1471f75bce7c8c137",
+        "text": "Skip to main content\nCalibrate Health\nReset password\nEnter your account email. For privacy, the response is the same whether or not an account exists.\nEmail\nSend reset instructions\nBack to sign in"
+      },
+      "after": {
+        "source": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+        "state": "recovery",
+        "route": "/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "actualUrl": "http://127.0.0.1:4174/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "capturedAt": "2026-10-09T05:36:21.663Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-b130ba8d9073eef9167389c9b3236693.js",
+            "sha256": "cee3238cb8a5a7a368056035b93b37753892fb0c79c7dc02731e2dca79ba6fd6"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          }
+        ],
+        "file": "after-recovery.png",
+        "sha256": "b305a2046b22faa4218e45e36a216b6b0c6c1201eb95bdc1471f75bce7c8c137",
+        "text": "Skip to main content\nCalibrate Health\nReset password\nEnter your account email. For privacy, the response is the same whether or not an account exists.\nEmail\nSend reset instructions\nBack to sign in"
+      }
+    },
+    {
+      "state": "recovery-failure",
+      "before": {
+        "source": "547206a1b372b73fc95fc412ad453b8099440000",
+        "state": "recovery-failure",
+        "route": "/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "actualUrl": "http://127.0.0.1:4174/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "capturedAt": "2026-10-09T05:37:20.887Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-2c3345dca4c181d6208656369ad664a8.js",
+            "sha256": "9b6acd70fa523962d67c9db8cb6dabd86efbf45cecff3b37bcde27d39e7117e9"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          },
+          {
+            "method": "POST",
+            "url": "http://127.0.0.1:4174/auth/password-reset/request"
+          }
+        ],
+        "file": "before-recovery-failure.png",
+        "sha256": "602a9b2d15d15daa6067fe6bee89c42959905b862d84e834c95f183a4ca5519c",
+        "text": "Skip to main content\nCalibrate Health\nReset password\nEnter your account email. For privacy, the response is the same whether or not an account exists.\nEmail\nUnable to request a password reset. Try again.\nSend reset instructions\nBack to sign in"
+      },
+      "after": {
+        "source": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+        "state": "recovery-failure",
+        "route": "/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "actualUrl": "http://127.0.0.1:4174/forgot-password?serverUrl=https%3A%2F%2Fwrong.example",
+        "capturedAt": "2026-10-09T05:36:22.114Z",
+        "browser": "149.0.7827.55",
+        "fixedClock": "2026-07-21T19:00:00.000Z",
+        "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+        "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+        "bundles": [
+          {
+            "pathname": "/_expo/static/js/web/index-b130ba8d9073eef9167389c9b3236693.js",
+            "sha256": "cee3238cb8a5a7a368056035b93b37753892fb0c79c7dc02731e2dca79ba6fd6"
+          }
+        ],
+        "requests": [
+          {
+            "method": "GET",
+            "url": "http://127.0.0.1:4174/auth/me"
+          },
+          {
+            "method": "POST",
+            "url": "http://127.0.0.1:4174/auth/password-reset/request"
+          }
+        ],
+        "file": "after-recovery-failure.png",
+        "sha256": "2601d190cff6ff117ce90af0dc7b6c6fd621070dc60ec4f52e1b1a0565d735ad",
+        "text": "Skip to main content\nCalibrate Health\nReset password\nEnter your account email. For privacy, the response is the same whether or not an account exists.\nEmail\nUnable to request a password reset. Try again.\nSend reset instructions\nBack to sign in"
+      }
+    }
+  ],
+  "authorPixelInspection": {
+    "checkedAt": "2026-10-09T05:39:33.371Z",
+    "tool": "view_image",
+    "observations": "All eight fresh PNGs opened. Advanced removes self-hosting notice and service classification; service address, platform/update diagnostics and software updates remain readable with unchanged navigation. Login, reset and reset-failure pairs retain matching form geometry; failure shows same synthetic email, retry message and button. These browser screenshots do not demonstrate native selector removal or native migration UI; component/storage tests cover those contracts and physical device execution is deferred.",
+    "independentQA": "Pending same independent QA owner; author inspection is not independent readiness QA.",
+    "renderedGithub": "Not executed; scoped general human rendering waiver applies."
+  },
+  "validation": {
+    "fullMobile": "234 suites / 1343 tests passed at initial focused source; final changed provider/storage/workspace suites 75 tests passed, final boundary 33 passed, private parser storage 23 passed. Full log with wrong-cwd PWA failures retained separately as invocation failure.",
+    "typecheck": "mobile tsc --noEmit passed after guards; no source semantic change after that.",
+    "browser": "4 maintained desktop Chromium tests passed on clean export: cookie Set-Cookie old-first/replacement-first and hosted account/PWA trust. Synthetic cookie fixture uses production intent store, not live backend auth.",
+    "baselineRed": "Unchanged actual-master native provider fails three login/register/refresh remount ownership assertions (24 skipped); wrapper supplies removed old server argument. Initial harness resolution failure retained. This is distinct from earlier API-removal probe.",
+    "native": "Physical Android/iOS/Wear checks deferred/unexecuted; no release/cloud/signing/install action.",
+    "ci": "Recorded separately after draft publication."
+  },
+  "retention": {
+    "ref": "refs/heads/evidence/managed-438-01a11c7b",
+    "purpose": "Nonmerged immutable review evidence; never a product merge target.",
+    "expiry": "No automatic deletion; retain while referenced by issue/PR/QA and preserve originals on superseding records.",
+    "predecessors": {
+      "PR450": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+      "PR439": "ce8543483db55800034e6ed2622eeb4b9ac7f3b6",
+      "previousEvidence": "7751202f6c984f13f9c196d254cf5d2216cfc1ab",
+      "planningManifestSha256": "484fe38c4687443ccbcae4ca25484aa243a1ff1a9df757229e0ed402d517114a"
+    },
+    "deferred": "PR439 administrator/bootstrap work retained, not implemented or discarded. PR450 remains open pending coordinator verification; PR439/402 remain closed unmerged. Prior evidence and QA receipts remain historical."
+  }
+}

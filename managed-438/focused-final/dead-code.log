@@ -1,0 +1,31 @@
+npm notice run cal-io@0.38.0 test:dead-code
+npm notice run node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production
+Γ£û scripts\knip-config.test.mjs (1.9387ms)
+Γä╣ tests 1
+Γä╣ suites 0
+Γä╣ pass 0
+Γä╣ fail 1
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 7.1146
+
+Γ£û failing tests:
+
+test at scripts\knip-config.test.mjs:1:1
+Γ£û scripts\knip-config.test.mjs (1.9387ms)
+  Error: spawn EPERM
+      at ChildProcess.spawn (node:internal/child_process:458:11)
+      at spawn (node:child_process:813:9)
+      at TestContext.<anonymous> (node:internal/test_runner/runner:517:19)
+      at FileTest.runInAsyncScope (node:async_hooks:227:14)
+      at FileTest.run (node:internal/test_runner/test:1382:25)
+      at FileTest.start (node:internal/test_runner/test:1242:17)
+      at runTestFile (node:internal/test_runner/runner:599:32)
+      at node:internal/test_runner/runner:1013:25
+      at node:internal/per_context/primordials:599:37
+      at new Promise (<anonymous>) {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'spawn'
+  }

@@ -1,0 +1,11 @@
+PASS src/auth/AuthContext.test.tsx
+PASS src/auth/AuthContext.web.test.tsx
+PASS src/auth/storage.test.ts
+PASS src/auth/offlineWorkspace.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       75 passed, 75 total
+Snapshots:   0 total
+Time:        6.404 s
+Ran all test suites within paths "src/auth/AuthContext.test.tsx", "src/auth/AuthContext.web.test.tsx", "src/auth/offlineWorkspace.test.ts", "src/auth/storage.test.ts".
+Test results written to: ..\..\focused-evidence-438\final-guard-tests.json

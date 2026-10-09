@@ -1,0 +1,31 @@
+PASS src/auth/storage.test.ts
+  ΓêÜ accepts an existing empty installation with only a device ID
+  ΓêÜ orders an in-flight old token write before logout clearing and replacement-account persistence (1 ms)
+  ΓêÜ rejects a cancelled write before it enters the storage queue
+  ΓêÜ restores an in-flight cancelled write before replacement reads (storage failure: false) (1 ms)
+  ΓêÜ restores an in-flight cancelled write before replacement reads (storage failure: true)
+  configured session at the production storage boundary
+    ΓêÜ retains matching legacy credentials and local state without inspecting or clearing queues (2 ms)
+    ΓêÜ preserves changed-origin originals and commits signed out (bound: false)
+    ΓêÜ preserves changed-origin originals and commits signed out (bound: true) (1 ms)
+    ΓêÜ blocks pending state and reopens the unchanged original binding in a matching build (9 ms)
+    ΓêÜ blocks failed state and reopens the unchanged original binding in a matching build (1 ms)
+    ΓêÜ blocks replaying state and reopens the unchanged original binding in a matching build
+    ΓêÜ blocks unreadable state and reopens the unchanged original binding in a matching build (1 ms)
+    ΓêÜ blocks unknown state and reopens the unchanged original binding in a matching build
+    ΓêÜ never guesses malformed saved origin previous.example (3 ms)
+    ΓêÜ never guesses malformed saved origin https://user:secret@previous.example (2 ms)
+    ΓêÜ never guesses malformed saved origin https://previous.example/path (1 ms)
+    ΓêÜ never guesses malformed saved origin not a URL
+    ΓêÜ blocks missing identity with tokens or scoped data; only a proven empty installation proceeds (1 ms)
+    ΓêÜ fails closed on read failure and retries without losing originals
+    ΓêÜ fails closed on preserve failure and retries without losing originals (1 ms)
+    ΓêÜ fails closed on commit failure and retries without losing originals (1 ms)
+    ΓêÜ recognizes a completed binding after an interrupted acknowledgement without importing legacy tokens
+    ΓêÜ does not fall back to legacy credentials after an unknown bound version (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        0.958 s, estimated 1 s
+Ran all test suites within paths "src/auth/storage.test.ts".

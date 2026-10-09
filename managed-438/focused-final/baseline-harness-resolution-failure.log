@@ -1,0 +1,21 @@
+FAIL focused-evidence-438/untouched-master-native.test.tsx
+  ΓùÅ Test suite failed to run
+
+    Cannot find module 'expo-secure-store' from '../../focused-evidence-438/untouched-master-native.test.tsx'
+
+      1 | const mockSecureLogoutStorage = new Map<string, string>();
+    > 2 | jest.mock('expo-secure-store', () => ({ getItemAsync: jest.fn(async (key: string) => mockSecureLogoutStorage.get(key) ?? null), setItemAsync: jest.fn(async (key: string, value: string) => { mockSecureLogoutStorage.set(key, value); }), deleteItemAsync: jest.fn(async (key: string) => { mockSecureLogoutStorage.delete(key); }) }));
+        |                                       ^
+      3 | jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+      4 | import AsyncStorage from '@react-native-async-storage/async-storage';
+      5 | import { saveOfflineWorkspace, restoreOfflineWorkspace } from 'C:/Users/MChar/Documents/Codex/2026-10-08/task-6/focused-before-438-01a11c7b/mobile/src/auth/offlineWorkspace';
+
+      at Resolver._throwModNotFoundError (../../managed-clone-438-01a11c7b/node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (../../focused-evidence-438/untouched-master-native.test.tsx:2:39)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        1.107 s
+Ran all test suites with tests matching "late .* after remount".
+Test results written to: focused-evidence-438\untouched-master-red.json

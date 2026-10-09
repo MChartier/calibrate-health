@@ -1,0 +1,26 @@
+{
+  "source": "547206a1b372b73fc95fc412ad453b8099440000",
+  "state": "login",
+  "route": "/login?serverUrl=https%3A%2F%2Fwrong.example",
+  "actualUrl": "http://127.0.0.1:4174/login?serverUrl=https%3A%2F%2Fwrong.example",
+  "capturedAt": "2026-10-09T05:32:52.242Z",
+  "browser": "149.0.7827.55",
+  "fixedClock": "2026-07-21T19:00:00.000Z",
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+  "bundles": [
+    {
+      "pathname": "/_expo/static/js/web/index-2c3345dca4c181d6208656369ad664a8.js",
+      "sha256": "9b6acd70fa523962d67c9db8cb6dabd86efbf45cecff3b37bcde27d39e7117e9"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/auth/me"
+    }
+  ],
+  "file": "before-login.png",
+  "sha256": "69854df50d5c02a43fc76306cc6ae44858e6a6138d815b1c3ad195fdf672869a",
+  "text": "Skip to main content\nCalibrate Health\ncalibrate\nTrack food, weight, and progress against a personalized calorie target.\nSign in\nUse your Calibrate account.\nEmail\nPassword\nForgot password?\nSign in\nCreate an account\nPrivacy policy\nTerms of service\nSupport"
+}

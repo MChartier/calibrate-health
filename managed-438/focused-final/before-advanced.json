@@ -1,0 +1,54 @@
+{
+  "source": "547206a1b372b73fc95fc412ad453b8099440000",
+  "state": "advanced",
+  "route": "/advanced",
+  "actualUrl": "http://127.0.0.1:4174/advanced",
+  "capturedAt": "2026-10-09T05:37:19.629Z",
+  "browser": "149.0.7827.55",
+  "fixedClock": "2026-07-21T19:00:00.000Z",
+  "fixtureSha256": "086f065ea8ad837705e2410ec099f8be4fc239701f4c1d2bacc752fed839e00f",
+  "normalization": "Shared repository clock/random fixture; unrelated transient PWA notices hidden using unchanged fixture helper. Compared UI unaltered.",
+  "bundles": [
+    {
+      "pathname": "/_expo/static/js/web/index-2c3345dca4c181d6208656369ad664a8.js",
+      "sha256": "9b6acd70fa523962d67c9db8cb6dabd86efbf45cecff3b37bcde27d39e7117e9"
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/auth/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/user/tracking-history"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/notifications/in-app?view=active&limit=5"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/client-config"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/notifications/stream"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/food-days?date=2026-07-21"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4174/api/v1/food-days/pause"
+    }
+  ],
+  "file": "before-advanced.png",
+  "sha256": "f06b869520b56a0cf26c889860967ebbad8f1c89764bf88c549189b9de72eae1",
+  "text": "Skip to main content\n\nToday\n\nProgress\n\nAdvanced settings\n\n\nDiagnostics\nTechnical details for support and release verification.\nSelf-hosting\nA self-hosted service's operator is responsible for privacy, security, availability, backups, and support.\nService\nSelf-hosted service\nService address\nhttp://127.0.0.1:4174\nPlatform\nWeb/PWA\nNative build tag\nNot applicable\nNative release\nNot applicable\nOTA runtime\n0.2.7\nUpdate channel\nBrowser\nCurrent OTA\nManaged by browser\nPublished\nUnknown\nSoftware updates\nCheck for and apply compatible Calibrate updates.\n\nBrowser updates are installed through the Calibrate PWA lifecycle.\nWeb and PWA updates are delivered through the browser and installed-site lifecycle."
+}

@@ -1,0 +1,29 @@
+npm notice run cal-io@0.38.0 test:dead-code
+npm notice run node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production
+Γ£ö Knip is pinned and dead-code scripts never auto-fix (1.1648ms)
+Γ£ö Knip models every package boundary in the repository (0.7827ms)
+Γ£ö dynamic workflow, plugin, scenario, and Playwright entry points stay discoverable (0.1029ms)
+Γ£ö Knip keeps blocking rules and generated/config boundaries explicit (0.1059ms)
+Γ£ö pull-request lint blocks on dead-code checks after typecheck (0.0827ms)
+Γä╣ tests 5
+Γä╣ suites 0
+Γä╣ pass 5
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 67.0316
+npm notice run cal-io@0.38.0 knip
+npm notice run knip
+Unused devDependencies (2)
+c8       backend/package.json:67:6
+nodemon  backend/package.json:68:6
+Unlisted binaries (4)
+prisma   backend/package.json
+ts-node  backend/package.json
+c8       backend/package.json
+nodemon  backend/package.json
+Unused exports (1)
+parseBoundSession  function  mobile/src/auth/storage.ts:14:17
+Unused exported types (1)
+BoundSession  type  mobile/src/auth/storage.ts:7:13
