@@ -1,0 +1,298 @@
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	﻿2026-10-09T05:41:18.0397801Z Current runner version: '2.337.0'
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0432870Z ##[group]Runner Image Provisioner
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0434213Z Hosted Compute Agent
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0435206Z Version: 20261002.596
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0436146Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0437296Z Build Date: 2026-10-02T22:28:27Z
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0438384Z Worker ID: {fe04deea-0748-4a4f-bbed-f8fb60db30d8}
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0439781Z Region: westus3
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0440735Z Cloud: Azure
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0441548Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0443648Z ##[group]Operating System
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0444668Z Ubuntu
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0445736Z 24.04.5
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0446757Z LTS
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0447535Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0448304Z ##[group]Runner Image
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0449303Z Image: ubuntu-24.04
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0450731Z Version: 20261004.327.1
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0452509Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0455284Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0457148Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0458754Z ##[group]GITHUB_TOKEN Permissions
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0461796Z Contents: read
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0463031Z Metadata: read
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0463789Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0466415Z Secret source: Actions
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0467490Z Cache mode: write
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.0468552Z Prepare workflow directory
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.1038380Z Prepare all required actions
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.1090101Z Getting action download info
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.5284617Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.6193282Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Backend, Shared, API Client, and Mobile Typecheck	Set up job	2026-10-09T05:41:18.8126792Z Complete job name: Backend, Shared, API Client, and Mobile Typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	﻿2026-10-09T05:41:18.8968609Z ##[group]Run actions/checkout@v4
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8969769Z with:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8970280Z   ref: 6f7a1d9fa4dfbf69d3468114d33f4498cf577e03
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8970919Z   repository: MChartier/calibrate-health
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8974770Z   token: ***
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8975192Z   ssh-strict: true
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8975623Z   ssh-user: git
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8976096Z   persist-credentials: true
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8976592Z   clean: true
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8977045Z   sparse-checkout-cone-mode: true
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8977568Z   fetch-depth: 1
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8977993Z   fetch-tags: false
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8978435Z   show-progress: true
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8978869Z   lfs: false
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8979278Z   submodules: false
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8979960Z   set-safe-directory: true
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8980489Z   allow-unsafe-pr-checkout: false
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:18.8981321Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0057667Z Syncing repository: MChartier/calibrate-health
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0060612Z ##[group]Getting Git version info
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0061686Z Working directory is '/home/runner/work/calibrate-health/calibrate-health'
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0063539Z [command]/usr/bin/git version
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0129049Z git version 2.55.0
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0153537Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0176778Z Temporarily overriding HOME='/home/runner/work/_temp/46968c92-8df2-4cb2-a4f3-3e7468e57ad0' before making global git config changes
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0179785Z Adding repository directory to the temporary git global config as a safe directory
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0184914Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0241590Z Deleting the contents of '/home/runner/work/calibrate-health/calibrate-health'
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0247572Z ##[group]Initializing the repository
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0252745Z [command]/usr/bin/git init /home/runner/work/calibrate-health/calibrate-health
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0373821Z hint: Using 'master' as the name for the initial branch. This default branch name
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0375382Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0376361Z hint: to use in all of your new repositories, which will suppress this warning,
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0377403Z hint: call:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0377814Z hint:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0378336Z hint: 	git config --global init.defaultBranch <name>
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0378969Z hint:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0379997Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0381737Z hint: 'development'. The just-created branch can be renamed via this command:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0383084Z hint:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0383846Z hint: 	git branch -m <name>
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0384678Z hint:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0385873Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0387990Z Initialized empty Git repository in /home/runner/work/calibrate-health/calibrate-health/.git/
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0401014Z [command]/usr/bin/git remote add origin https://github.com/MChartier/calibrate-health
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0448432Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0450036Z ##[group]Disabling automatic garbage collection
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0453348Z [command]/usr/bin/git config --local gc.auto 0
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0485372Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0486756Z ##[group]Setting up auth
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0493136Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0527001Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.0951861Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.1003197Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.1284635Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.1331080Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.1560477Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.1600967Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.1601913Z ##[group]Fetching the repository
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:19.1610297Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 6f7a1d9fa4dfbf69d3468114d33f4498cf577e03
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3432579Z From https://github.com/MChartier/calibrate-health
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3435013Z  * branch            6f7a1d9fa4dfbf69d3468114d33f4498cf577e03 -> FETCH_HEAD
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3440280Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3442501Z ##[group]Determining the checkout info
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3444745Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3449627Z [command]/usr/bin/git sparse-checkout disable
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3508725Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3540112Z ##[group]Checking out the ref
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.3543666Z [command]/usr/bin/git checkout --progress --force 6f7a1d9fa4dfbf69d3468114d33f4498cf577e03
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5573783Z Note: switching to '6f7a1d9fa4dfbf69d3468114d33f4498cf577e03'.
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5574968Z 
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5575711Z You are in 'detached HEAD' state. You can look around, make experimental
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5577385Z changes and commit them, and you can discard any commits you make in this
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5579025Z state without impacting any branches by switching back to a branch.
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5580741Z 
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5581888Z If you want to create a new branch to retain commits you create, you may
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5584655Z do so (now or later) by using -c with the switch command. Example:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5585601Z 
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5585993Z   git switch -c <new-branch-name>
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5586604Z 
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5587040Z Or undo this operation with:
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5587766Z 
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5588432Z   git switch -
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5589693Z 
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5591105Z Turn off this advice by setting config variable advice.detachedHead to false
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5592979Z 
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5594225Z HEAD is now at 6f7a1d9 Keep bound-session parsing private to native storage
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5600612Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5646271Z [command]/usr/bin/git log -1 --format=%H
+Backend, Shared, API Client, and Mobile Typecheck	Checkout	2026-10-09T05:41:21.5676186Z 6f7a1d9fa4dfbf69d3468114d33f4498cf577e03
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	﻿2026-10-09T05:41:21.6095587Z ##[group]Run actions/setup-node@v4
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6096210Z with:
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6096603Z   node-version: 22.13.0
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6097033Z   cache: npm
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6097612Z   cache-dependency-path: package-lock.json
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	backend/package-lock.json
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6098270Z   always-auth: false
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6098554Z   check-latest: false
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6102152Z   token: ***
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.6102454Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.7501947Z Attempting to download 22.13.0...
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.7608124Z (node:2326) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:21.7609841Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:22.7046585Z Acquiring 22.13.0 - x64 from https://github.com/actions/node-versions/releases/download/22.13.0-12683784390/node-22.13.0-linux-x64.tar.gz
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:23.2960372Z Extracting ...
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:23.3081779Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/f9df99d2-82b0-49a3-996a-893a2cce57b5 -f /home/runner/work/_temp/f885c4d4-d9f3-48cb-9a08-3546960ded74
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:24.4839061Z Adding to the cache ...
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:27.9650412Z ##[group]Environment details
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:28.1889633Z node: v22.13.0
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:28.1890302Z npm: 10.9.2
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:28.1890624Z yarn: 1.22.22
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:28.1900817Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:28.1914652Z [command]/opt/hostedtoolcache/node/22.13.0/x64/bin/npm config get cache
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:28.2853875Z /home/runner/.npm
+Backend, Shared, API Client, and Mobile Typecheck	Setup Node	2026-10-09T05:41:28.5070998Z npm cache is not found
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	﻿2026-10-09T05:41:28.5253689Z ##[group]Run npm ci --no-audit --fund=false
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:28.5254159Z ^[[36;1mnpm ci --no-audit --fund=false^[[0m
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:28.5523013Z shell: /usr/bin/bash -e {0}
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:28.5523455Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:31.8277407Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:35.0314767Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:35.4662767Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:35.6164876Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:35.8079010Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:44.1540541Z 
+Backend, Shared, API Client, and Mobile Typecheck	Install workspace deps	2026-10-09T05:41:44.1541264Z added 889 packages in 16s
+Backend, Shared, API Client, and Mobile Typecheck	Install backend deps	﻿2026-10-09T05:41:44.2276834Z ##[group]Run npm ci --prefix backend --no-audit --fund=false
+Backend, Shared, API Client, and Mobile Typecheck	Install backend deps	2026-10-09T05:41:44.2277343Z ^[[36;1mnpm ci --prefix backend --no-audit --fund=false^[[0m
+Backend, Shared, API Client, and Mobile Typecheck	Install backend deps	2026-10-09T05:41:44.2346268Z shell: /usr/bin/bash -e {0}
+Backend, Shared, API Client, and Mobile Typecheck	Install backend deps	2026-10-09T05:41:44.2346560Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Install backend deps	2026-10-09T05:41:52.6764852Z 
+Backend, Shared, API Client, and Mobile Typecheck	Install backend deps	2026-10-09T05:41:52.6765560Z added 430 packages in 8s
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	﻿2026-10-09T05:41:52.7048776Z ##[group]Run npm run lint
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.7049105Z ^[[36;1mnpm run lint^[[0m
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.7114642Z shell: /usr/bin/bash -e {0}
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.7114971Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.8085974Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.8086668Z > cal-io@0.38.0 lint
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.8087778Z > npm run lint:backend && npm run lint:shared && npm run lint:api-client && npm run lint:mobile
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.8088506Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9011581Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9012104Z > cal-io@0.38.0 lint:backend
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9012598Z > npm --prefix backend run typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9012814Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9977977Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9978514Z > backend@0.38.0 pretypecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9979039Z > npm run prisma:generate
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:52.9979349Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:53.1094404Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:53.1095193Z > backend@0.38.0 prisma:generate
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:53.1095955Z > prisma generate
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:53.1096222Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:54.3165611Z Loaded Prisma config from prisma.config.ts.
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:54.3166229Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:54.4107640Z Prisma schema loaded from prisma/schema.prisma.
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0318157Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0319336Z ✔ Generated Prisma Client (v7.9.0) to ./node_modules/@prisma/client in 406ms
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0320167Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0320639Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0321109Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0321118Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0612943Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0613485Z > backend@0.38.0 typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0613907Z > tsc --noEmit -p tsconfig.build.json
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:41:55.0614216Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.2203927Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.2204622Z > cal-io@0.38.0 lint:shared
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.2205096Z > npm --prefix shared run typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.2205336Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.3145339Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.3146100Z > @calibrate/shared@0.0.0 typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.3146760Z > tsc --noEmit -p tsconfig.build.json
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:02.3147113Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.2792166Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.2792964Z > cal-io@0.38.0 lint:api-client
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.2793496Z > npm --prefix packages/api-client run typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.2793751Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.3768179Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.3768915Z > @calibrate/api-client@0.0.0 typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.3769754Z > tsc -p tsconfig.json
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:03.3769998Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.1455267Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.1455916Z > cal-io@0.38.0 lint:mobile
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.1456786Z > npm --prefix mobile run typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.1457162Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.2383199Z 
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.2383997Z > mobile@0.2.7 typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.2384383Z > tsc --noEmit
+Backend, Shared, API Client, and Mobile Typecheck	Type-check all TypeScript surfaces	2026-10-09T05:42:05.2384545Z 
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	﻿2026-10-09T05:42:15.0068895Z ##[group]Run npm run test:dead-code
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.0069234Z ^[[36;1mnpm run test:dead-code^[[0m
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.0134228Z shell: /usr/bin/bash -e {0}
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.0134491Z ##[endgroup]
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1097500Z 
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1098140Z > cal-io@0.38.0 test:dead-code
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1098901Z > node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1099299Z 
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1487723Z TAP version 13
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1853384Z # Subtest: Knip is pinned and dead-code scripts never auto-fix
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1861283Z ok 1 - Knip is pinned and dead-code scripts never auto-fix
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1862509Z   ---
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1863605Z   duration_ms: 1.047287
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1864069Z   ...
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1865199Z # Subtest: Knip models every package boundary in the repository
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1867196Z ok 2 - Knip models every package boundary in the repository
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1867882Z   ---
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1868292Z   duration_ms: 1.625899
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1868681Z   ...
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1876566Z # Subtest: dynamic workflow, plugin, scenario, and Playwright entry points stay discoverable
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1877953Z ok 3 - dynamic workflow, plugin, scenario, and Playwright entry points stay discoverable
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1878737Z   ---
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1879089Z   duration_ms: 0.215012
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1879702Z   ...
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1880599Z # Subtest: Knip keeps blocking rules and generated/config boundaries explicit
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1881888Z ok 4 - Knip keeps blocking rules and generated/config boundaries explicit
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1882777Z   ---
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1883217Z   duration_ms: 0.183814
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1883655Z   ...
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1884639Z # Subtest: pull-request lint blocks on dead-code checks after typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1885706Z ok 5 - pull-request lint blocks on dead-code checks after typecheck
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1886380Z   ---
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1886763Z   duration_ms: 0.158657
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1887273Z   ...
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1958839Z 1..5
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1959244Z # tests 5
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1960398Z # suites 0
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1960943Z # pass 5
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1961494Z # fail 0
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1962054Z # cancelled 0
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1962633Z # skipped 0
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1963173Z # todo 0
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.1963800Z # duration_ms 58.484324
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.2920894Z 
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.2921239Z > cal-io@0.38.0 knip
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.2921621Z > knip
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:15.2921806Z 
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:18.3050252Z 
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:18.3050892Z > cal-io@0.38.0 knip:production
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:18.3051361Z > knip --production --exclude exports,types
+Backend, Shared, API Client, and Mobile Typecheck	Check for dead code	2026-10-09T05:42:18.3051637Z 
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	﻿2026-10-09T05:42:20.5100191Z Post job cleanup.
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	2026-10-09T05:42:20.6461760Z (node:2692) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	2026-10-09T05:42:20.6462755Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	2026-10-09T05:42:20.6828867Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/calibrate-health/calibrate-health --files-from manifest.txt --use-compress-program zstdmt
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	2026-10-09T05:42:21.5442615Z (node:2692) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	2026-10-09T05:42:22.5255624Z Sent 0 of 335044200 (0.0%), 0.0 MBs/sec
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	2026-10-09T05:42:23.2492714Z Sent 335044200 of 335044200 (100.0%), 185.3 MBs/sec
+Backend, Shared, API Client, and Mobile Typecheck	Post Setup Node	2026-10-09T05:42:23.5007147Z Cache saved with the key: node-cache-Linux-x64-npm-54dd681d7cb8a0a0b08b565f2fb2ed7a87475df9f06a8d975b608543233cd4db
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	﻿2026-10-09T05:42:23.5171638Z Post job cleanup.
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6036456Z [command]/usr/bin/git version
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6082384Z git version 2.55.0
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6124647Z Temporarily overriding HOME='/home/runner/work/_temp/a5cacb7e-b51d-4015-861f-bc9f8455ab15' before making global git config changes
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6126602Z Adding repository directory to the temporary git global config as a safe directory
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6131285Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/calibrate-health/calibrate-health
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6172121Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6215243Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6472571Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6502664Z http.https://github.com/.extraheader
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6514312Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6570459Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6848043Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Backend, Shared, API Client, and Mobile Typecheck	Post Checkout	2026-10-09T05:42:23.6891397Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Backend, Shared, API Client, and Mobile Typecheck	Complete job	﻿2026-10-09T05:42:23.7321660Z Cleaning up orphan processes
+Backend, Shared, API Client, and Mobile Typecheck	Complete job	2026-10-09T05:42:23.7627659Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

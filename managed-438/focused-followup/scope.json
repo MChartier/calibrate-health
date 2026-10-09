@@ -1,0 +1,321 @@
+{
+  "repository": "MChartier/calibrate-health",
+  "targetRef": "refs/heads/master",
+  "targetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+  "base": "547206a1b372b73fc95fc412ad453b8099440000",
+  "head": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+  "parents": [],
+  "commits": [
+    "8466b29695e6924db0ecbde0a435b04c49f56fc0 547206a1b372b73fc95fc412ad453b8099440000 Bind Calibrate to its build target and remove runtime service selection",
+    "6f7a1d9fa4dfbf69d3468114d33f4498cf577e03 8466b29695e6924db0ecbde0a435b04c49f56fc0 Keep bound-session parsing private to native storage",
+    "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43 6f7a1d9fa4dfbf69d3468114d33f4498cf577e03 Block target changes with unknown saved health consent"
+  ],
+  "files": [
+    {
+      "file": "README.md",
+      "added": 4,
+      "deleted": 5,
+      "category": "documentation",
+      "reason": "Replace customer hosting guidance with build-time targeting and non-destructive recovery."
+    },
+    {
+      "file": "e2e/expo-web/browser-session-ordering.spec.ts",
+      "added": 63,
+      "deleted": 0,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "e2e/expo-web/launch-19-hosted-pwa-trust.spec.ts",
+      "added": 2,
+      "deleted": 1,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/README.md",
+      "added": 3,
+      "deleted": 1,
+      "category": "documentation",
+      "reason": "Replace customer hosting guidance with build-time targeting and non-destructive recovery."
+    },
+    {
+      "file": "mobile/app.config.test.cjs",
+      "added": 1,
+      "deleted": 1,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/app.json",
+      "added": 1,
+      "deleted": 1,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/app/(auth)/login.tsx",
+      "added": 6,
+      "deleted": 26,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/app/(auth)/register.tsx",
+      "added": 7,
+      "deleted": 27,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/app/(tabs)/(settings)/advanced.tsx",
+      "added": 3,
+      "deleted": 54,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/app/_layout.tsx",
+      "added": 1,
+      "deleted": 4,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.test.tsx",
+      "added": 190,
+      "deleted": 22,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.tsx",
+      "added": 194,
+      "deleted": 108,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.web.test.tsx",
+      "added": 115,
+      "deleted": 6,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/AuthContext.web.tsx",
+      "added": 131,
+      "deleted": 89,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/authScreenNavigation.test.tsx",
+      "added": 13,
+      "deleted": 17,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/authServerDraft.test.ts",
+      "added": 0,
+      "deleted": 14,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/authServerDraft.ts",
+      "added": 0,
+      "deleted": 5,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/logoutIntent.web.ts",
+      "added": 1,
+      "deleted": 1,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/logoutIntentStore.test.ts",
+      "added": 41,
+      "deleted": 0,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/logoutIntentStore.ts",
+      "added": 33,
+      "deleted": 11,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/offlineWorkspace.test.ts",
+      "added": 40,
+      "deleted": 0,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/offlineWorkspace.ts",
+      "added": 27,
+      "deleted": 4,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/serverSwitch.test.ts",
+      "added": 1,
+      "deleted": 53,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/serverSwitch.ts",
+      "added": 0,
+      "deleted": 24,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/storage.test.ts",
+      "added": 136,
+      "deleted": 3,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/storage.ts",
+      "added": 91,
+      "deleted": 25,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/auth/targetTransitionState.test.ts",
+      "added": 110,
+      "deleted": 0,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/auth/targetTransitionState.ts",
+      "added": 103,
+      "deleted": 0,
+      "category": "product",
+      "reason": "Bounded existing-provider/storage/queue changes for fixed target and late-session isolation."
+    },
+    {
+      "file": "mobile/src/components/ClientServerIncompatibleScreen.test.tsx",
+      "added": 0,
+      "deleted": 4,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/components/ClientServerIncompatibleScreen.tsx",
+      "added": 1,
+      "deleted": 9,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/src/components/ClientUpgradeRequiredScreen.test.tsx",
+      "added": 1,
+      "deleted": 4,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/components/ClientUpgradeRequiredScreen.tsx",
+      "added": 1,
+      "deleted": 9,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/src/components/ServerUrlControl.test.tsx",
+      "added": 0,
+      "deleted": 124,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/components/ServerUrlControl.tsx",
+      "added": 0,
+      "deleted": 194,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/src/config/server.test.ts",
+      "added": 5,
+      "deleted": 24,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/config/server.ts",
+      "added": 23,
+      "deleted": 16,
+      "category": "product",
+      "reason": "Validate fixed build input and preserve production serving-origin routing."
+    },
+    {
+      "file": "mobile/src/legal/publicLegalContent.ts",
+      "added": 1,
+      "deleted": 1,
+      "category": "product",
+      "reason": "Remove runtime selection or promotional wording; retain diagnostics, consent and recovery controls."
+    },
+    {
+      "file": "mobile/src/offline/database.test.ts",
+      "added": 28,
+      "deleted": 0,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    },
+    {
+      "file": "mobile/src/offline/database.ts",
+      "added": 4,
+      "deleted": 0,
+      "category": "product",
+      "reason": "Fail closed before initializing an unknown outbox schema."
+    },
+    {
+      "file": "mobile/src/screens/AdvancedSettingsScreen.test.tsx",
+      "added": 8,
+      "deleted": 13,
+      "category": "maintained regression",
+      "reason": "Protect fixed target, absent picker, migration/recovery, or demonstrated session race contracts."
+    }
+  ],
+  "totals": {
+    "files": 40,
+    "added": 1389.0,
+    "deleted": 900.0
+  },
+  "composition": [
+    {
+      "category": "product",
+      "files": 20,
+      "added": 628.0,
+      "deleted": 608.0
+    },
+    {
+      "category": "maintained regression",
+      "files": 18,
+      "added": 754.0,
+      "deleted": 286.0
+    },
+    {
+      "category": "documentation",
+      "files": 2,
+      "added": 7.0,
+      "deleted": 6.0
+    }
+  ],
+  "scopeAssessment": "Three focused commits, no imported predecessor history, evidence commits or backend protocol changes. Session safety stays in the accepted eight-file boundary, reusing existing token/workspace/logout queues and browser Web Locks. Native bound credentials are the necessary format change; existing workspace/outbox formats are unchanged. General transition adapter and duplicate browser scheduler from PR450 are excluded. Product history is reviewed in full, not only net tree."
+}

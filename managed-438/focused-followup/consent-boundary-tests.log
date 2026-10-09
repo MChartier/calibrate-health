@@ -1,0 +1,9 @@
+PASS src/auth/storage.test.ts
+PASS src/auth/targetTransitionState.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       50 passed, 50 total
+Snapshots:   0 total
+Time:        1.206 s, estimated 2 s
+Ran all test suites within paths "src/auth/targetTransitionState.test.ts", "src/auth/storage.test.ts".
+Test results written to: ..\..\focused-evidence-438\consent-boundary-tests.json

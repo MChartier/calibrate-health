@@ -1,0 +1,17 @@
+{
+  "head": "18cf84a2a4d5acc05ca14ecd2ddd861a1fe20b43",
+  "evidenceCommit": "19031ef5d6e23cdb66b24c839889082b9861a6ed",
+  "checks": "Current-head CI pending; final readback appended separately.",
+  "impact": "Follow-ups make native binding declarations private and validate saved native Health Connect selection fields. Neither native file is imported by the browser AuthContext.web implementation. Browser UI, routes, fixtures, bundle sources and captures remain applicable without relabeling. Native storage/state regressions (50) and TypeScript pass. Existing source/build/capture records remain unchanged.",
+  "parents": [],
+  "manifestSha256": "f0cbab9e0ef3bfa12caace6fa50d11bcfe2e3af552316fe0149181ab029ad9ee",
+  "botReview": {
+    "requestedHead": "6f7a1d9fa4dfbf69d3468114d33f4498cf577e03",
+    "waiver": "issue405 comment6006523068",
+    "commentId": 6075059975,
+    "result": "quota-only refusal; no current-head bot review completed and no retry"
+  },
+  "capturedAfter": "8466b29695e6924db0ecbde0a435b04c49f56fc0",
+  "provenanceSha256": "68f05781efd6ee208e96389b536cd2455a9a445ecf4996ef561f8e0b16a35eb2",
+  "base": "547206a1b372b73fc95fc412ad453b8099440000"
+}
