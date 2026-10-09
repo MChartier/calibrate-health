@@ -1,4 +1,4 @@
-import { authenticateAgainstConfirmedServer, confirmServerSwitch } from './serverSwitch';
+import { authenticateAgainstConfirmedServer } from './serverSwitch';
 import type { ServerConnectionResult } from '../config/server';
 
 const failedConnection: ServerConnectionResult = {
@@ -32,58 +32,6 @@ const successfulConnection: ServerConnectionResult = {
         }
     }
 };
-
-describe('confirmServerSwitch', () => {
-    it('preserves a working session and persisted URL when confirmation fails', async () => {
-        const clearCurrentSession = jest.fn(async () => undefined);
-        const persistServerUrl = jest.fn(async () => undefined);
-
-        const result = await confirmServerSwitch({
-            candidate: 'https://new.example',
-            currentServerUrl: 'https://working.example',
-            testConnection: async () => failedConnection,
-            clearCurrentSession,
-            persistServerUrl
-        });
-
-        expect(result).toBe(failedConnection);
-        expect(clearCurrentSession).not.toHaveBeenCalled();
-        expect(persistServerUrl).not.toHaveBeenCalled();
-    });
-
-    it('clears server-scoped credentials only after successful confirmation', async () => {
-        const events: string[] = [];
-
-        await confirmServerSwitch({
-            candidate: 'https://new.example',
-            currentServerUrl: 'https://working.example',
-            testConnection: async () => {
-                events.push('confirmed');
-                return successfulConnection;
-            },
-            clearCurrentSession: async () => { events.push('cleared'); },
-            persistServerUrl: async () => { events.push('persisted'); }
-        });
-
-        expect(events).toEqual(['confirmed', 'cleared', 'persisted']);
-    });
-
-    it('keeps the current session when re-confirming the same normalized server', async () => {
-        const clearCurrentSession = jest.fn(async () => undefined);
-        const persistServerUrl = jest.fn(async () => undefined);
-
-        await confirmServerSwitch({
-            candidate: 'https://new.example',
-            currentServerUrl: 'https://new.example',
-            testConnection: async () => successfulConnection,
-            clearCurrentSession,
-            persistServerUrl
-        });
-
-        expect(clearCurrentSession).not.toHaveBeenCalled();
-        expect(persistServerUrl).toHaveBeenCalledWith('https://new.example');
-    });
-});
 
 describe('authenticateAgainstConfirmedServer', () => {
     it('authenticates against the normalized URL returned by confirmation', async () => {

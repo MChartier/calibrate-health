@@ -1,7 +1,7 @@
 /**
  * Exercises the consolidated Advanced settings route and interaction boundaries.
  */
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import { HOSTED_SERVER_URL } from '../config/server';
 import { useAuth } from '../auth/AuthContext';
@@ -73,27 +73,22 @@ describe('AdvancedSettingsScreen', () => {
         mockedUseAppUpdateController.mockReturnValue(updateController());
     });
 
-    it('combines connection, diagnostics, and software updates on one page', () => {
+    it('keeps diagnostics and software updates without connection setup', () => {
         const view = render(<AdvancedSettingsScreen />);
 
-        expect(view.getByRole('header', { name: 'Connection' })).toBeTruthy();
+        expect(view.queryByRole('header', { name: 'Connection' })).toBeNull();
         expect(view.getByRole('header', { name: 'Diagnostics' })).toBeTruthy();
         expect(view.getByRole('header', { name: 'Software updates' })).toBeTruthy();
-        expect(view.getByLabelText('Server URL')).toBeTruthy();
+        expect(view.queryByLabelText('Server URL')).toBeNull();
         expect(view.getByText(HOSTED_SERVER_URL)).toBeTruthy();
         expect(view.getByText('0.2.5 (build 7)')).toBeTruthy();
     });
 
-    it('tests and saves a selected server from the route', async () => {
+    it('has no self-hosting promotion or service switch action', () => {
         const view = render(<AdvancedSettingsScreen />);
-        const serverUrl = 'https://self-hosted.example.invalid';
-
-        fireEvent.changeText(view.getByLabelText('Server URL'), serverUrl);
-        fireEvent.press(view.getByRole('button', { name: 'Test Calibrate server connection' }));
-        fireEvent.press(view.getByRole('button', { name: 'Save connection' }));
-
-        expect(mockTestServerUrl).toHaveBeenCalledWith(serverUrl);
-        await waitFor(() => expect(mockSetServerUrl).toHaveBeenCalledWith(serverUrl));
+        expect(view.queryByText('Self-hosting')).toBeNull();
+        expect(view.queryByRole('button', { name: 'Save connection' })).toBeNull();
+        expect(mockSetServerUrl).not.toHaveBeenCalled();
     });
 
     it('does not offer the origin-bound server editor on web', () => {

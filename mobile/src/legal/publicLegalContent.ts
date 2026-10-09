@@ -132,7 +132,7 @@ export const PRIVACY_SECTIONS: PublicLegalSection[] = [
     },
     {
         title: '5. Self-Hosted Instances',
-        paragraphs: ['Calibrate is open-source and may be self-hosted. This policy applies to the hosted service at https://calibratehealth.app.'],
+        paragraphs: ['This policy applies to the hosted service at https://calibratehealth.app.'],
         bullets: [
             'A self-hosted operator is responsible for its stored data, HTTPS, database access, logs, backups, push configuration, and retention.',
             'The hosted Calibrate service cannot access data on independently hosted instances.',
