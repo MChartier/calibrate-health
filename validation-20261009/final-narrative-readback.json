@@ -1,0 +1,181 @@
+{
+  "checkedAtUtc": "2026-10-09T05:29:36.676Z",
+  "head": "c62450c77c7b6a127e04cc698cdcb7d11cb7d762",
+  "apiBase": "8eb6014adc6ed0ea327fa09fbd2af76afef284d5",
+  "baseRef": "master",
+  "actualMaster": "547206a1b372b73fc95fc412ad453b8099440000",
+  "draft": true,
+  "labels": [],
+  "issueState": "open",
+  "oldPrDigest": "f0af08f464c3bd818cb25d2565d7326e6fd261028e419f5698c3f31cb72a4bdc",
+  "oldPrUpdatedAt": "2026-10-09T01:56:30Z",
+  "newPrDigest": "dc12b71858ba73802fac430c5b8ae14cdb4b52cd3eeab9f23fb11f7ee9ec97da",
+  "prUpdatedAt": "2026-10-09T05:29:28Z",
+  "oldIssueDigest": "d66279eb52197d1b5b85318411fc4088e4d0e1fb14159468ee23f04ef54c37a4",
+  "oldIssueUpdatedAt": "2026-10-08T23:03:40Z",
+  "newIssueDigest": "372998b58f0851feb9d19e1f5b7dab258dd655881010cf146c9d4a102e5f1786",
+  "issueUpdatedAt": "2026-10-09T05:29:30Z",
+  "association": {
+    "closingIssuesReferences": {
+      "nodes": [
+        {
+          "number": 451
+        }
+      ]
+    },
+    "reviewThreads": {
+      "totalCount": 0,
+      "nodes": []
+    }
+  },
+  "feedbackUnchanged": true,
+  "checks": [
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632570704",
+      "name": "Release Configuration",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176083/job/113632567865",
+      "name": "High and Critical Vulnerabilities",
+      "state": "SUCCESS",
+      "workflow": "Production Container Scan"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632570650",
+      "name": "Backend Build",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176048/job/113632564332",
+      "name": "Backend Tests",
+      "state": "SUCCESS",
+      "workflow": "Tests"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632571975",
+      "name": "Expo Web Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572103",
+      "name": "${{ matrix.platform }} Runtime Bundle",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176073/job/113632564845",
+      "name": "Populated Postgres Upgrade",
+      "state": "SUCCESS",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572869",
+      "name": "Android Emulator End-to-End",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572060",
+      "name": "Native Two-Emulator Package Upgrade",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572345",
+      "name": "Wear Release Emulator Smoke",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572139",
+      "name": "Wear Build and JVM Tests",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176073/job/113632564944",
+      "name": "v0.14.0 Upgrade and Encrypted Rollback",
+      "state": "SUCCESS",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632571614",
+      "name": "iOS Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572112",
+      "name": "Web Critical Smoke",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572427",
+      "name": "Full Exported Web and PWA End-to-End",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632571688",
+      "name": "Six-State Data-Backed Route Acceptance",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632571853",
+      "name": "UX Accessibility and Visual Regression",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632572131",
+      "name": "Mobile Build",
+      "state": "SKIPPED",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176048/job/113632566053",
+      "name": "Mobile Tests",
+      "state": "SKIPPED",
+      "workflow": "Tests"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176051/job/113632536774",
+      "name": "Classify Build Inputs",
+      "state": "SUCCESS",
+      "workflow": "Builds"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176073/job/113632536411",
+      "name": "Classify Database Inputs",
+      "state": "SUCCESS",
+      "workflow": "Database Upgrade"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176083/job/113632536685",
+      "name": "Classify Production Image Inputs",
+      "state": "SUCCESS",
+      "workflow": "Production Container Scan"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176048/job/113632536421",
+      "name": "Classify Test Inputs",
+      "state": "SUCCESS",
+      "workflow": "Tests"
+    },
+    {
+      "link": "https://github.com/MChartier/calibrate-health/actions/runs/37872176105/job/113632536525",
+      "name": "Backend, Shared, API Client, and Mobile Typecheck",
+      "state": "SUCCESS",
+      "workflow": "Lint"
+    }
+  ],
+  "evidenceCommit": "46bf9f89f01a5f2bfd86368218b872367c58b333",
+  "historicalReplayExecutor": "unresolved",
+  "readiness": false
+}
