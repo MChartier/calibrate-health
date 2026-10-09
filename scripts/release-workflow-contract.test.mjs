@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { REQUIRED_CI } from './release-ci-gate.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const workflowsDirectory = path.join(repositoryRoot, '.github', 'workflows');
@@ -93,6 +94,35 @@ test('local reusable workflow callers cover every called job token permission', 
     }
   }
   assert.deepEqual(failures, [], 'Reusable workflows cannot increase caller token permissions');
+});
+
+test('Cut release reuses every required CI surface with explicit read-only candidate identity', () => {
+  const release = readWorkflow('cut-release.yml');
+  const finalize = workflowJobBlock(release, 'finalize');
+  for (const [file, requiredNames] of Object.entries(REQUIRED_CI)) {
+    const caller = workflowJobBlock(release, `candidate-${file.slice(0, -4)}`);
+    const callee = readWorkflow(file);
+    assert.deepEqual(workflowPermissions(caller, 4), { contents: 'read', 'pull-requests': 'read' });
+    assert.match(caller, /needs: \[prepare, publish_candidate, release-validation\]/);
+    assert.ok(caller.includes(`uses: ./.github/workflows/${file}`));
+    assert.match(caller, /release_sha: \$\{\{ needs\.prepare\.outputs\.release_sha \}\}/);
+    assert.match(caller, /source_sha: \$\{\{ needs\.prepare\.outputs\.source_sha \}\}/);
+    assert.doesNotMatch(caller, /secrets:|environment:|write/);
+    assert.ok(finalize.includes(`candidate-${file.slice(0, -4)}`));
+    assert.match(callee, /workflow_call:[\s\S]*release_sha:[\s\S]*required: true[\s\S]*source_sha:[\s\S]*required: true/);
+    assert.match(callee, /release-ci-gate\.mjs --verify-inputs/);
+    assert.match(callee, /format\('candidate-\{0\}-\{1\}', github\.run_id, github\.run_attempt\)/);
+    for (const name of requiredNames) {
+      assert.ok(callee.includes(`    name: ${name}\u0024{{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}`),
+        `${file} must bind the gate's ${name} job name to the full candidate SHA`);
+    }
+  }
+  assert.equal((finalize.match(/RELEASE_CI_RUN_ID: \$\{\{ github\.run_id \}\}/g) ?? []).length, 2);
+  assert.equal((finalize.match(/RELEASE_CI_RUN_ATTEMPT: \$\{\{ github\.run_attempt \}\}/g) ?? []).length, 2);
+  const buildDecision = workflowJobBlock(readWorkflow('builds.yml'), 'changes');
+  assert.match(buildDecision, /if \[\[ "\$\{RELEASE_CANDIDATE\}" == "true" \]\]; then\n\s+release_config=true\n\s+elif/);
+  assert.match(workflowJobBlock(readWorkflow('database-upgrade.yml'), 'changes'),
+    /MIGRATIONS_CHANGED: \$\{\{ inputs\.release_sha == '' &&/);
 });
 
 function workflowPathFilterBlock(job, filterName) {
@@ -457,7 +487,7 @@ test('Cut release uses a read-only request, protected handler, and scoped token 
   assert.match(validation, /npm run test:container:web -- http:\/\/127\.0\.0\.1:3000/);
   assert.doesNotMatch(validation, /create-github-app-token|SERVER_RELEASE_APP_|github\.token/);
 
-  assert.match(finalize, /needs: \[prepare, publish_candidate, release-validation\]/);
+  assert.match(finalize, /needs: \[prepare, publish_candidate, release-validation, candidate-lint, candidate-tests, candidate-builds, candidate-container-scan, candidate-database-upgrade\]/);
   assert.doesNotMatch(finalize, /environment:|secrets./);
   assert.match(finalize, /permissions:\s*\n\s+contents: write\s*\n\s+pull-requests: write/);
   assert.match(finalize, /Require current protected master workflow[\s\S]*git\/ref\/heads\/master/);
@@ -771,9 +801,9 @@ test('pull requests build and smoke only Web-impacting changes while exhaustive 
   );
   const releaseConfig = workflowJobBlock(workflow, 'release-config');
 
-  assert.match(workflow, /on:\s*\n\s+pull_request:/);
+  assert.match(workflow, /on:[\s\S]*?\n  pull_request:/);
   assert.match(workflow, /workflow_dispatch:[\s\S]*validation_scope:[\s\S]*configuration-only/);
-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
+  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
   assert.doesNotMatch(webPaths, /- 'backend\/\*\*'/);
   assert.doesNotMatch(webPaths, /- 'mobile\/test\/\*\*'/);
   assert.match(webPaths, /- 'mobile\/src\/\*\*'/);
@@ -2298,7 +2328,7 @@ test('pull request test suites run only for their affected surfaces', () => {
 
   assertPathFilterOutputs(changes, ['backend', 'mobile'], 'decision');
   assert.match(workflow, /workflow_dispatch:/);
-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
+  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
   assert.match(changes, /github\.event_name != 'pull_request'/);
   assert.match(backendPaths, /- '\.github\/workflows\/tests\.yml'/);
   assert.match(mobilePaths, /- '\.github\/workflows\/tests\.yml'/);
@@ -2371,7 +2401,7 @@ test('database upgrade and rollback select only their affected database surfaces
 
   assertPathFilterOutputs(changes, ['database', 'migrations'], 'decision');
   assert.match(workflow, /workflow_dispatch:/);
-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
+  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
   assert.match(changes, /github\.event_name != 'pull_request'/);
   for (const expectedPath of [
     '.github/workflows/database-upgrade.yml',
@@ -2401,7 +2431,11 @@ test('database upgrade and rollback select only their affected database surfaces
   assert.equal(packageConfig.scripts['test:db:rollback:unit'], 'node --test scripts/postgres-rollback-smoke.test.mjs');
   assert.equal(packageConfig.scripts['test:db:rollback'], 'node scripts/postgres-rollback-smoke.mjs');
 
-  assert.equal(pathFilterMatches(changes, 'database', 'backend/src/routes/user.ts'), false);
+  for (const source of ['routes/user.ts', 'routes/goals.ts', 'routes/metrics.ts', 'routes/imports.ts',
+    'services/caloriePlanningLock.ts', 'services/goalPace.ts', 'services/watch.ts', 'services/clientOperation.ts']) {
+    assert.equal(pathFilterMatches(changes, 'database', `backend/src/${source}`), true, source);
+    assert.equal(pathFilterMatches(changes, 'migrations', `backend/src/${source}`), false, source);
+  }
   assert.equal(pathFilterMatches(changes, 'database', 'backend/prisma/schema.prisma'), true);
   assert.equal(pathFilterMatches(changes, 'migrations', 'backend/prisma/schema.prisma'), false);
   assert.equal(pathFilterMatches(changes, 'migrations', 'backend/prisma/migrations/0021/example.sql'), true);
@@ -2499,7 +2533,7 @@ test('container scan targets production-image inputs while preserving scheduled 
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /schedule:/);
   assert.match(changes, /pull-requests: read/);
-  assert.match(changes, /if: github\.event_name == 'pull_request'/);
+  assert.match(changes, /if: inputs\.release_sha == '' && github\.event_name == 'pull_request'/);
   assert.match(changes, /github\.event_name != 'pull_request'/);
   for (const expectedPath of [
     '.github/workflows/container-scan.yml',
@@ -2521,7 +2555,7 @@ test('container scan targets production-image inputs while preserving scheduled 
   assert.match(scan, /uses: aquasecurity\/trivy-action@[0-9a-f]{40}/);
   assert.match(scan, /severity: HIGH,CRITICAL/);
   assert.ok(scan.includes(
-    "vuln-type: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'os,library' || 'os' }}"
+    "vuln-type: ${{ (inputs.release_sha == '' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) && 'os,library' || 'os' }}"
   ), 'only scheduled/manual scans may gate on package libraries; PR/push/merge scans keep OS checks');
   assert.match(scan, /ignore-unfixed: false/);
   assert.match(scan, /exit-code: '1'/);
@@ -2594,7 +2628,7 @@ test('version-only release PRs validate mirrors without platform build fan-out',
 });
 
 test('all pull-request workflow checkouts freeze exact candidate C', () => {
-  const checkoutExpression = 'ref: ${{ github.event.pull_request.head.sha || github.sha }}';
+  const checkoutExpression = 'ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}';
   for (const name of [
     'builds.yml',
     'tests.yml',
@@ -2604,7 +2638,7 @@ test('all pull-request workflow checkouts freeze exact candidate C', () => {
   ]) {
     const workflow = readWorkflow(name);
     const checkoutCount = (workflow.match(/uses: actions\/checkout@(?:v4|[0-9a-f]{40})/g) ?? []).length;
-    const pinnedCount = workflow.split(checkoutExpression).length - 1;
+    const pinnedCount = workflow.split(checkoutExpression).length - 1 + workflow.split('ref: ${{ inputs.release_sha }}').length - 1;
     assert.ok(checkoutCount > 0, `${name} must contain a checkout`);
     assert.equal(pinnedCount, checkoutCount, `${name} must pin every checkout to candidate C`);
   }
@@ -2682,7 +2716,7 @@ test('PR rollback owns migration safety without a redundant Cut release replay',
   assert.match(pullRequest, /npm run test:db:rollback/);
   assert.doesNotMatch(pullRequest, /upload-artifact|hosted-result|retention-days:/);
   assert.doesNotMatch(release, /\n  database-rollback:|database_migrations_changed|test:db:rollback/);
-  assert.match(releaseFinalize, /needs: \[prepare, publish_candidate, release-validation\]/);
+  assert.match(releaseFinalize, /needs: \[prepare, publish_candidate, release-validation, candidate-lint, candidate-tests, candidate-builds, candidate-container-scan, candidate-database-upgrade\]/);
   assert.doesNotMatch(releaseFinalize, /ux-regression/);
 });
 

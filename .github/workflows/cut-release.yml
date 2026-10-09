@@ -540,9 +540,64 @@ jobs:
         if: always()
         run: docker rm --force calibrate-release-smoke || true
 
+  candidate-lint:
+    name: Release candidate lint
+    needs: [prepare, publish_candidate, release-validation]
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/lint.yml
+    with:
+      release_sha: ${{ needs.prepare.outputs.release_sha }}
+      source_sha: ${{ needs.prepare.outputs.source_sha }}
+
+  candidate-tests:
+    name: Release candidate tests
+    needs: [prepare, publish_candidate, release-validation]
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/tests.yml
+    with:
+      release_sha: ${{ needs.prepare.outputs.release_sha }}
+      source_sha: ${{ needs.prepare.outputs.source_sha }}
+
+  candidate-builds:
+    name: Release candidate builds
+    needs: [prepare, publish_candidate, release-validation]
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/builds.yml
+    with:
+      release_sha: ${{ needs.prepare.outputs.release_sha }}
+      source_sha: ${{ needs.prepare.outputs.source_sha }}
+
+  candidate-container-scan:
+    name: Release candidate container-scan
+    needs: [prepare, publish_candidate, release-validation]
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/container-scan.yml
+    with:
+      release_sha: ${{ needs.prepare.outputs.release_sha }}
+      source_sha: ${{ needs.prepare.outputs.source_sha }}
+
+  candidate-database-upgrade:
+    name: Release candidate database-upgrade
+    needs: [prepare, publish_candidate, release-validation]
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/database-upgrade.yml
+    with:
+      release_sha: ${{ needs.prepare.outputs.release_sha }}
+      source_sha: ${{ needs.prepare.outputs.source_sha }}
+
   finalize:
     name: Merge validated release PR
-    needs: [prepare, publish_candidate, release-validation]
+    needs: [prepare, publish_candidate, release-validation, candidate-lint, candidate-tests, candidate-builds, candidate-container-scan, candidate-database-upgrade]
     runs-on: ubuntu-latest
     timeout-minutes: 50
     permissions:
@@ -691,9 +746,9 @@ jobs:
               '',
               '- exact candidate identity and synchronized release mirrors',
               '- production image build, readiness, and served-Web smoke',
-              '- required CI must succeed on this exact candidate before merge; approval or missing checks block finalization',
+              '- required CI must succeed on this exact candidate before merge; failed or missing checks block finalization',
               '',
-              'Candidate metadata and production smoke passed. Cut release now waits for this PR’s CI; approve pending workflow runs if GitHub requests it. After CI and merge, image publication runs explicitly; OTA and deployment have separate readiness gates.',
+              'Candidate metadata, production smoke and reusable CI passed on the exact release commit in the trusted run. Final identity verification and merge precede image publication; OTA and deployment retain their separate gates.',
             ].join('\n');
             const { data: pull } = await github.rest.pulls.create({
               owner: context.repo.owner,
@@ -706,7 +761,7 @@ jobs:
             core.setOutput('pull_request_number', pull.number);
             core.setOutput('pull_request_url', pull.html_url);
 
-      - name: Wait for exact release PR CI
+      - name: Verify exact candidate CI from this release run
         id: ci_gate
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -714,6 +769,9 @@ jobs:
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
           PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
+          RELEASE_CI_RUN_ID: ${{ github.run_id }}
+          RELEASE_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: node .release-tooling/scripts/release-ci-gate.mjs
 
       - name: Merge the exact release pull request through GitHub
@@ -725,6 +783,9 @@ jobs:
           RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
           RELEASE_BRANCH: ${{ needs.prepare.outputs.release_branch }}
           PULL_REQUEST_NUMBER: ${{ steps.pr.outputs.pull_request_number }}
+          RELEASE_CI_RUN_ID: ${{ github.run_id }}
+          RELEASE_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -1097,7 +1158,7 @@ jobs:
             echo "- Prepare: $PREPARE; candidate branch: $CANDIDATE; metadata/smoke: $SMOKE"
             echo "- CI gate and merge: $FINALIZE; publication workflow: $PUBLISH"
             echo "- Release PR: $PR_URL"
-            echo 'Before merge: inspect PR CI and approval annotations; a validated candidate is retained for failed-job retry while refs remain unchanged.'
+            echo 'Before merge: inspect the candidate validation jobs in this release run; a validated candidate is retained for failed-job retry while refs remain unchanged.'
             echo "After merge: use Publish prepared release with commit $RELEASE_SHA and branch $RELEASE_BRANCH for tag/image recovery. Never recut an already prepared version."
             echo 'Image, OTA and deployment are separate stages. Read the nested publisher summary/log for the verified image digest and explicit optional rollout skips; a skipped OTA/deploy job does not mean the image failed.'
           } >> "$GITHUB_STEP_SUMMARY"

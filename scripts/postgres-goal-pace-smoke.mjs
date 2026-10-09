@@ -29,7 +29,7 @@ try {
     const metricsRouter = backendRequire('./src/routes/metrics').default;
     const userRouter = backendRequire('./src/routes/user').default;
     const planningLock = backendRequire('./src/services/caloriePlanningLock');
-    const user = await db.user.create({ data: { email: 'pace-smoke@calibrate.invalid', password_hash: 'synthetic-only', timezone: 'UTC',
+    const user = await db.user.create({ data: { email: 'pace-smoke@synthetic.invalid', password_hash: 'synthetic-only', timezone: 'UTC',
             date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' } });
     const goal = await db.goal.create({ data: { user_id: user.id, start_weight_grams: 90000, target_weight_grams: 75000,
             daily_deficit: 500, created_at: new Date('2025-01-01Z'), target_date: new Date('2027-02-01Z') } });
@@ -255,6 +255,16 @@ try {
         }
     }
 
+    // Backdating a scenario must not let another goal become active. Keep the
+    // intended identity and explicitly order the synthetic history before it.
+    const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+    async function setActiveGoalFixture(createdAt, startWeight = 90000) {
+        await db.goal.updateMany({ where: { user_id: user.id, id: { not: currentGoal.id } },
+            data: { created_at: new Date(createdAt.getTime() - 86400000) } });
+        await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: createdAt, start_weight_grams: startWeight } });
+        const active = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+        assert.equal(active.id, currentGoal.id, 'scenario fixture must retain the intended active goal');
+    }
     const NativeDate = Date;
     globalThis.Date = class extends NativeDate {
         constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
@@ -266,8 +276,7 @@ try {
                 const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
                 await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
                 user.timezone = oldZone; // Authentication snapshot deliberately predates the profile commit.
-                const latest = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
-                await db.goal.update({ where: { id: latest.id }, data: { created_at: new Date('2026-10-08T19:00:00Z'), start_weight_grams: 90000 } });
+                await setActiveGoalFixture(new Date('2026-10-08T19:00:00Z'));
                 const payload = { weight: 84, ...(explicitDate ? { date: '2026-10-08' } : {}) };
                 const operationId = crypto.randomUUID();
                 const [profile, metric] = await orderedWriters(
@@ -276,7 +285,7 @@ try {
                 assert.equal(profile.statusCode, 200);
                 assert.equal(metric.statusCode, 200);
                 assert.equal(metric.body.date.slice(0, 10), explicitDate || nextZone === 'America/Los_Angeles' ? '2026-10-08' : '2026-10-09');
-                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: latest.id } })).start_weight_grams,
+                assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams,
                     nextZone === 'America/Los_Angeles' ? 84000 : 90000);
                 assert.deepEqual((await call('post', '/', payload, operationId, metricsRouter)).body, metric.body);
             }
@@ -292,8 +301,7 @@ try {
     const session = await db.mobileAuthSession.create({ data: { user_id: user.id, device_id: 'synthetic-watch', device_platform: 'WEAR_OS',
         access_token_hash: crypto.randomUUID(), refresh_token_hash: crypto.randomUUID(),
         access_expires_at: new Date(Date.now() + 3600000), refresh_expires_at: new Date(Date.now() + 7200000) } });
-    const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
-    await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date() } });
+    await setActiveGoalFixture(new Date());
     for (const watchFirst of [true, false]) {
         await call('post', '/', { date: metricDate, weight: 85 }, crypto.randomUUID(), metricsRouter);
         const existing = await db.bodyMetric.findUniqueOrThrow({ where: { user_id_date: { user_id: user.id, date: today } } });
@@ -373,7 +381,7 @@ try {
                 const acceptedDay = nextZone === 'UTC' ? '2026-10-09' : '2026-10-08';
                 await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
                 user.timezone = oldZone;
-                await db.goal.update({ where: { id: currentGoal.id }, data: { created_at: new Date('2026-10-09T01:00:00Z'), start_weight_grams: 90000 } });
+                await setActiveGoalFixture(new Date('2026-10-09T01:00:00Z'));
                 const [profile, imported] = await orderedWriters(
                     () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
                     () => importWeight(importDate, 82, 'OVERWRITE'));

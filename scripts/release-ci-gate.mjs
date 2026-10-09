@@ -1,4 +1,5 @@
 import { appendFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 // Only canonical version-mirror candidates reach this gate. Builds intentionally
@@ -20,6 +21,82 @@ const ALLOWED_SKIPS = {
   ],
   'database-upgrade.yml': ['v0.14.0 Upgrade and Encrypted Rollback'],
 };
+
+export function assertCandidateInputs(env, ancestry) {
+  const { RELEASE_SHA: head, SOURCE_SHA: source, WORKFLOW_SHA: workflow } = env;
+  if (!/^[0-9a-f]{40}$/.test(head ?? '') || !/^[0-9a-f]{40}$/.test(source ?? '') ||
+      head === source || workflow !== source || env.GITHUB_SHA !== source || env.GITHUB_REF !== 'refs/heads/master' ||
+      ancestry.trim() !== `${head} ${source}`) {
+    throw new Error('Reusable CI requires the exact candidate, sole source parent and protected workflow identity.');
+  }
+}
+
+function assertTrustedRun(run, identity) {
+  const expectedPath = '.github/workflows/cut-release-handler.yml';
+  if (run.id !== Number(identity.runId) || run.run_attempt !== Number(identity.runAttempt) ||
+      run.path !== expectedPath || run.event !== 'workflow_run' || run.head_branch !== 'master' ||
+      run.head_sha !== identity.base || run.head_repository?.full_name !== identity.repository ||
+      run.repository?.full_name !== identity.repository || run.status !== 'in_progress' || run.conclusion !== null) {
+    throw new Error('Trusted release run identity/attempt changed; no merge permitted.');
+  }
+  for (const file of ['cut-release.yml', ...Object.keys(REQUIRED_CI)]) {
+    const matches = (run.referenced_workflows ?? []).filter(workflow =>
+      workflow.path?.split('@')[0] === `${identity.repository}/.github/workflows/${file}`);
+    if (matches.length !== 1 || matches[0].sha !== identity.base) {
+      throw new Error(`Trusted release run lacks the exact ${file} workflow source.`);
+    }
+  }
+}
+
+export function evaluateTrustedJobs(jobs, identity) {
+  if (new Set(jobs.map(job => job.id)).size !== jobs.length) throw new Error('Duplicate job identities in CI inventory.');
+  const selected = [];
+  for (const [file, required] of Object.entries(REQUIRED_CI)) {
+    const prefix = `Release candidate ${file.slice(0, -4)} / `;
+    // Failed-job retries reuse successful jobs from earlier attempts of this
+    // same run. The explicit candidate suffix binds those jobs to their input,
+    // and the newest job identity always wins over an older passing execution.
+    const suffix = ` [${identity.head}]`;
+    const latest = new Map();
+    for (const job of [...jobs].sort((a, b) => b.id - a.id)) {
+      if (!(job.name?.startsWith(prefix) || job.name?.includes(` / ${prefix}`))) continue;
+      // Jobs for a different candidate in the same run cannot satisfy this gate.
+      if (/ \[[0-9a-f]{40}\]$/.test(job.name) && !job.name.endsWith(suffix)) continue;
+      if (!latest.has(job.name)) latest.set(job.name, job);
+    }
+    const own = [...latest.values()].map(job => ({ ...job,
+      bound: job.name.endsWith(suffix),
+      shortName: job.name.slice(job.name.indexOf(prefix) + prefix.length, job.name.endsWith(suffix) ? -suffix.length : undefined) }));
+    for (const name of required) {
+      const matches = own.filter(job => job.shortName === name);
+      if (matches.length !== 1 || !matches[0].bound || matches[0].status !== 'completed' || matches[0].conclusion !== 'success') {
+        throw new Error(`${file}: required job ${name} did not succeed in this release attempt.`);
+      }
+    }
+    for (const job of own) {
+      if (!Number.isSafeInteger(job.id) || job.id <= 0 || job.run_id !== Number(identity.runId) || job.head_sha !== identity.base || job.status !== 'completed' ||
+          (!(required.includes(job.shortName) && job.bound && job.conclusion === 'success') &&
+          !(job.conclusion === 'skipped' && ALLOWED_SKIPS[file]?.includes(job.shortName)))) {
+        throw new Error(`${file}: unacceptable candidate job ${job.name}: ${job.conclusion}.`);
+      }
+    }
+    selected.push({ path: file, run_attempt: Number(identity.runAttempt),
+      html_url: `https://github.com/${identity.repository}/actions/runs/${identity.runId}` });
+  }
+  return { selected, pending: [] };
+}
+
+export async function inspectTrustedCi(api, identity) {
+  const root = `/repos/${identity.repository}`;
+  assertIdentity({ pull: await api(`${root}/pulls/${identity.number}`), master: await api(`${root}/git/ref/heads/master`) }, identity);
+  const runPath = `${root}/actions/runs/${identity.runId}`;
+  assertTrustedRun(await api(runPath), identity);
+  const jobs = await api(`${runPath}/jobs?filter=all&per_page=100`, 'jobs');
+  const result = evaluateTrustedJobs(jobs, identity);
+  assertTrustedRun(await api(runPath), identity);
+  assertIdentity({ pull: await api(`${root}/pulls/${identity.number}`), master: await api(`${root}/git/ref/heads/master`) }, identity);
+  return result;
+}
 
 export function assertIdentity({ pull, master }, identity) {
   const { repository, head, base, branch } = identity;
@@ -118,7 +195,7 @@ export async function waitForCi(api, identity, {
   const deadline = now() + timeoutMs;
   let previousPending;
   while (true) {
-    const result = await inspectCi(api, identity);
+    const result = await (identity.runId ? inspectTrustedCi(api, identity) : inspectCi(api, identity));
     if (!result.pending.length) {
       report(result.selected.map(run => `${run.path}: success (${run.html_url}, attempt ${run.run_attempt})`).join('\n'));
       return result;
@@ -155,10 +232,21 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { GITHUB_REPOSITORY: repository, SOURCE_SHA: base, RELEASE_SHA: head,
     RELEASE_BRANCH: branch, PULL_REQUEST_NUMBER: number, GITHUB_TOKEN: token } = process.env;
   try {
+    if (process.argv.includes('--verify-inputs')) {
+      assertCandidateInputs(process.env, execFileSync('git', ['--no-replace-objects', 'rev-list', '--parents', '-n', '1', 'HEAD'], { encoding: 'utf8' }));
+      console.log('Exact candidate/source/workflow identity verified.');
+      process.exit(0);
+    }
     if (!/^[\w.-]+\/[\w.-]+$/.test(repository ?? '') || !/^[0-9a-f]{40}$/.test(base ?? '') ||
         !/^[0-9a-f]{40}$/.test(head ?? '') || !/^release\/v\d+\.\d+\.\d+$/.test(branch ?? '') ||
         !/^[1-9]\d*$/.test(number ?? '') || !token) throw new Error('Missing exact release CI identity/token.');
-    await waitForCi(githubApi({ token, apiUrl: process.env.GITHUB_API_URL }), { repository, base, head, branch, number }, {
+    const runId = process.env.RELEASE_CI_RUN_ID;
+    const runAttempt = process.env.RELEASE_CI_RUN_ATTEMPT;
+    if ((runId || runAttempt) && (!/^[1-9]\d*$/.test(runId ?? '') || !/^[1-9]\d*$/.test(runAttempt ?? '') ||
+        runId !== process.env.GITHUB_RUN_ID || runAttempt !== process.env.GITHUB_RUN_ATTEMPT || process.env.WORKFLOW_SHA !== base)) {
+      throw new Error('Missing exact current release run/attempt/workflow identity.');
+    }
+    await waitForCi(githubApi({ token, apiUrl: process.env.GITHUB_API_URL }), { repository, base, head, branch, number, runId, runAttempt }, {
       timeoutMs: process.argv.includes('--once') ? 0 : 40 * 60_000,
       report: message => {
         console.log(message);

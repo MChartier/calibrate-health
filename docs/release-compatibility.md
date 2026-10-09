@@ -160,21 +160,28 @@ fresh build/attestation/publication rather than trusting the registry bytes.
 
 Server candidate publication, validated PR merge, tag creation, and GHCR publication run automatically. No new server
 publication environment approvals are required. If validation or finalization fails before merging, read-only
-inspection first proves the candidate PR/branch still belong to the action; cleanup closes and deletes only that exact
-unmerged candidate. **Publish prepared release** and **Build Release Image** also run without a server environment gate.
+inspection first proves the candidate PR/branch still belong to the action. Candidates that passed metadata/smoke
+validation are retained for CI repair and failed-job retry with unchanged refs; cleanup is limited to exact unmerged
+candidates that did not pass that validation. **Publish prepared release** and **Build Release Image** also run without a server environment gate.
 
 The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
 `release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It verifies the candidate parent and identity,
 synchronized release configuration, and exact eight-file mirror set. It also builds and starts the production image,
-then checks readiness and the served web application. Unit and integration tests, generated API and deploy contracts,
-production-image smoke/OS scanning, and database upgrade/rollback rehearsal remain targeted pull-request or scheduled
-checks and are not replayed for the version-only candidate. Package dependency audits run only during weekly or
+then checks readiness and the served web application. The trusted release run calls the existing lint, test, release
+configuration, production-image OS scan and populated database upgrade workflows with explicit candidate/source SHAs.
+These jobs receive read-only permissions and no publication/provider secrets. Canonical version-only candidates keep
+platform builds and migration rollback skipped; normal PR and manual workflow selection stays unchanged.
+Package dependency audits run only during weekly or
 manual maintenance and do not gate a release cut. Full container scans include package libraries only during
 scheduled/manual maintenance; PR scans retain OS-vulnerability checks. If `master` advances while validation runs, the
-candidate is not merged; rerun the action so the later change is part of a newly validated candidate.
+candidate is not merged; explicitly reconcile the retained candidate before starting another cut.
 
 After validation, the action creates a version-only release PR and verifies the parents and tree of GitHub's proposed
-merge. It rechecks `master` immediately before calling the PR merge API with the exact validated head SHA. The API
+merge. Both the initial CI gate and its immediate premerge recheck require successful exact-candidate jobs from the
+same trusted run and verified workflow source. Failed-job retries may reuse earlier successes only from that run and
+candidate; newer failures cannot fall back to older green jobs. Missing, failed, cancelled or wholly skipped required
+validation blocks finalization without waiting for approval of token-created PR workflows.
+It rechecks `master` immediately before calling the PR merge API with the exact validated head SHA. The API
 honors branch protection and locks the head, but does not offer a base-SHA compare-and-swap. The workflow therefore
 checks the actual merged parents, tree, and current `master` again before allowing tag/image publication. A concurrent
 base change in that small window stops publication even if GitHub already merged the PR; inspect the failed run before

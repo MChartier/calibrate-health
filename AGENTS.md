@@ -268,8 +268,8 @@ UI code style:
 - The visible server release Actions are read-only request workflows. Default-branch `workflow_run` handlers verify
   exact requests before calling reusable workers. Keep build and verification jobs read-only. Use job-scoped
   `GITHUB_TOKEN` writes only for candidate/tag publication, PR finalization/cleanup, and GHCR publication; callers must
-  propagate every required reusable-workflow permission. Finalization waits for the exact candidate PR CI (including
-  any required human workflow approval), then uses the PR merge API with the validated head,
+  propagate every required reusable-workflow permission. Cut release calls existing read-only CI on the exact candidate
+  and source SHAs; finalization verifies those jobs in the same trusted run, then uses the PR merge API with the validated head,
   honors master protection, and checks merged parents/tree before publication. It must never push directly to master.
   Keep the repository's existing package Actions write access and PR-creation setting. A Server Release GitHub App,
   GHCR robot, `server-release-publication` environment, and extra server tag rulesets are not prerequisites.
@@ -288,11 +288,12 @@ UI code style:
 - Server release jobs run automatically with the configured Actions identity. Cleanup is eligible only after
   read-only exact-ref inspection and must not remove a merged or moved candidate. Job isolation is not an external
   credential boundary against a user who can edit or rerun write-enabled workflows.
-- **Cut release** revalidates exact metadata and runs a production-image smoke only. Affected pull-request and scheduled
-  workflows own full tests, production-image scanning, and database upgrade/rollback validation. Package dependency
+- **Cut release** revalidates exact metadata and runs a production-image smoke, then reuses lint, tests, release configuration,
+  production-image OS scanning and populated database upgrade checks on the candidate. Version-only candidates skip platform
+  build fan-out and migration rollback; normal PR/manual selection remains unchanged. Package dependency
   audits run only during weekly/manual maintenance; do not add them or expiring advisory exceptions to PR or release gates.
   Keep container OS-vulnerability checks on PRs; scan package libraries in the scheduled/manual full image scans.
-- A CI-blocked validated candidate is retained. Approve pending PR workflows or repair their failure, then rerun only
+- A CI-blocked validated candidate is retained. Repair the failed candidate validation, then rerun only
   failed release jobs while master and candidate remain unchanged. Do not cut another version or use the prepared
   publisher before merge. If master advances, stop and explicitly reconcile the retained candidate before a fresh
   Cut release; do not rebase, overwrite or manually merge it.
