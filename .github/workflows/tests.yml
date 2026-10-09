@@ -1,6 +1,16 @@
 name: Tests
 
 on:
+  workflow_call:
+    inputs:
+      release_sha:
+        description: Exact canonical release candidate; validated by Cut release
+        required: true
+        type: string
+      source_sha:
+        description: Exact protected source and workflow commit
+        required: true
+        type: string
   pull_request:
   workflow_dispatch:
 
@@ -8,12 +18,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.event.pull_request.number || github.ref }}
+  group: tests-${{ inputs.release_sha && format('candidate-{0}-{1}', github.run_id, github.run_attempt) || github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   changes:
-    name: Classify Test Inputs
+    name: Classify Test Inputs${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -24,8 +34,24 @@ jobs:
       mobile: ${{ steps.decision.outputs.mobile }}
 
     steps:
+      - name: Checkout release candidate for identity verification
+        if: inputs.release_sha != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Verify explicit release candidate
+        if: inputs.release_sha != ''
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: node scripts/release-ci-gate.mjs --verify-inputs
+
       - name: Detect affected test surfaces
-        if: github.event_name == 'pull_request'
+        if: inputs.release_sha == '' && github.event_name == 'pull_request'
         id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -51,14 +77,14 @@ jobs:
         id: decision
         shell: bash
         env:
-          BACKEND_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
-          MOBILE_CHANGED: ${{ github.event_name != 'pull_request' || steps.filter.outputs.mobile == 'true' }}
+          BACKEND_CHANGED: ${{ inputs.release_sha != '' || github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
+          MOBILE_CHANGED: ${{ inputs.release_sha != '' || github.event_name != 'pull_request' || steps.filter.outputs.mobile == 'true' }}
         run: |
           echo "backend=${BACKEND_CHANGED}" >> "${GITHUB_OUTPUT}"
           echo "mobile=${MOBILE_CHANGED}" >> "${GITHUB_OUTPUT}"
 
   backend-tests:
-    name: Backend Tests
+    name: Backend Tests${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
@@ -87,7 +113,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -110,7 +136,7 @@ jobs:
         run: npm test
 
   mobile-tests:
-    name: Mobile Tests
+    name: Mobile Tests${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
     needs: changes
     if: needs.changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
@@ -120,7 +146,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4

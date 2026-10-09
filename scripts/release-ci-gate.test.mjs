@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { REQUIRED_CI, assertIdentity, evaluateRuns, githubApi, inspectCi, waitForCi } from './release-ci-gate.mjs';
+import { REQUIRED_CI, assertCandidateInputs, assertIdentity, evaluateRuns, evaluateTrustedJobs, githubApi, inspectCi, inspectTrustedCi, waitForCi } from './release-ci-gate.mjs';
 
 const identity = { repository: 'owner/repo', head: 'a'.repeat(40), base: 'b'.repeat(40), branch: 'release/v1.2.3', number: '12' };
 function fixture() {
@@ -163,11 +163,103 @@ test('complete pagination, API denial and truncated inventory are handled explic
 
 test('workflow gates merge twice, retains blocked candidates and preserves explicit publication dependency', () => {
   const workflow = readFileSync(new URL('../.github/workflows/cut-release.yml', import.meta.url), 'utf8');
-  assert.ok(workflow.indexOf('Open or reuse the exact release pull request') < workflow.indexOf('Wait for exact release PR CI'));
-  assert.ok(workflow.indexOf('Wait for exact release PR CI') < workflow.indexOf('Merge the exact release pull request through GitHub'));
+  assert.ok(workflow.indexOf('Open or reuse the exact release pull request') < workflow.indexOf('Verify exact candidate CI from this release run'));
+  assert.ok(workflow.indexOf('Verify exact candidate CI from this release run') < workflow.indexOf('Merge the exact release pull request through GitHub'));
   assert.ok(workflow.indexOf('release-ci-gate.mjs --once') < workflow.indexOf('MERGE_RESPONSE='));
   assert.match(workflow, /needs\.release-validation\.result != 'success'/);
   assert.match(workflow, /publish:\n[\s\S]*needs: \[prepare, finalize\]/);
   assert.match(workflow, /release_status:\n[\s\S]*if: \$\{\{ always\(\) \}\}/);
   assert.doesNotMatch(workflow, /pull_request_target|actions: write|checks: write/);
+});
+
+function trustedFixture() {
+  const f = fixture();
+  const binding = { ...identity, runId: '456', runAttempt: '2' };
+  const run = { id: 456, run_attempt: 2, path: '.github/workflows/cut-release-handler.yml',
+    event: 'workflow_run', head_branch: 'master', head_sha: identity.base, status: 'in_progress', conclusion: null,
+    repository: { full_name: identity.repository }, head_repository: { full_name: identity.repository },
+    referenced_workflows: ['cut-release.yml', ...Object.keys(REQUIRED_CI)].map(file => ({
+      path: `${identity.repository}/.github/workflows/${file}@refs/heads/master`, sha: identity.base })) };
+  let id = 0;
+  const jobs = Object.entries(REQUIRED_CI).flatMap(([file, names]) => names.map(name => ({
+    id: ++id, run_id: 456, head_sha: identity.base, status: 'completed', conclusion: 'success',
+    name: `Cut release / Release candidate ${file.slice(0, -4)} / ${name} [${identity.head}]` })));
+  const api = async path => path.endsWith('/runs/456') ? run : path.includes('/jobs?filter=all') ? jobs : f.api(path);
+  return { ...f, binding, run, jobs, api };
+}
+
+test('trusted candidate CI succeeds without any pull-request-event workflow run', async () => {
+  const f = trustedFixture();
+  f.runs.length = 0;
+  assert.equal((await inspectTrustedCi(f.api, f.binding)).selected.length, 5);
+});
+
+test('trusted CI rejects wrong run, source, event, workflow and attempt', async () => {
+  for (const mutate of [run => run.id++, run => run.run_attempt++, run => run.head_sha = identity.head,
+    run => run.event = 'pull_request', run => run.head_branch = 'other', run => run.status = 'completed',
+    run => run.repository.full_name = 'other/repo', run => run.head_repository.full_name = 'other/repo',
+    run => run.referenced_workflows.pop(), run => run.referenced_workflows[0].sha = identity.head]) {
+    const f = trustedFixture(); mutate(f.run);
+    await assert.rejects(inspectTrustedCi(f.api, f.binding), /identity|workflow source/);
+  }
+});
+
+test('missing, all-skipped, cancelled and failed trusted validation cannot merge', async () => {
+  for (const conclusion of ['skipped', 'failure', 'cancelled', 'neutral', null]) {
+    const f = trustedFixture(); f.jobs.forEach(job => job.conclusion = conclusion);
+    await assert.rejects(inspectTrustedCi(f.api, f.binding), /did not succeed/);
+  }
+  const f = trustedFixture(); f.jobs.length = 0;
+  await assert.rejects(inspectTrustedCi(f.api, f.binding), /did not succeed/);
+});
+
+test('failed-job retry reuses exact-candidate successes but never an older passing job over newer failure', () => {
+  const f = trustedFixture();
+  assert.equal(evaluateTrustedJobs(f.jobs, f.binding).selected.length, 5);
+  f.jobs.push({ ...f.jobs[0], id: 100, conclusion: 'failure' });
+  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /did not succeed/);
+  f.jobs[0].name = f.jobs[0].name.replace(identity.head, 'c'.repeat(40));
+  f.jobs.pop();
+  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /did not succeed/);
+});
+
+test('trusted jobs remain bound to this run and source and permit only named platform skips', () => {
+  for (const field of ['run_id', 'head_sha']) {
+    const f = trustedFixture(); f.jobs[0][field] = 'wrong';
+    assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /unacceptable/);
+  }
+  const f = trustedFixture();
+  const skipped = { id: 100, run_id: 456, head_sha: identity.base, status: 'completed', conclusion: 'skipped',
+    name: 'Cut release / Release candidate builds / iOS Build' };
+  f.jobs.push(skipped);
+  assert.equal(evaluateTrustedJobs(f.jobs, f.binding).selected.length, 5);
+  skipped.conclusion = 'success';
+  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /unacceptable/);
+  skipped.conclusion = 'skipped';
+  skipped.name = skipped.name.replace('iOS Build', 'Unrecognized');
+  assert.throws(() => evaluateTrustedJobs(f.jobs, f.binding), /unacceptable/);
+});
+
+test('trusted premerge inspection rebinds the PR, master and run after inventory reads', async () => {
+  for (const changed of ['master', 'attempt']) {
+    const f = trustedFixture();
+    await assert.rejects(inspectTrustedCi(async path => {
+      const result = await f.api(path);
+      if (path.includes('/jobs?')) {
+        if (changed === 'master') f.master.object.sha = identity.head;
+        else f.run.run_attempt++;
+      }
+      return result;
+    }, f.binding), /changed/);
+  }
+});
+
+test('reusable checkout rejects missing or mixed candidate/source/workflow inputs', () => {
+  const env = { RELEASE_SHA: identity.head, SOURCE_SHA: identity.base, WORKFLOW_SHA: identity.base,
+    GITHUB_SHA: identity.base, GITHUB_REF: 'refs/heads/master' };
+  assertCandidateInputs(env, `${identity.head} ${identity.base}\n`);
+  for (const key of Object.keys(env)) assert.throws(() => assertCandidateInputs({ ...env, [key]: '' }, `${identity.head} ${identity.base}`));
+  for (const ancestry of [identity.head, `${identity.head} ${identity.base} ${identity.base}`, `${identity.head} ${'c'.repeat(40)}`]) {
+    assert.throws(() => assertCandidateInputs(env, ancestry));
+  }
 });
